@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,12 +16,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             <NotificationBell />
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6">
             {children}
           </main>
-          <footer className="border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
+          <footer className="hidden md:block border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
             Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026
           </footer>
+          <MobileBottomNav />
         </div>
       </div>
     </SidebarProvider>
