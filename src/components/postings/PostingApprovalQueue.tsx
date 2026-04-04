@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,8 +58,21 @@ export function PostingApprovalQueue() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: (_, { action }) => {
+    onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      // Send notification to the staff member
+      if (selectedRecord) {
+        const userId = await getUserIdFromProfileId(selectedRecord.profile_id);
+        if (userId) {
+          await createNotification({
+            userId,
+            title: `${selectedRecord.type === "posting" ? "Posting" : "Transfer"} ${action === "approved" ? "Approved" : "Rejected"}`,
+            message: `Your ${selectedRecord.type} request has been ${action}.${comments ? ` Comment: ${comments}` : ""}`,
+            type: "posting",
+            referenceId: selectedRecord.id,
+          });
+        }
+      }
       setSelectedRecord(null);
       setComments("");
       toast.success(`Request ${action}`);

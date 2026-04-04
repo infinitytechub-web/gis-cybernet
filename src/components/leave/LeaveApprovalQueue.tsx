@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -65,8 +66,21 @@ export function LeaveApprovalQueue() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: (_, { action }) => {
+    onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      // Send notification to the staff member
+      if (selectedRequest) {
+        const userId = await getUserIdFromProfileId(selectedRequest.profile_id);
+        if (userId) {
+          await createNotification({
+            userId,
+            title: `Leave ${action === "approved" ? "Approved" : "Rejected"}`,
+            message: `Your ${selectedRequest.type} leave request has been ${action}.${comments ? ` Comment: ${comments}` : ""}`,
+            type: "leave",
+            referenceId: selectedRequest.id,
+          });
+        }
+      }
       setSelectedRequest(null);
       setComments("");
       toast.success(`Leave request ${action}`);
