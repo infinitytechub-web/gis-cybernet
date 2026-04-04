@@ -620,6 +620,7 @@ export type Database = {
         | "deputy_supervisor"
         | "deputy_shift_leader"
         | "deputy"
+        | "shift_leader"
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
@@ -760,6 +761,7 @@ export const Constants = {
         "deputy_supervisor",
         "deputy_shift_leader",
         "deputy",
+        "shift_leader",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],
