@@ -266,7 +266,11 @@ export default function Staff() {
                       </Avatar>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{s.staff_id}</TableCell>
-                    <TableCell className="font-medium">{s.last_name}, {s.first_name}</TableCell>
+                    <TableCell>
+                      <button onClick={() => navigate(`/staff/${s.id}`)} className="font-medium text-primary hover:underline text-left">
+                        {s.last_name}, {s.first_name}
+                      </button>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{s.ranks?.abbreviation ?? "—"}</TableCell>
                     <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
                     <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
