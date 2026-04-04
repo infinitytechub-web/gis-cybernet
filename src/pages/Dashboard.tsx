@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Users, CalendarCheck, CalendarOff, Calendar, ArrowRightLeft,
-  Clock, UserCheck, UserX, TrendingUp, Building2, ShieldCheck
+  Clock, UserCheck, UserX, TrendingUp, Building2, ShieldCheck,
+  Activity, Shield, Wifi
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
