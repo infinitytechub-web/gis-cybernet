@@ -11,10 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import type { ProfileWithRelations } from "@/lib/types";
+import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
@@ -33,6 +34,7 @@ export default function Staff() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -224,9 +226,14 @@ export default function Staff() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {isAdmin && (
-          <Button onClick={openCreate} className="gap-1">
-            <Plus className="h-4 w-4" /> Add Staff
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBulkImportOpen(true)} className="gap-1">
+              <Upload className="h-4 w-4" /> Import
+            </Button>
+            <Button onClick={openCreate} className="gap-1">
+              <Plus className="h-4 w-4" /> Add Staff
+            </Button>
+          </div>
         )}
       </div>
       <div className="relative max-w-sm">
@@ -438,6 +445,7 @@ export default function Staff() {
           </div>
         </DialogContent>
       </Dialog>
+      <BulkImportDialog open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
     </div>
   );
 }
