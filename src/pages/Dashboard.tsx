@@ -25,6 +25,8 @@ const CHART_COLORS = [
 ];
 
 export default function Dashboard() {
+  const { isAdminOrSupervisor, isSupervisor, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
   const { data: staffCount = 0 } = useQuery({
