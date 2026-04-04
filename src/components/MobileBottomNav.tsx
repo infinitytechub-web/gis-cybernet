@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   CalendarCheck, Building2, Award, Clock, Calendar,
-  ArrowRightLeft, ClipboardCheck, BarChart3,
+  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays,
 } from "lucide-react";
 
 const primaryTabs = [
