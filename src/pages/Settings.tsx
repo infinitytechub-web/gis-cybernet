@@ -150,6 +150,7 @@ function UserRolesTab() {
                           <SelectItem value="shift_leader">Shift Leader</SelectItem>
                           <SelectItem value="deputy_supervisor">Deputy Supervisor</SelectItem>
                           <SelectItem value="supervisor">Supervisor</SelectItem>
+                          <SelectItem value="special_duties">Special Duties</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
