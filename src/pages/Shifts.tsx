@@ -1,11 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clock, Plus, Calendar, Shield, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
+import { toast } from "sonner";
 
 export default function Shifts() {
-  const { data: shifts = [], isLoading } = useQuery({
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedShiftId, setSelectedShiftId] = useState("");
+  const [selectedProfileId, setSelectedProfileId] = useState("");
+  const [assignStartDate, setAssignStartDate] = useState("");
+  const [assignEndDate, setAssignEndDate] = useState("");
+
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const { data: shifts = [] } = useQuery({
     queryKey: ["shifts"],
     queryFn: async () => {
       const { data, error } = await supabase.from("shifts").select("*").order("name");
@@ -14,31 +36,290 @@ export default function Shifts() {
     },
   });
 
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["shift-assignments", weekStart.toISOString()],
+    queryFn: async () => {
+      const from = format(weekStart, "yyyy-MM-dd");
+      const to = format(addDays(weekStart, 6), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("shift_assignments")
+        .select("*, profiles(first_name, last_name, staff_id, shift_group), shifts(name)")
+        .lte("start_date", to)
+        .or(`end_date.gte.${from},end_date.is.null`);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, shift_group, department_id, departments(name)")
+        .eq("status", "active")
+        .order("last_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Night guard duty staff
+  const { data: nightGuardDept } = useQuery({
+    queryKey: ["night-guard-dept"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name")
+        .ilike("name", "%night guard%")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const nightGuardStaff = profiles.filter(
+    (p: any) => p.department_id === nightGuardDept?.id
+  );
+
+  const assignMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedShiftId || !selectedProfileId || !assignStartDate) throw new Error("Fill required fields");
+      const { error } = await supabase.from("shift_assignments").insert({
+        shift_id: selectedShiftId,
+        profile_id: selectedProfileId,
+        start_date: assignStartDate,
+        end_date: assignEndDate || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
+      setAssignDialogOpen(false);
+      setSelectedShiftId("");
+      setSelectedProfileId("");
+      setAssignStartDate("");
+      setAssignEndDate("");
+      toast.success("Shift assigned");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const getAssignmentsForDay = (day: Date, shiftId: string) => {
+    return assignments.filter((a: any) => {
+      if (a.shift_id !== shiftId) return false;
+      const start = new Date(a.start_date);
+      const end = a.end_date ? new Date(a.end_date) : null;
+      return day >= start && (!end || day <= end);
+    });
+  };
+
+  // Auto-generate night guard rotation (round-robin across weeks)
+  const getNightGuardRotation = (day: Date) => {
+    if (nightGuardStaff.length === 0) return [];
+    const dayOfYear = Math.floor((day.getTime() - new Date(day.getFullYear(), 0, 0).getTime()) / 86400000);
+    const perNight = Math.max(1, Math.ceil(nightGuardStaff.length / 7));
+    const startIdx = (dayOfYear * perNight) % nightGuardStaff.length;
+    const assigned = [];
+    for (let i = 0; i < perNight; i++) {
+      assigned.push(nightGuardStaff[(startIdx + i) % nightGuardStaff.length]);
+    }
+    return assigned;
+  };
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-secondary">Office Shifts</h1>
-      {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading...</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {shifts.map((s) => (
-            <Card key={s.id} className="border-border/50">
-              <CardHeader className="flex flex-row items-center gap-3 pb-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">{s.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Badge variant="secondary">{s.pattern}</Badge>
-                {s.start_time && s.end_time && (
-                  <p className="text-sm text-muted-foreground">{s.start_time} — {s.end_time}</p>
-                )}
-                {s.description && <p className="text-xs text-muted-foreground">{s.description}</p>}
-              </CardContent>
-            </Card>
-          ))}
-          {shifts.length === 0 && <p className="text-muted-foreground col-span-full text-center py-8">No shifts configured</p>}
-        </div>
-      )}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-secondary">Shifts & Scheduling</h1>
+        {isAdmin && (
+          <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-1"><Plus className="h-4 w-4" /> Assign Shift</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Assign Shift</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Shift</Label>
+                  <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                    <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+                    <SelectContent>
+                      {shifts.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Staff Member</Label>
+                  <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+                    <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.staff_id} — {p.last_name}, {p.first_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Start Date</Label>
+                    <Input type="date" value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>End Date (optional)</Label>
+                    <Input type="date" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} />
+                  </div>
+                </div>
+                <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending} className="w-full">
+                  {assignMutation.isPending ? "Assigning..." : "Assign"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {/* Shift overview cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {shifts.map((s) => (
+          <Card key={s.id} className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">{s.name}</span>
+              </div>
+              <Badge variant="outline" className="text-xs">{s.pattern}</Badge>
+              {s.start_time && s.end_time && (
+                <p className="text-xs text-muted-foreground mt-1">{s.start_time} – {s.end_time}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Tabs defaultValue="calendar">
+        <TabsList>
+          <TabsTrigger value="calendar" className="gap-1"><Calendar className="h-4 w-4" /> Calendar</TabsTrigger>
+          <TabsTrigger value="nightguard" className="gap-1"><Shield className="h-4 w-4" /> Night Guard</TabsTrigger>
+        </TabsList>
+
+        {/* Weekly calendar */}
+        <TabsContent value="calendar" className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Button variant="outline" size="sm" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium">
+              {format(weekStart, "dd MMM")} – {format(addDays(weekStart, 6), "dd MMM yyyy")}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="rounded-lg border overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">Shift</TableHead>
+                  {weekDays.map((d) => (
+                    <TableHead key={d.toISOString()} className={`text-center text-xs min-w-[90px] ${isSameDay(d, new Date()) ? "bg-primary/10" : ""}`}>
+                      <div>{format(d, "EEE")}</div>
+                      <div className="text-muted-foreground">{format(d, "dd")}</div>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shifts.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="font-medium text-xs">{s.name}</TableCell>
+                    {weekDays.map((d) => {
+                      const dayAssignments = getAssignmentsForDay(d, s.id);
+                      return (
+                        <TableCell key={d.toISOString()} className={`text-center p-1 ${isSameDay(d, new Date()) ? "bg-primary/5" : ""}`}>
+                          {dayAssignments.length > 0 ? (
+                            <div className="space-y-0.5">
+                              {dayAssignments.slice(0, 3).map((a: any) => (
+                                <div key={a.id} className="text-[10px] bg-accent rounded px-1 py-0.5 truncate">
+                                  {a.profiles?.last_name}
+                                </div>
+                              ))}
+                              {dayAssignments.length > 3 && (
+                                <div className="text-[10px] text-muted-foreground">+{dayAssignments.length - 3}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">—</span>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        {/* Night Guard Duty rotation */}
+        <TabsContent value="nightguard" className="space-y-3">
+          <Card className="border-primary/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-secondary text-base">
+                <Shield className="h-5 w-5 text-primary" />
+                Night Guard Duty Rotation — Week of {format(weekStart, "dd MMM yyyy")}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {nightGuardStaff.length} staff in Night Guard Duty dept — auto-rotated nightly
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between mb-3">
+                <Button variant="outline" size="sm" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {nightGuardStaff.length === 0 ? (
+                <p className="text-center py-4 text-muted-foreground text-sm">
+                  No staff assigned to Night Guard Duty department
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+                  {weekDays.map((d) => {
+                    const rotation = getNightGuardRotation(d);
+                    const isToday = isSameDay(d, new Date());
+                    return (
+                      <Card key={d.toISOString()} className={isToday ? "border-primary" : ""}>
+                        <CardContent className="p-3">
+                          <div className={`text-xs font-semibold mb-2 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                            {format(d, "EEE dd")}
+                          </div>
+                          <div className="space-y-1">
+                            {rotation.map((p: any) => (
+                              <div key={p.id} className="flex items-center gap-1">
+                                <Users className="h-3 w-3 text-primary" />
+                                <span className="text-[11px] truncate">{p.last_name}, {p.first_name?.charAt(0)}.</span>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
