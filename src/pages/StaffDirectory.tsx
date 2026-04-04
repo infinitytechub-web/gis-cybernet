@@ -87,9 +87,10 @@ export default function StaffDirectory() {
         (s.phone?.toLowerCase().includes(q) ?? false);
       const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
       const matchesShift = shiftFilter === "all" || s.shift_group === shiftFilter;
-      return matchesSearch && matchesDept && matchesShift;
+      const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
+      return matchesSearch && matchesDept && matchesShift && matchesRank;
     });
-  }, [staff, search, deptFilter, shiftFilter]);
+  }, [staff, search, deptFilter, shiftFilter, rankFilter]);
 
   // Reset page when filters change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
