@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,29 +10,68 @@ import { Shield, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 60_000; // 1 minute
+
 export default function Login() {
   const [staffId, setStaffId] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [lockoutEnd, setLockoutEnd] = useState<number | null>(null);
+  const failCount = useRef(0);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const getRemainingLockout = useCallback(() => {
+    if (!lockoutEnd) return 0;
+    return Math.max(0, Math.ceil((lockoutEnd - Date.now()) / 1000));
+  }, [lockoutEnd]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check lockout
+    const remaining = getRemainingLockout();
+    if (remaining > 0) {
+      toast({
+        title: "Too many attempts",
+        description: `Account temporarily locked. Try again in ${remaining} seconds.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!staffId.trim() || !password.trim()) return;
     setIsLoading(true);
     try {
-      // Staff ID is used as email identifier: staffid@gis.local
       const email = `${staffId.trim().toLowerCase().replace(/\s+/g, "")}@gis.local`;
       await signIn(email, password);
+      failCount.current = 0;
+      setLockoutEnd(null);
       navigate("/");
     } catch {
-      toast({
-        title: "Login Failed",
-        description: "Invalid Staff ID or password. Please try again.",
-        variant: "destructive",
-      });
+      failCount.current += 1;
+      if (failCount.current >= MAX_ATTEMPTS) {
+        const until = Date.now() + LOCKOUT_DURATION_MS;
+        setLockoutEnd(until);
+        toast({
+          title: "Account Temporarily Locked",
+          description: `Too many failed attempts. Please wait 60 seconds before trying again.`,
+          variant: "destructive",
+        });
+        // Auto-clear lockout after duration
+        setTimeout(() => {
+          failCount.current = 0;
+          setLockoutEnd(null);
+        }, LOCKOUT_DURATION_MS);
+      } else {
+        toast({
+          title: "Login Failed",
+          description: `Invalid Staff ID or password. ${MAX_ATTEMPTS - failCount.current} attempts remaining.`,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
