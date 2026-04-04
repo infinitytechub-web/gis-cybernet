@@ -99,6 +99,7 @@ function UserRolesTab() {
       shift_leader: "bg-accent text-accent-foreground border-border",
       deputy_shift_leader: "bg-accent text-accent-foreground border-border",
       deputy: "bg-accent text-accent-foreground border-border",
+      special_duties: "bg-accent text-accent-foreground border-border",
       staff: "bg-muted text-muted-foreground border-border",
     };
     return <Badge variant="outline" className={colors[role]}>{role}</Badge>;
