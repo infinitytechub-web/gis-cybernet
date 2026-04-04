@@ -190,7 +190,7 @@ export default function DutyRoster() {
 
     // Title
     doc.setFontSize(16);
-    doc.text("GIS Amasaman Sector Command", pageW / 2, 12, { align: "center" });
+    doc.text("doc.text("GIS Amasaman Sector Command — Cybernet", pageW / 2, 12, { align: "center" });", pageW / 2, 12, { align: "center" });
     doc.setFontSize(12);
     doc.text(`Duty Roster — ${monthLabel}`, pageW / 2, 19, { align: "center" });
     doc.setFontSize(8);
