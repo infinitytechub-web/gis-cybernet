@@ -39,6 +39,7 @@ export default function StaffDirectory() {
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState(initialDept);
   const [shiftFilter, setShiftFilter] = useState("all");
+  const [rankFilter, setRankFilter] = useState("all");
   const [page, setPage] = useState(1);
 
   const { data: staff = [], isLoading } = useQuery({
@@ -67,6 +68,15 @@ export default function StaffDirectory() {
     },
   });
 
+  const { data: ranks = [] } = useQuery({
+    queryKey: ["ranks"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ranks").select("*").order("level", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const filtered = useMemo(() => {
     return staff.filter((s) => {
       const q = search.toLowerCase();
@@ -77,9 +87,10 @@ export default function StaffDirectory() {
         (s.phone?.toLowerCase().includes(q) ?? false);
       const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
       const matchesShift = shiftFilter === "all" || s.shift_group === shiftFilter;
-      return matchesSearch && matchesDept && matchesShift;
+      const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
+      return matchesSearch && matchesDept && matchesShift && matchesRank;
     });
-  }, [staff, search, deptFilter, shiftFilter]);
+  }, [staff, search, deptFilter, shiftFilter, rankFilter]);
 
   // Reset page when filters change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -149,6 +160,17 @@ export default function StaffDirectory() {
             <SelectItem value="B">Shift B</SelectItem>
             <SelectItem value="C">Shift C</SelectItem>
             <SelectItem value="D">Shift D</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={rankFilter} onValueChange={handleFilterChange(setRankFilter)}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Rank" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ranks</SelectItem>
+            {ranks.map((r) => (
+              <SelectItem key={r.id} value={r.id}>{r.abbreviation}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
