@@ -20,6 +20,7 @@ import PostingsTransfers from "./pages/PostingsTransfers";
 import Compliance from "./pages/Compliance";
 import Reports from "./pages/Reports";
 import StaffProfile from "./pages/StaffProfile";
+import StaffDirectory from "./pages/StaffDirectory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
