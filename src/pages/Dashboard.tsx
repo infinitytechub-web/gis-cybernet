@@ -206,6 +206,46 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Supervisor Pending Approvals Widget */}
+      {isAdminOrSupervisor && supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              {isSupervisor && !isAdmin ? "Your Department — " : ""}Pending Approvals
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {supervisorPending.leave > 0 && (
+                <button
+                  onClick={() => navigate("/leave")}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
+                >
+                  <CalendarOff className="h-6 w-6 text-amber-600" />
+                  <div className="text-left">
+                    <div className="text-xl font-bold">{supervisorPending.leave}</div>
+                    <div className="text-xs text-muted-foreground">Leave requests</div>
+                  </div>
+                </button>
+              )}
+              {supervisorPending.postings > 0 && (
+                <button
+                  onClick={() => navigate("/postings")}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
+                >
+                  <ArrowRightLeft className="h-6 w-6 text-secondary" />
+                  <div className="text-left">
+                    <div className="text-xl font-bold">{supervisorPending.postings}</div>
+                    <div className="text-xs text-muted-foreground">Postings/Transfers</div>
+                  </div>
+                </button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Weekly Attendance Chart */}
