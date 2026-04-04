@@ -99,6 +99,7 @@ function UserRolesTab() {
       shift_leader: "bg-accent text-accent-foreground border-border",
       deputy_shift_leader: "bg-accent text-accent-foreground border-border",
       deputy: "bg-accent text-accent-foreground border-border",
+      special_duties: "bg-accent text-accent-foreground border-border",
       staff: "bg-muted text-muted-foreground border-border",
     };
     return <Badge variant="outline" className={colors[role]}>{role}</Badge>;
@@ -149,6 +150,7 @@ function UserRolesTab() {
                           <SelectItem value="shift_leader">Shift Leader</SelectItem>
                           <SelectItem value="deputy_supervisor">Deputy Supervisor</SelectItem>
                           <SelectItem value="supervisor">Supervisor</SelectItem>
+                          <SelectItem value="special_duties">Special Duties</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
