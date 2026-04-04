@@ -96,6 +96,7 @@ function UserRolesTab() {
       admin: "bg-destructive/10 text-destructive border-destructive/20",
       supervisor: "bg-primary/10 text-primary border-primary/20",
       deputy_supervisor: "bg-primary/10 text-primary border-primary/20",
+      shift_leader: "bg-accent text-accent-foreground border-border",
       deputy_shift_leader: "bg-accent text-accent-foreground border-border",
       deputy: "bg-accent text-accent-foreground border-border",
       staff: "bg-muted text-muted-foreground border-border",
