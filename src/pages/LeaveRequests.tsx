@@ -4,7 +4,7 @@ import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { LeaveApprovalQueue } from "@/components/leave/LeaveApprovalQueue";
 
 export default function LeaveRequests() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSupervisor, isAdminOrSupervisor } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -14,10 +14,12 @@ export default function LeaveRequests() {
       <LeaveRequestForm />
       <MyLeaveHistory />
 
-      {/* Admin: approval queue */}
-      {isAdmin && (
+      {/* Admin/Supervisor: approval queue */}
+      {isAdminOrSupervisor && (
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-secondary">Approval Queue</h2>
+          <h2 className="text-lg font-semibold text-secondary">
+            Approval Queue {isSupervisor && !isAdmin && <span className="text-sm font-normal text-muted-foreground">(Your Department)</span>}
+          </h2>
           <LeaveApprovalQueue />
         </div>
       )}

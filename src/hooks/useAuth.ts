@@ -55,5 +55,5 @@ export function useAuth() {
     setRole(null);
   };
 
-  return { user, role, loading, signIn, signOut, isAdmin: role === "admin" };
+  return { user, role, loading, signIn, signOut, isAdmin: role === "admin", isSupervisor: role === "supervisor", isAdminOrSupervisor: role === "admin" || role === "supervisor" };
 }
