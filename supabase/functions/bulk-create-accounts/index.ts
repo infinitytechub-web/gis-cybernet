@@ -127,6 +127,7 @@ Deno.serve(async (req) => {
           first_name: profile.first_name,
           last_name: profile.last_name,
           staff_id: profile.staff_id,
+          must_change_password: true,
         },
       });
 
