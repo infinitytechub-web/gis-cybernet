@@ -116,7 +116,7 @@ export default function Staff() {
     setDeptId(s.department_id || "");
     setStatus(s.status);
     setPhotoFile(null);
-    setPhotoPreview(getPhotoUrl(s.photo_url));
+    setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
   };
 
