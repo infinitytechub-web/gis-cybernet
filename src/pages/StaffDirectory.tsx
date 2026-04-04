@@ -216,7 +216,7 @@ export default function StaffDirectory() {
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
                   {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    <SelectItem key={d.id} value={d.id}>{d.name.toUpperCase()}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
