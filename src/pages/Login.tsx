@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 const MAX_ATTEMPTS = 5;
@@ -112,6 +113,9 @@ export default function Login() {
                 <Button type="submit" className="w-full" disabled={isLoading || getRemainingLockout() > 0}>
                   {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : "Sign In"}
                 </Button>
+                <div className="text-center">
+                  <ForgotPasswordDialog />
+                </div>
               </form>
             </TabsContent>
             <TabsContent value="admin">
@@ -127,6 +131,9 @@ export default function Login() {
                 <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90" disabled={isLoading || getRemainingLockout() > 0}>
                   {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : "Admin Sign In"}
                 </Button>
+                <div className="text-center">
+                  <ForgotPasswordDialog />
+                </div>
               </form>
             </TabsContent>
           </Tabs>
