@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -23,6 +23,7 @@ const navItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff },
   { title: "Holidays", url: "/holidays", icon: Calendar },
   { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft },
+  { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
 ];
 
 export function AppSidebar() {

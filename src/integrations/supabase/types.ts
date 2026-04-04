@@ -58,6 +58,56 @@ export type Database = {
           },
         ]
       }
+      certifications: {
+        Row: {
+          certificate_number: string | null
+          certification_name: string
+          created_at: string
+          date_obtained: string | null
+          expiry_date: string | null
+          id: string
+          issuing_body: string | null
+          notes: string | null
+          profile_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          certification_name: string
+          created_at?: string
+          date_obtained?: string | null
+          expiry_date?: string | null
+          id?: string
+          issuing_body?: string | null
+          notes?: string | null
+          profile_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          certificate_number?: string | null
+          certification_name?: string
+          created_at?: string
+          date_obtained?: string | null
+          expiry_date?: string | null
+          id?: string
+          issuing_body?: string | null
+          notes?: string | null
+          profile_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -78,6 +128,53 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      equipment_issuance: {
+        Row: {
+          condition: string
+          created_at: string
+          equipment_name: string
+          id: string
+          issued_date: string
+          notes: string | null
+          profile_id: string
+          returned_date: string | null
+          serial_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          condition?: string
+          created_at?: string
+          equipment_name: string
+          id?: string
+          issued_date?: string
+          notes?: string | null
+          profile_id: string
+          returned_date?: string | null
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          condition?: string
+          created_at?: string
+          equipment_name?: string
+          id?: string
+          issued_date?: string
+          notes?: string | null
+          profile_id?: string
+          returned_date?: string | null
+          serial_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_issuance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       holidays: {
         Row: {
@@ -395,6 +492,56 @@ export type Database = {
           start_time?: string | null
         }
         Relationships: []
+      }
+      staff_documents: {
+        Row: {
+          created_at: string
+          document_number: string | null
+          document_type: string
+          expiry_date: string | null
+          id: string
+          issue_date: string | null
+          issuing_authority: string | null
+          notes: string | null
+          profile_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_number?: string | null
+          document_type: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          notes?: string | null
+          profile_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_number?: string | null
+          document_type?: string
+          expiry_date?: string | null
+          id?: string
+          issue_date?: string | null
+          issuing_authority?: string | null
+          notes?: string | null
+          profile_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
