@@ -30,6 +30,7 @@ const CHART_COLORS = [
 
 export default function Dashboard() {
   const { isAdminOrSupervisor, isSupervisor, isAdmin } = useAuth();
+  const { onlineUsers, onlineCount } = useOnlineUsers();
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
