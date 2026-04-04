@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -11,6 +11,7 @@ import {
   SidebarFooter, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 const navItems = [
@@ -74,6 +75,7 @@ export function AppSidebar() {
             <span className="capitalize">{role ?? "staff"}</span>
           </div>
         )}
+        {!collapsed && <ChangePasswordDialog />}
         <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={signOut}>
           <LogOut className="h-4 w-4 mr-2" />
           {!collapsed && "Sign Out"}
