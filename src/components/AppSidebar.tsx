@@ -21,6 +21,7 @@ const navItems = [
   { title: "Departments", url: "/departments", icon: Building2 },
   { title: "Roles / Designations", url: "/roles", icon: Award },
   { title: "Office Shifts", url: "/shifts", icon: Clock },
+  { title: "Duty Roster", url: "/roster", icon: CalendarDays },
   { title: "Attendance", url: "/attendance", icon: CalendarCheck },
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff },
   { title: "Holidays", url: "/holidays", icon: Calendar },

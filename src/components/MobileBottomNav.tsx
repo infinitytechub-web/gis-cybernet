@@ -22,6 +22,7 @@ const moreItems = [
   { title: "Departments", url: "/departments", icon: Building2 },
   { title: "Roles", url: "/roles", icon: Award },
   { title: "Shifts", url: "/shifts", icon: Clock },
+  { title: "Duty Roster", url: "/roster", icon: CalendarDays },
   { title: "Attendance", url: "/attendance", icon: CalendarCheck },
   { title: "Holidays", url: "/holidays", icon: Calendar },
   { title: "Postings", url: "/postings", icon: ArrowRightLeft },
