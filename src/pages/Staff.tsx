@@ -207,12 +207,15 @@ export default function Staff() {
 
   const filtered = staff.filter((s) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       s.first_name.toLowerCase().includes(q) ||
       s.last_name.toLowerCase().includes(q) ||
       s.staff_id.toLowerCase().includes(q) ||
-      (s.unit?.toLowerCase().includes(q) ?? false)
-    );
+      (s.unit?.toLowerCase().includes(q) ?? false);
+    const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
+    const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
+    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
+    return matchesSearch && matchesRank && matchesDept && matchesStatus;
   });
 
   const statusColor = (s: string) => {
