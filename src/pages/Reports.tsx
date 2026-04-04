@@ -32,7 +32,7 @@ function generatePDF(title: string, filename: string, headers: string[], rows: s
   // Header
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
-  doc.text("GIS Amasaman Sector Command", 14, 15);
+  doc.text("GIS Amasaman Sector Command - Cybernet", 14, 15);
   doc.setFontSize(12);
   doc.setTextColor(60, 60, 60);
   doc.text(title, 14, 23);

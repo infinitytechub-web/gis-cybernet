@@ -243,7 +243,7 @@ export default function DutyRoster() {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.text(
-        ``Ghana Immigration Service — Amasaman Sector Command — Cybernet | Page ${i} of ${pageCount}`, | Page ${i} of ${pageCount}`,
+        `Ghana Immigration Service - Amasaman Sector Command - Cybernet | Page ${i} of ${pageCount}`,
         pageW / 2,
         doc.internal.pageSize.getHeight() - 5,
         { align: "center" }
