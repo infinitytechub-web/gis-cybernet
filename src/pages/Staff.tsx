@@ -59,7 +59,12 @@ export default function Staff() {
         .select("*, ranks(*), departments(*)")
         .order("last_name");
       if (error) throw error;
-      return data as ProfileWithRelations[];
+      const profiles = data as ProfileWithRelations[];
+      // Resolve signed URLs for private bucket
+      await Promise.all(profiles.map(async (p: any) => {
+        p._photoUrl = await getPhotoUrl(p.photo_url);
+      }));
+      return profiles;
     },
   });
 

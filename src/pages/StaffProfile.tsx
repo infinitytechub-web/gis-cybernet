@@ -40,7 +40,9 @@ export default function StaffProfile() {
         .eq("id", id!)
         .single();
       if (error) throw error;
-      return data as ProfileWithRelations;
+      const p = data as any;
+      p._photoUrl = await getPhotoUrl(p.photo_url);
+      return p as ProfileWithRelations;
     },
   });
 

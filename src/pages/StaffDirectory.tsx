@@ -50,7 +50,11 @@ export default function StaffDirectory() {
         .eq("status", "active")
         .order("last_name");
       if (error) throw error;
-      return data as ProfileWithRelations[];
+      const profiles = data as ProfileWithRelations[];
+      await Promise.all(profiles.map(async (p: any) => {
+        p._photoUrl = await getPhotoUrl(p.photo_url);
+      }));
+      return profiles;
     },
   });
 
