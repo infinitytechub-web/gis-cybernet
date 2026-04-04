@@ -11,8 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Pencil, Trash2, Camera, Loader2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import type { ProfileWithRelations } from "@/lib/types";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -29,6 +30,7 @@ function getPhotoUrl(path: string | null) {
 export default function Staff() {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -264,7 +266,11 @@ export default function Staff() {
                       </Avatar>
                     </TableCell>
                     <TableCell className="font-mono text-xs">{s.staff_id}</TableCell>
-                    <TableCell className="font-medium">{s.last_name}, {s.first_name}</TableCell>
+                    <TableCell>
+                      <button onClick={() => navigate(`/staff/${s.id}`)} className="font-medium text-primary hover:underline text-left">
+                        {s.last_name}, {s.first_name}
+                      </button>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{s.ranks?.abbreviation ?? "—"}</TableCell>
                     <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
                     <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
