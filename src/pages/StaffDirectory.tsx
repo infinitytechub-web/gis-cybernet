@@ -110,6 +110,11 @@ export default function StaffDirectory() {
 
   const sortedDepts = Object.keys(grouped).sort();
 
+  const handleFilterChange = (setter: (v: string) => void) => (v: string) => {
+    setter(v);
+    setPage(1);
+  };
+
   const activeFilterCount = [deptFilter, shiftFilter, rankFilter].filter(f => f !== "all").length;
   const hasActiveFilters = activeFilterCount > 0 || search.length > 0;
 
