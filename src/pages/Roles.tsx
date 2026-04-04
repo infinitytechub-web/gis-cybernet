@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export default function Roles() {
@@ -23,9 +24,20 @@ export default function Roles() {
   const { data: ranks = [], isLoading } = useQuery({
     queryKey: ["ranks"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("ranks").select("*").order("level");
+      const { data, error } = await supabase.from("ranks").select("*").order("level", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: staffCounts = {} } = useQuery({
+    queryKey: ["ranks-staff-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("rank_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      data?.forEach((p) => { if (p.rank_id) counts[p.rank_id] = (counts[p.rank_id] || 0) + 1; });
+      return counts;
     },
   });
 
@@ -80,7 +92,11 @@ export default function Roles() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-secondary">Roles / Designations</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <Shield className="h-5 w-5 text-primary" />
+          <h1 className="text-2xl font-bold text-secondary">GIS Rank Structure</h1>
+        </div>
+        <p className="text-sm text-muted-foreground">Official Ghana Immigration Service ranking hierarchy — {ranks.length} ranks</p>
         {isAdmin && (
           <Button onClick={openCreate} className="gap-1">
             <Plus className="h-4 w-4" /> Add Rank
@@ -95,18 +111,22 @@ export default function Roles() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Level</TableHead>
+                <TableHead className="w-[60px]">Level</TableHead>
                 <TableHead>Rank</TableHead>
                 <TableHead>Abbreviation</TableHead>
+                <TableHead className="text-center">Staff</TableHead>
                 {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {ranks.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>{r.level}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono text-xs">{r.level}</Badge>
+                  </TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{r.abbreviation}</TableCell>
+                  <TableCell><Badge variant="secondary">{r.abbreviation}</Badge></TableCell>
+                  <TableCell className="text-center text-muted-foreground">{staffCounts[r.id] || 0}</TableCell>
                   {isAdmin && (
                     <TableCell>
                       <div className="flex gap-1">
