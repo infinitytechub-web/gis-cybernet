@@ -11,7 +11,7 @@ export type Holiday = Tables<"holidays">;
 export type PostingTransfer = Tables<"postings_transfers">;
 export type UserRole = Tables<"user_roles">;
 
-export type AppRole = "admin" | "supervisor" | "staff";
+export type AppRole = "admin" | "supervisor" | "deputy_supervisor" | "deputy_shift_leader" | "deputy" | "staff";
 
 export interface ProfileWithRelations extends Profile {
   ranks?: Rank | null;
