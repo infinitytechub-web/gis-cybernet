@@ -11,8 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2,
+  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Download,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
   addMonths, subMonths, isToday,
