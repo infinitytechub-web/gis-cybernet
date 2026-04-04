@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound, Contact
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -17,6 +17,7 @@ import gisLogo from "@/assets/gis-logo.jpeg";
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Staff / Employees", url: "/staff", icon: Users },
+  { title: "Staff Directory", url: "/directory", icon: Contact },
   { title: "Departments", url: "/departments", icon: Building2 },
   { title: "Roles / Designations", url: "/roles", icon: Award },
   { title: "Office Shifts", url: "/shifts", icon: Clock },

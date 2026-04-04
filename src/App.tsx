@@ -20,6 +20,7 @@ import PostingsTransfers from "./pages/PostingsTransfers";
 import Compliance from "./pages/Compliance";
 import Reports from "./pages/Reports";
 import StaffProfile from "./pages/StaffProfile";
+import StaffDirectory from "./pages/StaffDirectory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Layout><Staff /></Layout></ProtectedRoute>} />
           <Route path="/staff/:id" element={<ProtectedRoute><Layout><StaffProfile /></Layout></ProtectedRoute>} />
+          <Route path="/directory" element={<ProtectedRoute><Layout><StaffDirectory /></Layout></ProtectedRoute>} />
           <Route path="/departments" element={<ProtectedRoute><Layout><Departments /></Layout></ProtectedRoute>} />
           <Route path="/roles" element={<ProtectedRoute><Layout><Roles /></Layout></ProtectedRoute>} />
           <Route path="/shifts" element={<ProtectedRoute><Layout><Shifts /></Layout></ProtectedRoute>} />
