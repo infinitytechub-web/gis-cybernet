@@ -42,6 +42,7 @@ export default function StaffDirectory() {
   const [shiftFilter, setShiftFilter] = useState("all");
   const [rankFilter, setRankFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["directory-staff"],
