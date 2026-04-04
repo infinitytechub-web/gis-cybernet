@@ -168,6 +168,43 @@ export default function Dashboard() {
     },
   });
 
+  // System health metrics (admin only)
+  const { data: systemHealth } = useQuery({
+    queryKey: ["system-health"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const [profilesRes, withAccountRes, deptsRes, ranksRes, rolesRes] = await Promise.all([
+        supabase.from("profiles").select("id, user_id, department_id, rank_id, phone", { count: "exact" }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).not("user_id", "is", null),
+        supabase.from("departments").select("id", { count: "exact", head: true }),
+        supabase.from("ranks").select("id", { count: "exact", head: true }),
+        supabase.from("user_roles").select("id", { count: "exact", head: true }),
+      ]);
+
+      const profiles = profilesRes.data || [];
+      const totalProfiles = profilesRes.count ?? 0;
+      const withAccounts = withAccountRes.count ?? 0;
+      const missingDept = profiles.filter(p => !p.department_id).length;
+      const missingRank = profiles.filter(p => !p.rank_id).length;
+      const missingPhone = profiles.filter(p => !p.phone).length;
+
+      return {
+        totalProfiles,
+        withAccounts,
+        loginCoverage: totalProfiles > 0 ? Math.round((withAccounts / totalProfiles) * 100) : 0,
+        departments: deptsRes.count ?? 0,
+        ranks: ranksRes.count ?? 0,
+        roleAssignments: rolesRes.count ?? 0,
+        missingDept,
+        missingRank,
+        missingPhone,
+        dataCompleteness: totalProfiles > 0 
+          ? Math.round(((totalProfiles * 3 - missingDept - missingRank - missingPhone) / (totalProfiles * 3)) * 100) 
+          : 0,
+      };
+    },
+  });
+
   const summaryCards = [
     { title: "Total Staff", value: staffCount, sub: `${activeStaff} active`, icon: Users, color: "text-primary" },
     { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-emerald-600" },
