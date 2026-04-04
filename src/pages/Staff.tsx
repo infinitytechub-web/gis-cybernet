@@ -226,9 +226,14 @@ export default function Staff() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {isAdmin && (
-          <Button onClick={openCreate} className="gap-1">
-            <Plus className="h-4 w-4" /> Add Staff
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBulkImportOpen(true)} className="gap-1">
+              <Upload className="h-4 w-4" /> Import
+            </Button>
+            <Button onClick={openCreate} className="gap-1">
+              <Plus className="h-4 w-4" /> Add Staff
+            </Button>
+          </div>
         )}
       </div>
       <div className="relative max-w-sm">
