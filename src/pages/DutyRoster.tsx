@@ -1,21 +1,25 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
-  Calendar, ChevronLeft, ChevronRight, Clock, Users, Shield,
+  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2,
 } from "lucide-react";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
-  addMonths, subMonths, isSameDay, isToday, isSameMonth,
+  addMonths, subMonths, isToday,
 } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 
 const SHIFT_COLORS = [
   "bg-primary/15 text-primary border-primary/30",
@@ -30,16 +34,22 @@ const SHIFT_COLORS = [
 
 export default function DutyRoster() {
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filterShift, setFilterShift] = useState("all");
   const [filterDept, setFilterDept] = useState("all");
+
+  // Quick-assign state
+  const [assignDay, setAssignDay] = useState<string | null>(null);
+  const [assignShiftId, setAssignShiftId] = useState("");
+  const [assignProfileId, setAssignProfileId] = useState("");
+  const [assignEndDate, setAssignEndDate] = useState("");
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Pad start of month to align with Monday
-  const startDow = getDay(monthStart); // 0=Sun
+  const startDow = getDay(monthStart);
   const paddingBefore = startDow === 0 ? 6 : startDow - 1;
 
   const { data: shifts = [] } = useQuery({
@@ -55,6 +65,19 @@ export default function DutyRoster() {
     queryKey: ["departments"],
     queryFn: async () => {
       const { data, error } = await supabase.from("departments").select("id, name").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, department_id")
+        .eq("status", "active")
+        .order("last_name");
       if (error) throw error;
       return data;
     },
@@ -90,6 +113,50 @@ export default function DutyRoster() {
     },
   });
 
+  const assignMutation = useMutation({
+    mutationFn: async () => {
+      if (!assignShiftId || !assignProfileId || !assignDay) throw new Error("Select shift and staff");
+      const { error } = await supabase.from("shift_assignments").insert({
+        shift_id: assignShiftId,
+        profile_id: assignProfileId,
+        start_date: assignDay,
+        end_date: assignEndDate || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ["roster-assignments"] });
+      const shift = shifts.find((s) => s.id === assignShiftId);
+      const userId = await getUserIdFromProfileId(assignProfileId);
+      if (userId) {
+        await createNotification({
+          userId,
+          title: "New Shift Assignment",
+          message: `You have been assigned to ${shift?.name ?? "a shift"} on ${assignDay}.`,
+          type: "shift",
+        });
+      }
+      setAssignDay(null);
+      setAssignShiftId("");
+      setAssignProfileId("");
+      setAssignEndDate("");
+      toast.success("Staff assigned to shift");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("shift_assignments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roster-assignments"] });
+      toast.success("Assignment removed");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const shiftColorMap = new Map<string, string>();
   shifts.forEach((s, i) => {
     shiftColorMap.set(s.id, SHIFT_COLORS[i % SHIFT_COLORS.length]);
@@ -123,11 +190,14 @@ export default function DutyRoster() {
             <Calendar className="h-6 w-6 text-primary" />
             Duty Roster
           </h1>
-          <p className="text-sm text-muted-foreground">Monthly shift schedule overview</p>
+          <p className="text-sm text-muted-foreground">
+            Monthly shift schedule overview
+            {isAdmin && " · Click a day to assign staff"}
+          </p>
         </div>
       </div>
 
-      {/* Stats + Controls */}
+      {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1">
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
@@ -186,7 +256,6 @@ export default function DutyRoster() {
       {/* Calendar Grid */}
       <Card>
         <CardContent className="p-2 sm:p-4">
-          {/* Day headers */}
           <div className="grid grid-cols-7 gap-px mb-1">
             {weekDays.map((d) => (
               <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">
@@ -195,27 +264,27 @@ export default function DutyRoster() {
             ))}
           </div>
 
-          {/* Calendar cells */}
           <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
-            {/* Padding cells */}
             {Array.from({ length: paddingBefore }).map((_, i) => (
               <div key={`pad-${i}`} className="bg-muted/30 min-h-[80px] sm:min-h-[100px]" />
             ))}
 
             {daysInMonth.map((day) => {
+              const dateStr = format(day, "yyyy-MM-dd");
               const dayAssignments = getAssignmentsForDay(day);
               const holiday = getHoliday(day);
               const today = isToday(day);
               const isWeekend = getDay(day) === 0 || getDay(day) === 6;
+              const isAssignOpen = assignDay === dateStr;
 
-              return (
+              const cellContent = (
                 <div
-                  key={day.toISOString()}
                   className={cn(
-                    "bg-card min-h-[80px] sm:min-h-[100px] p-1 relative transition-colors",
+                    "bg-card min-h-[80px] sm:min-h-[100px] p-1 relative transition-colors group",
                     today && "ring-2 ring-primary ring-inset",
                     isWeekend && "bg-muted/20",
-                    holiday && "bg-destructive/5"
+                    holiday && "bg-destructive/5",
+                    isAdmin && "cursor-pointer hover:bg-accent/30"
                   )}
                 >
                   <div className="flex items-center justify-between mb-0.5">
@@ -226,9 +295,14 @@ export default function DutyRoster() {
                     )}>
                       {format(day, "d")}
                     </span>
-                    {dayAssignments.length > 0 && (
-                      <span className="text-[9px] text-muted-foreground">{dayAssignments.length}</span>
-                    )}
+                    <div className="flex items-center gap-0.5">
+                      {dayAssignments.length > 0 && (
+                        <span className="text-[9px] text-muted-foreground">{dayAssignments.length}</span>
+                      )}
+                      {isAdmin && (
+                        <Plus className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
                   </div>
 
                   {holiday && (
@@ -274,9 +348,111 @@ export default function DutyRoster() {
                   </div>
                 </div>
               );
+
+              if (!isAdmin) {
+                return <div key={day.toISOString()}>{cellContent}</div>;
+              }
+
+              return (
+                <Popover
+                  key={day.toISOString()}
+                  open={isAssignOpen}
+                  onOpenChange={(open) => {
+                    if (open) {
+                      setAssignDay(dateStr);
+                      setAssignShiftId("");
+                      setAssignProfileId("");
+                      setAssignEndDate("");
+                    } else {
+                      setAssignDay(null);
+                    }
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    {cellContent}
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-3" side="right" align="start">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-sm">{format(day, "EEE, dd MMM yyyy")}</h4>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAssignDay(null)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      {/* Existing assignments for this day */}
+                      {dayAssignments.length > 0 && (
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Current assignments</Label>
+                          {dayAssignments.map((a: any) => (
+                            <div key={a.id} className="flex items-center justify-between text-xs bg-accent/50 rounded px-2 py-1">
+                              <span>{a.profiles?.first_name} {a.profiles?.last_name} — {a.shifts?.name}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5 text-destructive hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeMutation.mutate(a.id);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="border-t pt-2 space-y-2">
+                        <Label className="text-xs font-semibold">Quick Assign</Label>
+                        <div>
+                          <Label className="text-xs">Shift</Label>
+                          <Select value={assignShiftId} onValueChange={setAssignShiftId}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Select shift" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {shifts.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Staff Member</Label>
+                          <Select value={assignProfileId} onValueChange={setAssignProfileId}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Select staff" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {profiles.map((p: any) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.staff_id} — {p.last_name}, {p.first_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">End Date (optional, for multi-day)</Label>
+                          <Input type="date" className="h-8 text-xs" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={dateStr} />
+                        </div>
+                        <Button
+                          size="sm"
+                          className="w-full gap-1"
+                          disabled={!assignShiftId || !assignProfileId || assignMutation.isPending}
+                          onClick={() => assignMutation.mutate()}
+                        >
+                          <Plus className="h-3 w-3" />
+                          {assignMutation.isPending ? "Assigning..." : "Assign"}
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              );
             })}
 
-            {/* Padding after */}
             {Array.from({ length: (7 - ((paddingBefore + daysInMonth.length) % 7)) % 7 }).map((_, i) => (
               <div key={`pad-end-${i}`} className="bg-muted/30 min-h-[80px] sm:min-h-[100px]" />
             ))}
