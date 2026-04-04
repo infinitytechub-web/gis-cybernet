@@ -24,6 +24,7 @@ const navItems = [
   { title: "Holidays", url: "/holidays", icon: Calendar },
   { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
+  { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
 export function AppSidebar() {
