@@ -10,6 +10,9 @@ import {
   Activity, Shield, Wifi
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
@@ -27,6 +30,7 @@ const CHART_COLORS = [
 
 export default function Dashboard() {
   const { isAdminOrSupervisor, isSupervisor, isAdmin } = useAuth();
+  const { onlineUsers, onlineCount } = useOnlineUsers();
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
@@ -336,6 +340,40 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Online Users Widget */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            </span>
+            Online Now
+            <Badge variant="outline" className="ml-auto text-[10px]">{onlineCount} user{onlineCount !== 1 ? "s" : ""}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {onlineCount === 0 ? (
+            <p className="text-sm text-muted-foreground">No users currently online</p>
+          ) : (
+            <ScrollArea className="max-h-[120px]">
+              <div className="flex flex-wrap gap-2">
+                {onlineUsers.map((u) => (
+                  <div key={u.userId} className="flex items-center gap-2 bg-accent/50 rounded-full pl-1 pr-3 py-1">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                        {u.firstName?.[0]}{u.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs font-medium">{u.firstName} {u.lastName}</span>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
