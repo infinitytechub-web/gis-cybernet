@@ -285,6 +285,58 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* System Health Widget (Admin only) */}
+      {isAdmin && systemHealth && (
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              System Health & Active Users
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" /> Login Accounts
+                </div>
+                <div className="text-xl font-bold">{systemHealth.withAccounts}<span className="text-sm font-normal text-muted-foreground">/{systemHealth.totalProfiles}</span></div>
+                <Progress value={systemHealth.loginCoverage} className="h-1.5" />
+                <p className="text-[10px] text-muted-foreground">{systemHealth.loginCoverage}% coverage</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Shield className="h-3 w-3" /> Role Assignments
+                </div>
+                <div className="text-xl font-bold">{systemHealth.roleAssignments}</div>
+                <p className="text-[10px] text-muted-foreground">{systemHealth.departments} depts · {systemHealth.ranks} ranks</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Wifi className="h-3 w-3" /> Data Completeness
+                </div>
+                <div className="text-xl font-bold">{systemHealth.dataCompleteness}%</div>
+                <Progress value={systemHealth.dataCompleteness} className="h-1.5" />
+                <p className="text-[10px] text-muted-foreground">profiles filled</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  Missing Data
+                </div>
+                <div className="space-y-0.5 text-xs">
+                  {systemHealth.missingDept > 0 && <p className="text-amber-600">{systemHealth.missingDept} no department</p>}
+                  {systemHealth.missingRank > 0 && <p className="text-amber-600">{systemHealth.missingRank} no rank</p>}
+                  {systemHealth.missingPhone > 0 && <p className="text-amber-600">{systemHealth.missingPhone} no phone</p>}
+                  {systemHealth.missingDept === 0 && systemHealth.missingRank === 0 && systemHealth.missingPhone === 0 && (
+                    <p className="text-emerald-600">All complete ✓</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Weekly Attendance Chart */}
