@@ -124,8 +124,8 @@ export default function Login() {
                   <Label htmlFor="admin-password">Password</Label>
                   <Input id="admin-password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90" disabled={isLoading}>
-                  {isLoading ? "Signing in..." : "Admin Sign In"}
+                <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90" disabled={isLoading || getRemainingLockout() > 0}>
+                  {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : "Admin Sign In"}
                 </Button>
               </form>
             </TabsContent>
