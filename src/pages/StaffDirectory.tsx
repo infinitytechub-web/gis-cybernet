@@ -162,6 +162,17 @@ export default function StaffDirectory() {
             <SelectItem value="D">Shift D</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={rankFilter} onValueChange={handleFilterChange(setRankFilter)}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Rank" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ranks</SelectItem>
+            {ranks.map((r) => (
+              <SelectItem key={r.id} value={r.id}>{r.abbreviation}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
