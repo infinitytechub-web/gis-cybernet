@@ -102,7 +102,7 @@ export default function StaffDirectory() {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const grouped = paged.reduce<Record<string, ProfileWithRelations[]>>((acc, s) => {
-    const dept = s.departments?.name ?? "Unassigned";
+    const dept = (s.departments?.name ?? "Unassigned").toUpperCase();
     if (!acc[dept]) acc[dept] = [];
     acc[dept].push(s);
     return acc;
