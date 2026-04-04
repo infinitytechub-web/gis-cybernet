@@ -113,6 +113,9 @@ export default function Login() {
                 <Button type="submit" className="w-full" disabled={isLoading || getRemainingLockout() > 0}>
                   {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : "Sign In"}
                 </Button>
+                <div className="text-center">
+                  <ForgotPasswordDialog />
+                </div>
               </form>
             </TabsContent>
             <TabsContent value="admin">
