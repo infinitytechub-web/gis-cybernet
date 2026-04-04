@@ -10,13 +10,19 @@ Deno.serve(async () => {
   const email = "admin@gis.local";
   const password = "Admin@ASC2026";
 
-  // Try to find existing user
-  const { data: { users } } = await supabase.auth.admin.listUsers();
+  // Try to find existing user by email (more reliable than listUsers)
+  const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+
   const existing = users?.find((u) => u.email === email);
 
   if (existing) {
     // Update password
-    await supabase.auth.admin.updateUserById(existing.id, { password });
+    const { error: updateErr } = await supabase.auth.admin.updateUserById(existing.id, { password });
+    if (updateErr) return new Response(JSON.stringify({ error: updateErr.message }), { status: 400 });
+
     // Ensure admin role
     const { data: roleData } = await supabase
       .from("user_roles")
@@ -46,8 +52,7 @@ Deno.serve(async () => {
   // Set admin role
   await supabase
     .from("user_roles")
-    .update({ role: "admin" })
-    .eq("user_id", newUser.user!.id);
+    .upsert({ user_id: newUser.user!.id, role: "admin" });
 
   return new Response(JSON.stringify({ message: "Admin created", email, password }));
 });
