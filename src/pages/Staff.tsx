@@ -31,6 +31,9 @@ export default function Staff() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [rankFilter, setRankFilter] = useState("all");
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -204,12 +207,15 @@ export default function Staff() {
 
   const filtered = staff.filter((s) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       s.first_name.toLowerCase().includes(q) ||
       s.last_name.toLowerCase().includes(q) ||
       s.staff_id.toLowerCase().includes(q) ||
-      (s.unit?.toLowerCase().includes(q) ?? false)
-    );
+      (s.unit?.toLowerCase().includes(q) ?? false);
+    const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
+    const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
+    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
+    return matchesSearch && matchesRank && matchesDept && matchesStatus;
   });
 
   const statusColor = (s: string) => {
@@ -239,9 +245,45 @@ export default function Staff() {
           </div>
         )}
       </div>
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search by name, ID, or unit..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search by name, ID, or unit..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <Select value={rankFilter} onValueChange={setRankFilter}>
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue placeholder="Rank" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ranks</SelectItem>
+            {ranks.map((r) => (
+              <SelectItem key={r.id} value={r.id}>{r.abbreviation}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={deptFilter} onValueChange={setDeptFilter}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Depts</SelectItem>
+            {departments.map((d) => (
+              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[130px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="study_leave">Study Leave</SelectItem>
+            <SelectItem value="transferred">Transferred</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
