@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
 
@@ -35,6 +35,7 @@ const statusColor = (s: string) => {
 
 export default function StaffDirectory() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";
   const [search, setSearch] = useState("");
@@ -102,7 +103,14 @@ export default function StaffDirectory() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-secondary">Staff Directory</h1>
+        <div className="flex items-center gap-2">
+          {initialDept !== "all" && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <h1 className="text-2xl font-bold text-secondary">Staff Directory</h1>
+        </div>
         <Badge variant="outline" className="gap-1">
           <Users className="h-3 w-3" /> {filtered.length} staff
         </Badge>
