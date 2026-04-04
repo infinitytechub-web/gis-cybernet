@@ -10,6 +10,9 @@ import {
   Activity, Shield, Wifi
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
