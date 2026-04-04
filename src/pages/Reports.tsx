@@ -255,7 +255,7 @@ export default function Reports() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            Reports generated with GIS Amasaman Sector Command branding
+            Reports generated with Reports generated with GIS Amasaman Sector Command — Cybernet branding
           </p>
         </CardContent>
       </Card>
