@@ -6,14 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Plus, Calendar, Shield, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { Clock, Plus, Calendar, Shield, ChevronLeft, ChevronRight, Users, Pencil, Trash2 } from "lucide-react";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+
+type ShiftPattern = Database["public"]["Enums"]["shift_pattern"];
 
 export default function Shifts() {
   const { isAdmin } = useAuth();
@@ -24,6 +29,15 @@ export default function Shifts() {
   const [selectedProfileId, setSelectedProfileId] = useState("");
   const [assignStartDate, setAssignStartDate] = useState("");
   const [assignEndDate, setAssignEndDate] = useState("");
+
+  // Shift CRUD state
+  const [shiftDialogOpen, setShiftDialogOpen] = useState(false);
+  const [editingShift, setEditingShift] = useState<any>(null);
+  const [shiftName, setShiftName] = useState("");
+  const [shiftPattern, setShiftPattern] = useState<ShiftPattern>("8h");
+  const [shiftStartTime, setShiftStartTime] = useState("");
+  const [shiftEndTime, setShiftEndTime] = useState("");
+  const [shiftDescription, setShiftDescription] = useState("");
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -64,7 +78,6 @@ export default function Shifts() {
     },
   });
 
-  // Night guard duty staff
   const { data: nightGuardDept } = useQuery({
     queryKey: ["night-guard-dept"],
     queryFn: async () => {
@@ -78,9 +91,66 @@ export default function Shifts() {
     },
   });
 
-  const nightGuardStaff = profiles.filter(
-    (p: any) => p.department_id === nightGuardDept?.id
-  );
+  const nightGuardStaff = profiles.filter((p: any) => p.department_id === nightGuardDept?.id);
+
+  // Shift CRUD
+  const openCreateShift = () => {
+    setEditingShift(null);
+    setShiftName("");
+    setShiftPattern("8h");
+    setShiftStartTime("");
+    setShiftEndTime("");
+    setShiftDescription("");
+    setShiftDialogOpen(true);
+  };
+
+  const openEditShift = (s: any) => {
+    setEditingShift(s);
+    setShiftName(s.name);
+    setShiftPattern(s.pattern);
+    setShiftStartTime(s.start_time || "");
+    setShiftEndTime(s.end_time || "");
+    setShiftDescription(s.description || "");
+    setShiftDialogOpen(true);
+  };
+
+  const shiftSaveMutation = useMutation({
+    mutationFn: async () => {
+      if (!shiftName.trim()) throw new Error("Shift name is required");
+      const payload = {
+        name: shiftName.trim(),
+        pattern: shiftPattern,
+        start_time: shiftStartTime || null,
+        end_time: shiftEndTime || null,
+        description: shiftDescription || null,
+      };
+      if (editingShift) {
+        const { error } = await supabase.from("shifts").update(payload).eq("id", editingShift.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("shifts").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
+      setShiftDialogOpen(false);
+      toast.success(editingShift ? "Shift updated" : "Shift created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const shiftDeleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("shifts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
+      toast.success("Shift deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const assignMutation = useMutation({
     mutationFn: async () => {
@@ -114,7 +184,6 @@ export default function Shifts() {
     });
   };
 
-  // Auto-generate night guard rotation (round-robin across weeks)
   const getNightGuardRotation = (day: Date) => {
     if (nightGuardStaff.length === 0) return [];
     const dayOfYear = Math.floor((day.getTime() - new Date(day.getFullYear(), 0, 0).getTime()) / 86400000);
@@ -129,67 +198,98 @@ export default function Shifts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-bold text-secondary">Shifts & Scheduling</h1>
         {isAdmin && (
-          <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-1"><Plus className="h-4 w-4" /> Assign Shift</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Assign Shift</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label>Shift</Label>
-                  <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
-                    <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
-                    <SelectContent>
-                      {shifts.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Staff Member</Label>
-                  <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
-                    <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
-                    <SelectContent>
-                      {profiles.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.staff_id} — {p.last_name}, {p.first_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={openCreateShift} className="gap-1">
+              <Plus className="h-4 w-4" /> New Shift
+            </Button>
+            <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-1"><Plus className="h-4 w-4" /> Assign Shift</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Assign Shift</DialogTitle></DialogHeader>
+                <div className="space-y-3">
                   <div>
-                    <Label>Start Date</Label>
-                    <Input type="date" value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} />
+                    <Label>Shift</Label>
+                    <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                      <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
+                      <SelectContent>
+                        {shifts.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
-                    <Label>End Date (optional)</Label>
-                    <Input type="date" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} />
+                    <Label>Staff Member</Label>
+                    <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+                      <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
+                      <SelectContent>
+                        {profiles.map((p: any) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.staff_id} — {p.last_name}, {p.first_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Start Date</Label>
+                      <Input type="date" value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>End Date (optional)</Label>
+                      <Input type="date" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} />
+                    </div>
+                  </div>
+                  <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending} className="w-full">
+                    {assignMutation.isPending ? "Assigning..." : "Assign"}
+                  </Button>
                 </div>
-                <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending} className="w-full">
-                  {assignMutation.isPending ? "Assigning..." : "Assign"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
 
       {/* Shift overview cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {shifts.map((s) => (
-          <Card key={s.id} className="border-border/50">
+          <Card key={s.id} className="border-border/50 relative group">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-sm">{s.name}</span>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-sm">{s.name}</span>
+                </div>
+                {isAdmin && (
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditShift(s)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete "{s.name}"?</AlertDialogTitle>
+                          <AlertDialogDescription>This will remove the shift and all its assignments.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => shiftDeleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
               </div>
               <Badge variant="outline" className="text-xs">{s.pattern}</Badge>
               {s.start_time && s.end_time && (
@@ -206,7 +306,6 @@ export default function Shifts() {
           <TabsTrigger value="nightguard" className="gap-1"><Shield className="h-4 w-4" /> Night Guard</TabsTrigger>
         </TabsList>
 
-        {/* Weekly calendar */}
         <TabsContent value="calendar" className="space-y-3">
           <div className="flex items-center justify-between">
             <Button variant="outline" size="sm" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
@@ -265,7 +364,6 @@ export default function Shifts() {
           </div>
         </TabsContent>
 
-        {/* Night Guard Duty rotation */}
         <TabsContent value="nightguard" className="space-y-3">
           <Card className="border-primary/20">
             <CardHeader className="pb-2">
@@ -320,6 +418,49 @@ export default function Shifts() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Shift Create/Edit Dialog */}
+      <Dialog open={shiftDialogOpen} onOpenChange={setShiftDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingShift ? "Edit Shift" : "Create Shift"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Shift Name</Label>
+              <Input value={shiftName} onChange={(e) => setShiftName(e.target.value)} placeholder="e.g. Shift A" />
+            </div>
+            <div>
+              <Label>Pattern</Label>
+              <Select value={shiftPattern} onValueChange={(v) => setShiftPattern(v as ShiftPattern)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8h">8 Hours</SelectItem>
+                  <SelectItem value="12h">12 Hours</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Start Time</Label>
+                <Input type="time" value={shiftStartTime} onChange={(e) => setShiftStartTime(e.target.value)} />
+              </div>
+              <div>
+                <Label>End Time</Label>
+                <Input type="time" value={shiftEndTime} onChange={(e) => setShiftEndTime(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea value={shiftDescription} onChange={(e) => setShiftDescription(e.target.value)} placeholder="Optional description" rows={2} />
+            </div>
+            <Button onClick={() => shiftSaveMutation.mutate()} disabled={shiftSaveMutation.isPending || !shiftName.trim()} className="w-full">
+              {shiftSaveMutation.isPending ? "Saving..." : editingShift ? "Update Shift" : "Create Shift"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
