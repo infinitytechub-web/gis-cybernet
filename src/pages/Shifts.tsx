@@ -164,8 +164,21 @@ export default function Shifts() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
+      // Notify the assigned staff member
+      if (selectedProfileId) {
+        const shift = shifts.find((s: any) => s.id === selectedShiftId);
+        const userId = await getUserIdFromProfileId(selectedProfileId);
+        if (userId) {
+          await createNotification({
+            userId,
+            title: "New Shift Assignment",
+            message: `You have been assigned to ${shift?.name ?? "a shift"} starting ${assignStartDate}.`,
+            type: "shift",
+          });
+        }
+      }
       setAssignDialogOpen(false);
       setSelectedShiftId("");
       setSelectedProfileId("");
