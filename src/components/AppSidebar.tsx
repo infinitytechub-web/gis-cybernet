@@ -17,6 +17,7 @@ import gisLogo from "@/assets/gis-logo.jpeg";
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Staff / Employees", url: "/staff", icon: Users },
+  { title: "Staff Directory", url: "/directory", icon: Contact },
   { title: "Departments", url: "/departments", icon: Building2 },
   { title: "Roles / Designations", url: "/roles", icon: Award },
   { title: "Office Shifts", url: "/shifts", icon: Clock },
