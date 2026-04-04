@@ -30,6 +30,10 @@ const navItems = [
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
+const adminItems = [
+  { title: "Settings", url: "/settings", icon: Shield },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
