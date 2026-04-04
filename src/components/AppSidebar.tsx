@@ -11,6 +11,7 @@ import {
   SidebarFooter, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 const navItems = [
