@@ -119,9 +119,8 @@ export default function Dashboard() {
       });
 
       return Object.entries(counts)
-        .map(([name, value]) => ({ name: name.length > 15 ? name.slice(0, 15) + "…" : name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 8);
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
     },
   });
 
