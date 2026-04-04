@@ -1,8 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Roles() {
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [name, setName] = useState("");
+  const [abbreviation, setAbbreviation] = useState("");
+  const [level, setLevel] = useState("0");
+
   const { data: ranks = [], isLoading } = useQuery({
     queryKey: ["ranks"],
     queryFn: async () => {
@@ -12,9 +29,65 @@ export default function Roles() {
     },
   });
 
+  const openCreate = () => {
+    setEditing(null);
+    setName("");
+    setAbbreviation("");
+    setLevel("0");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (r: any) => {
+    setEditing(r);
+    setName(r.name);
+    setAbbreviation(r.abbreviation);
+    setLevel(String(r.level));
+    setDialogOpen(true);
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!name.trim() || !abbreviation.trim()) throw new Error("Name and abbreviation required");
+      const payload = { name: name.trim(), abbreviation: abbreviation.trim().toUpperCase(), level: parseInt(level) || 0 };
+      if (editing) {
+        const { error } = await supabase.from("ranks").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("ranks").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ranks"] });
+      setDialogOpen(false);
+      toast.success(editing ? "Rank updated" : "Rank created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ranks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ranks"] });
+      toast.success("Rank deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-secondary">Roles / Designations</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-secondary">Roles / Designations</h1>
+        {isAdmin && (
+          <Button onClick={openCreate} className="gap-1">
+            <Plus className="h-4 w-4" /> Add Rank
+          </Button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
@@ -25,6 +98,7 @@ export default function Roles() {
                 <TableHead>Level</TableHead>
                 <TableHead>Rank</TableHead>
                 <TableHead>Abbreviation</TableHead>
+                {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -33,12 +107,63 @@ export default function Roles() {
                   <TableCell>{r.level}</TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
                   <TableCell>{r.abbreviation}</TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete "{r.name}"?</AlertDialogTitle>
+                              <AlertDialogDescription>This will remove the rank. Staff with this rank will lose their rank assignment.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(r.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit Rank" : "Add Rank"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Superintendent" />
+            </div>
+            <div>
+              <Label>Abbreviation</Label>
+              <Input value={abbreviation} onChange={(e) => setAbbreviation(e.target.value)} placeholder="e.g. SUPT" />
+            </div>
+            <div>
+              <Label>Level (higher = senior)</Label>
+              <Input type="number" value={level} onChange={(e) => setLevel(e.target.value)} />
+            </div>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !name.trim() || !abbreviation.trim()} className="w-full">
+              {saveMutation.isPending ? "Saving..." : editing ? "Update" : "Create"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

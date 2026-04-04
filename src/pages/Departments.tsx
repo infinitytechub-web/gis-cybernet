@@ -1,9 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Building2, Plus, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Departments() {
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingDept, setEditingDept] = useState<any>(null);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
   const { data: departments = [], isLoading } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
@@ -13,18 +29,97 @@ export default function Departments() {
     },
   });
 
+  const openCreate = () => {
+    setEditingDept(null);
+    setName("");
+    setDescription("");
+    setDialogOpen(true);
+  };
+
+  const openEdit = (dept: any) => {
+    setEditingDept(dept);
+    setName(dept.name);
+    setDescription(dept.description || "");
+    setDialogOpen(true);
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!name.trim()) throw new Error("Name is required");
+      if (editingDept) {
+        const { error } = await supabase.from("departments").update({ name: name.trim(), description: description.trim() || null }).eq("id", editingDept.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("departments").insert({ name: name.trim(), description: description.trim() || null });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      setDialogOpen(false);
+      toast.success(editingDept ? "Department updated" : "Department created");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("departments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      toast.success("Department deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-secondary">Departments</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-secondary">Departments</h1>
+        {isAdmin && (
+          <Button onClick={openCreate} className="gap-1">
+            <Plus className="h-4 w-4" /> Add Department
+          </Button>
+        )}
+      </div>
+
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {departments.map((d) => (
             <Card key={d.id} className="border-border/50">
-              <CardHeader className="flex flex-row items-center gap-3 pb-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">{d.name}</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="flex items-center gap-3">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base">{d.name}</CardTitle>
+                </div>
+                {isAdmin && (
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete "{d.name}"?</AlertDialogTitle>
+                          <AlertDialogDescription>This action cannot be undone. Staff assigned to this department will lose their department assignment.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteMutation.mutate(d.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">{d.description || "No description"}</p>
@@ -33,6 +128,27 @@ export default function Departments() {
           ))}
         </div>
       )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingDept ? "Edit Department" : "Add Department"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Department name" />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Optional description" rows={2} />
+            </div>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !name.trim()} className="w-full">
+              {saveMutation.isPending ? "Saving..." : editingDept ? "Update" : "Create"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
