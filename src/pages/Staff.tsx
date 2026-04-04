@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,15 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProfileWithRelations } from "@/lib/types";
 import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+function getPhotoUrl(path: string | null) {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  return `${SUPABASE_URL}/storage/v1/object/public/staff-photos/${path}`;
+}
 
 export default function Staff() {
   const { isAdmin } = useAuth();
@@ -23,6 +32,10 @@ export default function Staff() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Form fields
   const [staffId, setStaffId] = useState("");
@@ -78,6 +91,8 @@ export default function Staff() {
     setRankId("");
     setDeptId("");
     setStatus("active");
+    setPhotoFile(null);
+    setPhotoPreview(null);
     setDialogOpen(true);
   };
 
@@ -93,13 +108,39 @@ export default function Staff() {
     setRankId(s.rank_id || "");
     setDeptId(s.department_id || "");
     setStatus(s.status);
+    setPhotoFile(null);
+    setPhotoPreview(getPhotoUrl(s.photo_url));
     setDialogOpen(true);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Photo must be under 5MB");
+      return;
+    }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const uploadPhoto = async (profileId: string): Promise<string | null> => {
+    if (!photoFile) return null;
+    const ext = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${profileId}.${ext}`;
+    const { error } = await supabase.storage
+      .from("staff-photos")
+      .upload(path, photoFile, { upsert: true });
+    if (error) throw error;
+    return path;
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
-      const payload = {
+      setUploadingPhoto(!!photoFile);
+
+      const payload: any = {
         staff_id: staffId.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -111,20 +152,35 @@ export default function Staff() {
         department_id: deptId || null,
         status,
       };
+
       if (editing) {
+        if (photoFile) {
+          const photoPath = await uploadPhoto(editing.id);
+          if (photoPath) payload.photo_url = photoPath;
+        }
         const { error } = await supabase.from("profiles").update(payload).eq("id", editing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("profiles").insert(payload);
+        const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
+        if (photoFile && data) {
+          const photoPath = await uploadPhoto(data.id);
+          if (photoPath) {
+            await supabase.from("profiles").update({ photo_url: photoPath }).eq("id", data.id);
+          }
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       setDialogOpen(false);
+      setUploadingPhoto(false);
       toast.success(editing ? "Staff updated" : "Staff created");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      setUploadingPhoto(false);
+      toast.error(e.message);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -158,6 +214,9 @@ export default function Staff() {
     }
   };
 
+  const getInitials = (first: string, last: string) =>
+    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -180,6 +239,7 @@ export default function Staff() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[50px]">Photo</TableHead>
                 <TableHead>Staff ID</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead className="hidden md:table-cell">Rank</TableHead>
@@ -192,11 +252,17 @@ export default function Staff() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground py-8">No staff found</TableCell>
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((s) => (
                   <TableRow key={s.id}>
+                    <TableCell>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={getPhotoUrl(s.photo_url) ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(s.first_name, s.last_name)}</AvatarFallback>
+                      </Avatar>
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{s.staff_id}</TableCell>
                     <TableCell className="font-medium">{s.last_name}, {s.first_name}</TableCell>
                     <TableCell className="hidden md:table-cell">{s.ranks?.abbreviation ?? "—"}</TableCell>
@@ -246,6 +312,29 @@ export default function Staff() {
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            {/* Photo upload */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <Avatar className="h-20 w-20 border-2 border-border">
+                  <AvatarImage src={photoPreview ?? undefined} />
+                  <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                    {firstName && lastName ? getInitials(firstName, lastName) : <Camera className="h-6 w-6" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="h-5 w-5 text-white" />
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              <p className="text-xs text-muted-foreground">Click to upload photo (max 5MB)</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Staff ID</Label>
@@ -333,7 +422,12 @@ export default function Staff() {
               </div>
             </div>
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full">
-              {saveMutation.isPending ? "Saving..." : editing ? "Update Staff" : "Create Staff"}
+              {saveMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {uploadingPhoto ? "Uploading photo..." : "Saving..."}
+                </span>
+              ) : editing ? "Update Staff" : "Create Staff"}
             </Button>
           </div>
         </DialogContent>
