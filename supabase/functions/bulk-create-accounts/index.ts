@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 function generatePassword(length = 12): string {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -7,29 +12,31 @@ function generatePassword(length = 12): string {
   const digits = "0123456789";
   const special = "!@#$%&*";
   const all = upper + lower + digits + special;
-  
-  // Ensure at least one of each
+
   const chars = [
     upper[Math.floor(Math.random() * upper.length)],
     lower[Math.floor(Math.random() * lower.length)],
     digits[Math.floor(Math.random() * digits.length)],
     special[Math.floor(Math.random() * special.length)],
   ];
-  
+
   for (let i = chars.length; i < length; i++) {
     chars.push(all[Math.floor(Math.random() * all.length)]);
   }
-  
-  // Shuffle
+
   for (let i = chars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
-  
+
   return chars.join("");
 }
 
-function makeUsername(firstName: string, lastName: string, existingUsernames: Set<string>): string {
+function makeUsername(
+  firstName: string,
+  lastName: string,
+  existingUsernames: Set<string>
+): string {
   const base = `${firstName.trim().toLowerCase().replace(/\s+/g, "")}.${lastName.trim().toLowerCase().replace(/\s+/g, "")}`;
   let username = base;
   let counter = 1;
@@ -47,7 +54,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify the caller is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -59,11 +65,14 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify caller is admin using their token
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
+    const userClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const {
+      data: { user },
+    } = await userClient.auth.getUser();
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -71,7 +80,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin role
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: roleData } = await adminClient
       .from("user_roles")
@@ -81,13 +89,16 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!roleData) {
-      return new Response(JSON.stringify({ error: "Admin access required" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Admin access required" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
-    // Get all profiles without user_id
+    // Get all active profiles without user_id
     const { data: profiles, error: pErr } = await adminClient
       .from("profiles")
       .select("id, first_name, last_name, staff_id")
@@ -97,72 +108,111 @@ Deno.serve(async (req) => {
     if (pErr) throw pErr;
 
     if (!profiles || profiles.length === 0) {
-      return new Response(JSON.stringify({ created: [], message: "All staff already have accounts" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          created: [],
+          errors: [],
+          total: 0,
+          message: "All active staff already have accounts",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Get existing usernames to avoid collisions
-    const { data: existingProfiles } = await adminClient
-      .from("profiles")
-      .select("user_id")
-      .not("user_id", "is", null);
-
+    // Collect existing usernames (email local parts) to avoid collisions
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers({
+      perPage: 1000,
+    });
     const existingUsernames = new Set<string>();
+    if (existingUsers?.users) {
+      for (const u of existingUsers.users) {
+        if (u.email) {
+          existingUsernames.add(u.email.split("@")[0]);
+        }
+      }
+    }
 
-    const created: Array<{ staffId: string; name: string; username: string; password: string }> = [];
+    const created: Array<{
+      staffId: string;
+      name: string;
+      username: string;
+      password: string;
+    }> = [];
     const errors: Array<{ staffId: string; error: string }> = [];
 
     for (const profile of profiles) {
-      const username = makeUsername(profile.first_name, profile.last_name, existingUsernames);
-      const email = `${username}@gis.local`;
-      const password = generatePassword(12);
+      try {
+        const username = makeUsername(
+          profile.first_name,
+          profile.last_name,
+          existingUsernames
+        );
+        const email = `${username}@gis.local`;
+        const password = generatePassword(12);
 
-      // Create auth user (auto-confirm since these are admin-created)
-      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          staff_id: profile.staff_id,
-          must_change_password: true,
-        },
-      });
+        // Create auth user with a placeholder staff_id to prevent the trigger
+        // from creating a conflicting profile
+        const { data: newUser, error: createErr } =
+          await adminClient.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: {
+              first_name: profile.first_name,
+              last_name: profile.last_name,
+              staff_id: `__tmp_${profile.staff_id}`,
+              must_change_password: true,
+            },
+          });
 
-      if (createErr) {
-        errors.push({ staffId: profile.staff_id, error: createErr.message });
-        continue;
+        if (createErr) {
+          errors.push({ staffId: profile.staff_id, error: createErr.message });
+          continue;
+        }
+
+        // Delete the auto-created profile from the trigger
+        await adminClient
+          .from("profiles")
+          .delete()
+          .eq("user_id", newUser.user.id);
+
+        // Delete the auto-created user_role from the trigger
+        await adminClient
+          .from("user_roles")
+          .delete()
+          .eq("user_id", newUser.user.id);
+
+        // Link existing profile to this auth user
+        const { error: updateErr } = await adminClient
+          .from("profiles")
+          .update({ user_id: newUser.user.id })
+          .eq("id", profile.id);
+
+        if (updateErr) {
+          errors.push({
+            staffId: profile.staff_id,
+            error: updateErr.message,
+          });
+          continue;
+        }
+
+        // Assign default 'staff' role
+        await adminClient
+          .from("user_roles")
+          .insert({ user_id: newUser.user.id, role: "staff" });
+
+        created.push({
+          staffId: profile.staff_id,
+          name: `${profile.first_name} ${profile.last_name}`,
+          username,
+          password,
+        });
+      } catch (e) {
+        errors.push({
+          staffId: profile.staff_id,
+          error: e.message || "Unknown error",
+        });
       }
-
-      // Link profile to user — but don't create duplicate profile via trigger
-      // The handle_new_user trigger will create a new profile, so we need to:
-      // 1. Update the existing profile with the user_id
-      // 2. Delete the auto-created profile
-      const { error: updateErr } = await adminClient
-        .from("profiles")
-        .update({ user_id: newUser.user.id })
-        .eq("id", profile.id);
-
-      if (updateErr) {
-        errors.push({ staffId: profile.staff_id, error: updateErr.message });
-        continue;
-      }
-
-      // Delete the auto-created duplicate profile (from the trigger)
-      await adminClient
-        .from("profiles")
-        .delete()
-        .eq("user_id", newUser.user.id)
-        .neq("id", profile.id);
-
-      created.push({
-        staffId: profile.staff_id,
-        name: `${profile.first_name} ${profile.last_name}`,
-        username,
-        password,
-      });
     }
 
     return new Response(
@@ -170,9 +220,9 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
