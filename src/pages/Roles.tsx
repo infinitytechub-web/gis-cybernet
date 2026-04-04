@@ -92,7 +92,11 @@ export default function Roles() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-secondary">Roles / Designations</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <Shield className="h-5 w-5 text-primary" />
+          <h1 className="text-2xl font-bold text-secondary">GIS Rank Structure</h1>
+        </div>
+        <p className="text-sm text-muted-foreground">Official Ghana Immigration Service ranking hierarchy — {ranks.length} ranks</p>
         {isAdmin && (
           <Button onClick={openCreate} className="gap-1">
             <Plus className="h-4 w-4" /> Add Rank
