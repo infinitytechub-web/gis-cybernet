@@ -68,6 +68,15 @@ export default function StaffDirectory() {
     },
   });
 
+  const { data: ranks = [] } = useQuery({
+    queryKey: ["ranks"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ranks").select("*").order("level", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const filtered = useMemo(() => {
     return staff.filter((s) => {
       const q = search.toLowerCase();
