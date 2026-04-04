@@ -25,11 +25,15 @@ Deno.serve(async () => {
   const results: Array<{ staff_id: string; status: string; email?: string }> = [];
   const defaultPassword = "Supervisor@2026";
 
+  // First, temporarily disable the trigger by updating the function to be a no-op for existing staff
+  // Instead, we'll create users WITHOUT staff_id metadata so the trigger creates a generic profile,
+  // then we delete that generic profile and link the existing one.
+
   for (const sup of supervisors) {
     const email = `${sup.staff_id.toLowerCase().replace(/-/g, "")}@gis.local`;
 
     try {
-      // Check if user already exists
+      // Check if auth user already exists
       const { data: { users } } = await supabase.auth.admin.listUsers();
       const existing = users?.find((u) => u.email === email);
 
@@ -37,41 +41,57 @@ Deno.serve(async () => {
 
       if (existing) {
         userId = existing.id;
-        // Reset password
         await supabase.auth.admin.updateUserById(userId, { password: defaultPassword });
-        results.push({ staff_id: sup.staff_id, status: "existing - password reset", email });
       } else {
-        // Create new auth user
+        // Create user WITHOUT staff_id in metadata to avoid trigger conflict
+        // Use a unique placeholder staff_id that won't conflict
+        const placeholderStaffId = `TEMP-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const { data: newUser, error } = await supabase.auth.admin.createUser({
           email,
           password: defaultPassword,
           email_confirm: true,
           user_metadata: {
-            staff_id: sup.staff_id,
+            staff_id: placeholderStaffId,
             first_name: sup.first_name,
             last_name: sup.last_name,
           },
         });
 
         if (error) {
-          results.push({ staff_id: sup.staff_id, status: `error: ${error.message}` });
+          results.push({ staff_id: sup.staff_id, status: `create error: ${error.message}` });
           continue;
         }
         userId = newUser.user!.id;
-        results.push({ staff_id: sup.staff_id, status: "created", email });
+
+        // Delete the auto-created placeholder profile from the trigger
+        await supabase.from("profiles").delete().eq("user_id", userId);
+        // Also delete auto-created role from trigger
+        await supabase.from("user_roles").delete().eq("user_id", userId);
       }
 
-      // Link profile to auth user
-      await supabase
+      // Link existing profile to this auth user
+      const { error: linkErr } = await supabase
         .from("profiles")
         .update({ user_id: userId })
         .eq("id", sup.profile_id);
 
-      // Set supervisor role (upsert to avoid duplicates)
-      // First delete any existing role for this user
+      if (linkErr) {
+        results.push({ staff_id: sup.staff_id, status: `link error: ${linkErr.message}`, email });
+        continue;
+      }
+
+      // Set supervisor role
       await supabase.from("user_roles").delete().eq("user_id", userId);
-      // Then insert supervisor role
-      await supabase.from("user_roles").insert({ user_id: userId, role: "supervisor" });
+      const { error: roleErr } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role: "supervisor" });
+
+      if (roleErr) {
+        results.push({ staff_id: sup.staff_id, status: `role error: ${roleErr.message}`, email });
+        continue;
+      }
+
+      results.push({ staff_id: sup.staff_id, status: existing ? "updated" : "created", email });
 
     } catch (err) {
       results.push({ staff_id: sup.staff_id, status: `exception: ${String(err)}` });
@@ -81,6 +101,7 @@ Deno.serve(async () => {
   return new Response(JSON.stringify({
     message: `Processed ${results.length} supervisors`,
     default_password: defaultPassword,
+    login_format: "Use Staff ID (e.g. GIS-ASC-0001) as login",
     results,
   }, null, 2), {
     headers: { "Content-Type": "application/json" },
