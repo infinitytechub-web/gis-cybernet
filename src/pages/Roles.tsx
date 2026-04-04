@@ -23,9 +23,20 @@ export default function Roles() {
   const { data: ranks = [], isLoading } = useQuery({
     queryKey: ["ranks"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("ranks").select("*").order("level");
+      const { data, error } = await supabase.from("ranks").select("*").order("level", { ascending: false });
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: staffCounts = {} } = useQuery({
+    queryKey: ["ranks-staff-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("rank_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      data?.forEach((p) => { if (p.rank_id) counts[p.rank_id] = (counts[p.rank_id] || 0) + 1; });
+      return counts;
     },
   });
 
