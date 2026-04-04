@@ -190,7 +190,7 @@ export default function DutyRoster() {
 
     // Title
     doc.setFontSize(16);
-    doc.text("GIS Amasaman Sector Command", pageW / 2, 12, { align: "center" });
+    doc.text("GIS Amasaman Sector Command - Cybernet", pageW / 2, 12, { align: "center" });
     doc.setFontSize(12);
     doc.text(`Duty Roster — ${monthLabel}`, pageW / 2, 19, { align: "center" });
     doc.setFontSize(8);
@@ -243,7 +243,7 @@ export default function DutyRoster() {
       doc.setPage(i);
       doc.setFontSize(7);
       doc.text(
-        `Ghana Immigration Service — Amasaman Sector Command | Page ${i} of ${pageCount}`,
+        `Ghana Immigration Service - Amasaman Sector Command - Cybernet | Page ${i} of ${pageCount}`,
         pageW / 2,
         doc.internal.pageSize.getHeight() - 5,
         { align: "center" }
