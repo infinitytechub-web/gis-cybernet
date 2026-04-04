@@ -153,7 +153,19 @@ export default function Dashboard() {
     },
   });
 
-  const summaryCards = [
+  // Supervisor: pending approvals for their department
+  const { data: supervisorPending } = useQuery({
+    queryKey: ["supervisor-pending"],
+    enabled: isAdminOrSupervisor,
+    queryFn: async () => {
+      const [leaveRes, postingsRes] = await Promise.all([
+        supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("postings_transfers").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      ]);
+      return { leave: leaveRes.count ?? 0, postings: postingsRes.count ?? 0 };
+    },
+  });
+
     { title: "Total Staff", value: staffCount, sub: `${activeStaff} active`, icon: Users, color: "text-primary" },
     { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-emerald-600" },
     { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-amber-600" },
