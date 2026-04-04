@@ -4,7 +4,7 @@ import { MyPostingHistory } from "@/components/postings/MyPostingHistory";
 import { PostingApprovalQueue } from "@/components/postings/PostingApprovalQueue";
 
 export default function PostingsTransfers() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSupervisor, isAdminOrSupervisor } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -13,9 +13,11 @@ export default function PostingsTransfers() {
       <PostingRequestForm />
       <MyPostingHistory />
 
-      {isAdmin && (
+      {isAdminOrSupervisor && (
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-secondary">Approval Queue</h2>
+          <h2 className="text-lg font-semibold text-secondary">
+            Approval Queue {isSupervisor && !isAdmin && <span className="text-sm font-normal text-muted-foreground">(Your Department)</span>}
+          </h2>
           <PostingApprovalQueue />
         </div>
       )}
