@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
 } from "recharts";
 
 const CHART_COLORS = [
