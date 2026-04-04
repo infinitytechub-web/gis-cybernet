@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { ProfileWithRelations } from "@/lib/types";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
