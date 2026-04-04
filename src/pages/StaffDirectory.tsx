@@ -35,8 +35,10 @@ const statusColor = (s: string) => {
 
 export default function StaffDirectory() {
   const { isAdmin } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialDept = searchParams.get("dept") || "all";
   const [search, setSearch] = useState("");
-  const [deptFilter, setDeptFilter] = useState("all");
+  const [deptFilter, setDeptFilter] = useState(initialDept);
   const [shiftFilter, setShiftFilter] = useState("all");
   const [page, setPage] = useState(1);
 
