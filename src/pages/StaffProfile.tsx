@@ -121,7 +121,7 @@ export default function StaffProfile() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <Avatar className="h-24 w-24 border-2 border-border">
-              <AvatarImage src={getPhotoUrl(profile.photo_url) ?? undefined} />
+              <AvatarImage src={(profile as any)._photoUrl ?? undefined} />
               <AvatarFallback className="text-2xl bg-primary/10 text-primary">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-3">

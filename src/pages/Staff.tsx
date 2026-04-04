@@ -271,7 +271,7 @@ export default function Staff() {
                   <TableRow key={s.id}>
                     <TableCell>
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={getPhotoUrl(s.photo_url) ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
+                        <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(s.first_name, s.last_name)}</AvatarFallback>
                       </Avatar>
                     </TableCell>

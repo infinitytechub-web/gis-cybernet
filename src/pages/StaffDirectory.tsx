@@ -170,7 +170,7 @@ export default function StaffDirectory() {
                   <Card key={s.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex items-start gap-3">
                       <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={getPhotoUrl(s.photo_url) ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
+                        <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
                         <AvatarFallback className="bg-primary/10 text-primary font-medium">
                           {getInitials(s.first_name, s.last_name)}
                         </AvatarFallback>
