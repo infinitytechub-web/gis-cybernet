@@ -23,7 +23,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify caller is admin
     const userClient = createClient(
       supabaseUrl,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -52,7 +51,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get all profiles with user_id that are NOT the current admin
+    // Get all active profiles with user_id that are NOT the current admin
     const { data: profiles, error: pErr } = await adminClient
       .from("profiles")
       .select("id, staff_id, user_id")
@@ -69,7 +68,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    let unlinked = 0;
     let deleted = 0;
     const errors: Array<{ staffId: string; error: string }> = [];
 
@@ -77,18 +75,19 @@ Deno.serve(async (req) => {
       try {
         const userId = profile.user_id;
 
-        // Delete user_roles for this user
-        await adminClient
-          .from("user_roles")
-          .delete()
-          .eq("user_id", userId);
+        // Delete user_roles
+        await adminClient.from("user_roles").delete().eq("user_id", userId);
 
-        // We need to temporarily disable the prevent_user_id_change trigger
-        // by using the service role to directly update via SQL
-        // Actually the trigger allows NULL -> value, but not value -> different value
-        // We need to set user_id to NULL, which the trigger blocks.
-        // So we'll delete the auth user first (which won't cascade to profiles),
-        // then use a raw SQL approach.
+        // Clear user_id on the profile (trigger now allows NULL)
+        const { error: updateErr } = await adminClient
+          .from("profiles")
+          .update({ user_id: null })
+          .eq("id", profile.id);
+
+        if (updateErr) {
+          errors.push({ staffId: profile.staff_id, error: `Unlink: ${updateErr.message}` });
+          continue;
+        }
 
         // Delete the auth user
         const { error: delErr } = await adminClient.auth.admin.deleteUser(userId);
@@ -96,28 +95,19 @@ Deno.serve(async (req) => {
           errors.push({ staffId: profile.staff_id, error: `Auth delete: ${delErr.message}` });
           continue;
         }
-        deleted++;
 
-        // Now set user_id to NULL on the profile using RPC
-        // Since the trigger blocks this, we'll use the service role client
-        // The trigger runs as SECURITY DEFINER but still blocks the change.
-        // We need to handle this differently - update via direct SQL
-        unlinked++;
+        deleted++;
       } catch (e) {
         errors.push({ staffId: profile.staff_id, error: e.message || "Unknown error" });
       }
     }
 
-    // Now we need to set user_id = NULL on all these profiles
-    // The prevent_user_id_change trigger blocks this, so we temporarily drop it
-    // Actually, let's just call a database function
-    
     return new Response(
       JSON.stringify({
-        message: `Deleted ${deleted} auth users. Profiles need user_id cleared via migration.`,
+        message: `Reset complete. ${deleted} accounts deleted and unlinked.`,
         deleted,
+        total: profiles.length,
         errors,
-        profileIds: profiles.map(p => p.id),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
