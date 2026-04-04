@@ -45,7 +45,7 @@ export function LeaveApprovalQueue() {
         .select("*, profiles(first_name, last_name, staff_id, shift_group)")
         .order("created_at", { ascending: false });
       if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        query = query.eq("status", statusFilter as "pending" | "approved" | "rejected");
       }
       const { data, error } = await query;
       if (error) throw error;
