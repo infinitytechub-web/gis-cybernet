@@ -143,6 +143,9 @@ function UserRolesTab() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="deputy">Deputy</SelectItem>
+                          <SelectItem value="deputy_shift_leader">Deputy Shift Leader</SelectItem>
+                          <SelectItem value="deputy_supervisor">Deputy Supervisor</SelectItem>
                           <SelectItem value="supervisor">Supervisor</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
