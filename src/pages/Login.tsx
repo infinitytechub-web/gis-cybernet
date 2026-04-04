@@ -1,0 +1,101 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Shield, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import gisLogo from "@/assets/gis-logo.jpeg";
+
+export default function Login() {
+  const [staffId, setStaffId] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffId.trim() || !password.trim()) return;
+    setIsLoading(true);
+    try {
+      // Staff ID is used as email identifier: staffid@gis.local
+      const email = `${staffId.trim().toLowerCase().replace(/\s+/g, "")}@gis.local`;
+      await signIn(email, password);
+      navigate("/");
+    } catch {
+      toast({
+        title: "Login Failed",
+        description: "Invalid Staff ID or password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
+      <Card className="w-full max-w-md border-primary/20 shadow-xl">
+        <CardHeader className="text-center space-y-4 pb-2">
+          <div className="mx-auto">
+            <img src={gisLogo} alt="Ghana Immigration Service" className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
+            <p className="text-sm text-muted-foreground">Amasaman Sector Command — HRM</p>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="staff" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="staff" className="gap-2">
+                <Users className="h-4 w-4" /> Staff
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="gap-2">
+                <Shield className="h-4 w-4" /> Admin
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="staff">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="staff-id">Staff / Service ID</Label>
+                  <Input id="staff-id" placeholder="Enter your Staff ID" value={staffId} onChange={(e) => setStaffId(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="admin">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-id">Admin ID</Label>
+                  <Input id="admin-id" placeholder="Enter your Admin ID" value={staffId} onChange={(e) => setStaffId(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Input id="admin-password" type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Admin Sign In"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+          <p className="text-xs text-center text-muted-foreground mt-6">
+            Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
