@@ -13,6 +13,7 @@ import Staff from "./pages/Staff";
 import Departments from "./pages/Departments";
 import Roles from "./pages/Roles";
 import Shifts from "./pages/Shifts";
+import DutyRoster from "./pages/DutyRoster";
 import Attendance from "./pages/Attendance";
 import LeaveRequests from "./pages/LeaveRequests";
 import Holidays from "./pages/Holidays";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/departments" element={<ProtectedRoute><Layout><Departments /></Layout></ProtectedRoute>} />
           <Route path="/roles" element={<ProtectedRoute><Layout><Roles /></Layout></ProtectedRoute>} />
           <Route path="/shifts" element={<ProtectedRoute><Layout><Shifts /></Layout></ProtectedRoute>} />
+          <Route path="/roster" element={<ProtectedRoute><Layout><DutyRoster /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute><Layout><Holidays /></Layout></ProtectedRoute>} />
