@@ -102,7 +102,7 @@ export default function StaffDirectory() {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const grouped = paged.reduce<Record<string, ProfileWithRelations[]>>((acc, s) => {
-    const dept = s.departments?.name ?? "Unassigned";
+    const dept = (s.departments?.name ?? "Unassigned").toUpperCase();
     if (!acc[dept]) acc[dept] = [];
     acc[dept].push(s);
     return acc;
@@ -126,7 +126,7 @@ export default function StaffDirectory() {
     setPage(1);
   };
 
-  const getDeptName = (id: string) => departments.find(d => d.id === id)?.name ?? id;
+  const getDeptName = (id: string) => (departments.find(d => d.id === id)?.name ?? id).toUpperCase();
   const getRankName = (id: string) => ranks.find(r => r.id === id)?.abbreviation ?? id;
 
   return (
@@ -216,7 +216,7 @@ export default function StaffDirectory() {
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
                   {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    <SelectItem key={d.id} value={d.id}>{d.name.toUpperCase()}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
