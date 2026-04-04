@@ -445,6 +445,7 @@ export default function Staff() {
           </div>
         </DialogContent>
       </Dialog>
+      <BulkImportDialog open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
     </div>
   );
 }
