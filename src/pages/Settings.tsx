@@ -29,10 +29,12 @@ export default function Settings() {
       <Tabs defaultValue="roles" className="space-y-4">
         <TabsList>
           <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4" /> User Roles</TabsTrigger>
+          <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4" /> Accounts</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4" /> System Info</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
+        <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
       </Tabs>
     </div>
