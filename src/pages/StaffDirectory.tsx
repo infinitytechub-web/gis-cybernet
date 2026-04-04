@@ -102,7 +102,14 @@ export default function StaffDirectory() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-secondary">Staff Directory</h1>
+        <div className="flex items-center gap-2">
+          {initialDept !== "all" && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <h1 className="text-2xl font-bold text-secondary">Staff Directory</h1>
+        </div>
         <Badge variant="outline" className="gap-1">
           <Users className="h-3 w-3" /> {filtered.length} staff
         </Badge>
