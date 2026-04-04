@@ -111,14 +111,16 @@ export default function Dashboard() {
         .eq("status", "active");
       if (error) throw error;
 
-      const counts: Record<string, number> = {};
+      const counts: Record<string, { value: number; id: string }> = {};
       (data || []).forEach((p: any) => {
         const name = p.departments?.name || "Unassigned";
-        counts[name] = (counts[name] || 0) + 1;
+        const id = p.department_id || "unassigned";
+        if (!counts[name]) counts[name] = { value: 0, id };
+        counts[name].value += 1;
       });
 
       return Object.entries(counts)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, { value, id }]) => ({ name, value, id }))
         .sort((a, b) => b.value - a.value);
     },
   });
@@ -291,8 +293,12 @@ export default function Dashboard() {
                   const maxVal = deptDistribution[0]?.value || 1;
                   const pct = Math.round((dept.value / (activeStaff || 1)) * 100);
                   return (
-                    <TableRow key={dept.name}>
-                      <TableCell className="text-xs font-medium py-1.5">{dept.name}</TableCell>
+                    <TableRow
+                      key={dept.name}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => navigate(`/directory?dept=${dept.id}`)}
+                    >
+                      <TableCell className="text-xs font-medium py-1.5 text-primary underline-offset-2 hover:underline">{dept.name}</TableCell>
                       <TableCell className="text-xs text-right py-1.5 font-semibold">{dept.value}</TableCell>
                       <TableCell className="hidden sm:table-cell py-1.5">
                         <div className="flex items-center gap-2">
