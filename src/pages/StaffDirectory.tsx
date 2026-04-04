@@ -126,7 +126,7 @@ export default function StaffDirectory() {
     setPage(1);
   };
 
-  const getDeptName = (id: string) => departments.find(d => d.id === id)?.name ?? id;
+  const getDeptName = (id: string) => (departments.find(d => d.id === id)?.name ?? id).toUpperCase();
   const getRankName = (id: string) => ranks.find(r => r.id === id)?.abbreviation ?? id;
 
   return (
