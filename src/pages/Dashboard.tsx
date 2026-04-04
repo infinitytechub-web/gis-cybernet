@@ -269,35 +269,51 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Department Distribution */}
+        {/* Department Staff Count */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
               Staff by Department
+              <Badge variant="outline" className="ml-auto text-[10px]">{deptDistribution.length} depts</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={deptDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, value }) => `${name} (${value})`}
-                  labelLine={false}
-                  fontSize={10}
-                >
-                  {deptDistribution.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          <CardContent className="p-0 max-h-[280px] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Department</TableHead>
+                  <TableHead className="text-xs text-right w-16">Count</TableHead>
+                  <TableHead className="text-xs hidden sm:table-cell">Distribution</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deptDistribution.map((dept, i) => {
+                  const maxVal = deptDistribution[0]?.value || 1;
+                  const pct = Math.round((dept.value / (activeStaff || 1)) * 100);
+                  return (
+                    <TableRow key={dept.name}>
+                      <TableCell className="text-xs font-medium py-1.5">{dept.name}</TableCell>
+                      <TableCell className="text-xs text-right py-1.5 font-semibold">{dept.value}</TableCell>
+                      <TableCell className="hidden sm:table-cell py-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${(dept.value / maxVal) * 100}%`,
+                                backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground w-8">{pct}%</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
