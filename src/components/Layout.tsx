@@ -16,10 +16,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             <NotificationBell />
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 md:pb-6">
+          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 lg:pb-6">
             {children}
           </main>
-          <footer className="hidden md:block border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
+          <footer className="hidden lg:block border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
             Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026
           </footer>
           <MobileBottomNav />
