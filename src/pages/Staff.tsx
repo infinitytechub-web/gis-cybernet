@@ -34,6 +34,7 @@ export default function Staff() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
