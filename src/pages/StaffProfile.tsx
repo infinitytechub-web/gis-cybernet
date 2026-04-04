@@ -11,12 +11,10 @@ import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Ph
 import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
-function getPhotoUrl(path: string | null) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/staff-photos/${path}`;
+async function getPhotoUrl(path: string | null) {
+  return getSignedPhotoUrl(path);
 }
 
 const statusColor = (s: string) => {
@@ -42,7 +40,9 @@ export default function StaffProfile() {
         .eq("id", id!)
         .single();
       if (error) throw error;
-      return data as ProfileWithRelations;
+      const p = data as any;
+      p._photoUrl = await getPhotoUrl(p.photo_url);
+      return p as ProfileWithRelations;
     },
   });
 
@@ -121,7 +121,7 @@ export default function StaffProfile() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <Avatar className="h-24 w-24 border-2 border-border">
-              <AvatarImage src={getPhotoUrl(profile.photo_url) ?? undefined} />
+              <AvatarImage src={(profile as any)._photoUrl ?? undefined} />
               <AvatarFallback className="text-2xl bg-primary/10 text-primary">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-3">

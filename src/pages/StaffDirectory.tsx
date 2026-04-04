@@ -12,13 +12,11 @@ import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft }
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 const PAGE_SIZE = 24;
 
-function getPhotoUrl(path: string | null) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/staff-photos/${path}`;
+async function getPhotoUrl(path: string | null) {
+  return getSignedPhotoUrl(path);
 }
 
 const getInitials = (first: string, last: string) =>
@@ -52,7 +50,11 @@ export default function StaffDirectory() {
         .eq("status", "active")
         .order("last_name");
       if (error) throw error;
-      return data as ProfileWithRelations[];
+      const profiles = data as ProfileWithRelations[];
+      await Promise.all(profiles.map(async (p: any) => {
+        p._photoUrl = await getPhotoUrl(p.photo_url);
+      }));
+      return profiles;
     },
   });
 
@@ -168,7 +170,7 @@ export default function StaffDirectory() {
                   <Card key={s.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex items-start gap-3">
                       <Avatar className="h-12 w-12 shrink-0">
-                        <AvatarImage src={getPhotoUrl(s.photo_url) ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
+                        <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
                         <AvatarFallback className="bg-primary/10 text-primary font-medium">
                           {getInitials(s.first_name, s.last_name)}
                         </AvatarFallback>

@@ -20,12 +20,10 @@ import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
-function getPhotoUrl(path: string | null) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/staff-photos/${path}`;
+async function getPhotoUrl(path: string | null) {
+  return getSignedPhotoUrl(path);
 }
 
 export default function Staff() {
@@ -61,7 +59,12 @@ export default function Staff() {
         .select("*, ranks(*), departments(*)")
         .order("last_name");
       if (error) throw error;
-      return data as ProfileWithRelations[];
+      const profiles = data as ProfileWithRelations[];
+      // Resolve signed URLs for private bucket
+      await Promise.all(profiles.map(async (p: any) => {
+        p._photoUrl = await getPhotoUrl(p.photo_url);
+      }));
+      return profiles;
     },
   });
 
@@ -113,7 +116,7 @@ export default function Staff() {
     setDeptId(s.department_id || "");
     setStatus(s.status);
     setPhotoFile(null);
-    setPhotoPreview(getPhotoUrl(s.photo_url));
+    setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
   };
 
@@ -268,7 +271,7 @@ export default function Staff() {
                   <TableRow key={s.id}>
                     <TableCell>
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={getPhotoUrl(s.photo_url) ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
+                        <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(s.first_name, s.last_name)}</AvatarFallback>
                       </Avatar>
                     </TableCell>
