@@ -111,14 +111,16 @@ export default function Dashboard() {
         .eq("status", "active");
       if (error) throw error;
 
-      const counts: Record<string, number> = {};
+      const counts: Record<string, { value: number; id: string }> = {};
       (data || []).forEach((p: any) => {
         const name = p.departments?.name || "Unassigned";
-        counts[name] = (counts[name] || 0) + 1;
+        const id = p.department_id || "unassigned";
+        if (!counts[name]) counts[name] = { value: 0, id };
+        counts[name].value += 1;
       });
 
       return Object.entries(counts)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, { value, id }]) => ({ name, value, id }))
         .sort((a, b) => b.value - a.value);
     },
   });
