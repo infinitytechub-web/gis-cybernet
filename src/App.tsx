@@ -13,6 +13,7 @@ import Staff from "./pages/Staff";
 import Departments from "./pages/Departments";
 import Roles from "./pages/Roles";
 import Shifts from "./pages/Shifts";
+import DutyRoster from "./pages/DutyRoster";
 import Attendance from "./pages/Attendance";
 import LeaveRequests from "./pages/LeaveRequests";
 import Holidays from "./pages/Holidays";
