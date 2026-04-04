@@ -107,18 +107,22 @@ export default function Roles() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Level</TableHead>
+                <TableHead className="w-[60px]">Level</TableHead>
                 <TableHead>Rank</TableHead>
                 <TableHead>Abbreviation</TableHead>
+                <TableHead className="text-center">Staff</TableHead>
                 {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {ranks.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>{r.level}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono text-xs">{r.level}</Badge>
+                  </TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
-                  <TableCell>{r.abbreviation}</TableCell>
+                  <TableCell><Badge variant="secondary">{r.abbreviation}</Badge></TableCell>
+                  <TableCell className="text-center text-muted-foreground">{staffCounts[r.id] || 0}</TableCell>
                   {isAdmin && (
                     <TableCell>
                       <div className="flex gap-1">
