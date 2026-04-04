@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center border-b bg-card px-4 gap-4">
             <SidebarTrigger className="text-muted-foreground" />
             <h2 className="text-sm font-semibold text-secondary flex-1">Ghana Immigration Service — Amasaman Sector Command</h2>
+            <ThemeToggle />
             <NotificationBell />
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
