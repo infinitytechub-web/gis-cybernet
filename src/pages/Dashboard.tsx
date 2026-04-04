@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Users, CalendarCheck, CalendarOff, Calendar, ArrowRightLeft,
-  Clock, UserCheck, UserX, TrendingUp, Building2
+  Clock, UserCheck, UserX, TrendingUp, Building2, ShieldCheck
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
