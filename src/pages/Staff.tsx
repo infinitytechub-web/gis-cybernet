@@ -20,12 +20,10 @@ import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
-function getPhotoUrl(path: string | null) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/staff-photos/${path}`;
+async function getPhotoUrl(path: string | null) {
+  return getSignedPhotoUrl(path);
 }
 
 export default function Staff() {

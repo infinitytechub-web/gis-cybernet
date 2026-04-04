@@ -12,13 +12,11 @@ import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft }
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 const PAGE_SIZE = 24;
 
-function getPhotoUrl(path: string | null) {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/staff-photos/${path}`;
+async function getPhotoUrl(path: string | null) {
+  return getSignedPhotoUrl(path);
 }
 
 const getInitials = (first: string, last: string) =>
