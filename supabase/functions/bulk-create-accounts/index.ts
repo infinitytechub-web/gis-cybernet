@@ -1,0 +1,177 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+function generatePassword(length = 12): string {
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lower = "abcdefghijklmnopqrstuvwxyz";
+  const digits = "0123456789";
+  const special = "!@#$%&*";
+  const all = upper + lower + digits + special;
+  
+  // Ensure at least one of each
+  const chars = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    special[Math.floor(Math.random() * special.length)],
+  ];
+  
+  for (let i = chars.length; i < length; i++) {
+    chars.push(all[Math.floor(Math.random() * all.length)]);
+  }
+  
+  // Shuffle
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  
+  return chars.join("");
+}
+
+function makeUsername(firstName: string, lastName: string, existingUsernames: Set<string>): string {
+  const base = `${firstName.trim().toLowerCase().replace(/\s+/g, "")}.${lastName.trim().toLowerCase().replace(/\s+/g, "")}`;
+  let username = base;
+  let counter = 1;
+  while (existingUsernames.has(username)) {
+    username = `${base}${counter}`;
+    counter++;
+  }
+  existingUsernames.add(username);
+  return username;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    // Verify the caller is an admin
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Verify caller is admin using their token
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await userClient.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check admin role
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: roleData } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleData) {
+      return new Response(JSON.stringify({ error: "Admin access required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get all profiles without user_id
+    const { data: profiles, error: pErr } = await adminClient
+      .from("profiles")
+      .select("id, first_name, last_name, staff_id")
+      .is("user_id", null)
+      .eq("status", "active");
+
+    if (pErr) throw pErr;
+
+    if (!profiles || profiles.length === 0) {
+      return new Response(JSON.stringify({ created: [], message: "All staff already have accounts" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get existing usernames to avoid collisions
+    const { data: existingProfiles } = await adminClient
+      .from("profiles")
+      .select("user_id")
+      .not("user_id", "is", null);
+
+    const existingUsernames = new Set<string>();
+
+    const created: Array<{ staffId: string; name: string; username: string; password: string }> = [];
+    const errors: Array<{ staffId: string; error: string }> = [];
+
+    for (const profile of profiles) {
+      const username = makeUsername(profile.first_name, profile.last_name, existingUsernames);
+      const email = `${username}@gis.local`;
+      const password = generatePassword(12);
+
+      // Create auth user (auto-confirm since these are admin-created)
+      const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          staff_id: profile.staff_id,
+        },
+      });
+
+      if (createErr) {
+        errors.push({ staffId: profile.staff_id, error: createErr.message });
+        continue;
+      }
+
+      // Link profile to user — but don't create duplicate profile via trigger
+      // The handle_new_user trigger will create a new profile, so we need to:
+      // 1. Update the existing profile with the user_id
+      // 2. Delete the auto-created profile
+      const { error: updateErr } = await adminClient
+        .from("profiles")
+        .update({ user_id: newUser.user.id })
+        .eq("id", profile.id);
+
+      if (updateErr) {
+        errors.push({ staffId: profile.staff_id, error: updateErr.message });
+        continue;
+      }
+
+      // Delete the auto-created duplicate profile (from the trigger)
+      await adminClient
+        .from("profiles")
+        .delete()
+        .eq("user_id", newUser.user.id)
+        .neq("id", profile.id);
+
+      created.push({
+        staffId: profile.staff_id,
+        name: `${profile.first_name} ${profile.last_name}`,
+        username,
+        password,
+      });
+    }
+
+    return new Response(
+      JSON.stringify({ created, errors, total: profiles.length }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

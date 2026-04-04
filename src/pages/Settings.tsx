@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, RefreshCw } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus } from "lucide-react";
+import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -28,10 +29,12 @@ export default function Settings() {
       <Tabs defaultValue="roles" className="space-y-4">
         <TabsList>
           <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4" /> User Roles</TabsTrigger>
+          <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4" /> Accounts</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4" /> System Info</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
+        <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
       </Tabs>
     </div>
