@@ -62,6 +62,8 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "");
     const isServiceRole = token === serviceRoleKey || apikeyHeader === serviceRoleKey;
+    
+    console.log("Auth debug:", { hasApikey: !!apikeyHeader, hasAuth: !!authHeader, isServiceRole, apikeyLen: apikeyHeader.length, tokenLen: token.length, srkLen: serviceRoleKey.length });
 
     if (!isServiceRole) {
       if (!authHeader) {
