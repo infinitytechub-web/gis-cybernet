@@ -211,10 +211,10 @@ export default function Dashboard() {
 
   const summaryCards = [
     { title: "Total Staff", value: staffCount, sub: `${activeStaff} active`, icon: Users, color: "text-primary" },
-    { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-emerald-600" },
-    { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-amber-600" },
-    { title: "Pending Postings", value: pendingPostings, sub: "awaiting approval", icon: ArrowRightLeft, color: "text-secondary" },
-    { title: "Upcoming Holidays", value: upcomingHolidays.length, sub: "this year", icon: Calendar, color: "text-primary" },
+    { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-success" },
+    { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-warning" },
+    { title: "Pending Postings", value: pendingPostings, sub: "awaiting approval", icon: ArrowRightLeft, color: "text-info" },
+    { title: "Upcoming Holidays", value: upcomingHolidays.length, sub: "this year", icon: Calendar, color: "text-secondary" },
     { title: "Absent Today", value: staffCount - todayAttendance, sub: "not checked in", icon: UserX, color: "text-destructive" },
   ];
 
