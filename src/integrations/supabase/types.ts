@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          department_id: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          department_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          department_id?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendances: {
         Row: {
           check_in: string | null
