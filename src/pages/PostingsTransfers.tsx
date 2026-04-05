@@ -8,7 +8,7 @@ export default function PostingsTransfers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-secondary">Postings & Transfers</h1>
+      <h1 className="text-2xl font-bold text-secondary">Postings, Transfers & Reassignment</h1>
 
       <PostingRequestForm />
       <MyPostingHistory />

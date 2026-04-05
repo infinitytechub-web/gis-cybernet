@@ -27,7 +27,7 @@ const moreItems = [
   { title: "Duty Roster", url: "/roster", icon: CalendarDays },
   { title: "Attendance", url: "/attendance", icon: CalendarCheck },
   { title: "Holidays", url: "/holidays", icon: Calendar },
-  { title: "Postings", url: "/postings", icon: ArrowRightLeft },
+  { title: "Postings & Reassignment", url: "/postings", icon: ArrowRightLeft },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
