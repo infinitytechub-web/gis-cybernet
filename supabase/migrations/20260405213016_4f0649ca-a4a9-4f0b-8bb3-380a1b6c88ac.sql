@@ -1,0 +1,1 @@
+DROP POLICY "Only admins can modify user roles" ON public.user_roles;
