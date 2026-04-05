@@ -130,13 +130,15 @@ function UserRolesTab() {
           <div className="text-center py-8 text-muted-foreground">Loading users...</div>
         ) : (
           <div className="rounded-lg border">
-            <Table>
+             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Staff ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Current Role</TableHead>
                   <TableHead className="w-[180px]">Change Role</TableHead>
+                  <TableHead className="text-center w-[80px]"><Lock className="h-3.5 w-3.5 mx-auto" /></TableHead>
+                  <TableHead className="text-center w-[80px]"><LogIn className="h-3.5 w-3.5 mx-auto" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -164,11 +166,29 @@ function UserRolesTab() {
                         </SelectContent>
                       </Select>
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={u.account_locked}
+                        onCheckedChange={(checked) =>
+                          toggleAccountFlag.mutate({ profileId: u.id, field: "account_locked", value: checked })
+                        }
+                        className="data-[state=checked]:bg-destructive"
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={u.login_enabled}
+                        onCheckedChange={(checked) =>
+                          toggleAccountFlag.mutate({ profileId: u.id, field: "login_enabled", value: checked })
+                        }
+                        className="data-[state=checked]:bg-success"
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
                 {usersWithRoles.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
