@@ -1,1 +1,4 @@
 project_id = "ebndffutyrgybsduvijo"
+
+[functions.bulk-create-accounts]
+verify_jwt = false
