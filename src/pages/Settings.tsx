@@ -50,15 +50,13 @@ function UserRolesTab() {
   const { data: usersWithRoles = [], isLoading } = useQuery({
     queryKey: ["admin-user-roles"],
     queryFn: async () => {
-      // Get all profiles with user_id (linked accounts)
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, user_id")
+        .select("id, first_name, last_name, staff_id, user_id, account_locked, login_enabled")
         .not("user_id", "is", null)
         .order("last_name");
       if (pErr) throw pErr;
 
-      // Get all user roles
       const { data: roles, error: rErr } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -69,6 +67,8 @@ function UserRolesTab() {
 
       return (profiles ?? []).map((p) => ({
         ...p,
+        account_locked: (p as any).account_locked ?? false,
+        login_enabled: (p as any).login_enabled ?? true,
         role: roleMap.get(p.user_id!) ?? ("staff" as AppRole),
       }));
     },
