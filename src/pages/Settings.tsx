@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Lock, LogIn } from "lucide-react";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
