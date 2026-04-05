@@ -80,7 +80,7 @@ export function MobileBottomNav() {
               More
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-48 mb-2">
+          <DropdownMenuContent align="end" side="top" className="w-48 mb-2 max-h-[60vh] overflow-y-auto">
             {moreItems.map((item) => (
               <DropdownMenuItem
                 key={item.url}
