@@ -25,9 +25,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .maybeSingle();
-    return (data?.role as AppRole) ?? "staff";
+      .eq("user_id", userId);
+    if (!data || data.length === 0) return "staff" as AppRole;
+    // Prioritize admin > supervisor > other roles > staff
+    const priority: Record<string, number> = { admin: 0, supervisor: 1, shift_leader: 2, deputy_supervisor: 3, deputy_shift_leader: 4, special_duties: 5, deputy: 6, staff: 7 };
+    const sorted = data.sort((a, b) => (priority[a.role] ?? 99) - (priority[b.role] ?? 99));
+    return (sorted[0].role as AppRole) ?? "staff";
   }, []);
 
   useEffect(() => {
