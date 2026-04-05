@@ -4,22 +4,43 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2 } from "lucide-react";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
+import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
+import { AppSettings } from "@/components/settings/AppSettings";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
 
+const roleLabels: Record<AppRole, string> = {
+  admin: "Admin",
+  supervisor: "Supervisor",
+  shift_leader: "Shift Leader",
+  deputy_supervisor: "Dep. Supervisor",
+  deputy_shift_leader: "Dep. Shift Leader",
+  special_duties: "Special Duties",
+  deputy: "Deputy",
+  staff: "Staff",
+};
+
+const roleColors: Record<AppRole, string> = {
+  admin: "bg-destructive/10 text-destructive border-destructive/20",
+  supervisor: "bg-primary/10 text-primary border-primary/20",
+  shift_leader: "bg-chart-1/15 text-chart-1 border-chart-1/20",
+  deputy_supervisor: "bg-chart-2/15 text-chart-2 border-chart-2/20",
+  deputy_shift_leader: "bg-chart-3/15 text-chart-3 border-chart-3/20",
+  special_duties: "bg-chart-4/15 text-chart-4 border-chart-4/20",
+  deputy: "bg-chart-5/15 text-chart-5 border-chart-5/20",
+  staff: "bg-muted text-muted-foreground border-border",
+};
+
 export default function Settings() {
   const { isAdmin, loading: authLoading } = useAuth();
-  const queryClient = useQueryClient();
 
-  // Redirect non-admins
   if (!authLoading && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -28,14 +49,18 @@ export default function Settings() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">System Settings</h1>
       <Tabs defaultValue="roles" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4" /> User Roles</TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4" /> Permissions</TabsTrigger>
           <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4" /> Accounts</TabsTrigger>
+          <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4" /> App Settings</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4" /> System Info</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
+        <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
+        <TabsContent value="app-settings"><AppSettings /></TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
       </Tabs>
     </div>
@@ -101,15 +126,6 @@ function UserRolesTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const roleBadge = (role: AppRole) => {
-    const colors: Record<AppRole, string> = {
-      admin: "bg-destructive/10 text-destructive border-destructive/20",
-      supervisor: "bg-primary/10 text-primary border-primary/20",
-      staff: "bg-muted text-muted-foreground border-border",
-    };
-    return <Badge variant="outline" className={colors[role]}>{role}</Badge>;
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -127,7 +143,7 @@ function UserRolesTab() {
                   <TableHead>Staff ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Current Role</TableHead>
-                  <TableHead className="w-[160px]">Change Role</TableHead>
+                  <TableHead className="w-[180px]">Change Role</TableHead>
                   <TableHead className="text-center w-[90px]">Login</TableHead>
                   <TableHead className="text-center w-[90px]">Locked</TableHead>
                 </TableRow>
@@ -137,7 +153,11 @@ function UserRolesTab() {
                   <TableRow key={u.id}>
                     <TableCell className="font-mono text-xs">{u.staff_id}</TableCell>
                     <TableCell className="font-medium">{u.last_name}, {u.first_name}</TableCell>
-                    <TableCell>{roleBadge(u.role)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={roleColors[u.role]}>
+                        {roleLabels[u.role]}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       <Select
                         value={u.role}
@@ -151,9 +171,9 @@ function UserRolesTab() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="staff">Staff</SelectItem>
-                          <SelectItem value="supervisor">Supervisor</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                          {(Object.keys(roleLabels) as AppRole[]).map((r) => (
+                            <SelectItem key={r} value={r}>{roleLabels[r]}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
