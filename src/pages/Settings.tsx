@@ -92,6 +92,24 @@ function UserRolesTab() {
     },
   });
 
+  const toggleAccountFlag = useMutation({
+    mutationFn: async ({ profileId, field, value }: { profileId: string; field: "account_locked" | "login_enabled"; value: boolean }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [field]: value } as any)
+        .eq("id", profileId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      const label = vars.field === "account_locked"
+        ? (vars.value ? "Account locked" : "Account unlocked")
+        : (vars.value ? "Login enabled" : "Login disabled");
+      toast.success(label);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const roleBadge = (role: AppRole) => {
     const colors: Record<AppRole, string> = {
       admin: "bg-destructive/10 text-destructive border-destructive/20",
