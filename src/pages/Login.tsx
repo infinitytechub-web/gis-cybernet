@@ -87,7 +87,7 @@ export default function Login() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
-            <p className="text-sm text-muted-foreground">Amasaman Sector Command — Cybernet</p>
+            <p className="text-sm text-muted-foreground">Amasaman Sector Command — HRM</p>
           </div>
         </CardHeader>
         <CardContent>
