@@ -328,11 +328,11 @@ export default function Dashboard() {
                   Missing Data
                 </div>
                 <div className="space-y-0.5 text-xs">
-                  {systemHealth.missingDept > 0 && <p className="text-amber-600">{systemHealth.missingDept} no department</p>}
-                  {systemHealth.missingRank > 0 && <p className="text-amber-600">{systemHealth.missingRank} no rank</p>}
-                  {systemHealth.missingPhone > 0 && <p className="text-amber-600">{systemHealth.missingPhone} no phone</p>}
+                  {systemHealth.missingDept > 0 && <p className="text-warning">{systemHealth.missingDept} no department</p>}
+                  {systemHealth.missingRank > 0 && <p className="text-warning">{systemHealth.missingRank} no rank</p>}
+                  {systemHealth.missingPhone > 0 && <p className="text-warning">{systemHealth.missingPhone} no phone</p>}
                   {systemHealth.missingDept === 0 && systemHealth.missingRank === 0 && systemHealth.missingPhone === 0 && (
-                    <p className="text-emerald-600">All complete ✓</p>
+                    <p className="text-success">All complete ✓</p>
                   )}
                 </div>
               </div>
