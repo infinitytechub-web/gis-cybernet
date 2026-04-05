@@ -458,7 +458,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <CalendarOff className="h-4 w-4 text-amber-600" />
+              <CalendarOff className="h-4 w-4 text-warning" />
               Recent Leave Requests
             </CardTitle>
           </CardHeader>
