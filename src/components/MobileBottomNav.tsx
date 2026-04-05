@@ -40,7 +40,7 @@ const adminItems = [
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrSupervisor } = useAuth();
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
