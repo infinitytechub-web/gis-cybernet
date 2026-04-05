@@ -40,12 +40,12 @@ const adminItems = [
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrSupervisor } = useAuth();
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
 
-  const moreActive = moreItems.some((item) => isActive(item.url)) || (isAdmin && adminItems.some((item) => isActive(item.url)));
+  const moreActive = moreItems.some((item) => isActive(item.url)) || (isAdminOrSupervisor && adminItems.some((item) => isActive(item.url)));
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 safe-bottom">
@@ -94,7 +94,7 @@ export function MobileBottomNav() {
                 {item.title}
               </DropdownMenuItem>
             ))}
-            {isAdmin && (
+            {isAdminOrSupervisor && (
               <>
                 <DropdownMenuSeparator />
                 {adminItems.map((item) => (
