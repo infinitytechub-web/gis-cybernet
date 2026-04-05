@@ -22,10 +22,10 @@ import {
 const CHART_COLORS = [
   "hsl(var(--primary))",
   "hsl(var(--secondary))",
-  "hsl(160, 60%, 45%)",
-  "hsl(40, 90%, 50%)",
-  "hsl(0, 70%, 55%)",
-  "hsl(200, 70%, 50%)",
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(var(--destructive))",
+  "hsl(var(--info))",
 ];
 
 export default function Dashboard() {
