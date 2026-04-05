@@ -98,12 +98,20 @@ Deno.serve(async (req) => {
 
     if (lpErr) throw lpErr;
 
-    // Find admin user IDs to preserve
+    // Find admin user IDs to preserve (by role, not staff_id)
     const adminUserIds = new Set<string>();
     if (linkedProfiles) {
-      for (const p of linkedProfiles) {
-        if (p.staff_id === "admin") {
-          adminUserIds.add(p.user_id!);
+      const userIds = linkedProfiles.filter(p => p.user_id).map(p => p.user_id!);
+      if (userIds.length > 0) {
+        const { data: adminRoles } = await adminClient
+          .from("user_roles")
+          .select("user_id")
+          .in("user_id", userIds)
+          .eq("role", "admin");
+        if (adminRoles) {
+          for (const r of adminRoles) {
+            adminUserIds.add(r.user_id);
+          }
         }
       }
     }
