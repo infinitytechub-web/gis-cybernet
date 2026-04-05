@@ -18,6 +18,7 @@ import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
+import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -248,6 +249,9 @@ export default function Dashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Announcements */}
+      <AnnouncementsBanner />
 
       {/* Supervisor Pending Approvals Widget */}
       {isAdminOrSupervisor && supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
