@@ -93,6 +93,24 @@ export function MobileBottomNav() {
                 {item.title}
               </DropdownMenuItem>
             ))}
+            {isAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                {adminItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.url}
+                    onClick={() => navigate(item.url)}
+                    className={cn(
+                      "gap-2",
+                      isActive(item.url) && "text-primary font-medium"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.title}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
