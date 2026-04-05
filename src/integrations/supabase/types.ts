@@ -363,14 +363,12 @@ export type Database = {
       }
       profiles: {
         Row: {
-          account_locked: boolean
           created_at: string
           department_id: string | null
           first_name: string
           gender: string | null
           id: string
           last_name: string
-          login_enabled: boolean
           phone: string | null
           photo_url: string | null
           rank_id: string | null
@@ -382,14 +380,12 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          account_locked?: boolean
           created_at?: string
           department_id?: string | null
           first_name: string
           gender?: string | null
           id?: string
           last_name: string
-          login_enabled?: boolean
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
@@ -401,14 +397,12 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          account_locked?: boolean
           created_at?: string
           department_id?: string | null
           first_name?: string
           gender?: string | null
           id?: string
           last_name?: string
-          login_enabled?: boolean
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null

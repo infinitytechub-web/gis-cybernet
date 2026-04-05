@@ -7,9 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Lock, LogIn } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus } from "lucide-react";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
@@ -50,13 +49,15 @@ function UserRolesTab() {
   const { data: usersWithRoles = [], isLoading } = useQuery({
     queryKey: ["admin-user-roles"],
     queryFn: async () => {
+      // Get all profiles with user_id (linked accounts)
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, user_id, account_locked, login_enabled")
+        .select("id, first_name, last_name, staff_id, user_id")
         .not("user_id", "is", null)
         .order("last_name");
       if (pErr) throw pErr;
 
+      // Get all user roles
       const { data: roles, error: rErr } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -67,8 +68,6 @@ function UserRolesTab() {
 
       return (profiles ?? []).map((p) => ({
         ...p,
-        account_locked: (p as any).account_locked ?? false,
-        login_enabled: (p as any).login_enabled ?? true,
         role: roleMap.get(p.user_id!) ?? ("staff" as AppRole),
       }));
     },
@@ -92,24 +91,6 @@ function UserRolesTab() {
     },
   });
 
-  const toggleAccountFlag = useMutation({
-    mutationFn: async ({ profileId, field, value }: { profileId: string; field: "account_locked" | "login_enabled"; value: boolean }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ [field]: value } as any)
-        .eq("id", profileId);
-      if (error) throw error;
-    },
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-user-roles"] });
-      const label = vars.field === "account_locked"
-        ? (vars.value ? "Account locked" : "Account unlocked")
-        : (vars.value ? "Login enabled" : "Login disabled");
-      toast.success(label);
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
   const roleBadge = (role: AppRole) => {
     const colors: Record<AppRole, string> = {
       admin: "bg-destructive/10 text-destructive border-destructive/20",
@@ -130,15 +111,13 @@ function UserRolesTab() {
           <div className="text-center py-8 text-muted-foreground">Loading users...</div>
         ) : (
           <div className="rounded-lg border">
-             <Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Staff ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Current Role</TableHead>
                   <TableHead className="w-[180px]">Change Role</TableHead>
-                  <TableHead className="text-center w-[80px]"><Lock className="h-3.5 w-3.5 mx-auto" /></TableHead>
-                  <TableHead className="text-center w-[80px]"><LogIn className="h-3.5 w-3.5 mx-auto" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,29 +145,11 @@ function UserRolesTab() {
                         </SelectContent>
                       </Select>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={u.account_locked}
-                        onCheckedChange={(checked) =>
-                          toggleAccountFlag.mutate({ profileId: u.id, field: "account_locked", value: checked })
-                        }
-                        className="data-[state=checked]:bg-destructive"
-                      />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={u.login_enabled}
-                        onCheckedChange={(checked) =>
-                          toggleAccountFlag.mutate({ profileId: u.id, field: "login_enabled", value: checked })
-                        }
-                        className="data-[state=checked]:bg-success"
-                      />
-                    </TableCell>
                   </TableRow>
                 ))}
                 {usersWithRoles.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
