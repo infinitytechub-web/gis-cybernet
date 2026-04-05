@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Download, Copy, CheckCircle, AlertTriangle } from "lucide-react";
+import { UserPlus, Download, Copy, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface CreatedAccount {
@@ -17,6 +17,7 @@ interface CreatedAccount {
 
 export function BulkCreateAccounts() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [results, setResults] = useState<CreatedAccount[] | null>(null);
   const [errors, setErrors] = useState<Array<{ staffId: string; error: string }>>([]);
   const [total, setTotal] = useState(0);
@@ -45,6 +46,30 @@ export function BulkCreateAccounts() {
     }
   };
 
+  const handleResetAndCreate = async () => {
+    setIsResetting(true);
+    setResults(null);
+    setErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-and-create-accounts");
+      if (error) throw error;
+
+      setResults(data.created ?? []);
+      setErrors(data.errors ?? []);
+      setTotal(data.total ?? 0);
+
+      if (data.created?.length > 0) {
+        toast.success(`${data.created.length} accounts regenerated successfully`);
+      } else {
+        toast.info(data.message || "No accounts to regenerate");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to reset and create accounts");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   const copyCredentials = (account: CreatedAccount) => {
     const text = `Username: ${account.username}\nPassword: ${account.password}`;
     navigator.clipboard.writeText(text);
@@ -65,6 +90,8 @@ export function BulkCreateAccounts() {
     toast.success("Credentials CSV downloaded");
   };
 
+  const isAnyLoading = isLoading || isResetting;
+
   return (
     <Card>
       <CardHeader>
@@ -72,31 +99,56 @@ export function BulkCreateAccounts() {
           <UserPlus className="h-5 w-5" /> Bulk Create Staff Accounts
         </CardTitle>
         <CardDescription>
-          Generate login accounts for all active staff who don't have one yet. Each account gets a unique username (first.last) and auto-generated password.
+          Generate login accounts for all active staff who don't have one yet, or reset and regenerate all credentials.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {!results ? (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button disabled={isLoading} className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                {isLoading ? "Creating accounts..." : "Create Accounts for All Staff"}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Create accounts for all staff?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will create login accounts for every active staff member who doesn't have one yet. Each account will receive a unique username (first.last) and an auto-generated password. You will be able to download the credentials after creation.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBulkCreate}>Create Accounts</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button disabled={isAnyLoading} className="gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  {isLoading ? "Creating accounts..." : "Create New Accounts"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Create accounts for all staff?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will create login accounts for every active staff member who doesn't have one yet. Each account will receive a unique username (first.last) and an auto-generated password.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkCreate}>Create Accounts</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isAnyLoading} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  {isResetting ? "Resetting..." : "Reset & Regenerate All"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Reset all staff accounts?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will DELETE all existing staff login accounts (except admin) and generate brand new usernames and passwords for every active staff member. This action cannot be undone. Make sure to download the new credentials after.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetAndCreate} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Reset All Accounts
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-4 flex-wrap">
@@ -116,7 +168,7 @@ export function BulkCreateAccounts() {
                 </Button>
               )}
               <Button variant="ghost" size="sm" onClick={() => setResults(null)}>
-                Create More
+                Back
               </Button>
             </div>
 
