@@ -391,9 +391,9 @@ export default function Dashboard() {
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="present" stackId="a" fill="hsl(160, 60%, 45%)" name="Present" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="late" stackId="a" fill="hsl(40, 90%, 50%)" name="Late" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="absent" stackId="a" fill="hsl(0, 70%, 55%)" name="Absent" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="present" stackId="a" fill="hsl(var(--success))" name="Present" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="late" stackId="a" fill="hsl(var(--warning))" name="Late" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="absent" stackId="a" fill="hsl(var(--destructive))" name="Absent" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
