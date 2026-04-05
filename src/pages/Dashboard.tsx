@@ -250,6 +250,9 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Announcements */}
+      <AnnouncementsBanner />
+
       {/* Supervisor Pending Approvals Widget */}
       {isAdminOrSupervisor && supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
         <Card className="border-primary/20 bg-primary/5">
