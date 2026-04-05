@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   CalendarCheck, Building2, Award, Clock, Calendar,
-  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield,
+  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield, Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -33,6 +33,7 @@ const moreItems = [
 ];
 
 const adminItems = [
+  { title: "Announcements", url: "/announcements", icon: Megaphone },
   { title: "Settings", url: "/settings", icon: Shield },
 ];
 
