@@ -22,10 +22,10 @@ import {
 const CHART_COLORS = [
   "hsl(var(--primary))",
   "hsl(var(--secondary))",
-  "hsl(160, 60%, 45%)",
-  "hsl(40, 90%, 50%)",
-  "hsl(0, 70%, 55%)",
-  "hsl(200, 70%, 50%)",
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(var(--destructive))",
+  "hsl(var(--info))",
 ];
 
 export default function Dashboard() {
@@ -211,18 +211,18 @@ export default function Dashboard() {
 
   const summaryCards = [
     { title: "Total Staff", value: staffCount, sub: `${activeStaff} active`, icon: Users, color: "text-primary" },
-    { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-emerald-600" },
-    { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-amber-600" },
-    { title: "Pending Postings", value: pendingPostings, sub: "awaiting approval", icon: ArrowRightLeft, color: "text-secondary" },
-    { title: "Upcoming Holidays", value: upcomingHolidays.length, sub: "this year", icon: Calendar, color: "text-primary" },
+    { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-success" },
+    { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-warning" },
+    { title: "Pending Postings", value: pendingPostings, sub: "awaiting approval", icon: ArrowRightLeft, color: "text-info" },
+    { title: "Upcoming Holidays", value: upcomingHolidays.length, sub: "this year", icon: Calendar, color: "text-secondary" },
     { title: "Absent Today", value: staffCount - todayAttendance, sub: "not checked in", icon: UserX, color: "text-destructive" },
   ];
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "approved": return "bg-emerald-100 text-emerald-800";
-      case "rejected": return "bg-red-100 text-red-800";
-      default: return "bg-amber-100 text-amber-800";
+      case "approved": return "bg-success/15 text-success";
+      case "rejected": return "bg-destructive/15 text-destructive";
+      default: return "bg-warning/15 text-warning";
     }
   };
 
@@ -265,7 +265,7 @@ export default function Dashboard() {
                   onClick={() => navigate("/leave")}
                   className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
                 >
-                  <CalendarOff className="h-6 w-6 text-amber-600" />
+                  <CalendarOff className="h-6 w-6 text-warning" />
                   <div className="text-left">
                     <div className="text-xl font-bold">{supervisorPending.leave}</div>
                     <div className="text-xs text-muted-foreground">Leave requests</div>
@@ -328,11 +328,11 @@ export default function Dashboard() {
                   Missing Data
                 </div>
                 <div className="space-y-0.5 text-xs">
-                  {systemHealth.missingDept > 0 && <p className="text-amber-600">{systemHealth.missingDept} no department</p>}
-                  {systemHealth.missingRank > 0 && <p className="text-amber-600">{systemHealth.missingRank} no rank</p>}
-                  {systemHealth.missingPhone > 0 && <p className="text-amber-600">{systemHealth.missingPhone} no phone</p>}
+                  {systemHealth.missingDept > 0 && <p className="text-warning">{systemHealth.missingDept} no department</p>}
+                  {systemHealth.missingRank > 0 && <p className="text-warning">{systemHealth.missingRank} no rank</p>}
+                  {systemHealth.missingPhone > 0 && <p className="text-warning">{systemHealth.missingPhone} no phone</p>}
                   {systemHealth.missingDept === 0 && systemHealth.missingRank === 0 && systemHealth.missingPhone === 0 && (
-                    <p className="text-emerald-600">All complete ✓</p>
+                    <p className="text-success">All complete ✓</p>
                   )}
                 </div>
               </div>
@@ -346,8 +346,8 @@ export default function Dashboard() {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
             </span>
             Online Now
             <Badge variant="outline" className="ml-auto text-[10px]">{onlineCount} user{onlineCount !== 1 ? "s" : ""}</Badge>
@@ -391,9 +391,9 @@ export default function Dashboard() {
                 <XAxis dataKey="day" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="present" stackId="a" fill="hsl(160, 60%, 45%)" name="Present" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="late" stackId="a" fill="hsl(40, 90%, 50%)" name="Late" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="absent" stackId="a" fill="hsl(0, 70%, 55%)" name="Absent" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="present" stackId="a" fill="hsl(var(--success))" name="Present" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="late" stackId="a" fill="hsl(var(--warning))" name="Late" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="absent" stackId="a" fill="hsl(var(--destructive))" name="Absent" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -458,7 +458,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <CalendarOff className="h-4 w-4 text-amber-600" />
+              <CalendarOff className="h-4 w-4 text-warning" />
               Recent Leave Requests
             </CardTitle>
           </CardHeader>
@@ -520,7 +520,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <UserCheck className="h-4 w-4 text-emerald-600" />
+                <UserCheck className="h-4 w-4 text-success" />
                 Staff Status
               </CardTitle>
             </CardHeader>
