@@ -33,6 +33,7 @@ const moreItems = [
 ];
 
 const adminItems = [
+  { title: "Announcements", url: "/announcements", icon: Megaphone },
   { title: "Settings", url: "/settings", icon: Shield },
 ];
 
