@@ -5,11 +5,13 @@ import {
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   CalendarCheck, Building2, Award, Clock, Calendar,
-  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays,
+  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const primaryTabs = [
   { title: "Home", url: "/", icon: LayoutDashboard },
@@ -28,6 +30,10 @@ const moreItems = [
   { title: "Postings", url: "/postings", icon: ArrowRightLeft },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
+];
+
+const adminItems = [
+  { title: "Settings", url: "/settings", icon: Shield },
 ];
 
 export function MobileBottomNav() {
