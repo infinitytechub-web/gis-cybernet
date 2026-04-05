@@ -94,7 +94,7 @@ export function MobileBottomNav() {
                 {item.title}
               </DropdownMenuItem>
             ))}
-            {isAdmin && (
+            {isAdminOrSupervisor && (
               <>
                 <DropdownMenuSeparator />
                 {adminItems.map((item) => (
