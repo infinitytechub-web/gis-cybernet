@@ -48,7 +48,7 @@ const features: { name: string; access: Record<string, Access> }[] = [
     access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "view", special_duties: "own", deputy: "own", staff: "own" },
   },
   {
-    name: "Postings & Transfers",
+    name: "Postings, Transfers & Reassignment",
     access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "own", deputy: "own", staff: "own" },
   },
   {

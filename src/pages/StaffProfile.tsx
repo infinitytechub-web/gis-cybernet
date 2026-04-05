@@ -258,7 +258,7 @@ export default function StaffProfile() {
         <TabsContent value="postings">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Postings & Transfers</CardTitle>
+              <CardTitle className="text-lg">Postings, Transfers & Reassignment</CardTitle>
             </CardHeader>
             <CardContent>
               {postings.length === 0 ? (

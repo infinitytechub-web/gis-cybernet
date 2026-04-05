@@ -25,7 +25,7 @@ const navItems = [
   { title: "Attendance", url: "/attendance", icon: CalendarCheck },
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff },
   { title: "Holidays", url: "/holidays", icon: Calendar },
-  { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft },
+  { title: "Postings, Transfers & Reassignment", url: "/postings", icon: ArrowRightLeft },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
