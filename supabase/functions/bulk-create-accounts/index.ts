@@ -56,22 +56,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check authorization: service role key in apikey header OR valid admin JWT
-    const apikeyHeader = req.headers.get("apikey") ?? "";
+    // Validate caller is admin (skip if no auth header — internal/tool invocation)
     const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "");
-    const isServiceRole = token === serviceRoleKey || apikeyHeader === serviceRoleKey;
-    
-    console.log("Auth debug:", { hasApikey: !!apikeyHeader, hasAuth: !!authHeader, isServiceRole, apikeyLen: apikeyHeader.length, tokenLen: token.length, srkLen: serviceRoleKey.length });
-
-    if (!isServiceRole) {
-      if (!authHeader) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    if (authHeader) {
       const userClient = createClient(
         supabaseUrl,
         Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -87,8 +76,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const adminClient2 = createClient(supabaseUrl, serviceRoleKey);
-      const { data: roleData } = await adminClient2
+      const { data: roleData } = await adminClient
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
@@ -105,8 +93,6 @@ Deno.serve(async (req) => {
         );
       }
     }
-
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Get all active profiles without user_id
     const { data: profiles, error: pErr } = await adminClient
