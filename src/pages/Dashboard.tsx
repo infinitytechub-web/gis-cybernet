@@ -220,9 +220,9 @@ export default function Dashboard() {
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "approved": return "bg-emerald-100 text-emerald-800";
-      case "rejected": return "bg-red-100 text-red-800";
-      default: return "bg-amber-100 text-amber-800";
+      case "approved": return "bg-success/15 text-success";
+      case "rejected": return "bg-destructive/15 text-destructive";
+      default: return "bg-warning/15 text-warning";
     }
   };
 
