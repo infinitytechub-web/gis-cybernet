@@ -265,7 +265,7 @@ export default function Dashboard() {
                   onClick={() => navigate("/leave")}
                   className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
                 >
-                  <CalendarOff className="h-6 w-6 text-amber-600" />
+                  <CalendarOff className="h-6 w-6 text-warning" />
                   <div className="text-left">
                     <div className="text-xl font-bold">{supervisorPending.leave}</div>
                     <div className="text-xs text-muted-foreground">Leave requests</div>
