@@ -95,11 +95,6 @@ function UserRolesTab() {
     const colors: Record<AppRole, string> = {
       admin: "bg-destructive/10 text-destructive border-destructive/20",
       supervisor: "bg-primary/10 text-primary border-primary/20",
-      deputy_supervisor: "bg-primary/10 text-primary border-primary/20",
-      shift_leader: "bg-accent text-accent-foreground border-border",
-      deputy_shift_leader: "bg-accent text-accent-foreground border-border",
-      deputy: "bg-accent text-accent-foreground border-border",
-      special_duties: "bg-accent text-accent-foreground border-border",
       staff: "bg-muted text-muted-foreground border-border",
     };
     return <Badge variant="outline" className={colors[role]}>{role}</Badge>;
@@ -145,12 +140,7 @@ function UserRolesTab() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="staff">Staff</SelectItem>
-                          <SelectItem value="deputy">Deputy</SelectItem>
-                          <SelectItem value="deputy_shift_leader">Deputy Shift Leader</SelectItem>
-                          <SelectItem value="shift_leader">Shift Leader</SelectItem>
-                          <SelectItem value="deputy_supervisor">Deputy Supervisor</SelectItem>
                           <SelectItem value="supervisor">Supervisor</SelectItem>
-                          <SelectItem value="special_duties">Special Duties</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>

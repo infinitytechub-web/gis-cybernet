@@ -8,9 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, SlidersHorizontal, X } from "lucide-react";
+import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { ProfileWithRelations } from "@/lib/types";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
@@ -42,7 +41,6 @@ export default function StaffDirectory() {
   const [shiftFilter, setShiftFilter] = useState("all");
   const [rankFilter, setRankFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["directory-staff"],
@@ -102,7 +100,7 @@ export default function StaffDirectory() {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const grouped = paged.reduce<Record<string, ProfileWithRelations[]>>((acc, s) => {
-    const dept = (s.departments?.name ?? "Unassigned").toUpperCase();
+    const dept = s.departments?.name ?? "Unassigned";
     if (!acc[dept]) acc[dept] = [];
     acc[dept].push(s);
     return acc;
@@ -114,20 +112,6 @@ export default function StaffDirectory() {
     setter(v);
     setPage(1);
   };
-
-  const activeFilterCount = [deptFilter, shiftFilter, rankFilter].filter(f => f !== "all").length;
-  const hasActiveFilters = activeFilterCount > 0 || search.length > 0;
-
-  const clearAllFilters = () => {
-    setSearch("");
-    setDeptFilter("all");
-    setShiftFilter("all");
-    setRankFilter("all");
-    setPage(1);
-  };
-
-  const getDeptName = (id: string) => (departments.find(d => d.id === id)?.name ?? id).toUpperCase();
-  const getRankName = (id: string) => ranks.find(r => r.id === id)?.abbreviation ?? id;
 
   return (
     <div className="space-y-4">
@@ -145,114 +129,51 @@ export default function StaffDirectory() {
         </Badge>
       </div>
 
-      {/* Search bar - always visible */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, ID, or phone..."
-          className="pl-9 pr-10"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-        />
-        {search && (
-          <button
-            onClick={() => { setSearch(""); setPage(1); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Collapsible filters */}
-      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <div className="flex items-center gap-2">
-          <CollapsibleTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filters
-              {activeFilterCount > 0 && (
-                <Badge className="h-5 w-5 p-0 flex items-center justify-center text-[10px] rounded-full">
-                  {activeFilterCount}
-                </Badge>
-              )}
-            </Button>
-          </CollapsibleTrigger>
-
-          {/* Active filter chips */}
-          <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-            {deptFilter !== "all" && (
-              <Badge variant="secondary" className="gap-1 text-xs cursor-pointer hover:bg-destructive/10" onClick={() => { setDeptFilter("all"); setPage(1); }}>
-                {getDeptName(deptFilter)} <X className="h-3 w-3" />
-              </Badge>
-            )}
-            {shiftFilter !== "all" && (
-              <Badge variant="secondary" className="gap-1 text-xs cursor-pointer hover:bg-destructive/10" onClick={() => { setShiftFilter("all"); setPage(1); }}>
-                Shift {shiftFilter} <X className="h-3 w-3" />
-              </Badge>
-            )}
-            {rankFilter !== "all" && (
-              <Badge variant="secondary" className="gap-1 text-xs cursor-pointer hover:bg-destructive/10" onClick={() => { setRankFilter("all"); setPage(1); }}>
-                {getRankName(rankFilter)} <X className="h-3 w-3" />
-              </Badge>
-            )}
-          </div>
-
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground shrink-0" onClick={clearAllFilters}>
-              Clear all
-            </Button>
-          )}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, ID, or phone..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          />
         </div>
-
-        <CollapsibleContent className="mt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-lg border bg-muted/30">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Department</label>
-              <Select value={deptFilter} onValueChange={handleFilterChange(setDeptFilter)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.name.toUpperCase()}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Shift</label>
-              <Select value={shiftFilter} onValueChange={handleFilterChange(setShiftFilter)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Shift" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Shifts</SelectItem>
-                  <SelectItem value="A">Shift A</SelectItem>
-                  <SelectItem value="B">Shift B</SelectItem>
-                  <SelectItem value="C">Shift C</SelectItem>
-                  <SelectItem value="D">Shift D</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Rank</label>
-              <Select value={rankFilter} onValueChange={handleFilterChange(setRankFilter)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Rank" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Ranks</SelectItem>
-                  {ranks.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>{r.abbreviation}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        <Select value={deptFilter} onValueChange={handleFilterChange(setDeptFilter)}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Departments</SelectItem>
+            {departments.map((d) => (
+              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={shiftFilter} onValueChange={handleFilterChange(setShiftFilter)}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Shift" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Shifts</SelectItem>
+            <SelectItem value="A">Shift A</SelectItem>
+            <SelectItem value="B">Shift B</SelectItem>
+            <SelectItem value="C">Shift C</SelectItem>
+            <SelectItem value="D">Shift D</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={rankFilter} onValueChange={handleFilterChange(setRankFilter)}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="Rank" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ranks</SelectItem>
+            {ranks.map((r) => (
+              <SelectItem key={r.id} value={r.id}>{r.abbreviation}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading directory...</div>
