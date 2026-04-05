@@ -26,6 +26,7 @@ import StaffDirectory from "./pages/StaffDirectory";
 import Settings from "./pages/Settings";
 import ResetPassword from "./pages/ResetPassword";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
+import Announcements from "./pages/Announcements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
