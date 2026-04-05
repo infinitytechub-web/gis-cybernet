@@ -50,15 +50,13 @@ function UserRolesTab() {
   const { data: usersWithRoles = [], isLoading } = useQuery({
     queryKey: ["admin-user-roles"],
     queryFn: async () => {
-      // Get all profiles with user_id (linked accounts)
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, user_id")
+        .select("id, first_name, last_name, staff_id, user_id, account_locked, login_enabled")
         .not("user_id", "is", null)
         .order("last_name");
       if (pErr) throw pErr;
 
-      // Get all user roles
       const { data: roles, error: rErr } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -76,7 +74,6 @@ function UserRolesTab() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
-      // Upsert: delete existing then insert
       await supabase.from("user_roles").delete().eq("user_id", userId);
       const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole });
       if (error) throw error;
@@ -92,6 +89,18 @@ function UserRolesTab() {
     },
   });
 
+  const toggleProfileField = useMutation({
+    mutationFn: async ({ profileId, field, value }: { profileId: string; field: "account_locked" | "login_enabled"; value: boolean }) => {
+      const { error } = await supabase.from("profiles").update({ [field]: value }).eq("id", profileId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      toast.success("Updated successfully");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const roleBadge = (role: AppRole) => {
     const colors: Record<AppRole, string> = {
       admin: "bg-destructive/10 text-destructive border-destructive/20",
@@ -105,20 +114,22 @@ function UserRolesTab() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Manage User Roles</CardTitle>
-        <CardDescription>Assign admin, supervisor, or staff roles to users with linked accounts.</CardDescription>
+        <CardDescription>Assign roles and control account access for users with linked accounts.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading users...</div>
         ) : (
-          <div className="rounded-lg border">
+          <div className="rounded-lg border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Staff ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Current Role</TableHead>
-                  <TableHead className="w-[180px]">Change Role</TableHead>
+                  <TableHead className="w-[160px]">Change Role</TableHead>
+                  <TableHead className="text-center w-[90px]">Login</TableHead>
+                  <TableHead className="text-center w-[90px]">Locked</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -146,11 +157,23 @@ function UserRolesTab() {
                         </SelectContent>
                       </Select>
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={u.login_enabled}
+                        onCheckedChange={(val) => toggleProfileField.mutate({ profileId: u.id, field: "login_enabled", value: val })}
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={u.account_locked}
+                        onCheckedChange={(val) => toggleProfileField.mutate({ profileId: u.id, field: "account_locked", value: val })}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
                 {usersWithRoles.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
