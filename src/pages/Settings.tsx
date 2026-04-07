@@ -116,7 +116,8 @@ function UserRolesTab() {
 
   const toggleProfileField = useMutation({
     mutationFn: async ({ profileId, field, value }: { profileId: string; field: "account_locked" | "login_enabled"; value: boolean }) => {
-      const { error } = await supabase.from("profiles").update({ [field]: value }).eq("id", profileId);
+      const updateData = field === "account_locked" ? { account_locked: value } : { login_enabled: value };
+      const { error } = await supabase.from("profiles").update(updateData).eq("id", profileId);
       if (error) throw error;
     },
     onSuccess: () => {
