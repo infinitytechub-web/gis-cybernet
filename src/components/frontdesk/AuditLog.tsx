@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, Filter, X } from "lucide-react";
+import { Pencil, Trash2, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+const PAGE_SIZE = 20;
 
 export default function AuditLog() {
   const { isAdmin } = useAuth();
@@ -24,6 +26,7 @@ export default function AuditLog() {
   const [filterEntity, setFilterEntity] = useState("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [page, setPage] = useState(0);
 
   // Edit state
   const [editLog, setEditLog] = useState<any>(null);
@@ -60,6 +63,16 @@ export default function AuditLog() {
     setFilterEntity("all");
     setFilterDateFrom("");
     setFilterDateTo("");
+    setPage(0);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedLogs = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when filters change
+  const handleFilterChange = (setter: (v: string) => void) => (v: string) => {
+    setter(v);
+    setPage(0);
   };
 
   const updateMutation = useMutation({
@@ -121,7 +134,7 @@ export default function AuditLog() {
             </div>
             <div className="min-w-[130px]">
               <Label className="text-xs">Action</Label>
-              <Select value={filterAction} onValueChange={setFilterAction}>
+              <Select value={filterAction} onValueChange={handleFilterChange(setFilterAction)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Actions</SelectItem>
@@ -133,7 +146,7 @@ export default function AuditLog() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-xs">Entity Type</Label>
-              <Select value={filterEntity} onValueChange={setFilterEntity}>
+              <Select value={filterEntity} onValueChange={handleFilterChange(setFilterEntity)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
@@ -145,11 +158,11 @@ export default function AuditLog() {
             </div>
             <div>
               <Label className="text-xs">From</Label>
-              <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs w-[140px]" />
+              <Input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" />
             </div>
             <div>
               <Label className="text-xs">To</Label>
-              <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
+              <Input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
             </div>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1 text-xs">
@@ -181,7 +194,7 @@ export default function AuditLog() {
               <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
                 {hasActiveFilters ? "No entries match the current filters" : "No audit entries yet"}
               </TableCell></TableRow>
-            ) : filtered.map((log: any) => (
+            ) : paginatedLogs.map((log: any) => (
               <TableRow key={log.id}>
                 <TableCell className="text-sm">{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
                 <TableCell><Badge className={actionColor(log.action)}>{log.action}</Badge></TableCell>
@@ -218,7 +231,25 @@ export default function AuditLog() {
             ))}
           </TableBody>
         </Table>
-      </div></CardContent></Card>
+      </div>
+      {/* Pagination */}
+      {filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <span className="text-xs text-muted-foreground">
+            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-7 w-7" disabled={page === 0} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs px-2">Page {page + 1} of {totalPages}</span>
+            <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+      </CardContent></Card>
 
       {/* Edit Dialog */}
       <Dialog open={!!editLog} onOpenChange={(o) => !o && setEditLog(null)}>
