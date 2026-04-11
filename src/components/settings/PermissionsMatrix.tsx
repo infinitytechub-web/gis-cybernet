@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye } from "lucide-react";
+import { Check, X, Eye, Pencil } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const roles = ["admin", "supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
@@ -19,14 +23,14 @@ const roleLabels: Record<string, string> = {
 
 type Access = "full" | "dept" | "own" | "view" | "none";
 
-const features: { name: string; access: Record<string, Access> }[] = [
+const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
   {
     name: "Dashboard",
     access: { admin: "full", supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "full", staff: "full" },
   },
   {
     name: "Staff / Employees",
-    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "none", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
   },
   {
     name: "Staff Directory",
@@ -54,7 +58,7 @@ const features: { name: string; access: Record<string, Access> }[] = [
   },
   {
     name: "Duty Roster",
-    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "view", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "view", staff: "own" },
   },
   {
     name: "Announcements",
@@ -78,6 +82,8 @@ const features: { name: string; access: Record<string, Access> }[] = [
   },
 ];
 
+const accessOptions: Access[] = ["full", "dept", "own", "view", "none"];
+
 const accessBadge = (level: Access) => {
   switch (level) {
     case "full":
@@ -94,11 +100,52 @@ const accessBadge = (level: Access) => {
 };
 
 export function PermissionsMatrix() {
+  const [features, setFeatures] = useState(defaultFeatures);
+  const [editing, setEditing] = useState(false);
+
+  const handleAccessChange = (featureIdx: number, role: string, newAccess: Access) => {
+    setFeatures((prev) => {
+      const updated = [...prev];
+      updated[featureIdx] = {
+        ...updated[featureIdx],
+        access: { ...updated[featureIdx].access, [role]: newAccess },
+      };
+      return updated;
+    });
+  };
+
+  const handleSave = () => {
+    setEditing(false);
+    toast.success("Permissions matrix updated for this session");
+  };
+
+  const handleReset = () => {
+    setFeatures(defaultFeatures);
+    setEditing(false);
+    toast.info("Permissions matrix reset to defaults");
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">Permissions Matrix</CardTitle>
-        <CardDescription>Reference chart showing access levels for each role across system features.</CardDescription>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">Permissions Matrix</CardTitle>
+            <CardDescription>Reference chart showing access levels for each role across system features.</CardDescription>
+          </div>
+          <div className="flex gap-2">
+            {editing ? (
+              <>
+                <Button size="sm" variant="outline" onClick={handleReset}>Reset</Button>
+                <Button size="sm" onClick={handleSave}>Save Changes</Button>
+              </>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1">
+                <Pencil className="h-3.5 w-3.5" /> Edit Access
+              </Button>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="rounded-lg border overflow-x-auto">
@@ -112,11 +159,26 @@ export function PermissionsMatrix() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {features.map((f) => (
+              {features.map((f, fi) => (
                 <TableRow key={f.name}>
                   <TableCell className="sticky left-0 bg-card z-10 font-medium text-xs">{f.name}</TableCell>
                   {roles.map((r) => (
-                    <TableCell key={r} className="text-center">{accessBadge(f.access[r])}</TableCell>
+                    <TableCell key={r} className="text-center">
+                      {editing ? (
+                        <Select value={f.access[r]} onValueChange={(v) => handleAccessChange(fi, r, v as Access)}>
+                          <SelectTrigger className="h-7 text-[10px] w-[70px] mx-auto">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accessOptions.map((opt) => (
+                              <SelectItem key={opt} value={opt} className="text-xs">{opt.charAt(0).toUpperCase() + opt.slice(1)}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        accessBadge(f.access[r])
+                      )}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
 import { AppSettings } from "@/components/settings/AppSettings";
@@ -76,6 +77,7 @@ export default function Settings() {
 function UserRolesTab() {
   const queryClient = useQueryClient();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: usersWithRoles = [], isLoading } = useQuery({
     queryKey: ["admin-user-roles"],
@@ -132,6 +134,17 @@ function UserRolesTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const filteredUsers = useMemo(() => {
+    if (!search.trim()) return usersWithRoles;
+    const q = search.toLowerCase();
+    return usersWithRoles.filter((u) =>
+      u.staff_id?.toLowerCase().includes(q) ||
+      u.first_name?.toLowerCase().includes(q) ||
+      u.last_name?.toLowerCase().includes(q) ||
+      roleLabels[u.role]?.toLowerCase().includes(q)
+    );
+  }, [usersWithRoles, search]);
+
   return (
     <Card>
       <CardHeader>
@@ -139,6 +152,15 @@ function UserRolesTab() {
         <CardDescription>Assign roles and control account access for users with linked accounts.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="relative mb-4 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, staff ID, or role..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading users...</div>
         ) : (
@@ -155,7 +177,7 @@ function UserRolesTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {usersWithRoles.map((u) => (
+                {filteredUsers.map((u) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-mono text-xs">{u.staff_id}</TableCell>
                     <TableCell className="font-medium">{u.last_name}, {u.first_name}</TableCell>
@@ -186,20 +208,33 @@ function UserRolesTab() {
                     <TableCell className="text-center">
                       <Switch
                         checked={u.login_enabled}
-                        onCheckedChange={(val) => toggleProfileField.mutate({ profileId: u.id, field: "login_enabled", value: val })}
+                        onCheckedChange={(val) => {
+                          toggleProfileField.mutate({ profileId: u.id, field: "login_enabled", value: val });
+                          if (val && u.account_locked) {
+                            toggleProfileField.mutate({ profileId: u.id, field: "account_locked", value: false });
+                          }
+                        }}
                       />
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch
                         checked={u.account_locked}
-                        onCheckedChange={(val) => toggleProfileField.mutate({ profileId: u.id, field: "account_locked", value: val })}
+                        onCheckedChange={(val) => {
+                          toggleProfileField.mutate({ profileId: u.id, field: "account_locked", value: val });
+                          if (val && u.login_enabled) {
+                            toggleProfileField.mutate({ profileId: u.id, field: "login_enabled", value: false });
+                          }
+                        }}
+                        className={u.account_locked ? "data-[state=checked]:bg-destructive" : ""}
                       />
                     </TableCell>
                   </TableRow>
                 ))}
-                {usersWithRoles.length === 0 && (
+                {filteredUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No linked user accounts found.</TableCell>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      {search ? "No users match your search." : "No linked user accounts found."}
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
