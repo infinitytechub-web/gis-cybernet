@@ -47,12 +47,13 @@ export default function AuditLog() {
 
   const filtered = logs.filter((log: any) => {
     if (filterAction !== "all" && log.action !== filterAction) return false;
+    if (filterEntity !== "all" && log.entity_type !== filterEntity) return false;
     if (filterDateFrom && new Date(log.created_at) < new Date(filterDateFrom + "T00:00:00")) return false;
     if (filterDateTo && new Date(log.created_at) > new Date(filterDateTo + "T23:59:59")) return false;
     return true;
   });
 
-  const hasActiveFilters = filterAction !== "all" || filterDateFrom || filterDateTo;
+  const hasActiveFilters = filterAction !== "all" || filterEntity !== "all" || filterDateFrom || filterDateTo;
 
   const clearFilters = () => {
     setFilterAction("all");
