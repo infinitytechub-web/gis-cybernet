@@ -12,7 +12,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 flex flex-col">
           <header className="h-14 flex items-center border-b bg-card px-4 gap-4">
             <SidebarTrigger className="text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-success flex-1">Ghana Immigration Service — Amasaman Sector Command — Cybernet</h2>
+            <h2 className="text-sm font-semibold flex-1" style={{ color: "hsl(152, 70%, 30%)" }}>Ghana Immigration Service, Amasaman Sector Command: Cybernet</h2>
             <ThemeToggle />
             <NotificationBell />
           </header>
