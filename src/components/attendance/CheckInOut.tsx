@@ -121,12 +121,14 @@ export function CheckInOut() {
         .update({ check_out: now, notes: notes || todayRecord?.notes || null })
         .eq("id", todayRecord!.id);
       if (error) throw error;
+      return now;
     },
-    onSuccess: () => {
+    onSuccess: (timestamp) => {
       queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       setNotes("");
       toast.success("Checked out successfully");
+      syncToPlatform("check_out", timestamp);
     },
     onError: (e: any) => toast.error(e.message),
   });
