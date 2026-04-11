@@ -74,6 +74,30 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       // Silent - don't block UI for logging failures
     }
   };
+  // Filter activity log by event type
+  const filteredLog = filterType === "all"
+    ? activityLog
+    : activityLog.filter((e: any) => e.event_type === filterType);
+
+  // CSV export
+  const exportActivityCSV = () => {
+    const rows = [
+      ["Staff Name", "Staff ID", "Event", "Date & Time"],
+      ...filteredLog.map((e: any) => [
+        e.staff_name,
+        e.staff_id,
+        e.event_type === "online" ? "Came Online" : "Went Offline",
+        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c: string) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `night_guard_activity_${filterDate ? format(filterDate, "yyyy-MM-dd") : "all"}.csv`;
+    a.click();
+    toast.success("CSV downloaded");
+  };
 
   // Track previous online guard staffIds for change detection
   const prevOnlineRef = useRef<Set<string>>(new Set());
