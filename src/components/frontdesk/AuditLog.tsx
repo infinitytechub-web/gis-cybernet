@@ -134,7 +134,7 @@ export default function AuditLog() {
             </div>
             <div className="min-w-[130px]">
               <Label className="text-xs">Action</Label>
-              <Select value={filterAction} onValueChange={setFilterAction}>
+              <Select value={filterAction} onValueChange={handleFilterChange(setFilterAction)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Actions</SelectItem>
@@ -146,7 +146,7 @@ export default function AuditLog() {
             </div>
             <div className="min-w-[150px]">
               <Label className="text-xs">Entity Type</Label>
-              <Select value={filterEntity} onValueChange={setFilterEntity}>
+              <Select value={filterEntity} onValueChange={handleFilterChange(setFilterEntity)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
@@ -158,11 +158,11 @@ export default function AuditLog() {
             </div>
             <div>
               <Label className="text-xs">From</Label>
-              <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs w-[140px]" />
+              <Input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" />
             </div>
             <div>
               <Label className="text-xs">To</Label>
-              <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
+              <Input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
             </div>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1 text-xs">
