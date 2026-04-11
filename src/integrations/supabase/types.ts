@@ -445,6 +445,47 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_sync_history: {
+        Row: {
+          action: string
+          created_at: string
+          error_message: string | null
+          id: string
+          platform: string
+          profile_id: string
+          sync_status: string
+          synced_at: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          platform: string
+          profile_id: string
+          sync_status?: string
+          synced_at?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          platform?: string
+          profile_id?: string
+          sync_status?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_sync_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       postings_transfers: {
         Row: {
           approved_by: string | null
