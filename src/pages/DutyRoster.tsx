@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Download,
+  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Download, Search,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -47,6 +47,7 @@ export default function DutyRoster() {
   const [assignShiftId, setAssignShiftId] = useState("");
   const [assignProfileId, setAssignProfileId] = useState("");
   const [assignEndDate, setAssignEndDate] = useState("");
+  const [staffSearch, setStaffSearch] = useState("");
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -440,8 +441,10 @@ export default function DutyRoster() {
                       setAssignShiftId("");
                       setAssignProfileId("");
                       setAssignEndDate("");
+                      setStaffSearch("");
                     } else {
                       setAssignDay(null);
+                      setStaffSearch("");
                     }
                   }}
                 >
@@ -498,18 +501,56 @@ export default function DutyRoster() {
                         </div>
                         <div>
                           <Label className="text-xs">Staff Member</Label>
-                          <Select value={assignProfileId} onValueChange={setAssignProfileId}>
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Select staff" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {profiles.map((p: any) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  {p.staff_id} — {p.last_name}, {p.first_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="relative mt-1">
+                            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              placeholder="Search staff..."
+                              value={staffSearch}
+                              onChange={(e) => setStaffSearch(e.target.value)}
+                              className="h-8 text-xs pl-7"
+                            />
+                          </div>
+                          <ScrollArea className="max-h-[120px] mt-1 rounded-md border">
+                            <div className="p-1 space-y-0.5">
+                              {profiles
+                                .filter((p: any) => {
+                                  if (!staffSearch.trim()) return true;
+                                  const q = staffSearch.toLowerCase();
+                                  return (
+                                    p.staff_id?.toLowerCase().includes(q) ||
+                                    p.first_name?.toLowerCase().includes(q) ||
+                                    p.last_name?.toLowerCase().includes(q) ||
+                                    `${p.last_name}, ${p.first_name}`.toLowerCase().includes(q)
+                                  );
+                                })
+                                .map((p: any) => (
+                                  <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => setAssignProfileId(p.id)}
+                                    className={cn(
+                                      "w-full text-left text-xs rounded px-2 py-1 transition-colors",
+                                      assignProfileId === p.id
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-accent"
+                                    )}
+                                  >
+                                    {p.staff_id} — {p.last_name}, {p.first_name}
+                                  </button>
+                                ))}
+                              {profiles.filter((p: any) => {
+                                if (!staffSearch.trim()) return true;
+                                const q = staffSearch.toLowerCase();
+                                return (
+                                  p.staff_id?.toLowerCase().includes(q) ||
+                                  p.first_name?.toLowerCase().includes(q) ||
+                                  p.last_name?.toLowerCase().includes(q)
+                                );
+                              }).length === 0 && (
+                                <p className="text-xs text-muted-foreground text-center py-2">No staff found</p>
+                              )}
+                            </div>
+                          </ScrollArea>
                         </div>
                         <div>
                           <Label className="text-xs">End Date (optional, for multi-day)</Label>
