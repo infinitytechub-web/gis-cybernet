@@ -334,6 +334,41 @@ export type Database = {
           },
         ]
       }
+      night_guard_activity_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          profile_id: string
+          staff_id: string
+          staff_name: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          profile_id: string
+          staff_id: string
+          staff_name: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          profile_id?: string
+          staff_id?: string
+          staff_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "night_guard_activity_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
