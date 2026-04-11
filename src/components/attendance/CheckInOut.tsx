@@ -101,6 +101,8 @@ export function CheckInOut() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Shift Platform Integration */}
+        {profile && <ShiftPlatformConnect profileId={profile.id} />}
         {/* Status display */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="text-sm text-muted-foreground">
