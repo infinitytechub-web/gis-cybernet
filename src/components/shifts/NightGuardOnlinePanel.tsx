@@ -23,6 +23,10 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
   const { onlineUsers } = useOnlineUsers();
   const queryClient = useQueryClient();
 
+  // Activity log filters
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [filterType, setFilterType] = useState<string>("all");
+
   const nightGuardIds = new Set(nightGuardStaff.map((s) => s.staff_id));
 
   const onlineGuards = onlineUsers.filter((u) => nightGuardIds.has(u.staffId));
@@ -30,18 +34,25 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
     (s) => !onlineUsers.some((u) => u.staffId === s.staff_id)
   );
 
-  // Fetch recent activity history
+  // Fetch activity history with date filter
   const { data: activityLog = [] } = useQuery({
-    queryKey: ["night-guard-activity"],
+    queryKey: ["night-guard-activity", filterDate?.toISOString()],
     queryFn: async () => {
       const profileIds = nightGuardStaff.map((s) => s.id);
       if (profileIds.length === 0) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("night_guard_activity_log" as any)
         .select("*")
         .in("profile_id", profileIds)
-        .order("created_at", { ascending: false })
-        .limit(20);
+        .order("created_at", { ascending: false });
+
+      if (filterDate) {
+        query = query
+          .gte("created_at", startOfDay(filterDate).toISOString())
+          .lte("created_at", endOfDay(filterDate).toISOString());
+      } else {
+        query = query.limit(50);
+      }
       if (error) throw error;
       return (data as any[]) ?? [];
     },
