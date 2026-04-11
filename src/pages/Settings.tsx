@@ -8,10 +8,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2 } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound } from "lucide-react";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
 import { AppSettings } from "@/components/settings/AppSettings";
+import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -25,6 +26,7 @@ const roleLabels: Record<AppRole, string> = {
   special_duties: "Special Duties",
   deputy: "Deputy",
   staff: "Staff",
+  front_desk: "Front Desk",
 };
 
 const roleColors: Record<AppRole, string> = {
@@ -36,6 +38,7 @@ const roleColors: Record<AppRole, string> = {
   special_duties: "bg-chart-4/15 text-chart-4 border-chart-4/20",
   deputy: "bg-chart-5/15 text-chart-5 border-chart-5/20",
   staff: "bg-muted text-muted-foreground border-border",
+  front_desk: "bg-orange-100 text-orange-800 border-orange-200",
 };
 
 export default function Settings() {
@@ -55,6 +58,7 @@ export default function Settings() {
           <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4" /> Accounts</TabsTrigger>
           <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4" /> App Settings</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4" /> System Info</TabsTrigger>
+          <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4" /> 2FA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
@@ -62,6 +66,7 @@ export default function Settings() {
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
+        <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
       </Tabs>
     </div>
   );

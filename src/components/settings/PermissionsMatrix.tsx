@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Eye } from "lucide-react";
 
-const roles = ["admin", "supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "staff"] as const;
+const roles = ["admin", "supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
@@ -13,6 +13,7 @@ const roleLabels: Record<string, string> = {
   deputy_shift_leader: "Dep. Shift Leader",
   special_duties: "Special Duties",
   deputy: "Deputy",
+  front_desk: "Front Desk",
   staff: "Staff",
 };
 
@@ -21,55 +22,59 @@ type Access = "full" | "dept" | "own" | "view" | "none";
 const features: { name: string; access: Record<string, Access> }[] = [
   {
     name: "Dashboard",
-    access: { admin: "full", supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", staff: "full" },
+    access: { admin: "full", supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "full", staff: "full" },
   },
   {
     name: "Staff / Employees",
-    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "none", staff: "own" },
   },
   {
     name: "Staff Directory",
-    access: { admin: "full", supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", staff: "full" },
+    access: { admin: "full", supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "view", staff: "full" },
   },
   {
     name: "Departments",
-    access: { admin: "full", supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", staff: "view" },
+    access: { admin: "full", supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
   },
   {
     name: "Roles / Ranks",
-    access: { admin: "full", supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", staff: "view" },
+    access: { admin: "full", supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
   },
   {
     name: "Attendance",
-    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "own", deputy: "own", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "own", deputy: "own", front_desk: "own", staff: "own" },
   },
   {
     name: "Leave Requests",
-    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "view", special_duties: "own", deputy: "own", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "view", special_duties: "own", deputy: "own", front_desk: "own", staff: "own" },
   },
   {
-    name: "Postings, Transfers & Reassignment",
-    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "own", deputy: "own", staff: "own" },
+    name: "Postings & Transfers",
+    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "own", deputy: "own", front_desk: "none", staff: "own" },
   },
   {
     name: "Duty Roster",
-    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "view", staff: "own" },
   },
   {
     name: "Announcements",
-    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", staff: "view" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "view", staff: "view" },
   },
   {
     name: "Compliance",
-    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", staff: "own" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "own" },
   },
   {
     name: "Reports",
-    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "none", deputy: "none", staff: "none" },
+    access: { admin: "full", supervisor: "dept", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
+  },
+  {
+    name: "Front Desk",
+    access: { admin: "full", supervisor: "view", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "full", staff: "none" },
   },
   {
     name: "Settings / User Roles",
-    access: { admin: "full", supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", staff: "none" },
+    access: { admin: "full", supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
   },
 ];
 

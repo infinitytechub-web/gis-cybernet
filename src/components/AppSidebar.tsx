@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound, Contact, CalendarDays, Megaphone
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound, Contact, CalendarDays, Megaphone, Stamp
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -28,6 +28,7 @@ const navItems = [
   { title: "Postings, Transfers & Reassignment", url: "/postings", icon: ArrowRightLeft },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
+  { title: "Front Desk", url: "/front-desk", icon: Stamp },
 ];
 
 const adminItems = [
