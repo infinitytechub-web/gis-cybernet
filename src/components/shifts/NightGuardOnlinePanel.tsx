@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shield, Wifi, WifiOff } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -15,11 +17,51 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
 
   const nightGuardIds = new Set(nightGuardStaff.map((s) => s.staff_id));
 
-  // Match online users to night guard staff by staffId
   const onlineGuards = onlineUsers.filter((u) => nightGuardIds.has(u.staffId));
   const offlineGuards = nightGuardStaff.filter(
     (s) => !onlineUsers.some((u) => u.staffId === s.staff_id)
   );
+
+  // Track previous online guard staffIds for change detection
+  const prevOnlineRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (nightGuardStaff.length === 0) return;
+
+    const currentIds = new Set(onlineGuards.map((u) => u.staffId));
+    const prevIds = prevOnlineRef.current;
+
+    // Skip first render to avoid false notifications on mount
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      prevOnlineRef.current = currentIds;
+      return;
+    }
+
+    // Detect newly online guards
+    for (const guard of onlineGuards) {
+      if (!prevIds.has(guard.staffId)) {
+        toast.success(`🛡️ ${guard.firstName} ${guard.lastName} is now online`, {
+          description: "Night Guard officer came on duty",
+        });
+      }
+    }
+
+    // Detect newly offline guards
+    for (const staffId of prevIds) {
+      if (!currentIds.has(staffId)) {
+        const staff = nightGuardStaff.find((s) => s.staff_id === staffId);
+        if (staff) {
+          toast.warning(`${staff.first_name} ${staff.last_name} went offline`, {
+            description: "Night Guard officer left duty",
+          });
+        }
+      }
+    }
+
+    prevOnlineRef.current = currentIds;
+  }, [onlineGuards, nightGuardStaff]);
 
   return (
     <Card className="border-amber-300/50 dark:border-amber-700/50">
