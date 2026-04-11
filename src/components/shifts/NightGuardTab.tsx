@@ -229,5 +229,6 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
