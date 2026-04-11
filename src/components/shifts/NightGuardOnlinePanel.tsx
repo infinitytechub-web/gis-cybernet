@@ -200,21 +200,63 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       </Card>
 
       {/* Activity history log */}
-      {activityLog.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <History className="h-4 w-4 text-primary" />
-              Night Guard Activity Log
-              <Badge variant="outline" className="ml-auto text-[10px]">
-                Recent {activityLog.length} events
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" />
+            Night Guard Activity Log
+            <Badge variant="outline" className="ml-auto text-[10px]">
+              {filteredLog.length} events
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Filters row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs h-8", !filterDate && "text-muted-foreground")}>
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {filterDate ? format(filterDate, "dd MMM yyyy") : "All dates"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filterDate}
+                  onSelect={setFilterDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {filterDate && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => setFilterDate(undefined)}>
+                Clear date
+              </Button>
+            )}
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All events</SelectItem>
+                <SelectItem value="online">Online only</SelectItem>
+                <SelectItem value="offline">Offline only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1 ml-auto" onClick={exportActivityCSV} disabled={filteredLog.length === 0}>
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </Button>
+          </div>
+
+          {/* Log entries */}
+          {filteredLog.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No activity events found.</p>
+          ) : (
             <ScrollArea className="max-h-[200px]">
               <div className="space-y-1">
-                {activityLog.map((entry: any) => (
+                {filteredLog.map((entry: any) => (
                   <div
                     key={entry.id}
                     className="flex items-center gap-3 rounded-md px-3 py-1.5 text-sm hover:bg-accent/50"
@@ -238,9 +280,9 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
                 ))}
               </div>
             </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
