@@ -552,10 +552,10 @@ export default function DutyRoster() {
                                         className={cn(
                                           "w-full text-left text-xs rounded px-2 py-1 transition-colors",
                                           assignProfileId === p.id
-                                            ? "bg-primary text-primary-foreground"
+                                            ? "bg-primary text-primary-foreground font-semibold"
                                             : highlightIndex === idx
-                                            ? "bg-accent"
-                                            : "hover:bg-accent"
+                                            ? "bg-accent ring-2 ring-primary/40 font-medium"
+                                            : "hover:bg-accent/50"
                                         )}
                                       >
                                         {p.staff_id} — {p.last_name}, {p.first_name}
