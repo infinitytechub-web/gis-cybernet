@@ -53,6 +53,7 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       } else {
         query = query.limit(50);
       }
+      const { data, error } = await query;
       if (error) throw error;
       return (data as any[]) ?? [];
     },
