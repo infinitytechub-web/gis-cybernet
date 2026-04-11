@@ -713,6 +713,50 @@ export type Database = {
           },
         ]
       }
+      shift_platform_connections: {
+        Row: {
+          created_at: string
+          id: string
+          is_connected: boolean
+          last_sync_at: string | null
+          offline_mode: boolean
+          platform: string
+          platform_username: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          last_sync_at?: string | null
+          offline_mode?: boolean
+          platform: string
+          platform_username?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          last_sync_at?: string | null
+          offline_mode?: boolean
+          platform?: string
+          platform_username?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_platform_connections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shifts: {
         Row: {
           created_at: string
