@@ -50,13 +50,28 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
   const manualAssignMutation = useMutation({
     mutationFn: async () => {
       if (!manualProfileId || !manualShiftId || !manualDate) throw new Error("Fill all required fields");
+
+      // Check for existing assignment on the same date
+      const { data: existing } = await supabase
+        .from("shift_assignments")
+        .select("id")
+        .eq("profile_id", manualProfileId)
+        .eq("shift_id", manualShiftId)
+        .eq("start_date", manualDate)
+        .maybeSingle();
+
+      if (existing) throw new Error("This guard is already assigned to this shift on the selected date");
+
       const { error } = await supabase.from("shift_assignments").insert({
         profile_id: manualProfileId,
         shift_id: manualShiftId,
         start_date: manualDate,
         end_date: manualEndDate || null,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") throw new Error("Duplicate assignment: this guard is already assigned to this shift on the selected date");
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
