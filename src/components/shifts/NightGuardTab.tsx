@@ -1,3 +1,4 @@
+import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
 import { ManualAssignDialog } from "./ManualAssignDialog";
 import { BulkAssignDialog } from "./BulkAssignDialog";
