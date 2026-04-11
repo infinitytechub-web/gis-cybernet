@@ -223,6 +223,36 @@ export type Database = {
           },
         ]
       }
+      front_desk_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string
+          entity_type: string
+          id: string
+          performed_by: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          performed_by: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          performed_by?: string
+        }
+        Relationships: []
+      }
       holidays: {
         Row: {
           created_at: string
@@ -334,6 +364,84 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          purpose: string
+          used: boolean
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          purpose?: string
+          used?: boolean
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          used?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      passport_applications: {
+        Row: {
+          address: string | null
+          applicant_name: string
+          application_type: string
+          created_at: string
+          date_of_birth: string
+          gender: string | null
+          id: string
+          nationality: string
+          notes: string | null
+          phone: string | null
+          processed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          applicant_name: string
+          application_type?: string
+          created_at?: string
+          date_of_birth: string
+          gender?: string | null
+          id?: string
+          nationality: string
+          notes?: string | null
+          phone?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          applicant_name?: string
+          application_type?: string
+          created_at?: string
+          date_of_birth?: string
+          gender?: string | null
+          id?: string
+          nationality?: string
+          notes?: string | null
+          phone?: string | null
+          processed_by?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -507,6 +615,62 @@ export type Database = {
         }
         Relationships: []
       }
+      report_uploads: {
+        Row: {
+          category: string
+          created_at: string
+          department_id: string | null
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          report_date: string
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          report_date?: string
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          report_date?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_uploads_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_assignments: {
         Row: {
           created_at: string
@@ -646,6 +810,107 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visa_applications: {
+        Row: {
+          applicant_name: string
+          created_at: string
+          entry_date: string | null
+          exit_date: string | null
+          id: string
+          nationality: string
+          notes: string | null
+          passport_number: string
+          processed_by: string | null
+          purpose: string | null
+          status: string
+          updated_at: string
+          visa_type: string
+        }
+        Insert: {
+          applicant_name: string
+          created_at?: string
+          entry_date?: string | null
+          exit_date?: string | null
+          id?: string
+          nationality: string
+          notes?: string | null
+          passport_number: string
+          processed_by?: string | null
+          purpose?: string | null
+          status?: string
+          updated_at?: string
+          visa_type?: string
+        }
+        Update: {
+          applicant_name?: string
+          created_at?: string
+          entry_date?: string | null
+          exit_date?: string | null
+          id?: string
+          nationality?: string
+          notes?: string | null
+          passport_number?: string
+          processed_by?: string | null
+          purpose?: string | null
+          status?: string
+          updated_at?: string
+          visa_type?: string
+        }
+        Relationships: []
+      }
+      visa_extensions: {
+        Row: {
+          applicant_name: string
+          created_at: string
+          current_visa_expiry: string
+          id: string
+          notes: string | null
+          passport_number: string
+          processed_by: string | null
+          reason: string | null
+          requested_extension_date: string
+          status: string
+          updated_at: string
+          visa_application_id: string | null
+        }
+        Insert: {
+          applicant_name: string
+          created_at?: string
+          current_visa_expiry: string
+          id?: string
+          notes?: string | null
+          passport_number: string
+          processed_by?: string | null
+          reason?: string | null
+          requested_extension_date: string
+          status?: string
+          updated_at?: string
+          visa_application_id?: string | null
+        }
+        Update: {
+          applicant_name?: string
+          created_at?: string
+          current_visa_expiry?: string
+          id?: string
+          notes?: string | null
+          passport_number?: string
+          processed_by?: string | null
+          reason?: string | null
+          requested_extension_date?: string
+          status?: string
+          updated_at?: string
+          visa_application_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visa_extensions_visa_application_id_fkey"
+            columns: ["visa_application_id"]
+            isOneToOne: false
+            referencedRelation: "visa_applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
