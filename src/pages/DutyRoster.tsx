@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -447,7 +448,8 @@ export default function DutyRoster() {
                   <PopoverTrigger asChild>
                     {cellContent}
                   </PopoverTrigger>
-                  <PopoverContent className="w-72 p-3" side="right" align="start">
+                  <PopoverContent className="w-72 p-0" side="right" align="start">
+                    <ScrollArea className="max-h-[360px] overflow-y-auto p-3">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-sm">{format(day, "EEE, dd MMM yyyy")}</h4>
@@ -524,6 +526,7 @@ export default function DutyRoster() {
                         </Button>
                       </div>
                     </div>
+                    </ScrollArea>
                   </PopoverContent>
                 </Popover>
               );
