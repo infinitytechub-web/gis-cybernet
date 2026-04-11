@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
 import { ManualAssignDialog } from "./ManualAssignDialog";
 import { BulkAssignDialog } from "./BulkAssignDialog";
@@ -34,44 +33,6 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
     }
     return assigned;
   };
-
-  const manualAssignMutation = useMutation({
-    mutationFn: async () => {
-      if (!manualProfileId || !manualShiftId || !manualDate) throw new Error("Fill all required fields");
-
-      // Check for existing assignment on the same date
-      const { data: existing } = await supabase
-        .from("shift_assignments")
-        .select("id")
-        .eq("profile_id", manualProfileId)
-        .eq("shift_id", manualShiftId)
-        .eq("start_date", manualDate)
-        .maybeSingle();
-
-      if (existing) throw new Error("This guard is already assigned to this shift on the selected date");
-
-      const { error } = await supabase.from("shift_assignments").insert({
-        profile_id: manualProfileId,
-        shift_id: manualShiftId,
-        start_date: manualDate,
-        end_date: manualEndDate || null,
-      });
-      if (error) {
-        if (error.code === "23505") throw new Error("Duplicate assignment: this guard is already assigned to this shift on the selected date");
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
-      setManualOpen(false);
-      setManualProfileId("");
-      setManualShiftId("");
-      setManualDate("");
-      setManualEndDate("");
-      toast.success("Night guard manually assigned");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   // Export helpers
   const buildRows = () => {
@@ -113,125 +74,80 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
     <div className="space-y-4">
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} />
       <Card className="border-primary/20">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-secondary text-base">
-              <Shield className="h-5 w-5 text-primary" />
-              Night Guard Duty Rotation — Week of {format(weekStart, "dd MMM yyyy")}
-            </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              {nightGuardStaff.length} staff in Night Guard Duty dept — auto-rotated nightly
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {isAdmin && (
-              <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-                <DialogTrigger asChild>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-secondary text-base">
+                <Shield className="h-5 w-5 text-primary" />
+                Night Guard Duty Rotation — Week of {format(weekStart, "dd MMM yyyy")}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {nightGuardStaff.length} staff in Night Guard Duty dept — auto-rotated nightly
+              </p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {isAdmin && (
+                <>
+                  <ManualAssignDialog nightGuardStaff={nightGuardStaff} shifts={shifts} />
+                  <BulkAssignDialog nightGuardStaff={nightGuardStaff} shifts={shifts} />
+                </>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1">
-                    <Plus className="h-4 w-4" /> Manual Assign
+                    <Download className="h-4 w-4" /> Export
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Manual Night Guard Assignment</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Guard</Label>
-                      <Select value={manualProfileId} onValueChange={setManualProfileId}>
-                        <SelectTrigger><SelectValue placeholder="Select guard" /></SelectTrigger>
-                        <SelectContent>
-                          {nightGuardStaff.map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.staff_id} — {p.last_name}, {p.first_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Shift</Label>
-                      <Select value={manualShiftId} onValueChange={setManualShiftId}>
-                        <SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger>
-                        <SelectContent>
-                          {shifts.map((s: any) => (
-                            <SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>Start Date</Label>
-                        <Input type="date" value={manualDate} onChange={e => setManualDate(e.target.value)} />
-                      </div>
-                      <div>
-                        <Label>End Date (optional)</Label>
-                        <Input type="date" value={manualEndDate} onChange={e => setManualEndDate(e.target.value)} min={manualDate} />
-                      </div>
-                    </div>
-                    <Button onClick={() => manualAssignMutation.mutate()} disabled={manualAssignMutation.isPending} className="w-full">
-                      {manualAssignMutation.isPending ? "Assigning..." : "Assign Guard"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Download className="h-4 w-4" /> Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between mb-3">
-          <Button variant="outline" size="sm" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-3">
+            <Button variant="outline" size="sm" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
 
-        {nightGuardStaff.length === 0 ? (
-          <p className="text-center py-4 text-muted-foreground text-sm">
-            No staff assigned to Night Guard Duty department
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
-            {weekDays.map((d) => {
-              const rotation = getNightGuardRotation(d);
-              const isToday = isSameDay(d, new Date());
-              return (
-                <Card key={d.toISOString()} className={isToday ? "border-primary" : ""}>
-                  <CardContent className="p-3">
-                    <div className={`text-xs font-semibold mb-2 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                      {format(d, "EEE dd")}
-                    </div>
-                    <div className="space-y-1">
-                      {rotation.map((p: any) => (
-                        <div key={p.id} className="flex items-center gap-1">
-                          <Users className="h-3 w-3 text-primary" />
-                          <span className="text-[11px] truncate">{p.last_name}, {p.first_name?.charAt(0)}.</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          {nightGuardStaff.length === 0 ? (
+            <p className="text-center py-4 text-muted-foreground text-sm">
+              No staff assigned to Night Guard Duty department
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+              {weekDays.map((d) => {
+                const rotation = getNightGuardRotation(d);
+                const isToday = isSameDay(d, new Date());
+                return (
+                  <Card key={d.toISOString()} className={isToday ? "border-primary" : ""}>
+                    <CardContent className="p-3">
+                      <div className={`text-xs font-semibold mb-2 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                        {format(d, "EEE dd")}
+                      </div>
+                      <div className="space-y-1">
+                        {rotation.map((p: any) => (
+                          <div key={p.id} className="flex items-center gap-1">
+                            <Users className="h-3 w-3 text-primary" />
+                            <span className="text-[11px] truncate">{p.last_name}, {p.first_name?.charAt(0)}.</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
