@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
 import { AppSettings } from "@/components/settings/AppSettings";
@@ -76,6 +77,7 @@ export default function Settings() {
 function UserRolesTab() {
   const queryClient = useQueryClient();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: usersWithRoles = [], isLoading } = useQuery({
     queryKey: ["admin-user-roles"],
