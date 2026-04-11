@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -173,6 +174,14 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
     toast.success("CSV downloaded");
   };
 
+  const exportExcel = () => {
+    const ws = XLSX.utils.aoa_to_sheet([["Guard", "Staff ID", "Shift", "Date"], ...buildExportRows()]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Assignments");
+    XLSX.writeFile(wb, `night_guard_assignments${filterDate ? `_${filterDate}` : ""}.xlsx`);
+    toast.success("Excel downloaded");
+  };
+
   if (nightGuardStaff.length === 0) return null;
 
   return (
@@ -203,6 +212,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
                 <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
