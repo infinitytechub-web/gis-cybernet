@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { UsersRound, Loader2 } from "lucide-react";
+import { UsersRound, Loader2, Search } from "lucide-react";
 import { addDays, format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -25,6 +25,19 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedGuards, setSelectedGuards] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredGuards = useMemo(() => {
+    if (!searchQuery.trim()) return nightGuardStaff;
+    const q = searchQuery.toLowerCase();
+    return nightGuardStaff.filter(
+      (p) =>
+        p.first_name.toLowerCase().includes(q) ||
+        p.last_name.toLowerCase().includes(q) ||
+        p.staff_id.toLowerCase().includes(q) ||
+        `${p.last_name}, ${p.first_name}`.toLowerCase().includes(q)
+    );
+  }, [nightGuardStaff, searchQuery]);
 
   const toggleGuard = (id: string) => {
     setSelectedGuards(prev => {
@@ -35,12 +48,22 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
   };
 
   const selectAll = () => {
-    if (selectedGuards.size === nightGuardStaff.length) {
-      setSelectedGuards(new Set());
+    if (filteredGuards.every(g => selectedGuards.has(g.id))) {
+      setSelectedGuards(prev => {
+        const next = new Set(prev);
+        filteredGuards.forEach(g => next.delete(g.id));
+        return next;
+      });
     } else {
-      setSelectedGuards(new Set(nightGuardStaff.map(s => s.id)));
+      setSelectedGuards(prev => {
+        const next = new Set(prev);
+        filteredGuards.forEach(g => next.add(g.id));
+        return next;
+      });
     }
   };
+
+  const allFilteredSelected = filteredGuards.length > 0 && filteredGuards.every(g => selectedGuards.has(g.id));
 
   const dateCount = startDate && endDate
     ? Math.max(1, differenceInDays(new Date(endDate), new Date(startDate)) + 1)
@@ -57,7 +80,6 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
       if (days < 1) throw new Error("End date must be on or after start date");
       if (days > 31) throw new Error("Date range cannot exceed 31 days");
 
-      // Build all rows
       const rows: { profile_id: string; shift_id: string; start_date: string; end_date: string | null }[] = [];
       for (let d = 0; d < days; d++) {
         const date = format(addDays(new Date(startDate), d), "yyyy-MM-dd");
@@ -66,7 +88,6 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
         }
       }
 
-      // Insert in batches
       const batchSize = 50;
       let inserted = 0;
 
@@ -97,6 +118,7 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
       setStartDate("");
       setEndDate("");
       setSelectedGuards(new Set());
+      setSearchQuery("");
     }
   };
 
@@ -143,24 +165,41 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
             <div className="flex items-center justify-between">
               <Label>Select Guards</Label>
               <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={selectAll}>
-                {selectedGuards.size === nightGuardStaff.length ? "Deselect All" : "Select All"}
+                {allFilteredSelected ? "Deselect All" : "Select All"}
               </Button>
             </div>
-            <ScrollArea className="max-h-[180px] rounded-md border p-2">
-              <div className="space-y-1.5">
-                {nightGuardStaff.map((p) => (
-                  <label key={p.id} className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent/50 cursor-pointer text-sm">
-                    <Checkbox
-                      checked={selectedGuards.has(p.id)}
-                      onCheckedChange={() => toggleGuard(p.id)}
-                    />
-                    <span className="truncate">{p.staff_id} — {p.last_name}, {p.first_name}</span>
-                  </label>
-                ))}
+
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or staff ID..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
+
+            <ScrollArea className="max-h-[200px] rounded-md border p-2">
+              <div className="space-y-1">
+                {filteredGuards.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">No guards match "{searchQuery}"</p>
+                ) : (
+                  filteredGuards.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-accent/50 cursor-pointer text-sm">
+                      <Checkbox
+                        checked={selectedGuards.has(p.id)}
+                        onCheckedChange={() => toggleGuard(p.id)}
+                      />
+                      <span className="truncate flex-1">{p.last_name}, {p.first_name}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono shrink-0">{p.staff_id}</Badge>
+                    </label>
+                  ))
+                )}
               </div>
             </ScrollArea>
             <p className="text-xs text-muted-foreground">
               {selectedGuards.size} guard{selectedGuards.size !== 1 ? "s" : ""} selected
+              {searchQuery && ` · ${filteredGuards.length} shown`}
             </p>
           </div>
 
