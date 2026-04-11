@@ -21,6 +21,7 @@ export default function AuditLog() {
 
   // Filters
   const [filterAction, setFilterAction] = useState("all");
+  const [filterEntity, setFilterEntity] = useState("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
 
