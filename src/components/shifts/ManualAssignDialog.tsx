@@ -45,26 +45,13 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
     mutationFn: async () => {
       if (!profileId || !shiftId || !startDate) throw new Error("Fill all required fields");
 
-      const { data: existing } = await supabase
-        .from("shift_assignments")
-        .select("id")
-        .eq("profile_id", profileId)
-        .eq("shift_id", shiftId)
-        .eq("start_date", startDate)
-        .maybeSingle();
-
-      if (existing) throw new Error("This guard is already assigned to this shift on the selected date");
-
       const { error } = await supabase.from("shift_assignments").insert({
         profile_id: profileId,
         shift_id: shiftId,
         start_date: startDate,
         end_date: endDate || null,
       });
-      if (error) {
-        if (error.code === "23505") throw new Error("Duplicate assignment");
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
