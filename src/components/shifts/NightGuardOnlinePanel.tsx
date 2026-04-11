@@ -147,8 +147,8 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       {/* Live status panel */}
       <Card className="border-amber-300/50 dark:border-amber-700/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,70%,25%)] font-bold">
+            <Shield className="h-4 w-4 text-[hsl(220,70%,25%)] stroke-[2.5]" />
             Night Guard Duty — Online Status
             <Badge
               variant="outline"
@@ -226,8 +226,8 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       {/* Activity history log */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <History className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,70%,25%)] font-bold">
+            <History className="h-4 w-4 text-[hsl(220,70%,25%)] stroke-[2.5]" />
             Night Guard Activity Log
             <Badge variant="outline" className="ml-auto text-[10px]">
               {filteredLog.length} events
