@@ -318,6 +318,7 @@ export default function Reports() {
                         <SelectContent>
                           <SelectItem value="daily">Daily</SelectItem>
                           <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
                           <SelectItem value="quarterly">Quarterly</SelectItem>
                           <SelectItem value="annual">Annual</SelectItem>
                         </SelectContent>
@@ -346,6 +347,7 @@ export default function Reports() {
                 <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
                 <SelectItem value="quarterly">Quarterly</SelectItem>
                 <SelectItem value="annual">Annual</SelectItem>
               </SelectContent>

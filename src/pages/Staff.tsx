@@ -389,11 +389,27 @@ export default function Staff() {
               <TableRow>
                 <TableHead className="w-[50px]">Photo</TableHead>
                 <TableHead>Staff ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Rank</TableHead>
-                <TableHead className="hidden md:table-cell">Department</TableHead>
+                <TableHead>
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("name")}>
+                    Name <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("rank")}>
+                    Rank <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("department")}>
+                    Department <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
                 <TableHead className="hidden lg:table-cell">Shift</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("status")}>
+                    Status <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
                 {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
