@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,8 @@ export default function DutyRoster() {
   const [assignProfileId, setAssignProfileId] = useState("");
   const [assignEndDate, setAssignEndDate] = useState("");
   const [staffSearch, setStaffSearch] = useState("");
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+  const staffListRef = useRef<HTMLDivElement>(null);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -501,56 +503,72 @@ export default function DutyRoster() {
                         </div>
                         <div>
                           <Label className="text-xs">Staff Member</Label>
-                          <div className="relative mt-1">
-                            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              placeholder="Search staff..."
-                              value={staffSearch}
-                              onChange={(e) => setStaffSearch(e.target.value)}
-                              className="h-8 text-xs pl-7"
-                            />
-                          </div>
-                          <ScrollArea className="max-h-[120px] mt-1 rounded-md border">
-                            <div className="p-1 space-y-0.5">
-                              {profiles
-                                .filter((p: any) => {
-                                  if (!staffSearch.trim()) return true;
-                                  const q = staffSearch.toLowerCase();
-                                  return (
-                                    p.staff_id?.toLowerCase().includes(q) ||
-                                    p.first_name?.toLowerCase().includes(q) ||
-                                    p.last_name?.toLowerCase().includes(q) ||
-                                    `${p.last_name}, ${p.first_name}`.toLowerCase().includes(q)
-                                  );
-                                })
-                                .map((p: any) => (
-                                  <button
-                                    key={p.id}
-                                    type="button"
-                                    onClick={() => setAssignProfileId(p.id)}
-                                    className={cn(
-                                      "w-full text-left text-xs rounded px-2 py-1 transition-colors",
-                                      assignProfileId === p.id
-                                        ? "bg-primary text-primary-foreground"
-                                        : "hover:bg-accent"
+                          {(() => {
+                            const filteredProfiles = profiles.filter((p: any) => {
+                              if (!staffSearch.trim()) return true;
+                              const q = staffSearch.toLowerCase();
+                              return (
+                                p.staff_id?.toLowerCase().includes(q) ||
+                                p.first_name?.toLowerCase().includes(q) ||
+                                p.last_name?.toLowerCase().includes(q) ||
+                                `${p.last_name}, ${p.first_name}`.toLowerCase().includes(q)
+                              );
+                            });
+                            return (
+                              <>
+                                <div className="relative mt-1">
+                                  <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+                                  <Input
+                                    placeholder="Search staff..."
+                                    value={staffSearch}
+                                    onChange={(e) => { setStaffSearch(e.target.value); setHighlightIndex(0); }}
+                                    className="h-8 text-xs pl-7"
+                                    onKeyDown={(e) => {
+                                      if (e.key === "ArrowDown") {
+                                        e.preventDefault();
+                                        setHighlightIndex((prev) => Math.min(prev + 1, filteredProfiles.length - 1));
+                                        staffListRef.current?.querySelector(`[data-idx="${Math.min(highlightIndex + 1, filteredProfiles.length - 1)}"]`)?.scrollIntoView({ block: "nearest" });
+                                      } else if (e.key === "ArrowUp") {
+                                        e.preventDefault();
+                                        setHighlightIndex((prev) => Math.max(prev - 1, 0));
+                                        staffListRef.current?.querySelector(`[data-idx="${Math.max(highlightIndex - 1, 0)}"]`)?.scrollIntoView({ block: "nearest" });
+                                      } else if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        if (highlightIndex >= 0 && highlightIndex < filteredProfiles.length) {
+                                          setAssignProfileId(filteredProfiles[highlightIndex].id);
+                                        }
+                                      }
+                                    }}
+                                  />
+                                </div>
+                                <ScrollArea className="max-h-[120px] mt-1 rounded-md border">
+                                  <div className="p-1 space-y-0.5" ref={staffListRef}>
+                                    {filteredProfiles.map((p: any, idx: number) => (
+                                      <button
+                                        key={p.id}
+                                        type="button"
+                                        data-idx={idx}
+                                        onClick={() => setAssignProfileId(p.id)}
+                                        className={cn(
+                                          "w-full text-left text-xs rounded px-2 py-1 transition-colors",
+                                          assignProfileId === p.id
+                                            ? "bg-primary text-primary-foreground"
+                                            : highlightIndex === idx
+                                            ? "bg-accent"
+                                            : "hover:bg-accent"
+                                        )}
+                                      >
+                                        {p.staff_id} — {p.last_name}, {p.first_name}
+                                      </button>
+                                    ))}
+                                    {filteredProfiles.length === 0 && (
+                                      <p className="text-xs text-muted-foreground text-center py-2">No staff found</p>
                                     )}
-                                  >
-                                    {p.staff_id} — {p.last_name}, {p.first_name}
-                                  </button>
-                                ))}
-                              {profiles.filter((p: any) => {
-                                if (!staffSearch.trim()) return true;
-                                const q = staffSearch.toLowerCase();
-                                return (
-                                  p.staff_id?.toLowerCase().includes(q) ||
-                                  p.first_name?.toLowerCase().includes(q) ||
-                                  p.last_name?.toLowerCase().includes(q)
-                                );
-                              }).length === 0 && (
-                                <p className="text-xs text-muted-foreground text-center py-2">No staff found</p>
-                              )}
-                            </div>
-                          </ScrollArea>
+                                  </div>
+                                </ScrollArea>
+                              </>
+                            );
+                          })()}
                         </div>
                         <div>
                           <Label className="text-xs">End Date (optional, for multi-day)</Label>
