@@ -63,6 +63,16 @@ export default function AuditLog() {
     setFilterEntity("all");
     setFilterDateFrom("");
     setFilterDateTo("");
+    setPage(0);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedLogs = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when filters change
+  const handleFilterChange = (setter: (v: string) => void) => (v: string) => {
+    setter(v);
+    setPage(0);
   };
 
   const updateMutation = useMutation({
