@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +11,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
@@ -34,6 +38,8 @@ export default function Staff() {
   const [rankFilter, setRankFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState<"name" | "rank" | "department" | "status">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -205,18 +211,94 @@ export default function Staff() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const filtered = staff.filter((s) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      s.first_name.toLowerCase().includes(q) ||
-      s.last_name.toLowerCase().includes(q) ||
-      s.staff_id.toLowerCase().includes(q) ||
-      (s.unit?.toLowerCase().includes(q) ?? false);
-    const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
-    const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
-    const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-    return matchesSearch && matchesRank && matchesDept && matchesStatus;
-  });
+  const toggleSort = (field: "name" | "rank" | "department" | "status") => {
+    if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const filtered = useMemo(() => {
+    const list = staff.filter((s) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        s.first_name.toLowerCase().includes(q) ||
+        s.last_name.toLowerCase().includes(q) ||
+        s.staff_id.toLowerCase().includes(q) ||
+        (s.unit?.toLowerCase().includes(q) ?? false);
+      const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
+      const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
+      const matchesStatus = statusFilter === "all" || s.status === statusFilter;
+      return matchesSearch && matchesRank && matchesDept && matchesStatus;
+    });
+
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "name": cmp = `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`); break;
+        case "rank": cmp = (a.ranks?.abbreviation ?? "").localeCompare(b.ranks?.abbreviation ?? ""); break;
+        case "department": cmp = (a.departments?.name ?? "").localeCompare(b.departments?.name ?? ""); break;
+        case "status": cmp = a.status.localeCompare(b.status); break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return list;
+  }, [staff, search, rankFilter, deptFilter, statusFilter, sortField, sortDir]);
+
+  const exportStaffCSV = () => {
+    if (filtered.length === 0) { toast.error("No data to export"); return; }
+    const headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"];
+    const rows = filtered.map(s => [
+      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "", s.departments?.name ?? "",
+      s.unit ?? "", s.shift_group ?? "", s.gender ?? "", s.status, s.phone ?? "",
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `staff_export_${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("CSV downloaded");
+  };
+
+  const exportStaffPDF = () => {
+    if (filtered.length === 0) { toast.error("No data to export"); return; }
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(16); doc.setTextColor(0, 102, 153);
+    doc.text("GIS Amasaman Sector Command", 14, 15);
+    doc.setFontSize(12); doc.setTextColor(60, 60, 60);
+    doc.text("Staff / Employee Report", 14, 23);
+    doc.setFontSize(9); doc.setTextColor(120, 120, 120);
+    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Records: ${filtered.length}`, 14, 29);
+    const headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Status", "Phone"];
+    const rows = filtered.map(s => [
+      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—", s.departments?.name ?? "—",
+      s.unit ?? "—", s.shift_group ?? "—", s.status, s.phone ?? "—",
+    ]);
+    autoTable(doc, {
+      head: [headers], body: rows, startY: 34,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [0, 102, 153], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [240, 248, 255] },
+      margin: { left: 14, right: 14 },
+    });
+    doc.save(`staff_export_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+    toast.success("PDF downloaded");
+  };
+
+  const exportStaffXLSX = async () => {
+    if (filtered.length === 0) { toast.error("No data to export"); return; }
+    const XLSX = await import("xlsx");
+    const headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"];
+    const rows = filtered.map(s => ({
+      "Staff ID": s.staff_id, "Last Name": s.last_name, "First Name": s.first_name,
+      "Rank": s.ranks?.abbreviation ?? "", "Department": s.departments?.name ?? "",
+      "Unit": s.unit ?? "", "Shift": s.shift_group ?? "", "Gender": s.gender ?? "",
+      "Status": s.status, "Phone": s.phone ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Staff");
+    XLSX.writeFile(wb, `staff_export_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
+    toast.success("Excel downloaded");
+  };
 
   const statusColor = (s: string) => {
     switch (s) {
@@ -236,6 +318,18 @@ export default function Staff() {
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {isAdmin && (
           <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1">
+                  <Download className="h-4 w-4" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportStaffPDF} className="gap-2"><FileText className="h-4 w-4" /> PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportStaffCSV} className="gap-2"><FileSpreadsheet className="h-4 w-4" /> CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportStaffXLSX} className="gap-2"><FileSpreadsheet className="h-4 w-4" /> Excel (.xlsx)</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-1">
               <Upload className="h-4 w-4" /> Import
             </Button>
@@ -295,11 +389,27 @@ export default function Staff() {
               <TableRow>
                 <TableHead className="w-[50px]">Photo</TableHead>
                 <TableHead>Staff ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden md:table-cell">Rank</TableHead>
-                <TableHead className="hidden md:table-cell">Department</TableHead>
+                <TableHead>
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("name")}>
+                    Name <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("rank")}>
+                    Rank <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("department")}>
+                    Department <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
                 <TableHead className="hidden lg:table-cell">Shift</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>
+                  <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("status")}>
+                    Status <ArrowUpDown className="h-3 w-3" />
+                  </Button>
+                </TableHead>
                 {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>

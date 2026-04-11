@@ -19,7 +19,7 @@ import autoTable from "jspdf-autotable";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
 
 type ReportType = "staff" | "attendance" | "leave";
-type ReportCategory = "daily" | "weekly" | "quarterly" | "annual";
+type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
@@ -318,6 +318,7 @@ export default function Reports() {
                         <SelectContent>
                           <SelectItem value="daily">Daily</SelectItem>
                           <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
                           <SelectItem value="quarterly">Quarterly</SelectItem>
                           <SelectItem value="annual">Annual</SelectItem>
                         </SelectContent>
@@ -346,6 +347,7 @@ export default function Reports() {
                 <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
                 <SelectItem value="quarterly">Quarterly</SelectItem>
                 <SelectItem value="annual">Annual</SelectItem>
               </SelectContent>
