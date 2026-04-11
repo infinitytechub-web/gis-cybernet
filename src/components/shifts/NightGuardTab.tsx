@@ -21,15 +21,7 @@ interface Props {
 }
 
 export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setWeekStart, isAdmin }: Props) {
-  const queryClient = useQueryClient();
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-  // Manual assignment state
-  const [manualOpen, setManualOpen] = useState(false);
-  const [manualProfileId, setManualProfileId] = useState("");
-  const [manualShiftId, setManualShiftId] = useState("");
-  const [manualDate, setManualDate] = useState("");
-  const [manualEndDate, setManualEndDate] = useState("");
 
   const getNightGuardRotation = (day: Date) => {
     if (nightGuardStaff.length === 0) return [];
