@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Shield, Wifi, WifiOff, History } from "lucide-react";
-import { format } from "date-fns";
+import { Shield, Wifi, WifiOff, History, Download, CalendarIcon } from "lucide-react";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -18,6 +23,10 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
   const { onlineUsers } = useOnlineUsers();
   const queryClient = useQueryClient();
 
+  // Activity log filters
+  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
+  const [filterType, setFilterType] = useState<string>("all");
+
   const nightGuardIds = new Set(nightGuardStaff.map((s) => s.staff_id));
 
   const onlineGuards = onlineUsers.filter((u) => nightGuardIds.has(u.staffId));
@@ -25,18 +34,26 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
     (s) => !onlineUsers.some((u) => u.staffId === s.staff_id)
   );
 
-  // Fetch recent activity history
+  // Fetch activity history with date filter
   const { data: activityLog = [] } = useQuery({
-    queryKey: ["night-guard-activity"],
+    queryKey: ["night-guard-activity", filterDate?.toISOString()],
     queryFn: async () => {
       const profileIds = nightGuardStaff.map((s) => s.id);
       if (profileIds.length === 0) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("night_guard_activity_log" as any)
         .select("*")
         .in("profile_id", profileIds)
-        .order("created_at", { ascending: false })
-        .limit(20);
+        .order("created_at", { ascending: false });
+
+      if (filterDate) {
+        query = query
+          .gte("created_at", startOfDay(filterDate).toISOString())
+          .lte("created_at", endOfDay(filterDate).toISOString());
+      } else {
+        query = query.limit(50);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data as any[]) ?? [];
     },
@@ -56,6 +73,30 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
     } catch {
       // Silent - don't block UI for logging failures
     }
+  };
+  // Filter activity log by event type
+  const filteredLog = filterType === "all"
+    ? activityLog
+    : activityLog.filter((e: any) => e.event_type === filterType);
+
+  // CSV export
+  const exportActivityCSV = () => {
+    const rows = [
+      ["Staff Name", "Staff ID", "Event", "Date & Time"],
+      ...filteredLog.map((e: any) => [
+        e.staff_name,
+        e.staff_id,
+        e.event_type === "online" ? "Came Online" : "Went Offline",
+        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c: string) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `night_guard_activity_${filterDate ? format(filterDate, "yyyy-MM-dd") : "all"}.csv`;
+    a.click();
+    toast.success("CSV downloaded");
   };
 
   // Track previous online guard staffIds for change detection
@@ -183,21 +224,63 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       </Card>
 
       {/* Activity history log */}
-      {activityLog.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <History className="h-4 w-4 text-primary" />
-              Night Guard Activity Log
-              <Badge variant="outline" className="ml-auto text-[10px]">
-                Recent {activityLog.length} events
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" />
+            Night Guard Activity Log
+            <Badge variant="outline" className="ml-auto text-[10px]">
+              {filteredLog.length} events
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Filters row */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs h-8", !filterDate && "text-muted-foreground")}>
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {filterDate ? format(filterDate, "dd MMM yyyy") : "All dates"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filterDate}
+                  onSelect={setFilterDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {filterDate && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => setFilterDate(undefined)}>
+                Clear date
+              </Button>
+            )}
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All events</SelectItem>
+                <SelectItem value="online">Online only</SelectItem>
+                <SelectItem value="offline">Offline only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1 ml-auto" onClick={exportActivityCSV} disabled={filteredLog.length === 0}>
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </Button>
+          </div>
+
+          {/* Log entries */}
+          {filteredLog.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No activity events found.</p>
+          ) : (
             <ScrollArea className="max-h-[200px]">
               <div className="space-y-1">
-                {activityLog.map((entry: any) => (
+                {filteredLog.map((entry: any) => (
                   <div
                     key={entry.id}
                     className="flex items-center gap-3 rounded-md px-3 py-1.5 text-sm hover:bg-accent/50"
@@ -221,9 +304,9 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
                 ))}
               </div>
             </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
