@@ -1061,6 +1061,8 @@ export type Database = {
         | "shift_leader"
         | "special_duties"
         | "front_desk"
+        | "oic"
+        | "2ic"
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
@@ -1204,6 +1206,8 @@ export const Constants = {
         "shift_leader",
         "special_duties",
         "front_desk",
+        "oic",
+        "2ic",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],
