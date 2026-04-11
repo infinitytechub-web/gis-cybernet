@@ -20,6 +20,8 @@ import type { AppRole } from "@/lib/types";
 
 const roleLabels: Record<AppRole, string> = {
   admin: "Admin",
+  oic: "OIC",
+  "2ic": "2IC",
   supervisor: "Supervisor",
   shift_leader: "Shift Leader",
   deputy_supervisor: "Dep. Supervisor",
@@ -32,6 +34,8 @@ const roleLabels: Record<AppRole, string> = {
 
 const roleColors: Record<AppRole, string> = {
   admin: "bg-destructive/10 text-destructive border-destructive/20",
+  oic: "bg-emerald-500/15 text-emerald-700 border-emerald-500/20",
+  "2ic": "bg-teal-500/15 text-teal-700 border-teal-500/20",
   supervisor: "bg-primary/10 text-primary border-primary/20",
   shift_leader: "bg-chart-1/15 text-chart-1 border-chart-1/20",
   deputy_supervisor: "bg-chart-2/15 text-chart-2 border-chart-2/20",
