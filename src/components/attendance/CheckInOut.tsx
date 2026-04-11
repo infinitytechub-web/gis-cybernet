@@ -10,6 +10,7 @@ import { LogIn, LogOut, Clock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
+import { SyncHistoryLog } from "./SyncHistoryLog";
 
 export function CheckInOut() {
   const { user } = useAuth();
@@ -46,7 +47,7 @@ export function CheckInOut() {
     },
   });
 
-  // Auto-sync helper: push attendance data to connected shift platform
+  // Auto-sync helper: push attendance data to connected shift platform + log history
   const syncToPlatform = useCallback(async (action: "check_in" | "check_out", timestamp: string) => {
     if (!profile) return;
     try {
@@ -59,17 +60,30 @@ export function CheckInOut() {
       const conn = (connections as any[])?.[0];
       if (!conn) return;
 
-      // Simulate push to external platform API
       const isOnline = navigator.onLine;
       if (!isOnline && !conn.offline_mode) return;
 
-      // Log sync attempt and update last_sync_at
+      const syncStatus = !isOnline && conn.offline_mode ? "queued" : "success";
+
+      // Update last_sync_at on connection
       await supabase
         .from("shift_platform_connections" as any)
         .update({ last_sync_at: new Date().toISOString() } as any)
         .eq("id", conn.id);
 
+      // Log sync history entry
+      await supabase
+        .from("platform_sync_history" as any)
+        .insert({
+          profile_id: profile.id,
+          platform: conn.platform,
+          action,
+          sync_status: syncStatus,
+          synced_at: timestamp,
+        } as any);
+
       queryClient.invalidateQueries({ queryKey: ["shift-platform-connections"] });
+      queryClient.invalidateQueries({ queryKey: ["sync-history"] });
 
       const platformNames: Record<string, string> = {
         tracktik: "TrackTik SHIFT",
@@ -80,13 +94,34 @@ export function CheckInOut() {
       };
       const name = platformNames[conn.platform] || conn.platform;
 
-      if (!isOnline && conn.offline_mode) {
+      if (syncStatus === "queued") {
         toast.info(`${action === "check_in" ? "Check-in" : "Check-out"} queued for ${name} (offline)`);
       } else {
         toast.success(`Synced ${action === "check_in" ? "check-in" : "check-out"} to ${name}`);
       }
-    } catch {
-      // Silent fail — don't block attendance
+    } catch (err: any) {
+      // Log failed sync
+      try {
+        const { data: connections } = await supabase
+          .from("shift_platform_connections" as any)
+          .select("platform")
+          .eq("profile_id", profile.id)
+          .eq("is_connected", true);
+        const conn = (connections as any[])?.[0];
+        if (conn) {
+          await supabase.from("platform_sync_history" as any).insert({
+            profile_id: profile.id,
+            platform: conn.platform,
+            action,
+            sync_status: "failed",
+            synced_at: timestamp,
+            error_message: err?.message || "Unknown error",
+          } as any);
+          queryClient.invalidateQueries({ queryKey: ["sync-history"] });
+        }
+      } catch {
+        // Silent
+      }
     }
   }, [profile, queryClient]);
 
