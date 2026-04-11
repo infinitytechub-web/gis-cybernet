@@ -7,19 +7,23 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ClipboardList, Trash2, RefreshCw, Search, Loader2 } from "lucide-react";
+import { ClipboardList, Trash2, RefreshCw, Search, Loader2, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
   shifts: { id: string; name: string; pattern: string }[];
 }
+
+const PAGE_SIZE = 15;
 
 export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: Props) {
   const queryClient = useQueryClient();
@@ -30,6 +34,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
   const [reassignOpen, setReassignOpen] = useState(false);
   const [reassignTargetId, setReassignTargetId] = useState("");
   const [reassignSearch, setReassignSearch] = useState("");
+  const [page, setPage] = useState(0);
 
   const nightGuardIds = useMemo(() => nightGuardStaff.map(s => s.id), [nightGuardStaff]);
 
@@ -42,7 +47,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
         .select("id, profile_id, shift_id, start_date, end_date, profiles:profile_id(first_name, last_name, staff_id), shifts:shift_id(name)")
         .in("profile_id", nightGuardIds)
         .order("start_date", { ascending: false })
-        .limit(200);
+        .limit(500);
       if (filterDate) query = query.eq("start_date", filterDate);
       const { data, error } = await query;
       if (error) throw error;
@@ -61,6 +66,13 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
         p?.staff_id?.toLowerCase().includes(q);
     });
   }, [assignments, filterGuard]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const paged = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  // Reset page when filters change
+  useMemo(() => { setPage(0); }, [filterDate, filterGuard]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -126,6 +138,41 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
     );
   }, [nightGuardStaff, reassignSearch]);
 
+  // Export helpers
+  const buildExportRows = () =>
+    filtered.map((a: any) => [
+      `${a.profiles?.last_name}, ${a.profiles?.first_name}`,
+      a.profiles?.staff_id ?? "",
+      a.shifts?.name ?? "—",
+      format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy"),
+    ]);
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text("Night Guard Assignments", 14, 16);
+    if (filterDate) doc.setFontSize(10), doc.text(`Date: ${format(new Date(filterDate + "T00:00:00"), "dd MMM yyyy")}`, 14, 23);
+    autoTable(doc, {
+      head: [["Guard", "Staff ID", "Shift", "Date"]],
+      body: buildExportRows(),
+      startY: filterDate ? 28 : 22,
+    });
+    doc.save(`night_guard_assignments${filterDate ? `_${filterDate}` : ""}.pdf`);
+    toast.success("PDF downloaded");
+  };
+
+  const exportCSV = () => {
+    const header = ["Guard", "Staff ID", "Shift", "Date"];
+    const rows = [header, ...buildExportRows()];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `night_guard_assignments${filterDate ? `_${filterDate}` : ""}.csv`;
+    a.click();
+    toast.success("CSV downloaded");
+  };
+
   if (nightGuardStaff.length === 0) return null;
 
   return (
@@ -136,7 +183,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
             <ClipboardList className="h-5 w-5 text-primary" />
             Night Guard Assignments
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {selectedIds.size > 0 && (
               <>
                 <Button variant="outline" size="sm" className="gap-1 text-primary" onClick={() => setReassignOpen(true)}>
@@ -147,6 +194,17 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
                 </Button>
               </>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1" disabled={filtered.length === 0}>
+                  <Download className="h-3.5 w-3.5" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -167,46 +225,60 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
         ) : filtered.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-4">No assignments found</p>
         ) : (
-          <ScrollArea className="max-h-[280px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8">
-                    <Checkbox checked={selectedIds.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
-                  </TableHead>
-                  <TableHead className="text-xs">Guard</TableHead>
-                  <TableHead className="text-xs">Staff ID</TableHead>
-                  <TableHead className="text-xs">Shift</TableHead>
-                  <TableHead className="text-xs">Date</TableHead>
-                  <TableHead className="text-xs w-20">Actions</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox checked={selectedIds.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
+                </TableHead>
+                <TableHead className="text-xs">Guard</TableHead>
+                <TableHead className="text-xs">Staff ID</TableHead>
+                <TableHead className="text-xs">Shift</TableHead>
+                <TableHead className="text-xs">Date</TableHead>
+                <TableHead className="text-xs w-20">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paged.map((a: any) => (
+                <TableRow key={a.id} className={selectedIds.has(a.id) ? "bg-accent/30" : ""}>
+                  <TableCell><Checkbox checked={selectedIds.has(a.id)} onCheckedChange={() => toggleSelect(a.id)} /></TableCell>
+                  <TableCell className="text-xs">{a.profiles?.last_name}, {a.profiles?.first_name}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-[10px] font-mono">{a.profiles?.staff_id}</Badge></TableCell>
+                  <TableCell className="text-xs">{a.shifts?.name ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy")}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedIds(new Set([a.id])); setReassignOpen(true); }}>
+                        <RefreshCw className="h-3 w-3 text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedIds(new Set([a.id])); setDeleteConfirmOpen(true); }}>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((a: any) => (
-                  <TableRow key={a.id} className={selectedIds.has(a.id) ? "bg-accent/30" : ""}>
-                    <TableCell><Checkbox checked={selectedIds.has(a.id)} onCheckedChange={() => toggleSelect(a.id)} /></TableCell>
-                    <TableCell className="text-xs">{a.profiles?.last_name}, {a.profiles?.first_name}</TableCell>
-                    <TableCell><Badge variant="outline" className="text-[10px] font-mono">{a.profiles?.staff_id}</Badge></TableCell>
-                    <TableCell className="text-xs">{a.shifts?.name ?? "—"}</TableCell>
-                    <TableCell className="text-xs">{format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy")}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedIds(new Set([a.id])); setReassignOpen(true); }}>
-                          <RefreshCw className="h-3 w-3 text-primary" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedIds(new Set([a.id])); setDeleteConfirmOpen(true); }}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+              ))}
+            </TableBody>
+          </Table>
         )}
 
-        <p className="text-xs text-muted-foreground mt-2">{filtered.length} assignment{filtered.length !== 1 ? "s" : ""}</p>
+        {/* Pagination + count */}
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-xs text-muted-foreground">
+            {filtered.length} assignment{filtered.length !== 1 ? "s" : ""}
+            {filtered.length > PAGE_SIZE && ` · Page ${safePage + 1} of ${totalPages}`}
+          </p>
+          {totalPages > 1 && (
+            <div className="flex gap-1">
+              <Button variant="outline" size="icon" className="h-7 w-7" disabled={safePage === 0} onClick={() => setPage(p => p - 1)}>
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-7 w-7" disabled={safePage >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          )}
+        </div>
       </CardContent>
 
       {/* Delete confirmation */}
