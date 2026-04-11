@@ -1,0 +1,1 @@
+ALTER TABLE public.shift_assignments DROP CONSTRAINT IF EXISTS unique_profile_shift_date;

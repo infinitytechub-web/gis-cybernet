@@ -66,27 +66,25 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
         }
       }
 
-      // Upsert in batches, skipping duplicates via onConflict
+      // Insert in batches
       const batchSize = 50;
       let inserted = 0;
-      let skipped = 0;
 
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
         const { data, error } = await supabase
           .from("shift_assignments")
-          .upsert(batch, { onConflict: "profile_id,shift_id,start_date", ignoreDuplicates: true })
+          .insert(batch)
           .select("id");
         if (error) throw error;
         inserted += data?.length ?? 0;
       }
 
-      skipped = rows.length - inserted;
-      return { inserted, skipped };
+      return { inserted };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
-      toast.success(`Bulk assignment complete: ${result.inserted} created${result.skipped > 0 ? `, ${result.skipped} duplicates skipped` : ""}`);
+      toast.success(`Bulk assignment complete: ${result.inserted} assignments created`);
       resetAndClose(false);
     },
     onError: (e: any) => toast.error(e.message),
