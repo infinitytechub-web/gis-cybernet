@@ -131,6 +131,18 @@ export default function AuditLog() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="min-w-[150px]">
+              <Label className="text-xs">Entity Type</Label>
+              <Select value={filterEntity} onValueChange={setFilterEntity}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="visa_application">Visa Application</SelectItem>
+                  <SelectItem value="visa_extension">Visa Extension</SelectItem>
+                  <SelectItem value="passport_application">Passport Application</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label className="text-xs">From</Label>
               <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs w-[140px]" />
