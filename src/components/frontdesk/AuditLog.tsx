@@ -11,13 +11,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
 export default function AuditLog() {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
+
+  // Filters
+  const [filterAction, setFilterAction] = useState("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
+  // Edit state
   const [editLog, setEditLog] = useState<any>(null);
   const [editAction, setEditAction] = useState("");
   const [editEntityType, setEditEntityType] = useState("");
@@ -36,6 +43,21 @@ export default function AuditLog() {
       return data;
     },
   });
+
+  const filtered = logs.filter((log: any) => {
+    if (filterAction !== "all" && log.action !== filterAction) return false;
+    if (filterDateFrom && new Date(log.created_at) < new Date(filterDateFrom + "T00:00:00")) return false;
+    if (filterDateTo && new Date(log.created_at) > new Date(filterDateTo + "T23:59:59")) return false;
+    return true;
+  });
+
+  const hasActiveFilters = filterAction !== "all" || filterDateFrom || filterDateTo;
+
+  const clearFilters = () => {
+    setFilterAction("all");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+  };
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -87,6 +109,44 @@ export default function AuditLog() {
 
   return (
     <div className="space-y-4 mt-4">
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <Filter className="h-4 w-4" /> Filters
+            </div>
+            <div className="min-w-[130px]">
+              <Label className="text-xs">Action</Label>
+              <Select value={filterAction} onValueChange={setFilterAction}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Actions</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="update">Update</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">From</Label>
+              <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs w-[140px]" />
+            </div>
+            <div>
+              <Label className="text-xs">To</Label>
+              <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
+            </div>
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1 text-xs">
+                <X className="h-3 w-3" /> Clear
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground ml-auto">{filtered.length} entries</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
       <Card><CardContent className="p-0"><div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -102,9 +162,11 @@ export default function AuditLog() {
           <TableBody>
             {isLoading ? (
               <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8">Loading...</TableCell></TableRow>
-            ) : logs.length === 0 ? (
-              <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">No audit entries yet</TableCell></TableRow>
-            ) : logs.map((log: any) => (
+            ) : filtered.length === 0 ? (
+              <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
+                {hasActiveFilters ? "No entries match the current filters" : "No audit entries yet"}
+              </TableCell></TableRow>
+            ) : filtered.map((log: any) => (
               <TableRow key={log.id}>
                 <TableCell className="text-sm">{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
                 <TableCell><Badge className={actionColor(log.action)}>{log.action}</Badge></TableCell>
@@ -143,6 +205,7 @@ export default function AuditLog() {
         </Table>
       </div></CardContent></Card>
 
+      {/* Edit Dialog */}
       <Dialog open={!!editLog} onOpenChange={(o) => !o && setEditLog(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Audit Log Entry</DialogTitle></DialogHeader>
