@@ -1,3 +1,4 @@
+import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
 import { ManualAssignDialog } from "./ManualAssignDialog";
 import { BulkAssignDialog } from "./BulkAssignDialog";
@@ -73,6 +74,7 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
   return (
     <div className="space-y-4">
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} />
+      {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
       <Card className="border-primary/20">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
