@@ -194,7 +194,7 @@ export default function AuditLog() {
               <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">
                 {hasActiveFilters ? "No entries match the current filters" : "No audit entries yet"}
               </TableCell></TableRow>
-            ) : filtered.map((log: any) => (
+            ) : paginatedLogs.map((log: any) => (
               <TableRow key={log.id}>
                 <TableCell className="text-sm">{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
                 <TableCell><Badge className={actionColor(log.action)}>{log.action}</Badge></TableCell>
@@ -231,7 +231,25 @@ export default function AuditLog() {
             ))}
           </TableBody>
         </Table>
-      </div></CardContent></Card>
+      </div>
+      {/* Pagination */}
+      {filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <span className="text-xs text-muted-foreground">
+            Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-7 w-7" disabled={page === 0} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-xs px-2">Page {page + 1} of {totalPages}</span>
+            <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+      </CardContent></Card>
 
       {/* Edit Dialog */}
       <Dialog open={!!editLog} onOpenChange={(o) => !o && setEditLog(null)}>
