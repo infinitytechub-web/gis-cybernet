@@ -162,7 +162,7 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
           {nightGuardStaff.length === 0 ? (
             <p className="text-sm text-muted-foreground">No staff assigned to Night Guard department.</p>
           ) : (
-            <ScrollArea className="max-h-[200px]">
+            <ScrollArea className="max-h-[260px] overflow-y-auto pr-1">
               <div className="space-y-1.5">
                 {onlineGuards.map((u) => (
                   <div
