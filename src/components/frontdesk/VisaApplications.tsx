@@ -61,12 +61,41 @@ export default function VisaApplications() {
         exit_date: form.exit_date || null,
         processed_by: user?.id,
       };
+
+      // Detect status change for notifications
+      let previousStatus: string | null = null;
       if (editId) {
+        const existing = applications.find((a: any) => a.id === editId);
+        previousStatus = existing?.status ?? null;
         const { error } = await supabase.from("visa_applications").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("visa_applications").insert(payload);
         if (error) throw error;
+      }
+
+      // Send in-app notifications to all admins & front_desk users when status changes to approved/rejected
+      if (editId && previousStatus !== form.status && (form.status === "approved" || form.status === "rejected")) {
+        const { data: roledUsers } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["admin", "front_desk"]);
+
+        if (roledUsers) {
+          const uniqueUserIds = [...new Set(roledUsers.map((r) => r.user_id))];
+          const statusLabel = form.status === "approved" ? "Approved" : "Rejected";
+          await Promise.all(
+            uniqueUserIds.map((uid) =>
+              createNotification({
+                userId: uid,
+                title: `Visa Application ${statusLabel}`,
+                message: `Visa application for ${form.applicant_name} (${form.passport_number}) has been ${form.status}.`,
+                type: "visa",
+                referenceId: editId,
+              })
+            )
+          );
+        }
       }
     },
     onSuccess: () => {
