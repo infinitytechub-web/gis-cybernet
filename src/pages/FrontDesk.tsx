@@ -1,0 +1,38 @@
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { FileText, Stamp, BookOpen, ClipboardList } from "lucide-react";
+import VisaApplications from "@/components/frontdesk/VisaApplications";
+import VisaExtensions from "@/components/frontdesk/VisaExtensions";
+import PassportApplications from "@/components/frontdesk/PassportApplications";
+import AuditLog from "@/components/frontdesk/AuditLog";
+
+export default function FrontDesk() {
+  const { isAdmin } = useAuth();
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-secondary">Front Desk</h1>
+      <Tabs defaultValue="visa" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="visa" className="gap-1 text-xs sm:text-sm">
+            <Stamp className="h-4 w-4" /> Visa Apps
+          </TabsTrigger>
+          <TabsTrigger value="extensions" className="gap-1 text-xs sm:text-sm">
+            <FileText className="h-4 w-4" /> Extensions
+          </TabsTrigger>
+          <TabsTrigger value="passport" className="gap-1 text-xs sm:text-sm">
+            <BookOpen className="h-4 w-4" /> Passport
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm">
+            <ClipboardList className="h-4 w-4" /> Audit Log
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="visa"><VisaApplications /></TabsContent>
+        <TabsContent value="extensions"><VisaExtensions /></TabsContent>
+        <TabsContent value="passport"><PassportApplications /></TabsContent>
+        <TabsContent value="audit"><AuditLog /></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
