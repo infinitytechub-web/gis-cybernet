@@ -1,11 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function AuditLog() {
+  const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const [editLog, setEditLog] = useState<any>(null);
+  const [editAction, setEditAction] = useState("");
+  const [editEntityType, setEditEntityType] = useState("");
+  const [editApplicantName, setEditApplicantName] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["front-desk-audit-log"],
     queryFn: async () => {
@@ -18,6 +36,47 @@ export default function AuditLog() {
       return data;
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editLog) return;
+      const { error } = await supabase
+        .from("front_desk_audit_log")
+        .update({
+          action: editAction,
+          entity_type: editEntityType,
+          details: { applicant_name: editApplicantName || null, status: editStatus || null },
+        })
+        .eq("id", editLog.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["front-desk-audit-log"] });
+      setEditLog(null);
+      toast.success("Audit log updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("front_desk_audit_log").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["front-desk-audit-log"] });
+      toast.success("Audit log deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const openEdit = (log: any) => {
+    setEditLog(log);
+    setEditAction(log.action);
+    setEditEntityType(log.entity_type);
+    setEditApplicantName(log.details?.applicant_name || "");
+    setEditStatus(log.details?.status || "");
+  };
 
   const actionColor = (action: string) => {
     if (action === "create") return "bg-green-100 text-green-800";
@@ -37,13 +96,14 @@ export default function AuditLog() {
               <TableHead>Entity Type</TableHead>
               <TableHead>Applicant</TableHead>
               <TableHead>Status</TableHead>
+              {isAdmin && <TableHead className="w-20">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8">Loading...</TableCell></TableRow>
             ) : logs.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No audit entries yet</TableCell></TableRow>
+              <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-8 text-muted-foreground">No audit entries yet</TableCell></TableRow>
             ) : logs.map((log: any) => (
               <TableRow key={log.id}>
                 <TableCell className="text-sm">{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
@@ -51,11 +111,78 @@ export default function AuditLog() {
                 <TableCell><Badge variant="outline">{log.entity_type.replace("_", " ")}</Badge></TableCell>
                 <TableCell>{log.details?.applicant_name || "—"}</TableCell>
                 <TableCell>{log.details?.status || "—"}</TableCell>
+                {isAdmin && (
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(log)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete audit log entry?</AlertDialogTitle>
+                            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(log.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div></CardContent></Card>
+
+      <Dialog open={!!editLog} onOpenChange={(o) => !o && setEditLog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Audit Log Entry</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Action</Label>
+              <Select value={editAction} onValueChange={setEditAction}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="update">Update</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Entity Type</Label>
+              <Select value={editEntityType} onValueChange={setEditEntityType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="visa_application">Visa Application</SelectItem>
+                  <SelectItem value="visa_extension">Visa Extension</SelectItem>
+                  <SelectItem value="passport_application">Passport Application</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Applicant Name</Label>
+              <Input value={editApplicantName} onChange={(e) => setEditApplicantName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Input value={editStatus} onChange={(e) => setEditStatus(e.target.value)} />
+            </div>
+            <Button onClick={() => updateMutation.mutate()} disabled={updateMutation.isPending} className="w-full">
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
