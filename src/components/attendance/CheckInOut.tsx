@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LogIn, LogOut, Clock, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
 
 export function CheckInOut() {
   const { user } = useAuth();
