@@ -7,6 +7,7 @@ export interface OnlineUser {
   firstName: string;
   lastName: string;
   staffId: string;
+  department: string;
   onlineSince: string;
 }
 
