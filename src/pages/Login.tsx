@@ -17,6 +17,7 @@ const LOCKOUT_DURATION_MS = 60_000; // 1 minute
 export default function Login() {
   const [staffId, setStaffId] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lockoutEnd, setLockoutEnd] = useState<number | null>(null);
   const failCount = useRef(0);
