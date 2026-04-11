@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Users, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Users, Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -24,6 +25,19 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
   const [shiftId, setShiftId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredGuards = useMemo(() => {
+    if (!searchQuery.trim()) return nightGuardStaff;
+    const q = searchQuery.toLowerCase();
+    return nightGuardStaff.filter(
+      (p) =>
+        p.first_name.toLowerCase().includes(q) ||
+        p.last_name.toLowerCase().includes(q) ||
+        p.staff_id.toLowerCase().includes(q) ||
+        `${p.last_name}, ${p.first_name}`.toLowerCase().includes(q)
+    );
+  }, [nightGuardStaff, searchQuery]);
 
   const { data: existingAssignments = [] } = useQuery({
     queryKey: ["existing-assignments", startDate, shiftId],
@@ -69,6 +83,7 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
       setShiftId("");
       setStartDate("");
       setEndDate("");
+      setSearchQuery("");
     }
   };
 
@@ -128,30 +143,44 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
             </div>
           )}
 
-          <div>
+          <div className="space-y-2">
             <Label>Guard</Label>
-            <Select value={profileId} onValueChange={setProfileId}>
-              <SelectTrigger><SelectValue placeholder="Select guard" /></SelectTrigger>
-              <SelectContent>
-                {nightGuardStaff.map((p) => {
-                  const alreadyAssigned = assignedProfileIds.has(p.id);
-                  return (
-                    <SelectItem key={p.id} value={p.id} disabled={alreadyAssigned}>
-                      {p.staff_id} — {p.last_name}, {p.first_name}
-                      {alreadyAssigned ? " ✓" : ""}
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-            {profileId && assignedProfileIds.has(profileId) && (
-              <p className="text-xs text-destructive flex items-center gap-1 mt-1">
-                <AlertCircle className="h-3 w-3" /> Already assigned on this date
-              </p>
-            )}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or staff ID..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
+            </div>
+            <ScrollArea className="max-h-[160px] rounded-md border p-2">
+              <div className="space-y-1">
+                {filteredGuards.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">No guards match "{searchQuery}"</p>
+                ) : (
+                  filteredGuards.map((p) => {
+                    const isSelected = profileId === p.id;
+                    const alreadyAssigned = assignedProfileIds.has(p.id);
+                    return (
+                      <label
+                        key={p.id}
+                        className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 cursor-pointer text-sm ${isSelected ? "bg-accent" : "hover:bg-accent/50"}`}
+                        onClick={() => setProfileId(p.id)}
+                      >
+                        <Checkbox checked={isSelected} onCheckedChange={() => setProfileId(isSelected ? "" : p.id)} />
+                        <span className="truncate flex-1">{p.last_name}, {p.first_name}</span>
+                        <Badge variant="outline" className="text-[10px] font-mono shrink-0">{p.staff_id}</Badge>
+                        {alreadyAssigned && <Badge variant="secondary" className="text-[9px] shrink-0">assigned</Badge>}
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </ScrollArea>
           </div>
 
-          <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending || !profileId || !shiftId || !startDate} className="w-full">
+          <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending || !profileId || !shiftId || !startDate} className="w-full font-bold">
             {assignMutation.isPending ? "Assigning..." : "Assign Guard"}
           </Button>
         </div>

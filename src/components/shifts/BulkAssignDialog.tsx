@@ -213,7 +213,7 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
           <Button
             onClick={() => bulkMutation.mutate()}
             disabled={bulkMutation.isPending || selectedGuards.size === 0 || !shiftId || !startDate || !endDate}
-            className="w-full"
+            className="w-full font-bold"
           >
             {bulkMutation.isPending ? (
               <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Assigning...</>
