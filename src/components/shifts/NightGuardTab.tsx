@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,9 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
   };
 
   return (
-    <Card className="border-primary/20">
+    <div className="space-y-4">
+      <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} />
+      <Card className="border-primary/20">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
@@ -226,5 +229,6 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
