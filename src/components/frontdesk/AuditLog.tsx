@@ -26,6 +26,7 @@ export default function AuditLog() {
   const [filterEntity, setFilterEntity] = useState("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [page, setPage] = useState(0);
 
   // Edit state
   const [editLog, setEditLog] = useState<any>(null);
