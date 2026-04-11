@@ -19,7 +19,7 @@ import autoTable from "jspdf-autotable";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
 
 type ReportType = "staff" | "attendance" | "leave";
-type ReportCategory = "daily" | "weekly" | "quarterly" | "annual";
+type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
