@@ -57,6 +57,7 @@ export default function AuditLog() {
 
   const clearFilters = () => {
     setFilterAction("all");
+    setFilterEntity("all");
     setFilterDateFrom("");
     setFilterDateTo("");
   };
