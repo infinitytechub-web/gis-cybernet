@@ -131,7 +131,7 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
                 return (
                   <Card key={d.toISOString()} className={isToday ? "border-primary" : ""}>
                     <CardContent className="p-3">
-                      <div className={`text-xs font-semibold mb-2 ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                      <div className={`text-xs font-bold mb-2 ${isToday ? "text-[hsl(220,70%,25%)]" : "text-[hsl(220,50%,40%)]"}`}>
                         {format(d, "EEE dd")}
                       </div>
                       <div className="space-y-1">
