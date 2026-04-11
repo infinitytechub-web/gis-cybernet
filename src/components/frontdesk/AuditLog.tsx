@@ -21,6 +21,7 @@ export default function AuditLog() {
 
   // Filters
   const [filterAction, setFilterAction] = useState("all");
+  const [filterEntity, setFilterEntity] = useState("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
 
@@ -46,15 +47,17 @@ export default function AuditLog() {
 
   const filtered = logs.filter((log: any) => {
     if (filterAction !== "all" && log.action !== filterAction) return false;
+    if (filterEntity !== "all" && log.entity_type !== filterEntity) return false;
     if (filterDateFrom && new Date(log.created_at) < new Date(filterDateFrom + "T00:00:00")) return false;
     if (filterDateTo && new Date(log.created_at) > new Date(filterDateTo + "T23:59:59")) return false;
     return true;
   });
 
-  const hasActiveFilters = filterAction !== "all" || filterDateFrom || filterDateTo;
+  const hasActiveFilters = filterAction !== "all" || filterEntity !== "all" || filterDateFrom || filterDateTo;
 
   const clearFilters = () => {
     setFilterAction("all");
+    setFilterEntity("all");
     setFilterDateFrom("");
     setFilterDateTo("");
   };
@@ -125,6 +128,18 @@ export default function AuditLog() {
                   <SelectItem value="create">Create</SelectItem>
                   <SelectItem value="update">Update</SelectItem>
                   <SelectItem value="delete">Delete</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[150px]">
+              <Label className="text-xs">Entity Type</Label>
+              <Select value={filterEntity} onValueChange={setFilterEntity}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="visa_application">Visa Application</SelectItem>
+                  <SelectItem value="visa_extension">Visa Extension</SelectItem>
+                  <SelectItem value="passport_application">Passport Application</SelectItem>
                 </SelectContent>
               </Select>
             </div>
