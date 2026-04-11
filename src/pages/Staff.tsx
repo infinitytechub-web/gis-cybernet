@@ -40,7 +40,6 @@ export default function Staff() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<"name" | "rank" | "department" | "status">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
