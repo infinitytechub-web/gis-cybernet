@@ -4,7 +4,7 @@ interface CreateNotificationParams {
   userId: string;
   title: string;
   message: string;
-  type: "leave" | "posting" | "shift" | "general";
+  type: "leave" | "posting" | "shift" | "general" | "visa";
   referenceId?: string;
 }
 

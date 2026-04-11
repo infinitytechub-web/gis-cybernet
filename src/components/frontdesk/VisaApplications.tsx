@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Eye, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createNotification } from "@/lib/notifications";
 
 const VISA_TYPES = ["tourist", "business", "work", "transit", "student", "diplomatic"];
 const STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
