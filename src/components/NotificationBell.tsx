@@ -19,6 +19,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   leave: <Calendar className="h-4 w-4 text-primary" />,
   posting: <ArrowRightLeft className="h-4 w-4 text-secondary" />,
   shift: <Clock className="h-4 w-4 text-amber-600" />,
+  visa: <AlertTriangle className="h-4 w-4 text-orange-600" />,
   general: <Info className="h-4 w-4 text-muted-foreground" />,
 };
 
@@ -26,6 +27,7 @@ const typeLabels: Record<string, string> = {
   leave: "Leave",
   posting: "Posting",
   shift: "Shift",
+  visa: "Visa",
   general: "General",
 };
 
@@ -33,6 +35,7 @@ const typeRoutes: Record<string, string> = {
   leave: "/leave",
   posting: "/postings",
   shift: "/shifts",
+  visa: "/front-desk",
   general: "/",
 };
 
@@ -111,7 +114,7 @@ export function NotificationBell() {
       if (n) {
         toast(n.title, {
           description: n.message,
-          icon: n.type === "leave" ? "📋" : n.type === "posting" ? "🔄" : n.type === "shift" ? "⏰" : "ℹ️",
+          icon: n.type === "leave" ? "📋" : n.type === "posting" ? "🔄" : n.type === "shift" ? "⏰" : n.type === "visa" ? "🛂" : "ℹ️",
           action: {
             label: "View",
             onClick: () => navigate(typeRoutes[n.type] || "/"),
@@ -233,7 +236,7 @@ export function NotificationBell() {
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <div className="border-b px-2">
             <TabsList className="h-8 w-full bg-transparent gap-0 p-0">
-              {["all", "unread", "leave", "posting", "shift"].map((t) => (
+              {["all", "unread", "leave", "posting", "shift", "visa"].map((t) => (
                 <TabsTrigger key={t} value={t} className="text-[11px] h-8 px-2 py-0 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent capitalize">
                   {t === "all" ? "All" : t === "unread" ? `Unread (${unreadCount})` : typeLabels[t] || t}
                 </TabsTrigger>

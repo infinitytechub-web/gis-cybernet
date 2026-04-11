@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createNotification } from "@/lib/notifications";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
 
@@ -50,12 +51,39 @@ export default function VisaExtensions() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = { ...form, processed_by: user?.id };
+
+      let previousStatus: string | null = null;
       if (editId) {
+        const existing = extensions.find((e: any) => e.id === editId);
+        previousStatus = existing?.status ?? null;
         const { error } = await supabase.from("visa_extensions").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("visa_extensions").insert(payload);
         if (error) throw error;
+      }
+
+      if (editId && previousStatus !== form.status && (form.status === "approved" || form.status === "rejected")) {
+        const { data: roledUsers } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["admin", "front_desk"]);
+
+        if (roledUsers) {
+          const uniqueUserIds = [...new Set(roledUsers.map((r) => r.user_id))];
+          const statusLabel = form.status === "approved" ? "Approved" : "Rejected";
+          await Promise.all(
+            uniqueUserIds.map((uid) =>
+              createNotification({
+                userId: uid,
+                title: `Visa Extension ${statusLabel}`,
+                message: `Visa extension for ${form.applicant_name} (${form.passport_number}) has been ${form.status}.`,
+                type: "visa",
+                referenceId: editId,
+              })
+            )
+          );
+        }
       }
     },
     onSuccess: () => {

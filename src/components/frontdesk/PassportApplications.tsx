@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { createNotification } from "@/lib/notifications";
 
 const APP_TYPES = ["new", "renewal", "replacement"];
 const STATUSES = ["submitted", "processing", "ready", "collected", "rejected"];
@@ -53,12 +54,39 @@ export default function PassportApplications() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = { ...form, processed_by: user?.id };
+
+      let previousStatus: string | null = null;
       if (editId) {
+        const existing = applications.find((a: any) => a.id === editId);
+        previousStatus = existing?.status ?? null;
         const { error } = await supabase.from("passport_applications").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("passport_applications").insert(payload);
         if (error) throw error;
+      }
+
+      if (editId && previousStatus !== form.status && (form.status === "ready" || form.status === "rejected")) {
+        const { data: roledUsers } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["admin", "front_desk"]);
+
+        if (roledUsers) {
+          const uniqueUserIds = [...new Set(roledUsers.map((r) => r.user_id))];
+          const statusLabel = form.status === "ready" ? "Ready for Collection" : "Rejected";
+          await Promise.all(
+            uniqueUserIds.map((uid) =>
+              createNotification({
+                userId: uid,
+                title: `Passport Application ${statusLabel}`,
+                message: `Passport application for ${form.applicant_name} has been ${form.status === "ready" ? "marked ready for collection" : "rejected"}.`,
+                type: "visa",
+                referenceId: editId,
+              })
+            )
+          );
+        }
       }
     },
     onSuccess: () => {
