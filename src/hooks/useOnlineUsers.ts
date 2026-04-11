@@ -24,15 +24,18 @@ export function useOnlineUsers() {
       // Fetch this user's profile info for presence payload
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, last_name, staff_id")
+        .select("first_name, last_name, staff_id, department_id, departments:department_id(name)")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      const deptName = (profile as any)?.departments?.name ?? "";
 
       const presencePayload = {
         userId: user.id,
         firstName: profile?.first_name ?? "Unknown",
         lastName: profile?.last_name ?? "",
         staffId: profile?.staff_id ?? "",
+        department: deptName,
         onlineSince: new Date().toISOString(),
       };
 
