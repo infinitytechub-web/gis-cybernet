@@ -21,10 +21,12 @@ import {
   Shield, FileText, Download, Plus, Activity, PieChart as PieIcon,
   BarChart3, Clock
 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
 
 const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
@@ -215,97 +217,43 @@ export default function Analytics() {
     refetchIncidents();
   };
 
-  // Export executive summary
-  const exportExecutiveSummary = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.setTextColor(0, 102, 153);
-    doc.text("GIS Amasaman Sector Command", 14, 20);
-    doc.setFontSize(14);
-    doc.text("Executive Summary Report", 14, 30);
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`, 14, 38);
+  // Build executive summary data
+  const getExecutiveSummaryData = () => ({
+    title: "Executive Summary Report",
+    filename: `GIS_ASC_Executive_Summary_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Metric", "Value"],
+    rows: [
+      ["Total Staff", String(totalStaff)],
+      ["Active Staff", String(activeStaff)],
+      ["Attendance Rate", `${avgAttendance}%`],
+      ["Open Incidents", String(openIncidents)],
+      ["Pending Leave Requests", String(leaveRequests.filter((l: any) => l.status === "pending").length)],
+      ["Expired Documents", String(complianceSummary.expiredDocs)],
+      ["Expired Certifications", String(complianceSummary.expiredCerts)],
+    ],
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`,
+  });
 
-    let y = 48;
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Key Performance Indicators", 14, y); y += 8;
-    autoTable(doc, {
-      startY: y,
-      head: [["Metric", "Value"]],
-      body: [
-        ["Total Staff", String(totalStaff)],
-        ["Active Staff", String(activeStaff)],
-        ["Attendance Rate", `${avgAttendance}%`],
-        ["Open Incidents", String(openIncidents)],
-        ["Pending Leave Requests", String(leaveRequests.filter((l: any) => l.status === "pending").length)],
-        ["Expired Documents", String(complianceSummary.expiredDocs)],
-        ["Expired Certifications", String(complianceSummary.expiredCerts)],
-      ],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [0, 102, 153] },
-      margin: { left: 14 },
-    });
+  const getComplianceData = () => ({
+    title: "Compliance Report",
+    filename: `GIS_ASC_Compliance_Report_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Category", "Total", "Expired", "Expiring Soon", "Status"],
+    rows: [
+      ["Staff Documents", String(complianceSummary.totalDocs), String(complianceSummary.expiredDocs), String(complianceSummary.expiringSoon), complianceSummary.expiredDocs > 0 ? "Action Required" : "Compliant"],
+      ["Certifications", String(complianceSummary.totalCerts), String(complianceSummary.expiredCerts), "—", complianceSummary.expiredCerts > 0 ? "Action Required" : "Compliant"],
+      ["Equipment Issued", String(complianceSummary.issuedEquip), "—", "—", "Tracked"],
+    ],
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+  });
 
-    y = (doc as any).lastAutoTable.finalY + 12;
-    if (y > 240) { doc.addPage(); y = 20; }
-    doc.text("Incident Summary", 14, y); y += 8;
-    if (incidents.length > 0) {
-      autoTable(doc, {
-        startY: y,
-        head: [["Type", "Severity", "Status", "Date"]],
-        body: incidents.slice(0, 20).map((i: any) => [
-          i.incident_type.replace(/_/g, " "), i.severity, i.status,
-          format(new Date(i.created_at), "dd MMM yyyy"),
-        ]),
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [0, 102, 153] },
-        margin: { left: 14 },
-      });
-    } else {
-      doc.setFontSize(9);
-      doc.text("No incidents reported in this period.", 14, y);
-    }
-
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.setTextColor(150, 150, 150);
-      const ph = doc.internal.pageSize.height;
-      doc.text(`Page ${i} of ${pageCount} | Powered by Infinity Techub Intelligence`, 14, ph - 8);
-    }
-
-    doc.save(`GIS_ASC_Executive_Summary_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("Executive summary downloaded");
+  const handleExportSummary = (fmt: ExportFormat) => {
+    exportReport(fmt, getExecutiveSummaryData());
+    toast.success(`Executive summary (${getFormatLabel(fmt)}) downloaded`);
   };
 
-  // Export compliance report
-  const exportComplianceReport = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.setTextColor(0, 102, 153);
-    doc.text("Automated Compliance Report", 14, 20);
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, 14, 28);
-
-    autoTable(doc, {
-      startY: 36,
-      head: [["Category", "Total", "Expired", "Expiring Soon", "Status"]],
-      body: [
-        ["Staff Documents", String(complianceSummary.totalDocs), String(complianceSummary.expiredDocs), String(complianceSummary.expiringSoon), complianceSummary.expiredDocs > 0 ? "Action Required" : "Compliant"],
-        ["Certifications", String(complianceSummary.totalCerts), String(complianceSummary.expiredCerts), "—", complianceSummary.expiredCerts > 0 ? "Action Required" : "Compliant"],
-        ["Equipment Issued", String(complianceSummary.issuedEquip), "—", "—", "Tracked"],
-      ],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [0, 102, 153] },
-      margin: { left: 14 },
-    });
-
-    doc.save(`GIS_ASC_Compliance_Report_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("Compliance report downloaded");
+  const handleExportCompliance = (fmt: ExportFormat) => {
+    exportReport(fmt, getComplianceData());
+    toast.success(`Compliance report (${getFormatLabel(fmt)}) downloaded`);
   };
 
   return (
@@ -322,12 +270,28 @@ export default function Analytics() {
               <SelectItem value="12m">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={exportExecutiveSummary} className="gap-1">
-            <FileText className="h-4 w-4" /> Executive Summary
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportComplianceReport} className="gap-1">
-            <Download className="h-4 w-4" /> Compliance Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1"><FileText className="h-4 w-4" /> Executive Summary</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleExportSummary("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportSummary("csv")}>CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportSummary("excel")}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportSummary("word")}>Word</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1"><Download className="h-4 w-4" /> Compliance Report</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleExportCompliance("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportCompliance("csv")}>CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportCompliance("excel")}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportCompliance("word")}>Word</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
