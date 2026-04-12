@@ -173,29 +173,42 @@ export default function Shifts() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {shifts.map((s) => (
-          <Card key={s.id} className="border-border/50 relative group">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><span className="font-semibold text-sm">{s.name}</span></div>
-                {isAdmin && (
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditShift(s)}><Pencil className="h-3 w-3" /></Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"><Trash2 className="h-3 w-3" /></Button></AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>Delete "{s.name}"?</AlertDialogTitle><AlertDialogDescription>This will remove the shift and all its assignments.</AlertDialogDescription></AlertDialogHeader>
-                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => shiftDeleteMutation.mutate(s.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                )}
-              </div>
-              <Badge variant="outline" className="text-xs">{s.pattern}</Badge>
-              {s.start_time && s.end_time && <p className="text-xs text-muted-foreground mt-1">{s.start_time} – {s.end_time}</p>}
-            </CardContent>
-          </Card>
-        ))}
+        {shifts.map((s, idx) => {
+          const colors = [
+            { bg: "bg-blue-50 dark:bg-blue-950/40", border: "border-blue-300 dark:border-blue-700", icon: "text-blue-600 dark:text-blue-400", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+            { bg: "bg-emerald-50 dark:bg-emerald-950/40", border: "border-emerald-300 dark:border-emerald-700", icon: "text-emerald-600 dark:text-emerald-400", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
+            { bg: "bg-amber-50 dark:bg-amber-950/40", border: "border-amber-300 dark:border-amber-700", icon: "text-amber-600 dark:text-amber-400", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300" },
+            { bg: "bg-purple-50 dark:bg-purple-950/40", border: "border-purple-300 dark:border-purple-700", icon: "text-purple-600 dark:text-purple-400", badge: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+            { bg: "bg-rose-50 dark:bg-rose-950/40", border: "border-rose-300 dark:border-rose-700", icon: "text-rose-600 dark:text-rose-400", badge: "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300" },
+            { bg: "bg-cyan-50 dark:bg-cyan-950/40", border: "border-cyan-300 dark:border-cyan-700", icon: "text-cyan-600 dark:text-cyan-400", badge: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300" },
+            { bg: "bg-orange-50 dark:bg-orange-950/40", border: "border-orange-300 dark:border-orange-700", icon: "text-orange-600 dark:text-orange-400", badge: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
+            { bg: "bg-indigo-50 dark:bg-indigo-950/40", border: "border-indigo-300 dark:border-indigo-700", icon: "text-indigo-600 dark:text-indigo-400", badge: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" },
+          ];
+          const c = colors[idx % colors.length];
+          return (
+            <Card key={s.id} className={`${c.bg} ${c.border} border-2 relative group`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2"><Clock className={`h-4 w-4 ${c.icon}`} /><span className="font-semibold text-sm">{s.name}</span></div>
+                  {isAdmin && (
+                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditShift(s)}><Pencil className="h-3 w-3" /></Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"><Trash2 className="h-3 w-3" /></Button></AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader><AlertDialogTitle>Delete "{s.name}"?</AlertDialogTitle><AlertDialogDescription>This will remove the shift and all its assignments.</AlertDialogDescription></AlertDialogHeader>
+                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => shiftDeleteMutation.mutate(s.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
+                </div>
+                <Badge className={`text-xs border-0 ${c.badge}`}>{s.pattern}</Badge>
+                {s.start_time && s.end_time && <p className="text-xs text-muted-foreground mt-1">{s.start_time} – {s.end_time}</p>}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Tabs defaultValue="calendar">
