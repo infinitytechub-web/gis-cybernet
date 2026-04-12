@@ -65,7 +65,7 @@ export function AppSettings() {
               <p className="text-xs text-muted-foreground">Let new users sign up without admin approval.</p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px]">Not Recommended</Badge>
+              <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] gap-1"><Shield className="h-3 w-3" /> Not Recommended</Badge>
               <Switch checked={allowSelfRegistration} onCheckedChange={setAllowSelfRegistration} />
             </div>
           </div>
@@ -96,8 +96,8 @@ export function AppSettings() {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSave} className="gap-2">
-        <Settings2 className="h-4 w-4" /> Save Settings
+      <Button onClick={handleSave} className="gap-2 bg-primary hover:bg-primary/90">
+        <Settings2 className="h-4 w-4 text-primary-foreground" /> Save Settings
       </Button>
     </div>
   );
