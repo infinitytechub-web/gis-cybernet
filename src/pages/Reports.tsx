@@ -12,57 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail, FileDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
+import { triggerDownload } from "@/lib/download-utils";
+import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
-
-import { downloadCSVString, triggerDownload } from "@/lib/download-utils";
-
-function downloadCSV(filename: string, headers: string[], rows: string[][]) {
-  const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-  downloadCSVString(csv, filename);
-}
-
-function generatePDF(title: string, filename: string, headers: string[], rows: string[][], subtitle?: string) {
-  const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
-  doc.setFontSize(16);
-  doc.setTextColor(0, 102, 153);
-  doc.text("GIS Amasaman Sector Command", 14, 15);
-  doc.setFontSize(12);
-  doc.setTextColor(60, 60, 60);
-  doc.text(title, 14, 23);
-  if (subtitle) {
-    doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    doc.text(subtitle, 14, 29);
-  }
-  autoTable(doc, {
-    head: [headers], body: rows, startY: subtitle ? 34 : 28,
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [0, 102, 153], textColor: 255, fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [240, 248, 255] },
-    margin: { left: 14, right: 14 },
-  });
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(7);
-    doc.setTextColor(150, 150, 150);
-    const ph = doc.internal.pageSize.height;
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Page ${i} of ${pageCount}`, 14, ph - 8);
-    doc.text("Powered by Infinity Techub Intelligence", doc.internal.pageSize.width - 14, ph - 8, { align: "right" });
-  }
-  doc.save(filename);
-}
 
 export default function Reports() {
   const { isAdmin, isAdminOrSupervisor, user } = useAuth();
@@ -228,7 +190,7 @@ export default function Reports() {
     }
   };
 
-  const handleExport = (fmt: "pdf" | "csv") => {
+  const handleExport = (fmt: ExportFormat) => {
     setGenerating(true);
     try {
       const { headers, rows, title } = getReportData();
@@ -236,8 +198,8 @@ export default function Reports() {
       const dateRange = `${format(new Date(startDate), "dd-MMM-yyyy")}_${format(new Date(endDate), "dd-MMM-yyyy")}`;
       const filename = `GIS_ASC_${reportType}_${dateRange}`;
       const subtitle = `Period: ${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(endDate), "dd MMM yyyy")} | Records: ${rows.length}`;
-      if (fmt === "pdf") { generatePDF(title, `${filename}.pdf`, headers, rows, subtitle); toast.success("PDF report downloaded"); }
-      else { downloadCSV(`${filename}.csv`, headers, rows); toast.success("CSV report downloaded"); }
+      exportReport(fmt, { title, filename, headers, rows, subtitle });
+      toast.success(`${getFormatLabel(fmt)} report downloaded`);
     } catch (e: any) { toast.error(e.message); }
     finally { setGenerating(false); }
   };
@@ -285,9 +247,11 @@ export default function Reports() {
           <CardTitle className="text-sm flex items-center gap-2"><Download className="h-4 w-4 text-primary" /> Export Report</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-3">
-            <Button onClick={() => handleExport("pdf")} disabled={generating} className="flex-1 gap-2"><FileText className="h-4 w-4" /> Download PDF</Button>
-            <Button onClick={() => handleExport("csv")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileSpreadsheet className="h-4 w-4" /> Download CSV</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => handleExport("pdf")} disabled={generating} className="flex-1 gap-2"><FileText className="h-4 w-4" /> PDF</Button>
+            <Button onClick={() => handleExport("csv")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileSpreadsheet className="h-4 w-4" /> CSV</Button>
+            <Button onClick={() => handleExport("excel")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileSpreadsheet className="h-4 w-4" /> Excel</Button>
+            <Button onClick={() => handleExport("word")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileDown className="h-4 w-4" /> Word</Button>
           </div>
         </CardContent>
       </Card>
