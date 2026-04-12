@@ -102,7 +102,7 @@ export function MobileBottomNav() {
                 : "text-muted-foreground"
             )}
           >
-            <tab.icon className="h-5 w-5" />
+            <tab.icon className={`h-5 w-5 ${tab.iconColor}`} />
             {tab.title}
           </button>
         ))}
@@ -147,7 +147,7 @@ export function MobileBottomNav() {
                       isActive(item.url) && "text-primary font-medium"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className={`h-4 w-4 ${item.iconColor}`} />
                     {item.title}
                   </DropdownMenuItem>
                 ))}
