@@ -19,6 +19,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
+import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
