@@ -4,7 +4,9 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
+import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { org_name, system_label } = useAppSettings();
