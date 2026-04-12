@@ -139,12 +139,12 @@ export default function VisaApplications() {
     <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total", value: summary.total, color: "text-primary" },
-          { label: "Submitted", value: summary.submitted, color: "text-blue-600" },
-          { label: "Approved", value: summary.approved, color: "text-green-600" },
-          { label: "Rejected", value: summary.rejected, color: "text-red-600" },
+          { label: "Total", value: summary.total, color: "text-indigo-600 dark:text-indigo-400", border: "border-indigo-300 dark:border-indigo-700", bg: "bg-indigo-50/50 dark:bg-indigo-950/20" },
+          { label: "Submitted", value: summary.submitted, color: "text-blue-600 dark:text-blue-400", border: "border-blue-300 dark:border-blue-700", bg: "bg-blue-50/50 dark:bg-blue-950/20" },
+          { label: "Approved", value: summary.approved, color: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-300 dark:border-emerald-700", bg: "bg-emerald-50/50 dark:bg-emerald-950/20" },
+          { label: "Rejected", value: summary.rejected, color: "text-red-600 dark:text-red-400", border: "border-red-300 dark:border-red-700", bg: "bg-red-50/50 dark:bg-red-950/20" },
         ].map((s) => (
-          <Card key={s.label}><CardContent className="p-3 text-center">
+          <Card key={s.label} className={`${s.border} ${s.bg}`}><CardContent className="p-3 text-center">
             <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
             <div className="text-xs text-muted-foreground">{s.label}</div>
           </CardContent></Card>

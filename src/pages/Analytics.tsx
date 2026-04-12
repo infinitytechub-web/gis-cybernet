@@ -297,30 +297,30 @@ export default function Analytics() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card>
+        <Card className="border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs"><Users className="h-4 w-4" /> Active Staff</div>
+            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs"><Users className="h-4 w-4" /> Active Staff</div>
             <div className="text-2xl font-bold mt-1">{activeStaff}<span className="text-sm text-muted-foreground font-normal">/{totalStaff}</span></div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs"><CalendarCheck className="h-4 w-4" /> Attendance Rate</div>
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs"><CalendarCheck className="h-4 w-4" /> Attendance Rate</div>
             <div className="text-2xl font-bold mt-1 flex items-center gap-1">
               {avgAttendance}%
               {avgAttendance >= 80 ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs"><AlertTriangle className="h-4 w-4" /> Open Incidents</div>
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs"><AlertTriangle className="h-4 w-4" /> Open Incidents</div>
             <div className="text-2xl font-bold mt-1">{openIncidents}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs"><Shield className="h-4 w-4" /> Compliance Issues</div>
+            <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-xs"><Shield className="h-4 w-4" /> Compliance Issues</div>
             <div className="text-2xl font-bold mt-1">{complianceSummary.expiredDocs + complianceSummary.expiredCerts}</div>
           </CardContent>
         </Card>
@@ -328,10 +328,10 @@ export default function Analytics() {
 
       <Tabs defaultValue="attendance" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="attendance" className="gap-1 text-xs"><Activity className="h-3 w-3" /> Attendance</TabsTrigger>
-          <TabsTrigger value="leave" className="gap-1 text-xs"><Clock className="h-3 w-3" /> Leave</TabsTrigger>
-          <TabsTrigger value="incidents" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" /> Incidents</TabsTrigger>
-          <TabsTrigger value="overview" className="gap-1 text-xs"><PieIcon className="h-3 w-3" /> Overview</TabsTrigger>
+          <TabsTrigger value="attendance" className="gap-1 text-xs"><Activity className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Attendance</TabsTrigger>
+          <TabsTrigger value="leave" className="gap-1 text-xs"><Clock className="h-3 w-3 text-orange-600 dark:text-orange-400" /> Leave</TabsTrigger>
+          <TabsTrigger value="incidents" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" /> Incidents</TabsTrigger>
+          <TabsTrigger value="overview" className="gap-1 text-xs"><PieIcon className="h-3 w-3 text-indigo-600 dark:text-indigo-400" /> Overview</TabsTrigger>
         </TabsList>
 
         {/* Attendance Tab */}
