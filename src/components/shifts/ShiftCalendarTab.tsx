@@ -139,6 +139,22 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
         </div>
       </div>
 
+      {/* Color Legend */}
+      {sortedShifts.length > 0 && (
+        <div className="flex items-center gap-3 flex-wrap text-xs">
+          <span className="text-muted-foreground font-medium">Legend:</span>
+          {sortedShifts.map((s, idx) => {
+            const rc = ROW_COLORS[idx % ROW_COLORS.length];
+            return (
+              <div key={s.id} className="flex items-center gap-1.5">
+                <span className={`inline-block h-3 w-3 rounded-sm ${rc.cell.split(" ").slice(0, 2).join(" ")}`} />
+                <span className="font-medium">{s.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="rounded-lg border overflow-auto">
         <Table>
           <TableHeader>
