@@ -19,6 +19,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
+import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -344,6 +345,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Scheduled Reports Widget (Admin/Supervisor) */}
+      {isAdminOrSupervisor && <ScheduledReportsWidget />}
 
       {/* Online Users Widget */}
       <Card className="border-border/50">
