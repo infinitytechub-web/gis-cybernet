@@ -80,13 +80,7 @@ export function BulkCreateAccounts() {
     if (!results?.length) return;
     const header = "Staff ID,Name,Username,Default Password\n";
     const rows = results.map((r) => `${r.staffId},"${r.name}",${r.username},${r.password}`).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `staff-credentials-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCSVString(header + rows, `staff-credentials-${new Date().toISOString().slice(0, 10)}.csv`);
     toast.success("Credentials CSV downloaded");
   };
 

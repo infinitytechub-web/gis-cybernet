@@ -91,11 +91,7 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
       ]),
     ];
     const csv = rows.map((r) => r.map((c: string) => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `night_guard_activity_${filterDate ? format(filterDate, "yyyy-MM-dd") : "all"}.csv`;
-    a.click();
+    downloadCSVString(csv, `night_guard_activity_${filterDate ? format(filterDate, "yyyy-MM-dd") : "all"}.csv`);
     toast.success("CSV downloaded");
   };
 

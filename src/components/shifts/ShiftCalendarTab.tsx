@@ -67,11 +67,7 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
   const exportCSV = () => {
     const rows = [headers, ...buildExportRows()];
     const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `shifts_${format(weekStart, "yyyy-MM-dd")}.csv`;
-    a.click();
+    downloadCSVString(csv, `shifts_${format(weekStart, "yyyy-MM-dd")}.csv`);
     toast.success("CSV downloaded");
   };
 

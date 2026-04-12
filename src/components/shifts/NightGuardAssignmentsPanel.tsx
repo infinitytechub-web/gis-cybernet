@@ -166,11 +166,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
     const header = ["Guard", "Staff ID", "Shift", "Date"];
     const rows = [header, ...buildExportRows()];
     const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `night_guard_assignments${filterDate ? `_${filterDate}` : ""}.csv`;
-    a.click();
+    downloadCSVString(csv, `night_guard_assignments${filterDate ? `_${filterDate}` : ""}.csv`);
     toast.success("CSV downloaded");
   };
 
