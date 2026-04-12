@@ -5,6 +5,7 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAppSettings } from "@/hooks/useAppSettings";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -42,6 +43,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { signOut, role } = useAuth();
+  const { org_name, system_label } = useAppSettings();
 
   return (
     <Sidebar collapsible="icon">
@@ -50,8 +52,8 @@ export function AppSidebar() {
           <img src={gisLogo} alt="GIS" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-sidebar-primary-foreground">GIS - ASC</span>
-              <span className="text-xs text-sidebar-foreground/70">HRM System</span>
+              <span className="text-sm font-bold text-sidebar-primary-foreground">{org_name.length > 20 ? org_name.slice(0, 20) + "…" : org_name}</span>
+              <span className="text-xs text-sidebar-foreground/70">{system_label}</span>
             </div>
           )}
         </div>
