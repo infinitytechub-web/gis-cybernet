@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   CalendarCheck, Building2, Award, Clock, Calendar,
-  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield, Megaphone, Stamp,
+  ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield, Megaphone, Stamp, Activity,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -31,6 +31,7 @@ const moreItems = [
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Front Desk", url: "/front-desk", icon: Stamp },
+  { title: "Analytics", url: "/analytics", icon: Activity },
 ];
 
 const adminItems = [
