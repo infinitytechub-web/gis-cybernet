@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   LayoutDashboard, Users, Contact, CalendarOff, MoreHorizontal,
 } from "lucide-react";
@@ -43,19 +44,57 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin, isAdminOrSupervisor } = useAuth();
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
 
   const moreActive = moreItems.some((item) => isActive(item.url)) || (isAdminOrSupervisor && adminItems.some((item) => isActive(item.url)));
 
+  const handleNavigate = useCallback((url: string) => {
+    navigate(url);
+    setHidden(true);
+  }, [navigate]);
+
+  // Show nav bar again on scroll up or after settling
+  useEffect(() => {
+    if (!hidden) return;
+
+    const timer = setTimeout(() => setHidden(false), 2000);
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY < lastScrollY.current - 10) {
+        setHidden(false);
+      }
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [hidden]);
+
+  // Reset on route change (in case navigation didn't trigger scroll)
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+  }, [location.pathname]);
+
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 safe-bottom">
+    <nav
+      className={cn(
+        "lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 safe-bottom transition-transform duration-300",
+        hidden && "translate-y-full"
+      )}
+    >
       <div className="grid grid-cols-5 h-14">
         {primaryTabs.map((tab) => (
           <button
             key={tab.url}
-            onClick={() => navigate(tab.url)}
+            onClick={() => handleNavigate(tab.url)}
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 text-[10px] transition-colors",
               isActive(tab.url)
@@ -86,7 +125,7 @@ export function MobileBottomNav() {
             {moreItems.map((item) => (
               <DropdownMenuItem
                 key={item.url}
-                onClick={() => navigate(item.url)}
+                onClick={() => handleNavigate(item.url)}
                 className={cn(
                   "gap-2",
                   isActive(item.url) && "text-primary font-medium"
@@ -102,7 +141,7 @@ export function MobileBottomNav() {
                 {adminItems.map((item) => (
                   <DropdownMenuItem
                     key={item.url}
-                    onClick={() => navigate(item.url)}
+                    onClick={() => handleNavigate(item.url)}
                     className={cn(
                       "gap-2",
                       isActive(item.url) && "text-primary font-medium"
