@@ -6,17 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Shield, Users, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
-import { supabase } from "@/integrations/supabase/client";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
+
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60_000;
-// Use hCaptcha test key for development; replace with real site key in production
-const HCAPTCHA_SITE_KEY = "10000000-ffff-ffff-ffff-000000000001";
 
 export default function Login() {
   const [staffId, setStaffId] = useState("");
@@ -24,10 +21,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lockoutEnd, setLockoutEnd] = useState<number | null>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaVerified, setCaptchaVerified] = useState(false);
   const failCount = useRef(0);
-  const captchaRef = useRef<HCaptcha>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -36,16 +30,6 @@ export default function Login() {
     if (!lockoutEnd) return 0;
     return Math.max(0, Math.ceil((lockoutEnd - Date.now()) / 1000));
   }, [lockoutEnd]);
-
-  const handleCaptchaVerify = (token: string) => {
-    setCaptchaToken(token);
-    setCaptchaVerified(true);
-  };
-
-  const handleCaptchaExpire = () => {
-    setCaptchaToken(null);
-    setCaptchaVerified(false);
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,26 +40,9 @@ export default function Login() {
       return;
     }
 
-    if (!captchaVerified || !captchaToken) {
-      toast({ title: "Verification Required", description: "Please complete the human verification challenge.", variant: "destructive" });
-      return;
-    }
-
     if (!staffId.trim() || !password.trim()) return;
     setIsLoading(true);
     try {
-      // Verify hCaptcha token server-side
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke("verify-hcaptcha", {
-        body: { token: captchaToken },
-      });
-      if (verifyError || !verifyData?.success) {
-        toast({ title: "Verification Failed", description: "Human verification failed. Please try again.", variant: "destructive" });
-        captchaRef.current?.resetCaptcha();
-        setCaptchaVerified(false);
-        setCaptchaToken(null);
-        return;
-      }
-
       const email = `${staffId.trim().toLowerCase().replace(/\s+/g, "")}@gis.local`;
       await signIn(email, password);
       failCount.current = 0;
@@ -83,9 +50,6 @@ export default function Login() {
       navigate("/");
     } catch {
       failCount.current += 1;
-      captchaRef.current?.resetCaptcha();
-      setCaptchaVerified(false);
-      setCaptchaToken(null);
       if (failCount.current >= MAX_ATTEMPTS) {
         const until = Date.now() + LOCKOUT_DURATION_MS;
         setLockoutEnd(until);
@@ -115,25 +79,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* hCaptcha Widget */}
-      <div className="flex flex-col items-center gap-2">
-        <HCaptcha
-          ref={captchaRef}
-          sitekey={HCAPTCHA_SITE_KEY}
-          onVerify={handleCaptchaVerify}
-          onExpire={handleCaptchaExpire}
-          onError={handleCaptchaExpire}
-          size="compact"
-        />
-        {captchaVerified && (
-          <div className="flex items-center gap-1 text-xs text-green-600">
-            <ShieldCheck className="h-3 w-3" />
-            <span>Human verified</span>
-          </div>
-        )}
-      </div>
-
-      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading || getRemainingLockout() > 0 || !captchaVerified}>
+      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading || getRemainingLockout() > 0}>
         {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : buttonText}
       </Button>
       <div className="text-center">
