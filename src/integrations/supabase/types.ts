@@ -61,6 +61,42 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          allow_self_registration: boolean
+          auto_logout_minutes: number
+          created_at: string
+          enforce_password_change: boolean
+          id: string
+          min_password_length: number
+          org_name: string
+          system_label: string
+          updated_at: string
+        }
+        Insert: {
+          allow_self_registration?: boolean
+          auto_logout_minutes?: number
+          created_at?: string
+          enforce_password_change?: boolean
+          id?: string
+          min_password_length?: number
+          org_name?: string
+          system_label?: string
+          updated_at?: string
+        }
+        Update: {
+          allow_self_registration?: boolean
+          auto_logout_minutes?: number
+          created_at?: string
+          enforce_password_change?: boolean
+          id?: string
+          min_password_length?: number
+          org_name?: string
+          system_label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attendances: {
         Row: {
           check_in: string | null
