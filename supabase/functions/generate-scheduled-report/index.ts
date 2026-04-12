@@ -84,9 +84,9 @@ serve(async (req) => {
     } else if (report_type === "leave") {
       const { data: leave } = await supabase
         .from("leave_requests")
-        .select("*, profiles(first_name, last_name, staff_id)")
-        .gte("start_date", startDate)
-        .lte("end_date", endDate)
+        .select("*, profiles!leave_requests_profile_id_fkey(first_name, last_name, staff_id)")
+        .lte("start_date", endDate)
+        .gte("end_date", startDate)
         .order("created_at", { ascending: false });
 
       title = `Leave/Pass Report (${startDate} to ${endDate})`;
