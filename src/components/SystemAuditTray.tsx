@@ -1,19 +1,25 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { triggerDownload } from "@/lib/download-utils";
 import {
   Shield, Search, Filter, User, Clock, FileText, ArrowRightLeft,
   CalendarCheck, Building2, Megaphone, Award, CalendarOff, AlertTriangle,
-  Users, Calendar, ChevronDown, ChevronUp, Trash2,
+  Users, Calendar, ChevronDown, ChevronUp, Trash2, Download,
 } from "lucide-react";
 
 const ENTITY_CONFIG: Record<string, { label: string; icon: typeof Shield; color: string }> = {
@@ -100,6 +106,8 @@ export function SystemAuditTray() {
   const [actionFilter, setActionFilter] = useState("all");
   const [limit, setLimit] = useState(50);
 
+  const queryClient = useQueryClient();
+
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["system-audit-log", limit],
     queryFn: async () => {
@@ -147,6 +155,38 @@ export function SystemAuditTray() {
 
   const entityTypes = [...new Set(logs.map(l => l.entity_type))];
 
+  const exportCSV = () => {
+    if (filtered.length === 0) return;
+    const headers = ["Timestamp", "Action", "Entity Type", "Entity ID", "Performed By"];
+    const rows = filtered.map(log => [
+      format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss"),
+      log.action,
+      ENTITY_CONFIG[log.entity_type]?.label || log.entity_type,
+      log.entity_id || "",
+      log.performed_by ? (profiles[log.performed_by] || log.performed_by) : "System",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, `audit-log-${format(new Date(), "yyyy-MM-dd-HHmmss")}.csv`);
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${filtered.length} audit entries exported to CSV.` });
+  };
+
+  const purgeMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("system_audit_log").delete().lt("created_at", new Date().toISOString());
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["system-audit-log"] });
+      toast({ title: "Purged", description: "All audit log entries have been cleared." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to purge audit logs.", variant: "destructive" });
+    },
+  });
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -179,6 +219,50 @@ export function SystemAuditTray() {
               Real-time log of all system activities
             </SheetDescription>
           </SheetHeader>
+
+          {/* Action buttons */}
+          <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              className="h-7 text-[10px] bg-[hsl(120,30%,25%)] hover:bg-[hsl(120,30%,30%)] text-[hsl(120,20%,80%)] border border-[hsl(120,30%,30%)]"
+              onClick={exportCSV}
+              disabled={filtered.length === 0}
+            >
+              <Download className="h-3 w-3 mr-1" />
+              Export CSV
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className="h-7 text-[10px] bg-red-900/40 hover:bg-red-900/60 text-red-300 border border-red-800/50"
+                  disabled={logs.length === 0 || purgeMutation.isPending}
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  {purgeMutation.isPending ? "Purging..." : "Purge All"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-[hsl(120,18%,12%)] border-[hsl(120,30%,25%)] text-[hsl(120,15%,85%)]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-[hsl(120,30%,70%)]">Purge All Audit Logs?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-[hsl(120,15%,55%)]">
+                    This will permanently delete all {logs.length} audit log entries. This action cannot be undone. Consider exporting to CSV first.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="bg-[hsl(120,18%,15%)] border-[hsl(120,25%,25%)] text-[hsl(120,15%,70%)] hover:bg-[hsl(120,18%,20%)]">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-800 hover:bg-red-700 text-white"
+                    onClick={() => purgeMutation.mutate()}
+                  >
+                    Purge All Logs
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
 
           {/* Filters */}
           <div className="mt-3 space-y-2">
