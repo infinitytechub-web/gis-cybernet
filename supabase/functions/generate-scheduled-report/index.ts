@@ -82,14 +82,12 @@ serve(async (req) => {
         a.status, a.notes ?? "",
       ]);
     } else if (report_type === "leave") {
-      console.log("Leave query params:", { startDate, endDate });
-      const { data: leave, error: leaveError } = await supabase
+      const { data: leave } = await supabase
         .from("leave_requests")
-        .select("*, profiles(first_name, last_name, staff_id)")
+        .select("*, profiles!leave_requests_profile_id_fkey(first_name, last_name, staff_id)")
         .lte("start_date", endDate)
         .gte("end_date", startDate)
         .order("created_at", { ascending: false });
-      console.log("Leave query result:", { count: leave?.length, error: leaveError });
 
       title = `Leave/Pass Report (${startDate} to ${endDate})`;
       headers = ["Staff ID", "Name", "Type", "Start Date", "End Date", "Status", "Reason"];
