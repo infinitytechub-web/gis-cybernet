@@ -4,10 +4,13 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
+import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { org_name, system_label } = useAppSettings();
+  const { isAdmin } = useAuth();
 
   return (
     <SidebarProvider>
@@ -18,6 +21,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="text-muted-foreground" />
             <h2 className="text-sm font-semibold flex-1" style={{ color: "hsl(152, 70%, 30%)" }}>Ghana Immigration Service: {system_label}</h2>
             <ThemeToggle />
+            {isAdmin && <SystemAuditTray />}
             <NotificationBell />
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 lg:pb-6">
