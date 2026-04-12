@@ -1,19 +1,25 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { triggerDownload } from "@/lib/download-utils";
 import {
   Shield, Search, Filter, User, Clock, FileText, ArrowRightLeft,
   CalendarCheck, Building2, Megaphone, Award, CalendarOff, AlertTriangle,
-  Users, Calendar, ChevronDown, ChevronUp, Trash2,
+  Users, Calendar, ChevronDown, ChevronUp, Trash2, Download,
 } from "lucide-react";
 
 const ENTITY_CONFIG: Record<string, { label: string; icon: typeof Shield; color: string }> = {
