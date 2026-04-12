@@ -106,6 +106,8 @@ export function SystemAuditTray() {
   const [actionFilter, setActionFilter] = useState("all");
   const [limit, setLimit] = useState(50);
 
+  const queryClient = useQueryClient();
+
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["system-audit-log", limit],
     queryFn: async () => {
