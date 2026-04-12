@@ -204,25 +204,8 @@ export function SystemAuditTray() {
       if (error) throw error;
       return (data || []) as AuditEntry[];
     },
-    refetchInterval: 30000,
+    refetchInterval: 10000,
   });
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('system-audit-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'system_audit_log' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["system-audit-log"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
 
   const unseenCount = logs.filter(l => l.created_at > lastSeen).length;
 
