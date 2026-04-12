@@ -328,10 +328,10 @@ export default function Analytics() {
 
       <Tabs defaultValue="attendance" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="attendance" className="gap-1 text-xs"><Activity className="h-3 w-3" /> Attendance</TabsTrigger>
-          <TabsTrigger value="leave" className="gap-1 text-xs"><Clock className="h-3 w-3" /> Leave</TabsTrigger>
-          <TabsTrigger value="incidents" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" /> Incidents</TabsTrigger>
-          <TabsTrigger value="overview" className="gap-1 text-xs"><PieIcon className="h-3 w-3" /> Overview</TabsTrigger>
+          <TabsTrigger value="attendance" className="gap-1 text-xs"><Activity className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Attendance</TabsTrigger>
+          <TabsTrigger value="leave" className="gap-1 text-xs"><Clock className="h-3 w-3 text-orange-600 dark:text-orange-400" /> Leave</TabsTrigger>
+          <TabsTrigger value="incidents" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" /> Incidents</TabsTrigger>
+          <TabsTrigger value="overview" className="gap-1 text-xs"><PieIcon className="h-3 w-3 text-indigo-600 dark:text-indigo-400" /> Overview</TabsTrigger>
         </TabsList>
 
         {/* Attendance Tab */}

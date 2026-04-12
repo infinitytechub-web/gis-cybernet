@@ -16,16 +16,16 @@ export default function FrontDesk() {
       <Tabs defaultValue="visa" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="visa" className="gap-1 text-xs sm:text-sm">
-            <Stamp className="h-4 w-4" /> Visa Apps
+            <Stamp className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Visa Apps
           </TabsTrigger>
           <TabsTrigger value="extensions" className="gap-1 text-xs sm:text-sm">
-            <FileText className="h-4 w-4" /> Extensions
+            <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" /> Extensions
           </TabsTrigger>
           <TabsTrigger value="passport" className="gap-1 text-xs sm:text-sm">
-            <BookOpen className="h-4 w-4" /> Passport
+            <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Passport
           </TabsTrigger>
           <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm">
-            <ClipboardList className="h-4 w-4" /> Audit Log
+            <ClipboardList className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Audit Log
           </TabsTrigger>
         </TabsList>
         <TabsContent value="visa"><VisaApplications /></TabsContent>
