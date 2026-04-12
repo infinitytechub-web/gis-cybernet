@@ -257,6 +257,9 @@ export default function Reports() {
         </CardContent>
       </Card>
 
+      {/* Scheduled Reports - Admin/Supervisor */}
+      {isAdminOrSupervisor && <ReportScheduleManager />}
+
       {/* Uploaded Reports Section */}
       <Card>
         <CardHeader className="pb-3">
