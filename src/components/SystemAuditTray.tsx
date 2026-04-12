@@ -155,6 +155,38 @@ export function SystemAuditTray() {
 
   const entityTypes = [...new Set(logs.map(l => l.entity_type))];
 
+  const exportCSV = () => {
+    if (filtered.length === 0) return;
+    const headers = ["Timestamp", "Action", "Entity Type", "Entity ID", "Performed By"];
+    const rows = filtered.map(log => [
+      format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss"),
+      log.action,
+      ENTITY_CONFIG[log.entity_type]?.label || log.entity_type,
+      log.entity_id || "",
+      log.performed_by ? (profiles[log.performed_by] || log.performed_by) : "System",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    triggerDownload(url, `audit-log-${format(new Date(), "yyyy-MM-dd-HHmmss")}.csv`);
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${filtered.length} audit entries exported to CSV.` });
+  };
+
+  const purgeMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("system_audit_log").delete().lt("created_at", new Date().toISOString());
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["system-audit-log"] });
+      toast({ title: "Purged", description: "All audit log entries have been cleared." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to purge audit logs.", variant: "destructive" });
+    },
+  });
+
   return (
     <Sheet>
       <SheetTrigger asChild>
