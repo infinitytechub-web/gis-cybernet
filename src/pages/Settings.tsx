@@ -58,12 +58,12 @@ export default function Settings() {
       <h1 className="text-2xl font-bold text-secondary">System Settings</h1>
       <Tabs defaultValue="roles" className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4" /> User Roles</TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4" /> Permissions</TabsTrigger>
-          <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4" /> Accounts</TabsTrigger>
-          <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4" /> App Settings</TabsTrigger>
-          <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4" /> System Info</TabsTrigger>
-          <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4" /> 2FA</TabsTrigger>
+          <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4 text-destructive" /> User Roles</TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4 text-chart-1" /> Permissions</TabsTrigger>
+          <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4 text-chart-2" /> Accounts</TabsTrigger>
+          <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
+          <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
+          <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
@@ -275,12 +275,12 @@ function SystemInfoTab() {
   });
 
   const items = [
-    { label: "Total Staff Profiles", value: counts?.profiles },
-    { label: "Departments", value: counts?.departments },
-    { label: "Ranks / Designations", value: counts?.ranks },
-    { label: "Shifts Configured", value: counts?.shifts },
-    { label: "Leave Requests (All Time)", value: counts?.leaves },
-    { label: "Postings / Transfers (All Time)", value: counts?.postings },
+    { label: "Total Staff Profiles", value: counts?.profiles, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Departments", value: counts?.departments, color: "text-chart-1", bg: "bg-chart-1/10" },
+    { label: "Ranks / Designations", value: counts?.ranks, color: "text-chart-2", bg: "bg-chart-2/10" },
+    { label: "Shifts Configured", value: counts?.shifts, color: "text-chart-4", bg: "bg-chart-4/10" },
+    { label: "Leave Requests (All Time)", value: counts?.leaves, color: "text-destructive", bg: "bg-destructive/10" },
+    { label: "Postings / Transfers (All Time)", value: counts?.postings, color: "text-chart-5", bg: "bg-chart-5/10" },
   ];
 
   return (
@@ -295,8 +295,8 @@ function SystemInfoTab() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {items.map((item) => (
-              <div key={item.label} className="rounded-lg border p-4 text-center">
-                <div className="text-2xl font-bold text-primary">{item.value}</div>
+              <div key={item.label} className={`rounded-lg border p-4 text-center ${item.bg}`}>
+                <div className={`text-2xl font-bold ${item.color}`}>{item.value}</div>
                 <div className="text-xs text-muted-foreground mt-1">{item.label}</div>
               </div>
             ))}
