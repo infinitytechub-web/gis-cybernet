@@ -7,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, Download, Copy, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { downloadCSVString } from "@/lib/download-utils";
 
 interface CreatedAccount {
   staffId: string;
