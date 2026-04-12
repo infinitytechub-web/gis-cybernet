@@ -15,29 +15,29 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 
 const primaryTabs = [
-  { title: "Home", url: "/", icon: LayoutDashboard },
-  { title: "Staff", url: "/staff", icon: Users },
-  { title: "Directory", url: "/directory", icon: Contact },
-  { title: "Leave", url: "/leave", icon: CalendarOff },
+  { title: "Home", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
+  { title: "Staff", url: "/staff", icon: Users, iconColor: "text-emerald-600 dark:text-emerald-400" },
+  { title: "Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400" },
+  { title: "Leave", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
 ];
 
 const moreItems = [
-  { title: "Departments", url: "/departments", icon: Building2 },
-  { title: "Roles", url: "/roles", icon: Award },
-  { title: "Shifts", url: "/shifts", icon: Clock },
-  { title: "Duty Roster", url: "/roster", icon: CalendarDays },
-  { title: "Attendance", url: "/attendance", icon: CalendarCheck },
-  { title: "Holidays", url: "/holidays", icon: Calendar },
-  { title: "Postings & Reassignment", url: "/postings", icon: ArrowRightLeft },
-  { title: "Compliance", url: "/compliance", icon: ClipboardCheck },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
-  { title: "Front Desk", url: "/front-desk", icon: Stamp },
-  { title: "Analytics", url: "/analytics", icon: Activity },
+  { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400" },
+  { title: "Roles", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
+  { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400" },
+  { title: "Attendance", url: "/attendance", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400" },
+  { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
+  { title: "Postings & Reassignment", url: "/postings", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400" },
+  { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400" },
+  { title: "Reports", url: "/reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400" },
+  { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400" },
+  { title: "Analytics", url: "/analytics", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400" },
 ];
 
 const adminItems = [
-  { title: "Announcements", url: "/announcements", icon: Megaphone },
-  { title: "Settings", url: "/settings", icon: Shield },
+  { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
+  { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
 
 export function MobileBottomNav() {
