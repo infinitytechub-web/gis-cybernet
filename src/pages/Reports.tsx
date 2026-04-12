@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -381,7 +382,15 @@ export default function Reports() {
                         <Button variant="ghost" size="icon" onClick={() => handleDownload(r)} title="Download"><Download className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
                         {isAdminOrSupervisor && (
-                          <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(r)} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader><AlertDialogTitle>Delete report "{r.title}"?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this report file. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(r)}>Delete</AlertDialogAction></AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </div>
                     </TableCell>
