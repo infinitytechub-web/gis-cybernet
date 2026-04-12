@@ -131,7 +131,7 @@ export function MobileBottomNav() {
                   isActive(item.url) && "text-primary font-medium"
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className={`h-4 w-4 ${item.iconColor}`} />
                 {item.title}
               </DropdownMenuItem>
             ))}
