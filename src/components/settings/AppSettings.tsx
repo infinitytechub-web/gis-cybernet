@@ -27,7 +27,7 @@ export function AppSettings() {
       {/* Organization */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Globe className="h-4 w-4" /> Organization</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Globe className="h-4 w-4 text-chart-1" /> Organization</CardTitle>
           <CardDescription>Basic organization and branding settings.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -47,7 +47,7 @@ export function AppSettings() {
       {/* Security */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Shield className="h-4 w-4" /> Security Policy</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Shield className="h-4 w-4 text-destructive" /> Security Policy</CardTitle>
           <CardDescription>Password and authentication policies for all users.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -82,7 +82,7 @@ export function AppSettings() {
       {/* Session */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4" /> Session</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4 text-chart-4" /> Session</CardTitle>
           <CardDescription>Session timeout and activity settings.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
