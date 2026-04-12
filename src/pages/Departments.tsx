@@ -89,11 +89,23 @@ export default function Departments() {
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {departments.map((d) => (
-            <Card key={d.id} className="border-border/50">
+          {departments.map((d, idx) => {
+            const DEPT_COLORS = [
+              { border: "border-blue-300 dark:border-blue-700", bg: "bg-blue-50/50 dark:bg-blue-950/20", icon: "text-blue-600 dark:text-blue-400" },
+              { border: "border-emerald-300 dark:border-emerald-700", bg: "bg-emerald-50/50 dark:bg-emerald-950/20", icon: "text-emerald-600 dark:text-emerald-400" },
+              { border: "border-purple-300 dark:border-purple-700", bg: "bg-purple-50/50 dark:bg-purple-950/20", icon: "text-purple-600 dark:text-purple-400" },
+              { border: "border-amber-300 dark:border-amber-700", bg: "bg-amber-50/50 dark:bg-amber-950/20", icon: "text-amber-600 dark:text-amber-400" },
+              { border: "border-rose-300 dark:border-rose-700", bg: "bg-rose-50/50 dark:bg-rose-950/20", icon: "text-rose-600 dark:text-rose-400" },
+              { border: "border-cyan-300 dark:border-cyan-700", bg: "bg-cyan-50/50 dark:bg-cyan-950/20", icon: "text-cyan-600 dark:text-cyan-400" },
+              { border: "border-indigo-300 dark:border-indigo-700", bg: "bg-indigo-50/50 dark:bg-indigo-950/20", icon: "text-indigo-600 dark:text-indigo-400" },
+              { border: "border-orange-300 dark:border-orange-700", bg: "bg-orange-50/50 dark:bg-orange-950/20", icon: "text-orange-600 dark:text-orange-400" },
+            ];
+            const dc = DEPT_COLORS[idx % DEPT_COLORS.length];
+            return (
+            <Card key={d.id} className={`${dc.border} ${dc.bg}`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-3">
-                  <Building2 className="h-5 w-5 text-primary" />
+                  <Building2 className={`h-5 w-5 ${dc.icon}`} />
                   <CardTitle className="text-base">{d.name}</CardTitle>
                 </div>
                 {isAdmin && (
@@ -125,7 +137,8 @@ export default function Departments() {
                 <p className="text-sm text-muted-foreground">{d.description || "No description"}</p>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

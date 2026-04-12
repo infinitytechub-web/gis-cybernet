@@ -110,9 +110,9 @@ function DocumentsTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3"><FileText className="h-8 w-8 text-primary" /><div><div className="text-2xl font-bold">{documents.length}</div><div className="text-xs text-muted-foreground">Total Documents</div></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-amber-600" /><div><div className="text-2xl font-bold">{expiring}</div><div className="text-xs text-muted-foreground">Expiring Soon</div></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><Clock className="h-8 w-8 text-destructive" /><div><div className="text-2xl font-bold">{expired}</div><div className="text-xs text-muted-foreground">Expired</div></div></CardContent></Card>
+        <Card className="border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20"><CardContent className="p-4 flex items-center gap-3"><FileText className="h-8 w-8 text-blue-600 dark:text-blue-400" /><div><div className="text-2xl font-bold">{documents.length}</div><div className="text-xs text-muted-foreground">Total Documents</div></div></CardContent></Card>
+        <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20"><CardContent className="p-4 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" /><div><div className="text-2xl font-bold">{expiring}</div><div className="text-xs text-muted-foreground">Expiring Soon</div></div></CardContent></Card>
+        <Card className="border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20"><CardContent className="p-4 flex items-center gap-3"><Clock className="h-8 w-8 text-red-600 dark:text-red-400" /><div><div className="text-2xl font-bold">{expired}</div><div className="text-xs text-muted-foreground">Expired</div></div></CardContent></Card>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
@@ -287,9 +287,9 @@ function EquipmentTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3"><Wrench className="h-8 w-8 text-primary" /><div><div className="text-2xl font-bold">{equipment.length}</div><div className="text-xs text-muted-foreground">Total Records</div></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-amber-600" /><div><div className="text-2xl font-bold">{issued}</div><div className="text-xs text-muted-foreground">Currently Issued</div></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><CheckCircle2 className="h-8 w-8 text-emerald-600" /><div><div className="text-2xl font-bold">{equipment.length - issued}</div><div className="text-xs text-muted-foreground">Returned</div></div></CardContent></Card>
+        <Card className="border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20"><CardContent className="p-4 flex items-center gap-3"><Wrench className="h-8 w-8 text-indigo-600 dark:text-indigo-400" /><div><div className="text-2xl font-bold">{equipment.length}</div><div className="text-xs text-muted-foreground">Total Records</div></div></CardContent></Card>
+        <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20"><CardContent className="p-4 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" /><div><div className="text-2xl font-bold">{issued}</div><div className="text-xs text-muted-foreground">Currently Issued</div></div></CardContent></Card>
+        <Card className="border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20"><CardContent className="p-4 flex items-center gap-3"><CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" /><div><div className="text-2xl font-bold">{equipment.length - issued}</div><div className="text-xs text-muted-foreground">Returned</div></div></CardContent></Card>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
@@ -461,9 +461,9 @@ function CertificationsTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3"><Award className="h-8 w-8 text-primary" /><div><div className="text-2xl font-bold">{certifications.length}</div><div className="text-xs text-muted-foreground">Total Certs</div></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-amber-600" /><div><div className="text-2xl font-bold">{expiring}</div><div className="text-xs text-muted-foreground">Expiring Soon</div></div></CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3"><Clock className="h-8 w-8 text-destructive" /><div><div className="text-2xl font-bold">{expired}</div><div className="text-xs text-muted-foreground">Expired</div></div></CardContent></Card>
+        <Card className="border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20"><CardContent className="p-4 flex items-center gap-3"><Award className="h-8 w-8 text-purple-600 dark:text-purple-400" /><div><div className="text-2xl font-bold">{certifications.length}</div><div className="text-xs text-muted-foreground">Total Certs</div></div></CardContent></Card>
+        <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20"><CardContent className="p-4 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" /><div><div className="text-2xl font-bold">{expiring}</div><div className="text-xs text-muted-foreground">Expiring Soon</div></div></CardContent></Card>
+        <Card className="border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-950/20"><CardContent className="p-4 flex items-center gap-3"><Clock className="h-8 w-8 text-red-600 dark:text-red-400" /><div><div className="text-2xl font-bold">{expired}</div><div className="text-xs text-muted-foreground">Expired</div></div></CardContent></Card>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
@@ -553,9 +553,9 @@ export default function Compliance() {
       <h1 className="text-2xl font-bold text-secondary">Compliance Management</h1>
       <Tabs defaultValue="documents">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="documents" className="gap-1"><FileText className="h-4 w-4" /> Documents</TabsTrigger>
-          <TabsTrigger value="equipment" className="gap-1"><Wrench className="h-4 w-4" /> Equipment</TabsTrigger>
-          <TabsTrigger value="certifications" className="gap-1"><Award className="h-4 w-4" /> Certifications</TabsTrigger>
+          <TabsTrigger value="documents" className="gap-1"><FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Documents</TabsTrigger>
+          <TabsTrigger value="equipment" className="gap-1"><Wrench className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Equipment</TabsTrigger>
+          <TabsTrigger value="certifications" className="gap-1"><Award className="h-4 w-4 text-purple-600 dark:text-purple-400" /> Certifications</TabsTrigger>
         </TabsList>
         <TabsContent value="documents"><DocumentsTab /></TabsContent>
         <TabsContent value="equipment"><EquipmentTab /></TabsContent>

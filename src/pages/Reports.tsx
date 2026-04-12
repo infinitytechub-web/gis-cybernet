@@ -205,9 +205,9 @@ export default function Reports() {
   };
 
   const reportOptions = [
-    { value: "staff" as ReportType, label: "Staff Summary", icon: Users, description: "Complete staff roster", count: staff.length },
-    { value: "attendance" as ReportType, label: "Attendance", icon: CalendarCheck, description: "Check-in/out records", count: attendance.length },
-    { value: "leave" as ReportType, label: "Leave/Pass", icon: CalendarOff, description: "Leave and pass requests", count: leaveRequests.length },
+    { value: "staff" as ReportType, label: "Staff Summary", icon: Users, description: "Complete staff roster", count: staff.length, color: "text-blue-600 dark:text-blue-400", border: "border-blue-300 dark:border-blue-700", bg: "bg-blue-50/50 dark:bg-blue-950/20" },
+    { value: "attendance" as ReportType, label: "Attendance", icon: CalendarCheck, description: "Check-in/out records", count: attendance.length, color: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-300 dark:border-emerald-700", bg: "bg-emerald-50/50 dark:bg-emerald-950/20" },
+    { value: "leave" as ReportType, label: "Leave/Pass", icon: CalendarOff, description: "Leave and pass requests", count: leaveRequests.length, color: "text-orange-600 dark:text-orange-400", border: "border-orange-300 dark:border-orange-700", bg: "bg-orange-50/50 dark:bg-orange-950/20" },
   ];
 
   return (
@@ -217,9 +217,9 @@ export default function Reports() {
       {/* Generated Reports Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {reportOptions.map((opt) => (
-          <Card key={opt.value} className={`cursor-pointer transition-all ${reportType === opt.value ? "border-primary ring-1 ring-primary/30" : "border-border/50 hover:border-primary/40"}`} onClick={() => setReportType(opt.value)}>
+          <Card key={opt.value} className={`cursor-pointer transition-all ${reportType === opt.value ? `${opt.border} ring-1 ring-primary/30 ${opt.bg}` : "border-border/50 hover:border-primary/40"}`} onClick={() => setReportType(opt.value)}>
             <CardContent className="p-4 flex items-start gap-3">
-              <opt.icon className={`h-8 w-8 shrink-0 ${reportType === opt.value ? "text-primary" : "text-muted-foreground"}`} />
+              <opt.icon className={`h-8 w-8 shrink-0 ${opt.color}`} />
               <div>
                 <div className="font-semibold text-sm">{opt.label}</div>
                 <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
