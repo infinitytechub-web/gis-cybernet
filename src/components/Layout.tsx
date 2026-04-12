@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { useAppSettings } from "@/hooks/useAppSettings";
 
 export function Layout({ children }: { children: React.ReactNode }) {
