@@ -211,12 +211,12 @@ export default function Dashboard() {
   });
 
   const summaryCards = [
-    { title: "Total Staff", value: staffCount, sub: `${activeStaff} active`, icon: Users, color: "text-primary" },
-    { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-success" },
-    { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-warning" },
-    { title: "Pending Postings", value: pendingPostings, sub: "awaiting approval", icon: ArrowRightLeft, color: "text-info" },
-    { title: "Upcoming Holidays", value: upcomingHolidays.length, sub: "this year", icon: Calendar, color: "text-secondary" },
-    { title: "Absent Today", value: staffCount - todayAttendance, sub: "not checked in", icon: UserX, color: "text-destructive" },
+    { title: "Total Staff", value: staffCount, sub: `${activeStaff} active`, icon: Users, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/40", border: "border-blue-200 dark:border-blue-800" },
+    { title: "On-Duty Today", value: todayAttendance, sub: `of ${activeStaff} active`, icon: CalendarCheck, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/40", border: "border-emerald-200 dark:border-emerald-800" },
+    { title: "Pending Leave", value: pendingLeave, sub: "awaiting approval", icon: CalendarOff, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/40", border: "border-amber-200 dark:border-amber-800" },
+    { title: "Pending Postings", value: pendingPostings, sub: "awaiting approval", icon: ArrowRightLeft, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-950/40", border: "border-purple-200 dark:border-purple-800" },
+    { title: "Upcoming Holidays", value: upcomingHolidays.length, sub: "this year", icon: Calendar, color: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-950/40", border: "border-cyan-200 dark:border-cyan-800" },
+    { title: "Absent Today", value: staffCount - todayAttendance, sub: "not checked in", icon: UserX, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950/40", border: "border-rose-200 dark:border-rose-800" },
   ];
 
   const statusColor = (s: string) => {
@@ -237,7 +237,7 @@ export default function Dashboard() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {summaryCards.map((card) => (
-          <Card key={card.title} className="border-border/50">
+          <Card key={card.title} className={`${card.bg} ${card.border} border-2`}>
             <CardHeader className="flex flex-row items-center justify-between pb-1 pt-4 px-4">
               <CardTitle className="text-xs font-medium text-muted-foreground">{card.title}</CardTitle>
               <card.icon className={`h-4 w-4 ${card.color}`} />
