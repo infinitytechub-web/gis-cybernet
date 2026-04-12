@@ -220,6 +220,50 @@ export function SystemAuditTray() {
             </SheetDescription>
           </SheetHeader>
 
+          {/* Action buttons */}
+          <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              className="h-7 text-[10px] bg-[hsl(120,30%,25%)] hover:bg-[hsl(120,30%,30%)] text-[hsl(120,20%,80%)] border border-[hsl(120,30%,30%)]"
+              onClick={exportCSV}
+              disabled={filtered.length === 0}
+            >
+              <Download className="h-3 w-3 mr-1" />
+              Export CSV
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className="h-7 text-[10px] bg-red-900/40 hover:bg-red-900/60 text-red-300 border border-red-800/50"
+                  disabled={logs.length === 0 || purgeMutation.isPending}
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  {purgeMutation.isPending ? "Purging..." : "Purge All"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-[hsl(120,18%,12%)] border-[hsl(120,30%,25%)] text-[hsl(120,15%,85%)]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-[hsl(120,30%,70%)]">Purge All Audit Logs?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-[hsl(120,15%,55%)]">
+                    This will permanently delete all {logs.length} audit log entries. This action cannot be undone. Consider exporting to CSV first.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="bg-[hsl(120,18%,15%)] border-[hsl(120,25%,25%)] text-[hsl(120,15%,70%)] hover:bg-[hsl(120,18%,20%)]">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-800 hover:bg-red-700 text-white"
+                    onClick={() => purgeMutation.mutate()}
+                  >
+                    Purge All Logs
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+
           {/* Filters */}
           <div className="mt-3 space-y-2">
             <div className="relative">
