@@ -520,12 +520,21 @@ export default function Dashboard() {
               {upcomingHolidays.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No upcoming holidays</p>
               ) : (
-                upcomingHolidays.map((h: any) => (
-                  <div key={h.date} className="flex items-center justify-between text-sm">
-                    <span className="font-medium truncate mr-2">{h.name}</span>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{format(new Date(h.date), "dd MMM")}</span>
-                  </div>
-                ))
+                upcomingHolidays.map((h: any, idx: number) => {
+                  const holidayColors = [
+                    "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800",
+                    "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800",
+                    "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800",
+                    "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800",
+                    "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800",
+                  ];
+                  return (
+                    <div key={h.date} className={`flex items-center justify-between text-sm rounded-lg px-3 py-2 border ${holidayColors[idx % holidayColors.length]}`}>
+                      <span className="font-medium truncate mr-2">{h.name}</span>
+                      <Badge variant="outline" className="text-[10px] shrink-0">{format(new Date(h.date), "dd MMM")}</Badge>
+                    </div>
+                  );
+                })
               )}
             </CardContent>
           </Card>
@@ -538,12 +547,31 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {staffStatusData.map((s: any) => (
-                <div key={s.name} className="flex items-center justify-between">
-                  <span className="text-sm capitalize">{s.name.replace("_", " ")}</span>
-                  <Badge variant="outline" className="text-xs">{s.value}</Badge>
-                </div>
-              ))}
+              {staffStatusData.map((s: any) => {
+                const isActive = s.name === "active";
+                const isInactive = s.name === "inactive" || s.name === "transferred";
+                return (
+                  <div key={s.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {isActive ? (
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                        </span>
+                      ) : isInactive ? (
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-400" />
+                      )}
+                      <span className="text-sm capitalize">{s.name.replace("_", " ")}</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs">{s.value}</Badge>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
