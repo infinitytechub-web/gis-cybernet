@@ -7,31 +7,44 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
+import { lazy, Suspense } from "react";
+
+// Eagerly loaded (lightweight pages)
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Staff from "./pages/Staff";
-import Departments from "./pages/Departments";
-import Roles from "./pages/Roles";
-import Shifts from "./pages/Shifts";
-import DutyRoster from "./pages/DutyRoster";
-import Attendance from "./pages/Attendance";
-import LeaveRequests from "./pages/LeaveRequests";
-import Holidays from "./pages/Holidays";
-import PostingsTransfers from "./pages/PostingsTransfers";
-import Compliance from "./pages/Compliance";
-import Reports from "./pages/Reports";
-import StaffProfile from "./pages/StaffProfile";
-import StaffDirectory from "./pages/StaffDirectory";
-import Settings from "./pages/Settings";
 import ResetPassword from "./pages/ResetPassword";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
-import Announcements from "./pages/Announcements";
-import FrontDesk from "./pages/FrontDesk";
-import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
+// Lazy-loaded pages (contain heavy deps: recharts, jspdf, xlsx)
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Staff = lazy(() => import("./pages/Staff"));
+const StaffProfile = lazy(() => import("./pages/StaffProfile"));
+const StaffDirectory = lazy(() => import("./pages/StaffDirectory"));
+const Departments = lazy(() => import("./pages/Departments"));
+const Roles = lazy(() => import("./pages/Roles"));
+const Shifts = lazy(() => import("./pages/Shifts"));
+const DutyRoster = lazy(() => import("./pages/DutyRoster"));
+const Attendance = lazy(() => import("./pages/Attendance"));
+const LeaveRequests = lazy(() => import("./pages/LeaveRequests"));
+const Holidays = lazy(() => import("./pages/Holidays"));
+const PostingsTransfers = lazy(() => import("./pages/PostingsTransfers"));
+const Compliance = lazy(() => import("./pages/Compliance"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Announcements = lazy(() => import("./pages/Announcements"));
+const FrontDesk = lazy(() => import("./pages/FrontDesk"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
+
 const queryClient = new QueryClient();
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,6 +54,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
@@ -66,6 +80,7 @@ const App = () => (
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
