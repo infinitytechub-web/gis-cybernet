@@ -346,6 +346,9 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* Scheduled Reports Widget (Admin/Supervisor) */}
+      {isAdminOrSupervisor && <ScheduledReportsWidget />}
+
       {/* Online Users Widget */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
