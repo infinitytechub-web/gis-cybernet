@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription,
 } from "@/components/ui/sheet";
@@ -9,6 +10,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -19,7 +24,7 @@ import { triggerDownload } from "@/lib/download-utils";
 import {
   Shield, Search, Filter, User, Clock, FileText, ArrowRightLeft,
   CalendarCheck, Building2, Megaphone, Award, CalendarOff, AlertTriangle,
-  Users, Calendar, ChevronDown, ChevronUp, Trash2, Download,
+  Users, Calendar as CalendarIcon, ChevronDown, ChevronUp, Trash2, Download, X,
 } from "lucide-react";
 
 const ENTITY_CONFIG: Record<string, { label: string; icon: typeof Shield; color: string }> = {
@@ -32,7 +37,7 @@ const ENTITY_CONFIG: Record<string, { label: string; icon: typeof Shield; color:
   announcements: { label: "Announcement", icon: Megaphone, color: "bg-red-800/20 text-red-200" },
   user_roles: { label: "User Role", icon: Award, color: "bg-yellow-800/20 text-yellow-200" },
   shift_assignments: { label: "Shift Assignment", icon: FileText, color: "bg-blue-800/20 text-blue-200" },
-  holidays: { label: "Holiday", icon: Calendar, color: "bg-rose-800/20 text-rose-200" },
+  holidays: { label: "Holiday", icon: CalendarIcon, color: "bg-rose-800/20 text-rose-200" },
   report_schedules: { label: "Report Schedule", icon: FileText, color: "bg-fuchsia-800/20 text-fuchsia-200" },
   security_incidents: { label: "Security Incident", icon: AlertTriangle, color: "bg-orange-800/20 text-orange-200" },
 };
@@ -105,6 +110,13 @@ export function SystemAuditTray() {
   const [entityFilter, setEntityFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
   const [limit, setLimit] = useState(50);
+  const [isOpen, setIsOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+
+  // Track "last seen" timestamp for unread badge
+  const lastSeenRef = useRef<string>(localStorage.getItem("audit_last_seen") || new Date(0).toISOString());
+  const [lastSeen, setLastSeen] = useState(lastSeenRef.current);
 
   const queryClient = useQueryClient();
 
@@ -121,6 +133,20 @@ export function SystemAuditTray() {
     },
     refetchInterval: 15000,
   });
+
+  // Count unseen entries
+  const unseenCount = logs.filter(l => l.created_at > lastSeen).length;
+
+  // Mark as seen when tray opens
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen(open);
+    if (open && logs.length > 0) {
+      const newest = logs[0].created_at;
+      localStorage.setItem("audit_last_seen", newest);
+      lastSeenRef.current = newest;
+      setLastSeen(newest);
+    }
+  }, [logs]);
 
   // Fetch profile names for performed_by
   const performerIds = [...new Set(logs.map(l => l.performed_by).filter(Boolean))] as string[];
@@ -145,6 +171,14 @@ export function SystemAuditTray() {
   const filtered = logs.filter(log => {
     if (entityFilter !== "all" && log.entity_type !== entityFilter) return false;
     if (actionFilter !== "all" && log.action !== actionFilter) return false;
+    if (dateFrom) {
+      const logDate = new Date(log.created_at);
+      if (logDate < startOfDay(dateFrom)) return false;
+    }
+    if (dateTo) {
+      const logDate = new Date(log.created_at);
+      if (logDate > endOfDay(dateTo)) return false;
+    }
     if (search) {
       const s = search.toLowerCase();
       const performer = log.performed_by ? (profiles[log.performed_by] || "").toLowerCase() : "";
@@ -154,6 +188,9 @@ export function SystemAuditTray() {
   });
 
   const entityTypes = [...new Set(logs.map(l => l.entity_type))];
+
+  const hasDateFilter = dateFrom || dateTo;
+  const clearDateFilter = () => { setDateFrom(undefined); setDateTo(undefined); };
 
   const exportCSV = () => {
     if (filtered.length === 0) return;
@@ -188,7 +225,7 @@ export function SystemAuditTray() {
   });
 
   return (
-    <Sheet>
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
         <Button
           variant="ghost"
@@ -197,9 +234,9 @@ export function SystemAuditTray() {
           title="System Audit Trail"
         >
           <Shield className="h-5 w-5" />
-          {logs.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-[hsl(120,40%,30%)] text-white text-[9px] flex items-center justify-center font-bold">
-              {logs.length > 99 ? "99+" : logs.length}
+          {unseenCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-[hsl(120,50%,35%)] text-white text-[9px] flex items-center justify-center font-bold animate-pulse">
+              {unseenCount > 99 ? "99+" : unseenCount}
             </span>
           )}
         </Button>
@@ -300,11 +337,77 @@ export function SystemAuditTray() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Date range filter */}
+            <div className="flex gap-2 items-center">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-7 text-[10px] bg-[hsl(120,18%,8%)] border-[hsl(120,25%,25%)] text-[hsl(120,15%,70%)] hover:bg-[hsl(120,18%,14%)] hover:text-[hsl(120,15%,80%)] flex-1",
+                      dateFrom && "text-[hsl(120,30%,65%)] border-[hsl(120,35%,35%)]"
+                    )}
+                  >
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    {dateFrom ? format(dateFrom, "MMM dd") : "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-[hsl(120,18%,12%)] border-[hsl(120,25%,25%)]" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    disabled={(date) => date > new Date() || (dateTo ? date > dateTo : false)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-[10px] text-[hsl(120,15%,45%)]">to</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-7 text-[10px] bg-[hsl(120,18%,8%)] border-[hsl(120,25%,25%)] text-[hsl(120,15%,70%)] hover:bg-[hsl(120,18%,14%)] hover:text-[hsl(120,15%,80%)] flex-1",
+                      dateTo && "text-[hsl(120,30%,65%)] border-[hsl(120,35%,35%)]"
+                    )}
+                  >
+                    <CalendarIcon className="h-3 w-3 mr-1" />
+                    {dateTo ? format(dateTo, "MMM dd") : "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-[hsl(120,18%,12%)] border-[hsl(120,25%,25%)]" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    disabled={(date) => date > new Date() || (dateFrom ? date < dateFrom : false)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              {hasDateFilter && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-[hsl(120,15%,55%)] hover:text-red-400 hover:bg-[hsl(120,20%,15%)]"
+                  onClick={clearDateFilter}
+                  title="Clear date filter"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Log entries */}
-        <ScrollArea className="h-[calc(100vh-220px)]">
+        <ScrollArea className="h-[calc(100vh-280px)]">
           <div className="p-3 space-y-2">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
