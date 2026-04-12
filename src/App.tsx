@@ -46,7 +46,8 @@ function PageLoader() {
   );
 }
 
-const App = () => (
+function App() {
+  return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <TooltipProvider>
@@ -86,6 +87,7 @@ const App = () => (
     </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-);
+  );
+}
 
 export default App;
