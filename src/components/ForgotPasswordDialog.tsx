@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 
-export function ForgotPasswordDialog() {
+export const ForgotPasswordDialog = forwardRef<HTMLButtonElement>((_, ref) => {
   const [open, setOpen] = useState(false);
   const [staffId, setStaffId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +27,6 @@ export function ForgotPasswordDialog() {
       setSent(true);
       toast.success("If an account exists with this ID, a reset link has been sent.");
     } catch {
-      // Don't reveal whether the account exists
       setSent(true);
       toast.success("If an account exists with this ID, a reset link has been sent.");
     } finally {
@@ -46,7 +45,7 @@ export function ForgotPasswordDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button type="button" className="text-xs text-primary hover:underline">
+        <button ref={ref} type="button" className="text-xs text-primary hover:underline">
           Forgot password?
         </button>
       </DialogTrigger>
@@ -87,4 +86,6 @@ export function ForgotPasswordDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+ForgotPasswordDialog.displayName = "ForgotPasswordDialog";

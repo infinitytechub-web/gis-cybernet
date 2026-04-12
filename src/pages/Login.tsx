@@ -63,16 +63,16 @@ export default function Login() {
     }
   };
 
-  const LoginForm = ({ idLabel, idPlaceholder, buttonClass, buttonText }: { idLabel: string; idPlaceholder: string; buttonClass?: string; buttonText: string }) => (
+  const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string) => (
     <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
         <Label>{idLabel}</Label>
-        <Input placeholder={idPlaceholder} value={staffId} onChange={(e) => setStaffId(e.target.value)} required />
+        <Input placeholder={idPlaceholder} value={staffId} onChange={(e) => setStaffId(e.target.value)} required autoComplete="username" />
       </div>
       <div className="space-y-2">
         <Label>Password</Label>
         <div className="relative">
-          <Input type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" />
+          <Input type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" autoComplete="current-password" />
           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -80,7 +80,7 @@ export default function Login() {
       </div>
 
       <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading || getRemainingLockout() > 0}>
-        {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : buttonText}
+        {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : (buttonText || "Sign In")}
       </Button>
       <div className="text-center">
         <ForgotPasswordDialog />
@@ -107,10 +107,10 @@ export default function Login() {
               <TabsTrigger value="admin" className="gap-2"><Shield className="h-4 w-4" /> Admin</TabsTrigger>
             </TabsList>
             <TabsContent value="staff">
-              <LoginForm idLabel="Staff / Service ID" idPlaceholder="Enter your Staff ID" buttonText="Sign In" />
+              {renderLoginForm("Staff / Service ID", "Enter your Staff ID")}
             </TabsContent>
             <TabsContent value="admin">
-              <LoginForm idLabel="Admin ID" idPlaceholder="Enter your Admin ID" buttonClass="bg-secondary hover:bg-secondary/90" buttonText="Admin Sign In" />
+              {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary hover:bg-secondary/90", "Admin Sign In")}
             </TabsContent>
           </Tabs>
           <p className="text-xs text-center text-muted-foreground mt-6">
