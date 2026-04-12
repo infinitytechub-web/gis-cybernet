@@ -747,6 +747,65 @@ export type Database = {
           },
         ]
       }
+      security_incidents: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          department_id: string | null
+          description: string | null
+          id: string
+          incident_type: string
+          location: string | null
+          reported_by: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          incident_type?: string
+          location?: string | null
+          reported_by: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          incident_type?: string
+          location?: string | null
+          reported_by?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_incidents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_assignments: {
         Row: {
           created_at: string
