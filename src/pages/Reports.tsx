@@ -16,6 +16,7 @@ import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, Cale
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
+import ReportScheduleManager from "@/components/reports/ReportScheduleManager";
 import { triggerDownload } from "@/lib/download-utils";
 import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -255,6 +256,9 @@ export default function Reports() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Scheduled Reports - Admin/Supervisor */}
+      {isAdminOrSupervisor && <ReportScheduleManager />}
 
       {/* Uploaded Reports Section */}
       <Card>

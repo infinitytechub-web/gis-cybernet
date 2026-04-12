@@ -727,6 +727,42 @@ export type Database = {
         }
         Relationships: []
       }
+      report_schedules: {
+        Row: {
+          created_at: string
+          created_by: string
+          enabled: boolean
+          frequency: string
+          id: string
+          last_run_at: string | null
+          next_run_at: string | null
+          report_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          enabled?: boolean
+          frequency: string
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string | null
+          report_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string | null
+          report_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       report_uploads: {
         Row: {
           category: string
