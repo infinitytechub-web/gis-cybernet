@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfDay, endOfDay } from "date-fns";
@@ -25,7 +25,10 @@ import {
   Shield, Search, Filter, User, Clock, FileText, ArrowRightLeft,
   CalendarCheck, Building2, Megaphone, Award, CalendarOff, AlertTriangle,
   Users, Calendar as CalendarIcon, ChevronDown, ChevronUp, Trash2, Download, X,
+  Plus, Minus, RefreshCw,
 } from "lucide-react";
+
+// --- Constants ---
 
 const ENTITY_CONFIG: Record<string, { label: string; icon: typeof Shield; color: string }> = {
   profiles: { label: "Staff Profile", icon: Users, color: "bg-emerald-800/20 text-emerald-200" },
@@ -48,6 +51,10 @@ const ACTION_COLORS: Record<string, string> = {
   deleted: "bg-red-700/30 text-red-200 border-red-600/40",
 };
 
+const SKIP_FIELDS = new Set(["id", "created_at", "updated_at"]);
+
+// --- Types ---
+
 interface AuditEntry {
   id: string;
   action: string;
@@ -57,6 +64,72 @@ interface AuditEntry {
   details: Record<string, unknown> | null;
   created_at: string;
 }
+
+// --- Diff View Component ---
+
+function formatValue(val: unknown): string {
+  if (val === null || val === undefined) return "—";
+  if (typeof val === "boolean") return val ? "Yes" : "No";
+  if (typeof val === "object") return JSON.stringify(val);
+  return String(val);
+}
+
+function DiffView({ details, action }: { details: Record<string, unknown>; action: string }) {
+  if (action === "updated" && details.old && details.new) {
+    const oldData = details.old as Record<string, unknown>;
+    const newData = details.new as Record<string, unknown>;
+    const allKeys = [...new Set([...Object.keys(oldData), ...Object.keys(newData)])].filter(k => !SKIP_FIELDS.has(k));
+    const changedKeys = allKeys.filter(k => JSON.stringify(oldData[k]) !== JSON.stringify(newData[k]));
+
+    if (changedKeys.length === 0) {
+      return <p className="text-[10px] text-[hsl(120,15%,50%)] italic">No visible changes detected</p>;
+    }
+
+    return (
+      <div className="space-y-1.5">
+        <p className="text-[10px] font-semibold text-[hsl(120,20%,65%)] mb-1">{changedKeys.length} field{changedKeys.length > 1 ? "s" : ""} changed</p>
+        {changedKeys.map(key => (
+          <div key={key} className="rounded border border-[hsl(120,25%,20%)] overflow-hidden">
+            <div className="px-2 py-0.5 bg-[hsl(120,20%,14%)] text-[10px] font-medium text-[hsl(120,20%,65%)]">
+              {key.replace(/_/g, " ")}
+            </div>
+            <div className="flex items-start gap-1 px-2 py-1 bg-red-900/10">
+              <Minus className="h-3 w-3 text-red-400 mt-0.5 shrink-0" />
+              <span className="text-[10px] text-red-300 break-all">{formatValue(oldData[key])}</span>
+            </div>
+            <div className="flex items-start gap-1 px-2 py-1 bg-green-900/10">
+              <Plus className="h-3 w-3 text-green-400 mt-0.5 shrink-0" />
+              <span className="text-[10px] text-green-300 break-all">{formatValue(newData[key])}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // For created/deleted, show as a simple field list
+  const data = (action === "deleted" ? details : details) as Record<string, unknown>;
+  const keys = Object.keys(data).filter(k => !SKIP_FIELDS.has(k));
+  const icon = action === "created" ? <Plus className="h-3 w-3 text-green-400 shrink-0" /> : <Minus className="h-3 w-3 text-red-400 shrink-0" />;
+  const colorClass = action === "created" ? "text-green-300" : "text-red-300";
+
+  return (
+    <div className="space-y-1">
+      {keys.slice(0, 12).map(key => (
+        <div key={key} className="flex items-start gap-1.5">
+          {icon}
+          <span className="text-[10px] text-[hsl(120,20%,55%)] font-medium shrink-0">{key.replace(/_/g, " ")}:</span>
+          <span className={`text-[10px] ${colorClass} break-all`}>{formatValue(data[key])}</span>
+        </div>
+      ))}
+      {keys.length > 12 && (
+        <p className="text-[10px] text-[hsl(120,15%,45%)] italic">…and {keys.length - 12} more fields</p>
+      )}
+    </div>
+  );
+}
+
+// --- Audit Entry Card ---
 
 function AuditEntryCard({ entry, profiles }: { entry: AuditEntry; profiles: Record<string, string> }) {
   const [expanded, setExpanded] = useState(false);
@@ -95,26 +168,26 @@ function AuditEntryCard({ entry, profiles }: { entry: AuditEntry; profiles: Reco
         </Button>
       </div>
       {expanded && entry.details && (
-        <div className="mt-2 p-2 rounded bg-[hsl(120,20%,8%)] border border-[hsl(120,30%,20%)]">
-          <pre className="text-[10px] text-[hsl(120,15%,60%)] whitespace-pre-wrap break-all max-h-40 overflow-auto">
-            {JSON.stringify(entry.details, null, 2)}
-          </pre>
+        <div className="mt-2 p-2 rounded bg-[hsl(120,20%,8%)] border border-[hsl(120,30%,20%)] max-h-60 overflow-auto">
+          <DiffView details={entry.details} action={entry.action} />
         </div>
       )}
     </div>
   );
 }
 
+// --- Main Component ---
+
 export function SystemAuditTray() {
   const [search, setSearch] = useState("");
   const [entityFilter, setEntityFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
+  const [performerFilter, setPerformerFilter] = useState("all");
   const [limit, setLimit] = useState(50);
   const [isOpen, setIsOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
-  // Track "last seen" timestamp for unread badge
   const lastSeenRef = useRef<string>(localStorage.getItem("audit_last_seen") || new Date(0).toISOString());
   const [lastSeen, setLastSeen] = useState(lastSeenRef.current);
 
@@ -134,7 +207,6 @@ export function SystemAuditTray() {
     refetchInterval: 30000,
   });
 
-  // Real-time subscription for instant updates
   useEffect(() => {
     const channel = supabase
       .channel('system-audit-realtime')
@@ -152,10 +224,8 @@ export function SystemAuditTray() {
     };
   }, [queryClient]);
 
-  // Count unseen entries
   const unseenCount = logs.filter(l => l.created_at > lastSeen).length;
 
-  // Mark as seen when tray opens
   const handleOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
     if (open && logs.length > 0) {
@@ -186,9 +256,21 @@ export function SystemAuditTray() {
     if (p.user_id) profiles[p.user_id] = `${p.first_name} ${p.last_name} (${p.staff_id})`;
   });
 
+  // Build performer options for filter
+  const performerOptions = useMemo(() => {
+    const options: { id: string; label: string }[] = [];
+    performerIds.forEach(id => {
+      if (profiles[id]) {
+        options.push({ id, label: profiles[id] });
+      }
+    });
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [performerIds, profiles]);
+
   const filtered = logs.filter(log => {
     if (entityFilter !== "all" && log.entity_type !== entityFilter) return false;
     if (actionFilter !== "all" && log.action !== actionFilter) return false;
+    if (performerFilter !== "all" && log.performed_by !== performerFilter) return false;
     if (dateFrom) {
       const logDate = new Date(log.created_at);
       if (logDate < startOfDay(dateFrom)) return false;
@@ -356,6 +438,20 @@ export function SystemAuditTray() {
               </Select>
             </div>
 
+            {/* User filter */}
+            <Select value={performerFilter} onValueChange={setPerformerFilter}>
+              <SelectTrigger className="h-7 text-[10px] bg-[hsl(120,18%,8%)] border-[hsl(120,25%,25%)] text-[hsl(120,15%,70%)]">
+                <User className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[hsl(120,18%,12%)] border-[hsl(120,25%,25%)] text-[hsl(120,15%,80%)]">
+                <SelectItem value="all">All Users</SelectItem>
+                {performerOptions.map(opt => (
+                  <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {/* Date range filter */}
             <div className="flex gap-2 items-center">
               <Popover>
@@ -425,7 +521,7 @@ export function SystemAuditTray() {
         </div>
 
         {/* Log entries */}
-        <ScrollArea className="h-[calc(100vh-280px)]">
+        <ScrollArea className="h-[calc(100vh-320px)]">
           <div className="p-3 space-y-2">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
