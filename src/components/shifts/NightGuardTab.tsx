@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import { downloadCSVString } from "@/lib/download-utils";
 
 interface Props {
   nightGuardStaff: any[];
@@ -55,11 +56,7 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
   const exportCSV = () => {
     const rows = [["Date", "Assigned Guards"], ...buildRows()];
     const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `night_guard_${format(weekStart, "yyyy-MM-dd")}.csv`;
-    a.click();
+    downloadCSVString(csv, `night_guard_${format(weekStart, "yyyy-MM-dd")}.csv`);
     toast.success("CSV downloaded");
   };
 

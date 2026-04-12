@@ -18,6 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { downloadCSVString } from "@/lib/download-utils";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import type { Database } from "@/integrations/supabase/types";
@@ -251,10 +252,7 @@ export default function Staff() {
       s.unit ?? "", s.shift_group ?? "", s.gender ?? "", s.status, s.phone ?? "",
     ]);
     const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `staff_export_${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    downloadCSVString(csv, `staff_export_${format(new Date(), "yyyy-MM-dd")}.csv`);
     toast.success("CSV downloaded");
   };
 

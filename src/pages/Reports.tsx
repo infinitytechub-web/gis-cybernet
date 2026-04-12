@@ -25,15 +25,11 @@ type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
 
+import { downloadCSVString, triggerDownload } from "@/lib/download-utils";
+
 function downloadCSV(filename: string, headers: string[], rows: string[][]) {
   const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadCSVString(csv, filename);
 }
 
 function generatePDF(title: string, filename: string, headers: string[], rows: string[][], subtitle?: string) {
@@ -191,10 +187,7 @@ export default function Reports() {
   const handleDownload = async (report: any) => {
     const { data } = await supabase.storage.from("reports").createSignedUrl(report.file_path, 60);
     if (data?.signedUrl) {
-      const a = document.createElement("a");
-      a.href = data.signedUrl;
-      a.download = report.file_name;
-      a.click();
+      triggerDownload(data.signedUrl, report.file_name);
     }
   };
 

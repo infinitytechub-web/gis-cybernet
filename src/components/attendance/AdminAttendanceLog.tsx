@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { Search, Plus, Download, Users, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { downloadCSVString } from "@/lib/download-utils";
 
 type AttendanceStatus = Database["public"]["Enums"]["attendance_status"];
 
@@ -113,13 +114,7 @@ export function AdminAttendanceLog() {
     const rows = filtered.map((r: any) =>
       `${r.profiles?.staff_id},"${r.profiles?.last_name} ${r.profiles?.first_name}",${r.profiles?.shift_group ?? ""},${r.check_in ? format(new Date(r.check_in), "HH:mm") : ""},${r.check_out ? format(new Date(r.check_out), "HH:mm") : ""},${r.status},"${r.notes ?? ""}"`
     ).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `attendance-${selectedDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCSVString(header + rows, `attendance-${selectedDate}.csv`);
   };
 
   return (
