@@ -231,7 +231,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-secondary">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, dd MMMM yyyy")} · GIS Amasaman Sector Command</p>
+        <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, dd MMMM yyyy")} · Ghana Immigration Service - Cybernet</p>
       </div>
 
       {/* Summary Cards */}
