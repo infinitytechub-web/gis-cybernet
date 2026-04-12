@@ -27,11 +27,13 @@ export function useAppSettings() {
         .from("app_settings")
         .select("*")
         .limit(1)
-        .single();
-      if (error) throw error;
+        .maybeSingle();
+      // Non-admin users will get null due to RLS — return defaults
+      if (error || !data) return defaults;
       return data as AppSettings;
     },
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   return data ?? defaults;
