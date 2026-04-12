@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Users, CalendarCheck, CalendarOff, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarClock, Users, CalendarCheck, CalendarOff, Clock, Play, Loader2 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const TYPE_CONFIG: Record<string, { label: string; icon: typeof Users; color: string }> = {
   staff: { label: "Staff Summary", icon: Users, color: "text-blue-600 dark:text-blue-400" },
@@ -20,6 +22,7 @@ const FREQ_BADGE: Record<string, string> = {
 
 export default function ScheduledReportsWidget() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ["dashboard-report-schedules"],
@@ -32,6 +35,21 @@ export default function ScheduledReportsWidget() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const runNow = useMutation({
+    mutationFn: async ({ report_type, frequency }: { report_type: string; frequency: string }) => {
+      const { data, error } = await supabase.functions.invoke("generate-scheduled-report", {
+        body: { report_type, frequency },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Report generated: ${data.records ?? 0} records`);
+      queryClient.invalidateQueries({ queryKey: ["dashboard-report-schedules"] });
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to generate report"),
   });
 
   if (isLoading || schedules.length === 0) return null;
@@ -51,15 +69,15 @@ export default function ScheduledReportsWidget() {
           const Icon = cfg.icon;
           const nextRun = s.next_run_at ? new Date(s.next_run_at) : null;
           const isPast = nextRun && nextRun < new Date();
+          const isRunning = runNow.isPending && runNow.variables?.report_type === s.report_type && runNow.variables?.frequency === s.frequency;
 
           return (
             <div
               key={s.id}
-              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/60 bg-muted/20 hover:bg-accent/50 transition-colors cursor-pointer"
-              onClick={() => navigate("/reports")}
+              className="flex items-center gap-3 p-2.5 rounded-lg border border-border/60 bg-muted/20 hover:bg-accent/50 transition-colors"
             >
-              <Icon className={`h-4 w-4 shrink-0 ${cfg.color}`} />
-              <div className="flex-1 min-w-0">
+              <Icon className={`h-4 w-4 shrink-0 ${cfg.color} cursor-pointer`} onClick={() => navigate("/reports")} />
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate("/reports")}>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate">{cfg.label}</span>
                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-4 ${FREQ_BADGE[s.frequency] || ""}`}>
@@ -83,6 +101,19 @@ export default function ScheduledReportsWidget() {
                   )}
                 </div>
               </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 shrink-0"
+                disabled={isRunning}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  runNow.mutate({ report_type: s.report_type, frequency: s.frequency });
+                }}
+                title="Run now"
+              >
+                {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+              </Button>
             </div>
           );
         })}
