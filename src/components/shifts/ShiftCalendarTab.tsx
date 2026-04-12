@@ -155,32 +155,35 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedShifts.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium text-xs">{s.name}</TableCell>
-                {weekDays.map((d) => {
-                  const dayAssignments = getAssignmentsForDay(d, s.id);
-                  return (
-                    <TableCell key={d.toISOString()} className={`text-center p-1 ${isSameDay(d, new Date()) ? "bg-primary/5" : ""}`}>
-                      {dayAssignments.length > 0 ? (
-                        <div className="space-y-0.5">
-                          {dayAssignments.slice(0, 3).map((a: any) => (
-                            <div key={a.id} className="text-[10px] bg-accent rounded px-1 py-0.5 truncate">
-                              {a.profiles?.last_name}
-                            </div>
-                          ))}
-                          {dayAssignments.length > 3 && (
-                            <div className="text-[10px] text-muted-foreground">+{dayAssignments.length - 3}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-[10px]">—</span>
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
+            {sortedShifts.map((s, idx) => {
+              const rc = ROW_COLORS[idx % ROW_COLORS.length];
+              return (
+                <TableRow key={s.id} className={rc.bg}>
+                  <TableCell className="font-medium text-xs">{s.name}</TableCell>
+                  {weekDays.map((d) => {
+                    const dayAssignments = getAssignmentsForDay(d, s.id);
+                    return (
+                      <TableCell key={d.toISOString()} className={`text-center p-1 ${isSameDay(d, new Date()) ? "bg-primary/5" : ""}`}>
+                        {dayAssignments.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {dayAssignments.slice(0, 3).map((a: any) => (
+                              <div key={a.id} className={`text-[10px] rounded px-1 py-0.5 truncate ${rc.cell}`}>
+                                {a.profiles?.last_name}
+                              </div>
+                            ))}
+                            {dayAssignments.length > 3 && (
+                              <div className="text-[10px] text-muted-foreground">+{dayAssignments.length - 3}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-[10px]">—</span>
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
