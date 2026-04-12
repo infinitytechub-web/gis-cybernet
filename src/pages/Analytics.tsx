@@ -270,12 +270,28 @@ export default function Analytics() {
               <SelectItem value="12m">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={exportExecutiveSummary} className="gap-1">
-            <FileText className="h-4 w-4" /> Executive Summary
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportComplianceReport} className="gap-1">
-            <Download className="h-4 w-4" /> Compliance Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1"><FileText className="h-4 w-4" /> Executive Summary</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleExportSummary("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportSummary("csv")}>CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportSummary("excel")}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportSummary("word")}>Word</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1"><Download className="h-4 w-4" /> Compliance Report</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleExportCompliance("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportCompliance("csv")}>CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportCompliance("excel")}>Excel</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExportCompliance("word")}>Word</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
