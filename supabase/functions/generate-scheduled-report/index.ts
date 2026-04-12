@@ -162,6 +162,26 @@ serve(async (req) => {
       .eq("report_type", report_type)
       .eq("frequency", frequency);
 
+    // Send in-app notifications to admins and supervisors
+    const notifTitle = `${freqLabel} ${typeLabel.replace(/_/g, " ")} Report Ready`;
+    const notifMessage = `Auto-generated ${frequency} ${typeLabel.replace(/_/g, " ").toLowerCase()} report is ready with ${rows.length} records. View it in Uploaded Reports.`;
+
+    const { data: notifUsers } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["admin", "supervisor"]);
+
+    if (notifUsers && notifUsers.length > 0) {
+      const notifications = notifUsers.map((u: any) => ({
+        user_id: u.user_id,
+        title: notifTitle,
+        message: notifMessage,
+        type: "general",
+      }));
+      const { error: notifError } = await supabase.from("notifications").insert(notifications);
+      if (notifError) console.error("Notification error:", notifError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
