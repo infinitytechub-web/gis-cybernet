@@ -11,6 +11,17 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { downloadCSVString } from "@/lib/download-utils";
 
+const ROW_COLORS = [
+  { bg: "bg-blue-50/50 dark:bg-blue-950/20", cell: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200" },
+  { bg: "bg-emerald-50/50 dark:bg-emerald-950/20", cell: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200" },
+  { bg: "bg-amber-50/50 dark:bg-amber-950/20", cell: "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200" },
+  { bg: "bg-purple-50/50 dark:bg-purple-950/20", cell: "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200" },
+  { bg: "bg-rose-50/50 dark:bg-rose-950/20", cell: "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200" },
+  { bg: "bg-cyan-50/50 dark:bg-cyan-950/20", cell: "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-200" },
+  { bg: "bg-orange-50/50 dark:bg-orange-950/20", cell: "bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200" },
+  { bg: "bg-indigo-50/50 dark:bg-indigo-950/20", cell: "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200" },
+];
+
 interface Props {
   shifts: any[];
   assignments: any[];
@@ -144,32 +155,35 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedShifts.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium text-xs">{s.name}</TableCell>
-                {weekDays.map((d) => {
-                  const dayAssignments = getAssignmentsForDay(d, s.id);
-                  return (
-                    <TableCell key={d.toISOString()} className={`text-center p-1 ${isSameDay(d, new Date()) ? "bg-primary/5" : ""}`}>
-                      {dayAssignments.length > 0 ? (
-                        <div className="space-y-0.5">
-                          {dayAssignments.slice(0, 3).map((a: any) => (
-                            <div key={a.id} className="text-[10px] bg-accent rounded px-1 py-0.5 truncate">
-                              {a.profiles?.last_name}
-                            </div>
-                          ))}
-                          {dayAssignments.length > 3 && (
-                            <div className="text-[10px] text-muted-foreground">+{dayAssignments.length - 3}</div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-[10px]">—</span>
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))}
+            {sortedShifts.map((s, idx) => {
+              const rc = ROW_COLORS[idx % ROW_COLORS.length];
+              return (
+                <TableRow key={s.id} className={rc.bg}>
+                  <TableCell className="font-medium text-xs">{s.name}</TableCell>
+                  {weekDays.map((d) => {
+                    const dayAssignments = getAssignmentsForDay(d, s.id);
+                    return (
+                      <TableCell key={d.toISOString()} className={`text-center p-1 ${isSameDay(d, new Date()) ? "bg-primary/5" : ""}`}>
+                        {dayAssignments.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {dayAssignments.slice(0, 3).map((a: any) => (
+                              <div key={a.id} className={`text-[10px] rounded px-1 py-0.5 truncate ${rc.cell}`}>
+                                {a.profiles?.last_name}
+                              </div>
+                            ))}
+                            {dayAssignments.length > 3 && (
+                              <div className="text-[10px] text-muted-foreground">+{dayAssignments.length - 3}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-[10px]">—</span>
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
