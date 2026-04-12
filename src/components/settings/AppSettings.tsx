@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,21 +6,87 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Settings2, Shield, Clock, Globe } from "lucide-react";
+import { Settings2, Shield, Clock, Globe, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+interface AppSettingsRow {
+  id: string;
+  org_name: string;
+  system_label: string;
+  auto_logout_minutes: number;
+  enforce_password_change: boolean;
+  min_password_length: number;
+  allow_self_registration: boolean;
+}
 
 export function AppSettings() {
-  // These are local/display-only settings for now — could be persisted to a settings table later
-  const [orgName, setOrgName] = useState("GIS Amasaman Sector Command");
-  const [systemLabel, setSystemLabel] = useState("Cybernet");
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["app-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_settings")
+        .select("*")
+        .limit(1)
+        .single();
+      if (error) throw error;
+      return data as AppSettingsRow;
+    },
+  });
+
+  const [orgName, setOrgName] = useState("");
+  const [systemLabel, setSystemLabel] = useState("");
   const [autoLogout, setAutoLogout] = useState(30);
   const [enforcePasswordChange, setEnforcePasswordChange] = useState(true);
   const [minPasswordLength, setMinPasswordLength] = useState(8);
   const [allowSelfRegistration, setAllowSelfRegistration] = useState(false);
 
-  const handleSave = () => {
-    toast.success("Settings saved (client-side only). Backend persistence coming soon.");
-  };
+  useEffect(() => {
+    if (settings) {
+      setOrgName(settings.org_name);
+      setSystemLabel(settings.system_label);
+      setAutoLogout(settings.auto_logout_minutes);
+      setEnforcePasswordChange(settings.enforce_password_change);
+      setMinPasswordLength(settings.min_password_length);
+      setAllowSelfRegistration(settings.allow_self_registration);
+    }
+  }, [settings]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!settings?.id) throw new Error("No settings row found");
+      const { error } = await supabase
+        .from("app_settings")
+        .update({
+          org_name: orgName,
+          system_label: systemLabel,
+          auto_logout_minutes: autoLogout,
+          enforce_password_change: enforcePasswordChange,
+          min_password_length: minPasswordLength,
+          allow_self_registration: allowSelfRegistration,
+        })
+        .eq("id", settings.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["app-settings"] });
+      toast.success("Settings saved successfully.");
+    },
+    onError: (e: any) => {
+      toast.error(e.message || "Failed to save settings.");
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" /> Loading settings...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -96,8 +162,9 @@ export function AppSettings() {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSave} className="gap-2 bg-primary hover:bg-primary/90">
-        <Settings2 className="h-4 w-4 text-primary-foreground" /> Save Settings
+      <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2 bg-primary hover:bg-primary/90">
+        {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4 text-primary-foreground" />}
+        {saveMutation.isPending ? "Saving..." : "Save Settings"}
       </Button>
     </div>
   );
