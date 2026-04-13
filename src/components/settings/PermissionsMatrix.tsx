@@ -143,6 +143,19 @@ export function PermissionsMatrix() {
     toast.info("Permissions matrix reset to defaults");
   };
 
+  const handleExport = (fmt: ExportFormat) => {
+    const headers = ["Feature", ...roles.map((r) => roleLabels[r])];
+    const rows = features.map((f) => [f.name, ...roles.map((r) => f.access[r]?.toUpperCase() ?? "")]);
+    exportReport(fmt, {
+      title: "Permissions Matrix",
+      filename: `permissions-matrix-${new Date().toISOString().slice(0, 10)}`,
+      headers,
+      rows,
+      subtitle: "Access levels for each role across system features",
+    });
+    toast.success(`Permissions matrix exported as ${fmt.toUpperCase()}`);
+  };
+
   return (
     <Card>
       <CardHeader>
