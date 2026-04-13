@@ -165,6 +165,9 @@ export function PermissionsMatrix() {
             <CardDescription>Reference chart showing access levels for each role across system features.</CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => window.print()}>
+              <Printer className="h-3.5 w-3.5" /> Print
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-1">
