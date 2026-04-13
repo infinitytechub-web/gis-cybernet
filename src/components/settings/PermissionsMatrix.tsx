@@ -165,6 +165,19 @@ export function PermissionsMatrix() {
             <CardDescription>Reference chart showing access levels for each role across system features.</CardDescription>
           </div>
           <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <Download className="h-3.5 w-3.5" /> Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("pdf")}>Export as PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("csv")}>Export as CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("excel")}>Export as Excel</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("word")}>Export as Word</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {editing ? (
               <>
                 <Button size="sm" variant="outline" onClick={handleReset}>Reset</Button>
@@ -173,6 +186,8 @@ export function PermissionsMatrix() {
             ) : (
               <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1">
                 <Pencil className="h-3.5 w-3.5" /> Edit Access
+              </Button>
+            )}
               </Button>
             )}
           </div>
