@@ -18,9 +18,10 @@ import { downloadCSVString } from "@/lib/download-utils";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
+  todayDutyStaff?: { id: string; first_name: string; last_name: string; staff_id: string }[];
 }
 
-export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
+export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props) {
   const { onlineUsers } = useOnlineUsers();
   const queryClient = useQueryClient();
 
