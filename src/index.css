@@ -109,29 +109,29 @@
 }
 
 @media print {
-  /* Hide everything except the permissions matrix */
   body * {
     visibility: hidden;
   }
   .permissions-print-area,
   .permissions-print-area * {
     visibility: visible !important;
+    color: #1a1a1a !important;
+    background: #fff !important;
+    border-color: #ccc !important;
   }
   .permissions-print-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    box-shadow: none !important;
   }
-  /* Show print-only header */
   .print-only {
     display: block !important;
   }
-  /* Hide buttons in print */
   .no-print {
     display: none !important;
   }
-  /* Reset table styling for print */
   .permissions-print-area table {
     width: 100%;
     border-collapse: collapse;
@@ -139,7 +139,7 @@
   }
   .permissions-print-area th,
   .permissions-print-area td {
-    border: 1px solid #ccc;
+    border: 1px solid #ccc !important;
     padding: 3px 5px;
     text-align: center;
   }
@@ -153,6 +153,17 @@
     background: #f0f8ff !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  .permissions-print-area td:first-child {
+    text-align: left;
+    font-weight: 600;
+    background: #fff !important;
+  }
+  .permissions-print-area .print-only h1 {
+    color: #006699 !important;
+  }
+  .permissions-print-area .print-only p {
+    color: #666 !important;
   }
   @page {
     size: landscape;
