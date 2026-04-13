@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, Pencil, Download } from "lucide-react";
+import { Check, X, Eye, Pencil, Download, Printer } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -157,14 +157,21 @@ export function PermissionsMatrix() {
   };
 
   return (
-    <Card>
+    <Card className="permissions-print-area">
+      <div className="print-only hidden mb-4 px-6 pt-6">
+        <h1 className="text-lg font-bold" style={{ color: "#006699" }}>GIS Amasaman Sector Command</h1>
+        <p className="text-sm text-muted-foreground">Permissions Matrix — Generated {new Date().toLocaleDateString()}</p>
+      </div>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">Permissions Matrix</CardTitle>
             <CardDescription>Reference chart showing access levels for each role across system features.</CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 no-print">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => window.print()}>
+              <Printer className="h-3.5 w-3.5" /> Print
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-1">
