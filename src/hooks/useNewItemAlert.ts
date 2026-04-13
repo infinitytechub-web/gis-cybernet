@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 
 /** Plays a short notification chime using the Web Audio API. */
 function playNotificationSound() {
@@ -9,8 +9,8 @@ function playNotificationSound() {
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = "sine";
-    osc.frequency.setValueAtTime(880, ctx.currentTime);        // A5
-    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.08); // ~C#6
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.08);
     gain.gain.setValueAtTime(0.15, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
     osc.start(ctx.currentTime);
@@ -23,12 +23,9 @@ function playNotificationSound() {
 /**
  * Detects when a total count increases and triggers a visual flash + sound.
  * Returns { flash, checkForNewItems }
- *  - flash: boolean — true for a short period after new items detected
- *  - checkForNewItems(newTotal): call whenever data updates
  */
 export function useNewItemAlert() {
   const prevTotal = useRef<number | null>(null);
-  const flashRef = useRef(false);
   const flashTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [flash, setFlash] = useState(false);
 
@@ -44,5 +41,3 @@ export function useNewItemAlert() {
 
   return { flash, checkForNewItems };
 }
-
-import { useState } from "react";
