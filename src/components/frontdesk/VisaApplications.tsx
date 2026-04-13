@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CountryCombobox } from "@/components/ui/country-combobox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -166,7 +167,7 @@ export default function VisaApplications() {
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
                 <div><Label>Passport Number *</Label><Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} required /></div>
-                <div><Label>Nationality *</Label><Input value={form.nationality} onChange={(e) => setForm({ ...form, nationality: e.target.value })} required /></div>
+                <div><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
                 <div><Label>Visa Type</Label>
                   <Select value={form.visa_type} onValueChange={(v) => setForm({ ...form, visa_type: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
