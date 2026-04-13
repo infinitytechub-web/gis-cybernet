@@ -2,7 +2,8 @@ import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
   CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,28 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, role } = useAuth();
   const { org_name, system_label } = useAppSettings();
+  const queryClient = useQueryClient();
+
+  // Realtime: invalidate sidebar badge counts on any change to application tables
+  useEffect(() => {
+    const channel = supabase
+      .channel("sidebar-badge-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
+        queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
+        queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
+        queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const { data: processingCount } = useQuery({
     queryKey: ["processing-sidebar-count"],
