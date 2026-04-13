@@ -49,6 +49,28 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, role } = useAuth();
   const { org_name, system_label } = useAppSettings();
+  const queryClient = useQueryClient();
+
+  // Realtime: invalidate sidebar badge counts on any change to application tables
+  useEffect(() => {
+    const channel = supabase
+      .channel("sidebar-badge-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
+        queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
+        queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
+        queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const { data: processingCount } = useQuery({
     queryKey: ["processing-sidebar-count"],
