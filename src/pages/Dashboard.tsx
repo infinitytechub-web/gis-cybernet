@@ -22,6 +22,7 @@ import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBan
 import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
 import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidget";
 import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget";
+import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -301,6 +302,9 @@ export default function Dashboard() {
 
       {/* Processing Queue Widget */}
       {isAdminOrSupervisor && <ProcessingQueueWidget />}
+
+      {/* Front Desk Queue Widget */}
+      {isAdminOrSupervisor && <FrontDeskQueueWidget />}
 
       {/* System Health Widget (Admin only) */}
       {isAdmin && systemHealth && (
