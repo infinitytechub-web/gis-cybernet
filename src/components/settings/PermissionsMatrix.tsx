@@ -245,6 +245,11 @@ export function PermissionsMatrix() {
           <span className="flex items-center gap-1"><Eye className="h-3 w-3 text-muted-foreground" /> View — Read-only</span>
           <span className="flex items-center gap-1"><X className="h-3 w-3 text-destructive/60" /> None — No access</span>
         </div>
+        <div className="print-only hidden mt-6 pt-4 border-t border-border text-xs" style={{ color: "#666" }}>
+          <p className="font-semibold">CONFIDENTIAL — For Official Use Only</p>
+          <p>This document contains sensitive access control information. Unauthorized distribution is prohibited.</p>
+          <p className="mt-1">Printed by authorized personnel on {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })} • Powered by Infinity Techub Intelligence</p>
+        </div>
       </CardContent>
     </Card>
   );
