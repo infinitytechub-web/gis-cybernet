@@ -71,9 +71,17 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
 
   const todayRotation = getNightGuardRotation(new Date());
 
+  // Find night guard shift for dynamic duty hours
+  const nightGuardShift = shifts.find((s: any) => s.name?.toLowerCase().includes("night guard"));
+
   return (
     <div className="space-y-4">
-      <TodayRosterCard todayDutyStaff={todayRotation} totalStaff={nightGuardStaff.length} />
+      <TodayRosterCard
+        todayDutyStaff={todayRotation}
+        totalStaff={nightGuardStaff.length}
+        shiftStartTime={nightGuardShift?.start_time ?? null}
+        shiftEndTime={nightGuardShift?.end_time ?? null}
+      />
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayRotation} />
       {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
       <Card className="border-primary/20">
