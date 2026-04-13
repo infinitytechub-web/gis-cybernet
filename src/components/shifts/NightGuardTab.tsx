@@ -5,6 +5,7 @@ import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
 import { TodayRosterCard } from "./TodayRosterCard";
 import NightGuardDutyUpload from "./NightGuardDutyUpload";
+import { ManualAssignDialog } from "./ManualAssignDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,13 +21,14 @@ import { downloadCSVString } from "@/lib/download-utils";
 
 interface Props {
   nightGuardStaff: any[];
+  allStaff?: any[];
   shifts: any[];
   weekStart: Date;
   setWeekStart: (d: Date) => void;
   isAdmin: boolean;
 }
 
-export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setWeekStart, isAdmin }: Props) {
+export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, weekStart, setWeekStart, isAdmin }: Props) {
   const queryClient = useQueryClient();
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const nightGuardShift = shifts.find((s: any) => s.name?.toLowerCase().includes("night guard"));
@@ -136,7 +138,10 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
             </div>
             <div className="flex gap-2 flex-wrap">
               {isAdmin && (
-                <NightGuardDutyUpload nightGuardStaff={nightGuardStaff} shifts={shifts} />
+                <>
+                  <NightGuardDutyUpload nightGuardStaff={nightGuardStaff} shifts={shifts} />
+                  <ManualAssignDialog nightGuardStaff={allStaff.length > 0 ? allStaff : nightGuardStaff} shifts={shifts} />
+                </>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

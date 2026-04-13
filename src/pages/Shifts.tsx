@@ -226,7 +226,7 @@ export default function Shifts() {
           <ShiftCalendarTab shifts={shifts} assignments={assignments} weekStart={weekStart} setWeekStart={setWeekStart} />
         </TabsContent>
         <TabsContent value="nightguard">
-          <NightGuardTab nightGuardStaff={nightGuardStaff} shifts={shifts} weekStart={weekStart} setWeekStart={setWeekStart} isAdmin={isAdmin} />
+          <NightGuardTab nightGuardStaff={nightGuardStaff} allStaff={profiles} shifts={shifts} weekStart={weekStart} setWeekStart={setWeekStart} isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
 
