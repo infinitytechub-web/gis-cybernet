@@ -1,5 +1,6 @@
 import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
+import { TodayRosterCard } from "./TodayRosterCard";
 import { ManualAssignDialog } from "./ManualAssignDialog";
 import { BulkAssignDialog } from "./BulkAssignDialog";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,7 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
 
   return (
     <div className="space-y-4">
+      <TodayRosterCard todayDutyStaff={todayRotation} totalStaff={nightGuardStaff.length} />
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayRotation} />
       {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
       <Card className="border-primary/20">
