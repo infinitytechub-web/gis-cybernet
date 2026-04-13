@@ -39,6 +39,16 @@ export default function ProcessingVisaExtensions() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ status: "submitted", notes: "" });
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("processing-ext-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
+        qc.invalidateQueries({ queryKey: ["visa-extensions-processing"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   const { data: extensions = [], isLoading } = useQuery({
     queryKey: ["visa-extensions-processing"],
     queryFn: async () => {

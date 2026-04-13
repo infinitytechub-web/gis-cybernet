@@ -43,6 +43,16 @@ export default function ProcessingPassportApplications() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ status: "submitted", notes: "" });
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("processing-passport-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
+        qc.invalidateQueries({ queryKey: ["passport-apps-processing"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ["passport-applications-processing"],
     queryFn: async () => {
