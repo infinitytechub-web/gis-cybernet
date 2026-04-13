@@ -18,9 +18,10 @@ import { downloadCSVString } from "@/lib/download-utils";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
+  todayDutyStaff?: { id: string; first_name: string; last_name: string; staff_id: string }[];
 }
 
-export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
+export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props) {
   const { onlineUsers } = useOnlineUsers();
   const queryClient = useQueryClient();
 
@@ -28,10 +29,13 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
   const [filterType, setFilterType] = useState<string>("all");
 
-  const nightGuardIds = new Set(nightGuardStaff.map((s) => s.staff_id));
+  // Use today's duty staff if provided, otherwise fall back to all night guard staff
+  const displayStaff = todayDutyStaff && todayDutyStaff.length > 0 ? todayDutyStaff : nightGuardStaff;
+
+  const nightGuardIds = new Set(displayStaff.map((s) => s.staff_id));
 
   const onlineGuards = onlineUsers.filter((u) => nightGuardIds.has(u.staffId));
-  const offlineGuards = nightGuardStaff.filter(
+  const offlineGuards = displayStaff.filter(
     (s) => !onlineUsers.some((u) => u.staffId === s.staff_id)
   );
 
@@ -146,18 +150,23 @@ export function NightGuardOnlinePanel({ nightGuardStaff }: Props) {
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,70%,25%)] font-bold">
             <Shield className="h-4 w-4 text-[hsl(220,70%,25%)] stroke-[2.5]" />
-            Night Guard Duty — Online Status
+            Night Guard — Today's Duty Status
             <Badge
               variant="outline"
               className="ml-auto text-[10px] border-amber-400 text-amber-700 dark:text-amber-300"
             >
-              {onlineGuards.length}/{nightGuardStaff.length} online
+              {onlineGuards.length}/{displayStaff.length} online
             </Badge>
           </CardTitle>
+          {todayDutyStaff && todayDutyStaff.length > 0 && (
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Showing {todayDutyStaff.length} of {nightGuardStaff.length} staff assigned for today's rotation
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {nightGuardStaff.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No staff assigned to Night Guard department.</p>
+            <p className="text-sm text-muted-foreground">No staff assigned to Night Guard duty today.</p>
           ) : (
             <div className="relative">
               <ScrollArea className="max-h-[260px] overflow-y-auto pr-1">
