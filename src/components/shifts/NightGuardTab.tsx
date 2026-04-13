@@ -73,6 +73,7 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
 
   return (
     <div className="space-y-4">
+      <TodayRosterCard todayDutyStaff={todayRotation} totalStaff={nightGuardStaff.length} />
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayRotation} />
       {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
       <Card className="border-primary/20">
