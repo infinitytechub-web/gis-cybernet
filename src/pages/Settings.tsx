@@ -30,6 +30,8 @@ const roleLabels: Record<AppRole, string> = {
   deputy: "Deputy",
   staff: "Staff",
   front_desk: "Front Desk",
+  shift_supervisor: "Shift Supervisor",
+  deputy_shift_supervisor: "Dep. Shift Supervisor",
 };
 
 const roleColors: Record<AppRole, string> = {
@@ -44,6 +46,8 @@ const roleColors: Record<AppRole, string> = {
   deputy: "bg-chart-5/15 text-chart-5 border-chart-5/20",
   staff: "bg-muted text-muted-foreground border-border",
   front_desk: "bg-orange-100 text-orange-800 border-orange-200",
+  shift_supervisor: "bg-indigo-500/15 text-indigo-700 border-indigo-500/20",
+  deputy_shift_supervisor: "bg-violet-500/15 text-violet-700 border-violet-500/20",
 };
 
 export default function Settings() {
