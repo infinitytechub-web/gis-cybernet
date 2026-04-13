@@ -393,9 +393,18 @@ export default function Reports() {
               </TableHeader>
               <TableBody>
                 {uploadedReports.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No uploaded reports</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">No uploaded reports</TableCell></TableRow>
                 ) : uploadedReports.map((r: any) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} className={selectedReports.has(r.id) ? "bg-primary/5" : ""}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedReports.has(r.id)}
+                          onCheckedChange={() => toggleSelect(r.id)}
+                          aria-label={`Select ${r.title}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{r.title}</TableCell>
                     <TableCell><Badge variant="outline">{r.category}</Badge></TableCell>
                     <TableCell className="text-sm">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
