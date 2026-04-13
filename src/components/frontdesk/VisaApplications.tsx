@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { ECOWAS_COUNTRIES } from "@/lib/countries";
+import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -136,6 +137,14 @@ export default function VisaApplications() {
     return matchesSearch && matchesEcowas && matchesStatus;
   });
 
+  const hasActiveFilters = search || ecowasOnly || statusFilter !== "all";
+  const clearAllFilters = () => { setSearch(""); setEcowasOnly(false); setStatusFilter("all"); };
+  const activeFiltersList = [
+    ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
+    ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter.replace("_", " "), onClear: () => setStatusFilter("all") }] : []),
+    ...(ecowasOnly ? [{ label: "Region", value: "ECOWAS", onClear: () => setEcowasOnly(false) }] : []),
+  ];
+
   const summary = {
     total: applications.length,
     submitted: applications.filter((a: any) => a.status === "submitted").length,
@@ -158,6 +167,10 @@ export default function VisaApplications() {
           </CardContent></Card>
         ))}
       </div>
+
+      {hasActiveFilters && (
+        <FilterSummaryBar filters={activeFiltersList} totalResults={filtered.length} onClearAll={clearAllFilters} />
+      )}
 
       <div className="flex gap-2">
         <div className="relative flex-1">

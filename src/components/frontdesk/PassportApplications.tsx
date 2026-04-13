@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { ECOWAS_COUNTRIES } from "@/lib/countries";
+import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -126,8 +127,21 @@ export default function PassportApplications() {
     return matchesSearch && matchesEcowas && matchesStatus;
   });
 
+  const hasActiveFilters = search || ecowasOnly || statusFilter !== "all";
+  const clearAllFilters = () => { setSearch(""); setEcowasOnly(false); setStatusFilter("all"); };
+  const activeFiltersList = [
+    ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
+    ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter, onClear: () => setStatusFilter("all") }] : []),
+    ...(ecowasOnly ? [{ label: "Region", value: "ECOWAS", onClear: () => setEcowasOnly(false) }] : []),
+  ];
+
   return (
     <div className="space-y-4 mt-4">
+
+      {hasActiveFilters && (
+        <FilterSummaryBar filters={activeFiltersList} totalResults={filtered.length} onClearAll={clearAllFilters} />
+      )}
+
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
