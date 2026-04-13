@@ -188,8 +188,6 @@ export function PermissionsMatrix() {
                 <Pencil className="h-3.5 w-3.5" /> Edit Access
               </Button>
             )}
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
