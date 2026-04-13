@@ -107,3 +107,55 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  /* Hide everything except the permissions matrix */
+  body * {
+    visibility: hidden;
+  }
+  .permissions-print-area,
+  .permissions-print-area * {
+    visibility: visible !important;
+  }
+  .permissions-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  /* Show print-only header */
+  .print-only {
+    display: block !important;
+  }
+  /* Hide buttons in print */
+  .no-print {
+    display: none !important;
+  }
+  /* Reset table styling for print */
+  .permissions-print-area table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8pt;
+  }
+  .permissions-print-area th,
+  .permissions-print-area td {
+    border: 1px solid #ccc;
+    padding: 3px 5px;
+    text-align: center;
+  }
+  .permissions-print-area th {
+    background: #006699 !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .permissions-print-area tr:nth-child(even) td {
+    background: #f0f8ff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+}
