@@ -98,9 +98,12 @@ export default function ProcessingVisaExtensions() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [reviewItem, setReviewItem] = useState<any>(null);
+
   const openReview = (ext: any) => {
     setForm({ status: ext.status, notes: ext.notes || "" });
     setEditId(ext.id);
+    setReviewItem(ext);
     setOpen(true);
   };
 
@@ -139,8 +142,27 @@ export default function ProcessingVisaExtensions() {
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) setEditId(null); setOpen(v); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Review Visa Extension</DialogTitle></DialogHeader>
+          {reviewItem && (
+            <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
+              <div><span className="text-muted-foreground">Name:</span> {reviewItem.applicant_name}</div>
+              <div><span className="text-muted-foreground">Passport:</span> {reviewItem.passport_number}</div>
+              <div><span className="text-muted-foreground">Visa Expiry:</span> {reviewItem.current_visa_expiry}</div>
+              <div><span className="text-muted-foreground">Requested Date:</span> {reviewItem.requested_extension_date}</div>
+              {reviewItem.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewItem.phone}</div>}
+              {reviewItem.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewItem.gender}</div>}
+              {reviewItem.date_of_birth && <div><span className="text-muted-foreground">DOB:</span> {reviewItem.date_of_birth}</div>}
+              {reviewItem.marital_status && <div><span className="text-muted-foreground">Marital Status:</span> {reviewItem.marital_status}</div>}
+              {reviewItem.home_address && <div className="col-span-2"><span className="text-muted-foreground">Home Address:</span> {reviewItem.home_address}</div>}
+              {reviewItem.foreign_address && <div className="col-span-2"><span className="text-muted-foreground">Foreign Address:</span> {reviewItem.foreign_address}</div>}
+              {reviewItem.street_name && <div><span className="text-muted-foreground">Street:</span> {reviewItem.street_name}</div>}
+              {reviewItem.nearest_landmark && <div><span className="text-muted-foreground">Landmark:</span> {reviewItem.nearest_landmark}</div>}
+              {reviewItem.next_of_kin && <div><span className="text-muted-foreground">Next of Kin:</span> {reviewItem.next_of_kin}</div>}
+              {reviewItem.emergency_contact && <div><span className="text-muted-foreground">Emergency:</span> {reviewItem.emergency_contact}</div>}
+              {reviewItem.reason && <div className="col-span-2"><span className="text-muted-foreground">Reason:</span> {reviewItem.reason}</div>}
+            </div>
+          )}
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>

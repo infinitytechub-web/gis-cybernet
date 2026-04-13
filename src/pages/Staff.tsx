@@ -60,6 +60,8 @@ export default function Staff() {
   const [rankId, setRankId] = useState("");
   const [deptId, setDeptId] = useState("");
   const [status, setStatus] = useState<StaffStatus>("active");
+  const [ghanaCardNumber, setGhanaCardNumber] = useState("");
+  const [email, setEmail] = useState("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -108,6 +110,8 @@ export default function Staff() {
     setRankId("");
     setDeptId("");
     setStatus("active");
+    setGhanaCardNumber("");
+    setEmail("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -125,6 +129,8 @@ export default function Staff() {
     setRankId(s.rank_id || "");
     setDeptId(s.department_id || "");
     setStatus(s.status);
+    setGhanaCardNumber(s.ghana_card_number || "");
+    setEmail(s.email || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -168,6 +174,8 @@ export default function Staff() {
         rank_id: rankId || null,
         department_id: deptId || null,
         status,
+        ghana_card_number: ghanaCardNumber || null,
+        email: email || null,
       };
 
       if (editing) {
@@ -567,6 +575,16 @@ export default function Staff() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Ghana Card Number</Label>
+                <Input value={ghanaCardNumber} onChange={(e) => setGhanaCardNumber(e.target.value)} placeholder="GHA-XXXXXXXXX-X" />
+              </div>
+              <div>
+                <Label>Email Address</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
