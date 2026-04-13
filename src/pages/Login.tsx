@@ -116,7 +116,7 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="staff" className="w-full">
+          <Tabs defaultValue="staff" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="staff" className="gap-2"><Users className="h-4 w-4" /> Staff</TabsTrigger>
               <TabsTrigger value="admin" className="gap-2"><Shield className="h-4 w-4" /> Admin</TabsTrigger>
