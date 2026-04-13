@@ -29,10 +29,13 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
   const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
   const [filterType, setFilterType] = useState<string>("all");
 
-  const nightGuardIds = new Set(nightGuardStaff.map((s) => s.staff_id));
+  // Use today's duty staff if provided, otherwise fall back to all night guard staff
+  const displayStaff = todayDutyStaff && todayDutyStaff.length > 0 ? todayDutyStaff : nightGuardStaff;
+
+  const nightGuardIds = new Set(displayStaff.map((s) => s.staff_id));
 
   const onlineGuards = onlineUsers.filter((u) => nightGuardIds.has(u.staffId));
-  const offlineGuards = nightGuardStaff.filter(
+  const offlineGuards = displayStaff.filter(
     (s) => !onlineUsers.some((u) => u.staffId === s.staff_id)
   );
 
