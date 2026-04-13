@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail, FileDown } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail, FileDown, CheckSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
@@ -40,6 +41,7 @@ export default function Reports() {
   const [previewType, setPreviewType] = useState<string>("");
   const [previewName, setPreviewName] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
 
   const [uploadForm, setUploadForm] = useState({
     title: "", description: "", category: "daily" as ReportCategory, report_date: format(new Date(), "yyyy-MM-dd"),
@@ -137,6 +139,40 @@ export default function Reports() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const reportsToDelete = uploadedReports.filter((r: any) => ids.includes(r.id));
+      const filePaths = reportsToDelete.map((r: any) => r.file_path);
+      if (filePaths.length > 0) {
+        await supabase.storage.from("reports").remove(filePaths);
+      }
+      const { error } = await supabase.from("report_uploads").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_data, ids) => {
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success(`${ids.length} report(s) deleted`);
+      setSelectedReports(new Set());
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedReports(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedReports.size === uploadedReports.length && uploadedReports.length > 0) {
+      setSelectedReports(new Set());
+    } else {
+      setSelectedReports(new Set(uploadedReports.map((r: any) => r.id)));
+    }
+  }, [selectedReports.size, uploadedReports]);
 
   const handlePreview = async (report: any) => {
     const { data } = await supabase.storage.from("reports").createSignedUrl(report.file_path, 300);
