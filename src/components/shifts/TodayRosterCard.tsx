@@ -21,7 +21,7 @@ interface Props {
   shiftEndTime?: string | null;
 }
 
-export function TodayRosterCard({ todayDutyStaff, totalStaff }: Props) {
+export function TodayRosterCard({ todayDutyStaff, totalStaff, shiftStartTime, shiftEndTime }: Props) {
   const { onlineUsers } = useOnlineUsers();
   const onlineStaffIds = new Set(onlineUsers.map((u) => u.staffId));
 
@@ -37,7 +37,7 @@ export function TodayRosterCard({ todayDutyStaff, totalStaff }: Props) {
         </CardTitle>
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
           <Clock className="h-3 w-3" />
-          <span>Duty Hours: 18:00 – 06:00</span>
+          <span>Duty Hours: {shiftStartTime ?? "18:00"} – {shiftEndTime ?? "06:00"}</span>
         </div>
       </CardHeader>
       <CardContent>
