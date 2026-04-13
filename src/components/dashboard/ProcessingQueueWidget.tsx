@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,23 @@ import { useNavigate } from "react-router-dom";
 
 export default function ProcessingQueueWidget() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("processing-widget-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-queue-counts"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-queue-counts"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["processing-queue-counts"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const { data } = useQuery({
     queryKey: ["processing-queue-counts"],
