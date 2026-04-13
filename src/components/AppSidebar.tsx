@@ -87,6 +87,11 @@ export function AppSidebar() {
                     <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                       <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
                       {!collapsed && <span>{item.title}</span>}
+                      {item.url === "/processing" && !collapsed && processingCount != null && processingCount > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] justify-center px-1.5 text-[10px]">
+                          {processingCount}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
