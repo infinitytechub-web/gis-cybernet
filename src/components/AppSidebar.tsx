@@ -2,7 +2,10 @@ import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
   CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { NavLink } from "@/components/NavLink";
+import { Badge } from "@/components/ui/badge";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppSettings } from "@/hooks/useAppSettings";
@@ -46,6 +49,19 @@ export function AppSidebar() {
   const { signOut, role } = useAuth();
   const { org_name, system_label } = useAppSettings();
 
+  const { data: processingCount } = useQuery({
+    queryKey: ["processing-sidebar-count"],
+    queryFn: async () => {
+      const [v, e, p] = await Promise.all([
+        supabase.from("visa_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
+        supabase.from("visa_extensions").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
+        supabase.from("passport_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "processing"]),
+      ]);
+      return (v.count ?? 0) + (e.count ?? 0) + (p.count ?? 0);
+    },
+    refetchInterval: 60_000,
+  });
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
@@ -71,6 +87,11 @@ export function AppSidebar() {
                     <NavLink to={item.url} end={item.url === "/"} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                       <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
                       {!collapsed && <span>{item.title}</span>}
+                      {item.url === "/processing" && !collapsed && processingCount != null && processingCount > 0 && (
+                        <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] justify-center px-1.5 text-[10px]">
+                          {processingCount}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

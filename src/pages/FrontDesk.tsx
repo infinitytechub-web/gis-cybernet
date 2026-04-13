@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import { FileText, Stamp, BookOpen, ClipboardList } from "lucide-react";
 import VisaApplications from "@/components/frontdesk/VisaApplications";
 import VisaExtensions from "@/components/frontdesk/VisaExtensions";
 import PassportApplications from "@/components/frontdesk/PassportApplications";
 import AuditLog from "@/components/frontdesk/AuditLog";
 
+const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
+
 export default function FrontDesk() {
-  const { isAdmin } = useAuth();
+  const { role } = useAuth();
+
+  if (role && !ALLOWED_ROLES.includes(role)) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="space-y-6">
