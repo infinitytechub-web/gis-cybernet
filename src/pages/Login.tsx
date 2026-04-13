@@ -22,6 +22,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lockoutEnd, setLockoutEnd] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("staff");
   const failCount = useRef(0);
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -44,7 +45,20 @@ export default function Login() {
     if (!staffId.trim() || !password.trim()) return;
     setIsLoading(true);
     try {
-      const email = `${staffId.trim().toLowerCase().replace(/\s+/g, "")}@gis.local`;
+      let email: string;
+
+      if (activeTab === "staff") {
+        // Look up the auth email from the staff ID
+        const { data, error } = await supabase.rpc("get_email_by_staff_id", { _staff_id: staffId.trim() });
+        if (error || !data) {
+          throw new Error("Invalid Staff ID or password");
+        }
+        email = data;
+      } else {
+        // Admin tab: use direct ID-based email
+        email = `${staffId.trim().toLowerCase().replace(/\s+/g, "")}@gis.local`;
+      }
+
       await signIn(email, password);
       failCount.current = 0;
       setLockoutEnd(null);
