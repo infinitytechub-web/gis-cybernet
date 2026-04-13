@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Admins can insert notifications" ON public.notifications;
