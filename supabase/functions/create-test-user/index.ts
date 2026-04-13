@@ -16,45 +16,33 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Test 1: Try inserting directly into profiles to test trigger chain
-    console.log("Test 1: Direct profile insert...");
-    const { data: p1, error: e1 } = await adminClient.from("profiles").insert({
-      staff_id: "__test_trigger_chain_001",
-      first_name: "Trigger",
-      last_name: "Test",
-    }).select().single();
-    
-    if (e1) {
-      console.log("Profile insert failed:", e1.message, e1.details, e1.hint);
-      return new Response(JSON.stringify({ test1_error: e1 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    
-    console.log("Profile insert succeeded, cleaning up...");
-    // Clean up
-    await adminClient.from("profiles").delete().eq("id", p1.id);
+    const results: any = {};
 
-    // Test 2: Try creating auth user with NO metadata
-    console.log("Test 2: Auth user with no metadata...");
-    const { data: u2, error: e2 } = await adminClient.auth.admin.createUser({
-      email: "test.nometa999@gis.local",
+    // Test: Create with a gmail-like email
+    console.log("Test: Auth user with unique email...");
+    const testEmail = `test${Date.now()}@example.com`;
+    const { data: u1, error: e1 } = await adminClient.auth.admin.createUser({
+      email: testEmail,
       password: "TestPass123!",
       email_confirm: true,
+      user_metadata: { staff_id: `__test_${Date.now()}`, first_name: "Test", last_name: "User" },
     });
 
-    if (e2) {
-      return new Response(JSON.stringify({ test1: "ok", test2_error: e2.message }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (e1) {
+      results.test_email = { error: e1.message, status: e1.status };
+    } else {
+      results.test_email = { success: true, userId: u1.user.id };
+      // Check what profile was created
+      const { data: profile } = await adminClient.from("profiles").select("*").eq("user_id", u1.user.id).single();
+      results.profile_created = profile;
+      
+      // Cleanup
+      await adminClient.from("profiles").delete().eq("user_id", u1.user.id);
+      await adminClient.from("user_roles").delete().eq("user_id", u1.user.id);
+      await adminClient.auth.admin.deleteUser(u1.user.id);
     }
 
-    // Clean up
-    await adminClient.from("profiles").delete().eq("user_id", u2.user.id);
-    await adminClient.from("user_roles").delete().eq("user_id", u2.user.id);
-    await adminClient.auth.admin.deleteUser(u2.user.id);
-
-    return new Response(JSON.stringify({ test1: "ok", test2: "ok" }), {
+    return new Response(JSON.stringify(results, null, 2), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
