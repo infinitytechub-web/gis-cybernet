@@ -43,7 +43,7 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
       const to = format(addDays(weekStart, 6), "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("shift_assignments")
-        .select("*, profiles(id, first_name, last_name, staff_id, phone, email)")
+        .select("*, profiles(id, first_name, last_name, staff_id, phone, email, gender)")
         .eq("shift_id", nightGuardShift.id)
         .gte("start_date", from)
         .lte("start_date", to);
