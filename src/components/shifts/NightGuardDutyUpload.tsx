@@ -236,6 +236,109 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
     toast.success("Template downloaded");
   };
 
+  // Replace week logic
+  const replaceWeekDates = useMemo(() => {
+    if (!replaceWeekStart) return [];
+    const ws = parseISO(replaceWeekStart);
+    const mondayStart = startOfWeek(ws, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }, (_, i) => format(addDays(mondayStart, i), "yyyy-MM-dd"));
+  }, [replaceWeekStart]);
+
+  const { data: existingWeekAssignments = [] } = useQuery({
+    queryKey: ["replace-week-assignments", replaceWeekDates[0]],
+    queryFn: async () => {
+      if (!nightGuardShift || replaceWeekDates.length === 0) return [];
+      const { data, error } = await supabase
+        .from("shift_assignments")
+        .select("id, start_date, profiles:profile_id(first_name, last_name, staff_id)")
+        .eq("shift_id", nightGuardShift.id)
+        .gte("start_date", replaceWeekDates[0])
+        .lte("start_date", replaceWeekDates[6]);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: replaceWeekDates.length === 7 && !!nightGuardShift,
+  });
+
+  const handleReplaceFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setReplaceFile(f);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const wb = XLSX.read(evt.target?.result, { type: "binary" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        const assignments: ParsedAssignment[] = rows.map((row) => {
+          const staffId = String(row["Staff ID"] || row["staff_id"] || "").trim();
+          const staffName = String(row["Name"] || row["Staff Name"] || row["name"] || "").trim();
+          const match = nightGuardStaff.find((s: any) => s.staff_id === staffId);
+          return {
+            staffId,
+            staffName: staffName || (match ? `${match.first_name} ${match.last_name}` : "Unknown"),
+            date: "",
+            profileId: match?.id,
+            error: !staffId ? "Missing Staff ID" : !match ? "Staff not found" : undefined,
+          };
+        });
+        setReplaceParsed(assignments);
+      } catch {
+        toast.error("Failed to parse file");
+      }
+    };
+    reader.readAsBinaryString(f);
+  };
+
+  const validReplaceGuards = replaceParsed.filter((a) => !a.error && a.profileId);
+
+  const replaceWeekMutation = useMutation({
+    mutationFn: async () => {
+      if (!nightGuardShift) throw new Error("No Night Guard shift found");
+      if (validReplaceGuards.length === 0) throw new Error("No valid guards");
+      if (replaceWeekDates.length !== 7) throw new Error("Select a week");
+
+      // Delete existing assignments for the week
+      const { error: delErr } = await supabase
+        .from("shift_assignments")
+        .delete()
+        .eq("shift_id", nightGuardShift.id)
+        .gte("start_date", replaceWeekDates[0])
+        .lte("start_date", replaceWeekDates[6]);
+      if (delErr) throw delErr;
+
+      // Insert new assignments for every day of the week
+      const rows = validReplaceGuards.flatMap((a) =>
+        replaceWeekDates.map((d) => ({
+          profile_id: a.profileId!,
+          shift_id: nightGuardShift.id,
+          start_date: d,
+          end_date: d,
+        }))
+      );
+
+      const { error: insErr } = await supabase.from("shift_assignments").insert(rows);
+      if (insErr) throw insErr;
+      return rows;
+    },
+    onSuccess: async (rows) => {
+      queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["replace-week-assignments"] });
+      toast.success(`Week replaced: ${rows.length} assignments created`);
+
+      const dateLabel = `${replaceWeekDates[0]} to ${replaceWeekDates[6]}`;
+      const profileIds = validReplaceGuards.map((a) => a.profileId!);
+      notifyGuards(profileIds, dateLabel, nightGuardShift?.name ?? "Night Guard");
+
+      setReplaceParsed([]);
+      setReplaceFile(null);
+      setReplaceOpen(false);
+      setConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const totalUploadAssignments = uploadDateRange
     ? validAssignments.length * uploadDateRange.length
     : validAssignments.length;
