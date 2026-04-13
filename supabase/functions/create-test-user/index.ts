@@ -1,58 +1,53 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-Deno.serve(async () => {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-  const email = "test.user@gis.local";
-  const password = "Test@GIS2026";
-  const staffId = "TEST-001";
-
-  const { data: { users } } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-
-  const existing = users?.find((u) => u.email === email);
-
-  if (existing) {
-    const { error: updateErr } = await supabase.auth.admin.updateUserById(existing.id, { password });
-    if (updateErr) return new Response(JSON.stringify({ error: updateErr.message }), { status: 400 });
-
-    // Ensure deputy role (deputized admin)
-    await supabase.from("user_roles").delete().eq("user_id", existing.id);
-    await supabase.from("user_roles").insert({ user_id: existing.id, role: "deputy" });
-
-    return new Response(JSON.stringify({
-      message: "Test user password reset",
-      staffId,
-      email,
-      password,
-      role: "deputy (deputized admin)",
-    }));
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
-  // Create new user
-  const { data: newUser, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { staff_id: staffId, first_name: "Test", last_name: "User" },
-  });
+  try {
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+    const results: any = {};
 
-  // Set deputy role (deputized admin privileges)
-  await supabase.from("user_roles").upsert({ user_id: newUser.user!.id, role: "deputy" });
+    // Test: Create with a gmail-like email
+    console.log("Test: Auth user with unique email...");
+    const testEmail = `test${Date.now()}@example.com`;
+    const { data: u1, error: e1 } = await adminClient.auth.admin.createUser({
+      email: testEmail,
+      password: "TestPass123!",
+      email_confirm: true,
+      user_metadata: { staff_id: `__test_${Date.now()}`, first_name: "Test", last_name: "User" },
+    });
 
-  return new Response(JSON.stringify({
-    message: "Test user created",
-    staffId,
-    email,
-    password,
-    role: "deputy (deputized admin)",
-  }));
+    if (e1) {
+      results.test_email = { error: e1.message, status: e1.status };
+    } else {
+      results.test_email = { success: true, userId: u1.user.id };
+      // Check what profile was created
+      const { data: profile } = await adminClient.from("profiles").select("*").eq("user_id", u1.user.id).single();
+      results.profile_created = profile;
+      
+      // Cleanup
+      await adminClient.from("profiles").delete().eq("user_id", u1.user.id);
+      await adminClient.from("user_roles").delete().eq("user_id", u1.user.id);
+      await adminClient.auth.admin.deleteUser(u1.user.id);
+    }
+
+    return new Response(JSON.stringify(results, null, 2), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 });
