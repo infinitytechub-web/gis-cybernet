@@ -70,7 +70,7 @@ export default function Shifts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group, department_id, departments(name)")
+        .select("id, first_name, last_name, staff_id, shift_group, department_id, phone, email, departments(name)")
         .eq("status", "active")
         .order("last_name");
       if (error) throw error;
