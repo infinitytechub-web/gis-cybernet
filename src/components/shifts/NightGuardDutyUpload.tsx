@@ -508,6 +508,130 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Replace Week Dialog */}
+      <Dialog open={replaceOpen} onOpenChange={(v) => { setReplaceOpen(v); if (!v) { setReplaceParsed([]); setReplaceFile(null); setReplaceWeekStart(""); } }}>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1.5 text-destructive font-semibold">
+            <RefreshCw className="h-4 w-4" /> Replace Week
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-destructive" />
+              Clear &amp; Replace Week's Assignments
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Upload a new duty list to <strong>replace all</strong> night guard assignments for an entire week. Existing assignments for that week will be deleted first.
+            </p>
+
+            <div>
+              <Label>Select any day in the target week</Label>
+              <Input type="date" value={replaceWeekStart} onChange={(e) => setReplaceWeekStart(e.target.value)} />
+              {replaceWeekDates.length === 7 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Week: {format(parseISO(replaceWeekDates[0]), "dd MMM")} — {format(parseISO(replaceWeekDates[6]), "dd MMM yyyy")}
+                </p>
+              )}
+            </div>
+
+            {existingWeekAssignments.length > 0 && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  {existingWeekAssignments.length} existing assignment(s) will be replaced
+                </p>
+                <ScrollArea className="max-h-[100px]">
+                  <div className="flex flex-wrap gap-1.5">
+                    {existingWeekAssignments.map((a: any) => (
+                      <Badge key={a.id} variant="secondary" className="text-[10px]">
+                        {a.start_date} — {(a.profiles as any)?.staff_id} {(a.profiles as any)?.last_name}
+                      </Badge>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {replaceWeekDates.length === 7 && existingWeekAssignments.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">No existing assignments for this week.</p>
+            )}
+
+            <div>
+              <Label>Upload new duty list (Staff ID column required)</Label>
+              <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleReplaceFile} />
+            </div>
+
+            {replaceParsed.length > 0 && (
+              <>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">{replaceParsed.length} rows</Badge>
+                  <Badge className="text-xs bg-emerald-500/10 text-emerald-700 border-emerald-400">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> {validReplaceGuards.length} valid
+                  </Badge>
+                  {replaceParsed.length - validReplaceGuards.length > 0 && (
+                    <Badge variant="destructive" className="text-xs">
+                      <AlertCircle className="h-3 w-3 mr-1" /> {replaceParsed.length - validReplaceGuards.length} errors
+                    </Badge>
+                  )}
+                </div>
+                <ScrollArea className="max-h-[120px] border rounded-md">
+                  <div className="p-2 space-y-1">
+                    {replaceParsed.map((a, i) => (
+                      <div key={i} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded ${a.error ? "bg-destructive/10" : "bg-emerald-50 dark:bg-emerald-900/20"}`}>
+                        <span className="font-mono w-20 truncate">{a.staffId || "—"}</span>
+                        <span className="flex-1 truncate">{a.staffName}</span>
+                        {a.error && <span className="text-destructive text-[10px]">{a.error}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                <div className="rounded-md bg-muted/50 border p-2.5 text-xs text-muted-foreground">
+                  <strong>{validReplaceGuards.length}</strong> guard(s) × <strong>7</strong> days = <strong>{validReplaceGuards.length * 7}</strong> new assignments
+                </div>
+
+                <Button
+                  variant="destructive"
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={validReplaceGuards.length === 0 || replaceWeekDates.length !== 7}
+                  className="w-full font-bold"
+                >
+                  Review &amp; Replace Week
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation AlertDialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Week Replacement</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>This will permanently delete <strong>{existingWeekAssignments.length}</strong> existing assignment(s) for the week of <strong>{replaceWeekDates[0] ? format(parseISO(replaceWeekDates[0]), "dd MMM") : ""} — {replaceWeekDates[6] ? format(parseISO(replaceWeekDates[6]), "dd MMM yyyy") : ""}</strong> and create <strong>{validReplaceGuards.length * 7}</strong> new assignments.</p>
+                <p className="text-destructive font-medium">This action cannot be undone.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => replaceWeekMutation.mutate()}
+              disabled={replaceWeekMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {replaceWeekMutation.isPending ? "Replacing..." : "Yes, Replace Week"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
