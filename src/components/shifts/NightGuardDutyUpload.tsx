@@ -1,15 +1,14 @@
 import { useState, useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Users, Trash2, CalendarIcon, Plus } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarIcon, Plus } from "lucide-react";
 import { format, addDays, eachDayOfInterval, parseISO } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -27,6 +26,20 @@ interface ParsedAssignment {
   error?: string;
 }
 
+async function notifyGuards(profileIds: string[], dateLabel: string, shiftName: string) {
+  for (const pid of [...new Set(profileIds)]) {
+    const userId = await getUserIdFromProfileId(pid);
+    if (userId) {
+      await createNotification({
+        userId,
+        title: "Night Guard Duty Assignment",
+        message: `You have been assigned to ${shiftName} duty for ${dateLabel}.`,
+        type: "shift",
+      });
+    }
+  }
+}
+
 export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props) {
   const queryClient = useQueryClient();
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -34,8 +47,14 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
   const [parsed, setParsed] = useState<ParsedAssignment[]>([]);
   const [file, setFile] = useState<File | null>(null);
 
+  // Upload date range override
+  const [uploadStartDate, setUploadStartDate] = useState("");
+  const [uploadEndDate, setUploadEndDate] = useState("");
+  const [useUploadDateRange, setUseUploadDateRange] = useState(false);
+
   // Manual assign state
-  const [manualDate, setManualDate] = useState("");
+  const [manualStartDate, setManualStartDate] = useState("");
+  const [manualEndDate, setManualEndDate] = useState("");
   const [manualGuardIds, setManualGuardIds] = useState<string[]>([]);
   const [manualSearch, setManualSearch] = useState("");
 
@@ -48,6 +67,18 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
       `${g.first_name} ${g.last_name} ${g.staff_id}`.toLowerCase().includes(q)
     );
   }, [nightGuardStaff, manualSearch]);
+
+  const manualDateCount = useMemo(() => {
+    if (!manualStartDate) return 0;
+    if (!manualEndDate || manualEndDate < manualStartDate) return 1;
+    return eachDayOfInterval({ start: parseISO(manualStartDate), end: parseISO(manualEndDate) }).length;
+  }, [manualStartDate, manualEndDate]);
+
+  const uploadDateRange = useMemo(() => {
+    if (!useUploadDateRange || !uploadStartDate) return null;
+    if (!uploadEndDate || uploadEndDate < uploadStartDate) return [uploadStartDate];
+    return eachDayOfInterval({ start: parseISO(uploadStartDate), end: parseISO(uploadEndDate) }).map((d) => format(d, "yyyy-MM-dd"));
+  }, [useUploadDateRange, uploadStartDate, uploadEndDate]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -71,20 +102,21 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
           if (typeof dateRaw === "number") {
             const d = XLSX.SSF.parse_date_code(dateRaw);
             dateStr = `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
-          } else {
-            const parsed = new Date(String(dateRaw));
-            if (!isNaN(parsed.getTime())) {
-              dateStr = format(parsed, "yyyy-MM-dd");
+          } else if (String(dateRaw).trim()) {
+            const parsedDate = new Date(String(dateRaw));
+            if (!isNaN(parsedDate.getTime())) {
+              dateStr = format(parsedDate, "yyyy-MM-dd");
             }
           }
 
           const match = nightGuardStaff.find((s: any) => s.staff_id === staffId);
+          const needsDate = !dateStr && !useUploadDateRange;
           assignments.push({
             staffId,
             staffName: staffName || (match ? `${match.first_name} ${match.last_name}` : "Unknown"),
             date: dateStr,
             profileId: match?.id,
-            error: !staffId ? "Missing Staff ID" : !match ? "Staff not found in Night Guard dept" : !dateStr ? "Invalid date" : undefined,
+            error: !staffId ? "Missing Staff ID" : !match ? "Staff not found in Night Guard dept" : needsDate ? "Invalid date (use date range or add Date column)" : undefined,
           });
         }
         setParsed(assignments);
@@ -95,27 +127,54 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
     reader.readAsBinaryString(f);
   };
 
-  const validAssignments = parsed.filter((a) => !a.error && a.profileId);
+  // Re-validate when date range toggle changes
+  const validAssignments = parsed.filter((a) => {
+    if (a.error && a.error !== "Invalid date (use date range or add Date column)") return false;
+    if (!a.profileId) return false;
+    if (!a.date && !uploadDateRange) return false;
+    return true;
+  });
+
+  // Build final rows to insert, expanding date range
+  const buildUploadRows = () => {
+    if (!nightGuardShift) return [];
+    const rows: { profile_id: string; shift_id: string; start_date: string; end_date: string }[] = [];
+
+    for (const a of validAssignments) {
+      if (uploadDateRange) {
+        // Apply date range to every staff member
+        for (const d of uploadDateRange) {
+          rows.push({ profile_id: a.profileId!, shift_id: nightGuardShift.id, start_date: d, end_date: d });
+        }
+      } else {
+        rows.push({ profile_id: a.profileId!, shift_id: nightGuardShift.id, start_date: a.date, end_date: a.date });
+      }
+    }
+    return rows;
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!nightGuardShift) throw new Error("No Night Guard shift found. Create one first.");
-      if (validAssignments.length === 0) throw new Error("No valid assignments to upload");
-
-      const rows = validAssignments.map((a) => ({
-        profile_id: a.profileId!,
-        shift_id: nightGuardShift.id,
-        start_date: a.date,
-        end_date: a.date,
-      }));
+      const rows = buildUploadRows();
+      if (rows.length === 0) throw new Error("No valid assignments to upload");
 
       const { error } = await supabase.from("shift_assignments").insert(rows);
       if (error) throw error;
+      return rows;
     },
-    onSuccess: () => {
+    onSuccess: async (rows) => {
       queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
-      toast.success(`${validAssignments.length} assignments created`);
+      toast.success(`${rows.length} assignments created`);
+
+      // Send notifications
+      const dateLabel = uploadDateRange
+        ? `${uploadDateRange[0]} to ${uploadDateRange[uploadDateRange.length - 1]}`
+        : `${rows.length} date(s)`;
+      const profileIds = validAssignments.map((a) => a.profileId!);
+      notifyGuards(profileIds, dateLabel, nightGuardShift?.name ?? "Night Guard");
+
       setParsed([]);
       setFile(null);
       setUploadOpen(false);
@@ -126,23 +185,31 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
   const manualMutation = useMutation({
     mutationFn: async () => {
       if (!nightGuardShift) throw new Error("No Night Guard shift found");
-      if (!manualDate || manualGuardIds.length === 0) throw new Error("Select date and guards");
+      if (!manualStartDate || manualGuardIds.length === 0) throw new Error("Select date and guards");
 
-      const rows = manualGuardIds.map((pid) => ({
-        profile_id: pid,
-        shift_id: nightGuardShift.id,
-        start_date: manualDate,
-        end_date: manualDate,
-      }));
+      const dates = manualEndDate && manualEndDate >= manualStartDate
+        ? eachDayOfInterval({ start: parseISO(manualStartDate), end: parseISO(manualEndDate) }).map((d) => format(d, "yyyy-MM-dd"))
+        : [manualStartDate];
+
+      const rows = manualGuardIds.flatMap((pid) =>
+        dates.map((d) => ({ profile_id: pid, shift_id: nightGuardShift.id, start_date: d, end_date: d }))
+      );
 
       const { error } = await supabase.from("shift_assignments").insert(rows);
       if (error) throw error;
+      return { count: rows.length, dates };
     },
-    onSuccess: () => {
+    onSuccess: async ({ count, dates }) => {
       queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
-      toast.success(`${manualGuardIds.length} guards assigned for ${manualDate}`);
-      setManualDate("");
+      toast.success(`${count} assignments created`);
+
+      // Send notifications
+      const dateLabel = dates.length > 1 ? `${dates[0]} to ${dates[dates.length - 1]}` : dates[0];
+      notifyGuards(manualGuardIds, dateLabel, nightGuardShift?.name ?? "Night Guard");
+
+      setManualStartDate("");
+      setManualEndDate("");
       setManualGuardIds([]);
       setManualOpen(false);
     },
@@ -161,10 +228,14 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
     toast.success("Template downloaded");
   };
 
+  const totalUploadAssignments = uploadDateRange
+    ? validAssignments.length * uploadDateRange.length
+    : validAssignments.length;
+
   return (
     <div className="flex gap-2 flex-wrap">
       {/* Upload Dialog */}
-      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) { setParsed([]); setFile(null); } }}>
+      <Dialog open={uploadOpen} onOpenChange={(v) => { setUploadOpen(v); if (!v) { setParsed([]); setFile(null); setUseUploadDateRange(false); setUploadStartDate(""); setUploadEndDate(""); } }}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] font-semibold">
             <Upload className="h-4 w-4" /> Upload Duty List
@@ -179,18 +250,51 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-xs text-muted-foreground">
-              Upload an Excel or CSV file with columns: <strong>Staff ID</strong>, <strong>Name</strong> (optional), <strong>Date</strong>. Each row creates a shift assignment for that guard on that date.
+              Upload an Excel or CSV with <strong>Staff ID</strong> column. Optionally include a <strong>Date</strong> column per row, or use the date range below to assign all guards across multiple days.
             </p>
             <div className="flex gap-2">
               <Input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="flex-1" />
               <Button variant="ghost" size="sm" onClick={downloadTemplate} className="text-xs shrink-0">
-                Download Template
+                Template
               </Button>
+            </div>
+
+            {/* Date range override */}
+            <div className="border rounded-md p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="dateRangeToggle"
+                  checked={useUploadDateRange}
+                  onChange={(e) => setUseUploadDateRange(e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="dateRangeToggle" className="text-xs cursor-pointer">
+                  Apply date range to all staff in file (overrides per-row dates)
+                </Label>
+              </div>
+              {useUploadDateRange && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">Start Date</Label>
+                    <Input type="date" value={uploadStartDate} onChange={(e) => setUploadStartDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">End Date</Label>
+                    <Input type="date" value={uploadEndDate} onChange={(e) => setUploadEndDate(e.target.value)} min={uploadStartDate} />
+                  </div>
+                </div>
+              )}
+              {useUploadDateRange && uploadDateRange && (
+                <p className="text-[10px] text-muted-foreground">
+                  {uploadDateRange.length} day(s) × {validAssignments.length} guard(s) = <strong>{totalUploadAssignments}</strong> total assignments
+                </p>
+              )}
             </div>
 
             {parsed.length > 0 && (
               <>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="text-xs">
                     {parsed.length} rows parsed
                   </Badge>
@@ -203,24 +307,26 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
                     </Badge>
                   )}
                 </div>
-                <ScrollArea className="max-h-[250px] border rounded-md">
+                <ScrollArea className="max-h-[200px] border rounded-md">
                   <div className="p-2 space-y-1">
                     {parsed.map((a, i) => (
                       <div key={i} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded ${a.error ? "bg-destructive/10" : "bg-emerald-50 dark:bg-emerald-900/20"}`}>
                         <span className="font-mono w-20 truncate">{a.staffId || "—"}</span>
                         <span className="flex-1 truncate">{a.staffName}</span>
-                        <span className="w-24 text-muted-foreground">{a.date || "—"}</span>
-                        {a.error && <span className="text-destructive text-[10px]">{a.error}</span>}
+                        <span className="w-24 text-muted-foreground">{useUploadDateRange ? "range" : a.date || "—"}</span>
+                        {a.error && !(useUploadDateRange && a.error.includes("date")) && (
+                          <span className="text-destructive text-[10px]">{a.error}</span>
+                        )}
                       </div>
                     ))}
                   </div>
                 </ScrollArea>
                 <Button
                   onClick={() => uploadMutation.mutate()}
-                  disabled={uploadMutation.isPending || validAssignments.length === 0}
+                  disabled={uploadMutation.isPending || totalUploadAssignments === 0}
                   className="w-full"
                 >
-                  {uploadMutation.isPending ? "Creating assignments..." : `Create ${validAssignments.length} Assignments`}
+                  {uploadMutation.isPending ? "Creating assignments..." : `Create ${totalUploadAssignments} Assignment(s)`}
                 </Button>
               </>
             )}
@@ -229,7 +335,7 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
       </Dialog>
 
       {/* Manual Assign Dialog */}
-      <Dialog open={manualOpen} onOpenChange={(v) => { setManualOpen(v); if (!v) { setManualDate(""); setManualGuardIds([]); setManualSearch(""); } }}>
+      <Dialog open={manualOpen} onOpenChange={(v) => { setManualOpen(v); if (!v) { setManualStartDate(""); setManualEndDate(""); setManualGuardIds([]); setManualSearch(""); } }}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="gap-1.5 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] font-semibold">
             <Plus className="h-4 w-4" /> Assign Guards
@@ -239,14 +345,25 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-[hsl(220,80%,18%)]" />
-              Assign Guards to Date
+              Assign Guards to Dates
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label>Date</Label>
-              <Input type="date" value={manualDate} onChange={(e) => setManualDate(e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Start Date</Label>
+                <Input type="date" value={manualStartDate} onChange={(e) => setManualStartDate(e.target.value)} />
+              </div>
+              <div>
+                <Label>End Date (optional)</Label>
+                <Input type="date" value={manualEndDate} onChange={(e) => setManualEndDate(e.target.value)} min={manualStartDate} />
+              </div>
             </div>
+            {manualDateCount > 1 && (
+              <p className="text-[10px] text-muted-foreground">
+                {manualDateCount} days × {manualGuardIds.length} guard(s) = <strong>{manualDateCount * manualGuardIds.length}</strong> assignments
+              </p>
+            )}
             <div>
               <Label>Search Guards</Label>
               <Input placeholder="Search by name or ID..." value={manualSearch} onChange={(e) => setManualSearch(e.target.value)} />
@@ -272,10 +389,10 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
             <p className="text-xs text-muted-foreground">{manualGuardIds.length} guard(s) selected</p>
             <Button
               onClick={() => manualMutation.mutate()}
-              disabled={manualMutation.isPending || !manualDate || manualGuardIds.length === 0}
+              disabled={manualMutation.isPending || !manualStartDate || manualGuardIds.length === 0}
               className="w-full"
             >
-              {manualMutation.isPending ? "Assigning..." : `Assign ${manualGuardIds.length} Guard(s)`}
+              {manualMutation.isPending ? "Assigning..." : `Assign ${manualDateCount * manualGuardIds.length} Total`}
             </Button>
           </div>
         </DialogContent>
