@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KeyRound, Eye, EyeOff } from "lucide-react";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 export default function ForcePasswordChange() {
@@ -73,6 +74,7 @@ export default function ForcePasswordChange() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              <PasswordStrength password={password} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-pw">Confirm Password</Label>

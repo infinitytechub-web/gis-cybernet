@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { KeyRound, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { PasswordStrength } from "@/components/ui/password-strength";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -126,6 +127,7 @@ export function ChangePasswordDialog() {
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            <PasswordStrength password={newPassword} />
             {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword}</p>}
           </div>
           <div className="space-y-2">
