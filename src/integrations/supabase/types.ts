@@ -1238,6 +1238,7 @@ export type Database = {
     }
     Functions: {
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
