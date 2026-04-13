@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -34,8 +34,23 @@ export function CountryCombobox({ value, onValueChange, placeholder = "Select co
           <CommandInput placeholder="Type to search..." />
           <CommandList>
             <CommandEmpty>No country found.</CommandEmpty>
-            <CommandGroup>
-              {COUNTRIES.map((country) => (
+            <CommandGroup heading="⭐ ECOWAS Members">
+              {ECOWAS_COUNTRIES.map((country) => (
+                <CommandItem
+                  key={`ecowas-${country}`}
+                  value={country}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check className={cn("mr-2 h-4 w-4", value?.toLowerCase() === country.toLowerCase() ? "opacity-100" : "opacity-0")} />
+                  {country}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandGroup heading="All Countries">
+              {COUNTRIES.filter(c => !ECOWAS_COUNTRIES.includes(c)).map((country) => (
                 <CommandItem
                   key={country}
                   value={country}
