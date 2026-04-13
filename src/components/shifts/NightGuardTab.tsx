@@ -68,9 +68,11 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
     toast.success("Excel downloaded");
   };
 
+  const todayRotation = getNightGuardRotation(new Date());
+
   return (
     <div className="space-y-4">
-      <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} />
+      <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayRotation} />
       {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
       <Card className="border-primary/20">
         <CardHeader className="pb-2">
