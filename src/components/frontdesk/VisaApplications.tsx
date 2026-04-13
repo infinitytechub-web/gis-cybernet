@@ -6,13 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
+import { ECOWAS_COUNTRIES } from "@/lib/countries";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Eye, Edit } from "lucide-react";
+import { Plus, Search, Eye, Edit, Filter } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
@@ -35,6 +37,7 @@ export default function VisaApplications() {
   const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [ecowasOnly, setEcowasOnly] = useState(false);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -124,10 +127,12 @@ export default function VisaApplications() {
     setOpen(true);
   };
 
-  const filtered = applications.filter((a: any) =>
-    a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
-    a.passport_number.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = applications.filter((a: any) => {
+    const matchesSearch = a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
+      a.passport_number.toLowerCase().includes(search.toLowerCase());
+    const matchesEcowas = !ecowasOnly || ECOWAS_COUNTRIES.some(c => c.toLowerCase() === a.nationality?.toLowerCase());
+    return matchesSearch && matchesEcowas;
+  });
 
   const summary = {
     total: applications.length,
@@ -157,6 +162,16 @@ export default function VisaApplications() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by name or passport..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Toggle
+          pressed={ecowasOnly}
+          onPressedChange={setEcowasOnly}
+          variant="outline"
+          size="sm"
+          className="gap-1 whitespace-nowrap data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:border-primary/30"
+          aria-label="Filter ECOWAS only"
+        >
+          ⭐ ECOWAS
+        </Toggle>
         <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
           <DialogTrigger asChild>
             <Button className="gap-1"><Plus className="h-4 w-4" /> New Application</Button>
