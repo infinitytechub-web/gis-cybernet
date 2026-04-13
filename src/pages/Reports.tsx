@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail, FileDown } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail, FileDown, CheckSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
@@ -40,6 +41,7 @@ export default function Reports() {
   const [previewType, setPreviewType] = useState<string>("");
   const [previewName, setPreviewName] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
 
   const [uploadForm, setUploadForm] = useState({
     title: "", description: "", category: "daily" as ReportCategory, report_date: format(new Date(), "yyyy-MM-dd"),
@@ -137,6 +139,40 @@ export default function Reports() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const reportsToDelete = uploadedReports.filter((r: any) => ids.includes(r.id));
+      const filePaths = reportsToDelete.map((r: any) => r.file_path);
+      if (filePaths.length > 0) {
+        await supabase.storage.from("reports").remove(filePaths);
+      }
+      const { error } = await supabase.from("report_uploads").delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_data, ids) => {
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success(`${ids.length} report(s) deleted`);
+      setSelectedReports(new Set());
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedReports(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selectedReports.size === uploadedReports.length && uploadedReports.length > 0) {
+      setSelectedReports(new Set());
+    } else {
+      setSelectedReports(new Set(uploadedReports.map((r: any) => r.id)));
+    }
+  }, [selectedReports.size, uploadedReports]);
 
   const handlePreview = async (report: any) => {
     const { data } = await supabase.storage.from("reports").createSignedUrl(report.file_path, 300);
@@ -302,7 +338,7 @@ export default function Reports() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -314,11 +350,39 @@ export default function Reports() {
                 <SelectItem value="annual">Annual</SelectItem>
               </SelectContent>
             </Select>
+            {isAdmin && selectedReports.size > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="gap-1 ml-auto">
+                    <Trash2 className="h-4 w-4" /> Delete {selectedReports.size} selected
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedReports.size} report(s)?</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently remove the selected report files. This action cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => bulkDeleteMutation.mutate(Array.from(selectedReports))}>Delete All</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  {isAdmin && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={uploadedReports.length > 0 && selectedReports.size === uploadedReports.length}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Date</TableHead>
@@ -329,9 +393,18 @@ export default function Reports() {
               </TableHeader>
               <TableBody>
                 {uploadedReports.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No uploaded reports</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">No uploaded reports</TableCell></TableRow>
                 ) : uploadedReports.map((r: any) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} className={selectedReports.has(r.id) ? "bg-primary/5" : ""}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedReports.has(r.id)}
+                          onCheckedChange={() => toggleSelect(r.id)}
+                          aria-label={`Select ${r.title}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{r.title}</TableCell>
                     <TableCell><Badge variant="outline">{r.category}</Badge></TableCell>
                     <TableCell className="text-sm">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
