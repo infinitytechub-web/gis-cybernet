@@ -21,10 +21,9 @@ function playNotificationSound() {
 }
 
 /**
- * Detects when a total count increases and triggers a visual flash + sound.
- * Returns { flash, checkForNewItems }
+ * Detects when a total count increases and triggers a visual flash + sound + optional callback.
  */
-export function useNewItemAlert() {
+export function useNewItemAlert(onNewItems?: (diff: number, label?: string) => void) {
   const prevTotal = useRef<number | null>(null);
   const flashTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [flash, setFlash] = useState(false);
@@ -36,7 +35,7 @@ export function useNewItemAlert() {
       setFlash(true);
       clearTimeout(flashTimeout.current);
       flashTimeout.current = setTimeout(() => setFlash(false), 1500);
-      if (onNewItems) onNewItems(diff, label);
+      onNewItems?.(diff, label);
     }
     prevTotal.current = newTotal;
   }, [onNewItems]);
