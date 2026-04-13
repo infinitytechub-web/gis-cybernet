@@ -150,14 +150,19 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,70%,25%)] font-bold">
             <Shield className="h-4 w-4 text-[hsl(220,70%,25%)] stroke-[2.5]" />
-            Night Guard Duty — Online Status
+            Night Guard — Today's Duty Status
             <Badge
               variant="outline"
               className="ml-auto text-[10px] border-amber-400 text-amber-700 dark:text-amber-300"
             >
-              {onlineGuards.length}/{nightGuardStaff.length} online
+              {onlineGuards.length}/{displayStaff.length} online
             </Badge>
           </CardTitle>
+          {todayDutyStaff && todayDutyStaff.length > 0 && (
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Showing {todayDutyStaff.length} of {nightGuardStaff.length} staff assigned for today's rotation
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           {nightGuardStaff.length === 0 ? (
