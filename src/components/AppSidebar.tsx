@@ -2,7 +2,8 @@ import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
   CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, KeyRound, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
