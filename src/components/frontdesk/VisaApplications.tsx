@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
+import { ECOWAS_COUNTRIES } from "@/lib/countries";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,6 +36,7 @@ export default function VisaApplications() {
   const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [ecowasOnly, setEcowasOnly] = useState(false);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -124,10 +126,12 @@ export default function VisaApplications() {
     setOpen(true);
   };
 
-  const filtered = applications.filter((a: any) =>
-    a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
-    a.passport_number.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = applications.filter((a: any) => {
+    const matchesSearch = a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
+      a.passport_number.toLowerCase().includes(search.toLowerCase());
+    const matchesEcowas = !ecowasOnly || ECOWAS_COUNTRIES.some(c => c.toLowerCase() === a.nationality?.toLowerCase());
+    return matchesSearch && matchesEcowas;
+  });
 
   const summary = {
     total: applications.length,
