@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +38,16 @@ export default function ProcessingVisaExtensions() {
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ status: "submitted", notes: "" });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("processing-ext-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
+        qc.invalidateQueries({ queryKey: ["visa-extensions-processing"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
 
   const { data: extensions = [], isLoading } = useQuery({
     queryKey: ["visa-extensions-processing"],
