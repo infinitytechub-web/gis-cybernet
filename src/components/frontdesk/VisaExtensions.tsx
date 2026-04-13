@@ -49,6 +49,8 @@ export default function VisaExtensions() {
   const [form, setForm] = useState({
     applicant_name: "", passport_number: "", current_visa_expiry: "",
     requested_extension_date: "", reason: "", notes: "", status: "submitted",
+    phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "",
+    date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "",
   });
 
   const { data: extensions = [], isLoading } = useQuery({
@@ -62,7 +64,7 @@ export default function VisaExtensions() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, processed_by: user?.id };
+      const payload = { ...form, date_of_birth: form.date_of_birth || null, processed_by: user?.id };
 
       let previousStatus: string | null = null;
       if (editId) {
@@ -107,7 +109,7 @@ export default function VisaExtensions() {
   });
 
   const resetForm = () => {
-    setForm({ applicant_name: "", passport_number: "", current_visa_expiry: "", requested_extension_date: "", reason: "", notes: "", status: "submitted" });
+    setForm({ applicant_name: "", passport_number: "", current_visa_expiry: "", requested_extension_date: "", reason: "", notes: "", status: "submitted", phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "", date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "" });
     setEditId(null);
     setOpen(false);
   };
@@ -117,6 +119,11 @@ export default function VisaExtensions() {
       applicant_name: ext.applicant_name, passport_number: ext.passport_number,
       current_visa_expiry: ext.current_visa_expiry, requested_extension_date: ext.requested_extension_date,
       reason: ext.reason || "", notes: ext.notes || "", status: ext.status,
+      phone: ext.phone || "", home_address: ext.home_address || "", gender: ext.gender || "",
+      marital_status: ext.marital_status || "", foreign_address: ext.foreign_address || "",
+      date_of_birth: ext.date_of_birth || "", next_of_kin: ext.next_of_kin || "",
+      emergency_contact: ext.emergency_contact || "", street_name: ext.street_name || "",
+      nearest_landmark: ext.nearest_landmark || "",
     });
     setEditId(ext.id);
     setOpen(true);
@@ -164,10 +171,41 @@ export default function VisaExtensions() {
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
                 <div><Label>Passport Number *</Label><Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} required /></div>
+                <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
+                <div><Label>Gender</Label>
+                  <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Marital Status</Label>
+                  <Select value={form.marital_status} onValueChange={(v) => setForm({ ...form, marital_status: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="married">Married</SelectItem>
+                      <SelectItem value="divorced">Divorced</SelectItem>
+                      <SelectItem value="widowed">Widowed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Telephone Number</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
                 <div><Label>Current Visa Expiry *</Label><Input type="date" value={form.current_visa_expiry} onChange={(e) => setForm({ ...form, current_visa_expiry: e.target.value })} required /></div>
                 <div><Label>Requested Extension Date *</Label><Input type="date" value={form.requested_extension_date} onChange={(e) => setForm({ ...form, requested_extension_date: e.target.value })} required /></div>
               </div>
-              <div><Label>Reason</Label><Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} rows={2} /></div>
+              <div><Label>Home Address</Label><Textarea value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} rows={2} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>
+                <div><Label>Nearest Landmark</Label><Input value={form.nearest_landmark} onChange={(e) => setForm({ ...form, nearest_landmark: e.target.value })} /></div>
+              </div>
+              <div><Label>Foreign Address</Label><Textarea value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} rows={2} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
+                <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
+              </div>
               {editId && (
                 <div><Label>Status</Label>
                   <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
