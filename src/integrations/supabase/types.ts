@@ -440,7 +440,6 @@ export type Database = {
       }
       otp_codes: {
         Row: {
-          code: string
           code_hash: string | null
           created_at: string
           expires_at: string
@@ -450,7 +449,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          code: string
           code_hash?: string | null
           created_at?: string
           expires_at: string
@@ -460,7 +458,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          code?: string
           code_hash?: string | null
           created_at?: string
           expires_at?: string
