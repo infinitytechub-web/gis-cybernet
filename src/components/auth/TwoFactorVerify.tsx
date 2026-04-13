@@ -35,21 +35,9 @@ export default function TwoFactorVerify({ onVerified, method }: TwoFactorVerifyP
         const { error: verifyError } = await supabase.auth.mfa.verify({ factorId: totpFactor.id, challengeId: challenge.id, code });
         if (verifyError) throw verifyError;
       } else {
-        // Email OTP verification
-        const { data, error } = await supabase
-          .from("otp_codes")
-          .select("*")
-          .eq("user_id", user!.id)
-          .eq("code", code)
-          .eq("used", false)
-          .gt("expires_at", new Date().toISOString())
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error || !data) { toast.error("Invalid or expired code"); return; }
-
-        await supabase.from("otp_codes").update({ used: true }).eq("id", data.id);
+        // Email OTP verification via server-side hashed comparison
+        const { data: verified, error } = await supabase.rpc("verify_otp", { _code: code });
+        if (error || !verified) { toast.error("Invalid or expired code"); return; }
       }
 
       toast.success("Verification successful");

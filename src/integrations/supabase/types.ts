@@ -441,6 +441,7 @@ export type Database = {
       otp_codes: {
         Row: {
           code: string
+          code_hash: string | null
           created_at: string
           expires_at: string
           id: string
@@ -450,6 +451,7 @@ export type Database = {
         }
         Insert: {
           code: string
+          code_hash?: string | null
           created_at?: string
           expires_at: string
           id?: string
@@ -459,6 +461,7 @@ export type Database = {
         }
         Update: {
           code?: string
+          code_hash?: string | null
           created_at?: string
           expires_at?: string
           id?: string
@@ -1251,6 +1254,7 @@ export type Database = {
         Args: { _profile_id: string; _user_id: string }
         Returns: boolean
       }
+      verify_otp: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {
       app_role:
