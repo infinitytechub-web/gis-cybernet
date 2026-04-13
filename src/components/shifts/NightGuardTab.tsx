@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
+import { NightGuardDutySummary } from "./NightGuardDutySummary";
 import { TodayRosterCard } from "./TodayRosterCard";
 import NightGuardDutyUpload from "./NightGuardDutyUpload";
 import { ManualAssignDialog } from "./ManualAssignDialog";
@@ -42,7 +43,7 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
       const to = format(addDays(weekStart, 6), "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("shift_assignments")
-        .select("*, profiles(id, first_name, last_name, staff_id, phone, email)")
+        .select("*, profiles(id, first_name, last_name, staff_id, phone, email, gender)")
         .eq("shift_id", nightGuardShift.id)
         .gte("start_date", from)
         .lte("start_date", to);
@@ -121,6 +122,7 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
         shiftStartTime={nightGuardShift?.start_time ?? null}
         shiftEndTime={nightGuardShift?.end_time ?? null}
       />
+      <NightGuardDutySummary nightGuardStaff={nightGuardStaff} todayDutyStaff={todayDutyStaff} />
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayDutyStaff} />
       {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} allStaff={allStaff} shifts={shifts} />}
 
