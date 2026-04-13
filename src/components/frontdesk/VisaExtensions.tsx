@@ -34,6 +34,16 @@ export default function VisaExtensions() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("frontdesk-ext-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
+        qc.invalidateQueries({ queryKey: ["visa-extensions"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({

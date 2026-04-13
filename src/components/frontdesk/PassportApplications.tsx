@@ -39,6 +39,16 @@ export default function PassportApplications() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("frontdesk-passport-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
+        qc.invalidateQueries({ queryKey: ["passport-applications"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
   const [ecowasOnly, setEcowasOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
