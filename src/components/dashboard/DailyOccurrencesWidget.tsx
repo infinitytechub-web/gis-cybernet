@@ -144,7 +144,20 @@ export default function DailyOccurrencesWidget() {
             <Zap className="relative h-4 w-4 text-primary" />
           </span>
           Today's Occurrences
-          <Badge variant="outline" className="ml-auto text-[10px] font-semibold">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 ml-auto">
+                <RefreshCw className={`h-3 w-3 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {secondsAgo < 5 ? "Just now" : `${secondsAgo}s ago`}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-xs">Auto-refreshes every 60s</p>
+            </TooltipContent>
+          </Tooltip>
+          <Badge variant="outline" className="text-[10px] font-semibold">
             {format(new Date(), "dd MMM yyyy")}
           </Badge>
         </CardTitle>
