@@ -19,6 +19,7 @@ export function useOnlineUsers() {
     if (!user) return;
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
     const setup = async () => {
       const { data: profile } = await supabase
@@ -26,6 +27,8 @@ export function useOnlineUsers() {
         .select("first_name, last_name, staff_id, department_id, departments:department_id(name)")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      if (cancelled) return;
 
       const deptName = (profile as any)?.departments?.name ?? "";
 
@@ -42,30 +45,31 @@ export function useOnlineUsers() {
         config: { presence: { key: user.id } },
       });
 
-      // Register presence callback BEFORE subscribing
-      channel.on("presence", { event: "sync" }, () => {
-        const state = channel!.presenceState<OnlineUser>();
-        const users: OnlineUser[] = [];
-        for (const key of Object.keys(state)) {
-          const presences = state[key];
-          if (presences && presences.length > 0) {
-            users.push(presences[0] as unknown as OnlineUser);
+      // Register ALL callbacks BEFORE calling subscribe
+      channel
+        .on("presence", { event: "sync" }, () => {
+          if (cancelled || !channel) return;
+          const state = channel.presenceState<OnlineUser>();
+          const users: OnlineUser[] = [];
+          for (const key of Object.keys(state)) {
+            const presences = state[key];
+            if (presences && presences.length > 0) {
+              users.push(presences[0] as unknown as OnlineUser);
+            }
           }
-        }
-        setOnlineUsers(users);
-      });
-
-      // Subscribe after registering callbacks
-      channel.subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          await channel!.track(presencePayload);
-        }
-      });
+          setOnlineUsers(users);
+        })
+        .subscribe(async (status) => {
+          if (status === "SUBSCRIBED" && channel && !cancelled) {
+            await channel.track(presencePayload);
+          }
+        });
     };
 
     setup();
 
     return () => {
+      cancelled = true;
       if (channel) {
         channel.untrack();
         supabase.removeChannel(channel);
