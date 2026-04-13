@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -92,6 +93,7 @@ export default function Login() {
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <PasswordStrength password={password} />
       </div>
 
       <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading || getRemainingLockout() > 0}>
