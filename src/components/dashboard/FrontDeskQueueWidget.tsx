@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Stamp, FileText, BookOpen, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNewItemAlert } from "@/hooks/useNewItemAlert";
 
 export default function FrontDeskQueueWidget() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { flash, checkForNewItems } = useNewItemAlert();
 
   useEffect(() => {
     const channel = supabase
@@ -43,9 +45,13 @@ export default function FrontDeskQueueWidget() {
     refetchInterval: 60_000,
   });
 
-  if (!data) return null;
-  const total = data.visa + data.extensions + data.passport;
-  if (total === 0) return null;
+  const total = data ? data.visa + data.extensions + data.passport : 0;
+
+  useEffect(() => {
+    if (data) checkForNewItems(total);
+  }, [total, data, checkForNewItems]);
+
+  if (!data || total === 0) return null;
 
   const queues = [
     { label: "Visa Apps", count: data.visa, icon: Stamp, color: "text-blue-600 dark:text-blue-400", tab: "visa" },
@@ -54,12 +60,12 @@ export default function FrontDeskQueueWidget() {
   ];
 
   return (
-    <Card className="border-lime-200 dark:border-lime-800 bg-lime-50/50 dark:bg-lime-950/20">
+    <Card className={`border-lime-200 dark:border-lime-800 bg-lime-50/50 dark:bg-lime-950/20 transition-all duration-300 ${flash ? "ring-2 ring-lime-400 shadow-lg shadow-lime-200/50 dark:shadow-lime-800/30 animate-pulse" : ""}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <ClipboardList className="h-4 w-4 text-lime-600 dark:text-lime-400" />
           Front Desk
-          <Badge variant="outline" className="ml-auto text-[10px]">{total} total</Badge>
+          <Badge variant="outline" className={`ml-auto text-[10px] transition-colors ${flash ? "bg-lime-500 text-white border-lime-500" : ""}`}>{total} total</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>

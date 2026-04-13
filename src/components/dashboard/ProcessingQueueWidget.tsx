@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileSearch, Stamp, FileText, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNewItemAlert } from "@/hooks/useNewItemAlert";
 
 export default function ProcessingQueueWidget() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { flash, checkForNewItems } = useNewItemAlert();
 
   useEffect(() => {
     const channel = supabase
@@ -43,9 +45,13 @@ export default function ProcessingQueueWidget() {
     refetchInterval: 60_000,
   });
 
-  if (!data) return null;
-  const total = data.visa + data.extensions + data.passport;
-  if (total === 0) return null;
+  const total = data ? data.visa + data.extensions + data.passport : 0;
+
+  useEffect(() => {
+    if (data) checkForNewItems(total);
+  }, [total, data, checkForNewItems]);
+
+  if (!data || total === 0) return null;
 
   const queues = [
     { label: "Visa Apps", count: data.visa, icon: Stamp, color: "text-blue-600 dark:text-blue-400", tab: "visa" },
@@ -54,12 +60,12 @@ export default function ProcessingQueueWidget() {
   ];
 
   return (
-    <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+    <Card className={`border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 transition-all duration-300 ${flash ? "ring-2 ring-amber-400 shadow-lg shadow-amber-200/50 dark:shadow-amber-800/30 animate-pulse" : ""}`}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <FileSearch className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           Processing Queue
-          <Badge variant="outline" className="ml-auto text-[10px]">{total} pending</Badge>
+          <Badge variant="outline" className={`ml-auto text-[10px] transition-colors ${flash ? "bg-amber-500 text-white border-amber-500" : ""}`}>{total} pending</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
