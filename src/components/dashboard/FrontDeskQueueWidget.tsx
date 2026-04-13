@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Stamp, FileText, BookOpen, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNewItemAlert } from "@/hooks/useNewItemAlert";
+import { toast } from "sonner";
 
 export default function FrontDeskQueueWidget() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { flash, checkForNewItems } = useNewItemAlert();
+  const handleNewItems = useCallback((diff: number) => {
+    toast.info(`${diff} new application${diff > 1 ? "s" : ""} at Front Desk`, {
+      description: "Click to review",
+      action: { label: "View", onClick: () => navigate("/front-desk") },
+    });
+  }, [navigate]);
+  const { flash, checkForNewItems } = useNewItemAlert(handleNewItems);
 
   useEffect(() => {
     const channel = supabase
