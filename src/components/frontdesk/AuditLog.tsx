@@ -176,7 +176,7 @@ export default function AuditLog() {
 
       {/* Table */}
       <Card><CardContent className="p-0"><div className="overflow-x-auto">
-        <Table>
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               <TableHead>Timestamp</TableHead>
