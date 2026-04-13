@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KeyRound, CheckCircle } from "lucide-react";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 export default function ResetPassword() {
@@ -103,6 +104,7 @@ export default function ResetPassword() {
             <div className="space-y-2">
               <Label htmlFor="new-password">New Password</Label>
               <Input id="new-password" type="password" placeholder="Minimum 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+              <PasswordStrength password={password} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Confirm Password</Label>
