@@ -7,13 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const roles = ["admin", "oic", "2ic", "supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
+const roles = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
   oic: "OIC",
   "2ic": "2IC",
   supervisor: "Supervisor",
+  shift_supervisor: "Shift Supervisor",
+  deputy_shift_supervisor: "Dep. Shift Supervisor",
   shift_leader: "Shift Leader",
   deputy_supervisor: "Dep. Supervisor",
   deputy_shift_leader: "Dep. Shift Leader",
