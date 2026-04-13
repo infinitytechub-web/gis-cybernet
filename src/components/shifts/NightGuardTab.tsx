@@ -1,5 +1,6 @@
 import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
+import { TodayRosterCard } from "./TodayRosterCard";
 import { ManualAssignDialog } from "./ManualAssignDialog";
 import { BulkAssignDialog } from "./BulkAssignDialog";
 import { Button } from "@/components/ui/button";
