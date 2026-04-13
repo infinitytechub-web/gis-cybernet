@@ -21,6 +21,7 @@ import {
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
 import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
 import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidget";
+import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
