@@ -18,9 +18,12 @@ interface OccurrenceItem {
   textColor: string;
 }
 
+const REFRESH_INTERVAL = 60000;
+
 export default function DailyOccurrencesWidget() {
   const today = format(new Date(), "yyyy-MM-dd");
-
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [secondsAgo, setSecondsAgo] = useState(0);
   const { data, isLoading } = useQuery({
     queryKey: ["daily-occurrences", today],
     queryFn: async () => {
