@@ -59,7 +59,20 @@ export function AppSidebar() {
       ]);
       return (v.count ?? 0) + (e.count ?? 0) + (p.count ?? 0);
     },
-    refetchInterval: 60_000,
+    refetchInterval: 30_000,
+  });
+
+  const { data: frontDeskCount } = useQuery({
+    queryKey: ["frontdesk-sidebar-count"],
+    queryFn: async () => {
+      const [v, e, p] = await Promise.all([
+        supabase.from("visa_applications").select("id", { count: "exact", head: true }),
+        supabase.from("visa_extensions").select("id", { count: "exact", head: true }),
+        supabase.from("passport_applications").select("id", { count: "exact", head: true }),
+      ]);
+      return (v.count ?? 0) + (e.count ?? 0) + (p.count ?? 0);
+    },
+    refetchInterval: 30_000,
   });
 
   return (
@@ -90,6 +103,11 @@ export function AppSidebar() {
                       {item.url === "/processing" && !collapsed && processingCount != null && processingCount > 0 && (
                         <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] justify-center px-1.5 text-[10px]">
                           {processingCount}
+                        </Badge>
+                      )}
+                      {item.url === "/front-desk" && !collapsed && frontDeskCount != null && frontDeskCount > 0 && (
+                        <Badge variant="secondary" className="ml-auto h-5 min-w-[20px] justify-center px-1.5 text-[10px]">
+                          {frontDeskCount}
                         </Badge>
                       )}
                     </NavLink>
