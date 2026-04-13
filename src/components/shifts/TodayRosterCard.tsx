@@ -17,6 +17,8 @@ interface StaffMember {
 interface Props {
   todayDutyStaff: StaffMember[];
   totalStaff: number;
+  shiftStartTime?: string | null;
+  shiftEndTime?: string | null;
 }
 
 export function TodayRosterCard({ todayDutyStaff, totalStaff }: Props) {
