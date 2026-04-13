@@ -24,7 +24,7 @@ export default function DailyOccurrencesWidget() {
   const today = format(new Date(), "yyyy-MM-dd");
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [secondsAgo, setSecondsAgo] = useState(0);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["daily-occurrences", today],
     queryFn: async () => {
       const todayStart = `${today}T00:00:00`;
@@ -48,6 +48,8 @@ export default function DailyOccurrencesWidget() {
         supabase.from("security_incidents").select("id", { count: "exact", head: true }).gte("created_at", todayStart).lte("created_at", todayEnd),
       ]);
 
+      setLastRefresh(new Date());
+
       return {
         attendance: attendance.count ?? 0,
         leaveReqs: leaveReqs.count ?? 0,
@@ -58,8 +60,16 @@ export default function DailyOccurrencesWidget() {
         incidents: incidents.count ?? 0,
       };
     },
-    refetchInterval: 60000, // refresh every minute
+    refetchInterval: REFRESH_INTERVAL,
   });
+
+  // Update "seconds ago" counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsAgo(Math.floor((Date.now() - lastRefresh.getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lastRefresh]);
 
   const items: OccurrenceItem[] = [
     {
