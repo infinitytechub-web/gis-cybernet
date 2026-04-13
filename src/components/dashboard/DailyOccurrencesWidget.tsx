@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  CalendarCheck, CalendarOff, ArrowRightLeft, Stamp, FileText, ShieldAlert, Zap,
+  CalendarCheck, CalendarOff, ArrowRightLeft, Stamp, FileText, ShieldAlert, Zap, RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useState, useEffect } from "react";
 
 interface OccurrenceItem {
   label: string;
@@ -16,10 +18,13 @@ interface OccurrenceItem {
   textColor: string;
 }
 
+const REFRESH_INTERVAL = 60000;
+
 export default function DailyOccurrencesWidget() {
   const today = format(new Date(), "yyyy-MM-dd");
-
-  const { data, isLoading } = useQuery({
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [secondsAgo, setSecondsAgo] = useState(0);
+  const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["daily-occurrences", today],
     queryFn: async () => {
       const todayStart = `${today}T00:00:00`;
@@ -43,6 +48,8 @@ export default function DailyOccurrencesWidget() {
         supabase.from("security_incidents").select("id", { count: "exact", head: true }).gte("created_at", todayStart).lte("created_at", todayEnd),
       ]);
 
+      setLastRefresh(new Date());
+
       return {
         attendance: attendance.count ?? 0,
         leaveReqs: leaveReqs.count ?? 0,
@@ -53,8 +60,16 @@ export default function DailyOccurrencesWidget() {
         incidents: incidents.count ?? 0,
       };
     },
-    refetchInterval: 60000, // refresh every minute
+    refetchInterval: REFRESH_INTERVAL,
   });
+
+  // Update "seconds ago" counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsAgo(Math.floor((Date.now() - lastRefresh.getTime()) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lastRefresh]);
 
   const items: OccurrenceItem[] = [
     {
@@ -129,7 +144,20 @@ export default function DailyOccurrencesWidget() {
             <Zap className="relative h-4 w-4 text-primary" />
           </span>
           Today's Occurrences
-          <Badge variant="outline" className="ml-auto text-[10px] font-semibold">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex items-center gap-1 ml-auto">
+                <RefreshCw className={`h-3 w-3 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  {secondsAgo < 5 ? "Just now" : `${secondsAgo}s ago`}
+                </span>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-xs">Auto-refreshes every 60s</p>
+            </TooltipContent>
+          </Tooltip>
+          <Badge variant="outline" className="text-[10px] font-semibold">
             {format(new Date(), "dd MMM yyyy")}
           </Badge>
         </CardTitle>
