@@ -103,9 +103,12 @@ export default function ProcessingPassportApplications() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const [reviewApp, setReviewApp] = useState<any>(null);
+
   const openReview = (app: any) => {
     setForm({ status: app.status, notes: app.notes || "" });
     setEditId(app.id);
+    setReviewApp(app);
     setOpen(true);
   };
 
@@ -150,8 +153,25 @@ export default function ProcessingPassportApplications() {
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) setEditId(null); setOpen(v); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Review Passport Application</DialogTitle></DialogHeader>
+          {reviewApp && (
+            <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
+              <div><span className="text-muted-foreground">Name:</span> {reviewApp.applicant_name}</div>
+              <div><span className="text-muted-foreground">Nationality:</span> {reviewApp.nationality}</div>
+              <div><span className="text-muted-foreground">Type:</span> {reviewApp.application_type}</div>
+              <div><span className="text-muted-foreground">DOB:</span> {reviewApp.date_of_birth}</div>
+              {reviewApp.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewApp.phone}</div>}
+              {reviewApp.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewApp.gender}</div>}
+              {reviewApp.marital_status && <div><span className="text-muted-foreground">Marital Status:</span> {reviewApp.marital_status}</div>}
+              {reviewApp.address && <div className="col-span-2"><span className="text-muted-foreground">Address:</span> {reviewApp.address}</div>}
+              {reviewApp.foreign_address && <div className="col-span-2"><span className="text-muted-foreground">Foreign Address:</span> {reviewApp.foreign_address}</div>}
+              {reviewApp.street_name && <div><span className="text-muted-foreground">Street:</span> {reviewApp.street_name}</div>}
+              {reviewApp.nearest_landmark && <div><span className="text-muted-foreground">Landmark:</span> {reviewApp.nearest_landmark}</div>}
+              {reviewApp.next_of_kin && <div><span className="text-muted-foreground">Next of Kin:</span> {reviewApp.next_of_kin}</div>}
+              {reviewApp.emergency_contact && <div><span className="text-muted-foreground">Emergency:</span> {reviewApp.emergency_contact}</div>}
+            </div>
+          )}
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
