@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Download, Copy, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { UserPlus, Download, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadCSVString } from "@/lib/download-utils";
 
@@ -22,6 +23,57 @@ export function BulkCreateAccounts() {
   const [results, setResults] = useState<CreatedAccount[] | null>(null);
   const [errors, setErrors] = useState<Array<{ staffId: string; error: string }>>([]);
   const [total, setTotal] = useState(0);
+  const [jobProgress, setJobProgress] = useState(0);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
+
+  const pollJob = (jobId: string) => {
+    setJobStatus("processing");
+    setJobProgress(0);
+
+    pollingRef.current = setInterval(async () => {
+      const { data, error } = await supabase
+        .from("processing_jobs")
+        .select("status, progress, total, result, error")
+        .eq("id", jobId)
+        .single();
+
+      if (error || !data) return;
+
+      setJobProgress(data.progress ?? 0);
+      setTotal(data.total ?? 0);
+
+      if (data.status === "completed") {
+        clearInterval(pollingRef.current!);
+        pollingRef.current = null;
+        setJobStatus(null);
+        setIsResetting(false);
+
+        const result = data.result as any;
+        setResults(result?.created ?? []);
+        setErrors(result?.errors ?? []);
+        setTotal(result?.total ?? 0);
+
+        if (result?.created?.length > 0) {
+          toast.success(`${result.created.length} accounts regenerated successfully`);
+        } else {
+          toast.info(result?.message || "No accounts to regenerate");
+        }
+      } else if (data.status === "failed") {
+        clearInterval(pollingRef.current!);
+        pollingRef.current = null;
+        setJobStatus(null);
+        setIsResetting(false);
+        toast.error(data.error || "Job failed");
+      }
+    }, 3000);
+  };
 
   const handleBulkCreate = async () => {
     setIsLoading(true);
@@ -55,18 +107,24 @@ export function BulkCreateAccounts() {
       const { data, error } = await supabase.functions.invoke("reset-and-create-accounts");
       if (error) throw error;
 
-      setResults(data.created ?? []);
-      setErrors(data.errors ?? []);
-      setTotal(data.total ?? 0);
-
-      if (data.created?.length > 0) {
-        toast.success(`${data.created.length} accounts regenerated successfully`);
+      if (data.job_id) {
+        // Background job mode — poll for results
+        pollJob(data.job_id);
       } else {
-        toast.info(data.message || "No accounts to regenerate");
+        // Legacy direct response
+        setResults(data.created ?? []);
+        setErrors(data.errors ?? []);
+        setTotal(data.total ?? 0);
+        setIsResetting(false);
+
+        if (data.created?.length > 0) {
+          toast.success(`${data.created.length} accounts regenerated successfully`);
+        } else {
+          toast.info(data.message || "No accounts to regenerate");
+        }
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to reset and create accounts");
-    } finally {
       setIsResetting(false);
     }
   };
@@ -98,7 +156,18 @@ export function BulkCreateAccounts() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!results ? (
+        {jobStatus === "processing" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Resetting and regenerating accounts... This may take a few minutes.
+            </div>
+            <Progress value={jobProgress} className="w-full" />
+            <p className="text-xs text-muted-foreground">{jobProgress}% complete{total > 0 ? ` — ${total} accounts to process` : ""}</p>
+          </div>
+        )}
+
+        {!results && !jobStatus ? (
           <div className="flex flex-col sm:flex-row gap-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -144,7 +213,7 @@ export function BulkCreateAccounts() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        ) : (
+        ) : results ? (
           <div className="space-y-4">
             <div className="flex items-center gap-4 flex-wrap">
               <Badge variant="outline" className="gap-1 text-sm py-1 px-3">
@@ -214,7 +283,7 @@ export function BulkCreateAccounts() {
               </div>
             )}
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

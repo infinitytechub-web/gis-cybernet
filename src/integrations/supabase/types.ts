@@ -628,6 +628,45 @@ export type Database = {
           },
         ]
       }
+      processing_jobs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          progress: number
+          result: Json | null
+          status: string
+          task_type: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          progress?: number
+          result?: Json | null
+          status?: string
+          task_type: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          progress?: number
+          result?: Json | null
+          status?: string
+          task_type?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_locked: boolean
