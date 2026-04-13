@@ -690,8 +690,10 @@ export type Database = {
           account_locked: boolean
           created_at: string
           department_id: string | null
+          email: string | null
           first_name: string
           gender: string | null
+          ghana_card_number: string | null
           id: string
           last_name: string
           login_enabled: boolean
@@ -709,8 +711,10 @@ export type Database = {
           account_locked?: boolean
           created_at?: string
           department_id?: string | null
+          email?: string | null
           first_name: string
           gender?: string | null
+          ghana_card_number?: string | null
           id?: string
           last_name: string
           login_enabled?: boolean
@@ -728,8 +732,10 @@ export type Database = {
           account_locked?: boolean
           created_at?: string
           department_id?: string | null
+          email?: string | null
           first_name?: string
           gender?: string | null
+          ghana_card_number?: string | null
           id?: string
           last_name?: string
           login_enabled?: boolean
