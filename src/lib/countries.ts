@@ -5,6 +5,32 @@ export const ECOWAS_COUNTRIES = [
   "Nigeria", "Senegal", "Sierra Leone", "Togo",
 ];
 
+// Map of ECOWAS demonyms/adjectives to country names for flexible matching
+const ECOWAS_DEMONYMS: Record<string, string> = {
+  beninese: "Benin", beninois: "Benin",
+  "burkinabè": "Burkina Faso", burkinabe: "Burkina Faso", "burkinabé": "Burkina Faso",
+  "cabo verdean": "Cabo Verde", "cape verdean": "Cabo Verde",
+  ivorian: "Côte d'Ivoire", "ivoirian": "Côte d'Ivoire",
+  gambian: "Gambia",
+  ghanaian: "Ghana",
+  guinean: "Guinea",
+  "guinea-bissauan": "Guinea-Bissau", bissauan: "Guinea-Bissau",
+  liberian: "Liberia",
+  malian: "Mali",
+  nigerien: "Niger",
+  nigerian: "Nigeria", nigerinan: "Nigeria",
+  senegalese: "Senegal",
+  "sierra leonean": "Sierra Leone",
+  togolese: "Togo",
+};
+
+/** Check if a nationality string (country name or demonym) belongs to an ECOWAS member state */
+export function isEcowasNationality(nationality: string | null | undefined): boolean {
+  if (!nationality) return false;
+  const lower = nationality.toLowerCase().trim();
+  return ECOWAS_COUNTRIES.some(c => c.toLowerCase() === lower) || lower in ECOWAS_DEMONYMS;
+}
+
 // Comprehensive list of countries, African countries listed first for priority
 const AFRICAN_COUNTRIES = [
   "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi",

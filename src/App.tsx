@@ -33,6 +33,7 @@ const Compliance = lazy(() => import("./pages/Compliance"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const FrontDesk = lazy(() => import("./pages/FrontDesk"));
+const Processing = lazy(() => import("./pages/Processing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 
@@ -76,6 +77,7 @@ function App() {
           <Route path="/compliance" element={<ProtectedRoute><Layout><Compliance /></Layout></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
           <Route path="/announcements" element={<ProtectedRoute><Layout><Announcements /></Layout></ProtectedRoute>} />
+          <Route path="/processing" element={<ProtectedRoute><Layout><Processing /></Layout></ProtectedRoute>} />
           <Route path="/front-desk" element={<ProtectedRoute><Layout><FrontDesk /></Layout></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
