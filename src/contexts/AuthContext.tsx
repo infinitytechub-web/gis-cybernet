@@ -34,34 +34,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          setTimeout(async () => {
-            const r = await fetchRole(currentUser.id);
-            setRole(r);
-            setLoading(false);
-          }, 0);
-        } else {
-          setRole(null);
-          setLoading(false);
-        }
-      }
-    );
+    let isMounted = true;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const handleSession = async (session: { user: User } | null) => {
       const currentUser = session?.user ?? null;
+      if (!isMounted) return;
       setUser(currentUser);
       if (currentUser) {
         const r = await fetchRole(currentUser.id);
+        if (!isMounted) return;
         setRole(r);
+      } else {
+        setRole(null);
       }
       setLoading(false);
+    };
+
+    // Get initial session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    // Then listen for changes (skip INITIAL_SESSION to avoid double-fetch)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'INITIAL_SESSION') return;
+        handleSession(session);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchRole]);
 
   const signIn = useCallback(async (email: string, password: string) => {
