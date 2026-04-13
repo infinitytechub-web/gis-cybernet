@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarIcon, Plus } from "lucide-react";
-import { format, addDays, eachDayOfInterval, parseISO } from "date-fns";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarIcon, Plus, RefreshCw } from "lucide-react";
+import { format, addDays, eachDayOfInterval, parseISO, startOfWeek } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
