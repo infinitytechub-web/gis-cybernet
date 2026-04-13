@@ -1,12 +1,16 @@
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
 import { NightGuardOnlinePanel } from "./NightGuardOnlinePanel";
 import { TodayRosterCard } from "./TodayRosterCard";
-import { ManualAssignDialog } from "./ManualAssignDialog";
-import { BulkAssignDialog } from "./BulkAssignDialog";
+import NightGuardDutyUpload from "./NightGuardDutyUpload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, ChevronLeft, ChevronRight, Users, Download } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Shield, ChevronLeft, ChevronRight, Users, Download, Trash2 } from "lucide-react";
 import { format, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -23,32 +27,70 @@ interface Props {
 }
 
 export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setWeekStart, isAdmin }: Props) {
+  const queryClient = useQueryClient();
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const nightGuardShift = shifts.find((s: any) => s.name?.toLowerCase().includes("night guard"));
 
-  const getNightGuardRotation = (day: Date) => {
-    if (nightGuardStaff.length === 0) return [];
-    const dayOfYear = Math.floor((day.getTime() - new Date(day.getFullYear(), 0, 0).getTime()) / 86400000);
-    const perNight = Math.max(1, Math.ceil(nightGuardStaff.length / 7));
-    const startIdx = (dayOfYear * perNight) % nightGuardStaff.length;
-    const assigned = [];
-    for (let i = 0; i < perNight; i++) {
-      assigned.push(nightGuardStaff[(startIdx + i) % nightGuardStaff.length]);
-    }
-    return assigned;
-  };
+  // Fetch actual DB assignments for this week
+  const { data: weekAssignments = [] } = useQuery({
+    queryKey: ["night-guard-assignments", weekStart.toISOString()],
+    queryFn: async () => {
+      if (!nightGuardShift) return [];
+      const from = format(weekStart, "yyyy-MM-dd");
+      const to = format(addDays(weekStart, 6), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("shift_assignments")
+        .select("*, profiles(id, first_name, last_name, staff_id, phone, email)")
+        .eq("shift_id", nightGuardShift.id)
+        .gte("start_date", from)
+        .lte("start_date", to);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!nightGuardShift,
+  });
+
+  // Get today's assigned guards from DB
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const todayAssignments = weekAssignments.filter((a: any) => a.start_date === todayStr);
+  const todayDutyStaff = todayAssignments
+    .map((a: any) => a.profiles)
+    .filter(Boolean);
+
+  // Delete all assignments for a specific day
+  const deleteDayMutation = useMutation({
+    mutationFn: async (date: string) => {
+      if (!nightGuardShift) throw new Error("No shift");
+      const { error } = await supabase
+        .from("shift_assignments")
+        .delete()
+        .eq("shift_id", nightGuardShift.id)
+        .eq("start_date", date);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+      toast.success("Assignments cleared for that day");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   // Export helpers
   const buildRows = () => {
-    return weekDays.map(d => {
-      const rotation = getNightGuardRotation(d);
-      return [format(d, "EEE dd MMM yyyy"), rotation.map((p: any) => `${p.last_name}, ${p.first_name?.charAt(0)}.`).join("; ") || "—"];
+    return weekDays.map((d) => {
+      const dateStr = format(d, "yyyy-MM-dd");
+      const dayAssignments = weekAssignments.filter((a: any) => a.start_date === dateStr);
+      const names = dayAssignments
+        .map((a: any) => a.profiles ? `${a.profiles.last_name}, ${a.profiles.first_name?.charAt(0)}.` : "—")
+        .join("; ");
+      return [format(d, "EEE dd MMM yyyy"), names || "—"];
     });
   };
 
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(14);
-    doc.text(`Night Guard Rotation — ${format(weekStart, "dd MMM yyyy")}`, 14, 16);
+    doc.text(`Night Guard Duty — ${format(weekStart, "dd MMM yyyy")}`, 14, 16);
     autoTable(doc, { head: [["Date", "Assigned Guards"]], body: buildRows(), startY: 22 });
     doc.save(`night_guard_${format(weekStart, "yyyy-MM-dd")}.pdf`);
     toast.success("PDF downloaded");
@@ -56,7 +98,7 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
 
   const exportCSV = () => {
     const rows = [["Date", "Assigned Guards"], ...buildRows()];
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     downloadCSVString(csv, `night_guard_${format(weekStart, "yyyy-MM-dd")}.csv`);
     toast.success("CSV downloaded");
   };
@@ -69,39 +111,32 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
     toast.success("Excel downloaded");
   };
 
-  const todayRotation = getNightGuardRotation(new Date());
-
-  // Find night guard shift for dynamic duty hours
-  const nightGuardShift = shifts.find((s: any) => s.name?.toLowerCase().includes("night guard"));
-
   return (
     <div className="space-y-4">
       <TodayRosterCard
-        todayDutyStaff={todayRotation}
+        todayDutyStaff={todayDutyStaff}
         totalStaff={nightGuardStaff.length}
         shiftStartTime={nightGuardShift?.start_time ?? null}
         shiftEndTime={nightGuardShift?.end_time ?? null}
       />
-      <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayRotation} />
+      <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayDutyStaff} />
       {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
+
       <Card className="border-primary/20">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle className="flex items-center gap-2 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] text-base font-bold">
                 <Shield className="h-5 w-5 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] stroke-[2.5]" />
-                Night Guard Duty Rotation — Week of {format(weekStart, "dd MMM yyyy")}
+                Night Guard Duty Assignments — Week of {format(weekStart, "dd MMM yyyy")}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                {nightGuardStaff.length} staff in Night Guard Duty dept — auto-rotated nightly
+                {nightGuardStaff.length} staff in Night Guard dept — manage duty via upload or manual assignment
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
               {isAdmin && (
-                <>
-                  <ManualAssignDialog nightGuardStaff={nightGuardStaff} shifts={shifts} />
-                  <BulkAssignDialog nightGuardStaff={nightGuardStaff} shifts={shifts} />
-                </>
+                <NightGuardDutyUpload nightGuardStaff={nightGuardStaff} shifts={shifts} />
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -128,35 +163,60 @@ export default function NightGuardTab({ nightGuardStaff, shifts, weekStart, setW
             </Button>
           </div>
 
-          {nightGuardStaff.length === 0 ? (
-            <p className="text-center py-4 text-muted-foreground text-sm">
-              No staff assigned to Night Guard Duty department
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
-              {weekDays.map((d) => {
-                const rotation = getNightGuardRotation(d);
-                const isToday = isSameDay(d, new Date());
-                return (
-                  <Card key={d.toISOString()} className={isToday ? "border-primary" : ""}>
-                    <CardContent className="p-3">
-                      <div className={`text-xs font-bold mb-2 ${isToday ? "text-[hsl(220,70%,25%)]" : "text-[hsl(220,50%,40%)]"}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+            {weekDays.map((d) => {
+              const dateStr = format(d, "yyyy-MM-dd");
+              const dayAssignments = weekAssignments.filter((a: any) => a.start_date === dateStr);
+              const isToday = isSameDay(d, new Date());
+              return (
+                <Card key={d.toISOString()} className={isToday ? "border-primary" : ""}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs font-bold ${isToday ? "text-[hsl(220,70%,25%)]" : "text-[hsl(220,50%,40%)]"}`}>
                         {format(d, "EEE dd")}
-                      </div>
+                      </span>
+                      {isAdmin && dayAssignments.length > 0 && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive opacity-0 group-hover:opacity-100">
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Clear assignments for {format(d, "EEE dd MMM")}?</AlertDialogTitle>
+                              <AlertDialogDescription>This will remove all {dayAssignments.length} guard assignment(s) for this day.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteDayMutation.mutate(dateStr)}>Clear</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                    {dayAssignments.length === 0 ? (
+                      <p className="text-[10px] text-muted-foreground italic">No guards assigned</p>
+                    ) : (
                       <div className="space-y-1">
-                        {rotation.map((p: any) => (
-                          <div key={p.id} className="flex items-center gap-1">
+                        {dayAssignments.map((a: any) => (
+                          <div key={a.id} className="flex items-center gap-1">
                             <Users className="h-3 w-3 text-primary" />
-                            <span className="text-[11px] truncate">{p.last_name}, {p.first_name?.charAt(0)}.</span>
+                            <span className="text-[11px] truncate">
+                              {a.profiles?.last_name}, {a.profiles?.first_name?.charAt(0)}.
+                            </span>
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+                    )}
+                    <Badge variant="outline" className="text-[9px] mt-1">
+                      {dayAssignments.length} guard{dayAssignments.length !== 1 ? "s" : ""}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
     </div>
