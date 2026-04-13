@@ -475,13 +475,19 @@ export type Database = {
           application_type: string
           created_at: string
           date_of_birth: string
+          emergency_contact: string | null
+          foreign_address: string | null
           gender: string | null
           id: string
+          marital_status: string | null
           nationality: string
+          nearest_landmark: string | null
+          next_of_kin: string | null
           notes: string | null
           phone: string | null
           processed_by: string | null
           status: string
+          street_name: string | null
           updated_at: string
         }
         Insert: {
@@ -490,13 +496,19 @@ export type Database = {
           application_type?: string
           created_at?: string
           date_of_birth: string
+          emergency_contact?: string | null
+          foreign_address?: string | null
           gender?: string | null
           id?: string
+          marital_status?: string | null
           nationality: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
           notes?: string | null
           phone?: string | null
           processed_by?: string | null
           status?: string
+          street_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -505,13 +517,19 @@ export type Database = {
           application_type?: string
           created_at?: string
           date_of_birth?: string
+          emergency_contact?: string | null
+          foreign_address?: string | null
           gender?: string | null
           id?: string
+          marital_status?: string | null
           nationality?: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
           notes?: string | null
           phone?: string | null
           processed_by?: string | null
           status?: string
+          street_name?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1135,45 +1153,75 @@ export type Database = {
         Row: {
           applicant_name: string
           created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
           entry_date: string | null
           exit_date: string | null
+          foreign_address: string | null
+          gender: string | null
+          home_address: string | null
           id: string
+          marital_status: string | null
           nationality: string
+          nearest_landmark: string | null
+          next_of_kin: string | null
           notes: string | null
           passport_number: string
+          phone: string | null
           processed_by: string | null
           purpose: string | null
           status: string
+          street_name: string | null
           updated_at: string
           visa_type: string
         }
         Insert: {
           applicant_name: string
           created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
           entry_date?: string | null
           exit_date?: string | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
           id?: string
+          marital_status?: string | null
           nationality: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
           notes?: string | null
           passport_number: string
+          phone?: string | null
           processed_by?: string | null
           purpose?: string | null
           status?: string
+          street_name?: string | null
           updated_at?: string
           visa_type?: string
         }
         Update: {
           applicant_name?: string
           created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
           entry_date?: string | null
           exit_date?: string | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
           id?: string
+          marital_status?: string | null
           nationality?: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
           notes?: string | null
           passport_number?: string
+          phone?: string | null
           processed_by?: string | null
           purpose?: string | null
           status?: string
+          street_name?: string | null
           updated_at?: string
           visa_type?: string
         }
@@ -1184,13 +1232,23 @@ export type Database = {
           applicant_name: string
           created_at: string
           current_visa_expiry: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          foreign_address: string | null
+          gender: string | null
+          home_address: string | null
           id: string
+          marital_status: string | null
+          nearest_landmark: string | null
+          next_of_kin: string | null
           notes: string | null
           passport_number: string
+          phone: string | null
           processed_by: string | null
           reason: string | null
           requested_extension_date: string
           status: string
+          street_name: string | null
           updated_at: string
           visa_application_id: string | null
         }
@@ -1198,13 +1256,23 @@ export type Database = {
           applicant_name: string
           created_at?: string
           current_visa_expiry: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
           id?: string
+          marital_status?: string | null
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
           notes?: string | null
           passport_number: string
+          phone?: string | null
           processed_by?: string | null
           reason?: string | null
           requested_extension_date: string
           status?: string
+          street_name?: string | null
           updated_at?: string
           visa_application_id?: string | null
         }
@@ -1212,13 +1280,23 @@ export type Database = {
           applicant_name?: string
           created_at?: string
           current_visa_expiry?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
           id?: string
+          marital_status?: string | null
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
           notes?: string | null
           passport_number?: string
+          phone?: string | null
           processed_by?: string | null
           reason?: string | null
           requested_extension_date?: string
           status?: string
+          street_name?: string | null
           updated_at?: string
           visa_application_id?: string | null
         }

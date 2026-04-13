@@ -56,6 +56,8 @@ export default function PassportApplications() {
     applicant_name: "", date_of_birth: "", nationality: "Ghanaian",
     application_type: "new", gender: "", phone: "", address: "",
     notes: "", status: "submitted",
+    marital_status: "", foreign_address: "", next_of_kin: "",
+    emergency_contact: "", street_name: "", nearest_landmark: "",
   });
 
   const { data: applications = [], isLoading } = useQuery({
@@ -114,7 +116,7 @@ export default function PassportApplications() {
   });
 
   const resetForm = () => {
-    setForm({ applicant_name: "", date_of_birth: "", nationality: "Ghanaian", application_type: "new", gender: "", phone: "", address: "", notes: "", status: "submitted" });
+    setForm({ applicant_name: "", date_of_birth: "", nationality: "Ghanaian", application_type: "new", gender: "", phone: "", address: "", notes: "", status: "submitted", marital_status: "", foreign_address: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "" });
     setEditId(null);
     setOpen(false);
   };
@@ -125,6 +127,9 @@ export default function PassportApplications() {
       nationality: app.nationality, application_type: app.application_type,
       gender: app.gender || "", phone: app.phone || "", address: app.address || "",
       notes: app.notes || "", status: app.status,
+      marital_status: app.marital_status || "", foreign_address: app.foreign_address || "",
+      next_of_kin: app.next_of_kin || "", emergency_contact: app.emergency_contact || "",
+      street_name: app.street_name || "", nearest_landmark: app.nearest_landmark || "",
     });
     setEditId(app.id);
     setOpen(true);
@@ -200,9 +205,25 @@ export default function PassportApplications() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div><Label>Marital Status</Label>
+                  <Select value={form.marital_status} onValueChange={(v) => setForm({ ...form, marital_status: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="married">Married</SelectItem>
+                      <SelectItem value="divorced">Divorced</SelectItem>
+                      <SelectItem value="widowed">Widowed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Telephone Number</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
+                <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
+                <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>
+                <div><Label>Nearest Landmark</Label><Input value={form.nearest_landmark} onChange={(e) => setForm({ ...form, nearest_landmark: e.target.value })} /></div>
               </div>
-              <div><Label>Address</Label><Textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} /></div>
+              <div><Label>Home Address</Label><Textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} /></div>
+              <div><Label>Foreign Address</Label><Textarea value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} rows={2} /></div>
               {editId && (
                 <div><Label>Status</Label>
                   <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
