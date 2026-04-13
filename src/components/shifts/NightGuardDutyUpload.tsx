@@ -59,6 +59,13 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
   const [manualGuardIds, setManualGuardIds] = useState<string[]>([]);
   const [manualSearch, setManualSearch] = useState("");
 
+  // Replace week state
+  const [replaceOpen, setReplaceOpen] = useState(false);
+  const [replaceWeekStart, setReplaceWeekStart] = useState("");
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replaceParsed, setReplaceParsed] = useState<ParsedAssignment[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const nightGuardShift = shifts.find((s: any) => s.name?.toLowerCase().includes("night guard"));
 
   const filteredManualGuards = useMemo(() => {
