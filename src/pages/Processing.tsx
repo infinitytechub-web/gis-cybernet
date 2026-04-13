@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Stamp, FileText, BookOpen, ClipboardList } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import ProcessingVisaApplications from "@/components/processing/ProcessingVisaApplications";
 import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExtensions";
 import ProcessingPassportApplications from "@/components/processing/ProcessingPassportApplications";
@@ -12,6 +12,14 @@ const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "supervisor", "shift
 
 export default function Processing() {
   const { role } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "visa";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   if (role && !ALLOWED_ROLES.includes(role)) {
     return <Navigate to="/" replace />;
@@ -20,7 +28,7 @@ export default function Processing() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">Processing</h1>
-      <Tabs defaultValue="visa" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="visa" className="gap-1 text-xs sm:text-sm">
             <Stamp className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Visa Apps

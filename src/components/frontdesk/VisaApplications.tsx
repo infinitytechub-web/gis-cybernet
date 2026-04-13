@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +39,16 @@ export default function VisaApplications() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [ecowasOnly, setEcowasOnly] = useState(false);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("frontdesk-visa-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "visa_applications" }, () => {
+        qc.invalidateQueries({ queryKey: ["visa-applications"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
