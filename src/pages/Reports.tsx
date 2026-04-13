@@ -338,7 +338,7 @@ export default function Reports() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -350,11 +350,39 @@ export default function Reports() {
                 <SelectItem value="annual">Annual</SelectItem>
               </SelectContent>
             </Select>
+            {isAdmin && selectedReports.size > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="gap-1 ml-auto">
+                    <Trash2 className="h-4 w-4" /> Delete {selectedReports.size} selected
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedReports.size} report(s)?</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently remove the selected report files. This action cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => bulkDeleteMutation.mutate(Array.from(selectedReports))}>Delete All</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  {isAdmin && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={uploadedReports.length > 0 && selectedReports.size === uploadedReports.length}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Title</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Date</TableHead>
