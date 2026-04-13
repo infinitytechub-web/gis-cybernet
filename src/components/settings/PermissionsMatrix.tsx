@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-const roles = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
+const roles = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "official", "enquiry", "staff"] as const;
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
@@ -24,6 +24,8 @@ const roleLabels: Record<string, string> = {
   special_duties: "Special Duties",
   deputy: "Deputy",
   front_desk: "Front Desk",
+  official: "Official",
+  enquiry: "Enquiry",
   staff: "Staff",
 };
 
