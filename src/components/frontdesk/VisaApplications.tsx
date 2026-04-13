@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
-import { ECOWAS_COUNTRIES } from "@/lib/countries";
+import { isEcowasNationality } from "@/lib/countries";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -132,7 +132,7 @@ export default function VisaApplications() {
   const filtered = applications.filter((a: any) => {
     const matchesSearch = a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
       a.passport_number.toLowerCase().includes(search.toLowerCase());
-    const matchesEcowas = !ecowasOnly || ECOWAS_COUNTRIES.some(c => c.toLowerCase() === a.nationality?.toLowerCase());
+    const matchesEcowas = !ecowasOnly || isEcowasNationality(a.nationality);
     const matchesStatus = statusFilter === "all" || a.status === statusFilter;
     return matchesSearch && matchesEcowas && matchesStatus;
   });
