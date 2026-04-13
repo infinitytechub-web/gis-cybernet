@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { COUNTRIES } from "@/lib/countries";
+import { COUNTRIES, ECOWAS_COUNTRIES } from "@/lib/countries";
 
 interface CountryComboboxProps {
   value: string;

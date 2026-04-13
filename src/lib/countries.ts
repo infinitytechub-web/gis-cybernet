@@ -1,3 +1,10 @@
+// ECOWAS member states (15 countries)
+export const ECOWAS_COUNTRIES = [
+  "Benin", "Burkina Faso", "Cabo Verde", "Côte d'Ivoire", "Gambia",
+  "Ghana", "Guinea", "Guinea-Bissau", "Liberia", "Mali", "Niger",
+  "Nigeria", "Senegal", "Sierra Leone", "Togo",
+];
+
 // Comprehensive list of countries, African countries listed first for priority
 const AFRICAN_COUNTRIES = [
   "Algeria", "Angola", "Benin", "Botswana", "Burkina Faso", "Burundi",
