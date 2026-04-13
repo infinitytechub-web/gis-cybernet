@@ -166,7 +166,7 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
         </CardHeader>
         <CardContent>
           {nightGuardStaff.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No staff assigned to Night Guard department.</p>
+            <p className="text-sm text-muted-foreground">No staff assigned to Night Guard duty today.</p>
           ) : (
             <div className="relative">
               <ScrollArea className="max-h-[260px] overflow-y-auto pr-1">
