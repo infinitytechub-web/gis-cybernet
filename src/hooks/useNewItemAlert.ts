@@ -29,15 +29,17 @@ export function useNewItemAlert() {
   const flashTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [flash, setFlash] = useState(false);
 
-  const checkForNewItems = useCallback((newTotal: number) => {
+  const checkForNewItems = useCallback((newTotal: number, label?: string) => {
     if (prevTotal.current !== null && newTotal > prevTotal.current) {
+      const diff = newTotal - prevTotal.current;
       playNotificationSound();
       setFlash(true);
       clearTimeout(flashTimeout.current);
       flashTimeout.current = setTimeout(() => setFlash(false), 1500);
+      if (onNewItems) onNewItems(diff, label);
     }
     prevTotal.current = newTotal;
-  }, []);
+  }, [onNewItems]);
 
   return { flash, checkForNewItems };
 }
