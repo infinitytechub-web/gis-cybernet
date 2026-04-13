@@ -15,6 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { downloadCSVString } from "@/lib/download-utils";
+import { notifySupervisorsOfGuardLogin } from "@/lib/nightguard-notifications";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -123,7 +124,14 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
           description: "Night Guard officer came on duty",
         });
         const staff = nightGuardStaff.find((s) => s.staff_id === guard.staffId);
-        if (staff) persistEvent(staff, "online");
+        if (staff) {
+          persistEvent(staff, "online");
+          // Notify OIC, 2IC, and shift supervisors
+          notifySupervisorsOfGuardLogin(
+            `${staff.first_name} ${staff.last_name}`,
+            staff.staff_id
+          );
+        }
       }
     }
 
