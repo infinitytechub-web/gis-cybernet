@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
 import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
+import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -253,6 +254,9 @@ export default function Dashboard() {
 
       {/* Announcements */}
       <AnnouncementsBanner />
+
+      {/* Daily Occurrences - visible to all users */}
+      <DailyOccurrencesWidget />
 
       {/* Supervisor Pending Approvals Widget */}
       {isAdminOrSupervisor && supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
