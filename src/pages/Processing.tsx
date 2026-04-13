@@ -1,12 +1,22 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Stamp, FileText, BookOpen, ClipboardList } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import ProcessingVisaApplications from "@/components/processing/ProcessingVisaApplications";
 import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExtensions";
 import ProcessingPassportApplications from "@/components/processing/ProcessingPassportApplications";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
 
+const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
+
 export default function Processing() {
+  const { role } = useAuth();
+
+  if (role && !ALLOWED_ROLES.includes(role)) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">Processing</h1>
