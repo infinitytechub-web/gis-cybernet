@@ -299,6 +299,9 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* Processing Queue Widget */}
+      {isAdminOrSupervisor && <ProcessingQueueWidget />}
+
       {/* System Health Widget (Admin only) */}
       {isAdmin && systemHealth && (
         <Card className="border-border/50">
