@@ -22,7 +22,7 @@ export async function notifySupervisorsOfGuardLogin(
 ) {
   try {
     // Get all users with supervisor-level roles who should be notified
-    const rolesToNotify = ["oic", "2ic", "shift_supervisor", "deputy_shift_supervisor", "supervisor"];
+    const rolesToNotify: Array<"oic" | "2ic" | "shift_supervisor" | "deputy_shift_supervisor" | "supervisor"> = ["oic", "2ic", "shift_supervisor", "deputy_shift_supervisor", "supervisor"];
 
     const { data: roleUsers, error: roleError } = await supabase
       .from("user_roles")
