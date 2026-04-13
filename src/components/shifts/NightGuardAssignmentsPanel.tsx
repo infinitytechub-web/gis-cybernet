@@ -10,11 +10,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ClipboardList, Trash2, RefreshCw, Search, Loader2, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { ClipboardList, Trash2, RefreshCw, Search, Loader2, Download, ChevronLeft, ChevronRight, Pencil, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -22,12 +25,13 @@ import { downloadCSVString } from "@/lib/download-utils";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
+  allStaff?: { id: string; first_name: string; last_name: string; staff_id: string }[];
   shifts: { id: string; name: string; pattern: string }[];
 }
 
 const PAGE_SIZE = 15;
 
-export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: Props) {
+export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff = [], shifts }: Props) {
   const queryClient = useQueryClient();
   const [filterDate, setFilterDate] = useState("");
   const [filterGuard, setFilterGuard] = useState("");
@@ -35,27 +39,33 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
   const [reassignTargetId, setReassignTargetId] = useState("");
-  const [reassignSearch, setReassignSearch] = useState("");
+  const [reassignComboOpen, setReassignComboOpen] = useState(false);
   const [page, setPage] = useState(0);
 
+  // Edit date state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+
+  const staffList = allStaff.length > 0 ? allStaff : nightGuardStaff;
   const nightGuardIds = useMemo(() => nightGuardStaff.map(s => s.id), [nightGuardStaff]);
 
   const { data: assignments = [], isLoading } = useQuery({
-    queryKey: ["night-guard-assignments", filterDate],
+    queryKey: ["night-guard-panel-assignments", filterDate],
     queryFn: async () => {
-      if (nightGuardIds.length === 0) return [];
       let query = supabase
         .from("shift_assignments")
         .select("id, profile_id, shift_id, start_date, end_date, profiles:profile_id(first_name, last_name, staff_id), shifts:shift_id(name)")
-        .in("profile_id", nightGuardIds)
         .order("start_date", { ascending: false })
         .limit(500);
       if (filterDate) query = query.eq("start_date", filterDate);
+      // If we have night guard IDs, filter by them; otherwise show all
+      if (nightGuardIds.length > 0) {
+        query = query.in("profile_id", nightGuardIds);
+      }
       const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: nightGuardIds.length > 0,
   });
 
   const filtered = useMemo(() => {
@@ -73,7 +83,6 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
   const safePage = Math.min(page, totalPages - 1);
   const paged = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
-  // Reset page when filters change
   useMemo(() => { setPage(0); }, [filterDate, filterGuard]);
 
   const toggleSelect = (id: string) => {
@@ -99,6 +108,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
       return ids.length;
     },
     onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["night-guard-panel-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
       setSelectedIds(new Set());
@@ -119,26 +129,34 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
       return updated;
     },
     onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["night-guard-panel-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
       setSelectedIds(new Set());
       setReassignOpen(false);
       setReassignTargetId("");
-      setReassignSearch("");
       toast.success(`${count} assignment${count !== 1 ? "s" : ""} reassigned`);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const filteredReassignGuards = useMemo(() => {
-    if (!reassignSearch.trim()) return nightGuardStaff;
-    const q = reassignSearch.toLowerCase();
-    return nightGuardStaff.filter(p =>
-      p.first_name.toLowerCase().includes(q) ||
-      p.last_name.toLowerCase().includes(q) ||
-      p.staff_id.toLowerCase().includes(q)
-    );
-  }, [nightGuardStaff, reassignSearch]);
+  const editDateMutation = useMutation({
+    mutationFn: async ({ id, newDate }: { id: string; newDate: string }) => {
+      const { error } = await supabase.from("shift_assignments").update({ start_date: newDate, end_date: newDate }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["night-guard-panel-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
+      setEditingId(null);
+      setEditDate("");
+      toast.success("Assignment date updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const selectedGuard = useMemo(() => staffList.find(g => g.id === reassignTargetId), [staffList, reassignTargetId]);
 
   // Export helpers
   const buildExportRows = () =>
@@ -179,7 +197,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
     toast.success("Excel downloaded");
   };
 
-  if (nightGuardStaff.length === 0) return null;
+  if (nightGuardStaff.length === 0 && allStaff.length === 0) return null;
 
   return (
     <Card className="border-primary/20">
@@ -242,7 +260,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
                 <TableHead className="text-xs">Staff ID</TableHead>
                 <TableHead className="text-xs">Shift</TableHead>
                 <TableHead className="text-xs">Date</TableHead>
-                <TableHead className="text-xs w-20">Actions</TableHead>
+                <TableHead className="text-xs w-24">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -252,13 +270,38 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
                   <TableCell className="text-xs">{a.profiles?.last_name}, {a.profiles?.first_name}</TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px] font-mono">{a.profiles?.staff_id}</Badge></TableCell>
                   <TableCell className="text-xs">{a.shifts?.name ?? "—"}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-xs">
+                    {editingId === a.id ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="date"
+                          value={editDate}
+                          onChange={e => setEditDate(e.target.value)}
+                          className="h-7 w-32 text-xs"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          disabled={!editDate || editDateMutation.isPending}
+                          onClick={() => editDateMutation.mutate({ id: a.id, newDate: editDate })}
+                        >
+                          <Check className="h-3 w-3 text-primary" />
+                        </Button>
+                      </div>
+                    ) : (
+                      format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy")
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedIds(new Set([a.id])); setReassignOpen(true); }}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" title="Edit date" onClick={() => { setEditingId(a.id); setEditDate(a.start_date); }}>
+                        <Pencil className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" title="Reassign" onClick={() => { setSelectedIds(new Set([a.id])); setReassignOpen(true); }}>
                         <RefreshCw className="h-3 w-3 text-primary" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setSelectedIds(new Set([a.id])); setDeleteConfirmOpen(true); }}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" title="Delete" onClick={() => { setSelectedIds(new Set([a.id])); setDeleteConfirmOpen(true); }}>
                         <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
                     </div>
@@ -269,7 +312,6 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
           </Table>
         )}
 
-        {/* Pagination + count */}
         <div className="flex items-center justify-between mt-2">
           <p className="text-xs text-muted-foreground">
             {filtered.length} assignment{filtered.length !== 1 ? "s" : ""}
@@ -304,39 +346,60 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, shifts }: 
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reassign dialog */}
-      <Dialog open={reassignOpen} onOpenChange={(v) => { setReassignOpen(v); if (!v) { setReassignTargetId(""); setReassignSearch(""); } }}>
+      {/* Reassign dialog with combobox search */}
+      <Dialog open={reassignOpen} onOpenChange={(v) => { setReassignOpen(v); if (!v) { setReassignTargetId(""); setReassignComboOpen(false); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Reassign {selectedIds.size} Assignment{selectedIds.size !== 1 ? "s" : ""}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div>
-              <Label>New Guard</Label>
-              <div className="relative mt-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search by name or staff ID..." value={reassignSearch} onChange={e => setReassignSearch(e.target.value)} className="pl-8 h-9 text-sm" />
-              </div>
+            <div className="space-y-2">
+              <Label>Search &amp; select new guard</Label>
+              <Popover open={reassignComboOpen} onOpenChange={setReassignComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={reassignComboOpen}
+                    className="w-full justify-between h-9 text-sm font-normal"
+                  >
+                    {selectedGuard
+                      ? `${selectedGuard.last_name}, ${selectedGuard.first_name} (${selectedGuard.staff_id})`
+                      : "Search by name or staff ID..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Type name or staff ID..." />
+                    <CommandList>
+                      <CommandEmpty>No staff found.</CommandEmpty>
+                      <CommandGroup>
+                        {staffList.map((g) => (
+                          <CommandItem
+                            key={g.id}
+                            value={`${g.last_name} ${g.first_name} ${g.staff_id}`}
+                            onSelect={() => {
+                              setReassignTargetId(reassignTargetId === g.id ? "" : g.id);
+                              setReassignComboOpen(false);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <Check className={cn("h-4 w-4", reassignTargetId === g.id ? "opacity-100" : "opacity-0")} />
+                            <span className="flex-1 truncate">{g.last_name}, {g.first_name}</span>
+                            <Badge variant="outline" className="text-[10px] font-mono shrink-0">{g.staff_id}</Badge>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
-            <ScrollArea className="max-h-[200px] rounded-md border p-2">
-              <div className="space-y-1">
-                {filteredReassignGuards.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">No guards match</p>
-                ) : (
-                  filteredReassignGuards.map(p => (
-                    <label key={p.id} className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 cursor-pointer text-sm ${reassignTargetId === p.id ? "bg-accent" : "hover:bg-accent/50"}`} onClick={() => setReassignTargetId(p.id)}>
-                      <Checkbox checked={reassignTargetId === p.id} onCheckedChange={() => setReassignTargetId(reassignTargetId === p.id ? "" : p.id)} />
-                      <span className="truncate flex-1">{p.last_name}, {p.first_name}</span>
-                      <Badge variant="outline" className="text-[10px] font-mono shrink-0">{p.staff_id}</Badge>
-                    </label>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
             <Button
               onClick={() => reassignMutation.mutate({ ids: Array.from(selectedIds), newProfileId: reassignTargetId })}
               disabled={reassignMutation.isPending || !reassignTargetId}
               className="w-full font-bold"
             >
-              {reassignMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Reassigning...</> : `Reassign to Selected Guard`}
+              {reassignMutation.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Reassigning...</> : "Reassign to Selected Guard"}
             </Button>
           </div>
         </DialogContent>

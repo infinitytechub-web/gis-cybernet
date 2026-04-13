@@ -122,7 +122,7 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
         shiftEndTime={nightGuardShift?.end_time ?? null}
       />
       <NightGuardOnlinePanel nightGuardStaff={nightGuardStaff} todayDutyStaff={todayDutyStaff} />
-      {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} shifts={shifts} />}
+      {isAdmin && <NightGuardAssignmentsPanel nightGuardStaff={nightGuardStaff} allStaff={allStaff} shifts={shifts} />}
 
       <Card className="border-primary/20">
         <CardHeader className="pb-2">
