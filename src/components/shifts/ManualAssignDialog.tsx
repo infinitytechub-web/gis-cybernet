@@ -8,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Users, Search } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plus, Users, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -25,19 +27,12 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
   const [shiftId, setShiftId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [comboOpen, setComboOpen] = useState(false);
 
-  const filteredGuards = useMemo(() => {
-    if (!searchQuery.trim()) return nightGuardStaff;
-    const q = searchQuery.toLowerCase();
-    return nightGuardStaff.filter(
-      (p) =>
-        p.first_name.toLowerCase().includes(q) ||
-        p.last_name.toLowerCase().includes(q) ||
-        p.staff_id.toLowerCase().includes(q) ||
-        `${p.last_name}, ${p.first_name}`.toLowerCase().includes(q)
-    );
-  }, [nightGuardStaff, searchQuery]);
+  const selectedGuard = useMemo(
+    () => nightGuardStaff.find((g) => g.id === profileId),
+    [nightGuardStaff, profileId]
+  );
 
   const { data: existingAssignments = [] } = useQuery({
     queryKey: ["existing-assignments", startDate, shiftId],
@@ -58,7 +53,6 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
   const assignMutation = useMutation({
     mutationFn: async () => {
       if (!profileId || !shiftId || !startDate) throw new Error("Fill all required fields");
-
       const { error } = await supabase.from("shift_assignments").insert({
         profile_id: profileId,
         shift_id: shiftId,
@@ -83,7 +77,7 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
       setShiftId("");
       setStartDate("");
       setEndDate("");
-      setSearchQuery("");
+      setComboOpen(false);
     }
   };
 
@@ -145,39 +139,50 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
 
           <div className="space-y-2">
             <Label>Guard</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or staff ID..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-8 h-9 text-sm"
-              />
-            </div>
-            <ScrollArea className="max-h-[160px] rounded-md border p-2">
-              <div className="space-y-1">
-                {filteredGuards.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">No guards match "{searchQuery}"</p>
-                ) : (
-                  filteredGuards.map((p) => {
-                    const isSelected = profileId === p.id;
-                    const alreadyAssigned = assignedProfileIds.has(p.id);
-                    return (
-                      <label
-                        key={p.id}
-                        className={`flex items-center gap-2.5 rounded-md px-2 py-1.5 cursor-pointer text-sm ${isSelected ? "bg-accent" : "hover:bg-accent/50"}`}
-                        onClick={() => setProfileId(p.id)}
-                      >
-                        <Checkbox checked={isSelected} onCheckedChange={() => setProfileId(isSelected ? "" : p.id)} />
-                        <span className="truncate flex-1">{p.last_name}, {p.first_name}</span>
-                        <Badge variant="outline" className="text-[10px] font-mono shrink-0">{p.staff_id}</Badge>
-                        {alreadyAssigned && <Badge variant="secondary" className="text-[9px] shrink-0">assigned</Badge>}
-                      </label>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
+            <Popover open={comboOpen} onOpenChange={setComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboOpen}
+                  className="w-full justify-between h-9 text-sm font-normal"
+                >
+                  {selectedGuard
+                    ? `${selectedGuard.last_name}, ${selectedGuard.first_name} (${selectedGuard.staff_id})`
+                    : "Search and select a guard..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Type name or staff ID..." />
+                  <CommandList>
+                    <CommandEmpty>No guard found.</CommandEmpty>
+                    <CommandGroup>
+                      {nightGuardStaff.map((g) => {
+                        const alreadyAssigned = assignedProfileIds.has(g.id);
+                        return (
+                          <CommandItem
+                            key={g.id}
+                            value={`${g.last_name} ${g.first_name} ${g.staff_id}`}
+                            onSelect={() => {
+                              setProfileId(profileId === g.id ? "" : g.id);
+                              setComboOpen(false);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <Check className={cn("h-4 w-4", profileId === g.id ? "opacity-100" : "opacity-0")} />
+                            <span className="flex-1 truncate">{g.last_name}, {g.first_name}</span>
+                            <Badge variant="outline" className="text-[10px] font-mono shrink-0">{g.staff_id}</Badge>
+                            {alreadyAssigned && <Badge variant="secondary" className="text-[9px] shrink-0">assigned</Badge>}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending || !profileId || !shiftId || !startDate} className="w-full font-bold">
