@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,6 +33,7 @@ export default function VisaExtensions() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -110,18 +112,38 @@ export default function VisaExtensions() {
     setOpen(true);
   };
 
-  const filtered = extensions.filter((e: any) =>
-    e.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
-    e.passport_number.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = extensions.filter((e: any) => {
+    const matchesSearch = e.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
+      e.passport_number.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || e.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const hasActiveFilters = search || statusFilter !== "all";
+  const clearAllFilters = () => { setSearch(""); setStatusFilter("all"); };
+  const activeFiltersList = [
+    ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
+    ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter.replace("_", " "), onClear: () => setStatusFilter("all") }] : []),
+  ];
 
   return (
     <div className="space-y-4 mt-4">
+      {hasActiveFilters && (
+        <FilterSummaryBar filters={activeFiltersList} totalResults={filtered.length} onClearAll={clearAllFilters} />
+      )}
+
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search extensions..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {STATUSES.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ").replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
           <DialogTrigger asChild>
             <Button className="gap-1"><Plus className="h-4 w-4" /> New Extension</Button>
