@@ -21,7 +21,6 @@ export function useOnlineUsers() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setup = async () => {
-      // Fetch this user's profile info for presence payload
       const { data: profile } = await supabase
         .from("profiles")
         .select("first_name, last_name, staff_id, department_id, departments:department_id(name)")
@@ -43,23 +42,25 @@ export function useOnlineUsers() {
         config: { presence: { key: user.id } },
       });
 
-      channel
-        .on("presence", { event: "sync" }, () => {
-          const state = channel!.presenceState<OnlineUser>();
-          const users: OnlineUser[] = [];
-          for (const key of Object.keys(state)) {
-            const presences = state[key];
-            if (presences && presences.length > 0) {
-              users.push(presences[0] as unknown as OnlineUser);
-            }
+      // Register presence callback BEFORE subscribing
+      channel.on("presence", { event: "sync" }, () => {
+        const state = channel!.presenceState<OnlineUser>();
+        const users: OnlineUser[] = [];
+        for (const key of Object.keys(state)) {
+          const presences = state[key];
+          if (presences && presences.length > 0) {
+            users.push(presences[0] as unknown as OnlineUser);
           }
-          setOnlineUsers(users);
-        })
-        .subscribe(async (status) => {
-          if (status === "SUBSCRIBED") {
-            await channel!.track(presencePayload);
-          }
-        });
+        }
+        setOnlineUsers(users);
+      });
+
+      // Subscribe after registering callbacks
+      channel.subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel!.track(presencePayload);
+        }
+      });
     };
 
     setup();
