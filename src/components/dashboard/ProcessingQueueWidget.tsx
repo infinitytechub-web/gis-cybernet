@@ -67,7 +67,7 @@ export default function ProcessingQueueWidget() {
           {queues.filter(q => q.count > 0).map((q) => (
             <button
               key={q.label}
-              onClick={() => navigate("/processing")}
+              onClick={() => navigate(`/processing?tab=${q.tab}`)}
               className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
             >
               <q.icon className={`h-6 w-6 ${q.color}`} />
