@@ -40,40 +40,16 @@ function makeUsername(firstName: string, lastName: string, existingUsernames: Se
   return username;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+async function processResetAndCreate(jobId: string, callerUserId: string | null) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-    // Validate caller is admin
-    const authHeader = req.headers.get("Authorization") ?? "";
-    if (authHeader) {
-      const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user } } = await userClient.auth.getUser();
-      if (!user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const { data: roleData } = await adminClient
-        .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
-      if (!roleData) {
-        return new Response(JSON.stringify({ error: "Admin access required" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
+    // Update job to processing
+    await adminClient.from("processing_jobs").update({ status: "processing", progress: 0 }).eq("id", jobId);
 
     console.log("Step 1: Getting all active profiles with linked accounts...");
-
-    // Get profiles that have user_id linked
     const { data: linkedProfiles, error: lpErr } = await adminClient
       .from("profiles")
       .select("id, user_id, staff_id")
@@ -108,7 +84,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Also clean up ALL orphan auth users (no linked profile) from previous failed attempts
+    await adminClient.from("processing_jobs").update({ progress: 20 }).eq("id", jobId);
+
+    // Clean up orphan auth users
     console.log("Step 2b: Cleaning up orphan auth users...");
     const allAuthUsers: any[] = [];
     let page = 1;
@@ -135,6 +113,8 @@ Deno.serve(async (req) => {
     }
     console.log(`Cleaned up ${orphansDeleted} orphan auth users`);
 
+    await adminClient.from("processing_jobs").update({ progress: 30 }).eq("id", jobId);
+
     console.log("Step 3: Creating fresh accounts for all active staff...");
     const { data: profiles, error: pErr } = await adminClient
       .from("profiles")
@@ -144,16 +124,16 @@ Deno.serve(async (req) => {
     if (pErr) throw pErr;
 
     if (!profiles || profiles.length === 0) {
-      return new Response(
-        JSON.stringify({
-          created: [], errors: unlinkErrors.map((e) => ({ staffId: "reset", error: e })),
-          total: 0, unlinked: profilesToReset.length, message: "No profiles to create accounts for",
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      await adminClient.from("processing_jobs").update({
+        status: "completed", progress: 100, total: 0,
+        result: { created: [], errors: unlinkErrors.map((e) => ({ staffId: "reset", error: e })), unlinked: profilesToReset.length, message: "No profiles to create accounts for" },
+      }).eq("id", jobId);
+      return;
     }
 
-    // Collect existing usernames (only remaining users after cleanup)
+    await adminClient.from("processing_jobs").update({ total: profiles.length }).eq("id", jobId);
+
+    // Collect existing usernames
     const { data: remainingUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
     const existingUsernames = new Set<string>();
     if (remainingUsers?.users) {
@@ -165,7 +145,8 @@ Deno.serve(async (req) => {
     const created: Array<{ staffId: string; name: string; username: string; password: string }> = [];
     const errors: Array<{ staffId: string; error: string }> = [];
 
-    for (const profile of profiles) {
+    for (let i = 0; i < profiles.length; i++) {
+      const profile = profiles[i];
       try {
         const username = makeUsername(profile.first_name, profile.last_name, existingUsernames);
         const email = `${username}@gis.local`;
@@ -204,11 +185,75 @@ Deno.serve(async (req) => {
       } catch (e) {
         errors.push({ staffId: profile.staff_id, error: e.message || "Unknown error" });
       }
+
+      // Update progress every 10 accounts
+      if ((i + 1) % 10 === 0 || i === profiles.length - 1) {
+        const pct = 30 + Math.round(((i + 1) / profiles.length) * 70);
+        await adminClient.from("processing_jobs").update({ progress: pct }).eq("id", jobId);
+      }
     }
 
     console.log(`Done: ${created.length} created, ${errors.length} errors`);
+    await adminClient.from("processing_jobs").update({
+      status: "completed", progress: 100,
+      result: { created, errors, total: profiles.length, unlinked: profilesToReset.length },
+    }).eq("id", jobId);
+  } catch (err) {
+    console.error("Fatal error:", err.message);
+    await adminClient.from("processing_jobs").update({
+      status: "failed", error: err.message,
+    }).eq("id", jobId);
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    let callerUserId: string | null = null;
+
+    // Validate caller is admin
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (authHeader) {
+      const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await userClient.auth.getUser();
+      if (!user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      callerUserId = user.id;
+      const { data: roleData } = await adminClient
+        .from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
+      if (!roleData) {
+        return new Response(JSON.stringify({ error: "Admin access required" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Create job record
+    const { data: job, error: jobError } = await adminClient
+      .from("processing_jobs")
+      .insert({ task_type: "reset_and_create_accounts", status: "queued", created_by: callerUserId })
+      .select()
+      .single();
+
+    if (jobError) throw jobError;
+
+    // Start background processing
+    EdgeRuntime.waitUntil(processResetAndCreate(job.id, callerUserId));
+
     return new Response(
-      JSON.stringify({ created, errors, total: profiles.length, unlinked: profilesToReset.length }),
+      JSON.stringify({ job_id: job.id, status: "queued" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
