@@ -1,0 +1,1 @@
+UPDATE public.processing_jobs SET status = 'completed', progress = 100 WHERE id = 'a997f9cd-6f1e-4a8c-9b56-bff6547aebd5';
