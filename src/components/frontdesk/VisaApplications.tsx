@@ -38,6 +38,7 @@ export default function VisaApplications() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [ecowasOnly, setEcowasOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -131,7 +132,8 @@ export default function VisaApplications() {
     const matchesSearch = a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
       a.passport_number.toLowerCase().includes(search.toLowerCase());
     const matchesEcowas = !ecowasOnly || ECOWAS_COUNTRIES.some(c => c.toLowerCase() === a.nationality?.toLowerCase());
-    return matchesSearch && matchesEcowas;
+    const matchesStatus = statusFilter === "all" || a.status === statusFilter;
+    return matchesSearch && matchesEcowas && matchesStatus;
   });
 
   const summary = {
@@ -162,6 +164,13 @@ export default function VisaApplications() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by name or passport..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {STATUSES.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ").replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Toggle
           pressed={ecowasOnly}
           onPressedChange={setEcowasOnly}
