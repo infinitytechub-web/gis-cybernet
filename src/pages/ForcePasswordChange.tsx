@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KeyRound, Eye, EyeOff } from "lucide-react";
-import { PasswordStrength } from "@/components/ui/password-strength";
+import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
 export default function ForcePasswordChange() {
@@ -22,6 +22,10 @@ export default function ForcePasswordChange() {
     e.preventDefault();
     if (password.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (getStrength(password) < 4) {
+      toast.error("Password must be at least 'Strong'. Add uppercase, lowercase, numbers, and special characters.");
       return;
     }
     if (password !== confirmPassword) {

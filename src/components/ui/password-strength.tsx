@@ -5,7 +5,7 @@ interface PasswordStrengthProps {
   password: string;
 }
 
-function getStrength(password: string): number {
+export function getStrength(password: string): number {
   if (!password) return 0;
   let score = 0;
   if (password.length >= 8) score++;
