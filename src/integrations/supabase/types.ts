@@ -212,6 +212,87 @@ export type Database = {
         }
         Relationships: []
       }
+      enquiry_applications: {
+        Row: {
+          applicant_name: string
+          created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          enquiry_type: string
+          foreign_address: string | null
+          gender: string | null
+          home_address: string | null
+          id: string
+          marital_status: string | null
+          nationality: string
+          nearest_landmark: string | null
+          next_of_kin: string | null
+          notes: string | null
+          passport_number: string | null
+          phone: string | null
+          processed_by: string | null
+          purpose: string | null
+          responded_at: string | null
+          response: string | null
+          status: string
+          street_name: string | null
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_name: string
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          enquiry_type?: string
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          marital_status?: string | null
+          nationality: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          responded_at?: string | null
+          response?: string | null
+          status?: string
+          street_name?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_name?: string
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          enquiry_type?: string
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          marital_status?: string | null
+          nationality?: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          responded_at?: string | null
+          response?: string | null
+          status?: string
+          street_name?: string | null
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipment_issuance: {
         Row: {
           condition: string
@@ -435,6 +516,84 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      official_applications: {
+        Row: {
+          applicant_name: string
+          created_at: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          foreign_address: string | null
+          gender: string | null
+          home_address: string | null
+          id: string
+          marital_status: string | null
+          nationality: string
+          nearest_landmark: string | null
+          next_of_kin: string | null
+          notes: string | null
+          official_type: string
+          passport_number: string | null
+          phone: string | null
+          processed_by: string | null
+          purpose: string | null
+          reference_number: string | null
+          requesting_entity: string | null
+          status: string
+          street_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_name: string
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          marital_status?: string | null
+          nationality: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
+          notes?: string | null
+          official_type?: string
+          passport_number?: string | null
+          phone?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          reference_number?: string | null
+          requesting_entity?: string | null
+          status?: string
+          street_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_name?: string
+          created_at?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          marital_status?: string | null
+          nationality?: string
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
+          notes?: string | null
+          official_type?: string
+          passport_number?: string | null
+          phone?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          reference_number?: string | null
+          requesting_entity?: string | null
+          status?: string
+          street_name?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
