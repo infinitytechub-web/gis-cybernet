@@ -336,19 +336,95 @@ export default function Analytics() {
 
         {/* Attendance Tab */}
         <TabsContent value="attendance" className="space-y-4 mt-4">
+          {/* Summary stat cards */}
+          {(() => {
+            const totalPresent = attendanceTrend.reduce((s, d) => s + d.present, 0);
+            const totalLate = attendanceTrend.reduce((s, d) => s + d.late, 0);
+            const totalAbsent = attendanceTrend.reduce((s, d) => s + d.absent, 0);
+            const totalAll = totalPresent + totalLate + totalAbsent;
+            const pctPresent = totalAll ? Math.round((totalPresent / totalAll) * 100) : 0;
+            const pctLate = totalAll ? Math.round((totalLate / totalAll) * 100) : 0;
+            const pctAbsent = totalAll ? Math.round((totalAbsent / totalAll) * 100) : 0;
+            const peakDay = attendanceTrend.reduce((best, d) => d.total > best.total ? d : best, attendanceTrend[0] || { date: "—", total: 0 });
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="border-emerald-200 dark:border-emerald-800">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Present</div>
+                    <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{totalPresent}</div>
+                    <div className="text-[10px] text-muted-foreground">{pctPresent}% of total</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-amber-200 dark:border-amber-800">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Late</div>
+                    <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{totalLate}</div>
+                    <div className="text-[10px] text-muted-foreground">{pctLate}% of total</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-red-200 dark:border-red-800">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Absent</div>
+                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{totalAbsent}</div>
+                    <div className="text-[10px] text-muted-foreground">{pctAbsent}% of total</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-blue-200 dark:border-blue-800">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Peak Day</div>
+                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{peakDay.total}</div>
+                    <div className="text-[10px] text-muted-foreground">{peakDay.date}</div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
+
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Attendance Trend</CardTitle></CardHeader>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Activity className="h-4 w-4 text-emerald-500" />
+                Attendance Trend Analysis
+                <Badge variant="outline" className="ml-auto text-[10px]">
+                  {period === "7d" ? "Daily" : period === "30d" ? "Daily" : period === "90d" ? "Weekly" : "Monthly"}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={attendanceTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="present" stackId="1" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Present" />
-                  <Area type="monotone" dataKey="late" stackId="1" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.6} name="Late" />
-                  <Area type="monotone" dataKey="absent" stackId="1" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} name="Absent" />
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={attendanceTrend} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradPresent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient id="gradLate" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient id="gradAbsent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                  <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
+                    labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                  />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
+                  <Area type="monotone" dataKey="present" stroke="#10b981" strokeWidth={2} fill="url(#gradPresent)" name="Present" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
+                  <Area type="monotone" dataKey="late" stroke="#f59e0b" strokeWidth={2} fill="url(#gradLate)" name="Late" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
+                  <Area type="monotone" dataKey="absent" stroke="#ef4444" strokeWidth={2} fill="url(#gradAbsent)" name="Absent" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
+                  <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Total" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
