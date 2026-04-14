@@ -168,7 +168,7 @@ export default function Analytics() {
       .sort((a, b) => b.total - a.total);
   }, [attendance]);
 
-  // Department attendance sparkline data (weekly rate per department)
+  // Department sparklines (weekly rate trends)
   const deptSparklines = useMemo(() => {
     const weeks = eachWeekOfInterval({ start: periodStart, end: new Date() });
     const deptNames = [...new Set(attendance.map((a: any) => a.profiles?.departments?.name || "Unassigned"))];
@@ -184,10 +184,10 @@ export default function Analytics() {
         const onTime = recs.filter((a: any) => a.status === "present" || a.status === "late").length;
         return { week: format(ws, "MM/dd"), rate: total > 0 ? Math.round((onTime / total) * 100) : 0 };
       });
-      const avgRate = points.length > 0 ? Math.round(points.reduce((s, p) => s + p.rate, 0) / points.length) : 0;
-      const trend = points.length >= 2 ? points[points.length - 1].rate - points[points.length - 2].rate : 0;
-      return { name: dept, points, avgRate, trend };
-    }).sort((a, b) => b.avgRate - a.avgRate);
+      const latest = points[points.length - 1]?.rate ?? 0;
+      const prev = points.length > 1 ? points[points.length - 2]?.rate ?? 0 : latest;
+      return { dept, points, latest, trend: latest >= prev ? "up" : "down" as const };
+    }).sort((a, b) => b.latest - a.latest);
   }, [attendance, periodStart]);
 
   // Leave by type
@@ -611,41 +611,52 @@ export default function Analytics() {
             </CardContent>
           </Card>
 
-          {/* Department Sparklines */}
+          {/* Department Rate Trend Sparklines */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Activity className="h-4 w-4 text-violet-500" />
                 Department Rate Trends
-                <Badge variant="outline" className="ml-auto text-[10px]">Weekly sparklines</Badge>
+                <Badge variant="outline" className="ml-auto text-[10px]">{deptSparklines.length} depts</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {deptSparklines.map((dept) => (
-                  <div key={dept.name} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 bg-muted/20">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {deptSparklines.map((d) => (
+                  <div key={d.dept} className="flex items-center gap-2 p-2 rounded-lg border border-border/50 bg-muted/20">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium truncate">{dept.name}</span>
-                        <div className="flex items-center gap-1">
-                          <span className={`text-xs font-bold ${dept.avgRate >= 80 ? "text-emerald-600 dark:text-emerald-400" : dept.avgRate >= 60 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>
-                            {dept.avgRate}%
-                          </span>
-                          {dept.trend > 0 ? (
-                            <TrendingUp className="h-3 w-3 text-emerald-500" />
-                          ) : dept.trend < 0 ? (
-                            <TrendingDown className="h-3 w-3 text-red-500" />
-                          ) : null}
-                        </div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-[11px] font-medium truncate">{d.dept}</span>
+                        {d.trend === "up" ? (
+                          <TrendingUp className="h-3 w-3 text-emerald-500 shrink-0" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 text-red-500 shrink-0" />
+                        )}
+                        <span className={`text-[10px] font-bold ml-auto ${d.latest >= 80 ? "text-emerald-600 dark:text-emerald-400" : d.latest >= 60 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>
+                          {d.latest}%
+                        </span>
                       </div>
-                      <ResponsiveContainer width="100%" height={32}>
-                        <LineChart data={dept.points}>
+                      <ResponsiveContainer width="100%" height={36}>
+                        <LineChart data={d.points}>
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--background))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "6px",
+                              fontSize: "10px",
+                              padding: "4px 8px",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                            }}
+                            formatter={(value: any) => [`${value}%`, "Rate"]}
+                            labelFormatter={(label: string) => `Week of ${label}`}
+                          />
                           <Line
                             type="monotone"
                             dataKey="rate"
-                            stroke={dept.avgRate >= 80 ? "#10b981" : dept.avgRate >= 60 ? "#f59e0b" : "#ef4444"}
+                            stroke={d.latest >= 80 ? "#10b981" : d.latest >= 60 ? "#f59e0b" : "#ef4444"}
                             strokeWidth={1.5}
                             dot={false}
+                            activeDot={{ r: 3, strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
