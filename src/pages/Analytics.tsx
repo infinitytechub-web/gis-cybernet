@@ -52,12 +52,12 @@ export default function Analytics() {
     }
   }, [period]);
 
-  // Attendance data
+  // Attendance data (with department info)
   const { data: attendance = [] } = useQuery({
     queryKey: ["analytics-attendance", period],
     queryFn: async () => {
       const { data, error } = await supabase.from("attendances")
-        .select("date, status, check_in, check_out")
+        .select("date, status, check_in, check_out, profile_id, profiles(department_id, departments(name))")
         .gte("date", format(periodStart, "yyyy-MM-dd"))
         .order("date");
       if (error) throw error;
