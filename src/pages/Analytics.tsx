@@ -152,6 +152,22 @@ export default function Analytics() {
     return weekData.map((w, i) => ({ ...w, change: i > 0 ? w.rate - weekData[i - 1].rate : 0 }));
   }, [attendance, periodStart]);
 
+  // Department attendance breakdown
+  const deptAttendance = useMemo(() => {
+    const depts: Record<string, { present: number; late: number; absent: number; total: number }> = {};
+    attendance.forEach((a: any) => {
+      const deptName = a.profiles?.departments?.name || "Unassigned";
+      if (!depts[deptName]) depts[deptName] = { present: 0, late: 0, absent: 0, total: 0 };
+      depts[deptName].total++;
+      if (a.status === "present") depts[deptName].present++;
+      else if (a.status === "late") depts[deptName].late++;
+      else if (a.status === "absent") depts[deptName].absent++;
+    });
+    return Object.entries(depts)
+      .map(([name, d]) => ({ name, ...d, rate: d.total > 0 ? Math.round(((d.present + d.late) / d.total) * 100) : 0 }))
+      .sort((a, b) => b.total - a.total);
+  }, [attendance]);
+
   // Leave by type
   const leaveByType = useMemo(() => {
     const types: Record<string, number> = {};
@@ -521,6 +537,55 @@ export default function Analytics() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Department Attendance Breakdown */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Users className="h-4 w-4 text-indigo-500" />
+                Department Attendance Breakdown
+                <Badge variant="outline" className="ml-auto text-[10px]">{deptAttendance.length} depts</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={Math.max(200, deptAttendance.length * 40 + 40)}>
+                <BarChart data={deptAttendance} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={100} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
+                    formatter={(value: any, name: string) => {
+                      if (name === "Rate") return [`${value}%`, name];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
+                  <Bar dataKey="present" stackId="a" fill="#10b981" name="Present" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="late" stackId="a" fill="#f59e0b" name="Late" />
+                  <Bar dataKey="absent" stackId="a" fill="#ef4444" name="Absent" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+
+              {/* Attendance rate badges per department */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {deptAttendance.map((d) => (
+                  <div key={d.name} className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full border border-border/50 bg-muted/30">
+                    <span className="text-muted-foreground font-medium truncate max-w-[80px]">{d.name}</span>
+                    <span className={`font-bold ${d.rate >= 80 ? "text-emerald-600 dark:text-emerald-400" : d.rate >= 60 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"}`}>
+                      {d.rate}%
+                    </span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
