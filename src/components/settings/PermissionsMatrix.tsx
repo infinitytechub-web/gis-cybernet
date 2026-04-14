@@ -82,19 +82,19 @@ const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
   },
   {
     name: "Front Desk — Visa Apps",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "dept", enquiry: "view", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "none", enquiry: "none", staff: "none" },
   },
   {
     name: "Front Desk — Extensions",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "dept", enquiry: "view", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "none", enquiry: "none", staff: "none" },
   },
   {
     name: "Front Desk — Passport",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "dept", enquiry: "view", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "none", enquiry: "none", staff: "none" },
   },
   {
     name: "Front Desk — Audit Log",
-    access: { admin: "full", oic: "view", "2ic": "view", supervisor: "none", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "view", enquiry: "none", staff: "none" },
+    access: { admin: "full", oic: "view", "2ic": "view", supervisor: "none", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", official: "none", enquiry: "none", staff: "none" },
   },
   {
     name: "Settings / User Roles",
