@@ -168,6 +168,28 @@ export default function Analytics() {
       .sort((a, b) => b.total - a.total);
   }, [attendance]);
 
+  // Department sparklines (weekly rate trends)
+  const deptSparklines = useMemo(() => {
+    const weeks = eachWeekOfInterval({ start: periodStart, end: new Date() });
+    const deptNames = [...new Set(attendance.map((a: any) => a.profiles?.departments?.name || "Unassigned"))];
+    return deptNames.map((dept) => {
+      const points = weeks.map((ws) => {
+        const we = endOfWeek(ws);
+        const days = eachDayOfInterval({ start: ws, end: we > new Date() ? new Date() : we });
+        const recs = days.flatMap((day) => {
+          const dayStr = format(day, "yyyy-MM-dd");
+          return attendance.filter((a: any) => a.date === dayStr && (a.profiles?.departments?.name || "Unassigned") === dept);
+        });
+        const total = recs.length;
+        const onTime = recs.filter((a: any) => a.status === "present" || a.status === "late").length;
+        return { week: format(ws, "MM/dd"), rate: total > 0 ? Math.round((onTime / total) * 100) : 0 };
+      });
+      const latest = points[points.length - 1]?.rate ?? 0;
+      const prev = points.length > 1 ? points[points.length - 2]?.rate ?? 0 : latest;
+      return { dept, points, latest, trend: latest >= prev ? "up" : "down" as const };
+    }).sort((a, b) => b.latest - a.latest);
+  }, [attendance, periodStart]);
+
   // Leave by type
   const leaveByType = useMemo(() => {
     const types: Record<string, number> = {};
