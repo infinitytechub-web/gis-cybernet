@@ -168,6 +168,28 @@ export default function Analytics() {
       .sort((a, b) => b.total - a.total);
   }, [attendance]);
 
+  // Department attendance sparkline data (weekly rate per department)
+  const deptSparklines = useMemo(() => {
+    const weeks = eachWeekOfInterval({ start: periodStart, end: new Date() });
+    const deptNames = [...new Set(attendance.map((a: any) => a.profiles?.departments?.name || "Unassigned"))];
+    return deptNames.map((dept) => {
+      const points = weeks.map((ws) => {
+        const we = endOfWeek(ws);
+        const days = eachDayOfInterval({ start: ws, end: we > new Date() ? new Date() : we });
+        const recs = days.flatMap((day) => {
+          const dayStr = format(day, "yyyy-MM-dd");
+          return attendance.filter((a: any) => a.date === dayStr && (a.profiles?.departments?.name || "Unassigned") === dept);
+        });
+        const total = recs.length;
+        const onTime = recs.filter((a: any) => a.status === "present" || a.status === "late").length;
+        return { week: format(ws, "MM/dd"), rate: total > 0 ? Math.round((onTime / total) * 100) : 0 };
+      });
+      const avgRate = points.length > 0 ? Math.round(points.reduce((s, p) => s + p.rate, 0) / points.length) : 0;
+      const trend = points.length >= 2 ? points[points.length - 1].rate - points[points.length - 2].rate : 0;
+      return { name: dept, points, avgRate, trend };
+    }).sort((a, b) => b.avgRate - a.avgRate);
+  }, [attendance, periodStart]);
+
   // Leave by type
   const leaveByType = useMemo(() => {
     const types: Record<string, number> = {};
