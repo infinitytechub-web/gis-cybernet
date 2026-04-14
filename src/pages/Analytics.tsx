@@ -313,6 +313,19 @@ export default function Analytics() {
     toast.success(`Compliance report (${getFormatLabel(fmt)}) downloaded`);
   };
 
+  const getDeptAttendanceData = () => ({
+    title: "Department Attendance Breakdown",
+    filename: `GIS_ASC_Dept_Attendance_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Department", "Present", "Late", "Absent", "Total", "Rate (%)"],
+    rows: deptAttendance.map((d) => [d.name, String(d.present), String(d.late), String(d.absent), String(d.total), `${d.rate}%`]),
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+  });
+
+  const handleExportDeptAttendance = (fmt: ExportFormat) => {
+    exportReport(fmt, getDeptAttendanceData());
+    toast.success(`Department attendance report (${getFormatLabel(fmt)}) downloaded`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -569,6 +582,17 @@ export default function Analytics() {
                 <Users className="h-4 w-4 text-indigo-500" />
                 Department Attendance Breakdown
                 <Badge variant="outline" className="ml-auto text-[10px]">{deptAttendance.length} depts</Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 gap-1 text-[10px]"><Download className="h-3 w-3" /> Export</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("pdf")}>PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("csv")}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("excel")}>Excel</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("word")}>Word</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardTitle>
             </CardHeader>
             <CardContent>

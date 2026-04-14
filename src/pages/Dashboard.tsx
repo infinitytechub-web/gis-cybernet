@@ -168,7 +168,6 @@ export default function Dashboard() {
   // Supervisor: pending approvals for their department
   const { data: supervisorPending } = useQuery({
     queryKey: ["supervisor-pending"],
-    enabled: isAdminOrSupervisor,
     queryFn: async () => {
       const [leaveRes, postingsRes] = await Promise.all([
         supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -181,7 +180,6 @@ export default function Dashboard() {
   // System health metrics (admin only)
   const { data: systemHealth } = useQuery({
     queryKey: ["system-health"],
-    enabled: isAdmin,
     queryFn: async () => {
       const [profilesRes, withAccountRes, deptsRes, ranksRes, rolesRes] = await Promise.all([
         supabase.from("profiles").select("id, user_id, department_id, rank_id, phone", { count: "exact" }),
@@ -262,7 +260,7 @@ export default function Dashboard() {
       <DailyOccurrencesWidget />
 
       {/* Supervisor Pending Approvals Widget */}
-      {isAdminOrSupervisor && supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
+      {supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -302,13 +300,13 @@ export default function Dashboard() {
       )}
 
       {/* Processing Queue Widget */}
-      {isAdminOrSupervisor && <ProcessingQueueWidget />}
+      <ProcessingQueueWidget />
 
       {/* Front Desk Queue Widget */}
-      {isAdminOrSupervisor && <FrontDeskQueueWidget />}
+      <FrontDeskQueueWidget />
 
-      {/* System Health Widget (Admin only) */}
-      {isAdmin && systemHealth && (
+      {/* System Health Widget */}
+      {systemHealth && (
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -359,8 +357,8 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Scheduled Reports Widget (Admin/Supervisor) */}
-      {isAdminOrSupervisor && <ScheduledReportsWidget />}
+      {/* Scheduled Reports Widget */}
+      <ScheduledReportsWidget />
 
       {/* Online Users Widget */}
       <Card className="border-border/50">
