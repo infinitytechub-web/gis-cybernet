@@ -7,12 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { KeyRound, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { PasswordStrength } from "@/components/ui/password-strength";
+import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => getStrength(data.newPassword) >= 4, {
+  message: "Password must be at least 'Strong'. Add uppercase, lowercase, numbers, and special characters.",
+  path: ["newPassword"],
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
