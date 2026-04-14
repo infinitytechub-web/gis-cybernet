@@ -326,6 +326,45 @@ export default function Analytics() {
     toast.success(`Department attendance report (${getFormatLabel(fmt)}) downloaded`);
   };
 
+  const getAttendanceTrendData = () => ({
+    title: "Attendance Trend Analysis",
+    filename: `GIS_ASC_Attendance_Trend_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Date", "Present", "Late", "Absent", "Total"],
+    rows: attendanceTrend.map((d) => [d.date, String(d.present), String(d.late), String(d.absent), String(d.total)]),
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+  });
+
+  const handleExportAttendanceTrend = (fmt: ExportFormat) => {
+    exportReport(fmt, getAttendanceTrendData());
+    toast.success(`Attendance trend report (${getFormatLabel(fmt)}) downloaded`);
+  };
+
+  const getWeeklyComparisonData = () => ({
+    title: "Week-over-Week Attendance Comparison",
+    filename: `GIS_ASC_Weekly_Comparison_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Week", "Present", "Late", "Absent", "Total", "Rate (%)", "Change (%)"],
+    rows: weeklyComparison.map((w) => [w.week, String(w.present), String(w.late), String(w.absent), String(w.total), `${w.rate}%`, `${w.change > 0 ? "+" : ""}${w.change}%`]),
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+  });
+
+  const handleExportWeeklyComparison = (fmt: ExportFormat) => {
+    exportReport(fmt, getWeeklyComparisonData());
+    toast.success(`Weekly comparison report (${getFormatLabel(fmt)}) downloaded`);
+  };
+
+  const getDeptSparklineData = () => ({
+    title: "Department Rate Trends",
+    filename: `GIS_ASC_Dept_Rate_Trends_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Department", "Latest Rate (%)", "Trend", ...( deptSparklines[0]?.points.map(p => `W/${p.week}`) ?? [])],
+    rows: deptSparklines.map((d) => [d.dept, `${d.latest}%`, d.trend === "up" ? "↑" : "↓", ...d.points.map(p => `${p.rate}%`)]),
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+  });
+
+  const handleExportDeptSparklines = (fmt: ExportFormat) => {
+    exportReport(fmt, getDeptSparklineData());
+    toast.success(`Department rate trends report (${getFormatLabel(fmt)}) downloaded`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
