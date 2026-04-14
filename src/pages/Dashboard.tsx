@@ -23,6 +23,7 @@ import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidge
 import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidget";
 import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget";
 import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
+import GenderStatisticsWidget from "@/components/dashboard/GenderStatisticsWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -403,6 +404,9 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Gender Statistics */}
+      <GenderStatisticsWidget />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
