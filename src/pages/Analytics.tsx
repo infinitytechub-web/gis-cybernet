@@ -133,6 +133,25 @@ export default function Analytics() {
     }).filter((_, i) => period === "7d" || period === "30d" || i % (period === "90d" ? 7 : 30) === 0);
   }, [attendance, periodStart, period]);
 
+  // Weekly attendance comparison (week-over-week)
+  const weeklyComparison = useMemo(() => {
+    const weeks = eachWeekOfInterval({ start: periodStart, end: new Date() });
+    const weekData = weeks.map((ws) => {
+      const we = endOfWeek(ws);
+      const days = eachDayOfInterval({ start: ws, end: we > new Date() ? new Date() : we });
+      const weekRecords = days.flatMap((day) => {
+        const dayStr = format(day, "yyyy-MM-dd");
+        return attendance.filter((a: any) => a.date === dayStr);
+      });
+      const present = weekRecords.filter((a: any) => a.status === "present").length;
+      const late = weekRecords.filter((a: any) => a.status === "late").length;
+      const absent = weekRecords.filter((a: any) => a.status === "absent").length;
+      const total = present + late + absent;
+      return { week: format(ws, "MMM dd"), present, late, absent, total, rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0 };
+    });
+    return weekData.map((w, i) => ({ ...w, change: i > 0 ? w.rate - weekData[i - 1].rate : 0 }));
+  }, [attendance, periodStart]);
+
   // Leave by type
   const leaveByType = useMemo(() => {
     const types: Record<string, number> = {};
@@ -427,6 +446,81 @@ export default function Analytics() {
                   <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Total" />
                 </AreaChart>
               </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Weekly Comparison Bar Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-blue-500" />
+                Week-over-Week Attendance Comparison
+                <Badge variant="outline" className="ml-auto text-[10px]">{weeklyComparison.length} weeks</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={weeklyComparison} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="barPresent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.5} />
+                    </linearGradient>
+                    <linearGradient id="barLate" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.5} />
+                    </linearGradient>
+                    <linearGradient id="barAbsent" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#ef4444" stopOpacity={0.5} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} vertical={false} />
+                  <XAxis dataKey="week" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    }}
+                    formatter={(value: any, name: string, props: any) => {
+                      if (name === "Att. Rate") return [`${value}%`, name];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Week of ${label}`}
+                  />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
+                  <Bar dataKey="present" fill="url(#barPresent)" name="Present" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="late" fill="url(#barLate)" name="Late" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="absent" fill="url(#barAbsent)" name="Absent" radius={[4, 4, 0, 0]} />
+                  <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} name="Att. Rate" />
+                </BarChart>
+              </ResponsiveContainer>
+
+              {/* Week-over-week change indicators */}
+              {weeklyComparison.length > 1 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {weeklyComparison.slice(1).map((w, i) => (
+                    <div key={i} className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-border/50 bg-muted/30">
+                      <span className="text-muted-foreground">{w.week}</span>
+                      {w.change > 0 ? (
+                        <span className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
+                          <TrendingUp className="h-3 w-3 mr-0.5" />+{w.change}%
+                        </span>
+                      ) : w.change < 0 ? (
+                        <span className="flex items-center text-red-600 dark:text-red-400 font-medium">
+                          <TrendingDown className="h-3 w-3 mr-0.5" />{w.change}%
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground font-medium">0%</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
