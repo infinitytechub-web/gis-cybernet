@@ -133,6 +133,25 @@ export default function Analytics() {
     }).filter((_, i) => period === "7d" || period === "30d" || i % (period === "90d" ? 7 : 30) === 0);
   }, [attendance, periodStart, period]);
 
+  // Weekly attendance comparison (week-over-week)
+  const weeklyComparison = useMemo(() => {
+    const weeks = eachWeekOfInterval({ start: periodStart, end: new Date() });
+    const weekData = weeks.map((ws) => {
+      const we = endOfWeek(ws);
+      const days = eachDayOfInterval({ start: ws, end: we > new Date() ? new Date() : we });
+      const weekRecords = days.flatMap((day) => {
+        const dayStr = format(day, "yyyy-MM-dd");
+        return attendance.filter((a: any) => a.date === dayStr);
+      });
+      const present = weekRecords.filter((a: any) => a.status === "present").length;
+      const late = weekRecords.filter((a: any) => a.status === "late").length;
+      const absent = weekRecords.filter((a: any) => a.status === "absent").length;
+      const total = present + late + absent;
+      return { week: format(ws, "MMM dd"), present, late, absent, total, rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0 };
+    });
+    return weekData.map((w, i) => ({ ...w, change: i > 0 ? w.rate - weekData[i - 1].rate : 0 }));
+  }, [attendance, periodStart]);
+
   // Leave by type
   const leaveByType = useMemo(() => {
     const types: Record<string, number> = {};
