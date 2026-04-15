@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -7,10 +8,16 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAuth } from "@/hooks/useAuth";
+import { Clock } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { org_name, system_label } = useAppSettings();
   const { isAdmin } = useAuth();
+  const [clock, setClock] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <SidebarProvider>
@@ -20,6 +27,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <header className="h-14 flex items-center border-b bg-card px-4 gap-4">
             <SidebarTrigger className="text-muted-foreground" />
             <h2 className="text-sm font-semibold flex-1" style={{ color: "hsl(152, 70%, 30%)" }}>Ghana Immigration Service: {system_label}</h2>
+            <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground tabular-nums">
+              <Clock className="h-3.5 w-3.5" />
+              {clock.toLocaleTimeString()}
+            </span>
             <ThemeToggle />
             {isAdmin && <SystemAuditTray />}
             <NotificationBell />
