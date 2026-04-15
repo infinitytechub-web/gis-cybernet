@@ -1172,6 +1172,21 @@ export default function Operations() {
           )}
         </TabsContent>
       </Tabs>
+
+      <PrintColumnDialog
+        open={showPrintCols}
+        onOpenChange={setShowPrintCols}
+        operations={searched as unknown as OpRecord[]}
+        profiles={profiles}
+        title="Operations"
+      />
+      <ViewDetailDialog
+        op={viewingOp as unknown as OpRecord | null}
+        open={!!viewingOp}
+        onOpenChange={(v) => { if (!v) setViewingOp(null); }}
+        profiles={profiles}
+        moduleTitle="Operation"
+      />
     </div>
   );
 }
