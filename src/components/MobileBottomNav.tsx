@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  LayoutDashboard, Users, Contact, CalendarOff, MoreHorizontal, UserCircle,
+  LayoutDashboard, Users, Contact, CalendarOff, MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,8 @@ import {
   CalendarCheck, Building2, Award, Clock, Calendar,
   ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
 const primaryTabs = [
   { title: "Home", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
@@ -51,15 +53,25 @@ export function MobileBottomNav() {
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [initials, setInitials] = useState<string>("U");
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("id")
+      .select("id, photo_url, first_name, last_name")
       .eq("user_id", user.id)
       .maybeSingle()
-      .then(({ data }) => { if (data) setProfileId(data.id); });
+      .then(({ data }) => {
+        if (data) {
+          setProfileId(data.id);
+          setInitials(`${data.first_name[0]}${data.last_name[0]}`.toUpperCase());
+          if (data.photo_url) {
+            getSignedPhotoUrl(data.photo_url).then(setProfilePhoto);
+          }
+        }
+      });
   }, [user]);
 
   const isActive = (url: string) =>
@@ -132,7 +144,10 @@ export function MobileBottomNav() {
               : "text-muted-foreground"
           )}
         >
-          <UserCircle className="h-5 w-5 text-primary" />
+          <Avatar className="h-5 w-5">
+            {profilePhoto && <AvatarImage src={profilePhoto} alt="Profile" />}
+            <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{initials}</AvatarFallback>
+          </Avatar>
           Profile
         </button>
 
