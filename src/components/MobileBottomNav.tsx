@@ -61,8 +61,6 @@ export function MobileBottomNav() {
       .maybeSingle()
       .then(({ data }) => { if (data) setProfileId(data.id); });
   }, [user]);
-  const [hidden, setHidden] = useState(false);
-  const lastScrollY = useRef(0);
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
