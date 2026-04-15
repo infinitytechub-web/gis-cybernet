@@ -24,6 +24,8 @@ export function HeaderProfileDropdown() {
     last_name: string;
     photo_url: string | null;
     staff_id: string;
+    department_name: string | null;
+    rank_abbreviation: string | null;
   } | null>(null);
   const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
 
@@ -31,11 +33,21 @@ export function HeaderProfileDropdown() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("id, first_name, last_name, photo_url, staff_id")
+      .select("id, first_name, last_name, photo_url, staff_id, departments(name), ranks(abbreviation)")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setProfile(data);
+        if (data) {
+          setProfile({
+            id: data.id,
+            first_name: data.first_name,
+            last_name: data.last_name,
+            photo_url: data.photo_url,
+            staff_id: data.staff_id,
+            department_name: (data.departments as any)?.name ?? null,
+            rank_abbreviation: (data.ranks as any)?.abbreviation ?? null,
+          });
+        }
       });
   }, [user]);
 
@@ -76,7 +88,13 @@ export function HeaderProfileDropdown() {
             <div className="flex items-center gap-1 mt-0.5">
               <Shield className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground capitalize">{role ?? "staff"}</span>
+              {profile?.rank_abbreviation && (
+                <span className="text-xs text-muted-foreground">· {profile.rank_abbreviation}</span>
+              )}
             </div>
+            {profile?.department_name && (
+              <p className="text-xs text-muted-foreground">{profile.department_name}</p>
+            )}
           </div>
         </DropdownMenuLabel>
 
