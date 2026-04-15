@@ -23,6 +23,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
+import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
@@ -360,6 +361,8 @@ export default function Operations() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingOp, setEditingOp] = useState<OperationRecord | null>(null);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [showPrintCols, setShowPrintCols] = useState(false);
+  const [viewingOp, setViewingOp] = useState<OperationRecord | null>(null);
 
   useEffect(() => {
     const channel = supabase
@@ -695,6 +698,7 @@ export default function Operations() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="icon" onClick={handlePrint} title="Print Summary Report"><Printer className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => setShowPrintCols(true)} title="Print with Column Selection"><FileText className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["operations-data"] })}><RefreshCw className="h-4 w-4" /></Button>
         </div>
       </div>
@@ -1110,9 +1114,13 @@ export default function Operations() {
                         <TableCell className="text-right font-medium">{op.arrests_count}</TableCell>
                         <TableCell><Badge className={STATUS_COLORS[op.status] || ""}>{op.status.replace(/_/g, " ")}</Badge></TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(op); }} title="Edit operation">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          <OperationRowActions
+                            op={op as unknown as OpRecord}
+                            profiles={profiles}
+                            moduleTitle="Operation"
+                            onEdit={(o) => openEdit(o as unknown as OperationRecord)}
+                            onView={(o) => setViewingOp(o as unknown as OperationRecord)}
+                          />
                         </TableCell>
                       </TableRow>
                       {expandedId === op.id && (
@@ -1164,6 +1172,21 @@ export default function Operations() {
           )}
         </TabsContent>
       </Tabs>
+
+      <PrintColumnDialog
+        open={showPrintCols}
+        onOpenChange={setShowPrintCols}
+        operations={searched as unknown as OpRecord[]}
+        profiles={profiles}
+        title="Operations"
+      />
+      <ViewDetailDialog
+        op={viewingOp as unknown as OpRecord | null}
+        open={!!viewingOp}
+        onOpenChange={(v) => { if (!v) setViewingOp(null); }}
+        profiles={profiles}
+        moduleTitle="Operation"
+      />
     </div>
   );
 }

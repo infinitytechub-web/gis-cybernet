@@ -23,6 +23,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
+import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
@@ -359,6 +360,8 @@ export default function Enforcement() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingOp, setEditingOp] = useState<EnforcementOp | null>(null);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [showPrintCols, setShowPrintCols] = useState(false);
+  const [viewingOp, setViewingOp] = useState<EnforcementOp | null>(null);
 
   // Realtime subscription
   useEffect(() => {
@@ -695,6 +698,7 @@ export default function Enforcement() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="icon" onClick={handlePrint} title="Print Summary Report"><Printer className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => setShowPrintCols(true)} title="Print with Column Selection"><FileText className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["enforcement-ops"] })}><RefreshCw className="h-4 w-4" /></Button>
         </div>
       </div>
@@ -1117,9 +1121,13 @@ export default function Enforcement() {
                         <TableCell className="text-right font-medium">{op.arrests_count}</TableCell>
                         <TableCell><Badge className={STATUS_COLORS[op.status] || ""}>{op.status.replace(/_/g, " ")}</Badge></TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(op); }} title="Edit operation">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          <OperationRowActions
+                            op={op as unknown as OpRecord}
+                            profiles={profiles}
+                            moduleTitle="Enforcement Operation"
+                            onEdit={(o) => openEdit(o as unknown as EnforcementOp)}
+                            onView={(o) => setViewingOp(o as unknown as EnforcementOp)}
+                          />
                         </TableCell>
                       </TableRow>
                       {expandedId === op.id && (
@@ -1171,6 +1179,21 @@ export default function Enforcement() {
           )}
         </TabsContent>
       </Tabs>
+
+      <PrintColumnDialog
+        open={showPrintCols}
+        onOpenChange={setShowPrintCols}
+        operations={searched as unknown as OpRecord[]}
+        profiles={profiles}
+        title="Enforcement Operations"
+      />
+      <ViewDetailDialog
+        op={viewingOp as unknown as OpRecord | null}
+        open={!!viewingOp}
+        onOpenChange={(v) => { if (!v) setViewingOp(null); }}
+        profiles={profiles}
+        moduleTitle="Enforcement Operation"
+      />
     </div>
   );
 }
