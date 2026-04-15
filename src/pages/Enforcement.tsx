@@ -360,6 +360,8 @@ export default function Enforcement() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingOp, setEditingOp] = useState<EnforcementOp | null>(null);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [showPrintCols, setShowPrintCols] = useState(false);
+  const [viewingOp, setViewingOp] = useState<EnforcementOp | null>(null);
 
   // Realtime subscription
   useEffect(() => {
