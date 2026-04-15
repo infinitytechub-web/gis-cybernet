@@ -266,7 +266,7 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="p-0">
           <iframe
-            src="https://id-preview--f9feb453-7403-4b07-a7ef-2747f3e3ca4c.lovable.app/embed/enforcement?days=30"
+            src="https://adsc-cybernet.lovable.app/embed/enforcement?days=30"
             width="100%"
             height="600"
             style={{ border: "none" }}
