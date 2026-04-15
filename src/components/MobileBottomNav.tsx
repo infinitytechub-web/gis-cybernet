@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  LayoutDashboard, Users, Contact, CalendarOff, MoreHorizontal,
+  LayoutDashboard, Users, Contact, CalendarOff, MoreHorizontal, UserCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   DropdownMenuSeparator,
@@ -12,7 +14,6 @@ import {
   CalendarCheck, Building2, Award, Clock, Calendar,
   ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 const primaryTabs = [
   { title: "Home", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
@@ -46,9 +47,20 @@ const adminItems = [
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin, isAdminOrSupervisor } = useAuth();
+  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const [profileId, setProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => { if (data) setProfileId(data.id); });
+  }, [user]);
 
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
@@ -93,7 +105,7 @@ export function MobileBottomNav() {
         hidden && "translate-y-full"
       )}
     >
-      <div className="grid grid-cols-5 h-14">
+      <div className="grid grid-cols-6 h-14">
         {primaryTabs.map((tab) => (
           <button
             key={tab.url}
@@ -109,6 +121,20 @@ export function MobileBottomNav() {
             {tab.title}
           </button>
         ))}
+
+        {/* My Profile tab */}
+        <button
+          onClick={() => profileId && handleNavigate(`/staff/${profileId}`)}
+          className={cn(
+            "flex flex-col items-center justify-center gap-0.5 text-[10px] transition-colors",
+            location.pathname.startsWith("/staff/") && profileId && location.pathname === `/staff/${profileId}`
+              ? "text-primary font-semibold"
+              : "text-muted-foreground"
+          )}
+        >
+          <UserCircle className="h-5 w-5 text-primary" />
+          Profile
+        </button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
