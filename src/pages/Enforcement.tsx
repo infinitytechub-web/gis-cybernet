@@ -126,6 +126,7 @@ const INITIAL_FORM = {
   outcome: "",
   notes: "",
   officer_in_charge: "" as string,
+  contact_details: "",
 };
 
 function GhanaGPSButton({ onAddress }: { onAddress: (addr: string) => void }) {
