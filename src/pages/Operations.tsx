@@ -361,6 +361,8 @@ export default function Operations() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingOp, setEditingOp] = useState<OperationRecord | null>(null);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [showPrintCols, setShowPrintCols] = useState(false);
+  const [viewingOp, setViewingOp] = useState<OperationRecord | null>(null);
 
   useEffect(() => {
     const channel = supabase
