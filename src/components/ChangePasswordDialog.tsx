@@ -21,7 +21,7 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-export function ChangePasswordDialog() {
+export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sidebar" | "dropdown" }) {
   const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -88,10 +88,17 @@ export function ChangePasswordDialog() {
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
-          <KeyRound className="h-4 w-4 mr-2" />
-          Change Password
-        </Button>
+        {variant === "dropdown" ? (
+          <button className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer outline-none">
+            <KeyRound className="h-4 w-4 mr-2" />
+            Change Password
+          </button>
+        ) : (
+          <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
+            <KeyRound className="h-4 w-4 mr-2" />
+            Change Password
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
