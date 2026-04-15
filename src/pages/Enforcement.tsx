@@ -210,7 +210,7 @@ function StaffPickerDialog({ value, onChange, profiles }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" /> Contact / Intel By
+            <Users className="h-5 w-5" /> Intel By (Officer)
           </DialogTitle>
         </DialogHeader>
         <div className="relative">
