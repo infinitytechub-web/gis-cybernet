@@ -338,6 +338,32 @@ export function downloadOperationPDF(op: OpRecord, profiles: ProfileRef[], modul
   downloadBlob(blob, `${moduleTitle.toLowerCase().replace(/\s+/g, "-")}-${op.id.slice(0, 8)}.pdf`);
 }
 
+// ─── Download single record as Word ───────────────────────────────────────────
+export function downloadOperationWord(op: OpRecord, profiles: ProfileRef[], moduleTitle: string) {
+  const officer = resolveOfficer(op, profiles);
+  const rows = [
+    ["Type", op.operation_type.replace(/_/g, " ")],
+    ["Date", format(new Date(op.operation_date), "dd MMM yyyy")],
+    ["Location", op.location || "—"],
+    ["Severity", op.severity],
+    ["Status", op.status.replace(/_/g, " ")],
+    ["Suspects", String(op.suspects_count)],
+    ["Arrests", String(op.arrests_count)],
+    ["Intel By (Officer)", officer],
+    ["Contact Details", op.contact_details || "—"],
+    ["Description", op.description || "—"],
+    ["Outcome", op.outcome || "—"],
+    ["Notes", op.notes || "—"],
+  ];
+  exportReport("word", {
+    title: `${moduleTitle} Record`,
+    filename: `${moduleTitle.toLowerCase().replace(/\s+/g, "-")}-${op.id.slice(0, 8)}`,
+    headers: ["Field", "Value"],
+    rows,
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+  });
+}
+
 // ─── Row Actions Component ────────────────────────────────────────────────────
 interface RowActionsProps {
   op: OpRecord;
@@ -356,9 +382,21 @@ export function OperationRowActions({ op, profiles, moduleTitle, onEdit, onView 
       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); onEdit(op); }} title="Edit operation">
         <Pencil className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); downloadOperationPDF(op, profiles, moduleTitle); }} title="Download PDF">
-        <Download className="h-3.5 w-3.5" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()} title="Download">
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadOperationPDF(op, profiles, moduleTitle); }}>
+            <FileText className="h-4 w-4 mr-2" /> PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadOperationWord(op, profiles, moduleTitle); }}>
+            <FileText className="h-4 w-4 mr-2" /> Word
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
