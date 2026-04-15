@@ -12,22 +12,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
-import { Settings, LogOut, Shield, ChevronDown } from "lucide-react";
+import { Settings, LogOut, Shield, ChevronDown, User } from "lucide-react";
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
 export function HeaderProfileDropdown() {
   const { user, role, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ first_name: string; last_name: string; photo_url: string | null; staff_id: string } | null>(null);
+  const [profile, setProfile] = useState<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    photo_url: string | null;
+    staff_id: string;
+  } | null>(null);
+  const [signedPhotoUrl, setSignedPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("first_name, last_name, photo_url, staff_id")
+      .select("id, first_name, last_name, photo_url, staff_id")
       .eq("user_id", user.id)
       .maybeSingle()
-      .then(({ data }) => { if (data) setProfile(data); });
+      .then(({ data }) => {
+        if (data) setProfile(data);
+      });
   }, [user]);
+
+  useEffect(() => {
+    if (profile?.photo_url) {
+      getSignedPhotoUrl(profile.photo_url).then(setSignedPhotoUrl);
+    }
+  }, [profile?.photo_url]);
 
   const initials = profile
     ? `${profile.first_name[0]}${profile.last_name[0]}`.toUpperCase()
@@ -40,10 +56,14 @@ export function HeaderProfileDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-full px-1.5 py-1 hover:bg-accent transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <Avatar className="h-7 w-7">
-          {profile?.photo_url && <AvatarImage src={profile.photo_url} alt={displayName} />}
-          <AvatarFallback className="text-xs bg-primary text-primary-foreground">{initials}</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar className="h-7 w-7">
+            {signedPhotoUrl && <AvatarImage src={signedPhotoUrl} alt={displayName} />}
+            <AvatarFallback className="text-xs bg-primary text-primary-foreground">{initials}</AvatarFallback>
+          </Avatar>
+          {/* Online status indicator */}
+          <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-card" />
+        </div>
         <span className="hidden md:inline text-sm font-medium truncate max-w-[120px]">{displayName}</span>
         <ChevronDown className="hidden md:inline h-3.5 w-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
@@ -61,6 +81,13 @@ export function HeaderProfileDropdown() {
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
+
+        {profile && (
+          <DropdownMenuItem onClick={() => navigate(`/staff/${profile.id}`)} className="cursor-pointer">
+            <User className="h-4 w-4 mr-2" />
+            My Profile
+          </DropdownMenuItem>
+        )}
 
         {isAdmin && (
           <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
