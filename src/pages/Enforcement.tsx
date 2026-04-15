@@ -126,6 +126,7 @@ const INITIAL_FORM = {
   outcome: "",
   notes: "",
   officer_in_charge: "" as string,
+  contact_details: "",
 };
 
 function GhanaGPSButton({ onAddress }: { onAddress: (addr: string) => void }) {
@@ -209,7 +210,7 @@ function StaffPickerDialog({ value, onChange, profiles }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" /> Contact / Intel By
+            <Users className="h-5 w-5" /> Intel By (Officer)
           </DialogTitle>
         </DialogHeader>
         <div className="relative">
@@ -289,8 +290,12 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
         <Input placeholder="e.g. Amasaman Barrier, Pokuase or use GPS..." value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
       </div>
       <div className="space-y-2">
-        <Label>Contact / Intel By (Officer)</Label>
+        <Label>Intel By (Officer)</Label>
         <StaffPickerDialog value={form.officer_in_charge} onChange={(id) => setForm(p => ({ ...p, officer_in_charge: id }))} profiles={profiles} />
+      </div>
+      <div className="space-y-2">
+        <Label>Contact Details</Label>
+        <Input placeholder="Phone number, email or other contact info..." value={form.contact_details} onChange={e => setForm(p => ({ ...p, contact_details: e.target.value }))} />
       </div>
       <div className="space-y-2">
         <Label>Description</Label>
@@ -406,6 +411,7 @@ export default function Enforcement() {
         notes: values.notes || null,
         reported_by: user?.id ?? "",
         officer_in_charge: values.officer_in_charge || null,
+        contact_details: values.contact_details || null,
       });
       if (error) throw error;
     },
@@ -432,6 +438,7 @@ export default function Enforcement() {
         outcome: values.outcome || null,
         notes: values.notes || null,
         officer_in_charge: values.officer_in_charge || null,
+        contact_details: values.contact_details || null,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -458,6 +465,7 @@ export default function Enforcement() {
       outcome: op.outcome || "",
       notes: op.notes || "",
       officer_in_charge: op.officer_in_charge || "",
+      contact_details: (op as any).contact_details || "",
     });
   }, []);
 
@@ -1127,13 +1135,17 @@ export default function Enforcement() {
                                 <p>{op.outcome || "Pending"}</p>
                               </div>
                               <div>
-                                <p className="font-medium text-muted-foreground mb-1">Contact / Intel By</p>
+                                <p className="font-medium text-muted-foreground mb-1">Intel By</p>
                                 <p className="flex items-center gap-1.5">
                                   <Users className="h-3.5 w-3.5 text-muted-foreground" />
                                   {op.officer_in_charge
                                     ? (() => { const p = profiles.find(pr => pr.user_id === op.officer_in_charge || pr.id === op.officer_in_charge); return p ? `${p.first_name} ${p.last_name}` : "Unknown"; })()
                                     : "Not assigned"}
                                 </p>
+                              </div>
+                              <div>
+                                <p className="font-medium text-muted-foreground mb-1">Contact Details</p>
+                                <p>{(op as any).contact_details || "—"}</p>
                               </div>
                               <div>
                                 <p className="font-medium text-muted-foreground mb-1">Notes</p>

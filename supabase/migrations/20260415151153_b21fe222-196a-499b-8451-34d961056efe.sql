@@ -1,0 +1,1 @@
+ALTER TABLE public.enforcement_operations ADD COLUMN contact_details TEXT;
