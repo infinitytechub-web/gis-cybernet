@@ -200,17 +200,17 @@ export function MobileBottomNav() {
           <DropdownMenuContent align="end" side="top" className="w-52 mb-2 max-h-[60vh] overflow-y-auto">
             {(() => {
               let lastGroup = "";
-              return moreItems.map((item) => {
-                const showSep = item.group !== lastGroup && lastGroup !== "";
-                lastGroup = item.group;
+              return moreItems.map((item, idx) => {
+                const isFirstInGroup = item.group !== lastGroup;
+                if (isFirstInGroup) lastGroup = item.group;
                 return (
                   <div key={item.url}>
-                    {showSep && <DropdownMenuSeparator />}
-                    {item.group !== moreItems.find(i => i.group === item.group)?.group || moreItems.indexOf(item) === moreItems.findIndex(i => i.group === item.group) ? (
+                    {isFirstInGroup && idx > 0 && <DropdownMenuSeparator />}
+                    {isFirstInGroup && (
                       <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                         {item.group}
                       </div>
-                    ) : null}
+                    )}
                     <DropdownMenuItem
                       onClick={() => handleNavigate(item.url)}
                       className={cn(
