@@ -698,6 +698,7 @@ export default function Enforcement() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="icon" onClick={handlePrint} title="Print Summary Report"><Printer className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => setShowPrintCols(true)} title="Print with Column Selection"><FileText className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["enforcement-ops"] })}><RefreshCw className="h-4 w-4" /></Button>
         </div>
       </div>
