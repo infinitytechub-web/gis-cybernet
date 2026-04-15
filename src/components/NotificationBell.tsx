@@ -205,6 +205,7 @@ export function NotificationBell() {
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-scale-in">
               {unreadCount > 9 ? "9+" : unreadCount}
+              <span className="absolute inset-0 rounded-full bg-destructive animate-ping opacity-40" />
             </span>
           )}
         </Button>
