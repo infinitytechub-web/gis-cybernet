@@ -35,6 +35,7 @@ const Announcements = lazy(() => import("./pages/Announcements"));
 const FrontDesk = lazy(() => import("./pages/FrontDesk"));
 const Processing = lazy(() => import("./pages/Processing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Enforcement = lazy(() => import("./pages/Enforcement"));
 const Settings = lazy(() => import("./pages/Settings"));
 
 const queryClient = new QueryClient();
@@ -80,6 +81,7 @@ function App() {
           <Route path="/processing" element={<ProtectedRoute><Layout><Processing /></Layout></ProtectedRoute>} />
           <Route path="/front-desk" element={<ProtectedRoute><Layout><FrontDesk /></Layout></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
+          <Route path="/enforcement" element={<ProtectedRoute><Layout><Enforcement /></Layout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

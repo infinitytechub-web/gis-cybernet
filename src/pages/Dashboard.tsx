@@ -256,25 +256,6 @@ export default function Dashboard() {
       {/* Announcements */}
       <AnnouncementsBanner />
 
-      {/* Enforcement Operations Widget */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            Enforcement Operations — Amasaman Sector Command
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <iframe
-            src="https://adsc-cybernet.lovable.app/"
-            width="100%"
-            height="600"
-            style={{ border: "none" }}
-            title="Enforcement Operations - Amasaman Sector Command"
-            className="rounded-b-lg"
-          />
-        </CardContent>
-      </Card>
 
       {/* Daily Occurrences - visible to all users */}
       <DailyOccurrencesWidget />
