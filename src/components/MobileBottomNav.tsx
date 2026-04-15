@@ -145,7 +145,14 @@ export function MobileBottomNav() {
                 : "text-muted-foreground"
             )}
           >
-            <tab.icon className={`h-5 w-5 ${tab.iconColor}`} />
+            <div className="relative">
+              <tab.icon className={`h-5 w-5 ${tab.iconColor}`} />
+              {tab.url === "/" && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </div>
             {tab.title}
           </button>
         ))}
