@@ -1121,9 +1121,13 @@ export default function Enforcement() {
                         <TableCell className="text-right font-medium">{op.arrests_count}</TableCell>
                         <TableCell><Badge className={STATUS_COLORS[op.status] || ""}>{op.status.replace(/_/g, " ")}</Badge></TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(op); }} title="Edit operation">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
+                          <OperationRowActions
+                            op={op as unknown as OpRecord}
+                            profiles={profiles}
+                            moduleTitle="Enforcement Operation"
+                            onEdit={(o) => openEdit(o as unknown as EnforcementOp)}
+                            onView={(o) => setViewingOp(o as unknown as EnforcementOp)}
+                          />
                         </TableCell>
                       </TableRow>
                       {expandedId === op.id && (
