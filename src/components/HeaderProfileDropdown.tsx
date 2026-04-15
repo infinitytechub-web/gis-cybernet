@@ -87,7 +87,7 @@ export function HeaderProfileDropdown() {
 function ChangePasswordDialogItem() {
   return (
     <div className="relative">
-      <ChangePasswordDialog />
+      <ChangePasswordDialog variant="dropdown" />
     </div>
   );
 }
