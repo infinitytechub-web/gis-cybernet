@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, Contact, CalendarOff, MoreHorizontal,
 } from "lucide-react";
@@ -55,6 +56,21 @@ export function MobileBottomNav() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [initials, setInitials] = useState<string>("U");
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["notifications-unread-count", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .eq("is_read", false);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -129,7 +145,14 @@ export function MobileBottomNav() {
                 : "text-muted-foreground"
             )}
           >
-            <tab.icon className={`h-5 w-5 ${tab.iconColor}`} />
+            <div className="relative">
+              <tab.icon className={`h-5 w-5 ${tab.iconColor}`} />
+              {tab.url === "/" && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </div>
             {tab.title}
           </button>
         ))}
