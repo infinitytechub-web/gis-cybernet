@@ -197,20 +197,34 @@ export function MobileBottomNav() {
               More
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-48 mb-2 max-h-[60vh] overflow-y-auto">
-            {moreItems.map((item) => (
-              <DropdownMenuItem
-                key={item.url}
-                onClick={() => handleNavigate(item.url)}
-                className={cn(
-                  "gap-2",
-                  isActive(item.url) && "text-primary font-medium"
-                )}
-              >
-                <item.icon className={`h-4 w-4 ${item.iconColor}`} />
-                {item.title}
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuContent align="end" side="top" className="w-52 mb-2 max-h-[60vh] overflow-y-auto">
+            {(() => {
+              let lastGroup = "";
+              return moreItems.map((item) => {
+                const showSep = item.group !== lastGroup && lastGroup !== "";
+                lastGroup = item.group;
+                return (
+                  <div key={item.url}>
+                    {showSep && <DropdownMenuSeparator />}
+                    {item.group !== moreItems.find(i => i.group === item.group)?.group || moreItems.indexOf(item) === moreItems.findIndex(i => i.group === item.group) ? (
+                      <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {item.group}
+                      </div>
+                    ) : null}
+                    <DropdownMenuItem
+                      onClick={() => handleNavigate(item.url)}
+                      className={cn(
+                        "gap-2",
+                        isActive(item.url) && "text-primary font-medium"
+                      )}
+                    >
+                      <item.icon className={`h-4 w-4 ${item.iconColor}`} />
+                      {item.title}
+                    </DropdownMenuItem>
+                  </div>
+                );
+              });
+            })()}
             {isAdminOrSupervisor && (
               <>
                 <DropdownMenuSeparator />
