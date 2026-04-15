@@ -296,6 +296,7 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
       <div className="space-y-2">
         <Label>Contact Details</Label>
         <Input placeholder="Phone number, email or other contact info..." value={form.contact_details} onChange={e => setForm(p => ({ ...p, contact_details: e.target.value }))} />
+      </div>
       <div className="space-y-2">
         <Label>Description</Label>
         <Textarea placeholder="Brief description of the operation..." value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} />
