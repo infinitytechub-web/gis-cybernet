@@ -1179,6 +1179,21 @@ export default function Enforcement() {
           )}
         </TabsContent>
       </Tabs>
+
+      <PrintColumnDialog
+        open={showPrintCols}
+        onOpenChange={setShowPrintCols}
+        operations={searched as unknown as OpRecord[]}
+        profiles={profiles}
+        title="Enforcement Operations"
+      />
+      <ViewDetailDialog
+        op={viewingOp as unknown as OpRecord | null}
+        open={!!viewingOp}
+        onOpenChange={(v) => { if (!v) setViewingOp(null); }}
+        profiles={profiles}
+        moduleTitle="Enforcement Operation"
+      />
     </div>
   );
 }
