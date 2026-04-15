@@ -26,20 +26,25 @@ const primaryTabs = [
 ];
 
 const moreItems = [
-  { title: "Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400" },
-  { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400" },
-  { title: "Roles", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
-  { title: "Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
-  { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400" },
-  { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
-  { title: "Postings & Reassignment", url: "/postings", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400" },
-  { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400" },
-  { title: "Processing", url: "/processing", icon: FileSearch, iconColor: "text-amber-600 dark:text-amber-400" },
-  { title: "Operations", url: "/operations", icon: Crosshair, iconColor: "text-orange-600 dark:text-orange-400" },
-  { title: "Enforcement", url: "/enforcement", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400" },
-  { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400" },
-  { title: "Reports", url: "/reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400" },
-  { title: "Analytics", url: "/analytics", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400" },
+  // Command & Control
+  { title: "Analytics", url: "/analytics", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400", group: "Command" },
+  { title: "Reports", url: "/reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", group: "Command" },
+  // Personnel
+  { title: "Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400", group: "Personnel" },
+  { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400", group: "Personnel" },
+  { title: "Roles", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400", group: "Personnel" },
+  // Workforce
+  { title: "Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400", group: "Workforce" },
+  { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", group: "Workforce" },
+  { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400", group: "Workforce" },
+  { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", group: "Workforce" },
+  // Immigration Services
+  { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400", group: "Immigration" },
+  { title: "Processing", url: "/processing", icon: FileSearch, iconColor: "text-amber-600 dark:text-amber-400", group: "Immigration" },
+  // Security & Enforcement
+  { title: "Operations", url: "/operations", icon: Crosshair, iconColor: "text-orange-600 dark:text-orange-400", group: "Security" },
+  { title: "Enforcement", url: "/enforcement", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", group: "Security" },
+  { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400", group: "Security" },
 ];
 
 const adminItems = [
