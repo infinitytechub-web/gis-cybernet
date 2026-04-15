@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,11 +41,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
-  const [clock, setClock] = useState(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
 
   const { data: staffCount = 0 } = useQuery({
     queryKey: ["staff-count"],
@@ -241,7 +236,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-secondary">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, dd MMMM yyyy")} · <Clock className="inline h-3.5 w-3.5 -mt-0.5 mr-0.5" />{clock.toLocaleTimeString()} · Ghana Immigration Service - Cybernet</p>
+        <p className="text-sm text-muted-foreground">Ghana Immigration Service - Cybernet</p>
       </div>
 
       {/* Summary Cards */}
