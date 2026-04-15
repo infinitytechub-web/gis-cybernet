@@ -665,6 +665,74 @@ export type Database = {
         }
         Relationships: []
       }
+      operations: {
+        Row: {
+          arrests_count: number
+          contact_details: string | null
+          created_at: string
+          department_id: string | null
+          description: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          officer_in_charge: string | null
+          operation_date: string
+          operation_type: string
+          outcome: string | null
+          reported_by: string
+          severity: string
+          status: string
+          suspects_count: number
+          updated_at: string
+        }
+        Insert: {
+          arrests_count?: number
+          contact_details?: string | null
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          officer_in_charge?: string | null
+          operation_date?: string
+          operation_type?: string
+          outcome?: string | null
+          reported_by: string
+          severity?: string
+          status?: string
+          suspects_count?: number
+          updated_at?: string
+        }
+        Update: {
+          arrests_count?: number
+          contact_details?: string | null
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          officer_in_charge?: string | null
+          operation_date?: string
+          operation_type?: string
+          outcome?: string | null
+          reported_by?: string
+          severity?: string
+          status?: string
+          suspects_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       otp_codes: {
         Row: {
           code_hash: string | null
