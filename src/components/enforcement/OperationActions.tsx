@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Download, Pencil, Printer, Users, MapPin, CalendarDays, FileText } from "lucide-react";
+import { Eye, Download, Pencil, Printer, Users, MapPin, CalendarDays, FileText, FileSpreadsheet } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { downloadBlob } from "@/lib/download-utils";
+import { exportReport, type ExportFormat } from "@/lib/export-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface OpRecord {
@@ -107,8 +109,15 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
     }
   };
 
-  const handlePrint = () => {
+  const getSelectedData = () => {
     const cols = ALL_COLUMNS.filter(c => selectedCols.has(c.key));
+    const headers = cols.map(c => c.label);
+    const rows = operations.map(op => cols.map(c => getColumnValue(c.key, op, profiles)));
+    return { cols, headers, rows };
+  };
+
+  const handlePrint = () => {
+    const { cols } = getSelectedData();
     if (cols.length === 0) return;
 
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -147,10 +156,24 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
     onOpenChange(false);
   };
 
+  const handleDownload = (fmt: ExportFormat) => {
+    const { headers, rows } = getSelectedData();
+    if (headers.length === 0) return;
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    exportReport(fmt, {
+      title,
+      filename: slug,
+      headers,
+      rows,
+      subtitle: `${operations.length} records · Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+    });
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Print — Select Columns</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Print / Download — Select Columns</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Checkbox checked={selectedCols.size === ALL_COLUMNS.length} onCheckedChange={toggleAll} id="toggle-all" />
@@ -166,6 +189,19 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={selectedCols.size === 0} className="gap-1">
+                  <Download className="h-4 w-4" /> Download
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleDownload("pdf")}><FileText className="h-4 w-4 mr-2" /> PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("excel")}><FileSpreadsheet className="h-4 w-4 mr-2" /> Excel</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("csv")}><FileText className="h-4 w-4 mr-2" /> CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload("word")}><FileText className="h-4 w-4 mr-2" /> Word</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button onClick={handlePrint} disabled={selectedCols.size === 0} className="gap-1">
               <Printer className="h-4 w-4" /> Print ({selectedCols.size} cols)
             </Button>
@@ -302,6 +338,32 @@ export function downloadOperationPDF(op: OpRecord, profiles: ProfileRef[], modul
   downloadBlob(blob, `${moduleTitle.toLowerCase().replace(/\s+/g, "-")}-${op.id.slice(0, 8)}.pdf`);
 }
 
+// ─── Download single record as Word ───────────────────────────────────────────
+export function downloadOperationWord(op: OpRecord, profiles: ProfileRef[], moduleTitle: string) {
+  const officer = resolveOfficer(op, profiles);
+  const rows = [
+    ["Type", op.operation_type.replace(/_/g, " ")],
+    ["Date", format(new Date(op.operation_date), "dd MMM yyyy")],
+    ["Location", op.location || "—"],
+    ["Severity", op.severity],
+    ["Status", op.status.replace(/_/g, " ")],
+    ["Suspects", String(op.suspects_count)],
+    ["Arrests", String(op.arrests_count)],
+    ["Intel By (Officer)", officer],
+    ["Contact Details", op.contact_details || "—"],
+    ["Description", op.description || "—"],
+    ["Outcome", op.outcome || "—"],
+    ["Notes", op.notes || "—"],
+  ];
+  exportReport("word", {
+    title: `${moduleTitle} Record`,
+    filename: `${moduleTitle.toLowerCase().replace(/\s+/g, "-")}-${op.id.slice(0, 8)}`,
+    headers: ["Field", "Value"],
+    rows,
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+  });
+}
+
 // ─── Row Actions Component ────────────────────────────────────────────────────
 interface RowActionsProps {
   op: OpRecord;
@@ -320,9 +382,21 @@ export function OperationRowActions({ op, profiles, moduleTitle, onEdit, onView 
       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); onEdit(op); }} title="Edit operation">
         <Pencil className="h-3.5 w-3.5" />
       </Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); downloadOperationPDF(op, profiles, moduleTitle); }} title="Download PDF">
-        <Download className="h-3.5 w-3.5" />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()} title="Download">
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadOperationPDF(op, profiles, moduleTitle); }}>
+            <FileText className="h-4 w-4 mr-2" /> PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); downloadOperationWord(op, profiles, moduleTitle); }}>
+            <FileText className="h-4 w-4 mr-2" /> Word
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

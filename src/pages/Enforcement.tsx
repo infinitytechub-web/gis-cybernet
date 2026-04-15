@@ -695,6 +695,7 @@ export default function Enforcement() {
               <DropdownMenuItem onClick={() => handleExport("pdf")}><FileText className="h-4 w-4 mr-2" /> Export PDF</DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("excel")}><FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel</DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("csv")}><FileText className="h-4 w-4 mr-2" /> Export CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("word")}><FileText className="h-4 w-4 mr-2" /> Export Word</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline" size="icon" onClick={handlePrint} title="Print Summary Report"><Printer className="h-4 w-4" /></Button>
@@ -943,6 +944,7 @@ export default function Enforcement() {
                   <DropdownMenuItem onClick={() => handleOfficerExport("pdf")}><FileText className="h-4 w-4 mr-2" /> PDF</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleOfficerExport("excel")}><FileSpreadsheet className="h-4 w-4 mr-2" /> Excel</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleOfficerExport("csv")}><FileText className="h-4 w-4 mr-2" /> CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleOfficerExport("word")}><FileText className="h-4 w-4 mr-2" /> Word</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
