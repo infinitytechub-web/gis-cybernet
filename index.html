@@ -2,10 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>GAR-Cybernet</title>
     <meta name="description" content="Ghana Immigration Service, Amasaman Sector Command - Cybernet HRM System">
     <meta name="author" content="Lovable" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
@@ -13,7 +14,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Cybernet" />
-    <link rel="apple-touch-icon" href="/pwa-icon-192.png" />
+    <link rel="apple-touch-icon" href="/pwa-icon-180.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/pwa-icon-192.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/pwa-icon-96.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/pwa-icon-48.png" />
 
     <!-- OG -->
     <meta property="og:type" content="website" />
@@ -25,6 +29,10 @@
     <meta name="twitter:title" content="GAR-Cybernet">
     <meta name="twitter:description" content="Ghana Immigration Service HRM System">
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/oKYJ4nzjn7abpsUlqLaAW6BjMb12/social-images/social-1775768360181-IMG_5898.webp">
+
+    <!-- Performance: preconnect to Supabase -->
+    <link rel="preconnect" href="https://ebndffutyrgybsduvijo.supabase.co" />
+    <link rel="dns-prefetch" href="https://ebndffutyrgybsduvijo.supabase.co" />
   </head>
 
   <body>

@@ -2,6 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Mobile Performance & PWA Optimizations ─────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+/* Safe area padding for notched devices */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* GPU-accelerated scrolling containers */
+.scroll-smooth-gpu {
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Prevent content shift from scrollbar on mobile */
+@media (max-width: 1023px) {
+  html { overflow-x: hidden; }
+}
+
 @layer base {
   :root {
     --background: 200 25% 97%;

@@ -24,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {isAdmin && <SystemAuditTray />}
             <NotificationBell />
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-auto pb-20 lg:pb-6">
+          <main className="flex-1 p-3 md:p-6 overflow-auto pb-20 lg:pb-6 scroll-smooth-gpu">
             <WelcomeBanner />
             {children}
           </main>
