@@ -57,6 +57,21 @@ export function MobileBottomNav() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [initials, setInitials] = useState<string>("U");
 
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["notifications-unread-count", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .eq("is_read", false);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 30000,
+  });
+
   useEffect(() => {
     if (!user) return;
     supabase
