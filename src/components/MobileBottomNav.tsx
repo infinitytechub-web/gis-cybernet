@@ -144,10 +144,14 @@ export function MobileBottomNav() {
               : "text-muted-foreground"
           )}
         >
-          <Avatar className="h-5 w-5">
-            {profilePhoto && <AvatarImage src={profilePhoto} alt="Profile" />}
-            <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{initials}</AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-5 w-5">
+              {profilePhoto && <AvatarImage src={profilePhoto} alt="Profile" />}
+              <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{initials}</AvatarFallback>
+            </Avatar>
+            {/* Online status indicator */}
+            <span className="absolute bottom-0 right-0 block h-1.5 w-1.5 rounded-full bg-emerald-500 ring-1 ring-card" />
+          </div>
           Profile
         </button>
 
