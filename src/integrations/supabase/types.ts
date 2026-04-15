@@ -212,6 +212,71 @@ export type Database = {
         }
         Relationships: []
       }
+      enforcement_operations: {
+        Row: {
+          arrests_count: number
+          created_at: string
+          department_id: string | null
+          description: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          officer_in_charge: string | null
+          operation_date: string
+          operation_type: string
+          outcome: string | null
+          reported_by: string
+          severity: string
+          status: string
+          suspects_count: number
+          updated_at: string
+        }
+        Insert: {
+          arrests_count?: number
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          officer_in_charge?: string | null
+          operation_date?: string
+          operation_type?: string
+          outcome?: string | null
+          reported_by: string
+          severity?: string
+          status?: string
+          suspects_count?: number
+          updated_at?: string
+        }
+        Update: {
+          arrests_count?: number
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          officer_in_charge?: string | null
+          operation_date?: string
+          operation_type?: string
+          outcome?: string | null
+          reported_by?: string
+          severity?: string
+          status?: string
+          suspects_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enforcement_operations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enquiry_applications: {
         Row: {
           applicant_name: string
