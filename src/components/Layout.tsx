@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { HeaderProfileDropdown } from "@/components/HeaderProfileDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
@@ -39,6 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ThemeToggle />
               {isAdmin && <SystemAuditTray />}
               <NotificationBell />
+              <HeaderProfileDropdown />
             </div>
             {/* Compact date & clock row for mobile */}
             <div className="sm:hidden flex items-center justify-center gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
