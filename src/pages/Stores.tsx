@@ -141,6 +141,18 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
     onError: (e: any) => toast.error(e.message),
   });
 
+  const updateMinStock = useMutation({
+    mutationFn: async ({ id, min_stock }: { id: string; min_stock: number }) => {
+      const { error } = await supabase.from("inventory_items").update({ min_stock }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["inventory_items"] }); toast.success("Minimum stock updated"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const lowStockCount = items.filter((i: any) => Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0).length;
+  const outOfStockCount = items.filter((i: any) => Number(i.qty_on_hand) <= 0).length;
+
   const createCat = useMutation({
     mutationFn: async () => {
       const name = newCatName.trim();
