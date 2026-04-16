@@ -2,6 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 
 const NotFound = () => {
   const location = useLocation();
@@ -14,7 +15,12 @@ const NotFound = () => {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <div className="text-center max-w-lg">
         {/* Decorative 404 illustration */}
-        <div className="relative mx-auto mb-8 w-72 h-56">
+        <motion.div
+          className="relative mx-auto mb-8 w-72 h-56"
+          initial={{ opacity: 0, scale: 0.85, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
           {/* Browser window frame */}
           <div className="absolute inset-4 rounded-xl border-2 border-muted-foreground/10 bg-muted/60">
             {/* Window dots */}
@@ -32,28 +38,58 @@ const NotFound = () => {
             </div>
           </div>
           {/* Large 404 text */}
-          <div className="absolute top-8 right-8 text-7xl font-black text-muted-foreground/10 tracking-tight select-none">
+          <motion.div
+            className="absolute top-8 right-8 text-7xl font-black text-muted-foreground/10 tracking-tight select-none"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             404
-          </div>
+          </motion.div>
           {/* Decorative accent shapes */}
-          <div className="absolute left-6 top-1/2 -translate-y-1/2">
+          <motion.div
+            className="absolute left-6 top-1/2 -translate-y-1/2"
+            initial={{ opacity: 0, rotate: -30 }}
+            animate={{ opacity: 1, rotate: 0 }}
+            transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+          >
             <svg width="60" height="80" viewBox="0 0 60 80" fill="none" className="text-primary">
               <path d="M50 10 C20 10, 5 30, 5 50 C5 65, 15 75, 30 75" stroke="currentColor" strokeWidth="10" strokeLinecap="round" fill="none" />
             </svg>
-          </div>
-          <div className="absolute right-6 bottom-16 w-8 h-3 rounded-sm bg-primary/80 rotate-[-8deg]" />
+          </motion.div>
+          <motion.div
+            className="absolute right-6 bottom-16 w-8 h-3 rounded-sm bg-primary/80 rotate-[-8deg]"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+          />
           {/* Diagonal accent */}
           <div className="absolute left-12 top-8 w-32 h-32 bg-primary/5 rotate-45 rounded-lg" />
-        </div>
+        </motion.div>
 
-        <h1 className="text-2xl font-bold text-foreground mb-2">
+        <motion.h1
+          className="text-2xl font-bold text-foreground mb-2"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+        >
           This Page Does Not Exist
-        </h1>
-        <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+        </motion.h1>
+        <motion.p
+          className="text-muted-foreground mb-8 text-sm leading-relaxed"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.45 }}
+        >
           Sorry, the page you are looking for could not be found. It's just an accident that was not intentional.
-        </p>
+        </motion.p>
 
-        <div className="flex items-center justify-center gap-3">
+        <motion.div
+          className="flex items-center justify-center gap-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.55 }}
+        >
           <Button variant="outline" size="sm" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-1.5 h-4 w-4" />
             Go Back
@@ -64,7 +100,7 @@ const NotFound = () => {
               Return Home
             </Link>
           </Button>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
