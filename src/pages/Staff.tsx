@@ -444,7 +444,14 @@ export default function Staff() {
                     <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
                     <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
+                        {s.account_locked && (
+                          <span title="Account locked" className="inline-flex items-center text-destructive">
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     {isAdmin && (
                       <TableCell>
