@@ -103,6 +103,7 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
   const [search, setSearch] = useState("");
   const [filterGender, setFilterGender] = useState("all");
   const [filterRisk, setFilterRisk] = useState("all");
+  const [filterCountry, setFilterCountry] = useState("");
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   const { data: records = [] } = useQuery({
@@ -115,8 +116,9 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
     if (q && !`${r.first_name} ${r.last_name} ${r.alias || ""} ${r.nationality || ""} ${r.crime_type}`.toLowerCase().includes(q)) return false;
     if (filterGender !== "all" && r.gender !== filterGender) return false;
     if (filterRisk !== "all" && r.risk_level !== filterRisk) return false;
+    if (filterCountry && (r.nationality || "").toLowerCase() !== filterCountry.toLowerCase() && (r.country_of_origin || "").toLowerCase() !== filterCountry.toLowerCase()) return false;
     return true;
-  }), [records, search, filterGender, filterRisk]);
+  }), [records, search, filterGender, filterRisk, filterCountry]);
 
   return (
     <div className="space-y-3">
