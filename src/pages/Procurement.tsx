@@ -784,7 +784,7 @@ function DocumentsTab({ canManage, userId, vendors }: any) {
   const downloadDoc = async (d: any) => {
     const { data, error } = await supabase.storage.from("procurement-docs").createSignedUrl(d.file_path, 60);
     if (error || !data) return toast({ title: "Download failed", variant: "destructive" });
-    await downloadFile(data.signedUrl, d.file_name);
+    triggerDownload(data.signedUrl, d.file_name);
   };
 
   const deleteDoc = async (d: any) => {
