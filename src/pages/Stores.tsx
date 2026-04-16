@@ -59,13 +59,13 @@ export default function Stores() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex flex-wrap h-auto">
-          <TabsTrigger value="items"><Boxes className="h-4 w-4 mr-1" />Items</TabsTrigger>
-          <TabsTrigger value="movements"><Activity className="h-4 w-4 mr-1" />Movements</TabsTrigger>
-          <TabsTrigger value="issuance"><ArrowUpFromLine className="h-4 w-4 mr-1" />Issuance</TabsTrigger>
-          <TabsTrigger value="suppliers"><Truck className="h-4 w-4 mr-1" />Suppliers</TabsTrigger>
-          <TabsTrigger value="categories"><Tag className="h-4 w-4 mr-1" />Categories</TabsTrigger>
-          <TabsTrigger value="analytics"><BarChart3 className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50 p-1">
+          <TabsTrigger value="items" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"><Boxes className="h-4 w-4 mr-1 text-amber-700 dark:text-amber-400" />Items</TabsTrigger>
+          <TabsTrigger value="movements" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><Activity className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Movements</TabsTrigger>
+          <TabsTrigger value="issuance" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><ArrowUpFromLine className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Issuance</TabsTrigger>
+          <TabsTrigger value="suppliers" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><Truck className="h-4 w-4 mr-1 text-indigo-700 dark:text-indigo-400" />Suppliers</TabsTrigger>
+          <TabsTrigger value="categories" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"><Tag className="h-4 w-4 mr-1 text-violet-700 dark:text-violet-400" />Categories</TabsTrigger>
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items"><ItemsTab canManage={canManage} userId={user?.id} /></TabsContent>

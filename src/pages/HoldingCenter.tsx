@@ -92,10 +92,10 @@ export default function HoldingCenter() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex flex-wrap h-auto">
-          <TabsTrigger value="active"><UserCheck className="h-4 w-4 mr-1" />Active Custody</TabsTrigger>
-          <TabsTrigger value="archive"><FileSearch className="h-4 w-4 mr-1" />Archive</TabsTrigger>
-          <TabsTrigger value="analytics"><BarChart3 className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/50 p-1">
+          <TabsTrigger value="active" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white"><UserCheck className="h-4 w-4 mr-1 text-rose-700 dark:text-rose-400" />Active Custody</TabsTrigger>
+          <TabsTrigger value="archive" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><FileSearch className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Archive</TabsTrigger>
+          <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} onSelect={setSelected} /></TabsContent>
         <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} onSelect={setSelected} /></TabsContent>
@@ -356,12 +356,12 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
         </SheetHeader>
 
         <Tabs defaultValue="bio" className="mt-4">
-          <TabsList className="flex flex-wrap h-auto">
-            <TabsTrigger value="bio">Profile</TabsTrigger>
-            <TabsTrigger value="property"><Package className="h-3.5 w-3.5 mr-1" />Property ({detail?.property.length || 0})</TabsTrigger>
-            <TabsTrigger value="visitors"><Users className="h-3.5 w-3.5 mr-1" />Visitors ({detail?.visitors.length || 0})</TabsTrigger>
-            <TabsTrigger value="medical"><Stethoscope className="h-3.5 w-3.5 mr-1" />Medical ({detail?.medical.length || 0})</TabsTrigger>
-            <TabsTrigger value="transfers"><ArrowRightLeft className="h-3.5 w-3.5 mr-1" />Transfers ({detail?.transfers.length || 0})</TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/50 p-1">
+            <TabsTrigger value="bio" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">Profile</TabsTrigger>
+            <TabsTrigger value="property" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"><Package className="h-3.5 w-3.5 mr-1 text-amber-700 dark:text-amber-400" />Property ({detail?.property.length || 0})</TabsTrigger>
+            <TabsTrigger value="visitors" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Users className="h-3.5 w-3.5 mr-1 text-cyan-700 dark:text-cyan-400" />Visitors ({detail?.visitors.length || 0})</TabsTrigger>
+            <TabsTrigger value="medical" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><Stethoscope className="h-3.5 w-3.5 mr-1 text-emerald-700 dark:text-emerald-400" />Medical ({detail?.medical.length || 0})</TabsTrigger>
+            <TabsTrigger value="transfers" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><ArrowRightLeft className="h-3.5 w-3.5 mr-1 text-indigo-700 dark:text-indigo-400" />Transfers ({detail?.transfers.length || 0})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bio" className="space-y-3">

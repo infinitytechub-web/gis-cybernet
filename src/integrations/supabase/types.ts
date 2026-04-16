@@ -2555,6 +2555,10 @@ export type Database = {
           document_number: string | null
           document_type: string
           expiry_date: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
           id: string
           issue_date: string | null
           issuing_authority: string | null
@@ -2562,12 +2566,17 @@ export type Database = {
           profile_id: string
           status: string
           updated_at: string
+          uploaded_by: string | null
         }
         Insert: {
           created_at?: string
           document_number?: string | null
           document_type: string
           expiry_date?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           issue_date?: string | null
           issuing_authority?: string | null
@@ -2575,12 +2584,17 @@ export type Database = {
           profile_id: string
           status?: string
           updated_at?: string
+          uploaded_by?: string | null
         }
         Update: {
           created_at?: string
           document_number?: string | null
           document_type?: string
           expiry_date?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           issue_date?: string | null
           issuing_authority?: string | null
@@ -2588,6 +2602,7 @@ export type Database = {
           profile_id?: string
           status?: string
           updated_at?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {

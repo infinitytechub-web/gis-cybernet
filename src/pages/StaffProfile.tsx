@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award } from "lucide-react";
+import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award, FolderLock } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
+import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
@@ -29,6 +31,7 @@ const statusColor = (s: string) => {
 export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, role } = useAuth();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["staff-profile", id],
@@ -164,10 +167,11 @@ export default function StaffProfile() {
 
       {/* Tabs */}
       <Tabs defaultValue="attendance">
-        <TabsList className="w-full justify-start">
+        <TabsList className="w-full justify-start flex-wrap h-auto">
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>
           <TabsTrigger value="postings" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Postings</TabsTrigger>
+          <TabsTrigger value="documents" className="gap-1"><FolderLock className="h-4 w-4" /> Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="attendance">
@@ -293,6 +297,13 @@ export default function StaffProfile() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <StaffDocumentVault
+            profileId={profile.id}
+            canManage={role === "admin" || profile.user_id === user?.id}
+          />
         </TabsContent>
       </Tabs>
     </div>
