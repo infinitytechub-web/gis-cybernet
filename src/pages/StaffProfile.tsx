@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,8 @@ const statusColor = (s: string) => {
 export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "attendance";
   const { user, role } = useAuth();
 
   const { data: profile, isLoading } = useQuery({
@@ -166,7 +168,7 @@ export default function StaffProfile() {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="attendance">
+      <Tabs defaultValue={initialTab}>
         <TabsList className="w-full justify-start flex-wrap h-auto">
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>
