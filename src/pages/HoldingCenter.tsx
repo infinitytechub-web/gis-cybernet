@@ -226,8 +226,8 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
               <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-              <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
-              <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
+              <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
+              <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
               <div><Label>ID Type</Label>
                 <Select value={form.id_type} onValueChange={v => setForm(p => ({ ...p, id_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
