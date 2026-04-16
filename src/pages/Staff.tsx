@@ -568,6 +568,51 @@ export default function Staff() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <Label>Intake (1–100)</Label>
+                <Select value={intake} onValueChange={setIntake}>
+                  <SelectTrigger><SelectValue placeholder="Select intake" /></SelectTrigger>
+                  <SelectContent className="max-h-[260px]">
+                    {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
+                      <SelectItem key={n} value={String(n)}>Intake {n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Blood Group</Label>
+                <Select value={bloodGroup} onValueChange={setBloodGroup}>
+                  <SelectTrigger><SelectValue placeholder="Select blood group" /></SelectTrigger>
+                  <SelectContent>
+                    {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
+                      <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Weapon Training</Label>
+                <Select value={weaponTrained} onValueChange={(v) => { setWeaponTrained(v); if (v !== "yes") setWeaponTrainingDate(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Training Date</Label>
+                <Input
+                  type="date"
+                  value={weaponTrainingDate}
+                  onChange={(e) => setWeaponTrainingDate(e.target.value)}
+                  disabled={weaponTrained !== "yes"}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <Label>Unit</Label>
                 <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" />
               </div>
