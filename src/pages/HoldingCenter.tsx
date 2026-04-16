@@ -326,12 +326,12 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
   });
 
   const release = useMutation({
-    mutationFn: async (reason: string) => {
+    mutationFn: async ({ outcome, reason }: { outcome: string; reason: string }) => {
       if (!canCommand) throw new Error("Only command can release");
-      const { error } = await supabase.from("detention_records").update({ status: "released", released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
+      const { error } = await supabase.from("detention_records").update({ status: outcome, released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Detainee released"); onClose(); },
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${vars.outcome.replace(/_/g, " ")}`); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
