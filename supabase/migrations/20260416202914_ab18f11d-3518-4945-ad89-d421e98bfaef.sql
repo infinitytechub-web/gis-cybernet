@@ -1,0 +1,1 @@
+DELETE FROM public.failed_login_attempts WHERE staff_id IN ('system.administrator', 'admin', 'GIS-ADMIN-001', 'ADMIN-001');
