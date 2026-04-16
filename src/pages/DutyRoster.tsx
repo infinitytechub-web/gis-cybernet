@@ -230,9 +230,7 @@ export default function DutyRoster() {
             {isAdmin && " · Click a day to assign staff"}
           </p>
         </div>
-        <Button variant="outline" size="sm" className="gap-1" onClick={exportPdf}>
-          <Download className="h-4 w-4" /> Export PDF
-        </Button>
+        <ExportMenu getData={buildRosterExportData} />
       </div>
 
       {/* Controls */}
