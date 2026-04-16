@@ -222,9 +222,18 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Category</Label>
-                <Select value={form.category_id} onValueChange={v => setForm(p => ({ ...p, category_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>{cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <Select value={form.category_id || "__none__"} onValueChange={v => {
+                  if (v === "__create__") { setNewCatOpen(true); return; }
+                  setForm(p => ({ ...p, category_id: v === "__none__" ? "" : v }));
+                }}>
+                  <SelectTrigger aria-label="Item category"><SelectValue placeholder="Select category…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__"><span className="text-muted-foreground">— None —</span></SelectItem>
+                    {cats.length === 0 ? (
+                      <div className="px-2 py-3 text-xs text-muted-foreground text-center">No categories yet</div>
+                    ) : cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    {canManage && <SelectItem value="__create__"><span className="text-primary font-medium">+ Create new category…</span></SelectItem>}
+                  </SelectContent>
                 </Select>
               </div>
               <div><Label>Unit</Label>
