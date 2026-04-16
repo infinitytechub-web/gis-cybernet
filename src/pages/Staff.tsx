@@ -276,18 +276,15 @@ export default function Staff() {
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {isAdmin && (
           <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1">
-                  <Download className="h-4 w-4" /> Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={exportStaffPDF} className="gap-2"><FileText className="h-4 w-4" /> PDF</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportStaffCSV} className="gap-2"><FileSpreadsheet className="h-4 w-4" /> CSV</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportStaffXLSX} className="gap-2"><FileSpreadsheet className="h-4 w-4" /> Excel (.xlsx)</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ExportMenu
+              getData={() => ({
+                title: "Staff / Employee Report",
+                filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
+                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"],
+                rows: buildStaffExportRows(),
+                subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Records: ${filtered.length}`,
+              })}
+            />
             <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-1">
               <Upload className="h-4 w-4" /> Import
             </Button>
