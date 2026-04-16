@@ -15,8 +15,6 @@ import { Input } from "@/components/ui/input";
 import {
   Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Search,
 } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
   addMonths, subMonths, isToday,
