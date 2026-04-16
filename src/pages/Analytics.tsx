@@ -345,28 +345,8 @@ export default function Analytics() {
               <SelectItem value="12m">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1"><FileText className="h-4 w-4" /> Executive Summary</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExportSummary("pdf")}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportSummary("csv")}>CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportSummary("excel")}>Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportSummary("word")}>Word</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1"><Download className="h-4 w-4" /> Compliance Report</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExportCompliance("pdf")}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportCompliance("csv")}>CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportCompliance("excel")}>Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportCompliance("word")}>Word</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ExportMenu label="Executive Summary" getData={getExecutiveSummaryData} />
+          <ExportMenu label="Compliance Report" getData={getComplianceData} />
         </div>
       </div>
 
@@ -463,17 +443,7 @@ export default function Analytics() {
                 <Badge variant="outline" className="ml-auto text-[10px]">
                   {period === "7d" ? "Daily" : period === "30d" ? "Daily" : period === "90d" ? "Weekly" : "Monthly"}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3.5 w-3.5" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getAttendanceTrendData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -523,17 +493,7 @@ export default function Analytics() {
                 <BarChart3 className="h-4 w-4 text-blue-500" />
                 Week-over-Week Attendance Comparison
                 <Badge variant="outline" className="ml-auto text-[10px]">{weeklyComparison.length} weeks</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3.5 w-3.5" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getWeeklyComparisonData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -609,17 +569,7 @@ export default function Analytics() {
                 <Users className="h-4 w-4 text-indigo-500" />
                 Department Attendance Breakdown
                 <Badge variant="outline" className="ml-auto text-[10px]">{deptAttendance.length} depts</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 px-2 gap-1 text-[10px]"><Download className="h-3 w-3" /> Export</Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu variant="ghost" className="h-6 px-2 text-[10px]" getData={getDeptAttendanceData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -669,17 +619,7 @@ export default function Analytics() {
                 <Activity className="h-4 w-4 text-violet-500" />
                 Department Rate Trends
                 <Badge variant="outline" className="ml-auto text-[10px]">{deptSparklines.length} depts</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3.5 w-3.5" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getDeptSparklineData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
