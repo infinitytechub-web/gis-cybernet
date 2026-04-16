@@ -2,14 +2,9 @@ import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, ArrowUpDown, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 import { format, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
-import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 const ROW_COLORS = [
   { bg: "bg-blue-50/50 dark:bg-blue-950/20", cell: "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200" },
@@ -67,30 +62,6 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
 
   const headers = ["Shift", "Pattern", ...weekDays.map(d => format(d, "EEE dd"))];
 
-  const exportPDF = () => {
-    const doc = new jsPDF({ orientation: "landscape" });
-    doc.setFontSize(14);
-    doc.text(`Shift Schedule — ${format(weekStart, "dd MMM")} to ${format(addDays(weekStart, 6), "dd MMM yyyy")}`, 14, 16);
-    autoTable(doc, { head: [headers], body: buildExportRows(), startY: 22, styles: { fontSize: 8 } });
-    doc.save(`shifts_${format(weekStart, "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF downloaded");
-  };
-
-  const exportCSV = () => {
-    const rows = [headers, ...buildExportRows()];
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    downloadCSVString(csv, `shifts_${format(weekStart, "yyyy-MM-dd")}.csv`);
-    toast.success("CSV downloaded");
-  };
-
-  const exportExcel = () => {
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...buildExportRows()]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Shifts");
-    XLSX.writeFile(wb, `shifts_${format(weekStart, "yyyy-MM-dd")}.xlsx`);
-    toast.success("Excel downloaded");
-  };
-
   const toggleSort = (field: "name" | "pattern") => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDir("asc"); }
@@ -124,18 +95,14 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
             </SelectContent>
           </Select>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Download className="h-4 w-4" /> Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ExportMenu
+            getData={() => ({
+              title: `Shift Schedule — ${format(weekStart, "dd MMM")} to ${format(addDays(weekStart, 6), "dd MMM yyyy")}`,
+              filename: `shifts_${format(weekStart, "yyyy-MM-dd")}`,
+              headers,
+              rows: buildExportRows(),
+            })}
+          />
         </div>
       </div>
 

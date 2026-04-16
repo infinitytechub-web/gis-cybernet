@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, Pencil, Download, Printer } from "lucide-react";
+import { Check, X, Eye, Pencil, Printer } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { exportReport, ExportFormat } from "@/lib/export-utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 const roles = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
@@ -151,17 +150,16 @@ export function PermissionsMatrix() {
     toast.info("Permissions matrix reset to defaults");
   };
 
-  const handleExport = (fmt: ExportFormat) => {
+  const buildExportData = () => {
     const headers = ["Feature", ...roles.map((r) => roleLabels[r])];
     const rows = features.map((f) => [f.name, ...roles.map((r) => f.access[r]?.toUpperCase() ?? "")]);
-    exportReport(fmt, {
+    return {
       title: "Permissions Matrix",
       filename: `permissions-matrix-${new Date().toISOString().slice(0, 10)}`,
       headers,
       rows,
       subtitle: "Access levels for each role across system features",
-    });
-    toast.success(`Permissions matrix exported as ${fmt.toUpperCase()}`);
+    };
   };
 
   return (
@@ -180,19 +178,7 @@ export function PermissionsMatrix() {
             <Button size="sm" variant="outline" className="gap-1" onClick={() => window.print()}>
               <Printer className="h-3.5 w-3.5" /> Print
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="gap-1">
-                  <Download className="h-3.5 w-3.5" /> Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport("pdf")}>Export as PDF</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("csv")}>Export as CSV</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("excel")}>Export as Excel</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("word")}>Export as Word</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ExportMenu getData={buildExportData} className="gap-1" />
             {editing ? (
               <>
                 <Button size="sm" variant="outline" onClick={handleReset}>Reset</Button>
