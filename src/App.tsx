@@ -40,6 +40,7 @@ const Operations = lazy(() => import("./pages/Operations"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Stores = lazy(() => import("./pages/Stores"));
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
+const Procurement = lazy(() => import("./pages/Procurement"));
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ function App() {
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
           <Route path="/stores" element={<ProtectedRoute><Layout><Stores /></Layout></ProtectedRoute>} />
           <Route path="/holding" element={<ProtectedRoute><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
+          <Route path="/procurement" element={<ProtectedRoute><Layout><Procurement /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

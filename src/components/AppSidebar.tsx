@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,6 +55,10 @@ const securityItems = [
 
 const logisticsItems = [
   { title: "Stores & Inventory", url: "/stores", icon: Package, iconColor: "text-amber-700 dark:text-amber-500" },
+];
+
+const financeItems = [
+  { title: "Procurement Unit", url: "/procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400" },
 ];
 
 const adminItems = [
@@ -176,6 +180,7 @@ export function AppSidebar() {
         {renderGroup("Immigration Services", immigrationItems)}
         {renderGroup("Security & Enforcement", securityItems)}
         {renderGroup("Logistics", logisticsItems)}
+        {renderGroup("Finance & Procurement", financeItems)}
 
         {(role === "admin" || role === "supervisor") && renderGroup("Administration", adminItems)}
       </SidebarContent>

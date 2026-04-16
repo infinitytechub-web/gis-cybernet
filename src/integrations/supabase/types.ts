@@ -1568,6 +1568,361 @@ export type Database = {
         }
         Relationships: []
       }
+      procurement_contracts: {
+        Row: {
+          contract_number: string
+          contract_type: string
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          end_date: string | null
+          id: string
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+          value: number | null
+          vendor_id: string | null
+        }
+        Insert: {
+          contract_number: string
+          contract_type?: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          value?: number | null
+          vendor_id?: string | null
+        }
+        Update: {
+          contract_number?: string
+          contract_type?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          value?: number | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          reference_id: string | null
+          reference_table: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          uploaded_by: string
+          vendor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          uploaded_by: string
+          vendor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_documents_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          currency: string
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          paid_at: string | null
+          payment_reference: string | null
+          po_id: string | null
+          status: string
+          tax_amount: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_reference?: string | null
+          po_id?: string | null
+          status?: string
+          tax_amount?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_reference?: string | null
+          po_id?: string | null
+          status?: string
+          tax_amount?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_invoices_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_invoices_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_quotes: {
+        Row: {
+          created_at: string
+          delivery_days: number | null
+          id: string
+          notes: string | null
+          quoted_amount: number
+          rfq_id: string
+          selected: boolean
+          valid_until: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_days?: number | null
+          id?: string
+          notes?: string | null
+          quoted_amount: number
+          rfq_id: string
+          selected?: boolean
+          valid_until?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_days?: number | null
+          id?: string
+          notes?: string | null
+          quoted_amount?: number
+          rfq_id?: string
+          selected?: boolean
+          valid_until?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_quotes_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_quotes_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_rfqs: {
+        Row: {
+          awarded_amount: number | null
+          awarded_vendor_id: string | null
+          closing_date: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          requisition_id: string | null
+          rfq_number: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          awarded_amount?: number | null
+          awarded_vendor_id?: string | null
+          closing_date?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          requisition_id?: string | null
+          rfq_number: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          awarded_amount?: number | null
+          awarded_vendor_id?: string | null
+          closing_date?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          requisition_id?: string | null
+          rfq_number?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_rfqs_awarded_vendor_id_fkey"
+            columns: ["awarded_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_rfqs_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_vendors: {
+        Row: {
+          address: string | null
+          category: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_blacklisted: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          rating: number | null
+          tin_number: string | null
+          updated_at: string
+          vendor_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_blacklisted?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          tin_number?: string | null
+          updated_at?: string
+          vendor_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_blacklisted?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          rating?: number | null
+          tin_number?: string | null
+          updated_at?: string
+          vendor_code?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_locked: boolean
@@ -1648,6 +2003,239 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          item_name: string
+          po_id: string
+          quantity: number
+          received_qty: number
+          unit: string | null
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_name: string
+          po_id: string
+          quantity: number
+          received_qty?: number
+          unit?: string | null
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_name?: string
+          po_id?: string
+          quantity?: number
+          received_qty?: number
+          unit?: string | null
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          delivered_at: string | null
+          delivery_address: string | null
+          expected_delivery: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          payment_terms: string | null
+          po_number: string
+          requisition_id: string | null
+          rfq_id: string | null
+          status: string
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          delivered_at?: string | null
+          delivery_address?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          payment_terms?: string | null
+          po_number: string
+          requisition_id?: string | null
+          rfq_id?: string | null
+          status?: string
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          delivered_at?: string | null
+          delivery_address?: string | null
+          expected_delivery?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          payment_terms?: string | null
+          po_number?: string
+          requisition_id?: string | null
+          rfq_id?: string | null
+          status?: string
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_rfqs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisition_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          estimated_unit_cost: number | null
+          id: string
+          item_name: string
+          quantity: number
+          requisition_id: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          estimated_unit_cost?: number | null
+          id?: string
+          item_name: string
+          quantity?: number
+          requisition_id: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          estimated_unit_cost?: number | null
+          id?: string
+          item_name?: string
+          quantity?: number
+          requisition_id?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisition_items_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_requisitions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          department_id: string | null
+          description: string | null
+          estimated_cost: number | null
+          id: string
+          needed_by: string | null
+          notes: string | null
+          pr_number: string
+          priority: string
+          rejection_reason: string | null
+          requested_by: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          needed_by?: string | null
+          notes?: string | null
+          pr_number: string
+          priority?: string
+          rejection_reason?: string | null
+          requested_by: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          estimated_cost?: number | null
+          id?: string
+          needed_by?: string | null
+          notes?: string | null
+          pr_number?: string
+          priority?: string
+          rejection_reason?: string | null
+          requested_by?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       ranks: {
         Row: {
@@ -2248,6 +2836,7 @@ export type Database = {
         | "official"
         | "enquiry"
         | "storekeeper"
+        | "procurement_officer"
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
@@ -2398,6 +2987,7 @@ export const Constants = {
         "official",
         "enquiry",
         "storekeeper",
+        "procurement_officer",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],
