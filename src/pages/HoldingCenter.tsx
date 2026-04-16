@@ -103,6 +103,7 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
   const [search, setSearch] = useState("");
   const [filterGender, setFilterGender] = useState("all");
   const [filterRisk, setFilterRisk] = useState("all");
+  const [filterCountry, setFilterCountry] = useState("");
   const [intakeOpen, setIntakeOpen] = useState(false);
 
   const { data: records = [] } = useQuery({
@@ -115,8 +116,9 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
     if (q && !`${r.first_name} ${r.last_name} ${r.alias || ""} ${r.nationality || ""} ${r.crime_type}`.toLowerCase().includes(q)) return false;
     if (filterGender !== "all" && r.gender !== filterGender) return false;
     if (filterRisk !== "all" && r.risk_level !== filterRisk) return false;
+    if (filterCountry && (r.nationality || "").toLowerCase() !== filterCountry.toLowerCase() && (r.country_of_origin || "").toLowerCase() !== filterCountry.toLowerCase()) return false;
     return true;
-  }), [records, search, filterGender, filterRisk]);
+  }), [records, search, filterGender, filterRisk, filterCountry]);
 
   return (
     <div className="space-y-3">
@@ -133,6 +135,14 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
           <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All risk</SelectItem><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem><SelectItem value="critical">Critical</SelectItem></SelectContent>
         </Select>
+        <div className="w-[200px]">
+          <CountryCombobox value={filterCountry} onValueChange={setFilterCountry} placeholder="All countries" />
+        </div>
+        {filterCountry && (
+          <Button variant="ghost" size="sm" onClick={() => setFilterCountry("")} className="gap-1">
+            <X className="h-3 w-3" /> Clear country
+          </Button>
+        )}
         <ExportMenu getData={() => ({
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
