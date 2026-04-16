@@ -99,8 +99,8 @@ export default function Login() {
         <PasswordStrength password={password} />
       </div>
 
-      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading || getRemainingLockout() > 0}>
-        {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : (buttonText || "Sign In")}
+      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading}>
+        {isLoading ? "Signing in..." : (buttonText || "Sign In")}
       </Button>
       <div className="text-center">
         <ForgotPasswordDialog />
