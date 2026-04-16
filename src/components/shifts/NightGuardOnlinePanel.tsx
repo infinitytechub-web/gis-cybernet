@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shield, Wifi, WifiOff, History, CalendarIcon } from "lucide-react";
 import { format, startOfDay, endOfDay } from "date-fns";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -280,9 +281,16 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
                 <SelectItem value="offline">Offline only</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-8 text-xs gap-1 ml-auto" onClick={exportActivityCSV} disabled={filteredLog.length === 0}>
-              <Download className="h-3.5 w-3.5" /> Export CSV
-            </Button>
+            <ExportMenu
+              className="h-8 text-xs ml-auto"
+              disabled={filteredLog.length === 0}
+              getData={() => ({
+                title: "Night Guard Activity Log",
+                filename: `night_guard_activity_${filterDate ? format(filterDate, "yyyy-MM-dd") : "all"}`,
+                headers: ["Staff Name", "Staff ID", "Event", "Date & Time"],
+                rows: buildLogRows(),
+              })}
+            />
           </div>
 
           {/* Log entries */}

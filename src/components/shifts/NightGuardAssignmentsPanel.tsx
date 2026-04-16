@@ -165,7 +165,6 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
 
   if (nightGuardStaff.length === 0 && allStaff.length === 0) return null;
 
-  if (nightGuardStaff.length === 0 && allStaff.length === 0) return null;
 
   return (
     <Card className="border-primary/20">
