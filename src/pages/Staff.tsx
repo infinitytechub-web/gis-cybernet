@@ -65,6 +65,7 @@ export default function Staff() {
   const [weaponTrained, setWeaponTrained] = useState<string>("");
   const [weaponTrainingDate, setWeaponTrainingDate] = useState<string>("");
   const [bloodGroup, setBloodGroup] = useState<string>("");
+  const [trainingDesignation, setTrainingDesignation] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -119,6 +120,7 @@ export default function Staff() {
     setWeaponTrained("");
     setWeaponTrainingDate("");
     setBloodGroup("");
+    setTrainingDesignation("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -142,6 +144,7 @@ export default function Staff() {
     setWeaponTrained(s.weapon_trained === true ? "yes" : s.weapon_trained === false ? "no" : "");
     setWeaponTrainingDate(s.weapon_training_date || "");
     setBloodGroup(s.blood_group || "");
+    setTrainingDesignation(s.training_designation || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -191,6 +194,7 @@ export default function Staff() {
         weapon_trained: weaponTrained === "yes" ? true : weaponTrained === "no" ? false : null,
         weapon_training_date: weaponTrained === "yes" && weaponTrainingDate ? weaponTrainingDate : null,
         blood_group: bloodGroup || null,
+        training_designation: trainingDesignation || null,
       };
 
       if (editing) {
@@ -610,6 +614,19 @@ export default function Staff() {
                   disabled={weaponTrained !== "yes"}
                 />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Training Designation</Label>
+                <Select value={trainingDesignation} onValueChange={setTrainingDesignation}>
+                  <SelectTrigger><SelectValue placeholder="Select designation" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HUHUNYA">HUHUNYA</SelectItem>
+                    <SelectItem value="ITTRAS">ITTRAS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
