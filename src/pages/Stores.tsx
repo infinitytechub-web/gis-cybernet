@@ -283,6 +283,33 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newCatOpen} onOpenChange={(o) => { setNewCatOpen(o); if (!o) setNewCatName(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>New Category</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="new-cat-name">Category name *</Label>
+              <Input
+                id="new-cat-name"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="e.g. Stationery, Uniforms"
+                maxLength={60}
+                autoFocus
+                onKeyDown={e => { if (e.key === "Enter" && !createCat.isPending) createCat.mutate(); }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{newCatName.length}/60</p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setNewCatOpen(false)}>Cancel</Button>
+              <Button onClick={() => createCat.mutate()} disabled={createCat.isPending || !newCatName.trim()}>
+                {createCat.isPending ? "Creating…" : "Create"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
