@@ -98,7 +98,7 @@ export default function HoldingCenter() {
           <TabsTrigger value="analytics"><BarChart3 className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} onSelect={setSelected} /></TabsContent>
-        <TabsContent value="archive"><RecordsList status={["released", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} onSelect={setSelected} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
