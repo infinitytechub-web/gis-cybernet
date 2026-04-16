@@ -25,6 +25,7 @@ import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidge
 import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget";
 import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
 import GenderStatisticsWidget from "@/components/dashboard/GenderStatisticsWidget";
+import LowStockWidget from "@/components/dashboard/LowStockWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -307,6 +308,9 @@ export default function Dashboard() {
 
       {/* Front Desk Queue Widget */}
       <FrontDeskQueueWidget />
+
+      {/* Low Stock Alerts */}
+      <LowStockWidget />
 
       {/* System Health Widget */}
       {systemHealth && (
