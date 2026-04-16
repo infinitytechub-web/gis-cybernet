@@ -582,6 +582,9 @@ function HoldingAnalytics() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPI title="In Custody" value={inCustody} icon={Lock} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-950/40" />
+        <KPI title="On Bail" value={onBail} icon={UserCheck} color="text-cyan-600" bg="bg-cyan-50 dark:bg-cyan-950/40" />
+        <KPI title="Released" value={released} icon={UserCheck} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/40" />
+        <KPI title="Deported" value={deported} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
         <KPI title="Total Records" value={totalEver} icon={Activity} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/40" />
         <KPI title="Avg Custody" value={`${avgHrs} hrs`} icon={UserCheck} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/40" />
         <KPI title="Escapes" value={escaped} icon={AlertTriangle} color="text-red-700" bg="bg-red-100 dark:bg-red-950/50" />
