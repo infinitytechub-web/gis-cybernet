@@ -141,6 +141,26 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
     onError: (e: any) => toast.error(e.message),
   });
 
+  const createCat = useMutation({
+    mutationFn: async () => {
+      const name = newCatName.trim();
+      if (!name) throw new Error("Category name required");
+      if (name.length > 60) throw new Error("Name must be ≤ 60 characters");
+      if (cats.some((c: any) => c.name.toLowerCase() === name.toLowerCase())) throw new Error("Category already exists");
+      const { data, error } = await supabase.from("inventory_categories").insert({ name }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["inventory_categories"] });
+      setForm(p => ({ ...p, category_id: data.id }));
+      setNewCatName("");
+      setNewCatOpen(false);
+      toast.success(`Category "${data.name}" created`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
