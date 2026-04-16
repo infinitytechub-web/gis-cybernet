@@ -830,3 +830,40 @@ function KPI({ title, value, icon: Icon, color, bg }: any) {
     </Card>
   );
 }
+
+function InlineMinStockEditor({ value, onSave }: { value: number; onSave: (v: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(String(value));
+  useEffect(() => { setVal(String(value)); }, [value]);
+  if (editing) {
+    return (
+      <Input
+        type="number"
+        min={0}
+        autoFocus
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={() => {
+          setEditing(false);
+          const n = Number(val);
+          if (!isNaN(n) && n !== value && n >= 0) onSave(n);
+          else setVal(String(value));
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          if (e.key === "Escape") { setVal(String(value)); setEditing(false); }
+        }}
+        className="h-7 w-20 text-right text-xs ml-auto"
+      />
+    );
+  }
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className="px-2 py-0.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors min-w-[2rem] text-right"
+      title="Click to edit minimum stock"
+    >
+      {value}
+    </button>
+  );
+}
