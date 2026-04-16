@@ -23,7 +23,7 @@ import {
 } from "recharts";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { downloadFile } from "@/lib/download-utils";
+import { triggerDownload } from "@/lib/download-utils";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
