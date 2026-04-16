@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Upload, Users, CalendarCheck, CalendarOff, Trash2, Eye, CheckSquare } from "lucide-react";
+import { Download, Upload, Users, CalendarCheck, CalendarOff, Trash2, Eye, Printer, CheckSquare } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { toast } from "sonner";
