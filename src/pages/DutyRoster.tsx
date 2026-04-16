@@ -247,17 +247,57 @@ export default function DutyRoster() {
           </Button>
         </div>
 
-        <Select value={filterShift} onValueChange={setFilterShift}>
-          <SelectTrigger className="w-[150px] h-8 text-xs">
-            <SelectValue placeholder="All shifts" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Shifts</SelectItem>
-            {shifts.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 text-xs justify-between w-[180px] gap-1">
+              <span className="truncate">
+                {filterShift === "all"
+                  ? "All Shifts"
+                  : shifts.find((s) => s.id === filterShift)?.name ?? "All Shifts"}
+              </span>
+              <ChevronsUpDown className="h-3 w-3 opacity-50 shrink-0" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[240px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Search shift..." className="h-8 text-xs" />
+              <CommandList>
+                <CommandEmpty>No shift found.</CommandEmpty>
+                <CommandGroup>
+                  <ScrollAreaCmd className="max-h-[260px]">
+                    <CommandItem
+                      value="all shifts"
+                      onSelect={() => setFilterShift("all")}
+                      className="text-xs"
+                    >
+                      <Check className={cn("mr-2 h-3 w-3", filterShift === "all" ? "opacity-100" : "opacity-0")} />
+                      All Shifts
+                    </CommandItem>
+                    {shifts.map((s) => (
+                      <CommandItem
+                        key={s.id}
+                        value={`${s.name} ${s.pattern ?? ""} ${s.start_time ?? ""} ${s.end_time ?? ""}`}
+                        onSelect={() => setFilterShift(s.id)}
+                        className="text-xs"
+                      >
+                        <Check className={cn("mr-2 h-3 w-3", filterShift === s.id ? "opacity-100" : "opacity-0")} />
+                        <span className="flex-1 truncate">{s.name}</span>
+                        <span className="ml-2 text-[10px] text-muted-foreground">
+                          {s.start_time && s.end_time ? `${s.start_time}–${s.end_time}` : s.pattern}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </ScrollAreaCmd>
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        {filterShift !== "all" && (
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => setFilterShift("all")}>
+            <X className="h-3 w-3 mr-1" /> Clear
+          </Button>
+        )}
 
         <Select value={filterDept} onValueChange={setFilterDept}>
           <SelectTrigger className="w-[150px] h-8 text-xs">
