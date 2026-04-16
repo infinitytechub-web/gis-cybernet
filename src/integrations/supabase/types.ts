@@ -1946,6 +1946,7 @@ export type Database = {
           shift_group: string | null
           staff_id: string
           status: Database["public"]["Enums"]["staff_status"]
+          training_designation: string | null
           unit: string | null
           updated_at: string
           user_id: string | null
@@ -1971,6 +1972,7 @@ export type Database = {
           shift_group?: string | null
           staff_id: string
           status?: Database["public"]["Enums"]["staff_status"]
+          training_designation?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string | null
@@ -1996,6 +1998,7 @@ export type Database = {
           shift_group?: string | null
           staff_id?: string
           status?: Database["public"]["Enums"]["staff_status"]
+          training_designation?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string | null
