@@ -26,7 +26,7 @@ import OperationsMap from "@/components/enforcement/OperationsMap";
 import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { exportReport, ExportFormat } from "@/lib/export-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { format } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -630,7 +630,7 @@ export default function Enforcement() {
     setTimeout(() => printWindow.print(), 300);
   }, [totalOps, totalArrests, totalSuspects, criticalOps, filtered, officerPerformance, topLocations, typeBreakdown, period, startDate]);
 
-  const handleExport = useCallback((fmt: ExportFormat) => {
+  const buildEnforcementExportData = useCallback(() => {
     const headers = ["Date", "Type", "Location", "Severity", "Suspects", "Arrests", "Status", "Outcome"];
     const rows = searched.map(op => [
       format(new Date(op.operation_date), "dd MMM yyyy"),
@@ -642,30 +642,28 @@ export default function Enforcement() {
       op.status.replace(/_/g, " "),
       op.outcome || "—",
     ]);
-    exportReport(fmt, {
+    return {
       title: `Enforcement Report — ${period.charAt(0).toUpperCase() + period.slice(1)}`,
       subtitle: `Period: ${format(new Date(startDate), "dd MMM yyyy")} to ${format(new Date(), "dd MMM yyyy")} | ${searched.length} operations`,
       filename: `enforcement-report-${period}-${format(new Date(), "yyyy-MM-dd")}`,
       headers,
       rows,
-    });
-    toast.success(`${fmt.toUpperCase()} exported`);
+    };
   }, [searched, period, startDate]);
 
-  const handleOfficerExport = useCallback((fmt: ExportFormat) => {
+  const buildOfficerExportData = useCallback(() => {
     const headers = ["#", "Officer", "Operations", "Arrests", "Suspects", "Arrest Rate"];
     const rows = officerPerformance.map((o, i) => [
       String(i + 1), o.name, String(o.ops), String(o.arrests), String(o.suspects),
       `${o.suspects > 0 ? Math.round((o.arrests / o.suspects) * 100) : 0}%`,
     ]);
-    exportReport(fmt, {
+    return {
       title: `Officer Performance Report — ${period.charAt(0).toUpperCase() + period.slice(1)}`,
       subtitle: `Period: ${format(new Date(startDate), "dd MMM yyyy")} to ${format(new Date(), "dd MMM yyyy")}`,
       filename: `officer-performance-${period}-${format(new Date(), "yyyy-MM-dd")}`,
       headers,
       rows,
-    });
-    toast.success(`Officer report exported as ${fmt.toUpperCase()}`);
+    };
   }, [officerPerformance, period, startDate]);
 
   if (role && !ALLOWED_ROLES.includes(role)) {
@@ -687,17 +685,7 @@ export default function Enforcement() {
               <SelectItem value="annually">Annually</SelectItem>
             </SelectContent>
           </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon"><Download className="h-4 w-4" /></Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("pdf")}><FileText className="h-4 w-4 mr-2" /> Export PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("excel")}><FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("csv")}><FileText className="h-4 w-4 mr-2" /> Export CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("word")}><FileText className="h-4 w-4 mr-2" /> Export Word</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ExportMenu iconOnly variant="outline" size="icon" getData={buildEnforcementExportData} />
           <Button variant="outline" size="icon" onClick={handlePrint} title="Print Summary Report"><Printer className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => setShowPrintCols(true)} title="Print with Column Selection"><FileText className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["enforcement-ops"] })}><RefreshCw className="h-4 w-4" /></Button>
