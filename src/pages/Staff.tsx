@@ -12,13 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Download, FileText, FileSpreadsheet, Lock } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
@@ -253,59 +251,12 @@ export default function Staff() {
     return list;
   }, [staff, search, rankFilter, deptFilter, statusFilter, sortField, sortDir]);
 
-  const exportStaffCSV = () => {
-    if (filtered.length === 0) { toast.error("No data to export"); return; }
-    const headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"];
-    const rows = filtered.map(s => [
-      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "", s.departments?.name ?? "",
-      s.unit ?? "", s.shift_group ?? "", s.gender ?? "", s.status, s.phone ?? "",
+  const buildStaffExportRows = () =>
+    filtered.map((s) => [
+      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
+      s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—",
+      s.gender ?? "—", s.status, s.phone ?? "—",
     ]);
-    const csv = [headers.join(","), ...rows.map(r => r.map(c => `"${(c ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
-    downloadCSVString(csv, `staff_export_${format(new Date(), "yyyy-MM-dd")}.csv`);
-    toast.success("CSV downloaded");
-  };
-
-  const exportStaffPDF = () => {
-    if (filtered.length === 0) { toast.error("No data to export"); return; }
-    const doc = new jsPDF({ orientation: "landscape" });
-    doc.setFontSize(16); doc.setTextColor(0, 102, 153);
-    doc.text("GIS Amasaman Sector Command", 14, 15);
-    doc.setFontSize(12); doc.setTextColor(60, 60, 60);
-    doc.text("Staff / Employee Report", 14, 23);
-    doc.setFontSize(9); doc.setTextColor(120, 120, 120);
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Records: ${filtered.length}`, 14, 29);
-    const headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Status", "Phone"];
-    const rows = filtered.map(s => [
-      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—", s.departments?.name ?? "—",
-      s.unit ?? "—", s.shift_group ?? "—", s.status, s.phone ?? "—",
-    ]);
-    autoTable(doc, {
-      head: [headers], body: rows, startY: 34,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [0, 102, 153], textColor: 255, fontStyle: "bold" },
-      alternateRowStyles: { fillColor: [240, 248, 255] },
-      margin: { left: 14, right: 14 },
-    });
-    doc.save(`staff_export_${format(new Date(), "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF downloaded");
-  };
-
-  const exportStaffXLSX = async () => {
-    if (filtered.length === 0) { toast.error("No data to export"); return; }
-    const XLSX = await import("xlsx");
-    const headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"];
-    const rows = filtered.map(s => ({
-      "Staff ID": s.staff_id, "Last Name": s.last_name, "First Name": s.first_name,
-      "Rank": s.ranks?.abbreviation ?? "", "Department": s.departments?.name ?? "",
-      "Unit": s.unit ?? "", "Shift": s.shift_group ?? "", "Gender": s.gender ?? "",
-      "Status": s.status, "Phone": s.phone ?? "",
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Staff");
-    XLSX.writeFile(wb, `staff_export_${format(new Date(), "yyyy-MM-dd")}.xlsx`);
-    toast.success("Excel downloaded");
-  };
 
   const statusColor = (s: string) => {
     switch (s) {
