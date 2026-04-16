@@ -24,11 +24,20 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const PIE_COLORS = ["hsl(var(--primary))", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6"];
 const STATUS_COLORS: Record<string, string> = {
   in_custody: "bg-rose-100 text-rose-800 dark:bg-rose-950/40",
+  bail: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40",
   released: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40",
+  deported: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
   transferred: "bg-blue-100 text-blue-800 dark:bg-blue-950/40",
   court: "bg-amber-100 text-amber-800 dark:bg-amber-950/40",
   escaped: "bg-red-200 text-red-900 dark:bg-red-950/60",
 };
+const RELEASE_OUTCOMES = [
+  { value: "released", label: "Released" },
+  { value: "bail", label: "Bail Granted" },
+  { value: "deported", label: "Deported" },
+  { value: "transferred", label: "Transferred" },
+  { value: "court", label: "Sent to Court" },
+];
 const RISK_COLORS: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
   medium: "bg-amber-100 text-amber-800",
@@ -89,7 +98,7 @@ export default function HoldingCenter() {
           <TabsTrigger value="analytics"><BarChart3 className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} onSelect={setSelected} /></TabsContent>
-        <TabsContent value="archive"><RecordsList status={["released", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} onSelect={setSelected} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
@@ -317,12 +326,12 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
   });
 
   const release = useMutation({
-    mutationFn: async (reason: string) => {
+    mutationFn: async ({ outcome, reason }: { outcome: string; reason: string }) => {
       if (!canCommand) throw new Error("Only command can release");
-      const { error } = await supabase.from("detention_records").update({ status: "released", released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
+      const { error } = await supabase.from("detention_records").update({ status: outcome, released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Detainee released"); onClose(); },
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${vars.outcome.replace(/_/g, " ")}`); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -382,7 +391,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="NoK Phone" value={record.next_of_kin_phone} />
               <Field label="Emergency Contact" value={record.emergency_contact} full />
             </Section>
-            {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(reason) => release.mutate(reason)} pending={release.isPending} />}
+            {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(outcome, reason) => release.mutate({ outcome, reason })} pending={release.isPending} />}
           </TabsContent>
 
           <TabsContent value="property"><PropertyLog records={detail?.property || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody"} /></TabsContent>
@@ -402,19 +411,31 @@ function Field({ label, value, full }: { label: string; value: any; full?: boole
   return <div className={full ? "col-span-2" : ""}><div className="text-xs text-muted-foreground">{label}</div><div className="font-medium capitalize">{value || "—"}</div></div>;
 }
 
-function ReleaseAction({ onRelease, pending }: { onRelease: (r: string) => void; pending: boolean }) {
+function ReleaseAction({ onRelease, pending }: { onRelease: (outcome: string, reason: string) => void; pending: boolean }) {
   const [open, setOpen] = useState(false);
+  const [outcome, setOutcome] = useState("released");
   const [reason, setReason] = useState("");
   return (
     <div className="border-t pt-3">
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button className="w-full bg-emerald-600 hover:bg-emerald-700">Release Detainee</Button></DialogTrigger>
+        <DialogTrigger asChild><Button className="w-full bg-emerald-600 hover:bg-emerald-700">Close Custody / Release</Button></DialogTrigger>
         <DialogContent>
-          <DialogHeader><DialogTitle>Release Detainee</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Update Custody Status</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Label>Reason for release *</Label>
-            <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted, charges dropped, transferred to court…" />
-            <Button onClick={() => { if (reason.trim()) { onRelease(reason); setOpen(false); } else toast.error("Reason required"); }} disabled={pending} className="w-full bg-emerald-600 hover:bg-emerald-700">{pending ? "Releasing…" : "Confirm Release"}</Button>
+            <div>
+              <Label>Outcome *</Label>
+              <Select value={outcome} onValueChange={setOutcome}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RELEASE_OUTCOMES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Reason / Notes *</Label>
+              <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted on GHS 10,000, deported to Nigeria via KIA, transferred to court for hearing…" />
+            </div>
+            <Button onClick={() => { if (reason.trim()) { onRelease(outcome, reason); setOpen(false); } else toast.error("Reason required"); }} disabled={pending} className="w-full bg-emerald-600 hover:bg-emerald-700">{pending ? "Saving…" : "Confirm"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -532,6 +553,8 @@ function HoldingAnalytics() {
   const inCustody = data.filter((r: any) => r.status === "in_custody").length;
   const totalEver = data.length;
   const released = data.filter((r: any) => r.status === "released").length;
+  const onBail = data.filter((r: any) => r.status === "bail").length;
+  const deported = data.filter((r: any) => r.status === "deported").length;
   const escaped = data.filter((r: any) => r.status === "escaped").length;
 
   const groupBy = (key: string) => {
@@ -559,6 +582,9 @@ function HoldingAnalytics() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPI title="In Custody" value={inCustody} icon={Lock} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-950/40" />
+        <KPI title="On Bail" value={onBail} icon={UserCheck} color="text-cyan-600" bg="bg-cyan-50 dark:bg-cyan-950/40" />
+        <KPI title="Released" value={released} icon={UserCheck} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/40" />
+        <KPI title="Deported" value={deported} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
         <KPI title="Total Records" value={totalEver} icon={Activity} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/40" />
         <KPI title="Avg Custody" value={`${avgHrs} hrs`} icon={UserCheck} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/40" />
         <KPI title="Escapes" value={escaped} icon={AlertTriangle} color="text-red-700" bg="bg-red-100 dark:bg-red-950/50" />
