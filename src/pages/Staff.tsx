@@ -66,6 +66,7 @@ export default function Staff() {
   const [weaponTrainingDate, setWeaponTrainingDate] = useState<string>("");
   const [bloodGroup, setBloodGroup] = useState<string>("");
   const [trainingDesignation, setTrainingDesignation] = useState<string>("");
+  const [staffCategory, setStaffCategory] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -121,6 +122,7 @@ export default function Staff() {
     setWeaponTrainingDate("");
     setBloodGroup("");
     setTrainingDesignation("");
+    setStaffCategory("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -145,6 +147,7 @@ export default function Staff() {
     setWeaponTrainingDate(s.weapon_training_date || "");
     setBloodGroup(s.blood_group || "");
     setTrainingDesignation(s.training_designation || "");
+    setStaffCategory(s.staff_category || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -195,6 +198,7 @@ export default function Staff() {
         weapon_training_date: weaponTrained === "yes" && weaponTrainingDate ? weaponTrainingDate : null,
         blood_group: bloodGroup || null,
         training_designation: trainingDesignation || null,
+        staff_category: staffCategory || null,
       };
 
       if (editing) {
@@ -571,6 +575,16 @@ export default function Staff() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Category</Label>
+                <Select value={staffCategory} onValueChange={setStaffCategory}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Cadet">Cadet</SelectItem>
+                    <SelectItem value="Recruit">Recruit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Intake (1–100)</Label>
                 <Select value={intake} onValueChange={setIntake}>

@@ -1944,6 +1944,7 @@ export type Database = {
           photo_url: string | null
           rank_id: string | null
           shift_group: string | null
+          staff_category: string | null
           staff_id: string
           status: Database["public"]["Enums"]["staff_status"]
           training_designation: string | null
@@ -1970,6 +1971,7 @@ export type Database = {
           photo_url?: string | null
           rank_id?: string | null
           shift_group?: string | null
+          staff_category?: string | null
           staff_id: string
           status?: Database["public"]["Enums"]["staff_status"]
           training_designation?: string | null
@@ -1996,6 +1998,7 @@ export type Database = {
           photo_url?: string | null
           rank_id?: string | null
           shift_group?: string | null
+          staff_category?: string | null
           staff_id?: string
           status?: Database["public"]["Enums"]["staff_status"]
           training_designation?: string | null
