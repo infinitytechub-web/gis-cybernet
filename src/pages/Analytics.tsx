@@ -21,12 +21,9 @@ import {
   Shield, FileText, Download, Plus, Activity, PieChart as PieIcon,
   BarChart3, Clock
 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
@@ -291,6 +288,22 @@ export default function Analytics() {
     subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`,
   });
 
+  const getExecutiveSummaryData = () => ({
+    title: "Executive Summary Report",
+    filename: `GIS_ASC_Executive_Summary_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Metric", "Value"],
+    rows: [
+      ["Total Staff", String(totalStaff)],
+      ["Active Staff", String(activeStaff)],
+      ["Attendance Rate", `${avgAttendance}%`],
+      ["Open Incidents", String(openIncidents)],
+      ["Pending Leave Requests", String(leaveRequests.filter((l: any) => l.status === "pending").length)],
+      ["Expired Documents", String(complianceSummary.expiredDocs)],
+      ["Expired Certifications", String(complianceSummary.expiredCerts)],
+    ],
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`,
+  });
+
   const getComplianceData = () => ({
     title: "Compliance Report",
     filename: `GIS_ASC_Compliance_Report_${format(new Date(), "yyyy-MM-dd")}`,
@@ -303,16 +316,6 @@ export default function Analytics() {
     subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
-  const handleExportSummary = (fmt: ExportFormat) => {
-    exportReport(fmt, getExecutiveSummaryData());
-    toast.success(`Executive summary (${getFormatLabel(fmt)}) downloaded`);
-  };
-
-  const handleExportCompliance = (fmt: ExportFormat) => {
-    exportReport(fmt, getComplianceData());
-    toast.success(`Compliance report (${getFormatLabel(fmt)}) downloaded`);
-  };
-
   const getDeptAttendanceData = () => ({
     title: "Department Attendance Breakdown",
     filename: `GIS_ASC_Dept_Attendance_${format(new Date(), "yyyy-MM-dd")}`,
@@ -320,11 +323,6 @@ export default function Analytics() {
     rows: deptAttendance.map((d) => [d.name, String(d.present), String(d.late), String(d.absent), String(d.total), `${d.rate}%`]),
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
-
-  const handleExportDeptAttendance = (fmt: ExportFormat) => {
-    exportReport(fmt, getDeptAttendanceData());
-    toast.success(`Department attendance report (${getFormatLabel(fmt)}) downloaded`);
-  };
 
   const getAttendanceTrendData = () => ({
     title: "Attendance Trend Analysis",
@@ -334,11 +332,6 @@ export default function Analytics() {
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
-  const handleExportAttendanceTrend = (fmt: ExportFormat) => {
-    exportReport(fmt, getAttendanceTrendData());
-    toast.success(`Attendance trend report (${getFormatLabel(fmt)}) downloaded`);
-  };
-
   const getWeeklyComparisonData = () => ({
     title: "Week-over-Week Attendance Comparison",
     filename: `GIS_ASC_Weekly_Comparison_${format(new Date(), "yyyy-MM-dd")}`,
@@ -347,11 +340,6 @@ export default function Analytics() {
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
-  const handleExportWeeklyComparison = (fmt: ExportFormat) => {
-    exportReport(fmt, getWeeklyComparisonData());
-    toast.success(`Weekly comparison report (${getFormatLabel(fmt)}) downloaded`);
-  };
-
   const getDeptSparklineData = () => ({
     title: "Department Rate Trends",
     filename: `GIS_ASC_Dept_Rate_Trends_${format(new Date(), "yyyy-MM-dd")}`,
@@ -359,11 +347,6 @@ export default function Analytics() {
     rows: deptSparklines.map((d) => [d.dept, `${d.latest}%`, d.trend === "up" ? "↑" : "↓", ...d.points.map(p => `${p.rate}%`)]),
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
-
-  const handleExportDeptSparklines = (fmt: ExportFormat) => {
-    exportReport(fmt, getDeptSparklineData());
-    toast.success(`Department rate trends report (${getFormatLabel(fmt)}) downloaded`);
-  };
 
   return (
     <div className="space-y-6">
