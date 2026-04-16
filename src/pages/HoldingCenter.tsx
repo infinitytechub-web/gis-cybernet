@@ -411,19 +411,31 @@ function Field({ label, value, full }: { label: string; value: any; full?: boole
   return <div className={full ? "col-span-2" : ""}><div className="text-xs text-muted-foreground">{label}</div><div className="font-medium capitalize">{value || "—"}</div></div>;
 }
 
-function ReleaseAction({ onRelease, pending }: { onRelease: (r: string) => void; pending: boolean }) {
+function ReleaseAction({ onRelease, pending }: { onRelease: (outcome: string, reason: string) => void; pending: boolean }) {
   const [open, setOpen] = useState(false);
+  const [outcome, setOutcome] = useState("released");
   const [reason, setReason] = useState("");
   return (
     <div className="border-t pt-3">
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild><Button className="w-full bg-emerald-600 hover:bg-emerald-700">Release Detainee</Button></DialogTrigger>
+        <DialogTrigger asChild><Button className="w-full bg-emerald-600 hover:bg-emerald-700">Close Custody / Release</Button></DialogTrigger>
         <DialogContent>
-          <DialogHeader><DialogTitle>Release Detainee</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Update Custody Status</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Label>Reason for release *</Label>
-            <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted, charges dropped, transferred to court…" />
-            <Button onClick={() => { if (reason.trim()) { onRelease(reason); setOpen(false); } else toast.error("Reason required"); }} disabled={pending} className="w-full bg-emerald-600 hover:bg-emerald-700">{pending ? "Releasing…" : "Confirm Release"}</Button>
+            <div>
+              <Label>Outcome *</Label>
+              <Select value={outcome} onValueChange={setOutcome}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RELEASE_OUTCOMES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Reason / Notes *</Label>
+              <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted on GHS 10,000, deported to Nigeria via KIA, transferred to court for hearing…" />
+            </div>
+            <Button onClick={() => { if (reason.trim()) { onRelease(outcome, reason); setOpen(false); } else toast.error("Reason required"); }} disabled={pending} className="w-full bg-emerald-600 hover:bg-emerald-700">{pending ? "Saving…" : "Confirm"}</Button>
           </div>
         </DialogContent>
       </Dialog>
