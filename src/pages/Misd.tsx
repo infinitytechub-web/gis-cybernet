@@ -346,6 +346,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
           headers: ["Number", "Title", "Type", "Severity", "Status", "Reported", "Resolved"],
           rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-"]),
         })} />
+        <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
       </div>
 
