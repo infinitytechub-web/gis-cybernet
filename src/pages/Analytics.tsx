@@ -271,23 +271,6 @@ export default function Analytics() {
     refetchIncidents();
   };
 
-  // Build executive summary data
-  const getExecutiveSummaryData = () => ({
-    title: "Executive Summary Report",
-    filename: `GIS_ASC_Executive_Summary_${format(new Date(), "yyyy-MM-dd")}`,
-    headers: ["Metric", "Value"],
-    rows: [
-      ["Total Staff", String(totalStaff)],
-      ["Active Staff", String(activeStaff)],
-      ["Attendance Rate", `${avgAttendance}%`],
-      ["Open Incidents", String(openIncidents)],
-      ["Pending Leave Requests", String(leaveRequests.filter((l: any) => l.status === "pending").length)],
-      ["Expired Documents", String(complianceSummary.expiredDocs)],
-      ["Expired Certifications", String(complianceSummary.expiredCerts)],
-    ],
-    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`,
-  });
-
   const getExecutiveSummaryData = () => ({
     title: "Executive Summary Report",
     filename: `GIS_ASC_Executive_Summary_${format(new Date(), "yyyy-MM-dd")}`,
