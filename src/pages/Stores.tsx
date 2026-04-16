@@ -175,6 +175,19 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
 
   return (
     <div className="space-y-3">
+      {/* Low Stock Summary Banner */}
+      {(lowStockCount > 0 || outOfStockCount > 0) && (
+        <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
+          <CardContent className="p-3 flex items-center gap-3 flex-wrap">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <span className="text-sm font-medium">Stock Alert:</span>
+            {outOfStockCount > 0 && <Badge variant="destructive">{outOfStockCount} out of stock</Badge>}
+            {lowStockCount > 0 && <Badge className="bg-amber-600 hover:bg-amber-700 text-white">{lowStockCount} low stock</Badge>}
+            <Button size="sm" variant="outline" className="ml-auto" onClick={() => setFilterStock("low")}>View low stock</Button>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         <Input placeholder="Search name or SKU…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
         <Select value={filterCat} onValueChange={setFilterCat}>
@@ -200,22 +213,32 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
             <Table className="min-w-[800px]">
               <TableHeader><TableRow>
                 <TableHead>Item</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead>
-                <TableHead className="text-right">Qty</TableHead><TableHead className="text-right">Min</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Min Stock {canManage && <span className="text-[10px] font-normal text-muted-foreground">(click to edit)</span>}</TableHead>
                 <TableHead>Location</TableHead><TableHead>Status</TableHead>{canManage && <TableHead></TableHead>}
               </TableRow></TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={canManage ? 8 : 7} className="text-center py-6 text-muted-foreground">No items</TableCell></TableRow>
                 ) : filtered.map((i: any) => {
-                  const low = Number(i.qty_on_hand) <= Number(i.min_stock);
+                  const low = Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0;
                   const out = Number(i.qty_on_hand) <= 0;
                   return (
-                    <TableRow key={i.id}>
+                    <TableRow key={i.id} className={out ? "bg-destructive/5" : low ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}>
                       <TableCell className="font-medium">{i.name}</TableCell>
                       <TableCell className="font-mono text-xs">{i.sku || "—"}</TableCell>
                       <TableCell>{i.inventory_categories?.name || <span className="text-muted-foreground">—</span>}</TableCell>
-                      <TableCell className="text-right font-bold">{Number(i.qty_on_hand)} <span className="text-xs text-muted-foreground font-normal">{i.unit}</span></TableCell>
-                      <TableCell className="text-right text-muted-foreground">{Number(i.min_stock)}</TableCell>
+                      <TableCell className={`text-right font-bold ${out ? "text-destructive" : low ? "text-amber-700 dark:text-amber-400" : ""}`}>{Number(i.qty_on_hand)} <span className="text-xs text-muted-foreground font-normal">{i.unit}</span></TableCell>
+                      <TableCell className="text-right">
+                        {canManage ? (
+                          <InlineMinStockEditor
+                            value={Number(i.min_stock)}
+                            onSave={(v) => updateMinStock.mutate({ id: i.id, min_stock: v })}
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">{Number(i.min_stock)}</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">{i.location || "—"}</TableCell>
                       <TableCell>
                         {out ? <Badge variant="destructive">Out</Badge> :
