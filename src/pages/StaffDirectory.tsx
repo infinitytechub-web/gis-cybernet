@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
+import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, FolderLock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
 
@@ -214,6 +214,14 @@ export default function StaffDirectory() {
                             <Phone className="h-3 w-3" /> {s.phone}
                           </a>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 h-7 text-xs gap-1 w-full"
+                          onClick={() => navigate(`/staff/${s.id}?tab=documents`)}
+                        >
+                          <FolderLock className="h-3 w-3" /> Document Vault
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
