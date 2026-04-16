@@ -6,15 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Shield, Wifi, WifiOff, History, Download, CalendarIcon } from "lucide-react";
+import { Shield, Wifi, WifiOff, History, CalendarIcon } from "lucide-react";
 import { format, startOfDay, endOfDay } from "date-fns";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { notifySupervisorsOfGuardLogin } from "@/lib/nightguard-notifications";
 
 interface Props {
@@ -85,21 +84,14 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
     ? activityLog
     : activityLog.filter((e: any) => e.event_type === filterType);
 
-  // CSV export
-  const exportActivityCSV = () => {
-    const rows = [
-      ["Staff Name", "Staff ID", "Event", "Date & Time"],
-      ...filteredLog.map((e: any) => [
-        e.staff_name,
-        e.staff_id,
-        e.event_type === "online" ? "Came Online" : "Went Offline",
-        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((c: string) => `"${c}"`).join(",")).join("\n");
-    downloadCSVString(csv, `night_guard_activity_${filterDate ? format(filterDate, "yyyy-MM-dd") : "all"}.csv`);
-    toast.success("CSV downloaded");
-  };
+  // Build report rows for export
+  const buildLogRows = () =>
+    filteredLog.map((e: any) => [
+      e.staff_name,
+      e.staff_id,
+      e.event_type === "online" ? "Came Online" : "Went Offline",
+      format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+    ]);
 
   // Track previous online guard staffIds for change detection
   const prevOnlineRef = useRef<Set<string>>(new Set());
