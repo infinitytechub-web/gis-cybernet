@@ -473,6 +473,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
           headers: ["Type", "Indicator", "Threat Level", "Category", "Active", "First Seen"],
           rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", format(new Date(i.first_seen), "yyyy-MM-dd")]),
         })} />
+        <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
       </div>
 
@@ -588,7 +589,8 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
           headers: ["Case #", "Title", "Type", "Status", "Priority", "Opened", "Referred"],
           rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.referred_to_agency || "-"]),
         })} />
-        {canCreate && <Button onClick={() => openDialog()} className="bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
+        <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
+        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
       </div>
 
       <Card className="border-purple-200 dark:border-purple-900">
