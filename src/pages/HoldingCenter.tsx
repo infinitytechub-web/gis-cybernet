@@ -391,7 +391,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="NoK Phone" value={record.next_of_kin_phone} />
               <Field label="Emergency Contact" value={record.emergency_contact} full />
             </Section>
-            {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(reason) => release.mutate(reason)} pending={release.isPending} />}
+            {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(outcome, reason) => release.mutate({ outcome, reason })} pending={release.isPending} />}
           </TabsContent>
 
           <TabsContent value="property"><PropertyLog records={detail?.property || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody"} /></TabsContent>
@@ -541,6 +541,8 @@ function HoldingAnalytics() {
   const inCustody = data.filter((r: any) => r.status === "in_custody").length;
   const totalEver = data.length;
   const released = data.filter((r: any) => r.status === "released").length;
+  const onBail = data.filter((r: any) => r.status === "bail").length;
+  const deported = data.filter((r: any) => r.status === "deported").length;
   const escaped = data.filter((r: any) => r.status === "escaped").length;
 
   const groupBy = (key: string) => {
