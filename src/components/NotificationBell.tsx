@@ -125,7 +125,7 @@ export function NotificationBell() {
           icon: n.type === "leave" ? "📋" : n.type === "posting" ? "🔄" : n.type === "shift" ? "⏰" : n.type === "visa" ? "🛂" : "ℹ️",
           action: {
             label: "View",
-            onClick: () => navigate(typeRoutes[n.type] || "/"),
+            onClick: () => navigate(routeForNotification(n)),
           },
           duration: 6000,
         });
@@ -191,7 +191,7 @@ export function NotificationBell() {
 
   const handleClick = (n: any) => {
     if (!n.is_read) markAsReadMutation.mutate(n.id);
-    navigate(typeRoutes[n.type] || "/");
+    navigate(routeForNotification(n));
     setOpen(false);
   };
 
