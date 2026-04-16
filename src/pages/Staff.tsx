@@ -449,12 +449,19 @@ export default function Staff() {
                     {isAdmin && (
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)} title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
+                          <AdminAccountActions
+                            profileId={s.id}
+                            staffId={s.staff_id}
+                            fullName={`${s.first_name} ${s.last_name}`}
+                            accountLocked={s.account_locked}
+                            hasUserId={!!s.user_id}
+                          />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </AlertDialogTrigger>
