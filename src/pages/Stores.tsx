@@ -88,6 +88,8 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "" });
+  const [newCatOpen, setNewCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["inventory_items"],
@@ -136,6 +138,26 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("inventory_items").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["inventory_items"] }); toast.success("Deleted"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const createCat = useMutation({
+    mutationFn: async () => {
+      const name = newCatName.trim();
+      if (!name) throw new Error("Category name required");
+      if (name.length > 60) throw new Error("Name must be ≤ 60 characters");
+      if (cats.some((c: any) => c.name.toLowerCase() === name.toLowerCase())) throw new Error("Category already exists");
+      const { data, error } = await supabase.from("inventory_categories").insert({ name }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["inventory_categories"] });
+      setForm(p => ({ ...p, category_id: data.id }));
+      setNewCatName("");
+      setNewCatOpen(false);
+      toast.success(`Category "${data.name}" created`);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -220,9 +242,18 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Category</Label>
-                <Select value={form.category_id} onValueChange={v => setForm(p => ({ ...p, category_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-                  <SelectContent>{cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <Select value={form.category_id || "__none__"} onValueChange={v => {
+                  if (v === "__create__") { setNewCatOpen(true); return; }
+                  setForm(p => ({ ...p, category_id: v === "__none__" ? "" : v }));
+                }}>
+                  <SelectTrigger aria-label="Item category"><SelectValue placeholder="Select category…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__"><span className="text-muted-foreground">— None —</span></SelectItem>
+                    {cats.length === 0 ? (
+                      <div className="px-2 py-3 text-xs text-muted-foreground text-center">No categories yet</div>
+                    ) : cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    {canManage && <SelectItem value="__create__"><span className="text-primary font-medium">+ Create new category…</span></SelectItem>}
+                  </SelectContent>
                 </Select>
               </div>
               <div><Label>Unit</Label>
@@ -249,6 +280,33 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">{save.isPending ? "Saving…" : editing ? "Update" : "Create"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={newCatOpen} onOpenChange={(o) => { setNewCatOpen(o); if (!o) setNewCatName(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>New Category</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="new-cat-name">Category name *</Label>
+              <Input
+                id="new-cat-name"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="e.g. Stationery, Uniforms"
+                maxLength={60}
+                autoFocus
+                onKeyDown={e => { if (e.key === "Enter" && !createCat.isPending) createCat.mutate(); }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{newCatName.length}/60</p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setNewCatOpen(false)}>Cancel</Button>
+              <Button onClick={() => createCat.mutate()} disabled={createCat.isPending || !newCatName.trim()}>
+                {createCat.isPending ? "Creating…" : "Create"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
