@@ -408,6 +408,30 @@ export type Database = {
           },
         ]
       }
+      failed_login_attempts: {
+        Row: {
+          attempted_at: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          staff_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          staff_id: string
+        }
+        Update: {
+          attempted_at?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          staff_id?: string
+        }
+        Relationships: []
+      }
       front_desk_audit_log: {
         Row: {
           action: string
@@ -1616,7 +1640,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_reset_failed_attempts: {
+        Args: { _staff_id: string }
+        Returns: undefined
+      }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      clear_failed_login_attempts: {
+        Args: { _staff_id: string }
+        Returns: undefined
+      }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -1626,10 +1658,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff_locked: { Args: { _staff_id: string }; Returns: boolean }
       is_supervisor_for_profile: {
         Args: { _profile_id: string; _user_id: string }
         Returns: boolean
       }
+      record_failed_login: { Args: { _staff_id: string }; Returns: Json }
       verify_otp: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {

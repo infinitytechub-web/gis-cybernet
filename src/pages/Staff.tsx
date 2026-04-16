@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Download, FileText, FileSpreadsheet, Lock } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { downloadCSVString } from "@/lib/download-utils";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
+import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
@@ -443,17 +444,31 @@ export default function Staff() {
                     <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
                     <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
+                        {s.account_locked && (
+                          <span title="Account locked" className="inline-flex items-center text-destructive">
+                            <Lock className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     {isAdmin && (
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)} title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
+                          <AdminAccountActions
+                            profileId={s.id}
+                            staffId={s.staff_id}
+                            fullName={`${s.first_name} ${s.last_name}`}
+                            accountLocked={s.account_locked}
+                            hasUserId={!!s.user_id}
+                          />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </AlertDialogTrigger>

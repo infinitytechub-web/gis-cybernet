@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,63 +14,73 @@ import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 
 import gisLogo from "@/assets/gis-logo.jpeg";
 
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 60_000;
-
 export default function Login() {
   const [staffId, setStaffId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [lockoutEnd, setLockoutEnd] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("staff");
-  const failCount = useRef(0);
+  const [, setActiveTab] = useState("staff");
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const getRemainingLockout = useCallback(() => {
-    if (!lockoutEnd) return 0;
-    return Math.max(0, Math.ceil((lockoutEnd - Date.now()) / 1000));
-  }, [lockoutEnd]);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const remaining = getRemainingLockout();
-    if (remaining > 0) {
-      toast({ title: "Too many attempts", description: `Account temporarily locked. Try again in ${remaining} seconds.`, variant: "destructive" });
-      return;
-    }
-
     if (!staffId.trim() || !password.trim()) return;
     setIsLoading(true);
     try {
-      // Look up the auth email from the Staff/Admin ID (same lookup for both tabs)
-      const { data, error } = await supabase.rpc("get_email_by_staff_id", { _staff_id: staffId.trim() });
-      if (error || !data) {
+      const trimmedId = staffId.trim();
+
+      // Check server-side lockout first
+      const { data: locked } = await supabase.rpc("is_staff_locked", { _staff_id: trimmedId });
+      if (locked === true) {
+        toast({
+          title: "Account Locked",
+          description: "Too many failed attempts. Please wait 60 seconds or contact an administrator.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Look up the auth email from the Staff/Admin ID
+      const { data: emailData, error: emailErr } = await supabase.rpc("get_email_by_staff_id", { _staff_id: trimmedId });
+      if (emailErr || !emailData) {
+        // Record as failed attempt to prevent enumeration timing attacks
+        await supabase.rpc("record_failed_login", { _staff_id: trimmedId });
         throw new Error("Invalid ID or password");
       }
-      const email: string = data;
 
-      await signIn(email, password);
-      failCount.current = 0;
-      setLockoutEnd(null);
-      navigate("/");
-    } catch {
-      failCount.current += 1;
-      if (failCount.current >= MAX_ATTEMPTS) {
-        const until = Date.now() + LOCKOUT_DURATION_MS;
-        setLockoutEnd(until);
-        toast({ title: "Account Temporarily Locked", description: "Too many failed attempts. Please wait 60 seconds.", variant: "destructive" });
-        setTimeout(() => { failCount.current = 0; setLockoutEnd(null); }, LOCKOUT_DURATION_MS);
-      } else {
-        toast({ title: "Login Failed", description: `Invalid Staff ID or password. ${MAX_ATTEMPTS - failCount.current} attempts remaining.`, variant: "destructive" });
+      try {
+        await signIn(emailData as string, password);
+        // Clear failed attempts on success
+        await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
+        navigate("/");
+      } catch (signInErr) {
+        // Record failed attempt server-side
+        const { data: result } = await supabase.rpc("record_failed_login", { _staff_id: trimmedId });
+        const r = result as { attempts?: number; locked?: boolean; remaining?: number } | null;
+        if (r?.locked) {
+          toast({
+            title: "Account Temporarily Locked",
+            description: "Too many failed attempts. Please wait 60 seconds or contact an administrator.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: `Invalid Staff ID or password. ${r?.remaining ?? 0} attempts remaining.`,
+            variant: "destructive",
+          });
+        }
+        throw signInErr;
       }
+    } catch {
+      // Suppressed; handled above
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [staffId, password, signIn, navigate, toast]);
 
   const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string) => (
     <form onSubmit={handleLogin} className="space-y-4">
@@ -89,8 +99,8 @@ export default function Login() {
         <PasswordStrength password={password} />
       </div>
 
-      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading || getRemainingLockout() > 0}>
-        {isLoading ? "Signing in..." : getRemainingLockout() > 0 ? `Locked (${getRemainingLockout()}s)` : (buttonText || "Sign In")}
+      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading}>
+        {isLoading ? "Signing in..." : (buttonText || "Sign In")}
       </Button>
       <div className="text-center">
         <ForgotPasswordDialog />
