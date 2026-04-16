@@ -189,15 +189,15 @@ export default function Procurement() {
 
       <Tabs defaultValue="analytics" className="space-y-4">
         <ScrollArea className="w-full whitespace-nowrap">
-          <TabsList className="inline-flex">
-            <TabsTrigger value="analytics"><TrendingUp className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
-            <TabsTrigger value="requisitions"><FileText className="h-4 w-4 mr-1" />Requisitions</TabsTrigger>
-            <TabsTrigger value="rfqs"><FileText className="h-4 w-4 mr-1" />RFQs</TabsTrigger>
-            <TabsTrigger value="pos"><ShoppingCart className="h-4 w-4 mr-1" />Purchase Orders</TabsTrigger>
-            <TabsTrigger value="invoices"><Receipt className="h-4 w-4 mr-1" />Invoices</TabsTrigger>
-            <TabsTrigger value="contracts"><FileSignature className="h-4 w-4 mr-1" />Contracts</TabsTrigger>
-            <TabsTrigger value="vendors"><Briefcase className="h-4 w-4 mr-1" />Vendors</TabsTrigger>
-            <TabsTrigger value="documents"><Package className="h-4 w-4 mr-1" />Document Vault</TabsTrigger>
+          <TabsList className="inline-flex bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/50 p-1">
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><TrendingUp className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Analytics</TabsTrigger>
+            <TabsTrigger value="requisitions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Requisitions</TabsTrigger>
+            <TabsTrigger value="rfqs" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-indigo-700 dark:text-indigo-400" />RFQs</TabsTrigger>
+            <TabsTrigger value="pos" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"><ShoppingCart className="h-4 w-4 mr-1 text-amber-700 dark:text-amber-400" />Purchase Orders</TabsTrigger>
+            <TabsTrigger value="invoices" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"><Receipt className="h-4 w-4 mr-1 text-violet-700 dark:text-violet-400" />Invoices</TabsTrigger>
+            <TabsTrigger value="contracts" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><FileSignature className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Contracts</TabsTrigger>
+            <TabsTrigger value="vendors" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Briefcase className="h-4 w-4 mr-1 text-cyan-700 dark:text-cyan-400" />Vendors</TabsTrigger>
+            <TabsTrigger value="documents" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><Package className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Document Vault</TabsTrigger>
           </TabsList>
         </ScrollArea>
 
