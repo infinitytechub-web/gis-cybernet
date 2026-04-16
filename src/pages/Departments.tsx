@@ -14,8 +14,11 @@ import {
   Building2, Plus, Pencil, Trash2, Search, Shield, Stamp, FileSearch, Lock, Crosshair,
   ShieldAlert, ClipboardCheck, Package, Briefcase, Users, Award, Megaphone, BarChart3,
   CalendarCheck, Clock, CalendarDays, CalendarOff, Calendar as CalendarIcon, ArrowRightLeft,
-  Activity, Contact, LayoutDashboard, Heart, Stethoscope,
+  Activity, Contact, LayoutDashboard, Heart, Stethoscope, Eye, Download, Printer,
 } from "lucide-react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { downloadBlob } from "@/lib/download-utils";
+import { format as fmtDate } from "date-fns";
 import { toast } from "sonner";
 
 const ICON_REGISTRY: Record<string, React.ComponentType<{ className?: string }>> = {
