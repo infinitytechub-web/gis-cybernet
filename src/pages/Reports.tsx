@@ -12,15 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, FileSpreadsheet, Download, Upload, Users, CalendarCheck, CalendarOff, Search, Trash2, Eye, Printer, Mail, FileDown, CheckSquare } from "lucide-react";
+import { Download, Upload, Users, CalendarCheck, CalendarOff, Trash2, Eye, Printer, CheckSquare } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
 import ReportScheduleManager from "@/components/reports/ReportScheduleManager";
 import { triggerDownload } from "@/lib/download-utils";
-import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
@@ -227,18 +226,12 @@ export default function Reports() {
     }
   };
 
-  const handleExport = (fmt: ExportFormat) => {
-    setGenerating(true);
-    try {
-      const { headers, rows, title } = getReportData();
-      if (rows.length === 0) { toast.error("No data found for the selected period"); return; }
-      const dateRange = `${format(new Date(startDate), "dd-MMM-yyyy")}_${format(new Date(endDate), "dd-MMM-yyyy")}`;
-      const filename = `GIS_ASC_${reportType}_${dateRange}`;
-      const subtitle = `Period: ${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(endDate), "dd MMM yyyy")} | Records: ${rows.length}`;
-      exportReport(fmt, { title, filename, headers, rows, subtitle });
-      toast.success(`${getFormatLabel(fmt)} report downloaded`);
-    } catch (e: any) { toast.error(e.message); }
-    finally { setGenerating(false); }
+  const buildExportPayload = () => {
+    const { headers, rows, title } = getReportData();
+    const dateRange = `${format(new Date(startDate), "dd-MMM-yyyy")}_${format(new Date(endDate), "dd-MMM-yyyy")}`;
+    const filename = `GIS_ASC_${reportType}_${dateRange}`;
+    const subtitle = `Period: ${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(endDate), "dd MMM yyyy")} | Records: ${rows.length}`;
+    return { title, filename, headers, rows, subtitle };
   };
 
   const reportOptions = [
@@ -284,12 +277,20 @@ export default function Reports() {
           <CardTitle className="text-sm flex items-center gap-2"><Download className="h-4 w-4 text-primary" /> Export Report</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => handleExport("pdf")} disabled={generating} className="flex-1 gap-2"><FileText className="h-4 w-4" /> PDF</Button>
-            <Button onClick={() => handleExport("csv")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileSpreadsheet className="h-4 w-4" /> CSV</Button>
-            <Button onClick={() => handleExport("excel")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileSpreadsheet className="h-4 w-4" /> Excel</Button>
-            <Button onClick={() => handleExport("word")} disabled={generating} variant="outline" className="flex-1 gap-2"><FileDown className="h-4 w-4" /> Word</Button>
-          </div>
+          <ExportMenu
+            label="Export Report"
+            size="default"
+            variant="default"
+            disabled={generating}
+            getData={() => {
+              const payload = buildExportPayload();
+              if (payload.rows.length === 0) {
+                toast.error("No data found for the selected period");
+                return null;
+              }
+              return payload;
+            }}
+          />
         </CardContent>
       </Card>
 

@@ -21,12 +21,9 @@ import {
   Shield, FileText, Download, Plus, Activity, PieChart as PieIcon,
   BarChart3, Clock
 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
@@ -274,7 +271,6 @@ export default function Analytics() {
     refetchIncidents();
   };
 
-  // Build executive summary data
   const getExecutiveSummaryData = () => ({
     title: "Executive Summary Report",
     filename: `GIS_ASC_Executive_Summary_${format(new Date(), "yyyy-MM-dd")}`,
@@ -303,16 +299,6 @@ export default function Analytics() {
     subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
-  const handleExportSummary = (fmt: ExportFormat) => {
-    exportReport(fmt, getExecutiveSummaryData());
-    toast.success(`Executive summary (${getFormatLabel(fmt)}) downloaded`);
-  };
-
-  const handleExportCompliance = (fmt: ExportFormat) => {
-    exportReport(fmt, getComplianceData());
-    toast.success(`Compliance report (${getFormatLabel(fmt)}) downloaded`);
-  };
-
   const getDeptAttendanceData = () => ({
     title: "Department Attendance Breakdown",
     filename: `GIS_ASC_Dept_Attendance_${format(new Date(), "yyyy-MM-dd")}`,
@@ -320,11 +306,6 @@ export default function Analytics() {
     rows: deptAttendance.map((d) => [d.name, String(d.present), String(d.late), String(d.absent), String(d.total), `${d.rate}%`]),
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
-
-  const handleExportDeptAttendance = (fmt: ExportFormat) => {
-    exportReport(fmt, getDeptAttendanceData());
-    toast.success(`Department attendance report (${getFormatLabel(fmt)}) downloaded`);
-  };
 
   const getAttendanceTrendData = () => ({
     title: "Attendance Trend Analysis",
@@ -334,11 +315,6 @@ export default function Analytics() {
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
-  const handleExportAttendanceTrend = (fmt: ExportFormat) => {
-    exportReport(fmt, getAttendanceTrendData());
-    toast.success(`Attendance trend report (${getFormatLabel(fmt)}) downloaded`);
-  };
-
   const getWeeklyComparisonData = () => ({
     title: "Week-over-Week Attendance Comparison",
     filename: `GIS_ASC_Weekly_Comparison_${format(new Date(), "yyyy-MM-dd")}`,
@@ -347,11 +323,6 @@ export default function Analytics() {
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
-  const handleExportWeeklyComparison = (fmt: ExportFormat) => {
-    exportReport(fmt, getWeeklyComparisonData());
-    toast.success(`Weekly comparison report (${getFormatLabel(fmt)}) downloaded`);
-  };
-
   const getDeptSparklineData = () => ({
     title: "Department Rate Trends",
     filename: `GIS_ASC_Dept_Rate_Trends_${format(new Date(), "yyyy-MM-dd")}`,
@@ -359,11 +330,6 @@ export default function Analytics() {
     rows: deptSparklines.map((d) => [d.dept, `${d.latest}%`, d.trend === "up" ? "↑" : "↓", ...d.points.map(p => `${p.rate}%`)]),
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
-
-  const handleExportDeptSparklines = (fmt: ExportFormat) => {
-    exportReport(fmt, getDeptSparklineData());
-    toast.success(`Department rate trends report (${getFormatLabel(fmt)}) downloaded`);
-  };
 
   return (
     <div className="space-y-6">
@@ -379,28 +345,8 @@ export default function Analytics() {
               <SelectItem value="12m">Last 12 months</SelectItem>
             </SelectContent>
           </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1"><FileText className="h-4 w-4" /> Executive Summary</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExportSummary("pdf")}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportSummary("csv")}>CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportSummary("excel")}>Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportSummary("word")}>Word</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1"><Download className="h-4 w-4" /> Compliance Report</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExportCompliance("pdf")}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportCompliance("csv")}>CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportCompliance("excel")}>Excel</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExportCompliance("word")}>Word</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ExportMenu label="Executive Summary" getData={getExecutiveSummaryData} />
+          <ExportMenu label="Compliance Report" getData={getComplianceData} />
         </div>
       </div>
 
@@ -497,17 +443,7 @@ export default function Analytics() {
                 <Badge variant="outline" className="ml-auto text-[10px]">
                   {period === "7d" ? "Daily" : period === "30d" ? "Daily" : period === "90d" ? "Weekly" : "Monthly"}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3.5 w-3.5" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportAttendanceTrend("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getAttendanceTrendData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -557,17 +493,7 @@ export default function Analytics() {
                 <BarChart3 className="h-4 w-4 text-blue-500" />
                 Week-over-Week Attendance Comparison
                 <Badge variant="outline" className="ml-auto text-[10px]">{weeklyComparison.length} weeks</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3.5 w-3.5" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportWeeklyComparison("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getWeeklyComparisonData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -643,17 +569,7 @@ export default function Analytics() {
                 <Users className="h-4 w-4 text-indigo-500" />
                 Department Attendance Breakdown
                 <Badge variant="outline" className="ml-auto text-[10px]">{deptAttendance.length} depts</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-6 px-2 gap-1 text-[10px]"><Download className="h-3 w-3" /> Export</Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptAttendance("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu variant="ghost" className="h-6 px-2 text-[10px]" getData={getDeptAttendanceData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -703,17 +619,7 @@ export default function Analytics() {
                 <Activity className="h-4 w-4 text-violet-500" />
                 Department Rate Trends
                 <Badge variant="outline" className="ml-auto text-[10px]">{deptSparklines.length} depts</Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6"><Download className="h-3.5 w-3.5" /></Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("pdf")}>PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("csv")}>CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("excel")}>Excel</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExportDeptSparklines("word")}>Word</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getDeptSparklineData} />
               </CardTitle>
             </CardHeader>
             <CardContent>
