@@ -118,6 +118,7 @@ function printDepartmentDoc(dept: any) {
   w.onload = () => { w.focus(); w.print(); };
 }
 
+export default function Departments() {
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
