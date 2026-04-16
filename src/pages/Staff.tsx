@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { downloadCSVString } from "@/lib/download-utils";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
+import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
