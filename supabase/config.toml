@@ -5,6 +5,3 @@ verify_jwt = false
 
 [functions.reset-and-create-accounts]
 verify_jwt = false
-
-[functions.create-deputy-admin]
-verify_jwt = false
