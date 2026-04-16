@@ -287,8 +287,19 @@ export default function Departments() {
                     </div>
                   )}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">{d.description || "No description"}</p>
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t">
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => viewDepartmentDoc(d)}>
+                      <Eye className="h-3.5 w-3.5" /> View
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => downloadDepartmentDoc(d)}>
+                      <Download className="h-3.5 w-3.5" /> Download
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={() => printDepartmentDoc(d)}>
+                      <Printer className="h-3.5 w-3.5" /> Print
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );
