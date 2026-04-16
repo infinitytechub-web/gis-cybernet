@@ -40,7 +40,84 @@ const DEPT_COLORS = [
   { border: "border-orange-300 dark:border-orange-700", bg: "bg-orange-50/50 dark:bg-orange-950/20", icon: "text-orange-600 dark:text-orange-400" },
 ];
 
-export default function Departments() {
+function buildDepartmentDocHTML(dept: any) {
+  const Icon = ICON_REGISTRY[dept.icon] ?? Building2;
+  const iconSvg = renderToStaticMarkup(
+    // @ts-ignore lucide accepts these props
+    <Icon width={56} height={56} stroke="#1e3a8a" strokeWidth={1.6} />
+  );
+  const created = dept.created_at ? fmtDate(new Date(dept.created_at), "dd MMM yyyy") : "—";
+  const safe = (s?: string | null) => (s ?? "—").toString().replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] as string));
+  return `<!doctype html>
+<html><head><meta charset="utf-8"/><title>${safe(dept.name)} — Department Profile</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1f2937;margin:0;padding:32px;background:#fff}
+  .sheet{max-width:780px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+  .header{display:flex;align-items:center;gap:20px;padding:24px 28px;background:linear-gradient(135deg,#f0f9ff,#eef2ff);border-bottom:2px solid #1e3a8a}
+  .icon-box{width:80px;height:80px;background:#fff;border:2px solid #1e3a8a;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  h1{margin:0;font-size:24px;color:#0f172a}
+  .sub{margin:4px 0 0;color:#475569;font-size:13px}
+  .body{padding:24px 28px}
+  .section{margin-bottom:20px}
+  .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:600;margin-bottom:6px}
+  .value{font-size:14px;color:#0f172a;line-height:1.55}
+  .meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-top:16px;border-top:1px dashed #e5e7eb}
+  .footer{padding:16px 28px;background:#f8fafc;border-top:1px solid #e5e7eb;font-size:11px;color:#64748b;display:flex;justify-content:space-between}
+  .stamp{font-weight:700;color:#1e3a8a;letter-spacing:.05em}
+  @media print{body{padding:0}.sheet{border:none}}
+</style></head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div class="icon-box">${iconSvg}</div>
+      <div>
+        <h1>${safe(dept.name)}</h1>
+        <p class="sub">Ghana Immigration Service — Departmental Profile</p>
+      </div>
+    </div>
+    <div class="body">
+      <div class="section">
+        <div class="label">Description</div>
+        <div class="value">${safe(dept.description) || "<em>No description provided.</em>"}</div>
+      </div>
+      <div class="meta">
+        <div><div class="label">Department ID</div><div class="value">${safe(dept.id)}</div></div>
+        <div><div class="label">Created</div><div class="value">${created}</div></div>
+        <div><div class="label">Icon</div><div class="value">${safe(dept.icon || "Building2")}</div></div>
+        <div><div class="label">Status</div><div class="value">Active</div></div>
+      </div>
+    </div>
+    <div class="footer">
+      <span class="stamp">GIS · ASC</span>
+      <span>Generated ${fmtDate(new Date(), "dd MMM yyyy HH:mm")}</span>
+    </div>
+  </div>
+</body></html>`;
+}
+
+function viewDepartmentDoc(dept: any) {
+  const html = buildDepartmentDocHTML(dept);
+  const w = window.open("", "_blank");
+  if (!w) { toast.error("Please allow pop-ups to view"); return; }
+  w.document.write(html); w.document.close();
+}
+
+function downloadDepartmentDoc(dept: any) {
+  const html = buildDepartmentDocHTML(dept);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  downloadBlob(blob, `Department_${(dept.name || "department").replace(/\s+/g, "_")}.html`);
+  toast.success("Download started");
+}
+
+function printDepartmentDoc(dept: any) {
+  const html = buildDepartmentDocHTML(dept);
+  const w = window.open("", "_blank");
+  if (!w) { toast.error("Please allow pop-ups to print"); return; }
+  w.document.write(html); w.document.close();
+  w.onload = () => { w.focus(); w.print(); };
+}
+
   const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
