@@ -135,6 +135,14 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
           <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All risk</SelectItem><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem><SelectItem value="critical">Critical</SelectItem></SelectContent>
         </Select>
+        <div className="w-[200px]">
+          <CountryCombobox value={filterCountry} onValueChange={setFilterCountry} placeholder="All countries" />
+        </div>
+        {filterCountry && (
+          <Button variant="ghost" size="sm" onClick={() => setFilterCountry("")} className="gap-1">
+            <X className="h-3 w-3" /> Clear country
+          </Button>
+        )}
         <ExportMenu getData={() => ({
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
