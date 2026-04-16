@@ -12,8 +12,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ScrollArea as ScrollAreaCmd } from "@/components/ui/scroll-area";
 import {
-  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Search,
+  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Search, Check, ChevronsUpDown,
 } from "lucide-react";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval, getDay,
