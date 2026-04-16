@@ -11,10 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Search, Plus, Download, Users, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, Plus, Users, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 type AttendanceStatus = Database["public"]["Enums"]["attendance_status"];
 
@@ -109,13 +109,16 @@ export function AdminAttendanceLog() {
     }
   };
 
-  const exportCSV = () => {
-    const header = "Staff ID,Name,Shift,Check In,Check Out,Status,Notes\n";
-    const rows = filtered.map((r: any) =>
-      `${r.profiles?.staff_id},"${r.profiles?.last_name} ${r.profiles?.first_name}",${r.profiles?.shift_group ?? ""},${r.check_in ? format(new Date(r.check_in), "HH:mm") : ""},${r.check_out ? format(new Date(r.check_out), "HH:mm") : ""},${r.status},"${r.notes ?? ""}"`
-    ).join("\n");
-    downloadCSVString(header + rows, `attendance-${selectedDate}.csv`);
-  };
+  const buildExportRows = () =>
+    filtered.map((r: any) => [
+      r.profiles?.staff_id ?? "",
+      `${r.profiles?.last_name ?? ""}, ${r.profiles?.first_name ?? ""}`,
+      r.profiles?.shift_group ?? "",
+      r.check_in ? format(new Date(r.check_in), "HH:mm") : "",
+      r.check_out ? format(new Date(r.check_out), "HH:mm") : "",
+      r.status,
+      r.notes ?? "",
+    ]);
 
   return (
     <div className="space-y-4">
@@ -246,9 +249,15 @@ export function AdminAttendanceLog() {
             </div>
           </DialogContent>
         </Dialog>
-        <Button variant="outline" onClick={exportCSV} className="gap-1">
-          <Download className="h-4 w-4" /> Export
-        </Button>
+        <ExportMenu
+          getData={() => ({
+            title: `Attendance Log — ${format(new Date(selectedDate + "T00:00"), "PPP")}`,
+            filename: `attendance-${selectedDate}`,
+            headers: ["Staff ID", "Name", "Shift", "Check In", "Check Out", "Status", "Notes"],
+            rows: buildExportRows(),
+            subtitle: `Total ${total} | Present ${present} | Late ${late} | Absent ${absent}`,
+          })}
+        />
       </div>
 
       {/* Table */}
