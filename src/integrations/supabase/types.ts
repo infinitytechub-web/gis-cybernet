@@ -191,6 +191,191 @@ export type Database = {
           },
         ]
       }
+      cyber_incidents: {
+        Row: {
+          affected_systems: string | null
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          detected_at: string | null
+          id: string
+          impact_assessment: string | null
+          incident_number: string
+          incident_type: string
+          reported_at: string
+          reported_by: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          source: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_systems?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          detected_at?: string | null
+          id?: string
+          impact_assessment?: string | null
+          incident_number: string
+          incident_type?: string
+          reported_at?: string
+          reported_by: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          source?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_systems?: string | null
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          detected_at?: string | null
+          id?: string
+          impact_assessment?: string | null
+          incident_number?: string
+          incident_type?: string
+          reported_at?: string
+          reported_by?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          source?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cyber_investigations: {
+        Row: {
+          case_number: string
+          case_type: string
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          evidence_summary: string | null
+          id: string
+          lead_investigator: string | null
+          opened_at: string
+          outcome: string | null
+          priority: string
+          referred_at: string | null
+          referred_to_agency: string | null
+          related_incident_id: string | null
+          status: string
+          suspects: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          case_number: string
+          case_type?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          evidence_summary?: string | null
+          id?: string
+          lead_investigator?: string | null
+          opened_at?: string
+          outcome?: string | null
+          priority?: string
+          referred_at?: string | null
+          referred_to_agency?: string | null
+          related_incident_id?: string | null
+          status?: string
+          suspects?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          case_number?: string
+          case_type?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          evidence_summary?: string | null
+          id?: string
+          lead_investigator?: string | null
+          opened_at?: string
+          outcome?: string | null
+          priority?: string
+          referred_at?: string | null
+          referred_to_agency?: string | null
+          related_incident_id?: string | null
+          status?: string
+          suspects?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cyber_investigations_related_incident_id_fkey"
+            columns: ["related_incident_id"]
+            isOneToOne: false
+            referencedRelation: "cyber_incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cyber_threat_intel: {
+        Row: {
+          added_by: string
+          category: string | null
+          created_at: string
+          description: string | null
+          first_seen: string
+          id: string
+          indicator_type: string
+          indicator_value: string
+          is_active: boolean
+          last_seen: string | null
+          source: string | null
+          threat_level: string
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          first_seen?: string
+          id?: string
+          indicator_type?: string
+          indicator_value: string
+          is_active?: boolean
+          last_seen?: string | null
+          source?: string | null
+          threat_level?: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          first_seen?: string
+          id?: string
+          indicator_type?: string
+          indicator_value?: string
+          is_active?: boolean
+          last_seen?: string | null
+          source?: string | null
+          threat_level?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           created_at: string
