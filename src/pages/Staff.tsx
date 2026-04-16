@@ -61,6 +61,10 @@ export default function Staff() {
   const [status, setStatus] = useState<StaffStatus>("active");
   const [ghanaCardNumber, setGhanaCardNumber] = useState("");
   const [email, setEmail] = useState("");
+  const [intake, setIntake] = useState<string>("");
+  const [weaponTrained, setWeaponTrained] = useState<string>("");
+  const [weaponTrainingDate, setWeaponTrainingDate] = useState<string>("");
+  const [bloodGroup, setBloodGroup] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -111,6 +115,10 @@ export default function Staff() {
     setStatus("active");
     setGhanaCardNumber("");
     setEmail("");
+    setIntake("");
+    setWeaponTrained("");
+    setWeaponTrainingDate("");
+    setBloodGroup("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -130,6 +138,10 @@ export default function Staff() {
     setStatus(s.status);
     setGhanaCardNumber(s.ghana_card_number || "");
     setEmail(s.email || "");
+    setIntake(s.intake != null ? String(s.intake) : "");
+    setWeaponTrained(s.weapon_trained === true ? "yes" : s.weapon_trained === false ? "no" : "");
+    setWeaponTrainingDate(s.weapon_training_date || "");
+    setBloodGroup(s.blood_group || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -175,6 +187,10 @@ export default function Staff() {
         status,
         ghana_card_number: ghanaCardNumber || null,
         email: email || null,
+        intake: intake ? parseInt(intake, 10) : null,
+        weapon_trained: weaponTrained === "yes" ? true : weaponTrained === "no" ? false : null,
+        weapon_training_date: weaponTrained === "yes" && weaponTrainingDate ? weaponTrainingDate : null,
+        blood_group: bloodGroup || null,
       };
 
       if (editing) {
@@ -548,6 +564,51 @@ export default function Staff() {
               <div>
                 <Label>Email Address</Label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Intake (1–100)</Label>
+                <Select value={intake} onValueChange={setIntake}>
+                  <SelectTrigger><SelectValue placeholder="Select intake" /></SelectTrigger>
+                  <SelectContent className="max-h-[260px]">
+                    {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
+                      <SelectItem key={n} value={String(n)}>Intake {n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Blood Group</Label>
+                <Select value={bloodGroup} onValueChange={setBloodGroup}>
+                  <SelectTrigger><SelectValue placeholder="Select blood group" /></SelectTrigger>
+                  <SelectContent>
+                    {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
+                      <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Weapon Training</Label>
+                <Select value={weaponTrained} onValueChange={(v) => { setWeaponTrained(v); if (v !== "yes") setWeaponTrainingDate(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Training Date</Label>
+                <Input
+                  type="date"
+                  value={weaponTrainingDate}
+                  onChange={(e) => setWeaponTrainingDate(e.target.value)}
+                  disabled={weaponTrained !== "yes"}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

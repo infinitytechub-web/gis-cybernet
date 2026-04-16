@@ -1929,6 +1929,7 @@ export type Database = {
       profiles: {
         Row: {
           account_locked: boolean
+          blood_group: string | null
           created_at: string
           department_id: string | null
           email: string | null
@@ -1936,6 +1937,7 @@ export type Database = {
           gender: string | null
           ghana_card_number: string | null
           id: string
+          intake: number | null
           last_name: string
           login_enabled: boolean
           phone: string | null
@@ -1947,9 +1949,12 @@ export type Database = {
           unit: string | null
           updated_at: string
           user_id: string | null
+          weapon_trained: boolean | null
+          weapon_training_date: string | null
         }
         Insert: {
           account_locked?: boolean
+          blood_group?: string | null
           created_at?: string
           department_id?: string | null
           email?: string | null
@@ -1957,6 +1962,7 @@ export type Database = {
           gender?: string | null
           ghana_card_number?: string | null
           id?: string
+          intake?: number | null
           last_name: string
           login_enabled?: boolean
           phone?: string | null
@@ -1968,9 +1974,12 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           user_id?: string | null
+          weapon_trained?: boolean | null
+          weapon_training_date?: string | null
         }
         Update: {
           account_locked?: boolean
+          blood_group?: string | null
           created_at?: string
           department_id?: string | null
           email?: string | null
@@ -1978,6 +1987,7 @@ export type Database = {
           gender?: string | null
           ghana_card_number?: string | null
           id?: string
+          intake?: number | null
           last_name?: string
           login_enabled?: boolean
           phone?: string | null
@@ -1989,6 +1999,8 @@ export type Database = {
           unit?: string | null
           updated_at?: string
           user_id?: string | null
+          weapon_trained?: boolean | null
+          weapon_training_date?: string | null
         }
         Relationships: [
           {
