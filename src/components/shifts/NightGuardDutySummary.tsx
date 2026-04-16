@@ -6,15 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Shield, Users, UserCheck, UserX, Wifi, WifiOff, Download, Clock, BarChart3 } from "lucide-react";
+import { Shield, Users, UserCheck, UserX, Wifi, WifiOff, Clock, BarChart3 } from "lucide-react";
 import { format, startOfDay, endOfDay } from "date-fns";
-import { toast } from "sonner";
-import { downloadCSVString } from "@/lib/download-utils";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string; gender?: string | null }[];
@@ -94,32 +88,6 @@ export function NightGuardDutySummary({ nightGuardStaff, todayDutyStaff }: Props
   const headers = ["Name", "Staff ID", "Gender", "Reported", "Status", "First Login", "Last Logout"];
   const dateLabel = format(today, "dd MMM yyyy");
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text(`Night Guard Duty Summary — ${dateLabel}`, 14, 16);
-    doc.setFontSize(10);
-    doc.text(`Total: ${displayStaff.length} | Reported: ${totalReported} | Online: ${totalOnline} | Male: ${genderStats.male} | Female: ${genderStats.female}`, 14, 24);
-    autoTable(doc, { head: [headers], body: buildReportRows(), startY: 30 });
-    doc.save(`night_guard_summary_${format(today, "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF report downloaded");
-  };
-
-  const exportCSV = () => {
-    const rows = [headers, ...buildReportRows()];
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-    downloadCSVString(csv, `night_guard_summary_${format(today, "yyyy-MM-dd")}.csv`);
-    toast.success("CSV report downloaded");
-  };
-
-  const exportExcel = () => {
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...buildReportRows()]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Night Guard Summary");
-    XLSX.writeFile(wb, `night_guard_summary_${format(today, "yyyy-MM-dd")}.xlsx`);
-    toast.success("Excel report downloaded");
-  };
-
   return (
     <Card className="border-[hsl(220,80%,18%)]/20">
       <CardHeader className="pb-2">
@@ -128,18 +96,17 @@ export function NightGuardDutySummary({ nightGuardStaff, todayDutyStaff }: Props
             <BarChart3 className="h-4 w-4 text-[hsl(220,70%,25%)] stroke-[2.5]" />
             Night Guard Duty Summary — {dateLabel}
           </CardTitle>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 text-xs h-7">
-                <Download className="h-3.5 w-3.5" /> Report
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={exportPDF}>PDF Report</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportCSV}>CSV Report</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportExcel}>Excel Report</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ExportMenu
+            label="Report"
+            className="text-xs h-7"
+            getData={() => ({
+              title: `Night Guard Duty Summary — ${dateLabel}`,
+              filename: `night_guard_summary_${format(today, "yyyy-MM-dd")}`,
+              headers,
+              rows: buildReportRows(),
+              subtitle: `Total: ${displayStaff.length} | Reported: ${totalReported} | Online: ${totalOnline} | Male: ${genderStats.male} | Female: ${genderStats.female}`,
+            })}
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

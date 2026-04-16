@@ -10,15 +10,11 @@ import { ManualAssignDialog } from "./ManualAssignDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Shield, ChevronLeft, ChevronRight, Users, Download, Trash2 } from "lucide-react";
+import { Shield, ChevronLeft, ChevronRight, Users, Trash2 } from "lucide-react";
 import { format, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 interface Props {
   nightGuardStaff: any[];
@@ -90,30 +86,6 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
     });
   };
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text(`Night Guard Duty — ${format(weekStart, "dd MMM yyyy")}`, 14, 16);
-    autoTable(doc, { head: [["Date", "Assigned Guards"]], body: buildRows(), startY: 22 });
-    doc.save(`night_guard_${format(weekStart, "yyyy-MM-dd")}.pdf`);
-    toast.success("PDF downloaded");
-  };
-
-  const exportCSV = () => {
-    const rows = [["Date", "Assigned Guards"], ...buildRows()];
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
-    downloadCSVString(csv, `night_guard_${format(weekStart, "yyyy-MM-dd")}.csv`);
-    toast.success("CSV downloaded");
-  };
-
-  const exportExcel = () => {
-    const ws = XLSX.utils.aoa_to_sheet([["Date", "Assigned Guards"], ...buildRows()]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Night Guard");
-    XLSX.writeFile(wb, `night_guard_${format(weekStart, "yyyy-MM-dd")}.xlsx`);
-    toast.success("Excel downloaded");
-  };
-
   return (
     <div className="space-y-4">
       <TodayRosterCard
@@ -145,18 +117,14 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
                   <ManualAssignDialog nightGuardStaff={allStaff.length > 0 ? allStaff : nightGuardStaff} shifts={shifts} />
                 </>
               )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <Download className="h-4 w-4" /> Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
-                  <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ExportMenu
+                getData={() => ({
+                  title: `Night Guard Duty — ${format(weekStart, "dd MMM yyyy")}`,
+                  filename: `night_guard_${format(weekStart, "yyyy-MM-dd")}`,
+                  headers: ["Date", "Assigned Guards"],
+                  rows: buildRows(),
+                })}
+              />
             </div>
           </div>
         </CardHeader>
