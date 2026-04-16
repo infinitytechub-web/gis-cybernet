@@ -24,11 +24,20 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const PIE_COLORS = ["hsl(var(--primary))", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6"];
 const STATUS_COLORS: Record<string, string> = {
   in_custody: "bg-rose-100 text-rose-800 dark:bg-rose-950/40",
+  bail: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40",
   released: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40",
+  deported: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
   transferred: "bg-blue-100 text-blue-800 dark:bg-blue-950/40",
   court: "bg-amber-100 text-amber-800 dark:bg-amber-950/40",
   escaped: "bg-red-200 text-red-900 dark:bg-red-950/60",
 };
+const RELEASE_OUTCOMES = [
+  { value: "released", label: "Released" },
+  { value: "bail", label: "Bail Granted" },
+  { value: "deported", label: "Deported" },
+  { value: "transferred", label: "Transferred" },
+  { value: "court", label: "Sent to Court" },
+];
 const RISK_COLORS: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
   medium: "bg-amber-100 text-amber-800",
