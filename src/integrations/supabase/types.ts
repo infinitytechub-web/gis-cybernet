@@ -195,18 +195,21 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          icon: string | null
           id: string
           name: string
         }
         Insert: {
           created_at?: string
           description?: string | null
+          icon?: string | null
           id?: string
           name: string
         }
         Update: {
           created_at?: string
           description?: string | null
+          icon?: string | null
           id?: string
           name?: string
         }
@@ -2814,6 +2817,16 @@ export type Database = {
       is_supervisor_for_profile: {
         Args: { _profile_id: string; _user_id: string }
         Returns: boolean
+      }
+      notify_roles: {
+        Args: {
+          _message: string
+          _ref: string
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _title: string
+          _type: string
+        }
+        Returns: undefined
       }
       record_failed_login: { Args: { _staff_id: string }; Returns: Json }
       verify_otp: { Args: { _code: string }; Returns: boolean }
