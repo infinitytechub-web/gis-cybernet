@@ -31,13 +31,21 @@ const typeLabels: Record<string, string> = {
   general: "General",
 };
 
-const typeRoutes: Record<string, string> = {
-  leave: "/leave",
-  posting: "/postings",
-  shift: "/shifts",
-  visa: "/front-desk",
-  general: "/",
-};
+// Smart routing: 'general' notifications are routed by title keyword to the right module
+function routeForNotification(n: any): string {
+  const t = (n?.title || "").toLowerCase();
+  if (t.includes("detention") || t.includes("custody")) return "/holding";
+  if (t.includes("inventory") || t.includes("stock")) return "/stores";
+  if (t.includes("requisition") || t.includes("purchase order") || t.includes("invoice") || t.includes("rfq") || t.includes("contract")) return "/procurement";
+  const map: Record<string, string> = {
+    leave: "/leave",
+    posting: "/postings",
+    shift: "/shifts",
+    visa: "/front-desk",
+    general: "/",
+  };
+  return map[n?.type] || "/";
+}
 
 function isUrgent(n: any): boolean {
   return (
