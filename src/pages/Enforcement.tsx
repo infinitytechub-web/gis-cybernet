@@ -924,17 +924,7 @@ export default function Enforcement() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2"><Users className="h-4 w-4" /> Officer Performance Summary</CardTitle>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1"><Download className="h-3 w-3" /> Export</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleOfficerExport("pdf")}><FileText className="h-4 w-4 mr-2" /> PDF</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleOfficerExport("excel")}><FileSpreadsheet className="h-4 w-4 mr-2" /> Excel</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleOfficerExport("csv")}><FileText className="h-4 w-4 mr-2" /> CSV</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleOfficerExport("word")}><FileText className="h-4 w-4 mr-2" /> Word</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ExportMenu getData={buildOfficerExportData} />
             </CardHeader>
             <CardContent>
               {officerPerformance.length > 0 ? (
