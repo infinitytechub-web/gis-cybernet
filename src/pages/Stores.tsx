@@ -88,6 +88,8 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "" });
+  const [newCatOpen, setNewCatOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["inventory_items"],
