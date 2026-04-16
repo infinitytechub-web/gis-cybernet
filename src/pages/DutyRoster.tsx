@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
-  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Download, Search,
+  Calendar, ChevronLeft, ChevronRight, Clock, Users, Plus, X, Trash2, Search,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 const SHIFT_COLORS = [
   "bg-primary/15 text-primary border-primary/30",
@@ -188,24 +189,11 @@ export default function DutyRoster() {
   const totalAssigned = new Set(assignments.map((a: any) => a.profile_id)).size;
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-  const exportPdf = () => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const buildRosterExportData = () => {
     const monthLabel = format(currentMonth, "MMMM yyyy");
-    const pageW = doc.internal.pageSize.getWidth();
-
-    // Title
-    doc.setFontSize(16);
-    doc.text("GIS Amasaman Sector Command", pageW / 2, 12, { align: "center" });
-    doc.setFontSize(12);
-    doc.text(`Duty Roster — ${monthLabel}`, pageW / 2, 19, { align: "center" });
-    doc.setFontSize(8);
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`, pageW / 2, 24, { align: "center" });
-
-    // Build table: rows = shifts, columns = days of month
-    const dayHeaders = daysInMonth.map((d) => format(d, "dd\nEEE"));
-    const head = [["Shift", ...dayHeaders]];
-
-    const body = shifts.map((s) => {
+    const dayHeaders = daysInMonth.map((d) => format(d, "dd EEE"));
+    const headers = ["Shift", ...dayHeaders];
+    const rows = shifts.map((s) => {
       const row = [s.name];
       daysInMonth.forEach((day) => {
         const dayAssigns = assignments.filter((a: any) => {
@@ -219,44 +207,13 @@ export default function DutyRoster() {
       });
       return row;
     });
-
-    autoTable(doc, {
-      head,
-      body,
-      startY: 28,
-      styles: { fontSize: 5, cellPadding: 1, overflow: "linebreak", valign: "middle" },
-      headStyles: { fillColor: [34, 60, 80], fontSize: 5, halign: "center", valign: "middle", minCellHeight: 10 },
-      columnStyles: { 0: { fontStyle: "bold", cellWidth: 20 } },
-      theme: "grid",
-      didParseCell: (data) => {
-        // Highlight weekends
-        if (data.section === "body" && data.column.index > 0) {
-          const dayIndex = data.column.index - 1;
-          if (dayIndex < daysInMonth.length) {
-            const dow = getDay(daysInMonth[dayIndex]);
-            if (dow === 0 || dow === 6) {
-              data.cell.styles.fillColor = [240, 240, 240];
-            }
-          }
-        }
-      },
-    });
-
-    // Footer
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.text(
-        `Ghana Immigration Service — Amasaman Sector Command | Page ${i} of ${pageCount}`,
-        pageW / 2,
-        doc.internal.pageSize.getHeight() - 5,
-        { align: "center" }
-      );
-    }
-
-    doc.save(`Duty_Roster_${format(currentMonth, "yyyy_MM")}.pdf`);
-    toast.success("PDF downloaded");
+    return {
+      title: `Duty Roster — ${monthLabel}`,
+      filename: `Duty_Roster_${format(currentMonth, "yyyy_MM")}`,
+      headers,
+      rows,
+      subtitle: `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+    };
   };
 
   return (
