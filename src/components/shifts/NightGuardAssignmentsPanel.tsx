@@ -9,19 +9,15 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ClipboardList, Trash2, RefreshCw, Search, Loader2, Download, ChevronLeft, ChevronRight, Pencil, Check, ChevronsUpDown } from "lucide-react";
+import { ClipboardList, Trash2, RefreshCw, Search, Loader2, ChevronLeft, ChevronRight, Pencil, Check, ChevronsUpDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -167,35 +163,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
       format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy"),
     ]);
 
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Night Guard Assignments", 14, 16);
-    if (filterDate) doc.setFontSize(10), doc.text(`Date: ${format(new Date(filterDate + "T00:00:00"), "dd MMM yyyy")}`, 14, 23);
-    autoTable(doc, {
-      head: [["Guard", "Staff ID", "Shift", "Date"]],
-      body: buildExportRows(),
-      startY: filterDate ? 28 : 22,
-    });
-    doc.save(`night_guard_assignments${filterDate ? `_${filterDate}` : ""}.pdf`);
-    toast.success("PDF downloaded");
-  };
-
-  const exportCSV = () => {
-    const header = ["Guard", "Staff ID", "Shift", "Date"];
-    const rows = [header, ...buildExportRows()];
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    downloadCSVString(csv, `night_guard_assignments${filterDate ? `_${filterDate}` : ""}.csv`);
-    toast.success("CSV downloaded");
-  };
-
-  const exportExcel = () => {
-    const ws = XLSX.utils.aoa_to_sheet([["Guard", "Staff ID", "Shift", "Date"], ...buildExportRows()]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Assignments");
-    XLSX.writeFile(wb, `night_guard_assignments${filterDate ? `_${filterDate}` : ""}.xlsx`);
-    toast.success("Excel downloaded");
-  };
+  if (nightGuardStaff.length === 0 && allStaff.length === 0) return null;
 
   if (nightGuardStaff.length === 0 && allStaff.length === 0) return null;
 
@@ -218,18 +186,16 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
                 </Button>
               </>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1" disabled={filtered.length === 0}>
-                  <Download className="h-3.5 w-3.5" /> Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={exportPDF}>PDF</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportCSV}>CSV</DropdownMenuItem>
-                <DropdownMenuItem onClick={exportExcel}>Excel</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <ExportMenu
+              disabled={filtered.length === 0}
+              getData={() => ({
+                title: "Night Guard Assignments",
+                filename: `night_guard_assignments${filterDate ? `_${filterDate}` : ""}`,
+                headers: ["Guard", "Staff ID", "Shift", "Date"],
+                rows: buildExportRows(),
+                subtitle: filterDate ? `Date: ${format(new Date(filterDate + "T00:00:00"), "dd MMM yyyy")}` : undefined,
+              })}
+            />
           </div>
         </div>
       </CardHeader>
