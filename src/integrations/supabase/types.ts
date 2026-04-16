@@ -212,6 +212,321 @@ export type Database = {
         }
         Relationships: []
       }
+      detention_medical_log: {
+        Row: {
+          attended_at: string
+          attended_by: string | null
+          complaint: string
+          detention_id: string
+          id: string
+          logged_by: string
+          notes: string | null
+          treatment: string | null
+        }
+        Insert: {
+          attended_at?: string
+          attended_by?: string | null
+          complaint: string
+          detention_id: string
+          id?: string
+          logged_by: string
+          notes?: string | null
+          treatment?: string | null
+        }
+        Update: {
+          attended_at?: string
+          attended_by?: string | null
+          complaint?: string
+          detention_id?: string
+          id?: string
+          logged_by?: string
+          notes?: string | null
+          treatment?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_medical_log_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_property_log: {
+        Row: {
+          condition: string | null
+          detention_id: string
+          id: string
+          item_description: string
+          logged_at: string
+          logged_by: string
+          notes: string | null
+          quantity: number | null
+          returned_at: string | null
+          returned_to: string | null
+        }
+        Insert: {
+          condition?: string | null
+          detention_id: string
+          id?: string
+          item_description: string
+          logged_at?: string
+          logged_by: string
+          notes?: string | null
+          quantity?: number | null
+          returned_at?: string | null
+          returned_to?: string | null
+        }
+        Update: {
+          condition?: string | null
+          detention_id?: string
+          id?: string
+          item_description?: string
+          logged_at?: string
+          logged_by?: string
+          notes?: string | null
+          quantity?: number | null
+          returned_at?: string | null
+          returned_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_property_log_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_records: {
+        Row: {
+          alias: string | null
+          arrest_date: string
+          arresting_officer_id: string | null
+          arresting_officer_name: string | null
+          cell_number: string | null
+          charge_description: string | null
+          country_of_origin: string | null
+          created_at: string
+          created_by: string
+          crime_type: string
+          date_of_birth: string | null
+          emergency_contact: string | null
+          expected_release_at: string | null
+          first_name: string
+          gender: string | null
+          home_address: string | null
+          id: string
+          id_number: string | null
+          id_type: string | null
+          intake_at: string
+          last_name: string
+          location_of_arrest: string | null
+          medical_alerts: string | null
+          nationality: string | null
+          next_of_kin: string | null
+          next_of_kin_phone: string | null
+          notes: string | null
+          officer_in_charge_id: string | null
+          phone: string | null
+          photo_url: string | null
+          release_reason: string | null
+          released_at: string | null
+          released_by: string | null
+          risk_level: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alias?: string | null
+          arrest_date?: string
+          arresting_officer_id?: string | null
+          arresting_officer_name?: string | null
+          cell_number?: string | null
+          charge_description?: string | null
+          country_of_origin?: string | null
+          created_at?: string
+          created_by: string
+          crime_type: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          expected_release_at?: string | null
+          first_name: string
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          intake_at?: string
+          last_name: string
+          location_of_arrest?: string | null
+          medical_alerts?: string | null
+          nationality?: string | null
+          next_of_kin?: string | null
+          next_of_kin_phone?: string | null
+          notes?: string | null
+          officer_in_charge_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          release_reason?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          risk_level?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alias?: string | null
+          arrest_date?: string
+          arresting_officer_id?: string | null
+          arresting_officer_name?: string | null
+          cell_number?: string | null
+          charge_description?: string | null
+          country_of_origin?: string | null
+          created_at?: string
+          created_by?: string
+          crime_type?: string
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          expected_release_at?: string | null
+          first_name?: string
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          intake_at?: string
+          last_name?: string
+          location_of_arrest?: string | null
+          medical_alerts?: string | null
+          nationality?: string | null
+          next_of_kin?: string | null
+          next_of_kin_phone?: string | null
+          notes?: string | null
+          officer_in_charge_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          release_reason?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          risk_level?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_records_arresting_officer_id_fkey"
+            columns: ["arresting_officer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_records_officer_in_charge_id_fkey"
+            columns: ["officer_in_charge_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_records_released_by_fkey"
+            columns: ["released_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_transfers: {
+        Row: {
+          detention_id: string
+          escorted_by: string | null
+          from_location: string | null
+          id: string
+          performed_by: string
+          reason: string | null
+          to_location: string
+          transferred_at: string
+        }
+        Insert: {
+          detention_id: string
+          escorted_by?: string | null
+          from_location?: string | null
+          id?: string
+          performed_by: string
+          reason?: string | null
+          to_location: string
+          transferred_at?: string
+        }
+        Update: {
+          detention_id?: string
+          escorted_by?: string | null
+          from_location?: string | null
+          id?: string
+          performed_by?: string
+          reason?: string | null
+          to_location?: string
+          transferred_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_transfers_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_visitor_log: {
+        Row: {
+          approved_by: string
+          detention_id: string
+          id: string
+          id_number: string | null
+          notes: string | null
+          phone: string | null
+          relationship: string | null
+          visit_end: string | null
+          visit_start: string
+          visitor_name: string
+        }
+        Insert: {
+          approved_by: string
+          detention_id: string
+          id?: string
+          id_number?: string | null
+          notes?: string | null
+          phone?: string | null
+          relationship?: string | null
+          visit_end?: string | null
+          visit_start?: string
+          visitor_name: string
+        }
+        Update: {
+          approved_by?: string
+          detention_id?: string
+          id?: string
+          id_number?: string | null
+          notes?: string | null
+          phone?: string | null
+          relationship?: string | null
+          visit_end?: string | null
+          visit_start?: string
+          visitor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_visitor_log_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enforcement_operations: {
         Row: {
           arrests_count: number
@@ -483,6 +798,255 @@ export type Database = {
           id?: string
           name?: string
           recurring?: boolean
+        }
+        Relationships: []
+      }
+      inventory_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_issuance: {
+        Row: {
+          condition_on_return: string | null
+          created_at: string
+          id: string
+          issued_at: string
+          issued_by: string
+          item_id: string
+          notes: string | null
+          profile_id: string
+          quantity: number
+          returned_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          condition_on_return?: string | null
+          created_at?: string
+          id?: string
+          issued_at?: string
+          issued_by: string
+          item_id: string
+          notes?: string | null
+          profile_id: string
+          quantity: number
+          returned_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          condition_on_return?: string | null
+          created_at?: string
+          id?: string
+          issued_at?: string
+          issued_by?: string
+          item_id?: string
+          notes?: string | null
+          profile_id?: string
+          quantity?: number
+          returned_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_issuance_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_issuance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          category_id: string | null
+          condition: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          location: string | null
+          min_stock: number
+          name: string
+          notes: string | null
+          photo_url: string | null
+          qty_on_hand: number
+          sku: string | null
+          unit: string
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          condition?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          min_stock?: number
+          name: string
+          notes?: string | null
+          photo_url?: string | null
+          qty_on_hand?: number
+          sku?: string | null
+          unit?: string
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          condition?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          min_stock?: number
+          name?: string
+          notes?: string | null
+          photo_url?: string | null
+          qty_on_hand?: number
+          sku?: string | null
+          unit?: string
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          from_location: string | null
+          id: string
+          issued_to_profile_id: string | null
+          item_id: string
+          movement_date: string
+          movement_type: string
+          notes: string | null
+          performed_by: string
+          quantity: number
+          reference: string | null
+          supplier_id: string | null
+          to_location: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_location?: string | null
+          id?: string
+          issued_to_profile_id?: string | null
+          item_id: string
+          movement_date?: string
+          movement_type: string
+          notes?: string | null
+          performed_by: string
+          quantity: number
+          reference?: string | null
+          supplier_id?: string | null
+          to_location?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_location?: string | null
+          id?: string
+          issued_to_profile_id?: string | null
+          item_id?: string
+          movement_date?: string
+          movement_type?: string
+          notes?: string | null
+          performed_by?: string
+          quantity?: number
+          reference?: string | null
+          supplier_id?: string | null
+          to_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_issued_to_profile_id_fkey"
+            columns: ["issued_to_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
