@@ -41,7 +41,8 @@ export function useOnlineUsers() {
         onlineSince: new Date().toISOString(),
       };
 
-      channel = supabase.channel("online-users", {
+      // Use a unique channel instance per mount to avoid reusing an already-subscribed channel
+      channel = supabase.channel(`online-users-${user.id}-${Date.now()}`, {
         config: { presence: { key: user.id } },
       });
 
