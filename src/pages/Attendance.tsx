@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Attendance() {
-  const { isAdmin, user } = useAuth();
+  const { isAdminOrSupervisor, user } = useAuth();
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile-id", user?.id],
@@ -36,8 +36,8 @@ export default function Attendance() {
       {/* Sync history log */}
       {profile && <SyncHistoryLog profileId={profile.id} />}
 
-      {/* Admins also see the full attendance log with reports */}
-      {isAdmin && (
+      {/* Admins, OIC, 2IC, Staff Officer, and Supervisors see the full attendance log with reports */}
+      {isAdminOrSupervisor && (
         <div className="space-y-2">
           <h2 className="text-lg font-semibold text-secondary">Attendance Log</h2>
           <AdminAttendanceLog />

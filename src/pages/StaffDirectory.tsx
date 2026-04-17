@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +32,6 @@ const statusColor = (s: string) => {
 };
 
 export default function StaffDirectory() {
-  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";

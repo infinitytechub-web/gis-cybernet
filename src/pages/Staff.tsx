@@ -31,7 +31,8 @@ async function getPhotoUrl(path: string | null) {
 }
 
 export default function Staff() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrSupervisor } = useAuth();
+  const canManage = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -298,7 +299,7 @@ export default function Staff() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
-        {isAdmin && (
+        {canManage && (
           <div className="flex gap-2">
             <ExportMenu
               getData={() => ({
@@ -309,12 +310,16 @@ export default function Staff() {
                 subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
-            <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-1">
-              <Upload className="h-4 w-4" /> Import
-            </Button>
-            <Button size="sm" onClick={openCreate} className="gap-1">
-              <Plus className="h-4 w-4" /> Add Staff
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-1">
+                <Upload className="h-4 w-4" /> Import
+              </Button>
+            )}
+            {isAdmin && (
+              <Button size="sm" onClick={openCreate} className="gap-1">
+                <Plus className="h-4 w-4" /> Add Staff
+              </Button>
+            )}
           </div>
         )}
       </div>

@@ -27,8 +27,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select("role")
       .eq("user_id", userId);
     if (!data || data.length === 0) return "staff" as AppRole;
-    // Prioritize admin > supervisor > other roles > staff
-    const priority: Record<string, number> = { admin: 0, supervisor: 1, shift_leader: 2, deputy_supervisor: 3, deputy_shift_leader: 4, special_duties: 5, deputy: 6, staff: 7 };
+    // Prioritize admin > oic > 2ic > staff_officer > supervisor > other roles > staff
+    const priority: Record<string, number> = { admin: 0, oic: 1, "2ic": 2, staff_officer: 3, supervisor: 4, shift_supervisor: 5, deputy_shift_supervisor: 6, shift_leader: 7, deputy_supervisor: 8, deputy_shift_leader: 9, special_duties: 10, deputy: 11, staff: 99 };
     const sorted = data.sort((a, b) => (priority[a.role] ?? 99) - (priority[b.role] ?? 99));
     return (sorted[0].role as AppRole) ?? "staff";
   }, []);
@@ -88,7 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     isAdmin: role === "admin",
     isSupervisor: role === "supervisor",
-    isAdminOrSupervisor: role === "admin" || role === "supervisor",
+    // Command tier: admin, OIC, 2IC, Staff Officer, and Supervisor share elevated reporting/oversight access
+    isAdminOrSupervisor:
+      role === "admin" ||
+      role === "oic" ||
+      role === "2ic" ||
+      role === "staff_officer" ||
+      role === "supervisor",
   }), [user, role, loading, signIn, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

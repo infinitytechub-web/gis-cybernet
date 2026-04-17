@@ -10,7 +10,7 @@ import OfficialApplications from "@/components/frontdesk/OfficialApplications";
 import EnquiryApplications from "@/components/frontdesk/EnquiryApplications";
 import AuditLog from "@/components/frontdesk/AuditLog";
 
-const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
+const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
 
 export default function FrontDesk() {
   const { role } = useAuth();
