@@ -205,12 +205,17 @@ export default function Staff() {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
       setUploadingPhoto(!!photoFile);
 
+      // Derive primary phone from contacts list (fallback to legacy field)
+      const validContacts = contacts.filter((c) => c.value.trim());
+      const primary = validContacts.find((c) => c.is_primary) ?? validContacts[0];
+      const primaryPhone = primary?.value.trim() || phone || null;
+
       const payload: any = {
         staff_id: staffId.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         gender: gender || null,
-        phone: phone || null,
+        phone: primaryPhone,
         unit: unit || null,
         shift_group: shiftGroup || null,
         rank_id: rankId || null,
