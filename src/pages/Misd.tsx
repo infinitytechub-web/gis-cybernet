@@ -15,8 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ExportMenu } from "@/components/ui/export-menu";
 import {
   Shield, AlertTriangle, Bug, Eye, FolderSearch, BarChart3, Plus, Activity,
-  Lock, ShieldAlert, Crosshair, FileText, TrendingUp, Clock, CheckCircle2, Printer,
+  Lock, ShieldAlert, Crosshair, FileText, TrendingUp, Clock, CheckCircle2, Printer, Users,
 } from "lucide-react";
+import { OrgStructureTab } from "@/components/misd/OrgStructureTab";
 import { toast } from "sonner";
 import { format, subDays, differenceInDays } from "date-fns";
 import {
