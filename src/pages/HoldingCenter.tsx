@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { CountryCombobox } from "@/components/ui/country-combobox";
+import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
