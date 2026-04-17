@@ -15,8 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ExportMenu } from "@/components/ui/export-menu";
 import {
   Shield, AlertTriangle, Bug, Eye, FolderSearch, BarChart3, Plus, Activity,
-  Lock, ShieldAlert, Crosshair, FileText, TrendingUp, Clock, CheckCircle2, Printer,
+  Lock, ShieldAlert, Crosshair, FileText, TrendingUp, Clock, CheckCircle2, Printer, Users,
 } from "lucide-react";
+import { OrgStructureTab } from "@/components/misd/OrgStructureTab";
 import { toast } from "sonner";
 import { format, subDays, differenceInDays } from "date-fns";
 import {
@@ -86,6 +87,9 @@ export default function Misd() {
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200 data-[state=active]:shadow-md">
             <BarChart3 className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Dashboard
           </TabsTrigger>
+          <TabsTrigger value="structure" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
+            <Users className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Org Structure
+          </TabsTrigger>
           <TabsTrigger value="incidents" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
             <ShieldAlert className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Incidents
           </TabsTrigger>
@@ -101,6 +105,7 @@ export default function Misd() {
         </TabsList>
 
         <TabsContent value="dashboard"><DashboardTab /></TabsContent>
+        <TabsContent value="structure"><OrgStructureTab /></TabsContent>
         <TabsContent value="incidents"><IncidentsTab canCreate={canCreate} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="intel"><ThreatIntelTab canCreate={canCreate} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="investigations"><InvestigationsTab canCreate={canCreate} canManage={canManage} userId={user?.id} /></TabsContent>
