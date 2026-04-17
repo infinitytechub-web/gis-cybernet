@@ -170,7 +170,7 @@ export function AnnouncementsBanner() {
                             </Badge>
                           </div>
                           <p className="text-xs font-bold text-destructive mt-1">{a.content}</p>
-                          <p className="text-[10px] text-destructive/70 mt-1">{format(new Date(a.created_at), "dd MMM yyyy, HH:mm")}</p>
+                          <p className="text-[10px] mt-1 text-[hsl(210_70%_25%)]">{format(new Date(a.created_at), "dd MMM yyyy, HH:mm")}</p>
                         </div>
                       </div>
                       {isAdminOrSupervisor && (
