@@ -349,10 +349,7 @@ function EquipmentTab() {
           <DialogHeader><DialogTitle>{editing ? "Edit Equipment Record" : "Issue Equipment"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Staff Member</Label>
-              <Select value={profileId} onValueChange={setProfileId}>
-                <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
-                <SelectContent>{profiles.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.staff_id} — {p.last_name}, {p.first_name}</SelectItem>)}</SelectContent>
-              </Select>
+              <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Equipment Name</Label><Input value={equipName} onChange={(e) => setEquipName(e.target.value)} placeholder="e.g. Body Camera" /></div>
@@ -521,10 +518,7 @@ function CertificationsTab() {
           <DialogHeader><DialogTitle>{editing ? "Edit Certification" : "Add Certification"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Staff Member</Label>
-              <Select value={profileId} onValueChange={setProfileId}>
-                <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
-                <SelectContent>{profiles.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.staff_id} — {p.last_name}, {p.first_name}</SelectItem>)}</SelectContent>
-              </Select>
+              <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Certification Name</Label><Input value={certName} onChange={(e) => setCertName(e.target.value)} placeholder="e.g. First Aid" /></div>
