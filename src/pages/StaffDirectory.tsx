@@ -32,7 +32,6 @@ const statusColor = (s: string) => {
 };
 
 export default function StaffDirectory() {
-  const { isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";
