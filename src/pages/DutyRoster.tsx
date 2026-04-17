@@ -38,7 +38,8 @@ const SHIFT_COLORS = [
 ];
 
 export default function DutyRoster() {
-  const { isAdmin } = useAuth();
+  const { isAdminOrSupervisor } = useAuth();
+  const isAdmin = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor can assign roster
   const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filterShift, setFilterShift] = useState("all");
