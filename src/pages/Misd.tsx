@@ -26,16 +26,16 @@ import {
 } from "recharts";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200",
-  medium: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  low: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
+  medium: "bg-cyan-100 text-cyan-900 dark:bg-cyan-900/40 dark:text-cyan-200",
   high: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200",
   critical: "bg-red-600 text-white",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
-  investigating: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200",
-  contained: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200",
+  open: "bg-cyan-100 text-cyan-900 dark:bg-cyan-900/40 dark:text-cyan-200",
+  investigating: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
+  contained: "bg-sky-100 text-sky-900 dark:bg-sky-900/40 dark:text-sky-200",
   resolved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
   closed: "bg-muted text-muted-foreground",
 };
@@ -44,7 +44,11 @@ const INCIDENT_TYPES = ["phishing", "malware", "fraud", "data_breach", "unauthor
 const CASE_TYPES = ["fraud", "identity_theft", "cyber_harassment", "financial_crime", "data_breach", "intellectual_property", "other"];
 const INDICATOR_TYPES = ["ip", "domain", "email", "url", "hash", "phone", "account"];
 
-const PURPLE_PALETTE = ["#6d28d9", "#9333ea", "#a855f7", "#c084fc", "#d8b4fe", "#f59e0b", "#fbbf24", "#fcd34d"];
+const NAVY_PALETTE = ["#0B2447", "#19376D", "#1E3A8A", "#0E7490", "#22D3EE", "#67E8F9", "#A5F3FC", "#CFFAFE"];
+
+const MisdBadge = () => (
+  <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900 text-[9px] px-1.5 py-0 h-4 font-bold tracking-wider">MISD</Badge>
+);
 
 export default function Misd() {
   const { user, role } = useAuth();
@@ -70,37 +74,37 @@ export default function Misd() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-700 to-purple-900 flex items-center justify-center shadow-lg shadow-purple-500/30">
-            <Shield className="h-7 w-7 text-amber-300" />
+          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-900 to-slate-900 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+            <Shield className="h-7 w-7 text-cyan-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-700 to-purple-900 dark:from-purple-300 dark:to-purple-500 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-cyan-700 dark:from-cyan-300 dark:to-blue-400 bg-clip-text text-transparent">
               MISD / CYBER
             </h1>
-            <p className="text-sm text-muted-foreground">Cybersecurity Operations Centre — Incidents, Threat Intel & Investigations</p>
+            <p className="text-sm text-muted-foreground">Cybersecurity Operations Centre — Incidents, Threat Intel & Investigations · Managed by MISD</p>
           </div>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex flex-wrap h-auto bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-900/50 p-1">
-          <TabsTrigger value="dashboard" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200 data-[state=active]:shadow-md">
-            <BarChart3 className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Dashboard
+        <TabsList className="flex flex-wrap h-auto bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 p-1">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200 data-[state=active]:shadow-md">
+            <BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Dashboard
           </TabsTrigger>
-          <TabsTrigger value="structure" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <Users className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Org Structure
+          <TabsTrigger value="structure" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <Users className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Org Structure
           </TabsTrigger>
-          <TabsTrigger value="incidents" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <ShieldAlert className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Incidents
+          <TabsTrigger value="incidents" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <ShieldAlert className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Incidents
           </TabsTrigger>
-          <TabsTrigger value="intel" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <Eye className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Threat Intel
+          <TabsTrigger value="intel" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <Eye className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Threat Intel
           </TabsTrigger>
-          <TabsTrigger value="investigations" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <FolderSearch className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Investigations
+          <TabsTrigger value="investigations" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <FolderSearch className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Investigations
           </TabsTrigger>
-          <TabsTrigger value="reports" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <FileText className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Reports
+          <TabsTrigger value="reports" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <FileText className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Reports
           </TabsTrigger>
         </TabsList>
 
@@ -171,12 +175,12 @@ function DashboardTab() {
     <div className="space-y-4">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiCard title="Open Incidents" value={kpis.open} icon={ShieldAlert} variant="amber" />
+        <KpiCard title="Open Incidents" value={kpis.open} icon={ShieldAlert} variant="cyan" />
         <KpiCard title="Critical" value={kpis.critical} icon={AlertTriangle} variant="red" />
-        <KpiCard title="Avg MTTR (days)" value={kpis.avgMttr} icon={Clock} variant="purple" />
+        <KpiCard title="Avg MTTR (days)" value={kpis.avgMttr} icon={Clock} variant="navy" />
         <KpiCard title="Closure Rate" value={`${kpis.closureRate}%`} icon={CheckCircle2} variant="emerald" />
-        <KpiCard title="Active IOCs" value={kpis.activeIntel} icon={Eye} variant="purple" />
-        <KpiCard title="Open Cases" value={kpis.openCases} icon={FolderSearch} variant="amber" />
+        <KpiCard title="Active IOCs" value={kpis.activeIntel} icon={Eye} variant="navy" />
+        <KpiCard title="Open Cases" value={kpis.openCases} icon={FolderSearch} variant="cyan" />
       </div>
 
       {/* Critical alerts banner */}
@@ -193,9 +197,9 @@ function DashboardTab() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-purple-200 dark:border-purple-900">
+        <Card className="border-blue-200 dark:border-blue-900">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4 text-purple-700 dark:text-purple-300" />Incident Trend (30d)</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4 text-blue-700 dark:text-cyan-300" />Incident Trend (30d)</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -205,22 +209,22 @@ function DashboardTab() {
                 <YAxis fontSize={10} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="incidents" stroke="#9333ea" strokeWidth={2} name="New" />
-                <Line type="monotone" dataKey="resolved" stroke="#f59e0b" strokeWidth={2} name="Resolved" />
+                <Line type="monotone" dataKey="incidents" stroke="#1E3A8A" strokeWidth={2} name="New" />
+                <Line type="monotone" dataKey="resolved" stroke="#22D3EE" strokeWidth={2} name="Resolved" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 dark:border-purple-900">
+        <Card className="border-blue-200 dark:border-blue-900">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><Bug className="h-4 w-4 text-purple-700 dark:text-purple-300" />Incidents by Type</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><Bug className="h-4 w-4 text-blue-700 dark:text-cyan-300" />Incidents by Type</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(e: any) => `${e.name} (${e.value})`} fontSize={10}>
-                  {typeData.map((_, i) => <Cell key={i} fill={PURPLE_PALETTE[i % PURPLE_PALETTE.length]} />)}
+                  {typeData.map((_, i) => <Cell key={i} fill={NAVY_PALETTE[i % NAVY_PALETTE.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -228,9 +232,9 @@ function DashboardTab() {
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 dark:border-purple-900 lg:col-span-2">
+        <Card className="border-blue-200 dark:border-blue-900 lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" />Severity Heatmap</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-cyan-600" />Severity Heatmap</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -244,7 +248,7 @@ function DashboardTab() {
                     <Cell key={i} fill={
                       entry.name === "critical" ? "#dc2626" :
                       entry.name === "high" ? "#ea580c" :
-                      entry.name === "medium" ? "#f59e0b" : "#9333ea"
+                      entry.name === "medium" ? "#0E7490" : "#1E3A8A"
                     } />
                   ))}
                 </Bar>
@@ -257,10 +261,10 @@ function DashboardTab() {
   );
 }
 
-function KpiCard({ title, value, icon: Icon, variant }: { title: string; value: any; icon: any; variant: "purple" | "amber" | "red" | "emerald" }) {
+function KpiCard({ title, value, icon: Icon, variant }: { title: string; value: any; icon: any; variant: "navy" | "cyan" | "red" | "emerald" }) {
   const styles = {
-    purple: "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300",
-    amber: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300",
+    navy: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-300",
+    cyan: "bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-900 text-cyan-700 dark:text-cyan-300",
     red: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300",
     emerald: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300",
   }[variant];
@@ -352,15 +356,15 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
           rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-"]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
+        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader>
-                <TableRow className="bg-purple-50 dark:bg-purple-950/30">
+                <TableRow className="bg-blue-50 dark:bg-blue-950/30">
                   <TableHead>Number</TableHead><TableHead>Title</TableHead><TableHead>Type</TableHead>
                   <TableHead>Severity</TableHead><TableHead>Status</TableHead><TableHead>Reported</TableHead>
                   {canCreate && <TableHead></TableHead>}
@@ -372,7 +376,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
                 ) : filtered.map((i: any) => (
                   <TableRow key={i.id} className={i.severity === "critical" && !["resolved", "closed"].includes(i.status) ? "bg-red-50/40 dark:bg-red-950/20" : ""}>
                     <TableCell className="font-mono text-xs">{i.incident_number}</TableCell>
-                    <TableCell className="font-medium">{i.title}</TableCell>
+                    <TableCell className="font-medium"><div className="flex items-center gap-1.5"><MisdBadge />{i.title}</div></TableCell>
                     <TableCell className="text-xs capitalize">{i.incident_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.severity]}>{i.severity}</Badge></TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[i.status]}>{i.status}</Badge></TableCell>
@@ -418,7 +422,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
             </div>
             <div><Label>Impact assessment</Label><Textarea rows={2} value={form.impact_assessment || ""} onChange={(e) => setForm({ ...form, impact_assessment: e.target.value })} /></div>
             {editing && <div><Label>Resolution notes</Label><Textarea rows={2} value={form.resolution_notes || ""} onChange={(e) => setForm({ ...form, resolution_notes: e.target.value })} /></div>}
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-purple-700 hover:bg-purple-800 text-white">
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-blue-900 hover:bg-blue-950 text-cyan-100">
               {save.isPending ? "Saving…" : editing ? "Update" : "Log Incident"}
             </Button>
           </div>
@@ -479,15 +483,15 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
           rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", format(new Date(i.first_seen), "yyyy-MM-dd")]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-        {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
+        {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[700px]">
               <TableHeader>
-                <TableRow className="bg-purple-50 dark:bg-purple-950/30">
+                <TableRow className="bg-blue-50 dark:bg-blue-950/30">
                   <TableHead>Type</TableHead><TableHead>Indicator</TableHead><TableHead>Threat Level</TableHead>
                   <TableHead>Category</TableHead><TableHead>Status</TableHead><TableHead>First Seen</TableHead>
                   {canManage && <TableHead></TableHead>}
@@ -498,8 +502,8 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
                   <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center py-6 text-muted-foreground">No indicators</TableCell></TableRow>
                 ) : filtered.map((i: any) => (
                   <TableRow key={i.id}>
-                    <TableCell><Badge variant="outline" className="uppercase border-purple-400 text-purple-700 dark:text-purple-300">{i.indicator_type}</Badge></TableCell>
-                    <TableCell className="font-mono text-xs break-all">{i.indicator_value}</TableCell>
+                    <TableCell><Badge variant="outline" className="uppercase border-blue-400 text-blue-700 dark:text-cyan-300">{i.indicator_type}</Badge></TableCell>
+                    <TableCell className="font-mono text-xs break-all"><div className="flex items-center gap-1.5"><MisdBadge /><span>{i.indicator_value}</span></div></TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.threat_level]}>{i.threat_level}</Badge></TableCell>
                     <TableCell className="text-xs">{i.category || "—"}</TableCell>
                     <TableCell>{i.is_active ? <Badge className="bg-emerald-100 text-emerald-800">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
@@ -535,7 +539,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
             <div><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. C2, phishing host" /></div>
             <div><Label>Source</Label><Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="e.g. internal, partner agency" /></div>
             <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-purple-700 hover:bg-purple-800 text-white">{save.isPending ? "Saving…" : "Add IOC"}</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-blue-900 hover:bg-blue-950 text-cyan-100">{save.isPending ? "Saving…" : "Add IOC"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -595,15 +599,15 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
           rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.referred_to_agency || "-"]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
+        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader>
-                <TableRow className="bg-purple-50 dark:bg-purple-950/30">
+                <TableRow className="bg-blue-50 dark:bg-blue-950/30">
                   <TableHead>Case #</TableHead><TableHead>Title</TableHead><TableHead>Type</TableHead>
                   <TableHead>Status</TableHead><TableHead>Priority</TableHead><TableHead>Referred</TableHead>
                   {canCreate && <TableHead></TableHead>}
@@ -615,7 +619,7 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
                 ) : cases.map((c: any) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-mono text-xs">{c.case_number}</TableCell>
-                    <TableCell className="font-medium">{c.title}</TableCell>
+                    <TableCell className="font-medium"><div className="flex items-center gap-1.5"><MisdBadge />{c.title}</div></TableCell>
                     <TableCell className="text-xs capitalize">{c.case_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[c.status]}>{c.status}</Badge></TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[c.priority]}>{c.priority}</Badge></TableCell>
@@ -670,7 +674,7 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
               <div><Label>Referred to agency</Label><Input value={form.referred_to_agency || ""} onChange={(e) => setForm({ ...form, referred_to_agency: e.target.value })} placeholder="e.g. EOCO, Police CID" /></div>
               <div><Label>Outcome</Label><Input value={form.outcome || ""} onChange={(e) => setForm({ ...form, outcome: e.target.value })} /></div>
             </div>
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-purple-700 hover:bg-purple-800 text-white">{save.isPending ? "Saving…" : editing ? "Update" : "Open Case"}</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-blue-900 hover:bg-blue-950 text-cyan-100">{save.isPending ? "Saving…" : editing ? "Update" : "Open Case"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -712,10 +716,10 @@ function ReportsTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-purple-700 dark:text-purple-300" />
+            <BarChart3 className="h-4 w-4 text-blue-700 dark:text-cyan-300" />
             6-Month Performance Report
           </CardTitle>
         </CardHeader>
@@ -727,38 +731,38 @@ function ReportsTab() {
               <YAxis fontSize={11} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="incidents" fill="#9333ea" name="Incidents" />
-              <Bar dataKey="resolved" fill="#f59e0b" name="Resolved" />
-              <Bar dataKey="cases" fill="#7c3aed" name="Cases" />
+              <Bar dataKey="incidents" fill="#1E3A8A" name="Incidents" />
+              <Bar dataKey="resolved" fill="#22D3EE" name="Resolved" />
+              <Bar dataKey="cases" fill="#0E7490" name="Cases" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
+        <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Total Incidents</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold text-purple-700 dark:text-purple-300">{incidents.length}</div></CardContent>
+          <CardContent><div className="text-3xl font-bold text-blue-700 dark:text-cyan-300">{incidents.length}</div></CardContent>
         </Card>
-        <Card className="border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20">
+        <Card className="border-cyan-200 dark:border-cyan-900 bg-cyan-50/40 dark:bg-cyan-950/20">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Resolution Rate</CardTitle></CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">
+            <div className="text-3xl font-bold text-cyan-700 dark:text-cyan-300">
               {incidents.length > 0 ? Math.round((incidents.filter((i: any) => i.resolved_at).length / incidents.length) * 100) : 0}%
             </div>
           </CardContent>
         </Card>
-        <Card className="border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
+        <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Cases Referred</CardTitle></CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">
+            <div className="text-3xl font-bold text-blue-700 dark:text-cyan-300">
               {cases.filter((c: any) => c.referred_to_agency).length}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardHeader>
           <CardTitle className="text-sm">Export Reports</CardTitle>
         </CardHeader>

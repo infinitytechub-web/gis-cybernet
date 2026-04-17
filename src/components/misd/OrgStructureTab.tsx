@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -13,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ShieldCheck, Server, Database, FileCheck2, FlaskConical, Users, Crown, Star,
-  UserPlus, Search, X, Sparkles, BarChart3, ChevronsUpDown, Check,
+  UserPlus, Sparkles, BarChart3, ChevronsUpDown, Check, X, HardDrive,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -40,8 +39,8 @@ const UNITS: Unit[] = [
     name: "Cybersecurity & Risk Management",
     priority: "Top Priority",
     icon: ShieldCheck,
-    accent: "from-purple-700 to-purple-900",
-    ring: "border-purple-300 dark:border-purple-800",
+    accent: "from-blue-900 to-slate-900",
+    ring: "border-blue-300 dark:border-blue-800",
     description: "Defends digital assets, manages cyber risk, and leads incident response.",
     roles: [
       { title: "Cybersecurity Analyst" },
@@ -53,8 +52,8 @@ const UNITS: Unit[] = [
     key: "infra_systems",
     name: "IT Infrastructure & Systems Engineering",
     icon: Server,
-    accent: "from-indigo-600 to-purple-800",
-    ring: "border-indigo-300 dark:border-indigo-800",
+    accent: "from-blue-800 to-slate-900",
+    ring: "border-sky-300 dark:border-sky-800",
     description: "Designs, deploys, and maintains the network, servers, and core systems.",
     roles: [
       { title: "IT Infrastructure Manager", lead: true },
@@ -66,8 +65,8 @@ const UNITS: Unit[] = [
     key: "data_analytics",
     name: "Data Analytics & Intelligence",
     icon: Database,
-    accent: "from-fuchsia-600 to-purple-800",
-    ring: "border-fuchsia-300 dark:border-fuchsia-800",
+    accent: "from-cyan-700 to-blue-900",
+    ring: "border-cyan-300 dark:border-cyan-800",
     description: "Transforms operational data into actionable intelligence and decision support.",
     roles: [
       { title: "Data Scientist" },
@@ -78,8 +77,8 @@ const UNITS: Unit[] = [
     key: "governance",
     name: "Information Governance & Compliance",
     icon: FileCheck2,
-    accent: "from-amber-600 to-purple-800",
-    ring: "border-amber-300 dark:border-amber-800",
+    accent: "from-slate-800 to-blue-900",
+    ring: "border-slate-300 dark:border-slate-700",
     description: "Enforces policy, regulatory compliance, and information assurance standards.",
     roles: [
       { title: "Information Assurance Specialist" },
@@ -89,17 +88,31 @@ const UNITS: Unit[] = [
     key: "cyber_ops",
     name: "Cyber Operations & Innovation Lab",
     icon: FlaskConical,
-    accent: "from-purple-600 to-amber-700",
-    ring: "border-purple-300 dark:border-purple-800",
+    accent: "from-blue-900 to-cyan-700",
+    ring: "border-blue-300 dark:border-blue-800",
     description: "Runs offensive/defensive operations and prototypes new capabilities.",
     roles: [
       { title: "Cyber Operations Specialist" },
       { title: "Software Developer" },
     ],
   },
+  {
+    key: "hardware",
+    name: "Hardware Unit",
+    icon: HardDrive,
+    accent: "from-slate-900 to-cyan-600",
+    ring: "border-cyan-300 dark:border-cyan-800",
+    description: "Manages physical IT assets, end-user hardware support, and specialized immigration devices.",
+    roles: [
+      { title: "Asset & Lifecycle Manager", lead: true },
+      { title: "Hardware Engineer / Technician" },
+      { title: "Field Support Specialist" },
+      { title: "Biometrics & Peripherals Specialist" },
+    ],
+  },
 ];
 
-const PURPLE_PALETTE = ["#6d28d9", "#9333ea", "#a855f7", "#c084fc", "#d8b4fe"];
+const NAVY_PALETTE = ["#0B2447", "#19376D", "#1E3A8A", "#0E7490", "#22D3EE", "#67E8F9"];
 
 export function OrgStructureTab() {
   const { role } = useAuth();
@@ -152,7 +165,6 @@ export function OrgStructureTab() {
     return { byUnit, activeUnits, leads, total: assignments.length };
   }, [assignments, grouped]);
 
-  // Auto-assign: distribute MISD/CYBER department staff across units round-robin
   const autoAssign = useMutation({
     mutationFn: async () => {
       const misdStaff = profiles.filter(
@@ -195,23 +207,23 @@ export function OrgStructureTab() {
   return (
     <div className="space-y-4">
       {/* Summary banner */}
-      <Card className="border-purple-200 dark:border-purple-900 bg-gradient-to-r from-purple-50 to-amber-50 dark:from-purple-950/40 dark:to-amber-950/30">
+      <Card className="border-blue-200 dark:border-blue-900 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/30">
         <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-700 to-purple-900 flex items-center justify-center shadow-md shadow-purple-500/30">
-              <Users className="h-5 w-5 text-amber-300" />
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-900 to-slate-900 flex items-center justify-center shadow-md shadow-cyan-500/30">
+              <Users className="h-5 w-5 text-cyan-300" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-purple-900 dark:text-purple-200">MISD / CYBER Organisational Structure</h2>
+              <h2 className="text-base font-semibold text-blue-900 dark:text-blue-200">MISD / CYBER Organisational Structure</h2>
               <p className="text-xs text-muted-foreground">Defined roles & functional units aligned with global cyber best practices.</p>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge className="bg-purple-700 text-amber-200 hover:bg-purple-700">{UNITS.length} Units</Badge>
-            <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-300">{totalRoles} Role Types</Badge>
+            <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900">{UNITS.length} Units</Badge>
+            <Badge variant="outline" className="border-cyan-500 text-cyan-700 dark:text-cyan-300">{totalRoles} Role Types</Badge>
             <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">{analytics.total} Assigned</Badge>
             {canManage && (
-              <Button size="sm" variant="outline" className="border-purple-400 text-purple-800 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/40"
+              <Button size="sm" variant="outline" className="border-blue-400 text-blue-800 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/40"
                 onClick={() => autoAssign.mutate()} disabled={autoAssign.isPending}>
                 <Sparkles className="h-3.5 w-3.5 mr-1" />Auto-assign MISD staff
               </Button>
@@ -222,14 +234,14 @@ export function OrgStructureTab() {
 
       {/* Analytics dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <StatCard label="Total Assigned" value={analytics.total} icon={Users} tone="purple" />
+        <StatCard label="Total Assigned" value={analytics.total} icon={Users} tone="navy" />
         <StatCard label="Active Units" value={`${analytics.activeUnits}/${UNITS.length}`} icon={ShieldCheck} tone="emerald" />
-        <StatCard label="Unit Leads" value={analytics.leads} icon={Crown} tone="amber" />
+        <StatCard label="Unit Leads" value={analytics.leads} icon={Crown} tone="cyan" />
 
-        <Card className="border-purple-200 dark:border-purple-900 lg:col-span-2">
+        <Card className="border-blue-200 dark:border-blue-900 lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-purple-700 dark:text-purple-300" />Staff per Unit
+              <BarChart3 className="h-4 w-4 text-blue-700 dark:text-cyan-300" />Staff per Unit
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -240,24 +252,24 @@ export function OrgStructureTab() {
                 <YAxis fontSize={10} allowDecimals={false} />
                 <Tooltip />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {analytics.byUnit.map((_, i) => <Cell key={i} fill={PURPLE_PALETTE[i % PURPLE_PALETTE.length]} />)}
+                  {analytics.byUnit.map((_, i) => <Cell key={i} fill={NAVY_PALETTE[i % NAVY_PALETTE.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 dark:border-purple-900">
+        <Card className="border-blue-200 dark:border-blue-900">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <PieChartIcon />Distribution
+              <BarChart3 className="h-4 w-4 text-blue-700 dark:text-cyan-300" />Distribution
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={analytics.byUnit.filter((d) => d.value > 0)} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} fontSize={9}>
-                  {analytics.byUnit.map((_, i) => <Cell key={i} fill={PURPLE_PALETTE[i % PURPLE_PALETTE.length]} />)}
+                  {analytics.byUnit.map((_, i) => <Cell key={i} fill={NAVY_PALETTE[i % NAVY_PALETTE.length]} />)}
                 </Pie>
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 9 }} />
@@ -277,8 +289,8 @@ export function OrgStructureTab() {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2.5">
-                    <div className={`h-9 w-9 rounded-md bg-gradient-to-br ${u.accent} flex items-center justify-center shadow shadow-purple-500/20`}>
-                      <u.icon className="h-4 w-4 text-amber-200" />
+                    <div className={`h-9 w-9 rounded-md bg-gradient-to-br ${u.accent} flex items-center justify-center shadow shadow-cyan-500/20`}>
+                      <u.icon className="h-4 w-4 text-cyan-200" />
                     </div>
                     <div>
                       <CardTitle className="text-sm leading-tight">{u.name}</CardTitle>
@@ -287,11 +299,11 @@ export function OrgStructureTab() {
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     {u.priority && (
-                      <Badge className="bg-amber-500 text-white hover:bg-amber-500">
+                      <Badge className="bg-cyan-500 text-white hover:bg-cyan-500">
                         <Star className="h-3 w-3 mr-1 fill-white" />{u.priority}
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-[10px] border-purple-400 text-purple-800 dark:text-purple-200">
+                    <Badge variant="outline" className="text-[10px] border-blue-400 text-blue-800 dark:text-blue-200">
                       {unitAssigned.length} assigned
                     </Badge>
                   </div>
@@ -304,14 +316,14 @@ export function OrgStructureTab() {
                     {u.roles.map((r) => (
                       <li
                         key={r.title}
-                        className="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded border border-purple-100 dark:border-purple-900/50 bg-purple-50/50 dark:bg-purple-950/20"
+                        className="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded border border-blue-100 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20"
                       >
                         <span className="flex items-center gap-2">
-                          {r.lead ? <Crown className="h-3 w-3 text-amber-600" /> : <span className="h-1.5 w-1.5 rounded-full bg-purple-600" />}
-                          <span className={r.lead ? "font-semibold text-purple-900 dark:text-purple-200" : ""}>{r.title}</span>
+                          {r.lead ? <Crown className="h-3 w-3 text-cyan-600" /> : <span className="h-1.5 w-1.5 rounded-full bg-blue-700" />}
+                          <span className={r.lead ? "font-semibold text-blue-900 dark:text-blue-200" : ""}>{r.title}</span>
                         </span>
                         {r.lead && (
-                          <Badge variant="outline" className="text-[9px] h-4 border-amber-500 text-amber-700 dark:text-amber-300">Unit Lead</Badge>
+                          <Badge variant="outline" className="text-[9px] h-4 border-cyan-500 text-cyan-700 dark:text-cyan-300">Unit Lead</Badge>
                         )}
                       </li>
                     ))}
@@ -322,7 +334,7 @@ export function OrgStructureTab() {
                   <div className="flex items-center justify-between mb-1.5">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Assigned Staff</p>
                     {canManage && (
-                      <Button size="sm" variant="ghost" className="h-6 text-xs px-2 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
+                      <Button size="sm" variant="ghost" className="h-6 text-xs px-2 text-blue-700 dark:text-cyan-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
                         onClick={() => { setAssignUnit(u); setAssignOpen(true); }}>
                         <UserPlus className="h-3 w-3 mr-1" />Assign
                       </Button>
@@ -335,7 +347,7 @@ export function OrgStructureTab() {
                       {unitAssigned.map((a: any) => (
                         <li key={a.id} className="flex items-center justify-between gap-2 text-xs py-1 px-2 rounded bg-background border border-border">
                           <div className="flex items-center gap-2 min-w-0">
-                            {a.is_lead && <Crown className="h-3 w-3 text-amber-600 shrink-0" />}
+                            {a.is_lead && <Crown className="h-3 w-3 text-cyan-600 shrink-0" />}
                             <span className="truncate font-medium">
                               {a.profiles?.first_name} {a.profiles?.last_name}
                             </span>
@@ -374,14 +386,10 @@ export function OrgStructureTab() {
   );
 }
 
-function PieChartIcon() {
-  return <BarChart3 className="h-4 w-4 text-purple-700 dark:text-purple-300" />;
-}
-
-function StatCard({ label, value, icon: Icon, tone }: { label: string; value: any; icon: any; tone: "purple" | "amber" | "emerald" }) {
+function StatCard({ label, value, icon: Icon, tone }: { label: string; value: any; icon: any; tone: "navy" | "cyan" | "emerald" }) {
   const styles = {
-    purple: "border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-800 text-purple-800 dark:text-purple-200",
-    amber: "border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-200",
+    navy: "border-blue-300 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800 text-blue-900 dark:text-blue-200",
+    cyan: "border-cyan-300 bg-cyan-50 dark:bg-cyan-950/30 dark:border-cyan-800 text-cyan-800 dark:text-cyan-200",
     emerald: "border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200",
   }[tone];
   return (
@@ -436,7 +444,7 @@ function AssignDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <unit.icon className="h-5 w-5 text-purple-700 dark:text-purple-300" />
+            <unit.icon className="h-5 w-5 text-blue-700 dark:text-cyan-300" />
             Assign to {unit.name}
           </DialogTitle>
         </DialogHeader>
@@ -492,13 +500,13 @@ function AssignDialog({
 
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox checked={isLead} onCheckedChange={(v) => setIsLead(!!v)} />
-            <Crown className="h-3.5 w-3.5 text-amber-600" />
+            <Crown className="h-3.5 w-3.5 text-cyan-600" />
             Mark as Unit Lead
           </label>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-purple-700 hover:bg-purple-800 text-amber-100">
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-blue-900 hover:bg-blue-950 text-cyan-100">
             <UserPlus className="h-4 w-4 mr-1" />Assign
           </Button>
         </DialogFooter>
