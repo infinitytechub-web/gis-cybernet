@@ -56,6 +56,7 @@ export default function Staff() {
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
+  const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [unit, setUnit] = useState("");
   const [shiftGroup, setShiftGroup] = useState("");
   const [rankId, setRankId] = useState("");
