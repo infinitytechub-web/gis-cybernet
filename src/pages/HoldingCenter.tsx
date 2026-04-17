@@ -484,7 +484,6 @@ function VisitorLog({ records, detentionId, userId, canEdit }: any) {
           <div className="grid grid-cols-2 gap-3"><div><Label>Relationship</Label><Input value={form.relationship} onChange={e => setForm(p => ({ ...p, relationship: e.target.value }))} /></div>
             <div><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div></div>
           <div><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
-          <div><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
           <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
           <Button onClick={() => add.mutate()} disabled={add.isPending} className="w-full">{add.isPending ? "Saving…" : "Log"}</Button></div></DialogContent></Dialog>
     </div>
