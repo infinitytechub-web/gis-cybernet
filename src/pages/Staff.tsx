@@ -113,6 +113,7 @@ export default function Staff() {
     setLastName("");
     setGender("");
     setPhone("");
+    setContacts([]);
     setUnit("");
     setShiftGroup("");
     setRankId("");
@@ -138,6 +139,27 @@ export default function Staff() {
     setLastName(s.last_name);
     setGender(s.gender || "");
     setPhone(s.phone || "");
+    // Load contacts for this profile
+    supabase
+      .from("profile_contacts")
+      .select("*")
+      .eq("profile_id", s.id)
+      .order("is_primary", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setContacts(
+            data.map((c: any) => ({
+              id: c.id,
+              contact_type: c.contact_type,
+              label: c.label,
+              value: c.value,
+              is_primary: c.is_primary,
+            }))
+          );
+        } else {
+          setContacts([]);
+        }
+      });
     setUnit(s.unit || "");
     setShiftGroup(s.shift_group || "");
     setRankId(s.rank_id || "");
