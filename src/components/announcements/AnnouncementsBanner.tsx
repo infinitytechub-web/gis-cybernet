@@ -91,10 +91,10 @@ export function AnnouncementsBanner() {
   if (announcements.length === 0 && !isAdminOrSupervisor) return null;
 
   return (
-    <Card className="border-destructive/40 bg-destructive text-destructive-foreground">
+    <Card className="border-destructive/40 bg-[hsl(48_87%_92%)] text-destructive">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="font-semibold tracking-tight text-sm flex items-center gap-2 bg-slate-100 text-destructive">
+          <CardTitle className="font-semibold tracking-tight text-sm flex items-center gap-2 text-destructive">
             <Megaphone className="h-4 w-4 text-destructive" />
             Announcements
           </CardTitle>
