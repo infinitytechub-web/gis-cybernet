@@ -94,8 +94,8 @@ export function AnnouncementsBanner() {
     <Card className="border-destructive/40 bg-destructive text-destructive-foreground">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2 text-destructive-foreground">
-            <Megaphone className="h-4 w-4 text-destructive-foreground" />
+          <CardTitle className="font-semibold tracking-tight text-sm flex items-center gap-2 bg-slate-100 text-destructive">
+            <Megaphone className="h-4 w-4 text-destructive" />
             Announcements
           </CardTitle>
           {isAdminOrSupervisor && (
