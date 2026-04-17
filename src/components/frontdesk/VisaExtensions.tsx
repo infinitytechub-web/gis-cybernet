@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
