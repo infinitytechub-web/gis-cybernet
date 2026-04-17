@@ -376,7 +376,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
                 ) : filtered.map((i: any) => (
                   <TableRow key={i.id} className={i.severity === "critical" && !["resolved", "closed"].includes(i.status) ? "bg-red-50/40 dark:bg-red-950/20" : ""}>
                     <TableCell className="font-mono text-xs">{i.incident_number}</TableCell>
-                    <TableCell className="font-medium">{i.title}</TableCell>
+                    <TableCell className="font-medium"><div className="flex items-center gap-1.5"><MisdBadge />{i.title}</div></TableCell>
                     <TableCell className="text-xs capitalize">{i.incident_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.severity]}>{i.severity}</Badge></TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[i.status]}>{i.status}</Badge></TableCell>
@@ -503,7 +503,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
                 ) : filtered.map((i: any) => (
                   <TableRow key={i.id}>
                     <TableCell><Badge variant="outline" className="uppercase border-blue-400 text-blue-700 dark:text-cyan-300">{i.indicator_type}</Badge></TableCell>
-                    <TableCell className="font-mono text-xs break-all">{i.indicator_value}</TableCell>
+                    <TableCell className="font-mono text-xs break-all"><div className="flex items-center gap-1.5"><MisdBadge /><span>{i.indicator_value}</span></div></TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.threat_level]}>{i.threat_level}</Badge></TableCell>
                     <TableCell className="text-xs">{i.category || "—"}</TableCell>
                     <TableCell>{i.is_active ? <Badge className="bg-emerald-100 text-emerald-800">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
@@ -619,7 +619,7 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
                 ) : cases.map((c: any) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-mono text-xs">{c.case_number}</TableCell>
-                    <TableCell className="font-medium">{c.title}</TableCell>
+                    <TableCell className="font-medium"><div className="flex items-center gap-1.5"><MisdBadge />{c.title}</div></TableCell>
                     <TableCell className="text-xs capitalize">{c.case_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[c.status]}>{c.status}</Badge></TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[c.priority]}>{c.priority}</Badge></TableCell>
