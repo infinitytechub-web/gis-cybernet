@@ -238,6 +238,7 @@ export default function Staff() {
         }
         const { error } = await supabase.from("profiles").update(payload).eq("id", editing.id);
         if (error) throw error;
+        await syncContacts(editing.id, validContacts);
       } else {
         const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
@@ -247,6 +248,7 @@ export default function Staff() {
             await supabase.from("profiles").update({ photo_url: photoPath }).eq("id", data.id);
           }
         }
+        if (data) await syncContacts(data.id, validContacts);
       }
     },
     onSuccess: () => {
