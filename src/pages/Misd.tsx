@@ -175,12 +175,12 @@ function DashboardTab() {
     <div className="space-y-4">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KpiCard title="Open Incidents" value={kpis.open} icon={ShieldAlert} variant="amber" />
+        <KpiCard title="Open Incidents" value={kpis.open} icon={ShieldAlert} variant="cyan" />
         <KpiCard title="Critical" value={kpis.critical} icon={AlertTriangle} variant="red" />
-        <KpiCard title="Avg MTTR (days)" value={kpis.avgMttr} icon={Clock} variant="purple" />
+        <KpiCard title="Avg MTTR (days)" value={kpis.avgMttr} icon={Clock} variant="navy" />
         <KpiCard title="Closure Rate" value={`${kpis.closureRate}%`} icon={CheckCircle2} variant="emerald" />
-        <KpiCard title="Active IOCs" value={kpis.activeIntel} icon={Eye} variant="purple" />
-        <KpiCard title="Open Cases" value={kpis.openCases} icon={FolderSearch} variant="amber" />
+        <KpiCard title="Active IOCs" value={kpis.activeIntel} icon={Eye} variant="navy" />
+        <KpiCard title="Open Cases" value={kpis.openCases} icon={FolderSearch} variant="cyan" />
       </div>
 
       {/* Critical alerts banner */}
