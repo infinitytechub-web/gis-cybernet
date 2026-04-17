@@ -26,16 +26,16 @@ import {
 } from "recharts";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200",
-  medium: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+  low: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
+  medium: "bg-cyan-100 text-cyan-900 dark:bg-cyan-900/40 dark:text-cyan-200",
   high: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200",
   critical: "bg-red-600 text-white",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
-  investigating: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200",
-  contained: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200",
+  open: "bg-cyan-100 text-cyan-900 dark:bg-cyan-900/40 dark:text-cyan-200",
+  investigating: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
+  contained: "bg-sky-100 text-sky-900 dark:bg-sky-900/40 dark:text-sky-200",
   resolved: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
   closed: "bg-muted text-muted-foreground",
 };
@@ -44,7 +44,11 @@ const INCIDENT_TYPES = ["phishing", "malware", "fraud", "data_breach", "unauthor
 const CASE_TYPES = ["fraud", "identity_theft", "cyber_harassment", "financial_crime", "data_breach", "intellectual_property", "other"];
 const INDICATOR_TYPES = ["ip", "domain", "email", "url", "hash", "phone", "account"];
 
-const PURPLE_PALETTE = ["#6d28d9", "#9333ea", "#a855f7", "#c084fc", "#d8b4fe", "#f59e0b", "#fbbf24", "#fcd34d"];
+const NAVY_PALETTE = ["#0B2447", "#19376D", "#1E3A8A", "#0E7490", "#22D3EE", "#67E8F9", "#A5F3FC", "#CFFAFE"];
+
+const MisdBadge = () => (
+  <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900 text-[9px] px-1.5 py-0 h-4 font-bold tracking-wider">MISD</Badge>
+);
 
 export default function Misd() {
   const { user, role } = useAuth();
