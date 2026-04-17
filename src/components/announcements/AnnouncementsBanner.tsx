@@ -179,9 +179,9 @@ export function AnnouncementsBanner() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-6 w-6 shrink-0"
+                              className="h-6 w-6 shrink-0 text-destructive-foreground hover:bg-destructive-foreground/10 hover:text-destructive-foreground"
                             >
-                              <Trash2 className="h-3 w-3 text-destructive" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
