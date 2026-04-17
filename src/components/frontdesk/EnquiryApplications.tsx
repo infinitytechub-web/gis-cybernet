@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { isEcowasNationality } from "@/lib/countries";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
@@ -204,7 +205,7 @@ export default function EnquiryApplications() {
                     <SelectContent><SelectItem value="single">Single</SelectItem><SelectItem value="married">Married</SelectItem><SelectItem value="divorced">Divorced</SelectItem><SelectItem value="widowed">Widowed</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div><Label>Telephone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div className="md:col-span-2"><Label>Telephone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
               </div>
               <div><Label>Home Address</Label><Textarea value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">

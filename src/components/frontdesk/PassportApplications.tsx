@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { isEcowasNationality } from "@/lib/countries";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
@@ -216,7 +217,7 @@ export default function PassportApplications() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div><Label>Telephone Number</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
                 <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
                 <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>

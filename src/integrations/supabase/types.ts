@@ -2150,6 +2150,47 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_contacts: {
+        Row: {
+          contact_type: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          label: string | null
+          profile_id: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          contact_type?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          label?: string | null
+          profile_id: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          label?: string | null
+          profile_id?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_locked: boolean

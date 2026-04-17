@@ -20,6 +20,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
+import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
@@ -55,6 +56,7 @@ export default function Staff() {
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
+  const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [unit, setUnit] = useState("");
   const [shiftGroup, setShiftGroup] = useState("");
   const [rankId, setRankId] = useState("");
@@ -111,6 +113,7 @@ export default function Staff() {
     setLastName("");
     setGender("");
     setPhone("");
+    setContacts([]);
     setUnit("");
     setShiftGroup("");
     setRankId("");
@@ -136,6 +139,27 @@ export default function Staff() {
     setLastName(s.last_name);
     setGender(s.gender || "");
     setPhone(s.phone || "");
+    // Load contacts for this profile
+    supabase
+      .from("profile_contacts")
+      .select("*")
+      .eq("profile_id", s.id)
+      .order("is_primary", { ascending: false })
+      .then(({ data }) => {
+        if (data) {
+          setContacts(
+            data.map((c: any) => ({
+              id: c.id,
+              contact_type: c.contact_type,
+              label: c.label,
+              value: c.value,
+              is_primary: c.is_primary,
+            }))
+          );
+        } else {
+          setContacts([]);
+        }
+      });
     setUnit(s.unit || "");
     setShiftGroup(s.shift_group || "");
     setRankId(s.rank_id || "");
@@ -176,17 +200,36 @@ export default function Staff() {
     return path;
   };
 
+  const syncContacts = async (profileId: string, list: ContactEntry[]) => {
+    await supabase.from("profile_contacts").delete().eq("profile_id", profileId);
+    if (list.length === 0) return;
+    const rows = list.map((c) => ({
+      profile_id: profileId,
+      contact_type: c.contact_type,
+      label: c.label || null,
+      value: c.value.trim(),
+      is_primary: c.is_primary,
+    }));
+    const { error } = await supabase.from("profile_contacts").insert(rows);
+    if (error) throw error;
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
       setUploadingPhoto(!!photoFile);
+
+      // Derive primary phone from contacts list (fallback to legacy field)
+      const validContacts = contacts.filter((c) => c.value.trim());
+      const primary = validContacts.find((c) => c.is_primary) ?? validContacts[0];
+      const primaryPhone = primary?.value.trim() || phone || null;
 
       const payload: any = {
         staff_id: staffId.trim(),
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         gender: gender || null,
-        phone: phone || null,
+        phone: primaryPhone,
         unit: unit || null,
         shift_group: shiftGroup || null,
         rank_id: rankId || null,
@@ -209,6 +252,7 @@ export default function Staff() {
         }
         const { error } = await supabase.from("profiles").update(payload).eq("id", editing.id);
         if (error) throw error;
+        await syncContacts(editing.id, validContacts);
       } else {
         const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
@@ -218,6 +262,7 @@ export default function Staff() {
             await supabase.from("profiles").update({ photo_url: photoPath }).eq("id", data.id);
           }
         }
+        if (data) await syncContacts(data.id, validContacts);
       }
     },
     onSuccess: () => {
@@ -541,9 +586,15 @@ export default function Staff() {
                 </Select>
               </div>
               <div>
-                <Label>Phone</Label>
+                <Label>Primary Phone</Label>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0XX XXX XXXX" />
+                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added.</p>
               </div>
+            </div>
+            <div>
+              <Label>Additional Contacts</Label>
+              <p className="text-xs text-muted-foreground mb-2">Add multiple phone numbers. Star one to mark it primary.</p>
+              <MultiContactInput value={contacts} onChange={setContacts} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
