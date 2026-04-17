@@ -706,8 +706,8 @@ function VendorsTab({ vendors, canManage }: any) {
                 <div><Label>Contact Person</Label><Input value={form.contact_person} onChange={e => setForm({ ...form, contact_person: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-2">
                   <div><Label>Email</Label><Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-                  <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
                 </div>
+                <div><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>TIN</Label><Input value={form.tin_number} onChange={e => setForm({ ...form, tin_number: e.target.value })} /></div>
               </div>
               <DialogFooter><Button onClick={submit}>Save</Button></DialogFooter>
