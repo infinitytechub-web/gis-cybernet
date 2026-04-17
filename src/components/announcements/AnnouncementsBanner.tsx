@@ -91,17 +91,17 @@ export function AnnouncementsBanner() {
   if (announcements.length === 0 && !isAdminOrSupervisor) return null;
 
   return (
-    <Card className="border-accent/30 bg-accent/5">
+    <Card className="border-destructive/40 bg-destructive text-destructive-foreground">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-accent-foreground" />
+          <CardTitle className="text-sm flex items-center gap-2 text-destructive-foreground">
+            <Megaphone className="h-4 w-4 text-destructive-foreground" />
             Announcements
           </CardTitle>
           {isAdminOrSupervisor && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1 bg-transparent border-destructive-foreground/40 text-destructive-foreground hover:bg-destructive-foreground/10 hover:text-destructive-foreground">
                   <Plus className="h-3 w-3" /> New
                 </Button>
               </DialogTrigger>
