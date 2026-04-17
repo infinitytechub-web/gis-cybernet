@@ -586,9 +586,15 @@ export default function Staff() {
                 </Select>
               </div>
               <div>
-                <Label>Phone</Label>
+                <Label>Primary Phone</Label>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0XX XXX XXXX" />
+                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added.</p>
               </div>
+            </div>
+            <div>
+              <Label>Additional Contacts</Label>
+              <p className="text-xs text-muted-foreground mb-2">Add multiple phone numbers. Star one to mark it primary.</p>
+              <MultiContactInput value={contacts} onChange={setContacts} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
