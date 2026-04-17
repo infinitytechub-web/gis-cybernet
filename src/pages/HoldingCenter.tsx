@@ -245,7 +245,7 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
-              <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+              <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
               <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
               <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
               <div><Label>ID Type</Label>
@@ -482,7 +482,8 @@ function VisitorLog({ records, detentionId, userId, canEdit }: any) {
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Log Visitor</DialogTitle></DialogHeader>
         <div className="space-y-3"><div><Label>Visitor Name *</Label><Input value={form.visitor_name} onChange={e => setForm(p => ({ ...p, visitor_name: e.target.value }))} /></div>
           <div className="grid grid-cols-2 gap-3"><div><Label>Relationship</Label><Input value={form.relationship} onChange={e => setForm(p => ({ ...p, relationship: e.target.value }))} /></div>
-            <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div></div>
+            <div><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div></div>
+          <div><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
           <div><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
           <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
           <Button onClick={() => add.mutate()} disabled={add.isPending} className="w-full">{add.isPending ? "Saving…" : "Log"}</Button></div></DialogContent></Dialog>
