@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { FileText, Wrench, Award, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, Clock, Search } from "lucide-react";
@@ -173,10 +174,7 @@ function DocumentsTab() {
           <div className="space-y-3">
             <div>
               <Label>Staff Member</Label>
-              <Select value={profileId} onValueChange={setProfileId}>
-                <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
-                <SelectContent>{profiles.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.staff_id} — {p.last_name}, {p.first_name}</SelectItem>)}</SelectContent>
-              </Select>
+              <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Document Type</Label>

@@ -159,7 +159,7 @@ export default function Shifts() {
                 <DialogHeader><DialogTitle>Assign Shift</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Shift</Label><Select value={selectedShiftId} onValueChange={setSelectedShiftId}><SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger><SelectContent>{shifts.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>))}</SelectContent></Select></div>
-                  <div><Label>Staff Member</Label><Select value={selectedProfileId} onValueChange={setSelectedProfileId}><SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger><SelectContent>{profiles.map((p: any) => (<SelectItem key={p.id} value={p.id}>{p.staff_id} — {p.last_name}, {p.first_name}</SelectItem>))}</SelectContent></Select></div>
+                  <div><Label>Staff Member</Label><StaffCombobox staff={profiles as any} value={selectedProfileId} onValueChange={setSelectedProfileId} /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Start Date</Label><Input type="date" value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} /></div>
                     <div><Label>End Date (optional)</Label><Input type="date" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} /></div>

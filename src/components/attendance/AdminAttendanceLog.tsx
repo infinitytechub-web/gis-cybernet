@@ -204,18 +204,7 @@ export function AdminAttendanceLog() {
             <div className="space-y-3">
               <div>
                 <Label>Staff Member</Label>
-                <Select value={logStaffId} onValueChange={setLogStaffId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select staff" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allProfiles.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.staff_id} — {p.last_name}, {p.first_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <StaffCombobox staff={allProfiles as any} value={logStaffId} onValueChange={setLogStaffId} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

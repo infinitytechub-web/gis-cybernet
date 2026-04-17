@@ -546,10 +546,7 @@ function IssuanceTab({ canManage, userId }: { canManage: boolean; userId?: strin
               </Select>
             </div>
             <div><Label>Recipient (Staff) *</Label>
-              <Select value={form.profile_id} onValueChange={v => setForm(p => ({ ...p, profile_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select staff…" /></SelectTrigger>
-                <SelectContent>{staff.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name} ({s.staff_id})</SelectItem>)}</SelectContent>
-              </Select>
+              <StaffCombobox staff={staff as any} value={form.profile_id} onValueChange={v => setForm(p => ({ ...p, profile_id: v }))} />
             </div>
             <div><Label>Quantity *</Label><Input type="number" min={1} value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: Number(e.target.value) }))} /></div>
             <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
