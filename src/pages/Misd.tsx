@@ -356,15 +356,15 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
           rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-"]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
+        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader>
-                <TableRow className="bg-purple-50 dark:bg-purple-950/30">
+                <TableRow className="bg-blue-50 dark:bg-blue-950/30">
                   <TableHead>Number</TableHead><TableHead>Title</TableHead><TableHead>Type</TableHead>
                   <TableHead>Severity</TableHead><TableHead>Status</TableHead><TableHead>Reported</TableHead>
                   {canCreate && <TableHead></TableHead>}
@@ -422,7 +422,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
             </div>
             <div><Label>Impact assessment</Label><Textarea rows={2} value={form.impact_assessment || ""} onChange={(e) => setForm({ ...form, impact_assessment: e.target.value })} /></div>
             {editing && <div><Label>Resolution notes</Label><Textarea rows={2} value={form.resolution_notes || ""} onChange={(e) => setForm({ ...form, resolution_notes: e.target.value })} /></div>}
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-purple-700 hover:bg-purple-800 text-white">
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-blue-900 hover:bg-blue-950 text-cyan-100">
               {save.isPending ? "Saving…" : editing ? "Update" : "Log Incident"}
             </Button>
           </div>
@@ -483,15 +483,15 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
           rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", format(new Date(i.first_seen), "yyyy-MM-dd")]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-        {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
+        {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[700px]">
               <TableHeader>
-                <TableRow className="bg-purple-50 dark:bg-purple-950/30">
+                <TableRow className="bg-blue-50 dark:bg-blue-950/30">
                   <TableHead>Type</TableHead><TableHead>Indicator</TableHead><TableHead>Threat Level</TableHead>
                   <TableHead>Category</TableHead><TableHead>Status</TableHead><TableHead>First Seen</TableHead>
                   {canManage && <TableHead></TableHead>}
@@ -502,7 +502,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
                   <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center py-6 text-muted-foreground">No indicators</TableCell></TableRow>
                 ) : filtered.map((i: any) => (
                   <TableRow key={i.id}>
-                    <TableCell><Badge variant="outline" className="uppercase border-purple-400 text-purple-700 dark:text-purple-300">{i.indicator_type}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className="uppercase border-blue-400 text-blue-700 dark:text-cyan-300">{i.indicator_type}</Badge></TableCell>
                     <TableCell className="font-mono text-xs break-all">{i.indicator_value}</TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.threat_level]}>{i.threat_level}</Badge></TableCell>
                     <TableCell className="text-xs">{i.category || "—"}</TableCell>
@@ -539,7 +539,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
             <div><Label>Category</Label><Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. C2, phishing host" /></div>
             <div><Label>Source</Label><Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="e.g. internal, partner agency" /></div>
             <div><Label>Description</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-purple-700 hover:bg-purple-800 text-white">{save.isPending ? "Saving…" : "Add IOC"}</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-blue-900 hover:bg-blue-950 text-cyan-100">{save.isPending ? "Saving…" : "Add IOC"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -599,15 +599,15 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
           rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.referred_to_agency || "-"]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-purple-700 hover:bg-purple-800 text-white"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
+        {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader>
-                <TableRow className="bg-purple-50 dark:bg-purple-950/30">
+                <TableRow className="bg-blue-50 dark:bg-blue-950/30">
                   <TableHead>Case #</TableHead><TableHead>Title</TableHead><TableHead>Type</TableHead>
                   <TableHead>Status</TableHead><TableHead>Priority</TableHead><TableHead>Referred</TableHead>
                   {canCreate && <TableHead></TableHead>}
@@ -674,7 +674,7 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
               <div><Label>Referred to agency</Label><Input value={form.referred_to_agency || ""} onChange={(e) => setForm({ ...form, referred_to_agency: e.target.value })} placeholder="e.g. EOCO, Police CID" /></div>
               <div><Label>Outcome</Label><Input value={form.outcome || ""} onChange={(e) => setForm({ ...form, outcome: e.target.value })} /></div>
             </div>
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-purple-700 hover:bg-purple-800 text-white">{save.isPending ? "Saving…" : editing ? "Update" : "Open Case"}</Button>
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full bg-blue-900 hover:bg-blue-950 text-cyan-100">{save.isPending ? "Saving…" : editing ? "Update" : "Open Case"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -716,10 +716,10 @@ function ReportsTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
-            <BarChart3 className="h-4 w-4 text-purple-700 dark:text-purple-300" />
+            <BarChart3 className="h-4 w-4 text-blue-700 dark:text-cyan-300" />
             6-Month Performance Report
           </CardTitle>
         </CardHeader>
@@ -731,38 +731,38 @@ function ReportsTab() {
               <YAxis fontSize={11} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="incidents" fill="#9333ea" name="Incidents" />
-              <Bar dataKey="resolved" fill="#f59e0b" name="Resolved" />
-              <Bar dataKey="cases" fill="#7c3aed" name="Cases" />
+              <Bar dataKey="incidents" fill="#1E3A8A" name="Incidents" />
+              <Bar dataKey="resolved" fill="#22D3EE" name="Resolved" />
+              <Bar dataKey="cases" fill="#0E7490" name="Cases" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
+        <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Total Incidents</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold text-purple-700 dark:text-purple-300">{incidents.length}</div></CardContent>
+          <CardContent><div className="text-3xl font-bold text-blue-700 dark:text-cyan-300">{incidents.length}</div></CardContent>
         </Card>
-        <Card className="border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/20">
+        <Card className="border-cyan-200 dark:border-cyan-900 bg-cyan-50/40 dark:bg-cyan-950/20">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Resolution Rate</CardTitle></CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">
+            <div className="text-3xl font-bold text-cyan-700 dark:text-cyan-300">
               {incidents.length > 0 ? Math.round((incidents.filter((i: any) => i.resolved_at).length / incidents.length) * 100) : 0}%
             </div>
           </CardContent>
         </Card>
-        <Card className="border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
+        <Card className="border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
           <CardHeader className="pb-2"><CardTitle className="text-sm">Cases Referred</CardTitle></CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">
+            <div className="text-3xl font-bold text-blue-700 dark:text-cyan-300">
               {cases.filter((c: any) => c.referred_to_agency).length}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-purple-200 dark:border-purple-900">
+      <Card className="border-blue-200 dark:border-blue-900">
         <CardHeader>
           <CardTitle className="text-sm">Export Reports</CardTitle>
         </CardHeader>
