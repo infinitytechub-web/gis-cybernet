@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -159,7 +160,7 @@ export default function Shifts() {
                 <DialogHeader><DialogTitle>Assign Shift</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Shift</Label><Select value={selectedShiftId} onValueChange={setSelectedShiftId}><SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger><SelectContent>{shifts.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>))}</SelectContent></Select></div>
-                  <div><Label>Staff Member</Label><Select value={selectedProfileId} onValueChange={setSelectedProfileId}><SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger><SelectContent>{profiles.map((p: any) => (<SelectItem key={p.id} value={p.id}>{p.staff_id} — {p.last_name}, {p.first_name}</SelectItem>))}</SelectContent></Select></div>
+                  <div><Label>Staff Member</Label><StaffCombobox staff={profiles as any} value={selectedProfileId} onValueChange={setSelectedProfileId} /></div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label>Start Date</Label><Input type="date" value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} /></div>
                     <div><Label>End Date (optional)</Label><Input type="date" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} /></div>

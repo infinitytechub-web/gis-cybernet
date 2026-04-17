@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -204,18 +205,7 @@ export function AdminAttendanceLog() {
             <div className="space-y-3">
               <div>
                 <Label>Staff Member</Label>
-                <Select value={logStaffId} onValueChange={setLogStaffId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select staff" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allProfiles.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.staff_id} — {p.last_name}, {p.first_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <StaffCombobox staff={allProfiles as any} value={logStaffId} onValueChange={setLogStaffId} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
