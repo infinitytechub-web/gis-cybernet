@@ -91,10 +91,10 @@ export function AnnouncementsBanner() {
   if (announcements.length === 0 && !isAdminOrSupervisor) return null;
 
   return (
-    <Card className="border-destructive/40 bg-[hsl(48_87%_92%)] text-destructive">
+    <Card className="border-destructive/40 bg-white text-destructive">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="font-semibold tracking-tight text-sm flex items-center gap-2 text-destructive">
+          <CardTitle className="font-bold tracking-tight text-sm flex items-center gap-2 text-destructive">
             <Megaphone className="h-4 w-4 text-destructive" />
             Announcements
           </CardTitle>
@@ -160,7 +160,7 @@ export function AnnouncementsBanner() {
                         <Icon className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm text-destructive">{a.title}</span>
+                            <span className="font-bold text-sm text-destructive">{a.title}</span>
                             <Badge variant="outline" className="text-[10px] h-4 gap-1 border-destructive/40 text-destructive bg-transparent">
                               {a.department_id ? (
                                 <><Building2 className="h-2.5 w-2.5" />{(a as any).departments?.name}</>
@@ -169,7 +169,7 @@ export function AnnouncementsBanner() {
                               )}
                             </Badge>
                           </div>
-                          <p className="text-xs text-destructive/90 mt-1">{a.content}</p>
+                          <p className="text-xs font-bold text-destructive mt-1">{a.content}</p>
                           <p className="text-[10px] text-destructive/70 mt-1">{format(new Date(a.created_at), "dd MMM yyyy, HH:mm")}</p>
                         </div>
                       </div>
