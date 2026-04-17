@@ -74,37 +74,37 @@ export default function Misd() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-purple-700 to-purple-900 flex items-center justify-center shadow-lg shadow-purple-500/30">
-            <Shield className="h-7 w-7 text-amber-300" />
+          <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-900 to-slate-900 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+            <Shield className="h-7 w-7 text-cyan-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-700 to-purple-900 dark:from-purple-300 dark:to-purple-500 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-900 to-cyan-700 dark:from-cyan-300 dark:to-blue-400 bg-clip-text text-transparent">
               MISD / CYBER
             </h1>
-            <p className="text-sm text-muted-foreground">Cybersecurity Operations Centre — Incidents, Threat Intel & Investigations</p>
+            <p className="text-sm text-muted-foreground">Cybersecurity Operations Centre — Incidents, Threat Intel & Investigations · Managed by MISD</p>
           </div>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex flex-wrap h-auto bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-900/50 p-1">
-          <TabsTrigger value="dashboard" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200 data-[state=active]:shadow-md">
-            <BarChart3 className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Dashboard
+        <TabsList className="flex flex-wrap h-auto bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 p-1">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200 data-[state=active]:shadow-md">
+            <BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Dashboard
           </TabsTrigger>
-          <TabsTrigger value="structure" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <Users className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Org Structure
+          <TabsTrigger value="structure" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <Users className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Org Structure
           </TabsTrigger>
-          <TabsTrigger value="incidents" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <ShieldAlert className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Incidents
+          <TabsTrigger value="incidents" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <ShieldAlert className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Incidents
           </TabsTrigger>
-          <TabsTrigger value="intel" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <Eye className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Threat Intel
+          <TabsTrigger value="intel" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <Eye className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Threat Intel
           </TabsTrigger>
-          <TabsTrigger value="investigations" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <FolderSearch className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Investigations
+          <TabsTrigger value="investigations" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <FolderSearch className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Investigations
           </TabsTrigger>
-          <TabsTrigger value="reports" className="data-[state=active]:bg-purple-700 data-[state=active]:text-amber-200">
-            <FileText className="h-4 w-4 mr-1 text-purple-700 dark:text-purple-300" />Reports
+          <TabsTrigger value="reports" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <FileText className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Reports
           </TabsTrigger>
         </TabsList>
 
@@ -197,9 +197,9 @@ function DashboardTab() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-purple-200 dark:border-purple-900">
+        <Card className="border-blue-200 dark:border-blue-900">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4 text-purple-700 dark:text-purple-300" />Incident Trend (30d)</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><TrendingUp className="h-4 w-4 text-blue-700 dark:text-cyan-300" />Incident Trend (30d)</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
@@ -209,22 +209,22 @@ function DashboardTab() {
                 <YAxis fontSize={10} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="incidents" stroke="#9333ea" strokeWidth={2} name="New" />
-                <Line type="monotone" dataKey="resolved" stroke="#f59e0b" strokeWidth={2} name="Resolved" />
+                <Line type="monotone" dataKey="incidents" stroke="#1E3A8A" strokeWidth={2} name="New" />
+                <Line type="monotone" dataKey="resolved" stroke="#22D3EE" strokeWidth={2} name="Resolved" />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 dark:border-purple-900">
+        <Card className="border-blue-200 dark:border-blue-900">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><Bug className="h-4 w-4 text-purple-700 dark:text-purple-300" />Incidents by Type</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><Bug className="h-4 w-4 text-blue-700 dark:text-cyan-300" />Incidents by Type</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(e: any) => `${e.name} (${e.value})`} fontSize={10}>
-                  {typeData.map((_, i) => <Cell key={i} fill={PURPLE_PALETTE[i % PURPLE_PALETTE.length]} />)}
+                  {typeData.map((_, i) => <Cell key={i} fill={NAVY_PALETTE[i % NAVY_PALETTE.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -232,9 +232,9 @@ function DashboardTab() {
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 dark:border-purple-900 lg:col-span-2">
+        <Card className="border-blue-200 dark:border-blue-900 lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" />Severity Heatmap</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-cyan-600" />Severity Heatmap</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -248,7 +248,7 @@ function DashboardTab() {
                     <Cell key={i} fill={
                       entry.name === "critical" ? "#dc2626" :
                       entry.name === "high" ? "#ea580c" :
-                      entry.name === "medium" ? "#f59e0b" : "#9333ea"
+                      entry.name === "medium" ? "#0E7490" : "#1E3A8A"
                     } />
                   ))}
                 </Bar>
@@ -261,10 +261,10 @@ function DashboardTab() {
   );
 }
 
-function KpiCard({ title, value, icon: Icon, variant }: { title: string; value: any; icon: any; variant: "purple" | "amber" | "red" | "emerald" }) {
+function KpiCard({ title, value, icon: Icon, variant }: { title: string; value: any; icon: any; variant: "navy" | "cyan" | "red" | "emerald" }) {
   const styles = {
-    purple: "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300",
-    amber: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300",
+    navy: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-300",
+    cyan: "bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-900 text-cyan-700 dark:text-cyan-300",
     red: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300",
     emerald: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300",
   }[variant];
