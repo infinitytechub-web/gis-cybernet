@@ -1295,6 +1295,45 @@ export type Database = {
           },
         ]
       }
+      misd_unit_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          id: string
+          is_lead: boolean
+          profile_id: string
+          role_title: string | null
+          unit_key: string
+          unit_name: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          profile_id: string
+          role_title?: string | null
+          unit_key: string
+          unit_name: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_lead?: boolean
+          profile_id?: string
+          role_title?: string | null
+          unit_key?: string
+          unit_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       night_guard_activity_log: {
         Row: {
           created_at: string
