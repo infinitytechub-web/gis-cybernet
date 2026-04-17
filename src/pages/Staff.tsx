@@ -200,6 +200,20 @@ export default function Staff() {
     return path;
   };
 
+  const syncContacts = async (profileId: string, list: ContactEntry[]) => {
+    await supabase.from("profile_contacts").delete().eq("profile_id", profileId);
+    if (list.length === 0) return;
+    const rows = list.map((c) => ({
+      profile_id: profileId,
+      contact_type: c.contact_type,
+      label: c.label || null,
+      value: c.value.trim(),
+      is_primary: c.is_primary,
+    }));
+    const { error } = await supabase.from("profile_contacts").insert(rows);
+    if (error) throw error;
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
