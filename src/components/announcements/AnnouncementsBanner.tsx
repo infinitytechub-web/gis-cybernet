@@ -91,17 +91,17 @@ export function AnnouncementsBanner() {
   if (announcements.length === 0 && !isAdminOrSupervisor) return null;
 
   return (
-    <Card className="border-accent/30 bg-accent/5">
+    <Card className="border-destructive/40 bg-destructive text-destructive-foreground">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-accent-foreground" />
+          <CardTitle className="text-sm flex items-center gap-2 text-destructive-foreground">
+            <Megaphone className="h-4 w-4 text-destructive-foreground" />
             Announcements
           </CardTitle>
           {isAdminOrSupervisor && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                <Button size="sm" variant="outline" className="h-7 text-xs gap-1 bg-transparent border-destructive-foreground/40 text-destructive-foreground hover:bg-destructive-foreground/10 hover:text-destructive-foreground">
                   <Plus className="h-3 w-3" /> New
                 </Button>
               </DialogTrigger>
@@ -146,7 +146,7 @@ export function AnnouncementsBanner() {
       </CardHeader>
       <CardContent>
         {announcements.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-2">No active announcements</p>
+          <p className="text-xs text-destructive-foreground/80 text-center py-2">No active announcements</p>
         ) : (
           <ScrollArea className="max-h-[200px]">
             <div className="space-y-2">
@@ -154,14 +154,14 @@ export function AnnouncementsBanner() {
                 const cfg = priorityConfig[a.priority as keyof typeof priorityConfig] || priorityConfig.normal;
                 const Icon = cfg.icon;
                 return (
-                  <div key={a.id} className={`rounded-lg border p-3 ${cfg.bg}`}>
+                  <div key={a.id} className="rounded-lg border border-destructive-foreground/30 bg-destructive-foreground/10 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2 min-w-0">
-                        <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${cfg.color}`} />
+                        <Icon className="h-4 w-4 mt-0.5 shrink-0 text-destructive-foreground" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm">{a.title}</span>
-                            <Badge variant="outline" className="text-[10px] h-4 gap-1">
+                            <span className="font-semibold text-sm text-destructive-foreground">{a.title}</span>
+                            <Badge variant="outline" className="text-[10px] h-4 gap-1 border-destructive-foreground/40 text-destructive-foreground bg-transparent">
                               {a.department_id ? (
                                 <><Building2 className="h-2.5 w-2.5" />{(a as any).departments?.name}</>
                               ) : (
@@ -169,8 +169,8 @@ export function AnnouncementsBanner() {
                               )}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">{a.content}</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">{format(new Date(a.created_at), "dd MMM yyyy, HH:mm")}</p>
+                          <p className="text-xs text-destructive-foreground/90 mt-1">{a.content}</p>
+                          <p className="text-[10px] text-destructive-foreground/70 mt-1">{format(new Date(a.created_at), "dd MMM yyyy, HH:mm")}</p>
                         </div>
                       </div>
                       {isAdminOrSupervisor && (
@@ -179,9 +179,9 @@ export function AnnouncementsBanner() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-6 w-6 shrink-0"
+                              className="h-6 w-6 shrink-0 text-destructive-foreground hover:bg-destructive-foreground/10 hover:text-destructive-foreground"
                             >
-                              <Trash2 className="h-3 w-3 text-destructive" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
