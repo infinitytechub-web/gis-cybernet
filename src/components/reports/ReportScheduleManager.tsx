@@ -25,6 +25,8 @@ const FREQUENCY_CONFIG: Record<ScheduleFrequency, { label: string; badge: string
   daily: { label: "Daily", badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", cron: "Every day at 6:00 AM" },
   weekly: { label: "Weekly", badge: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300", cron: "Every Monday at 6:00 AM" },
   monthly: { label: "Monthly", badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", cron: "1st of each month at 6:00 AM" },
+  quarterly: { label: "Quarterly", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300", cron: "1st of every 3rd month at 6:00 AM" },
+  annually: { label: "Annually", badge: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300", cron: "1st of January at 6:00 AM" },
 };
 
 export default function ReportScheduleManager() {
