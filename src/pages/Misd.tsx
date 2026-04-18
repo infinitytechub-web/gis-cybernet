@@ -513,7 +513,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
                     <TableCell><Badge className={SEVERITY_COLORS[i.threat_level]}>{i.threat_level}</Badge></TableCell>
                     <TableCell className="text-xs">{i.category || "—"}</TableCell>
                     <TableCell>{i.is_active ? <Badge className="bg-emerald-100 text-emerald-800">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format(new Date(i.first_seen), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.first_seen, "dd MMM yyyy")}</TableCell>
                     {canManage && <TableCell><Button variant="ghost" size="sm" onClick={() => toggle.mutate({ id: i.id, is_active: !i.is_active })}>{i.is_active ? "Deactivate" : "Activate"}</Button></TableCell>}
                   </TableRow>
                 ))}
