@@ -782,13 +782,13 @@ function ReportsTab() {
             title: "MISD Full Incidents Report",
             filename: `misd-incidents-${format(new Date(), "yyyy-MM-dd")}`,
             headers: ["Number", "Title", "Type", "Severity", "Status", "Reported", "Resolved", "Source", "Affected Systems"],
-            rows: incidents.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-", i.source || "-", i.affected_systems || "-"]),
+            rows: incidents.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, safeFormat(i.reported_at, "yyyy-MM-dd"), safeFormat(i.resolved_at, "yyyy-MM-dd"), i.source || "-", i.affected_systems || "-"]),
           })} />
           <ExportMenu getData={() => ({
             title: "MISD Investigations Report",
             filename: `misd-investigations-${format(new Date(), "yyyy-MM-dd")}`,
             headers: ["Case #", "Title", "Type", "Status", "Priority", "Opened", "Closed", "Referred to"],
-            rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.closed_at ? format(new Date(c.closed_at), "yyyy-MM-dd") : "-", c.referred_to_agency || "-"]),
+            rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, safeFormat(c.opened_at, "yyyy-MM-dd"), safeFormat(c.closed_at, "yyyy-MM-dd"), c.referred_to_agency || "-"]),
           })} />
         </CardContent>
       </Card>
