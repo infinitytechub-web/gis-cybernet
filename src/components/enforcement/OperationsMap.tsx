@@ -65,8 +65,36 @@ interface OperationsMapProps {
   operations: Operation[];
 }
 
-const LIGHT_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+type BaseLayerKey = "streets" | "satellite" | "hybrid" | "terrain";
+
+const BASE_LAYERS: Record<BaseLayerKey, { label: string; light: string; dark?: string; attribution: string; maxZoom: number; overlay?: string }> = {
+  streets: {
+    label: "Streets",
+    light: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  },
+  satellite: {
+    label: "Satellite",
+    light: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+  },
+  hybrid: {
+    label: "Hybrid",
+    light: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    overlay: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar &mdash; Labels &copy; Esri',
+    maxZoom: 19,
+  },
+  terrain: {
+    label: "Terrain",
+    light: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom',
+    maxZoom: 19,
+  },
+};
 
 function isDarkMode() {
   return document.documentElement.classList.contains("dark");
@@ -76,6 +104,7 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [clusterEnabled, setClusterEnabled] = useState(true);
+  const [baseLayer, setBaseLayer] = useState<BaseLayerKey>("streets");
 
   const allSeverities = useMemo(() => {
     const s = new Set(operations.map(op => op.severity));
@@ -146,12 +175,15 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
     const map = L.map(mapRef.current, { zoomAnimation: true }).setView(center, 12);
     mapInstanceRef.current = map;
 
-    L.tileLayer(darkMode ? DARK_TILES : LIGHT_TILES, {
-      attribution: darkMode
-        ? '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
+    const layerCfg = BASE_LAYERS[baseLayer];
+    const tileUrl = baseLayer === "streets" && darkMode && layerCfg.dark ? layerCfg.dark : layerCfg.light;
+    L.tileLayer(tileUrl, {
+      attribution: layerCfg.attribution,
+      maxZoom: layerCfg.maxZoom,
     }).addTo(map);
+    if (layerCfg.overlay) {
+      L.tileLayer(layerCfg.overlay, { maxZoom: layerCfg.maxZoom, opacity: 0.9 }).addTo(map);
+    }
 
     const markers: L.CircleMarker[] = [];
     mappableOps.forEach(op => {
@@ -166,8 +198,12 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
         fillOpacity: 0.85,
       });
 
+      const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${op.lat},${op.lng}`;
+      const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${op.lat},${op.lng}`;
+      const osmUrl = `https://www.openstreetmap.org/?mlat=${op.lat}&mlon=${op.lng}#map=18/${op.lat}/${op.lng}`;
+
       marker.bindPopup(`
-        <div style="font-size:12px;min-width:160px">
+        <div style="font-size:12px;min-width:200px">
           <p style="font-weight:bold;text-transform:capitalize;margin:0 0 4px">${op.operation_type.replace(/_/g, " ")}</p>
           <p style="margin:0;color:#666">${format(new Date(op.operation_date), "dd MMM yyyy")}</p>
           <p style="margin:2px 0;color:#666">${op.location}</p>
@@ -177,6 +213,12 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
             <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:#e5e7eb;margin-left:4px;text-transform:capitalize">${op.status.replace(/_/g, " ")}</span>
           </p>
           ${op.description ? `<p style="margin:4px 0;color:#888;font-size:11px">${op.description}</p>` : ""}
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb;display:flex;flex-wrap:wrap;gap:4px">
+            <a href="${streetViewUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#1a73e8;color:#fff;text-decoration:none">🚶 Street View</a>
+            <a href="${gmapsUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#0f9d58;color:#fff;text-decoration:none">📍 Google Maps</a>
+            <a href="${osmUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#7e57c2;color:#fff;text-decoration:none">🗺️ OSM</a>
+          </div>
+          <p style="margin:4px 0 0;color:#9ca3af;font-size:10px">📐 ${op.lat.toFixed(5)}, ${op.lng.toFixed(5)}</p>
         </div>
       `);
 
@@ -242,7 +284,7 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
       try { map.remove(); } catch { /* ignore */ }
       mapInstanceRef.current = null;
     };
-  }, [mappableOps, center, darkMode, clusterEnabled]);
+  }, [mappableOps, center, darkMode, clusterEnabled, baseLayer]);
 
   const noGeoOps = operations.filter(op => op.location).length === 0;
 
@@ -295,16 +337,32 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
             );
           })}
         </div>
-        <button
-          onClick={() => setClusterEnabled(prev => !prev)}
-          className={`ml-auto px-2.5 py-0.5 rounded-full border text-xs transition-all cursor-pointer ${
-            clusterEnabled
-              ? "bg-primary/10 text-primary border-primary/30"
-              : "opacity-60 border-border text-muted-foreground"
-          }`}
-        >
-          {clusterEnabled ? "⊕ Clustered" : "⊙ Individual"}
-        </button>
+        <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+          <span className="font-medium text-muted-foreground mr-1">Map:</span>
+          {(Object.keys(BASE_LAYERS) as BaseLayerKey[]).map(key => (
+            <button
+              key={key}
+              onClick={() => setBaseLayer(key)}
+              className={`px-2 py-0.5 rounded-full border text-xs transition-all cursor-pointer ${
+                baseLayer === key
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "opacity-60 border-border text-muted-foreground hover:opacity-100"
+              }`}
+            >
+              {BASE_LAYERS[key].label}
+            </button>
+          ))}
+          <button
+            onClick={() => setClusterEnabled(prev => !prev)}
+            className={`px-2.5 py-0.5 rounded-full border text-xs transition-all cursor-pointer ${
+              clusterEnabled
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "opacity-60 border-border text-muted-foreground"
+            }`}
+          >
+            {clusterEnabled ? "⊕ Clustered" : "⊙ Individual"}
+          </button>
+        </div>
       </div>
 
       {mappableOps.length === 0 ? (
