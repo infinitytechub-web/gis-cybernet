@@ -164,6 +164,10 @@ serve(async (req) => {
       nextRun.setDate(nextRun.getDate() + 1);
     } else if (frequency === "weekly") {
       nextRun.setDate(nextRun.getDate() + 7);
+    } else if (frequency === "quarterly") {
+      nextRun.setMonth(nextRun.getMonth() + 3);
+    } else if (frequency === "annually") {
+      nextRun.setFullYear(nextRun.getFullYear() + 1);
     } else {
       nextRun.setMonth(nextRun.getMonth() + 1);
     }
