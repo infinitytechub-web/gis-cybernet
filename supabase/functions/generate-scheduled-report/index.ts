@@ -36,13 +36,22 @@ serve(async (req) => {
     if (frequency === "daily") {
       startDate = today;
     } else if (frequency === "weekly") {
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      startDate = weekAgo.toISOString().split("T")[0];
+      const d = new Date(now);
+      d.setDate(d.getDate() - 7);
+      startDate = d.toISOString().split("T")[0];
+    } else if (frequency === "quarterly") {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 3);
+      startDate = d.toISOString().split("T")[0];
+    } else if (frequency === "annually") {
+      const d = new Date(now);
+      d.setFullYear(d.getFullYear() - 1);
+      startDate = d.toISOString().split("T")[0];
     } else {
-      const monthAgo = new Date(now);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      startDate = monthAgo.toISOString().split("T")[0];
+      // monthly (default fallback)
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 1);
+      startDate = d.toISOString().split("T")[0];
     }
 
     // Fetch data based on report type
@@ -133,7 +142,7 @@ serve(async (req) => {
     const { error: insertError } = await supabase.from("report_uploads").insert({
       title: `${freqLabel} ${typeLabel.replace(/_/g, " ")} Report`,
       description: `Auto-generated ${frequency} report for ${startDate} to ${endDate}`,
-      category: frequency === "daily" ? "daily" : frequency === "weekly" ? "weekly" : "monthly",
+      category: frequency,
       file_path: filePath,
       file_name: fileName,
       file_type: "text/csv",
@@ -155,6 +164,10 @@ serve(async (req) => {
       nextRun.setDate(nextRun.getDate() + 1);
     } else if (frequency === "weekly") {
       nextRun.setDate(nextRun.getDate() + 7);
+    } else if (frequency === "quarterly") {
+      nextRun.setMonth(nextRun.getMonth() + 3);
+    } else if (frequency === "annually") {
+      nextRun.setFullYear(nextRun.getFullYear() + 1);
     } else {
       nextRun.setMonth(nextRun.getMonth() + 1);
     }
