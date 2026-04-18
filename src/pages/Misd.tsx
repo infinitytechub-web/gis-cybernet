@@ -359,7 +359,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
           title: "Cyber Incidents",
           filename: `cyber-incidents-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Number", "Title", "Type", "Severity", "Status", "Reported", "Resolved"],
-          rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-"]),
+          rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, safeFormat(i.reported_at, "yyyy-MM-dd"), safeFormat(i.resolved_at, "yyyy-MM-dd")]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
