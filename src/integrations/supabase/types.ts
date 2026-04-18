@@ -3131,12 +3131,24 @@ export type Database = {
         Returns: boolean
       }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      is_frontdesk_realtime_topic: {
+        Args: { _topic: string }
+        Returns: boolean
+      }
       is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      is_sensitive_realtime_topic: {
+        Args: { _topic: string }
+        Returns: boolean
+      }
       is_shift_leader_tier: { Args: { _user_id: string }; Returns: boolean }
       is_staff_locked: { Args: { _staff_id: string }; Returns: boolean }
       is_supervisor_for_profile: {
         Args: { _profile_id: string; _user_id: string }
         Returns: boolean
+      }
+      issue_otp: {
+        Args: { _purpose?: string; _ttl_minutes?: number }
+        Returns: string
       }
       notify_roles: {
         Args: {
