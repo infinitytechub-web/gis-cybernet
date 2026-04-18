@@ -700,16 +700,21 @@ function ReportsTab() {
       const key = format(d, "MMM yyyy");
       months[key] = { incidents: 0, resolved: 0, cases: 0 };
     }
+    const safeKey = (v: any) => {
+      if (!v) return null;
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? null : format(d, "MMM yyyy");
+    };
     incidents.forEach((inc: any) => {
-      const key = format(new Date(inc.reported_at), "MMM yyyy");
-      if (months[key]) {
+      const key = safeKey(inc.reported_at);
+      if (key && months[key]) {
         months[key].incidents += 1;
         if (inc.resolved_at) months[key].resolved += 1;
       }
     });
     cases.forEach((c: any) => {
-      const key = format(new Date(c.opened_at), "MMM yyyy");
-      if (months[key]) months[key].cases += 1;
+      const key = safeKey(c.opened_at);
+      if (key && months[key]) months[key].cases += 1;
     });
     return Object.entries(months).map(([month, v]) => ({ month, ...v }));
   }, [incidents, cases]);
