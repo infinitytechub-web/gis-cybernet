@@ -3121,6 +3121,7 @@ export type Database = {
         Returns: undefined
       }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
+      get_misd_department_id: { Args: never; Returns: string }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -3130,6 +3131,7 @@ export type Database = {
         Returns: boolean
       }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
       is_shift_leader_tier: { Args: { _user_id: string }; Returns: boolean }
       is_staff_locked: { Args: { _staff_id: string }; Returns: boolean }
       is_supervisor_for_profile: {
