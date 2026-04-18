@@ -20,6 +20,12 @@ import {
 import { OrgStructureTab } from "@/components/misd/OrgStructureTab";
 import { toast } from "sonner";
 import { format, subDays, differenceInDays } from "date-fns";
+
+const safeFormat = (v: any, fmt: string, fallback = "-") => {
+  if (!v) return fallback;
+  const d = v instanceof Date ? v : new Date(v);
+  return isNaN(d.getTime()) ? fallback : format(d, fmt);
+};
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell, LineChart, Line, Legend,
@@ -353,7 +359,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
           title: "Cyber Incidents",
           filename: `cyber-incidents-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Number", "Title", "Type", "Severity", "Status", "Reported", "Resolved"],
-          rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-"]),
+          rows: filtered.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, safeFormat(i.reported_at, "yyyy-MM-dd"), safeFormat(i.resolved_at, "yyyy-MM-dd")]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Log Incident</Button>}
@@ -380,7 +386,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
                     <TableCell className="text-xs capitalize">{i.incident_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.severity]}>{i.severity}</Badge></TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[i.status]}>{i.status}</Badge></TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format(new Date(i.reported_at), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.reported_at, "dd MMM yyyy")}</TableCell>
                     {canCreate && <TableCell><Button variant="ghost" size="sm" onClick={() => openDialog(i)}>Open</Button></TableCell>}
                   </TableRow>
                 ))}
@@ -480,7 +486,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
           title: "Threat Intelligence",
           filename: `threat-intel-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Type", "Indicator", "Threat Level", "Category", "Active", "First Seen"],
-          rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", format(new Date(i.first_seen), "yyyy-MM-dd")]),
+          rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", safeFormat(i.first_seen, "yyyy-MM-dd")]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
@@ -507,7 +513,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
                     <TableCell><Badge className={SEVERITY_COLORS[i.threat_level]}>{i.threat_level}</Badge></TableCell>
                     <TableCell className="text-xs">{i.category || "—"}</TableCell>
                     <TableCell>{i.is_active ? <Badge className="bg-emerald-100 text-emerald-800">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format(new Date(i.first_seen), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.first_seen, "dd MMM yyyy")}</TableCell>
                     {canManage && <TableCell><Button variant="ghost" size="sm" onClick={() => toggle.mutate({ id: i.id, is_active: !i.is_active })}>{i.is_active ? "Deactivate" : "Activate"}</Button></TableCell>}
                   </TableRow>
                 ))}
@@ -596,7 +602,7 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
           title: "Cyber Investigations",
           filename: `investigations-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Case #", "Title", "Type", "Status", "Priority", "Opened", "Referred"],
-          rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.referred_to_agency || "-"]),
+          rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, safeFormat(c.opened_at, "yyyy-MM-dd"), c.referred_to_agency || "-"]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
@@ -776,13 +782,13 @@ function ReportsTab() {
             title: "MISD Full Incidents Report",
             filename: `misd-incidents-${format(new Date(), "yyyy-MM-dd")}`,
             headers: ["Number", "Title", "Type", "Severity", "Status", "Reported", "Resolved", "Source", "Affected Systems"],
-            rows: incidents.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, format(new Date(i.reported_at), "yyyy-MM-dd"), i.resolved_at ? format(new Date(i.resolved_at), "yyyy-MM-dd") : "-", i.source || "-", i.affected_systems || "-"]),
+            rows: incidents.map((i: any) => [i.incident_number, i.title, i.incident_type, i.severity, i.status, safeFormat(i.reported_at, "yyyy-MM-dd"), safeFormat(i.resolved_at, "yyyy-MM-dd"), i.source || "-", i.affected_systems || "-"]),
           })} />
           <ExportMenu getData={() => ({
             title: "MISD Investigations Report",
             filename: `misd-investigations-${format(new Date(), "yyyy-MM-dd")}`,
             headers: ["Case #", "Title", "Type", "Status", "Priority", "Opened", "Closed", "Referred to"],
-            rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.closed_at ? format(new Date(c.closed_at), "yyyy-MM-dd") : "-", c.referred_to_agency || "-"]),
+            rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, safeFormat(c.opened_at, "yyyy-MM-dd"), safeFormat(c.closed_at, "yyyy-MM-dd"), c.referred_to_agency || "-"]),
           })} />
         </CardContent>
       </Card>
