@@ -129,7 +129,7 @@ serve(async (req) => {
       });
     }
 
-    // Save to report_uploads table
+    // Save to report_uploads table — auto-generated reports start as pending approval
     const { error: insertError } = await supabase.from("report_uploads").insert({
       title: `${freqLabel} ${typeLabel.replace(/_/g, " ")} Report`,
       description: `Auto-generated ${frequency} report for ${startDate} to ${endDate}`,
@@ -139,7 +139,10 @@ serve(async (req) => {
       file_type: "text/csv",
       file_size: csvBlob.length,
       uploaded_by: "00000000-0000-0000-0000-000000000000",
+      submitted_by: "00000000-0000-0000-0000-000000000000",
       report_date: today,
+      source: "scheduled",
+      approval_status: "pending",
     });
 
     if (insertError) {
