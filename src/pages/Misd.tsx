@@ -602,7 +602,7 @@ function InvestigationsTab({ canCreate, canManage, userId }: { canCreate: boolea
           title: "Cyber Investigations",
           filename: `investigations-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Case #", "Title", "Type", "Status", "Priority", "Opened", "Referred"],
-          rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, format(new Date(c.opened_at), "yyyy-MM-dd"), c.referred_to_agency || "-"]),
+          rows: cases.map((c: any) => [c.case_number, c.title, c.case_type, c.status, c.priority, safeFormat(c.opened_at, "yyyy-MM-dd"), c.referred_to_agency || "-"]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => openDialog()} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Open Case</Button>}
