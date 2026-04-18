@@ -13,7 +13,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 type ScheduleReportType = "staff" | "attendance" | "leave";
-type ScheduleFrequency = "daily" | "weekly" | "monthly";
+type ScheduleFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "annually";
 
 const REPORT_TYPE_CONFIG: Record<ScheduleReportType, { label: string; icon: any; color: string }> = {
   staff: { label: "Staff Summary", icon: Users, color: "text-blue-600 dark:text-blue-400" },
