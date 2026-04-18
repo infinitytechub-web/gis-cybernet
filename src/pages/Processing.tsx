@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Stamp, FileText, BookOpen, ClipboardList, Shield, HelpCircle } from "lucide-react";
+import { Stamp, FileText, BookOpen, ClipboardList, Shield, HelpCircle, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
 import ProcessingVisaApplications from "@/components/processing/ProcessingVisaApplications";
@@ -9,8 +9,10 @@ import ProcessingPassportApplications from "@/components/processing/ProcessingPa
 import ProcessingOfficialApplications from "@/components/processing/ProcessingOfficialApplications";
 import ProcessingEnquiryApplications from "@/components/processing/ProcessingEnquiryApplications";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
+import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 
-const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
+const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
+const APPROVALS_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
 
 export default function Processing() {
   const { role } = useAuth();
@@ -27,11 +29,14 @@ export default function Processing() {
     return <Navigate to="/" replace />;
   }
 
+  const showApprovals = !!role && APPROVALS_ROLES.includes(role);
+  const colsClass = showApprovals ? "grid w-full grid-cols-7" : "grid w-full grid-cols-6";
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">Processing</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className={colsClass}>
           <TabsTrigger value="visa" className="gap-1 text-xs sm:text-sm">
             <Stamp className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Visa Apps
           </TabsTrigger>
@@ -47,6 +52,11 @@ export default function Processing() {
           <TabsTrigger value="enquiry" className="gap-1 text-xs sm:text-sm">
             <HelpCircle className="h-4 w-4 text-lime-600 dark:text-lime-400" /> Enquiry
           </TabsTrigger>
+          {showApprovals && (
+            <TabsTrigger value="approvals" className="gap-1 text-xs sm:text-sm">
+              <ShieldCheck className="h-4 w-4 text-rose-600 dark:text-rose-400" /> Approvals
+            </TabsTrigger>
+          )}
           <TabsTrigger value="audit" className="gap-1 text-xs sm:text-sm">
             <ClipboardList className="h-4 w-4 text-amber-600 dark:text-amber-400" /> Audit Log
           </TabsTrigger>
@@ -56,6 +66,7 @@ export default function Processing() {
         <TabsContent value="passport"><ProcessingPassportApplications /></TabsContent>
         <TabsContent value="official"><ProcessingOfficialApplications /></TabsContent>
         <TabsContent value="enquiry"><ProcessingEnquiryApplications /></TabsContent>
+        {showApprovals && <TabsContent value="approvals"><ApprovalsQueue /></TabsContent>}
         <TabsContent value="audit"><ProcessingAuditLog /></TabsContent>
       </Tabs>
     </div>

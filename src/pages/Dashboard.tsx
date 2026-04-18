@@ -11,9 +11,7 @@ import {
   Activity, Shield, Wifi
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { useOnlineUsers } from "@/hooks/useOnlineUsers";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import OnlineNowPanel from "@/components/dashboard/OnlineNowPanel";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
@@ -38,7 +36,6 @@ const CHART_COLORS = [
 
 export default function Dashboard() {
   const { isAdminOrSupervisor, isSupervisor, isAdmin } = useAuth();
-  const { onlineUsers, onlineCount } = useOnlineUsers();
   const navigate = useNavigate();
   const today = new Date().toISOString().split("T")[0];
 
@@ -367,48 +364,8 @@ export default function Dashboard() {
       {/* Scheduled Reports Widget */}
       <ScheduledReportsWidget />
 
-      {/* Online Users Widget */}
-      <Card className="border-border/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
-            </span>
-            Online Now
-            <Badge variant="outline" className="ml-auto text-[10px]">{onlineCount} user{onlineCount !== 1 ? "s" : ""}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {onlineCount === 0 ? (
-            <p className="text-sm text-muted-foreground">No users currently online</p>
-          ) : (
-            <ScrollArea className="max-h-[120px]">
-              <div className="flex flex-wrap gap-2">
-                {onlineUsers.map((u) => {
-                  const isNightGuard = u.department?.toLowerCase().includes("night guard");
-                  return (
-                    <div key={u.userId} className={`flex items-center gap-2 rounded-full pl-1 pr-3 py-1 ${isNightGuard ? "bg-amber-100 dark:bg-amber-900/40 ring-1 ring-amber-400" : "bg-accent/50"}`}>
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className={`text-[10px] ${isNightGuard ? "bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100" : "bg-primary/10 text-primary"}`}>
-                          {u.firstName?.[0]}{u.lastName?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs font-medium">{u.firstName} {u.lastName}</span>
-                      {isNightGuard && (
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-400">
-                          <Shield className="h-2.5 w-2.5 mr-0.5" />
-                          Night Guard
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
+      {/* Online Users Widget — command tier only */}
+      <OnlineNowPanel />
 
       {/* Gender Statistics */}
       <GenderStatisticsWidget />
