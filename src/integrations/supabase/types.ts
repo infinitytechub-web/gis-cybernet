@@ -3142,6 +3142,10 @@ export type Database = {
         Args: { _profile_id: string; _user_id: string }
         Returns: boolean
       }
+      issue_otp: {
+        Args: { _purpose?: string; _ttl_minutes?: number }
+        Returns: string
+      }
       notify_roles: {
         Args: {
           _message: string
