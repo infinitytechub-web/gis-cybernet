@@ -36,13 +36,22 @@ serve(async (req) => {
     if (frequency === "daily") {
       startDate = today;
     } else if (frequency === "weekly") {
-      const weekAgo = new Date(now);
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      startDate = weekAgo.toISOString().split("T")[0];
+      const d = new Date(now);
+      d.setDate(d.getDate() - 7);
+      startDate = d.toISOString().split("T")[0];
+    } else if (frequency === "quarterly") {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 3);
+      startDate = d.toISOString().split("T")[0];
+    } else if (frequency === "annually") {
+      const d = new Date(now);
+      d.setFullYear(d.getFullYear() - 1);
+      startDate = d.toISOString().split("T")[0];
     } else {
-      const monthAgo = new Date(now);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      startDate = monthAgo.toISOString().split("T")[0];
+      // monthly (default fallback)
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - 1);
+      startDate = d.toISOString().split("T")[0];
     }
 
     // Fetch data based on report type
