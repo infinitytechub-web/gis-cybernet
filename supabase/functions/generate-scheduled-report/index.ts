@@ -142,7 +142,7 @@ serve(async (req) => {
     const { error: insertError } = await supabase.from("report_uploads").insert({
       title: `${freqLabel} ${typeLabel.replace(/_/g, " ")} Report`,
       description: `Auto-generated ${frequency} report for ${startDate} to ${endDate}`,
-      category: frequency === "daily" ? "daily" : frequency === "weekly" ? "weekly" : "monthly",
+      category: frequency,
       file_path: filePath,
       file_name: fileName,
       file_type: "text/csv",
