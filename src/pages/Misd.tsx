@@ -486,7 +486,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
           title: "Threat Intelligence",
           filename: `threat-intel-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Type", "Indicator", "Threat Level", "Category", "Active", "First Seen"],
-          rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", format(new Date(i.first_seen), "yyyy-MM-dd")]),
+          rows: filtered.map((i: any) => [i.indicator_type, i.indicator_value, i.threat_level, i.category || "-", i.is_active ? "Yes" : "No", safeFormat(i.first_seen, "yyyy-MM-dd")]),
         })} />
         <Button variant="outline" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
         {canCreate && <Button onClick={() => setOpen(true)} className="ml-auto bg-blue-900 hover:bg-blue-950 text-cyan-100"><Plus className="h-4 w-4 mr-1" />Add IOC</Button>}
