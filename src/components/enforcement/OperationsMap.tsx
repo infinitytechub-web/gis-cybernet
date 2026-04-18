@@ -284,7 +284,7 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
       try { map.remove(); } catch { /* ignore */ }
       mapInstanceRef.current = null;
     };
-  }, [mappableOps, center, darkMode, clusterEnabled]);
+  }, [mappableOps, center, darkMode, clusterEnabled, baseLayer]);
 
   const noGeoOps = operations.filter(op => op.location).length === 0;
 
@@ -337,16 +337,32 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
             );
           })}
         </div>
-        <button
-          onClick={() => setClusterEnabled(prev => !prev)}
-          className={`ml-auto px-2.5 py-0.5 rounded-full border text-xs transition-all cursor-pointer ${
-            clusterEnabled
-              ? "bg-primary/10 text-primary border-primary/30"
-              : "opacity-60 border-border text-muted-foreground"
-          }`}
-        >
-          {clusterEnabled ? "⊕ Clustered" : "⊙ Individual"}
-        </button>
+        <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+          <span className="font-medium text-muted-foreground mr-1">Map:</span>
+          {(Object.keys(BASE_LAYERS) as BaseLayerKey[]).map(key => (
+            <button
+              key={key}
+              onClick={() => setBaseLayer(key)}
+              className={`px-2 py-0.5 rounded-full border text-xs transition-all cursor-pointer ${
+                baseLayer === key
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "opacity-60 border-border text-muted-foreground hover:opacity-100"
+              }`}
+            >
+              {BASE_LAYERS[key].label}
+            </button>
+          ))}
+          <button
+            onClick={() => setClusterEnabled(prev => !prev)}
+            className={`px-2.5 py-0.5 rounded-full border text-xs transition-all cursor-pointer ${
+              clusterEnabled
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "opacity-60 border-border text-muted-foreground"
+            }`}
+          >
+            {clusterEnabled ? "⊕ Clustered" : "⊙ Individual"}
+          </button>
+        </div>
       </div>
 
       {mappableOps.length === 0 ? (
