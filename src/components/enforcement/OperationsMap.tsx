@@ -104,6 +104,7 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [clusterEnabled, setClusterEnabled] = useState(true);
+  const [baseLayer, setBaseLayer] = useState<BaseLayerKey>("streets");
 
   const allSeverities = useMemo(() => {
     const s = new Set(operations.map(op => op.severity));
