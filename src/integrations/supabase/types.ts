@@ -2585,6 +2585,9 @@ export type Database = {
       }
       report_uploads: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           category: string
           created_at: string
           department_id: string | null
@@ -2595,11 +2598,17 @@ export type Database = {
           file_type: string
           id: string
           report_date: string
+          review_comment: string | null
+          source: string
+          submitted_by: string | null
           title: string
           updated_at: string
           uploaded_by: string
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string
           created_at?: string
           department_id?: string | null
@@ -2610,11 +2619,17 @@ export type Database = {
           file_type: string
           id?: string
           report_date?: string
+          review_comment?: string | null
+          source?: string
+          submitted_by?: string | null
           title: string
           updated_at?: string
           uploaded_by: string
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           category?: string
           created_at?: string
           department_id?: string | null
@@ -2625,6 +2640,9 @@ export type Database = {
           file_type?: string
           id?: string
           report_date?: string
+          review_comment?: string | null
+          source?: string
+          submitted_by?: string | null
           title?: string
           updated_at?: string
           uploaded_by?: string
@@ -3111,6 +3129,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      is_shift_leader_tier: { Args: { _user_id: string }; Returns: boolean }
       is_staff_locked: { Args: { _staff_id: string }; Returns: boolean }
       is_supervisor_for_profile: {
         Args: { _profile_id: string; _user_id: string }
