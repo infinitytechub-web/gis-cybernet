@@ -198,8 +198,12 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
         fillOpacity: 0.85,
       });
 
+      const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${op.lat},${op.lng}`;
+      const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${op.lat},${op.lng}`;
+      const osmUrl = `https://www.openstreetmap.org/?mlat=${op.lat}&mlon=${op.lng}#map=18/${op.lat}/${op.lng}`;
+
       marker.bindPopup(`
-        <div style="font-size:12px;min-width:160px">
+        <div style="font-size:12px;min-width:200px">
           <p style="font-weight:bold;text-transform:capitalize;margin:0 0 4px">${op.operation_type.replace(/_/g, " ")}</p>
           <p style="margin:0;color:#666">${format(new Date(op.operation_date), "dd MMM yyyy")}</p>
           <p style="margin:2px 0;color:#666">${op.location}</p>
@@ -209,6 +213,12 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
             <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:#e5e7eb;margin-left:4px;text-transform:capitalize">${op.status.replace(/_/g, " ")}</span>
           </p>
           ${op.description ? `<p style="margin:4px 0;color:#888;font-size:11px">${op.description}</p>` : ""}
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb;display:flex;flex-wrap:wrap;gap:4px">
+            <a href="${streetViewUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#1a73e8;color:#fff;text-decoration:none">🚶 Street View</a>
+            <a href="${gmapsUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#0f9d58;color:#fff;text-decoration:none">📍 Google Maps</a>
+            <a href="${osmUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#7e57c2;color:#fff;text-decoration:none">🗺️ OSM</a>
+          </div>
+          <p style="margin:4px 0 0;color:#9ca3af;font-size:10px">📐 ${op.lat.toFixed(5)}, ${op.lng.toFixed(5)}</p>
         </div>
       `);
 
