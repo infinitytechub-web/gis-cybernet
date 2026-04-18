@@ -65,8 +65,36 @@ interface OperationsMapProps {
   operations: Operation[];
 }
 
-const LIGHT_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+type BaseLayerKey = "streets" | "satellite" | "hybrid" | "terrain";
+
+const BASE_LAYERS: Record<BaseLayerKey, { label: string; light: string; dark?: string; attribution: string; maxZoom: number; overlay?: string }> = {
+  streets: {
+    label: "Streets",
+    light: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  },
+  satellite: {
+    label: "Satellite",
+    light: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+  },
+  hybrid: {
+    label: "Hybrid",
+    light: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    overlay: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Imagery &copy; Esri, Maxar &mdash; Labels &copy; Esri',
+    maxZoom: 19,
+  },
+  terrain: {
+    label: "Terrain",
+    light: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom',
+    maxZoom: 19,
+  },
+};
 
 function isDarkMode() {
   return document.documentElement.classList.contains("dark");
