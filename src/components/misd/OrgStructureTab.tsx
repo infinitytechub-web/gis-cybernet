@@ -187,11 +187,18 @@ export function OrgStructureTab() {
           is_lead: false,
         };
       });
-      const { error } = await supabase.from("misd_unit_assignments").insert(rows);
+      const { error, data } = await supabase
+        .from("misd_unit_assignments")
+        .upsert(rows, { onConflict: "profile_id,unit_key", ignoreDuplicates: true })
+        .select();
       if (error) throw error;
-      return rows.length;
+      return data?.length ?? 0;
     },
-    onSuccess: (n) => { qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] }); toast.success(`Auto-assigned ${n} staff`); },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] });
+      if (n === 0) toast.info("No new assignments — everyone is already placed");
+      else toast.success(`Auto-assigned ${n} staff`);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -429,7 +436,12 @@ function AssignDialog({
         role_title: roleTitle || null,
         is_lead: isLead,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("This staff member is already assigned to this unit");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] });
