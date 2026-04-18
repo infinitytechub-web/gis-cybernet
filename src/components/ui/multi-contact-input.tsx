@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -116,40 +117,41 @@ function StructuredContacts({ value, onChange, className }: StructuredProps) {
 }
 
 function ListContacts({ value, onChange, placeholder, className }: ListProps) {
-  const items = value
-    ? value.split(",").map((v) => v.trim()).filter(Boolean)
-    : [];
+  // Keep empty entries so users can add multiple slots and fill them in any order.
+  // Only trim/collapse on persistence (handled by callers when storing).
+  const items = React.useMemo(() => {
+    if (value === undefined || value === null) return [""];
+    if (value === "") return [""];
+    return value.split(",").map((v) => v.trim());
+  }, [value]);
+
+  const commit = (arr: string[]) => {
+    // Preserve all slots (including empties) so the UI keeps the rows the user added.
+    onChange(arr.join(", "));
+  };
 
   const update = (idx: number, next: string) => {
     const arr = [...items];
     arr[idx] = next;
-    onChange(arr.filter((v) => v !== undefined).join(", "));
+    commit(arr);
   };
   const remove = (idx: number) => {
     const arr = items.filter((_, i) => i !== idx);
-    onChange(arr.join(", "));
+    commit(arr.length === 0 ? [""] : arr);
   };
-  const add = () => onChange([...items, ""].join(", "));
-
-  const display = items.length === 0 ? [""] : items;
+  const add = () => commit([...items, ""]);
 
   return (
     <div className={cn("space-y-2", className)}>
-      {display.map((v, idx) => (
+      {items.map((v, idx) => (
         <div key={idx} className="flex gap-2">
           <Input
             className="h-9"
             placeholder={placeholder ?? "0XX XXX XXXX"}
             value={v}
-            onChange={(e) => {
-              if (items.length === 0) {
-                onChange(e.target.value);
-              } else {
-                update(idx, e.target.value);
-              }
-            }}
+            onChange={(e) => update(idx, e.target.value)}
           />
-          {display.length > 1 && (
+          {items.length > 1 && (
             <Button
               type="button"
               size="icon"
