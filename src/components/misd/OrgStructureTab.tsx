@@ -436,7 +436,12 @@ function AssignDialog({
         role_title: roleTitle || null,
         is_lead: isLead,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("This staff member is already assigned to this unit");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] });
