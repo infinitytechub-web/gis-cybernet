@@ -24,6 +24,7 @@ import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget"
 import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
 import GenderStatisticsWidget from "@/components/dashboard/GenderStatisticsWidget";
 import LowStockWidget from "@/components/dashboard/LowStockWidget";
+import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -360,6 +361,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Approved Reports — visible to all staff for download/print */}
+      <ApprovedReportsWidget />
 
       {/* Scheduled Reports Widget */}
       <ScheduledReportsWidget />
