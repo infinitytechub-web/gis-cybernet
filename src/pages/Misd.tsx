@@ -20,6 +20,12 @@ import {
 import { OrgStructureTab } from "@/components/misd/OrgStructureTab";
 import { toast } from "sonner";
 import { format, subDays, differenceInDays } from "date-fns";
+
+const safeFormat = (v: any, fmt: string, fallback = "-") => {
+  if (!v) return fallback;
+  const d = v instanceof Date ? v : new Date(v);
+  return isNaN(d.getTime()) ? fallback : format(d, fmt);
+};
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell, LineChart, Line, Legend,
