@@ -117,7 +117,7 @@ const NAVY_PALETTE = ["#0B2447", "#19376D", "#1E3A8A", "#0E7490", "#22D3EE", "#6
 export function OrgStructureTab() {
   const { role } = useAuth();
   const qc = useQueryClient();
-  const canManage = ["admin", "oic", "2ic"].includes(role || "");
+  const canManage = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor"].includes(role || "");
   const [assignOpen, setAssignOpen] = useState(false);
   const [assignUnit, setAssignUnit] = useState<Unit | null>(null);
 
