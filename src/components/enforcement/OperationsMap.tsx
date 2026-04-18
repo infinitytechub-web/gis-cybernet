@@ -175,12 +175,15 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
     const map = L.map(mapRef.current, { zoomAnimation: true }).setView(center, 12);
     mapInstanceRef.current = map;
 
-    L.tileLayer(darkMode ? DARK_TILES : LIGHT_TILES, {
-      attribution: darkMode
-        ? '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
+    const layerCfg = BASE_LAYERS[baseLayer];
+    const tileUrl = baseLayer === "streets" && darkMode && layerCfg.dark ? layerCfg.dark : layerCfg.light;
+    L.tileLayer(tileUrl, {
+      attribution: layerCfg.attribution,
+      maxZoom: layerCfg.maxZoom,
     }).addTo(map);
+    if (layerCfg.overlay) {
+      L.tileLayer(layerCfg.overlay, { maxZoom: layerCfg.maxZoom, opacity: 0.9 }).addTo(map);
+    }
 
     const markers: L.CircleMarker[] = [];
     mappableOps.forEach(op => {
