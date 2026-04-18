@@ -1,53 +1,76 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Upload, Users, CalendarCheck, CalendarOff, Trash2, Eye, Printer, CheckSquare } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Download, Upload, Users, CalendarCheck, CalendarOff, Clock, CheckCircle2, XCircle, FileStack } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
 import ReportScheduleManager from "@/components/reports/ReportScheduleManager";
-import { triggerDownload } from "@/lib/download-utils";
+import ReportApprovalsTable from "@/components/reports/ReportApprovalsTable";
 import { ExportMenu } from "@/components/ui/export-menu";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
+type StatusTab = "pending" | "approved" | "rejected" | "all";
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
 
 export default function Reports() {
   const { isAdmin, isAdminOrSupervisor, user } = useAuth();
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [reportType, setReportType] = useState<ReportType>("staff");
   const [startDate, setStartDate] = useState(() => format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
-  const [generating, setGenerating] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusTab, setStatusTab] = useState<StatusTab>(() => {
+    const t = searchParams.get("tab");
+    return (t === "approved" || t === "rejected" || t === "all") ? (t as StatusTab) : "pending";
+  });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string>("");
   const [previewName, setPreviewName] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
-  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
 
   const [uploadForm, setUploadForm] = useState({
     title: "", description: "", category: "daily" as ReportCategory, report_date: format(new Date(), "yyyy-MM-dd"),
   });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
 
-  // Staff data
+  // Sync tab to URL
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (statusTab === "pending") next.delete("tab"); else next.set("tab", statusTab);
+    setSearchParams(next, { replace: true });
+  }, [statusTab]); // eslint-disable-line
+
+  // Check if current user can submit reports (shift_group present or supervisor+)
+  const { data: canSubmit = false } = useQuery({
+    queryKey: ["can-submit-reports", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      if (isAdminOrSupervisor) return true;
+      const { data } = await supabase.from("profiles").select("shift_group").eq("user_id", user!.id).maybeSingle();
+      if (data?.shift_group) return true;
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user!.id);
+      const allowed = ["shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_shift_leader"];
+      return (roles || []).some((r: any) => allowed.includes(r.role));
+    },
+  });
+
+  // Generated reports source data
   const { data: staff = [] } = useQuery({
     queryKey: ["report-staff"],
     queryFn: async () => {
@@ -57,7 +80,6 @@ export default function Reports() {
     },
   });
 
-  // Attendance data
   const { data: attendance = [] } = useQuery({
     queryKey: ["report-attendance", startDate, endDate],
     enabled: reportType === "attendance",
@@ -69,7 +91,6 @@ export default function Reports() {
     },
   });
 
-  // Leave data
   const { data: leaveRequests = [] } = useQuery({
     queryKey: ["report-leave", startDate, endDate],
     enabled: reportType === "leave",
@@ -81,17 +102,27 @@ export default function Reports() {
     },
   });
 
-  // Uploaded reports
+  // All visible report uploads (RLS handles scope)
   const { data: uploadedReports = [] } = useQuery({
-    queryKey: ["report-uploads", categoryFilter],
+    queryKey: ["report-uploads"],
     queryFn: async () => {
-      let q = supabase.from("report_uploads").select("*").order("report_date", { ascending: false });
-      if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
-      const { data, error } = await q;
+      const { data, error } = await supabase.from("report_uploads").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
+
+  const filteredReports = useMemo(() => {
+    if (statusTab === "all") return uploadedReports;
+    return uploadedReports.filter((r: any) => r.approval_status === statusTab);
+  }, [uploadedReports, statusTab]);
+
+  const counts = useMemo(() => ({
+    pending: uploadedReports.filter((r: any) => r.approval_status === "pending").length,
+    approved: uploadedReports.filter((r: any) => r.approval_status === "approved").length,
+    rejected: uploadedReports.filter((r: any) => r.approval_status === "rejected").length,
+    all: uploadedReports.length,
+  }), [uploadedReports]);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -112,13 +143,16 @@ export default function Reports() {
         file_type: uploadFile.type,
         file_size: uploadFile.size,
         uploaded_by: user!.id,
+        submitted_by: user!.id,
         report_date: uploadForm.report_date,
+        source: "manual",
+        approval_status: "pending",
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["report-uploads"] });
-      toast.success("Report uploaded");
+      toast.success("Report submitted for supervisor approval");
       setUploadOpen(false);
       setUploadFile(null);
       setUploadForm({ title: "", description: "", category: "daily", report_date: format(new Date(), "yyyy-MM-dd") });
@@ -126,66 +160,12 @@ export default function Reports() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (report: any) => {
-      await supabase.storage.from("reports").remove([report.file_path]);
-      const { error } = await supabase.from("report_uploads").delete().eq("id", report.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["report-uploads"] });
-      toast.success("Report deleted");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (ids: string[]) => {
-      const reportsToDelete = uploadedReports.filter((r: any) => ids.includes(r.id));
-      const filePaths = reportsToDelete.map((r: any) => r.file_path);
-      if (filePaths.length > 0) {
-        await supabase.storage.from("reports").remove(filePaths);
-      }
-      const { error } = await supabase.from("report_uploads").delete().in("id", ids);
-      if (error) throw error;
-    },
-    onSuccess: (_data, ids) => {
-      qc.invalidateQueries({ queryKey: ["report-uploads"] });
-      toast.success(`${ids.length} report(s) deleted`);
-      setSelectedReports(new Set());
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedReports(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const toggleSelectAll = useCallback(() => {
-    if (selectedReports.size === uploadedReports.length && uploadedReports.length > 0) {
-      setSelectedReports(new Set());
-    } else {
-      setSelectedReports(new Set(uploadedReports.map((r: any) => r.id)));
-    }
-  }, [selectedReports.size, uploadedReports]);
-
   const handlePreview = async (report: any) => {
     const { data } = await supabase.storage.from("reports").createSignedUrl(report.file_path, 300);
     if (data?.signedUrl) {
       setPreviewUrl(data.signedUrl);
       setPreviewType(report.file_type);
       setPreviewName(report.file_name);
-    }
-  };
-
-  const handleDownload = async (report: any) => {
-    const { data } = await supabase.storage.from("reports").createSignedUrl(report.file_path, 60);
-    if (data?.signedUrl) {
-      triggerDownload(data.signedUrl, report.file_name);
     }
   };
 
@@ -244,7 +224,6 @@ export default function Reports() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">Reports</h1>
 
-      {/* Generated Reports Section */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {reportOptions.map((opt) => (
           <Card key={opt.value} className={`cursor-pointer transition-all ${reportType === opt.value ? `${opt.border} ring-1 ring-primary/30 ${opt.bg}` : "border-border/50 hover:border-primary/40"}`} onClick={() => setReportType(opt.value)}>
@@ -276,12 +255,11 @@ export default function Reports() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2"><Download className="h-4 w-4 text-primary" /> Export Report</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <ExportMenu
             label="Export Report"
             size="default"
             variant="default"
-            disabled={generating}
             getData={() => {
               const payload = buildExportPayload();
               if (payload.rows.length === 0) {
@@ -291,24 +269,28 @@ export default function Reports() {
               return payload;
             }}
           />
+          <p className="text-[11px] text-muted-foreground">
+            Generated exports are downloaded directly. To submit a report for supervisor approval, save the file and upload it below.
+          </p>
         </CardContent>
       </Card>
 
-      {/* Scheduled Reports - Admin/Supervisor */}
       {isAdminOrSupervisor && <ReportScheduleManager />}
 
-      {/* Uploaded Reports Section */}
+      {/* Approval workflow */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm flex items-center gap-2"><Upload className="h-4 w-4 text-primary" /> Uploaded Reports</CardTitle>
-            {isAdminOrSupervisor && (
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileStack className="h-4 w-4 text-primary" /> Reports — Approval Workflow
+            </CardTitle>
+            {canSubmit && (
               <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="gap-1"><Upload className="h-4 w-4" /> Upload Report</Button>
+                  <Button size="sm" className="gap-1"><Upload className="h-4 w-4" /> Submit Report</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>Upload Report</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>Submit report for supervisor approval</DialogTitle></DialogHeader>
                   <form onSubmit={(e) => { e.preventDefault(); uploadMutation.mutate(); }} className="space-y-3">
                     <div><Label>Title *</Label><Input value={uploadForm.title} onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })} required /></div>
                     <div><Label>Category *</Label>
@@ -324,13 +306,16 @@ export default function Reports() {
                       </Select>
                     </div>
                     <div><Label>Report Date</Label><Input type="date" value={uploadForm.report_date} onChange={(e) => setUploadForm({ ...uploadForm, report_date: e.target.value })} /></div>
-                    <div><Label>Description</Label><Textarea value={uploadForm.description} onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })} rows={2} /></div>
+                    <div><Label>Description / Notes</Label><Textarea value={uploadForm.description} onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })} rows={2} /></div>
                     <div>
                       <Label>File (PDF, CSV, JPEG — max 2MB) *</Label>
                       <Input ref={fileRef} type="file" accept=".pdf,.csv,.jpg,.jpeg" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} required />
                     </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Your supervisor will review and either approve (visible to OIC, 2IC, Staff Officer & all staff) or return with comments.
+                    </p>
                     <Button type="submit" className="w-full" disabled={uploadMutation.isPending}>
-                      {uploadMutation.isPending ? "Uploading..." : "Upload"}
+                      {uploadMutation.isPending ? "Submitting..." : "Submit for Approval"}
                     </Button>
                   </form>
                 </DialogContent>
@@ -339,101 +324,30 @@ export default function Reports() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 mb-3">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="quarterly">Quarterly</SelectItem>
-                <SelectItem value="annual">Annual</SelectItem>
-              </SelectContent>
-            </Select>
-            {isAdmin && selectedReports.size > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" className="gap-1 ml-auto">
-                    <Trash2 className="h-4 w-4" /> Delete {selectedReports.size} selected
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete {selectedReports.size} report(s)?</AlertDialogTitle>
-                    <AlertDialogDescription>This will permanently remove the selected report files. This action cannot be undone.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => bulkDeleteMutation.mutate(Array.from(selectedReports))}>Delete All</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {isAdmin && (
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={uploadedReports.length > 0 && selectedReports.size === uploadedReports.length}
-                        onCheckedChange={toggleSelectAll}
-                        aria-label="Select all"
-                      />
-                    </TableHead>
-                  )}
-                  <TableHead>Title</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {uploadedReports.length === 0 ? (
-                  <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center py-8 text-muted-foreground">No uploaded reports</TableCell></TableRow>
-                ) : uploadedReports.map((r: any) => (
-                  <TableRow key={r.id} className={selectedReports.has(r.id) ? "bg-primary/5" : ""}>
-                    {isAdmin && (
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedReports.has(r.id)}
-                          onCheckedChange={() => toggleSelect(r.id)}
-                          aria-label={`Select ${r.title}`}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell className="font-medium">{r.title}</TableCell>
-                    <TableCell><Badge variant="outline">{r.category}</Badge></TableCell>
-                    <TableCell className="text-sm">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
-                    <TableCell className="text-xs">{r.file_type.split("/")[1]?.toUpperCase()}</TableCell>
-                    <TableCell className="text-xs">{(r.file_size / 1024).toFixed(0)} KB</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handlePreview(r)} title="Preview"><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDownload(r)} title="Download"><Download className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => window.print()} title="Print"><Printer className="h-4 w-4" /></Button>
-                        {isAdminOrSupervisor && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader><AlertDialogTitle>Delete report "{r.title}"?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this report file. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(r)}>Delete</AlertDialogAction></AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <Tabs value={statusTab} onValueChange={(v) => setStatusTab(v as StatusTab)}>
+            <TabsList className="mb-3 flex-wrap h-auto">
+              <TabsTrigger value="pending" className="gap-1.5">
+                <Clock className="h-3.5 w-3.5" /> Pending
+                {counts.pending > 0 && <Badge variant="secondary" className="ml-1">{counts.pending}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="approved" className="gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Approved
+                {counts.approved > 0 && <Badge variant="secondary" className="ml-1">{counts.approved}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="rejected" className="gap-1.5">
+                <XCircle className="h-3.5 w-3.5" /> Returned
+                {counts.rejected > 0 && <Badge variant="secondary" className="ml-1">{counts.rejected}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
+            </TabsList>
+            <TabsContent value={statusTab} forceMount>
+              <ReportApprovalsTable
+                reports={filteredReports}
+                onPreview={handlePreview}
+                showActions={isAdminOrSupervisor}
+              />
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
