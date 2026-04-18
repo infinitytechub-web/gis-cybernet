@@ -386,7 +386,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
                     <TableCell className="text-xs capitalize">{i.incident_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.severity]}>{i.severity}</Badge></TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[i.status]}>{i.status}</Badge></TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{format(new Date(i.reported_at), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.reported_at, "dd MMM yyyy")}</TableCell>
                     {canCreate && <TableCell><Button variant="ghost" size="sm" onClick={() => openDialog(i)}>Open</Button></TableCell>}
                   </TableRow>
                 ))}
