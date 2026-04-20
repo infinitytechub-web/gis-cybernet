@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
-import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search } from "lucide-react";
+import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
@@ -45,7 +46,9 @@ export default function Ipse() {
   const [comment, setComment] = useState("");
   const [severity, setSeverity] = useState<string>("");
   const [drillStaffId, setDrillStaffId] = useState<string>("");
-
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", severity: "", ipse_comment: "" });
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   // Realtime
   useEffect(() => {
     const ch = supabase.channel("ipse-rt");
@@ -211,9 +214,49 @@ export default function Ipse() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editTarget) throw new Error("No report");
+      if (!editForm.title.trim()) throw new Error("Title required");
+      const updates: any = {
+        title: editForm.title.trim(),
+        severity: editForm.severity || null,
+        ipse_comment: editForm.ipse_comment.trim() || null,
+      };
+      const { error } = await supabase.from("report_uploads").update(updates).eq("id", editTarget.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ipse-reports"] });
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success("Report updated");
+      setEditTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!deleteTarget) throw new Error("No report");
+      if (deleteTarget.file_path) {
+        await supabase.storage.from("reports").remove([deleteTarget.file_path]);
+      }
+      const { error } = await supabase.from("report_uploads").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ipse-reports"] });
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success("Report deleted");
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const canActIpse = isAdmin || isIpse;
   const canAct2ic = isAdmin || is2ic;
   const canActOic = isAdmin || isOic;
+  const canManage = isAdmin || isIpse;
 
   return (
     <div className="space-y-4">
@@ -357,6 +400,16 @@ export default function Ipse() {
                                 <XCircle className="h-3.5 w-3.5" /> Return
                               </Button>
                             )}
+                            {canManage && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setEditTarget(r); setEditForm({ title: r.title ?? "", severity: r.severity ?? "", ipse_comment: r.ipse_comment ?? "" }); }}>
+                                <Pencil className="h-3.5 w-3.5" /> Edit
+                              </Button>
+                            )}
+                            {canManage && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={() => setDeleteTarget(r)}>
+                                <Trash2 className="h-3.5 w-3.5" /> Delete
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -484,6 +537,61 @@ export default function Ipse() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editTarget} onOpenChange={(o) => { if (!o) setEditTarget(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit report</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">Title *</label>
+              <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Severity</label>
+              <Select value={editForm.severity || "none"} onValueChange={(v) => setEditForm({ ...editForm, severity: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="No severity" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No severity</SelectItem>
+                  {sanctions.map((s) => (
+                    <SelectItem key={s.code} value={s.code}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">IPSE comment</label>
+              <Textarea rows={3} value={editForm.ipse_comment} onChange={(e) => setEditForm({ ...editForm, ipse_comment: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTarget(null)}>Cancel</Button>
+            <Button onClick={() => editMutation.mutate()} disabled={editMutation.isPending || !editForm.title.trim()}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{deleteTarget?.title}" will be permanently removed along with its uploaded file. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); deleteMutation.mutate(); }}
+              disabled={deleteMutation.isPending}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
