@@ -217,36 +217,40 @@ export default function Ipse() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Shield className="h-7 w-7 text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" />
-          <div>
-            <h1 className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">IPSE</h1>
-            <p className="text-xs text-muted-foreground">Immigration Professional Standards & Ethics</p>
+      {/* Hero header with gradient */}
+      <div className="relative overflow-hidden rounded-xl border border-[hsl(82,40%,30%)]/20 bg-gradient-to-r from-[hsl(82,40%,30%)] via-[hsl(82,35%,38%)] to-[hsl(195,55%,35%)] p-5 shadow-md">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]" />
+        <div className="relative flex items-center gap-3 flex-wrap">
+          <div className="rounded-lg bg-white/15 backdrop-blur p-2.5 ring-1 ring-white/20">
+            <Shield className="h-7 w-7 text-white" />
           </div>
+          <div className="text-white">
+            <h1 className="text-2xl font-bold tracking-tight">IPSE</h1>
+            <p className="text-xs text-white/80">Immigration Professional Standards & Ethics</p>
+          </div>
+          <Badge variant="outline" className="ml-auto bg-white/15 backdrop-blur border-white/30 text-white hover:bg-white/20">
+            Reporting chain: Staff → IPSE → 2IC → OIC
+          </Badge>
         </div>
-        <Badge variant="outline" className="ml-auto border-[hsl(82,40%,30%)]/30 text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">
-          Reporting chain: Staff → IPSE → 2IC → OIC
-        </Badge>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Dashboard</TabsTrigger>
-          <TabsTrigger value="triage" className="gap-1.5"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
-          <TabsTrigger value="sanctions" className="gap-1.5"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
-          <TabsTrigger value="drilldown" className="gap-1.5"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
-          <TabsTrigger value="nightguard" className="gap-1.5"><Users className="h-4 w-4" /> Night Guard</TabsTrigger>
+        <TabsList className="flex-wrap h-auto bg-muted/60 p-1">
+          <TabsTrigger value="dashboard" className="gap-1.5 data-[state=active]:bg-[hsl(82,40%,30%)] data-[state=active]:text-white"><BarChart3 className="h-4 w-4" /> Dashboard</TabsTrigger>
+          <TabsTrigger value="triage" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
+          <TabsTrigger value="sanctions" className="gap-1.5 data-[state=active]:bg-rose-700 data-[state=active]:text-white"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
+          <TabsTrigger value="drilldown" className="gap-1.5 data-[state=active]:bg-sky-700 data-[state=active]:text-white"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
+          <TabsTrigger value="nightguard" className="gap-1.5 data-[state=active]:bg-indigo-700 data-[state=active]:text-white"><Users className="h-4 w-4" /> Night Guard</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD */}
         <TabsContent value="dashboard" className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold">{analytics.total}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold">{analytics.avgIpseHours}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-[hsl(82,40%,30%)]"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">{analytics.total}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-amber-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-blue-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-purple-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-emerald-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold text-emerald-600">{analytics.avgIpseHours}</div></CardContent></Card>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
