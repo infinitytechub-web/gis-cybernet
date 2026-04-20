@@ -76,6 +76,11 @@ export default function CommandVault() {
     related_profile_id: "",
   });
 
+  // Preview state
+  const [preview, setPreview] = useState<{ url: string; file: any } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [csvText, setCsvText] = useState<string | null>(null);
+
   // Edit + delete state
   const [editing, setEditing] = useState<any>(null);
   const [editForm, setEditForm] = useState({ title: "", category: "general", description: "", related_profile_id: "" });
@@ -249,9 +254,29 @@ export default function CommandVault() {
   };
 
   const viewFile = async (d: any) => {
+    setPreview({ url: "", file: d });
+    setPreviewLoading(true);
+    setCsvText(null);
     const { data, error } = await supabase.storage.from("command-vault").createSignedUrl(d.file_path, 300);
-    if (error || !data) return toast.error("Could not open file");
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    if (error || !data) {
+      setPreview(null);
+      setPreviewLoading(false);
+      return toast.error("Could not open file");
+    }
+    setPreview({ url: data.signedUrl, file: d });
+    // Inline-load CSV/text content for proper preview
+    const ft = (d.file_type || "").toLowerCase();
+    const fn = (d.file_name || "").toLowerCase();
+    if (ft.startsWith("text/") || ft === "text/csv" || fn.endsWith(".csv") || fn.endsWith(".txt")) {
+      try {
+        const res = await fetch(data.signedUrl);
+        const text = await res.text();
+        setCsvText(text);
+      } catch {
+        setCsvText(null);
+      }
+    }
+    setPreviewLoading(false);
   };
 
   const openEdit = (d: any) => {
@@ -707,6 +732,108 @@ export default function CommandVault() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Inline preview pane */}
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) { setPreview(null); setCsvText(null); } }}>
+        <DialogContent className="max-w-5xl max-h-[92vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">{preview?.file?.title || preview?.file?.file_name}</span>
+              </span>
+              <div className="flex gap-2">
+                {preview?.url && (
+                  <>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={preview.url} target="_blank" rel="noopener noreferrer">
+                        <Eye className="h-4 w-4 mr-1" /> Open in new tab
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => preview && downloadFile(preview.file)}>
+                      <Download className="h-4 w-4 mr-1" /> Download
+                    </Button>
+                  </>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/30 min-h-[60vh]">
+            {previewLoading || !preview?.url ? (
+              <div className="h-[60vh] flex items-center justify-center text-sm text-muted-foreground">
+                Loading preview…
+              </div>
+            ) : (
+              <PreviewContent file={preview.file} url={preview.url} csvText={csvText} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* ===== Inline preview renderer ===== */
+function PreviewContent({ file, url, csvText }: { file: any; url: string; csvText: string | null }) {
+  const ft = (file.file_type || "").toLowerCase();
+  const fn = (file.file_name || "").toLowerCase();
+  const isImage = ft.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/.test(fn);
+  const isPdf = ft === "application/pdf" || fn.endsWith(".pdf");
+  const isCsv = ft === "text/csv" || fn.endsWith(".csv");
+  const isText = ft.startsWith("text/") || fn.endsWith(".txt");
+  const isOffice = /(officedocument|msword|ms-excel|ms-powerpoint)/.test(ft) ||
+    /\.(docx?|xlsx?|pptx?)$/.test(fn);
+
+  if (isImage) {
+    return (
+      <div className="flex items-center justify-center p-4 min-h-[60vh]">
+        <img src={url} alt={file.file_name} className="max-w-full max-h-[80vh] rounded shadow-md object-contain" />
+      </div>
+    );
+  }
+  if (isPdf) {
+    return <iframe src={url} title={file.file_name} className="w-full h-[80vh] border-0" />;
+  }
+  if (isCsv && csvText !== null) {
+    const rows = csvText.split(/\r?\n/).filter((r) => r.length > 0).slice(0, 500).map((r) => r.split(","));
+    const header = rows[0] || [];
+    const body = rows.slice(1);
+    return (
+      <div className="p-4 overflow-auto">
+        <div className="text-xs text-muted-foreground mb-2">
+          Showing first {body.length} row{body.length === 1 ? "" : "s"} ({header.length} column{header.length === 1 ? "" : "s"}).
+        </div>
+        <div className="rounded border bg-card overflow-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/50 sticky top-0">
+              <tr>{header.map((h, i) => <th key={i} className="text-left px-2 py-1.5 font-semibold border-b">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {body.map((r, i) => (
+                <tr key={i} className="odd:bg-muted/20">
+                  {r.map((c, j) => <td key={j} className="px-2 py-1 border-b border-border/40 align-top">{c}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+  if (isText && csvText !== null) {
+    return <pre className="p-4 text-xs whitespace-pre-wrap break-words">{csvText}</pre>;
+  }
+  if (isOffice) {
+    const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+    return <iframe src={officeUrl} title={file.file_name} className="w-full h-[80vh] border-0" />;
+  }
+  return (
+    <div className="p-8 text-center text-sm text-muted-foreground space-y-2">
+      <FileText className="h-10 w-10 mx-auto opacity-40" />
+      <p>Preview not available for this file type.</p>
+      <Button variant="outline" size="sm" asChild>
+        <a href={url} target="_blank" rel="noopener noreferrer">Open in new tab</a>
+      </Button>
     </div>
   );
 }
