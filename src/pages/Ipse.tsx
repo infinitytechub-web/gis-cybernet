@@ -229,7 +229,6 @@ export default function Ipse() {
             <p className="text-xs text-white/80">Immigration Professional Standards & Ethics</p>
           </div>
           <Badge variant="outline" className="ml-auto bg-white/15 backdrop-blur border-white/30 text-white hover:bg-white/20">
-            Reporting chain: Staff → IPSE → 2IC → OIC
           </Badge>
         </div>
       </div>
