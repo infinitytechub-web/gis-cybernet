@@ -363,7 +363,10 @@ export default function Dashboard() {
       )}
 
       {/* Approved Reports — visible to all staff for download/print */}
-      <ApprovedReportsWidget />
+      <ApprovedReportsWidget variant="standard" />
+
+      {/* Approved IPSE Reports — separated from standard reports */}
+      <ApprovedReportsWidget variant="ipse" />
 
       {/* Scheduled Reports Widget */}
       <ScheduledReportsWidget />

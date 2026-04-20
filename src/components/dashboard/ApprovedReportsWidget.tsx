@@ -10,20 +10,31 @@ import { useNavigate } from "react-router-dom";
 import { triggerDownload } from "@/lib/download-utils";
 import { toast } from "sonner";
 
-export default function ApprovedReportsWidget() {
+type Variant = "standard" | "ipse";
+
+interface Props {
+  variant?: Variant;
+}
+
+export default function ApprovedReportsWidget({ variant = "standard" }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isIpse = variant === "ipse";
 
   const { data: reports = [] } = useQuery({
-    queryKey: ["dashboard-approved-reports"],
+    queryKey: ["dashboard-approved-reports", variant],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("report_uploads")
-        .select("id, title, category, report_date, file_name, file_path, file_type, approved_at, severity, ipse_comment")
-        .eq("approval_status", "approved")
-        .order("approved_at", { ascending: false })
-        .limit(6);
+        .select("id, title, category, report_date, file_name, file_path, file_type, approved_at, severity, ipse_comment, ipse_status")
+        .eq("approval_status", "approved");
+
+      // IPSE widget: only reports that went through the IPSE chain (have severity set)
+      // Standard widget: only reports outside the IPSE chain (no severity)
+      q = isIpse ? q.not("severity", "is", null) : q.is("severity", null);
+
+      const { data, error } = await q.order("approved_at", { ascending: false }).limit(6);
       if (error) throw error;
       return data;
     },
@@ -57,20 +68,27 @@ export default function ApprovedReportsWidget() {
 
   if (reports.length === 0) return null;
 
+  const cardClass = isIpse
+    ? "border-[hsl(82,40%,30%)]/30 bg-[hsl(82,40%,30%)]/5"
+    : "border-success/30 bg-success/5";
+  const iconClass = isIpse ? "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" : "text-success";
+  const title = isIpse ? "Approved IPSE Reports" : "Approved Reports";
+  const viewAllPath = isIpse ? "/ipse" : "/reports?tab=approved";
+
   return (
-    <Card className="border-success/30 bg-success/5">
+    <Card className={cardClass}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <FileCheck2 className="h-4 w-4 text-success" />
-            Approved Reports
+            <FileCheck2 className={`h-4 w-4 ${iconClass}`} />
+            {title}
             <Badge variant="outline" className="ml-1 text-[10px]">{reports.length}</Badge>
           </CardTitle>
           <Button
             variant="ghost"
             size="sm"
             className="h-7 text-xs gap-1"
-            onClick={() => navigate("/reports?tab=approved")}
+            onClick={() => navigate(viewAllPath)}
           >
             View all <ArrowRight className="h-3 w-3" />
           </Button>
@@ -84,14 +102,14 @@ export default function ApprovedReportsWidget() {
                 <div className="text-sm font-medium truncate">{r.title}</div>
                 <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="text-[10px] py-0 px-1.5">{r.category}</Badge>
-                  {r.severity && (
+                  {isIpse && r.severity && (
                     <Badge className={`text-[10px] py-0 px-1.5 ${sevClass(r.severity)}`}>
                       {String(r.severity).toUpperCase()}
                     </Badge>
                   )}
                   <span>{format(new Date(r.report_date), "dd MMM yyyy")}</span>
                 </div>
-                {r.ipse_comment && (
+                {isIpse && r.ipse_comment && (
                   <div className="text-[10px] italic text-muted-foreground mt-0.5 truncate" title={r.ipse_comment}>
                     IPSE: {r.ipse_comment}
                   </div>
