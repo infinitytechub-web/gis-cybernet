@@ -20,7 +20,7 @@ export default function ApprovedReportsWidget() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("report_uploads")
-        .select("id, title, category, report_date, file_name, file_path, file_type, approved_at")
+        .select("id, title, category, report_date, file_name, file_path, file_type, approved_at, severity, ipse_comment")
         .eq("approval_status", "approved")
         .order("approved_at", { ascending: false })
         .limit(6);
@@ -28,6 +28,13 @@ export default function ApprovedReportsWidget() {
       return data;
     },
   });
+
+  const sevClass = (s: string | null | undefined) => {
+    if (s === "high") return "bg-red-600 text-white";
+    if (s === "medium") return "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200";
+    if (s === "low") return "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200";
+    return "";
+  };
 
   const handleDownload = async (report: any) => {
     const { data, error } = await supabase.storage.from("reports").createSignedUrl(report.file_path, 60);
@@ -75,10 +82,20 @@ export default function ApprovedReportsWidget() {
             <li key={r.id} className="flex items-center gap-2 py-2">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium truncate">{r.title}</div>
-                <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+                <div className="text-[11px] text-muted-foreground flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="text-[10px] py-0 px-1.5">{r.category}</Badge>
+                  {r.severity && (
+                    <Badge className={`text-[10px] py-0 px-1.5 ${sevClass(r.severity)}`}>
+                      {String(r.severity).toUpperCase()}
+                    </Badge>
+                  )}
                   <span>{format(new Date(r.report_date), "dd MMM yyyy")}</span>
                 </div>
+                {r.ipse_comment && (
+                  <div className="text-[10px] italic text-muted-foreground mt-0.5 truncate" title={r.ipse_comment}>
+                    IPSE: {r.ipse_comment}
+                  </div>
+                )}
               </div>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(r)} title="Download">
                 <Download className="h-3.5 w-3.5" />

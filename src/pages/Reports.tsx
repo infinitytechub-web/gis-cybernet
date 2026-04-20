@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Download, Upload, Users, CalendarCheck, CalendarOff, Clock, CheckCircle2, XCircle, FileStack } from "lucide-react";
+import { Download, Upload, Users, CalendarCheck, CalendarOff, Clock, CheckCircle2, XCircle, FileStack, ShieldAlert, ArrowRightCircle, Gavel, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
@@ -22,7 +23,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
-type StatusTab = "pending" | "approved" | "rejected" | "all";
+type StatusTab = "pending_ipse" | "with_2ic" | "with_oic" | "approved" | "rejected" | "all";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
@@ -30,6 +31,7 @@ const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"]
 export default function Reports() {
   const { isAdmin, isAdminOrSupervisor, user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [reportType, setReportType] = useState<ReportType>("staff");
   const [startDate, setStartDate] = useState(() => format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"));
@@ -37,7 +39,8 @@ export default function Reports() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [statusTab, setStatusTab] = useState<StatusTab>(() => {
     const t = searchParams.get("tab");
-    return (t === "approved" || t === "rejected" || t === "all") ? (t as StatusTab) : "pending";
+    const valid: StatusTab[] = ["pending_ipse", "with_2ic", "with_oic", "approved", "rejected", "all"];
+    return valid.includes(t as StatusTab) ? (t as StatusTab) : "pending_ipse";
   });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewType, setPreviewType] = useState<string>("");
@@ -52,7 +55,7 @@ export default function Reports() {
   // Sync tab to URL
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
-    if (statusTab === "pending") next.delete("tab"); else next.set("tab", statusTab);
+    if (statusTab === "pending_ipse") next.delete("tab"); else next.set("tab", statusTab);
     setSearchParams(next, { replace: true });
   }, [statusTab]); // eslint-disable-line
 
@@ -114,15 +117,29 @@ export default function Reports() {
 
   const filteredReports = useMemo(() => {
     if (statusTab === "all") return uploadedReports;
-    return uploadedReports.filter((r: any) => r.approval_status === statusTab);
+    const map: Record<Exclude<StatusTab, "all">, string> = {
+      pending_ipse: "pending_ipse",
+      with_2ic: "forwarded_to_2ic",
+      with_oic: "forwarded_to_oic",
+      approved: "approved",
+      rejected: "rejected",
+    };
+    const target = map[statusTab as Exclude<StatusTab, "all">];
+    return uploadedReports.filter((r: any) => (r.ipse_status ?? "pending_ipse") === target);
   }, [uploadedReports, statusTab]);
 
-  const counts = useMemo(() => ({
-    pending: uploadedReports.filter((r: any) => r.approval_status === "pending").length,
-    approved: uploadedReports.filter((r: any) => r.approval_status === "approved").length,
-    rejected: uploadedReports.filter((r: any) => r.approval_status === "rejected").length,
-    all: uploadedReports.length,
-  }), [uploadedReports]);
+  const counts = useMemo(() => {
+    const c = { pending_ipse: 0, with_2ic: 0, with_oic: 0, approved: 0, rejected: 0, all: uploadedReports.length };
+    uploadedReports.forEach((r: any) => {
+      const s = r.ipse_status ?? "pending_ipse";
+      if (s === "pending_ipse") c.pending_ipse++;
+      else if (s === "forwarded_to_2ic") c.with_2ic++;
+      else if (s === "forwarded_to_oic") c.with_oic++;
+      else if (s === "approved") c.approved++;
+      else if (s === "rejected") c.rejected++;
+    });
+    return c;
+  }, [uploadedReports]);
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -147,12 +164,13 @@ export default function Reports() {
         report_date: uploadForm.report_date,
         source: "manual",
         approval_status: "pending",
+        ipse_status: "pending_ipse",
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["report-uploads"] });
-      toast.success("Report submitted for supervisor approval");
+      toast.success("Report submitted — IPSE will triage and forward");
       setUploadOpen(false);
       setUploadFile(null);
       setUploadForm({ title: "", description: "", category: "daily", report_date: format(new Date(), "yyyy-MM-dd") });
@@ -324,11 +342,27 @@ export default function Reports() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[11px] text-muted-foreground">
+              Chain of command: <strong>Staff → IPSE → 2IC → OIC</strong>. Triage and forwarding actions live in the IPSE module.
+            </p>
+            <Button variant="outline" size="sm" className="gap-1 h-7" onClick={() => navigate("/ipse")}>
+              <Gavel className="h-3.5 w-3.5" /> Open IPSE Triage <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
           <Tabs value={statusTab} onValueChange={(v) => setStatusTab(v as StatusTab)}>
             <TabsList className="mb-3 flex-wrap h-auto">
-              <TabsTrigger value="pending" className="gap-1.5">
-                <Clock className="h-3.5 w-3.5" /> Pending
-                {counts.pending > 0 && <Badge variant="secondary" className="ml-1">{counts.pending}</Badge>}
+              <TabsTrigger value="pending_ipse" className="gap-1.5">
+                <ShieldAlert className="h-3.5 w-3.5" /> Pending IPSE
+                {counts.pending_ipse > 0 && <Badge variant="secondary" className="ml-1">{counts.pending_ipse}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="with_2ic" className="gap-1.5">
+                <ArrowRightCircle className="h-3.5 w-3.5" /> With 2IC
+                {counts.with_2ic > 0 && <Badge variant="secondary" className="ml-1">{counts.with_2ic}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="with_oic" className="gap-1.5">
+                <Clock className="h-3.5 w-3.5" /> With OIC
+                {counts.with_oic > 0 && <Badge variant="secondary" className="ml-1">{counts.with_oic}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="approved" className="gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Approved
