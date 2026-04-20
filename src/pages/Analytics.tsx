@@ -30,6 +30,38 @@ const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
 const STATUS_COLORS: Record<string, string> = { open: "bg-red-100 text-red-800", investigating: "bg-yellow-100 text-yellow-800", resolved: "bg-green-100 text-green-800", closed: "bg-gray-100 text-gray-800" };
 
+// Friendly labels + display order for AppRole
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Admin",
+  oic: "OIC",
+  "2ic": "2IC",
+  staff_officer: "Staff Officer",
+  supervisor: "Supervisor",
+  ipse_supervisor: "IPSE Supervisor",
+  ipse_deputy_supervisor: "IPSE Deputy Supervisor",
+  shift_supervisor: "Shift Supervisor",
+  deputy_shift_supervisor: "Deputy Shift Supervisor",
+  shift_leader: "Shift Leader",
+  deputy_supervisor: "Deputy Supervisor",
+  deputy_shift_leader: "Deputy Shift Leader",
+  special_duties: "Special Duties",
+  deputy: "Deputy",
+  front_desk: "Front Desk",
+  official: "Official",
+  enquiry: "Enquiry",
+  storekeeper: "Storekeeper",
+  procurement_officer: "Procurement Officer",
+  staff: "Staff",
+};
+const ROLE_ORDER: AppRole[] = [
+  "admin","oic","2ic","staff_officer","supervisor",
+  "ipse_supervisor","ipse_deputy_supervisor",
+  "shift_supervisor","deputy_shift_supervisor","shift_leader","deputy_shift_leader","deputy_supervisor",
+  "special_duties","deputy",
+  "front_desk","official","enquiry","storekeeper","procurement_officer",
+  "staff",
+];
+
 type TimePeriod = "7d" | "30d" | "90d" | "12m";
 
 export default function Analytics() {
