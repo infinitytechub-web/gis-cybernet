@@ -394,19 +394,27 @@ export default function Ipse() {
 
         {/* DRILL-DOWN */}
         <TabsContent value="drilldown" className="space-y-3">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Per-officer report history</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <Select value={drillStaffId} onValueChange={setDrillStaffId}>
-                <SelectTrigger className="max-w-md"><SelectValue placeholder="Select an officer" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {(profiles as any[]).map((p) => (
-                    <SelectItem key={p.user_id ?? p.id} value={p.user_id ?? p.id}>
-                      {p.last_name}, {p.first_name} ({p.staff_id})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <Card className="border-t-4 border-t-sky-700">
+            <CardHeader className="pb-2 bg-sky-50/50 dark:bg-sky-950/20 rounded-t-lg">
+              <CardTitle className="text-sm flex items-center gap-2 text-sky-900 dark:text-sky-200"><Search className="h-4 w-4" /> Per-officer report history</CardTitle>
+              <CardDescription className="text-xs">Search by first name, surname or staff ID to view that officer's full IPSE history.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-4">
+              <div className="max-w-md">
+                <StaffCombobox
+                  staff={(profiles as any[]).map((p) => ({
+                    id: p.user_id ?? p.id,
+                    first_name: p.first_name,
+                    last_name: p.last_name,
+                    staff_id: p.staff_id ?? "—",
+                  }))}
+                  value={drillStaffId}
+                  onValueChange={setDrillStaffId}
+                  placeholder="Search and select an officer…"
+                  includeAllOption
+                  allOptionLabel="Clear selection"
+                />
+              </div>
 
               {drillStaffId && (
                 <Table>
