@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
