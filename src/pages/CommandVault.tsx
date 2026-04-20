@@ -76,6 +76,11 @@ export default function CommandVault() {
     related_profile_id: "",
   });
 
+  // Preview state
+  const [preview, setPreview] = useState<{ url: string; file: any } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [csvText, setCsvText] = useState<string | null>(null);
+
   // Edit + delete state
   const [editing, setEditing] = useState<any>(null);
   const [editForm, setEditForm] = useState({ title: "", category: "general", description: "", related_profile_id: "" });
