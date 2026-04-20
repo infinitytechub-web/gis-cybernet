@@ -2644,6 +2644,57 @@ export type Database = {
         }
         Relationships: []
       }
+      recycle_bin: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          deleted_by_name: string | null
+          display_context: string | null
+          display_label: string | null
+          expires_at: string
+          id: string
+          purged_at: string | null
+          record_id: string
+          restored_at: string | null
+          restored_by: string | null
+          snapshot: Json
+          storage_paths: Json
+          table_name: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_by_name?: string | null
+          display_context?: string | null
+          display_label?: string | null
+          expires_at?: string
+          id?: string
+          purged_at?: string | null
+          record_id: string
+          restored_at?: string | null
+          restored_by?: string | null
+          snapshot: Json
+          storage_paths?: Json
+          table_name: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          deleted_by_name?: string | null
+          display_context?: string | null
+          display_label?: string | null
+          expires_at?: string
+          id?: string
+          purged_at?: string | null
+          record_id?: string
+          restored_at?: string | null
+          restored_by?: string | null
+          snapshot?: Json
+          storage_paths?: Json
+          table_name?: string
+        }
+        Relationships: []
+      }
       report_schedules: {
         Row: {
           created_at: string
@@ -3240,10 +3291,12 @@ export type Database = {
         Returns: undefined
       }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      can_use_recycle_bin: { Args: { _user_id: string }; Returns: boolean }
       clear_failed_login_attempts: {
         Args: { _staff_id: string }
         Returns: undefined
       }
+      empty_recycle_bin: { Args: never; Returns: Json }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
       get_misd_department_id: { Args: never; Returns: string }
       get_profile_protected_fields: {
@@ -3274,6 +3327,7 @@ export type Database = {
       }
       is_ipse_tier: { Args: { _user_id: string }; Returns: boolean }
       is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
+      is_recyclable_table: { Args: { _table: string }; Returns: boolean }
       is_sensitive_realtime_topic: {
         Args: { _topic: string }
         Returns: boolean
@@ -3298,7 +3352,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      purge_expired_recycle_bin: { Args: never; Returns: Json }
+      purge_recycle_bin_entry: { Args: { _bin_id: string }; Returns: Json }
       record_failed_login: { Args: { _staff_id: string }; Returns: Json }
+      restore_recycle_bin_entry: {
+        Args: { _bin_id: string }
+        Returns: undefined
+      }
+      soft_delete_record: {
+        Args: {
+          _display_context?: string
+          _display_label?: string
+          _record_id: string
+          _storage_paths?: Json
+          _table: string
+        }
+        Returns: string
+      }
       verify_otp: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {

@@ -14,6 +14,7 @@ import { Upload, Download, Trash2, FileText, Search, Eye, FolderLock } from "luc
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
+import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
 
 const DOC_TYPES = [
@@ -149,14 +150,20 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
   };
 
   const deleteDoc = async (d: any) => {
-    if (!confirm(`Delete ${d.file_name || d.document_type}?`)) return;
-    if (d.file_path) {
-      await supabase.storage.from("staff-documents").remove([d.file_path]);
+    if (!confirm(`Move ${d.file_name || d.document_type} to the Recycle Bin?`)) return;
+    try {
+      await softDelete({
+        table: "staff_documents",
+        id: d.id,
+        label: d.file_name || d.document_type,
+        context: d.document_number || undefined,
+        storagePaths: d.file_path ? [{ bucket: "staff-documents", path: d.file_path }] : [],
+      });
+      toast.success("Document moved to Recycle Bin");
+      qc.invalidateQueries({ queryKey: ["staff-doc-vault", profileId] });
+    } catch (e: any) {
+      toast.error(e.message || "Delete failed");
     }
-    const { error } = await supabase.from("staff_documents").delete().eq("id", d.id);
-    if (error) return toast.error(error.message);
-    toast.success("Document removed");
-    qc.invalidateQueries({ queryKey: ["staff-doc-vault", profileId] });
   };
 
   const handleDrop = (e: React.DragEvent) => {

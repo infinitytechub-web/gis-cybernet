@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
 import { format, isPast, isFuture, isToday } from "date-fns";
 import { toast } from "sonner";
+import { softDelete } from "@/lib/recycle-bin";
 
 export default function Holidays() {
   const { isAdmin } = useAuth();
@@ -69,13 +70,17 @@ export default function Holidays() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("holidays").delete().eq("id", id);
-      if (error) throw error;
+    mutationFn: async (h: any) => {
+      await softDelete({
+        table: "holidays",
+        id: h.id,
+        label: h.name,
+        context: format(new Date(h.date), "dd MMM yyyy"),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holidays"] });
-      toast.success("Holiday deleted");
+      toast.success("Holiday moved to Recycle Bin");
     },
     onError: (e: any) => toast.error(e.message),
   });

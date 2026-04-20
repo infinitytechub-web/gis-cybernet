@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -70,6 +70,10 @@ const adminItems = [
 
 const commandVaultItems = [
   { title: "Command Vault", url: "/command-vault", icon: FolderLock, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
+];
+
+const recycleBinItems = [
+  { title: "Recycle Bin", url: "/recycle-bin", icon: Trash2, iconColor: "text-destructive" },
 ];
 
 type NavItem = { title: string; url: string; icon: any; iconColor: string; badge?: "frontdesk" | "processing" };
@@ -194,6 +198,7 @@ export function AppSidebar() {
         {renderGroup("Finance & Procurement", financeItems)}
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", commandVaultItems)}
+        {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
         {(role === "admin" || role === "supervisor") && renderGroup("Administration", adminItems)}
       </SidebarContent>
 

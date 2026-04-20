@@ -44,6 +44,7 @@ const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
 const Ipse = lazy(() => import("./pages/Ipse"));
 const CommandVault = lazy(() => import("./pages/CommandVault"));
+const RecycleBin = lazy(() => import("./pages/RecycleBin"));
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,7 @@ function App() {
           <Route path="/misd" element={<ProtectedRoute><Layout><Misd /></Layout></ProtectedRoute>} />
           <Route path="/ipse" element={<ProtectedRoute><Layout><Ipse /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
+          <Route path="/recycle-bin" element={<ProtectedRoute><Layout><RecycleBin /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

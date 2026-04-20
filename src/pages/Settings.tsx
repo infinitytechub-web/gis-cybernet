@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
@@ -82,6 +83,7 @@ export default function Settings() {
           <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4 text-chart-2" /> Accounts</TabsTrigger>
           <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
           <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
+          <TabsTrigger value="recycle" className="gap-1.5"><Trash2 className="h-4 w-4 text-destructive" /> Recycle Bin</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
           <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
         </TabsList>
@@ -91,6 +93,19 @@ export default function Settings() {
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
+        <TabsContent value="recycle">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Recycle Bin</CardTitle>
+              <CardDescription>Restore mistakenly deleted items, or empty the bin permanently. Items auto-purge after 30 days.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/recycle-bin" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                Open the Recycle Bin →
+              </Link>
+            </CardContent>
+          </Card>
+        </TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
       </Tabs>
