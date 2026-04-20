@@ -46,7 +46,9 @@ export default function Ipse() {
   const [comment, setComment] = useState("");
   const [severity, setSeverity] = useState<string>("");
   const [drillStaffId, setDrillStaffId] = useState<string>("");
-
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", severity: "", ipse_comment: "" });
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   // Realtime
   useEffect(() => {
     const ch = supabase.channel("ipse-rt");
