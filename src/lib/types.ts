@@ -11,7 +11,35 @@ export type Holiday = Tables<"holidays">;
 export type PostingTransfer = Tables<"postings_transfers">;
 export type UserRole = Tables<"user_roles">;
 
-export type AppRole = "admin" | "oic" | "2ic" | "staff_officer" | "supervisor" | "staff" | "deputy_supervisor" | "deputy_shift_leader" | "deputy" | "shift_leader" | "special_duties" | "front_desk" | "shift_supervisor" | "deputy_shift_supervisor" | "official" | "enquiry" | "storekeeper" | "procurement_officer";
+export type AppRole =
+  | "admin"
+  | "oic"
+  | "2ic"
+  | "staff_officer"
+  | "supervisor"
+  | "ipse_supervisor"
+  | "ipse_deputy_supervisor"
+  | "shift_supervisor"
+  | "deputy_shift_supervisor"
+  | "shift_leader"
+  | "deputy_supervisor"
+  | "deputy_shift_leader"
+  | "special_duties"
+  | "deputy"
+  | "front_desk"
+  | "official"
+  | "enquiry"
+  | "storekeeper"
+  | "procurement_officer"
+  | "staff";
+
+export type ReportSeverity = "low" | "medium" | "high";
+export type IpseStatus =
+  | "pending_ipse"
+  | "forwarded_to_2ic"
+  | "forwarded_to_oic"
+  | "approved"
+  | "rejected";
 
 export interface ProfileWithRelations extends Profile {
   ranks?: Rank | null;
