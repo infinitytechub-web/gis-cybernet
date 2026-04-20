@@ -373,8 +373,8 @@ export default function Ipse() {
 
         {/* SANCTIONS */}
         <TabsContent value="sanctions">
-          <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Gavel className="h-4 w-4" /> Severity-of-Sanction Reference</CardTitle><CardDescription>Official scale used by IPSE before forwarding any report up the chain.</CardDescription></CardHeader>
+          <Card className="border-t-4 border-t-rose-700">
+            <CardHeader className="bg-rose-50/50 dark:bg-rose-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-rose-900 dark:text-rose-200"><Gavel className="h-4 w-4" /> Severity-of-Sanction Reference</CardTitle><CardDescription>Official scale used by IPSE before forwarding any report up the chain.</CardDescription></CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow><TableHead>Level</TableHead><TableHead>Description</TableHead><TableHead>Recommended action</TableHead></TableRow></TableHeader>
