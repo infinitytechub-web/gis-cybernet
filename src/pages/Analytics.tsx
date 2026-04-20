@@ -19,8 +19,9 @@ import {
 import {
   TrendingUp, TrendingDown, Users, CalendarCheck, AlertTriangle,
   Shield, FileText, Download, Plus, Activity, PieChart as PieIcon,
-  BarChart3, Clock
+  BarChart3, Clock, UserCog
 } from "lucide-react";
+import type { AppRole } from "@/lib/types";
 import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
