@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { softDelete } from "@/lib/recycle-bin";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -138,7 +139,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("inventory_items").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await softDelete({ table: "inventory_items", id, label: "Inventory item" }); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["inventory_items"] }); toast.success("Deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -584,7 +585,7 @@ function SuppliersTab({ canManage }: { canManage: boolean }) {
     onError: (e: any) => toast.error(e.message),
   });
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("inventory_suppliers").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await softDelete({ table: "inventory_suppliers", id, label: "Supplier" }); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["inventory_suppliers"] }); toast.success("Deleted"); },
   });
 
@@ -653,7 +654,7 @@ function CategoriesTab({ canManage }: { canManage: boolean }) {
     onError: (e: any) => toast.error(e.message),
   });
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("inventory_categories").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await softDelete({ table: "inventory_categories", id, label: "Category" }); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["inventory_categories"] }); toast.success("Deleted"); },
   });
 

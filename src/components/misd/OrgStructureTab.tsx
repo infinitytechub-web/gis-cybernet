@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { softDelete } from "@/lib/recycle-bin";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -204,8 +205,7 @@ export function OrgStructureTab() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("misd_unit_assignments").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "misd_unit_assignments", id, label: "MISD unit assignment" });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] }); toast.success("Removed"); },
     onError: (e: any) => toast.error(e.message),

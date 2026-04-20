@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { softDelete } from "@/lib/recycle-bin";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,8 +86,7 @@ export default function ReportScheduleManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("report_schedules").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "report_schedules", id, label: "Report schedule" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["report-schedules"] });

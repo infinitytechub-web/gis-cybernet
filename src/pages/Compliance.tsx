@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { softDelete } from "@/lib/recycle-bin";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -94,7 +95,7 @@ function DocumentsTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("staff_documents").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await softDelete({ table: "staff_documents", id, label: "Staff document" }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["staff-documents"] }); toast.success("Document deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -265,7 +266,7 @@ function EquipmentTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("equipment_issuance").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await softDelete({ table: "equipment_issuance", id, label: "Equipment issuance" }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["equipment-issuance"] }); toast.success("Record deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -439,7 +440,7 @@ function CertificationsTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("certifications").delete().eq("id", id); if (error) throw error; },
+    mutationFn: async (id: string) => { await softDelete({ table: "certifications", id, label: "Certification" }); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["certifications"] }); toast.success("Certification deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
