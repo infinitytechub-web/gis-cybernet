@@ -12,7 +12,7 @@ const roles = ["admin", "oic", "2ic", "supervisor", "ipse_supervisor", "ipse_dep
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
-  oic: "OIC",
+  oic: "Command OIC",
   "2ic": "2IC",
   supervisor: "Supervisor",
   ipse_supervisor: "IPSE Supervisor",

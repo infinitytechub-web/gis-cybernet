@@ -21,7 +21,7 @@ import type { AppRole } from "@/lib/types";
 
 const roleLabels: Record<AppRole, string> = {
   admin: "Admin",
-  oic: "OIC",
+  oic: "Command OIC",
   "2ic": "2IC",
   staff_officer: "Staff Officer",
   supervisor: "Supervisor",
