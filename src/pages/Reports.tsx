@@ -342,10 +342,7 @@ export default function Reports() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-[11px] text-muted-foreground">
-              Chain of command: <strong>Staff → IPSE → 2IC → OIC</strong>. Triage and forwarding actions live in the IPSE module.
-            </p>
+          <div className="mb-3 flex items-center justify-end gap-2 flex-wrap">
             <Button variant="outline" size="sm" className="gap-1 h-7" onClick={() => navigate("/ipse")}>
               <Gavel className="h-3.5 w-3.5" /> Open IPSE Triage <ExternalLink className="h-3 w-3" />
             </Button>
