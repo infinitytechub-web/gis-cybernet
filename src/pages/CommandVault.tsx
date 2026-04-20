@@ -319,10 +319,14 @@ export default function CommandVault() {
     if (!deleting) return;
     setDeletingBusy(true);
     try {
-      if (deleting.file_path) await supabase.storage.from("command-vault").remove([deleting.file_path]);
-      const { error } = await supabase.from("command_vault_files").delete().eq("id", deleting.id);
-      if (error) throw error;
-      toast.success("File removed");
+      await softDelete({
+        table: "command_vault_files",
+        id: deleting.id,
+        label: deleting.title || deleting.file_name,
+        context: deleting.file_name,
+        storagePaths: deleting.file_path ? [{ bucket: "command-vault", path: deleting.file_path }] : [],
+      });
+      toast.success("File moved to Recycle Bin");
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["command-vault"] });
     } catch (e: any) {
