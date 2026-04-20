@@ -28,11 +28,18 @@ export function StaffRosterTab() {
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ["misd_unit_assignments_roster"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: rows } = await supabase
         .from("misd_unit_assignments")
-        .select("*, profiles:profile_id(id, first_name, last_name, staff_id, photo_url, ranks:rank_id(name), departments:department_id(name))")
+        .select("*")
         .order("unit_name", { ascending: true });
-      return data || [];
+      const ids = Array.from(new Set((rows || []).map((r: any) => r.profile_id)));
+      if (ids.length === 0) return [];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, photo_url, rank_id, department_id, ranks:rank_id(name), departments:department_id(name)")
+        .in("id", ids);
+      const map = new Map((profs || []).map((p: any) => [p.id, p]));
+      return (rows || []).map((r: any) => ({ ...r, profiles: map.get(r.profile_id) || null }));
     },
   });
 
