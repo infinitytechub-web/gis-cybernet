@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { triggerDownload } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 import {
   Shield, Search, Filter, User, Clock, FileText, ArrowRightLeft,
   CalendarCheck, Building2, Megaphone, Award, CalendarOff, AlertTriangle,
@@ -275,8 +275,8 @@ export function SystemAuditTray() {
   const hasDateFilter = dateFrom || dateTo;
   const clearDateFilter = () => { setDateFrom(undefined); setDateTo(undefined); };
 
-  const exportCSV = () => {
-    if (filtered.length === 0) return;
+  const getAuditExportData = () => {
+    if (filtered.length === 0) return { title: "System Audit Trail", filename: `audit-log-${format(new Date(), "yyyy-MM-dd-HHmmss")}`, headers: [], rows: [] };
     const headers = ["Timestamp", "Action", "Entity Type", "Entity ID", "Performed By"];
     const rows = filtered.map(log => [
       format(new Date(log.created_at), "yyyy-MM-dd HH:mm:ss"),
@@ -285,12 +285,13 @@ export function SystemAuditTray() {
       log.entity_id || "",
       log.performed_by ? (profiles[log.performed_by] || log.performed_by) : "System",
     ]);
-    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    triggerDownload(url, `audit-log-${format(new Date(), "yyyy-MM-dd-HHmmss")}.csv`);
-    URL.revokeObjectURL(url);
-    toast({ title: "Exported", description: `${filtered.length} audit entries exported to CSV.` });
+    return {
+      title: "System Audit Trail",
+      filename: `audit-log-${format(new Date(), "yyyy-MM-dd-HHmmss")}`,
+      subtitle: `${filtered.length} entries`,
+      headers,
+      rows,
+    };
   };
 
   const purgeMutation = useMutation({
@@ -342,15 +343,14 @@ export function SystemAuditTray() {
 
           {/* Action buttons */}
           <div className="flex gap-2 mt-2">
-            <Button
+            <ExportMenu
+              getData={getAuditExportData}
+              label="Export"
               size="sm"
+              variant="default"
               className="h-7 text-[10px] bg-[hsl(120,30%,25%)] hover:bg-[hsl(120,30%,30%)] text-[hsl(120,20%,80%)] border border-[hsl(120,30%,30%)]"
-              onClick={exportCSV}
               disabled={filtered.length === 0}
-            >
-              <Download className="h-3 w-3 mr-1" />
-              Export CSV
-            </Button>
+            />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
