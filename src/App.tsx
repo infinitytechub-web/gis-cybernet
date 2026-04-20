@@ -42,6 +42,7 @@ const Stores = lazy(() => import("./pages/Stores"));
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
 const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
+const Ipse = lazy(() => import("./pages/Ipse"));
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ function App() {
           <Route path="/holding" element={<ProtectedRoute><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
           <Route path="/procurement" element={<ProtectedRoute><Layout><Procurement /></Layout></ProtectedRoute>} />
           <Route path="/misd" element={<ProtectedRoute><Layout><Misd /></Layout></ProtectedRoute>} />
+          <Route path="/ipse" element={<ProtectedRoute><Layout><Ipse /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
