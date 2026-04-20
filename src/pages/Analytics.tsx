@@ -145,6 +145,22 @@ export default function Analytics() {
     },
   });
 
+  // User roles distribution (with profile info for active filtering + dept breakdown)
+  const { data: rolesData = [] } = useQuery({
+    queryKey: ["analytics-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role, user_id, profiles!user_roles_user_id_fkey(status, gender, departments(name))");
+      if (error) {
+        // Fallback if relationship name differs
+        const { data: simple } = await supabase.from("user_roles").select("role, user_id");
+        return (simple || []).map((r: any) => ({ ...r, profiles: null }));
+      }
+      return data || [];
+    },
+  });
+
   // --- Computed analytics ---
 
   // Attendance trend
