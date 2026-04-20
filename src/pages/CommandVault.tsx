@@ -29,6 +29,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
+import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
 import { Navigate } from "react-router-dom";
 import {
