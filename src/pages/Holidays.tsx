@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
 import { format, isPast, isFuture, isToday } from "date-fns";
 import { toast } from "sonner";
+import { softDelete } from "@/lib/recycle-bin";
 
 export default function Holidays() {
   const { isAdmin } = useAuth();
