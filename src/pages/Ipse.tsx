@@ -400,6 +400,16 @@ export default function Ipse() {
                                 <XCircle className="h-3.5 w-3.5" /> Return
                               </Button>
                             )}
+                            {canManage && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setEditTarget(r); setEditForm({ title: r.title ?? "", severity: r.severity ?? "", ipse_comment: r.ipse_comment ?? "" }); }}>
+                                <Pencil className="h-3.5 w-3.5" /> Edit
+                              </Button>
+                            )}
+                            {canManage && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7 text-destructive border-destructive/40 hover:bg-destructive/10" onClick={() => setDeleteTarget(r)}>
+                                <Trash2 className="h-3.5 w-3.5" /> Delete
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
