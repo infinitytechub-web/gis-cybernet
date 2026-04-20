@@ -193,7 +193,7 @@ export function AppSidebar() {
         {renderGroup("Logistics", logisticsItems)}
         {renderGroup("Finance & Procurement", financeItems)}
 
-        {(role === "admin" || role === "oic" || role === "2ic") && renderGroup("Confidential", commandVaultItems)}
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", commandVaultItems)}
         {(role === "admin" || role === "supervisor") && renderGroup("Administration", adminItems)}
       </SidebarContent>
 
