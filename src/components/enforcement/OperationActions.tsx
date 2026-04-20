@@ -1,15 +1,20 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Download, Pencil, Printer, Users, MapPin, CalendarDays, FileText, FileSpreadsheet } from "lucide-react";
+import { Eye, Download, Pencil, Printer, Users, MapPin, CalendarDays, FileText, FileSpreadsheet, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { downloadBlob } from "@/lib/download-utils";
 import { exportReport, type ExportFormat } from "@/lib/export-utils";
+import { softDelete, type RecyclableTable } from "@/lib/recycle-bin";
+import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface OpRecord {
@@ -371,9 +376,39 @@ interface RowActionsProps {
   moduleTitle: string;
   onEdit: (op: OpRecord) => void;
   onView: (op: OpRecord) => void;
+  /** Source table — used for soft-delete + cache invalidation. */
+  table?: RecyclableTable;
+  /** React-query key to invalidate after delete. */
+  queryKey?: unknown[];
 }
 
-export function OperationRowActions({ op, profiles, moduleTitle, onEdit, onView }: RowActionsProps) {
+export function OperationRowActions({ op, profiles, moduleTitle, onEdit, onView, table, queryKey }: RowActionsProps) {
+  const { isAdmin, isOic } = useAuth();
+  const queryClient = useQueryClient();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const canDelete = (isAdmin || isOic) && !!table;
+
+  const handleDelete = async () => {
+    if (!table) return;
+    setDeleting(true);
+    try {
+      await softDelete({
+        table,
+        id: op.id,
+        label: `${moduleTitle}: ${op.operation_type.replace(/_/g, " ")}`,
+        context: `${format(new Date(op.operation_date), "dd MMM yyyy")}${op.location ? ` · ${op.location}` : ""}`,
+      });
+      toast.success(`${moduleTitle} moved to Recycle Bin`);
+      if (queryKey) queryClient.invalidateQueries({ queryKey });
+      setConfirmOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center gap-0.5">
       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); onView(op); }} title="View details">
@@ -397,6 +432,39 @@ export function OperationRowActions({ op, profiles, moduleTitle, onEdit, onView 
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {canDelete && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={(e) => { e.stopPropagation(); setConfirmOpen(true); }}
+            title="Delete operation"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this {moduleTitle.toLowerCase()}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  The record will be moved to the Recycle Bin and can be restored within 30 days by Admin or Command OIC.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </div>
   );
 }
