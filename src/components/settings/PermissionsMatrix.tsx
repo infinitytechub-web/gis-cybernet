@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 
-const roles = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
+const roles = ["admin", "oic", "2ic", "supervisor", "ipse_supervisor", "ipse_deputy_supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
   oic: "OIC",
   "2ic": "2IC",
   supervisor: "Supervisor",
+  ipse_supervisor: "IPSE Supervisor",
+  ipse_deputy_supervisor: "IPSE Dep. Supervisor",
   shift_supervisor: "Shift Supervisor",
   deputy_shift_supervisor: "Dep. Shift Supervisor",
   shift_leader: "Shift Leader",
@@ -31,79 +33,79 @@ type Access = "full" | "dept" | "own" | "view" | "none";
 const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
   {
     name: "Dashboard",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "full", shift_supervisor: "full", deputy_shift_supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "full", staff: "full" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "full", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "full", deputy_shift_supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "full", staff: "full" },
   },
   {
     name: "Staff / Employees",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
   },
   {
     name: "Staff Directory",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "full", shift_supervisor: "full", deputy_shift_supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "view", staff: "full" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "full", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "full", deputy_shift_supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "view", staff: "full" },
   },
   {
     name: "Departments",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "view", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "view", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
   },
   {
     name: "Roles / Ranks",
-    access: { admin: "full", oic: "full", "2ic": "view", supervisor: "view", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
+    access: { admin: "full", oic: "full", "2ic": "view", supervisor: "view", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "view" },
   },
   {
     name: "Attendance",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "own", deputy: "own", front_desk: "own", staff: "own" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "own", deputy: "own", front_desk: "own", staff: "own" },
   },
   {
     name: "Leave Requests",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "view", special_duties: "own", deputy: "own", front_desk: "own", staff: "own" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "dept", deputy_shift_leader: "view", special_duties: "own", deputy: "own", front_desk: "own", staff: "own" },
   },
   {
     name: "Postings & Transfers",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "own", deputy: "own", front_desk: "none", staff: "own" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "own", deputy: "own", front_desk: "none", staff: "own" },
   },
   {
     name: "Duty Roster",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "view", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "view", staff: "own" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "view", deputy_supervisor: "dept", deputy_shift_leader: "dept", special_duties: "view", deputy: "view", front_desk: "view", staff: "own" },
   },
   {
     name: "Announcements",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "view", staff: "view" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "view", staff: "view" },
   },
   {
     name: "Compliance",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "own" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "view", deputy: "view", front_desk: "none", staff: "own" },
   },
   {
     name: "Reports",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "view", deputy_shift_supervisor: "view", shift_leader: "view", deputy_supervisor: "view", deputy_shift_leader: "view", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
   },
   {
     name: "Front Desk — Visa Apps",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
   },
   {
     name: "Front Desk — Extensions",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
   },
   {
     name: "Front Desk — Passport",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
   },
   {
     name: "Front Desk — Official",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
   },
   {
     name: "Front Desk — Enquiry",
-    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "full", supervisor: "dept", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "dept", deputy_shift_supervisor: "dept", shift_leader: "dept", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
   },
   {
     name: "Front Desk — Audit Log",
-    access: { admin: "full", oic: "view", "2ic": "view", supervisor: "none", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
+    access: { admin: "full", oic: "view", "2ic": "view", supervisor: "none", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "own", staff: "none" },
   },
   {
     name: "Settings / User Roles",
-    access: { admin: "full", oic: "full", "2ic": "view", supervisor: "none", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
+    access: { admin: "full", oic: "full", "2ic": "view", supervisor: "none", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
   },
 ];
 

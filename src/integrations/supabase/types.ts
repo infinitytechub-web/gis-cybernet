@@ -383,6 +383,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          parent_department_id: string | null
         }
         Insert: {
           created_at?: string
@@ -390,6 +391,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          parent_department_id?: string | null
         }
         Update: {
           created_at?: string
@@ -397,8 +399,17 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          parent_department_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "departments_parent_department_id_fkey"
+            columns: ["parent_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       detention_medical_log: {
         Row: {
@@ -1234,6 +1245,39 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ipse_sanctions: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          label: string
+          recommended_action: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          label: string
+          recommended_action?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          label?: string
+          recommended_action?: string | null
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -2596,12 +2640,21 @@ export type Database = {
           file_path: string
           file_size: number
           file_type: string
+          forwarded_to: string | null
           id: string
+          ipse_comment: string | null
+          ipse_reviewed_at: string | null
+          ipse_reviewer: string | null
+          ipse_status: string
           report_date: string
           review_comment: string | null
+          severity: string | null
           source: string
           submitted_by: string | null
           title: string
+          two_ic_comment: string | null
+          two_ic_reviewed_at: string | null
+          two_ic_reviewer: string | null
           updated_at: string
           uploaded_by: string
         }
@@ -2617,12 +2670,21 @@ export type Database = {
           file_path: string
           file_size: number
           file_type: string
+          forwarded_to?: string | null
           id?: string
+          ipse_comment?: string | null
+          ipse_reviewed_at?: string | null
+          ipse_reviewer?: string | null
+          ipse_status?: string
           report_date?: string
           review_comment?: string | null
+          severity?: string | null
           source?: string
           submitted_by?: string | null
           title: string
+          two_ic_comment?: string | null
+          two_ic_reviewed_at?: string | null
+          two_ic_reviewer?: string | null
           updated_at?: string
           uploaded_by: string
         }
@@ -2638,12 +2700,21 @@ export type Database = {
           file_path?: string
           file_size?: number
           file_type?: string
+          forwarded_to?: string | null
           id?: string
+          ipse_comment?: string | null
+          ipse_reviewed_at?: string | null
+          ipse_reviewer?: string | null
+          ipse_status?: string
           report_date?: string
           review_comment?: string | null
+          severity?: string | null
           source?: string
           submitted_by?: string | null
           title?: string
+          two_ic_comment?: string | null
+          two_ic_reviewed_at?: string | null
+          two_ic_reviewer?: string | null
           updated_at?: string
           uploaded_by?: string
         }
@@ -3135,6 +3206,7 @@ export type Database = {
         Args: { _topic: string }
         Returns: boolean
       }
+      is_ipse_tier: { Args: { _user_id: string }; Returns: boolean }
       is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
       is_sensitive_realtime_topic: {
         Args: { _topic: string }
@@ -3183,6 +3255,8 @@ export type Database = {
         | "storekeeper"
         | "procurement_officer"
         | "staff_officer"
+        | "ipse_supervisor"
+        | "ipse_deputy_supervisor"
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
@@ -3335,6 +3409,8 @@ export const Constants = {
         "storekeeper",
         "procurement_officer",
         "staff_officer",
+        "ipse_supervisor",
+        "ipse_deputy_supervisor",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],

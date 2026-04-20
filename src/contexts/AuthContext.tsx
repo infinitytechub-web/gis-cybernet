@@ -12,6 +12,9 @@ interface AuthContextValue {
   isAdmin: boolean;
   isSupervisor: boolean;
   isAdminOrSupervisor: boolean;
+  isIpse: boolean;
+  is2ic: boolean;
+  isOic: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,8 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select("role")
       .eq("user_id", userId);
     if (!data || data.length === 0) return "staff" as AppRole;
-    // Prioritize admin > oic > 2ic > staff_officer > supervisor > other roles > staff
-    const priority: Record<string, number> = { admin: 0, oic: 1, "2ic": 2, staff_officer: 3, supervisor: 4, shift_supervisor: 5, deputy_shift_supervisor: 6, shift_leader: 7, deputy_supervisor: 8, deputy_shift_leader: 9, special_duties: 10, deputy: 11, staff: 99 };
+    // Prioritize admin > oic > 2ic > staff_officer > supervisor > ipse > other roles > staff
+    const priority: Record<string, number> = { admin: 0, oic: 1, "2ic": 2, staff_officer: 3, supervisor: 4, ipse_supervisor: 5, ipse_deputy_supervisor: 6, shift_supervisor: 7, deputy_shift_supervisor: 8, shift_leader: 9, deputy_supervisor: 10, deputy_shift_leader: 11, special_duties: 12, deputy: 13, staff: 99 };
     const sorted = data.sort((a, b) => (priority[a.role] ?? 99) - (priority[b.role] ?? 99));
     return (sorted[0].role as AppRole) ?? "staff";
   }, []);
@@ -95,6 +98,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role === "2ic" ||
       role === "staff_officer" ||
       role === "supervisor",
+    isIpse: role === "ipse_supervisor" || role === "ipse_deputy_supervisor",
+    is2ic: role === "2ic",
+    isOic: role === "oic",
   }), [user, role, loading, signIn, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

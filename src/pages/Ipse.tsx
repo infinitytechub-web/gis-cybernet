@@ -1,0 +1,479 @@
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { toast } from "sonner";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import NightGuardTab from "@/components/shifts/NightGuardTab";
+import { startOfWeek } from "date-fns";
+
+const SEVERITY_BADGE: Record<string, string> = {
+  low: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
+  medium: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
+  high: "bg-red-600 text-white",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  pending_ipse: "Pending IPSE",
+  forwarded_to_2ic: "With 2IC",
+  forwarded_to_oic: "With OIC",
+  approved: "Approved",
+  rejected: "Returned",
+};
+
+const OLIVE_PALETTE = ["#556B2F", "#6B8E23", "#808000", "#9ACD32", "#BDB76B", "#8FBC8F"];
+
+export default function Ipse() {
+  const { user, isAdmin, isIpse, is2ic, isOic } = useAuth();
+  const qc = useQueryClient();
+  const [tab, setTab] = useState("dashboard");
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [decision, setDecision] = useState<{ report: any; action: "forward_2ic" | "forward_oic" | "approve" | "reject" } | null>(null);
+  const [comment, setComment] = useState("");
+  const [severity, setSeverity] = useState<string>("");
+  const [drillStaffId, setDrillStaffId] = useState<string>("");
+
+  // Realtime
+  useEffect(() => {
+    const ch = supabase.channel("ipse-rt");
+    ch.on("postgres_changes", { event: "*", schema: "public", table: "report_uploads" }, () => {
+      qc.invalidateQueries({ queryKey: ["ipse-reports"] });
+      qc.invalidateQueries({ queryKey: ["ipse-analytics"] });
+    });
+    ch.subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
+  const { data: reports = [] } = useQuery({
+    queryKey: ["ipse-reports"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("report_uploads")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: sanctions = [] } = useQuery({
+    queryKey: ["ipse-sanctions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ipse_sanctions" as any)
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["ipse-profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, user_id, first_name, last_name, staff_id, departments(name)")
+        .eq("status", "active")
+        .order("last_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Night Guard data
+  const { data: shifts = [] } = useQuery({
+    queryKey: ["shifts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shifts").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: nightGuardDept } = useQuery({
+    queryKey: ["night-guard-dept"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("departments").select("id, name").ilike("name", "%night guard%").maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const nightGuardStaff = useMemo(
+    () => (profiles as any[]).filter((p) => p.departments?.name && nightGuardDept && (p as any).department_id === nightGuardDept.id),
+    [profiles, nightGuardDept]
+  );
+
+  // Analytics
+  const analytics = useMemo(() => {
+    const total = reports.length;
+    const bySeverity = { low: 0, medium: 0, high: 0, none: 0 };
+    const byStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    const submitterCount: Record<string, number> = {};
+    const trend: Record<string, number> = {};
+
+    reports.forEach((r: any) => {
+      bySeverity[(r.severity as keyof typeof bySeverity) || "none"]++;
+      byStatus[r.ipse_status || "pending_ipse"] = (byStatus[r.ipse_status || "pending_ipse"] ?? 0) + 1;
+      const sb = r.submitted_by || r.uploaded_by || "unknown";
+      submitterCount[sb] = (submitterCount[sb] ?? 0) + 1;
+      const day = format(new Date(r.created_at), "dd MMM");
+      trend[day] = (trend[day] ?? 0) + 1;
+    });
+
+    // Resolution time avg (created → approved/rejected)
+    const resolved = reports.filter((r: any) => r.ipse_reviewed_at);
+    const avgIpseHours = resolved.length
+      ? Math.round((resolved.reduce((a: number, r: any) => a + (new Date(r.ipse_reviewed_at).getTime() - new Date(r.created_at).getTime()) / 36e5, 0) / resolved.length) * 10) / 10
+      : 0;
+
+    const topOffenders = Object.entries(submitterCount)
+      .map(([id, count]) => {
+        const p: any = (profiles as any[]).find((pp) => pp.user_id === id);
+        return {
+          id,
+          name: p ? `${p.last_name}, ${p.first_name}` : "Unknown",
+          staff_id: p?.staff_id ?? "—",
+          count,
+        };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return {
+      total,
+      bySeverity,
+      byStatus,
+      avgIpseHours,
+      trend: Object.entries(trend).slice(-14).map(([day, count]) => ({ day, count })),
+      topOffenders,
+      severityChart: [
+        { name: "Low", value: bySeverity.low, color: "#3B82F6" },
+        { name: "Medium", value: bySeverity.medium, color: "#F59E0B" },
+        { name: "High", value: bySeverity.high, color: "#DC2626" },
+      ].filter((x) => x.value > 0),
+    };
+  }, [reports, profiles]);
+
+  const drillReports = useMemo(() => {
+    if (!drillStaffId) return [];
+    return (reports as any[]).filter((r) => r.submitted_by === drillStaffId || r.uploaded_by === drillStaffId);
+  }, [reports, drillStaffId]);
+
+  // Mutations
+  const decideMutation = useMutation({
+    mutationFn: async () => {
+      if (!decision) throw new Error("No decision");
+      const { report, action } = decision;
+      const updates: any = {};
+      if (action === "forward_2ic") {
+        if (!severity) throw new Error("Pick a severity level");
+        updates.severity = severity;
+        updates.ipse_status = "forwarded_to_2ic";
+        updates.ipse_comment = comment.trim() || null;
+        updates.forwarded_to = "2ic";
+      } else if (action === "forward_oic") {
+        updates.ipse_status = "forwarded_to_oic";
+        updates.two_ic_comment = comment.trim() || null;
+        updates.forwarded_to = "oic";
+      } else if (action === "approve") {
+        updates.ipse_status = "approved";
+      } else if (action === "reject") {
+        if (!comment.trim()) throw new Error("Comment required when returning a report");
+        updates.ipse_status = "rejected";
+        updates.review_comment = comment.trim();
+      }
+      const { error } = await supabase.from("report_uploads").update(updates).eq("id", report.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ipse-reports"] });
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success("Report updated");
+      setDecision(null);
+      setComment("");
+      setSeverity("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const canActIpse = isAdmin || isIpse;
+  const canAct2ic = isAdmin || is2ic;
+  const canActOic = isAdmin || isOic;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Shield className="h-7 w-7 text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" />
+          <div>
+            <h1 className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">IPSE</h1>
+            <p className="text-xs text-muted-foreground">Immigration Professional Standards & Ethics</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="ml-auto border-[hsl(82,40%,30%)]/30 text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">
+          Reporting chain: Staff → IPSE → 2IC → OIC
+        </Badge>
+      </div>
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Dashboard</TabsTrigger>
+          <TabsTrigger value="triage" className="gap-1.5"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
+          <TabsTrigger value="sanctions" className="gap-1.5"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
+          <TabsTrigger value="drilldown" className="gap-1.5"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
+          <TabsTrigger value="nightguard" className="gap-1.5"><Users className="h-4 w-4" /> Night Guard</TabsTrigger>
+        </TabsList>
+
+        {/* DASHBOARD */}
+        <TabsContent value="dashboard" className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold">{analytics.total}</div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
+            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold">{analytics.avgIpseHours}</div></CardContent></Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Severity breakdown</CardTitle></CardHeader>
+              <CardContent>
+                {analytics.severityChart.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No triaged reports yet.</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={analytics.severityChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                        {analytics.severityChart.map((d, i) => (<Cell key={i} fill={d.color} />))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm">Submission trend (last 14 entries)</CardTitle></CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={analytics.trend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="#556B2F" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Top reported officers</CardTitle></CardHeader>
+            <CardContent>
+              {analytics.topOffenders.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No data yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Staff ID</TableHead><TableHead className="text-right">Reports</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {analytics.topOffenders.map((o) => (
+                      <TableRow key={o.id} className="cursor-pointer" onClick={() => { setDrillStaffId(o.id); setTab("drilldown"); }}>
+                        <TableCell className="font-medium">{o.name}</TableCell>
+                        <TableCell className="text-xs">{o.staff_id}</TableCell>
+                        <TableCell className="text-right"><Badge>{o.count}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TRIAGE */}
+        <TabsContent value="triage" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to 2IC → 2IC forwards to OIC → OIC issues final approval.</CardDescription></CardHeader>
+            <CardContent>
+              <ScrollArea className="max-h-[60vh]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Stage</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reports.filter((r: any) => r.ipse_status !== "approved" && r.ipse_status !== "rejected").length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No active reports.</TableCell></TableRow>
+                    )}
+                    {reports.filter((r: any) => r.ipse_status !== "approved" && r.ipse_status !== "rejected").map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-sm font-medium">{r.title}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
+                        <TableCell>{r.severity ? <Badge className={SEVERITY_BADGE[r.severity]}>{r.severity.toUpperCase()}</Badge> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
+                        <TableCell><Badge variant="outline">{STATUS_LABEL[r.ipse_status] ?? r.ipse_status}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1 flex-wrap">
+                            {r.ipse_status === "pending_ipse" && canActIpse && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_2ic" }); setSeverity(r.severity ?? ""); setComment(""); }}>
+                                <ArrowRightCircle className="h-3.5 w-3.5" /> Forward to 2IC
+                              </Button>
+                            )}
+                            {r.ipse_status === "forwarded_to_2ic" && canAct2ic && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_oic" }); setComment(""); }}>
+                                <ArrowRightCircle className="h-3.5 w-3.5" /> Forward to OIC
+                              </Button>
+                            )}
+                            {r.ipse_status === "forwarded_to_oic" && canActOic && (
+                              <Button size="sm" className="gap-1 h-7 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setDecision({ report: r, action: "approve" }); setComment(""); }}>
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                              </Button>
+                            )}
+                            {(canActIpse || canAct2ic || canActOic) && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7 text-destructive" onClick={() => { setDecision({ report: r, action: "reject" }); setComment(""); }}>
+                                <XCircle className="h-3.5 w-3.5" /> Return
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* SANCTIONS */}
+        <TabsContent value="sanctions">
+          <Card>
+            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Gavel className="h-4 w-4" /> Severity-of-Sanction Reference</CardTitle><CardDescription>Official scale used by IPSE before forwarding any report up the chain.</CardDescription></CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow><TableHead>Level</TableHead><TableHead>Description</TableHead><TableHead>Recommended action</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {sanctions.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell><Badge className={SEVERITY_BADGE[s.code]}>{s.label}</Badge></TableCell>
+                      <TableCell className="text-sm">{s.description}</TableCell>
+                      <TableCell className="text-sm">{s.recommended_action}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* DRILL-DOWN */}
+        <TabsContent value="drilldown" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">Per-officer report history</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <Select value={drillStaffId} onValueChange={setDrillStaffId}>
+                <SelectTrigger className="max-w-md"><SelectValue placeholder="Select an officer" /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {(profiles as any[]).map((p) => (
+                    <SelectItem key={p.user_id ?? p.id} value={p.user_id ?? p.id}>
+                      {p.last_name}, {p.first_name} ({p.staff_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {drillStaffId && (
+                <Table>
+                  <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Date</TableHead><TableHead>Severity</TableHead><TableHead>Stage</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {drillReports.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">No reports for this officer.</TableCell></TableRow>}
+                    {drillReports.map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-sm font-medium">{r.title}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
+                        <TableCell>{r.severity ? <Badge className={SEVERITY_BADGE[r.severity]}>{r.severity.toUpperCase()}</Badge> : "—"}</TableCell>
+                        <TableCell><Badge variant="outline">{STATUS_LABEL[r.ipse_status] ?? r.ipse_status}</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* NIGHT GUARD */}
+        <TabsContent value="nightguard">
+          <NightGuardTab nightGuardStaff={nightGuardStaff} allStaff={profiles} shifts={shifts} weekStart={weekStart} setWeekStart={setWeekStart} isAdmin={isAdmin} />
+        </TabsContent>
+      </Tabs>
+
+      {/* Decision dialog */}
+      <Dialog open={!!decision} onOpenChange={(o) => { if (!o) { setDecision(null); setComment(""); setSeverity(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {decision?.action === "forward_2ic" && "Assign severity & forward to 2IC"}
+              {decision?.action === "forward_oic" && "Forward to OIC"}
+              {decision?.action === "approve" && "Final OIC approval"}
+              {decision?.action === "reject" && "Return report"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm"><strong>{decision?.report?.title}</strong></p>
+            {decision?.action === "forward_2ic" && (
+              <div>
+                <label className="text-sm font-medium">Severity *</label>
+                <Select value={severity} onValueChange={setSeverity}>
+                  <SelectTrigger><SelectValue placeholder="Pick severity level" /></SelectTrigger>
+                  <SelectContent>
+                    {sanctions.map((s) => (
+                      <SelectItem key={s.code} value={s.code}>
+                        {s.label} — {s.recommended_action}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <label className="text-sm font-medium">{decision?.action === "reject" ? "Reason *" : "Comment (optional)"}</label>
+              <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDecision(null)}>Cancel</Button>
+            <Button
+              variant={decision?.action === "reject" ? "destructive" : "default"}
+              disabled={decideMutation.isPending || (decision?.action === "forward_2ic" && !severity) || (decision?.action === "reject" && !comment.trim())}
+              onClick={() => decideMutation.mutate()}
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
