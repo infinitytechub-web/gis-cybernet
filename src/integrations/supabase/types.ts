@@ -3183,6 +3183,8 @@ export type Database = {
         | "storekeeper"
         | "procurement_officer"
         | "staff_officer"
+        | "ipse_supervisor"
+        | "ipse_deputy_supervisor"
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
@@ -3335,6 +3337,8 @@ export const Constants = {
         "storekeeper",
         "procurement_officer",
         "staff_officer",
+        "ipse_supervisor",
+        "ipse_deputy_supervisor",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],
