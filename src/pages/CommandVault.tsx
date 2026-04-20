@@ -42,8 +42,8 @@ const CATEGORY_BADGE: Record<string, string> = {
 };
 
 export default function CommandVault() {
-  const { user, isAdmin, isOic, is2ic, loading } = useAuth();
-  const allowed = isAdmin || isOic || is2ic;
+  const { user, isAdmin, isOic, is2ic, role, loading } = useAuth();
+  const allowed = isAdmin || isOic || is2ic || role === "staff_officer";
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -193,7 +193,7 @@ export default function CommandVault() {
           <div>
             <h1 className="text-2xl font-bold text-secondary">Command Vault</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5" /> Restricted — visible only to Admin, OIC and 2IC
+              <Lock className="h-3.5 w-3.5 mr-1" /> Restricted — visible only to Admin, Command OIC, 2IC and Staff Officer
             </p>
           </div>
         </div>
