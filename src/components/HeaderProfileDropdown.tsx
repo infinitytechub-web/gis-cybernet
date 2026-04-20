@@ -87,7 +87,7 @@ export function HeaderProfileDropdown() {
             <p className="text-xs text-muted-foreground">{user?.email}</p>
             <div className="flex items-center gap-1 mt-0.5">
               <Shield className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground capitalize">{role ?? "staff"}</span>
+              <span className="text-xs text-muted-foreground capitalize">{role === "oic" ? "Command OIC" : role === "2ic" ? "2IC" : (role ?? "staff").replace(/_/g, " ")}</span>
               {profile?.rank_abbreviation && (
                 <span className="text-xs text-muted-foreground">· {profile.rank_abbreviation}</span>
               )}
