@@ -1,0 +1,1 @@
+UPDATE public.departments SET name = 'Immigration Professional Standard & Ethics - IPSE Unit' WHERE id = '24303f77-5eab-4931-ade9-db798fe9a747';
