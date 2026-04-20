@@ -298,6 +298,56 @@ export default function Analytics() {
     return { expiredDocs, expiringSoon, totalDocs: complianceData.documents.length, expiredCerts, totalCerts: complianceData.certifications.length, issuedEquip };
   }, [complianceData]);
 
+  // Role-type statistics
+  const rolesStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const activeCounts: Record<string, number> = {};
+    const inactiveCounts: Record<string, number> = {};
+    const deptByRole: Record<string, Record<string, number>> = {};
+    rolesData.forEach((r: any) => {
+      const role = r.role as string;
+      counts[role] = (counts[role] || 0) + 1;
+      const status = r.profiles?.status;
+      if (status === "active") activeCounts[role] = (activeCounts[role] || 0) + 1;
+      else if (status) inactiveCounts[role] = (inactiveCounts[role] || 0) + 1;
+      const dept = r.profiles?.departments?.name || "Unassigned";
+      if (!deptByRole[role]) deptByRole[role] = {};
+      deptByRole[role][dept] = (deptByRole[role][dept] || 0) + 1;
+    });
+    const total = rolesData.length;
+    const rows = ROLE_ORDER
+      .filter((role) => counts[role])
+      .map((role) => ({
+        role,
+        label: ROLE_LABELS[role],
+        count: counts[role] || 0,
+        active: activeCounts[role] || 0,
+        inactive: inactiveCounts[role] || 0,
+        pct: total ? Math.round(((counts[role] || 0) / total) * 100) : 0,
+        topDept: Object.entries(deptByRole[role] || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || "—",
+      }));
+    // Append any unknown roles not in our order
+    Object.keys(counts).forEach((role) => {
+      if (!ROLE_ORDER.includes(role as AppRole)) {
+        rows.push({
+          role: role as AppRole,
+          label: role.replace(/_/g, " "),
+          count: counts[role],
+          active: activeCounts[role] || 0,
+          inactive: inactiveCounts[role] || 0,
+          pct: total ? Math.round((counts[role] / total) * 100) : 0,
+          topDept: Object.entries(deptByRole[role] || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || "—",
+        });
+      }
+    });
+    const commandTier = (counts.admin || 0) + (counts.oic || 0) + (counts["2ic"] || 0) + (counts.staff_officer || 0) + (counts.supervisor || 0);
+    const shiftTier = (counts.shift_supervisor || 0) + (counts.deputy_shift_supervisor || 0) + (counts.shift_leader || 0) + (counts.deputy_shift_leader || 0) + (counts.deputy_supervisor || 0);
+    const ipseTier = (counts.ipse_supervisor || 0) + (counts.ipse_deputy_supervisor || 0);
+    const operationsTier = (counts.front_desk || 0) + (counts.official || 0) + (counts.enquiry || 0) + (counts.storekeeper || 0) + (counts.procurement_officer || 0);
+    const generalStaff = counts.staff || 0;
+    return { rows, total, commandTier, shiftTier, ipseTier, operationsTier, generalStaff };
+  }, [rolesData]);
+
   // KPI cards
   const totalStaff = staffStats?.length || 0;
   const activeStaff = staffStats?.filter((s: any) => s.status === "active").length || 0;
