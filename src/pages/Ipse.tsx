@@ -97,6 +97,20 @@ export default function Ipse() {
     },
   });
 
+  // IPSE staff (supervisor + deputy) — for direct dashboard linkage
+  const { data: ipseUserIds = [] } = useQuery({
+    queryKey: ["ipse-staff-user-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["ipse_supervisor", "ipse_deputy_supervisor"]);
+      if (error) throw error;
+      return (data || []).map((r: any) => r.user_id);
+    },
+  });
+  const ipseUserIdSet = useMemo(() => new Set(ipseUserIds), [ipseUserIds]);
+
   // Night Guard data
   const { data: shifts = [] } = useQuery({
     queryKey: ["shifts"],
@@ -157,6 +171,18 @@ export default function Ipse() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // IPSE-submitted reports (direct dashboard linkage)
+    const ipseSubmissions = reports.filter((r: any) => {
+      const sb = r.submitted_by || r.uploaded_by;
+      return sb && ipseUserIdSet.has(sb);
+    });
+    const ipseBySeverity = { low: 0, medium: 0, high: 0, none: 0 };
+    const ipseByStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    ipseSubmissions.forEach((r: any) => {
+      ipseBySeverity[(r.severity as keyof typeof ipseBySeverity) || "none"]++;
+      ipseByStatus[r.ipse_status || "pending_ipse"] = (ipseByStatus[r.ipse_status || "pending_ipse"] ?? 0) + 1;
+    });
+
     return {
       total,
       bySeverity,
@@ -169,8 +195,12 @@ export default function Ipse() {
         { name: "Medium", value: bySeverity.medium, color: "#F59E0B" },
         { name: "High", value: bySeverity.high, color: "#DC2626" },
       ].filter((x) => x.value > 0),
+      ipseSubmissions,
+      ipseTotal: ipseSubmissions.length,
+      ipseBySeverity,
+      ipseByStatus,
     };
-  }, [reports, profiles]);
+  }, [reports, profiles, ipseUserIdSet]);
 
   const drillReports = useMemo(() => {
     if (!drillStaffId) return [];
@@ -328,6 +358,73 @@ export default function Ipse() {
               </CardContent>
             </Card>
           </div>
+
+          {/* IPSE Unit submissions — direct linkage from Reports dashboard */}
+          <Card className="border-t-4 border-t-[hsl(82,40%,30%)]">
+            <CardHeader className="pb-2 bg-[hsl(82,40%,30%)]/5 rounded-t-lg">
+              <CardTitle className="text-sm flex items-center gap-2 text-[hsl(82,40%,25%)] dark:text-[hsl(82,50%,70%)]">
+                <Shield className="h-4 w-4" /> IPSE Unit submissions
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Reports submitted directly by the IPSE Supervisor and Deputy IPSE Supervisor — captured automatically into IPSE analytics.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="rounded-md border p-2 bg-[hsl(82,40%,30%)]/5">
+                  <div className="text-[11px] text-muted-foreground">Total submitted</div>
+                  <div className="text-xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">{analytics.ipseTotal}</div>
+                </div>
+                <div className="rounded-md border p-2">
+                  <div className="text-[11px] text-muted-foreground">High severity</div>
+                  <div className="text-xl font-bold text-red-600">{analytics.ipseBySeverity.high}</div>
+                </div>
+                <div className="rounded-md border p-2">
+                  <div className="text-[11px] text-muted-foreground">Approved</div>
+                  <div className="text-xl font-bold text-emerald-600">{analytics.ipseByStatus.approved ?? 0}</div>
+                </div>
+                <div className="rounded-md border p-2">
+                  <div className="text-[11px] text-muted-foreground">In workflow</div>
+                  <div className="text-xl font-bold text-amber-600">
+                    {(analytics.ipseByStatus.pending_ipse ?? 0) + (analytics.ipseByStatus.forwarded_to_2ic ?? 0) + (analytics.ipseByStatus.forwarded_to_oic ?? 0)}
+                  </div>
+                </div>
+              </div>
+
+              {analytics.ipseSubmissions.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No reports submitted by IPSE staff yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Submitter</TableHead>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {analytics.ipseSubmissions.slice(0, 8).map((r: any) => {
+                      const sb = r.submitted_by || r.uploaded_by;
+                      const p: any = (profiles as any[]).find((pp) => pp.user_id === sb);
+                      return (
+                        <TableRow key={r.id}>
+                          <TableCell className="text-xs">{format(new Date(r.created_at), "dd MMM yyyy")}</TableCell>
+                          <TableCell className="font-medium text-xs">{r.title}</TableCell>
+                          <TableCell className="text-xs">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
+                          <TableCell>
+                            {r.severity ? <Badge className={SEVERITY_BADGE[r.severity] || ""}>{r.severity}</Badge> : <span className="text-xs text-muted-foreground">—</span>}
+                          </TableCell>
+                          <TableCell><Badge variant="outline" className="text-[10px]">{STATUS_LABEL[r.ipse_status || "pending_ipse"]}</Badge></TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="border-t-4 border-t-sky-600">
             <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-sky-600" /> Top reported officers</CardTitle></CardHeader>
