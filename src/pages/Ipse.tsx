@@ -171,6 +171,18 @@ export default function Ipse() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // IPSE-submitted reports (direct dashboard linkage)
+    const ipseSubmissions = reports.filter((r: any) => {
+      const sb = r.submitted_by || r.uploaded_by;
+      return sb && ipseUserIdSet.has(sb);
+    });
+    const ipseBySeverity = { low: 0, medium: 0, high: 0, none: 0 };
+    const ipseByStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    ipseSubmissions.forEach((r: any) => {
+      ipseBySeverity[(r.severity as keyof typeof ipseBySeverity) || "none"]++;
+      ipseByStatus[r.ipse_status || "pending_ipse"] = (ipseByStatus[r.ipse_status || "pending_ipse"] ?? 0) + 1;
+    });
+
     return {
       total,
       bySeverity,
@@ -183,8 +195,12 @@ export default function Ipse() {
         { name: "Medium", value: bySeverity.medium, color: "#F59E0B" },
         { name: "High", value: bySeverity.high, color: "#DC2626" },
       ].filter((x) => x.value > 0),
+      ipseSubmissions,
+      ipseTotal: ipseSubmissions.length,
+      ipseBySeverity,
+      ipseByStatus,
     };
-  }, [reports, profiles]);
+  }, [reports, profiles, ipseUserIdSet]);
 
   const drillReports = useMemo(() => {
     if (!drillStaffId) return [];
