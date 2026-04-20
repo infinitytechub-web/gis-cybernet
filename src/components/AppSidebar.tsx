@@ -72,6 +72,10 @@ const commandVaultItems = [
   { title: "Command Vault", url: "/command-vault", icon: FolderLock, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
 ];
 
+const recycleBinItems = [
+  { title: "Recycle Bin", url: "/recycle-bin", icon: Trash2, iconColor: "text-destructive" },
+];
+
 type NavItem = { title: string; url: string; icon: any; iconColor: string; badge?: "frontdesk" | "processing" };
 
 export function AppSidebar() {
