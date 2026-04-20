@@ -17,7 +17,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ExportMenu } from "@/components/ui/export-menu";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { MultiContactInput } from "@/components/ui/multi-contact-input";
-import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope } from "lucide-react";
+import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
@@ -98,8 +100,8 @@ export default function HoldingCenter() {
           <TabsTrigger value="archive" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><FileSearch className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Archive</TabsTrigger>
           <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Analytics</TabsTrigger>
         </TabsList>
-        <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} onSelect={setSelected} /></TabsContent>
-        <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
@@ -109,12 +111,20 @@ export default function HoldingCenter() {
 }
 
 /* ----------------- LIST ----------------- */
-function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]; canCreate: boolean; userId?: string; onSelect: (r: any) => void }) {
+function RecordsList({ status, canCreate, userId, role, onSelect }: { status: string[]; canCreate: boolean; userId?: string; role: string | null; onSelect: (r: any) => void }) {
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterGender, setFilterGender] = useState("all");
   const [filterRisk, setFilterRisk] = useState("all");
   const [filterCountry, setFilterCountry] = useState("");
   const [intakeOpen, setIntakeOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [deleting, setDeleting] = useState<any>(null);
+  const [deletePending, setDeletePending] = useState(false);
+
+  const isAdmin = role === "admin";
+  const isOic = role === "oic";
+  const canModify = isAdmin || isOic;
 
   const { data: records = [] } = useQuery({
     queryKey: ["detention_records", status],
@@ -129,6 +139,26 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
     if (filterCountry && (r.nationality || "").toLowerCase() !== filterCountry.toLowerCase() && (r.country_of_origin || "").toLowerCase() !== filterCountry.toLowerCase()) return false;
     return true;
   }), [records, search, filterGender, filterRisk, filterCountry]);
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setDeletePending(true);
+    try {
+      await softDelete({
+        table: "detention_records",
+        id: deleting.id,
+        label: `Detainee: ${deleting.first_name} ${deleting.last_name}`,
+        context: `${deleting.crime_type}${deleting.cell_number ? ` · Cell ${deleting.cell_number}` : ""} · Intake ${format(new Date(deleting.intake_at), "dd MMM yyyy")}`,
+      });
+      toast.success("Record moved to Recycle Bin");
+      qc.invalidateQueries({ queryKey: ["detention_records"] });
+      setDeleting(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete");
+    } finally {
+      setDeletePending(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -165,14 +195,15 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[1000px]">
               <TableHeader><TableRow>
                 <TableHead></TableHead><TableHead>Detainee</TableHead><TableHead>Gender</TableHead>
                 <TableHead>Nationality</TableHead><TableHead>Crime</TableHead><TableHead>Cell</TableHead>
                 <TableHead>Risk</TableHead><TableHead>Status</TableHead><TableHead>Duration</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {filtered.length === 0 ? <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">No records</TableCell></TableRow>
+                {filtered.length === 0 ? <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">No records</TableCell></TableRow>
                 : filtered.map((r: any) => (
                   <TableRow key={r.id} className="cursor-pointer hover:bg-accent/50" onClick={() => onSelect(r)}>
                     <TableCell><Avatar className="h-9 w-9"><AvatarFallback className="bg-rose-100 text-rose-700 text-xs">{r.first_name[0]}{r.last_name[0]}</AvatarFallback></Avatar></TableCell>
@@ -184,6 +215,26 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
                     <TableCell><Badge className={RISK_COLORS[r.risk_level]}>{r.risk_level}</Badge></TableCell>
                     <TableCell><Badge className={STATUS_COLORS[r.status]}>{r.status.replace(/_/g, " ")}</Badge></TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{formatDistanceToNow(new Date(r.intake_at), { addSuffix: false })}</TableCell>
+                    <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onSelect(r)} title="View details">
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        {canModify && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(r)} title="Edit">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => printDetentionRecord(r)} title="Print">
+                          <Printer className="h-3.5 w-3.5" />
+                        </Button>
+                        {canModify && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleting(r)} title="Delete">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -193,7 +244,189 @@ function RecordsList({ status, canCreate, userId, onSelect }: { status: string[]
       </Card>
 
       {intakeOpen && <IntakeForm onClose={() => setIntakeOpen(false)} userId={userId} />}
+      {editing && <EditDetaineeDialog record={editing} onClose={() => setEditing(null)} />}
+
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this detention record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleting && <>The record for <span className="font-semibold">{deleting.first_name} {deleting.last_name}</span> will be moved to the Recycle Bin and can be restored within 30 days by Admin or Command OIC.</>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletePending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deletePending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deletePending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+/* ----------------- PRINT HELPER ----------------- */
+function printDetentionRecord(r: any) {
+  const esc = (s: any) => String(s ?? "—").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const isDark = document.documentElement.classList.contains("dark");
+  const bg = isDark ? "#1e293b" : "#fff";
+  const fg = isDark ? "#e2e8f0" : "#1e293b";
+  const border = isDark ? "#334155" : "#e2e8f0";
+  const rows: [string, any][] = [
+    ["Full Name", `${r.first_name} ${r.last_name}`],
+    ["Alias", r.alias],
+    ["Gender", r.gender],
+    ["Date of Birth", r.date_of_birth ? format(new Date(r.date_of_birth), "dd MMM yyyy") : "—"],
+    ["Nationality", r.nationality],
+    ["Country of Origin", r.country_of_origin],
+    ["ID Type", r.id_type],
+    ["ID Number", r.id_number],
+    ["Phone", r.phone],
+    ["Home Address", r.home_address],
+    ["Crime Type", r.crime_type],
+    ["Charge Description", r.charge_description],
+    ["Location of Arrest", r.location_of_arrest],
+    ["Arresting Officer", r.arresting_officer_name],
+    ["Cell / Room", r.cell_number],
+    ["Risk Level", r.risk_level],
+    ["Status", r.status?.replace(/_/g, " ")],
+    ["Intake", format(new Date(r.intake_at), "dd MMM yyyy HH:mm")],
+    ["Custody Duration", `${differenceInHours(r.released_at ? new Date(r.released_at) : new Date(), new Date(r.intake_at))} hrs`],
+    ["Next of Kin", r.next_of_kin],
+    ["NoK Phone", r.next_of_kin_phone],
+    ["Emergency Contact", r.emergency_contact],
+    ["Medical Alerts", r.medical_alerts],
+    ["Notes", r.notes],
+  ];
+  const html = `<!DOCTYPE html><html><head><title>Detention Record — ${esc(r.first_name)} ${esc(r.last_name)}</title>
+<style>
+  @media print { @page { size: portrait; margin: 14mm; } }
+  body { font-family: system-ui, sans-serif; color: ${fg}; background: ${bg}; margin: 0; padding: 18px; }
+  h2 { font-size: 16px; margin: 0 0 2px; color: #be123c; }
+  h3 { font-size: 13px; margin: 0 0 10px; color: ${fg}; }
+  .meta { font-size: 10px; color: #888; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 6px 10px; border: 1px solid ${border}; font-size: 11px; vertical-align: top; }
+  td.label { background: ${isDark ? "#334155" : "#f1f5f9"}; font-weight: 600; width: 35%; }
+  .footer { text-align: center; margin-top: 18px; font-size: 9px; color: #888; }
+</style></head><body>
+  <h2>GIS Amasaman Sector Command</h2>
+  <h3>Holding / Detention Center — Detainee Record</h3>
+  <div class="meta">Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}</div>
+  <table><tbody>
+    ${rows.map(([label, value]) => `<tr><td class="label">${esc(label)}</td><td>${esc(value)}</td></tr>`).join("")}
+  </tbody></table>
+  <div class="footer">CONFIDENTIAL — Ghana Immigration Service</div>
+</body></html>`;
+  const w = window.open("", "_blank", "width=900,height=700");
+  if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+}
+
+/* ----------------- EDIT DIALOG ----------------- */
+function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({
+    first_name: record.first_name || "",
+    last_name: record.last_name || "",
+    alias: record.alias || "",
+    gender: record.gender || "male",
+    date_of_birth: record.date_of_birth || "",
+    nationality: record.nationality || "",
+    country_of_origin: record.country_of_origin || "",
+    id_type: record.id_type || "Passport",
+    id_number: record.id_number || "",
+    phone: record.phone || "",
+    home_address: record.home_address || "",
+    next_of_kin: record.next_of_kin || "",
+    next_of_kin_phone: record.next_of_kin_phone || "",
+    emergency_contact: record.emergency_contact || "",
+    crime_type: record.crime_type || "Illegal Entry",
+    charge_description: record.charge_description || "",
+    location_of_arrest: record.location_of_arrest || "",
+    arresting_officer_name: record.arresting_officer_name || "",
+    cell_number: record.cell_number || "",
+    risk_level: record.risk_level || "medium",
+    medical_alerts: record.medical_alerts || "",
+    notes: record.notes || "",
+  });
+
+  const update = useMutation({
+    mutationFn: async () => {
+      if (!form.first_name.trim() || !form.last_name.trim()) throw new Error("Name required");
+      const { error } = await supabase.from("detention_records").update(form).eq("id", record.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Record updated"); onClose(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="h-5 w-5 text-rose-600" />Edit Detainee Record</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="border rounded-lg p-3 space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2"><Users className="h-4 w-4" />Biodata</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
+              <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
+              <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
+              <div><Label>Gender</Label>
+                <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
+              <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
+              <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
+              <div><Label>ID Type</Label>
+                <Select value={form.id_type} onValueChange={v => setForm(p => ({ ...p, id_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["Passport", "Ghana Card", "Driver's Licence", "Voter's ID", "None"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
+              <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
+              <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
+              <div><Label>NoK Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
+            </div>
+          </div>
+
+          <div className="border rounded-lg p-3 space-y-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2"><ShieldAlert className="h-4 w-4" />Case Details</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Crime Type *</Label>
+                <Select value={form.crime_type} onValueChange={v => setForm(p => ({ ...p, crime_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CRIME_TYPES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
+              <div className="col-span-2"><Label>Charge Description</Label><Textarea rows={2} value={form.charge_description} onChange={e => setForm(p => ({ ...p, charge_description: e.target.value }))} /></div>
+              <div><Label>Location of Arrest</Label><Input value={form.location_of_arrest} onChange={e => setForm(p => ({ ...p, location_of_arrest: e.target.value }))} /></div>
+              <div><Label>Arresting Officer</Label><Input value={form.arresting_officer_name} onChange={e => setForm(p => ({ ...p, arresting_officer_name: e.target.value }))} /></div>
+              <div><Label>Risk Level *</Label>
+                <Select value={form.risk_level} onValueChange={v => setForm(p => ({ ...p, risk_level: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["low", "medium", "high", "critical"].map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={() => update.mutate()} disabled={update.isPending} className="bg-rose-600 hover:bg-rose-700">{update.isPending ? "Saving…" : "Save Changes"}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
