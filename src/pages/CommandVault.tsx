@@ -254,9 +254,29 @@ export default function CommandVault() {
   };
 
   const viewFile = async (d: any) => {
+    setPreview({ url: "", file: d });
+    setPreviewLoading(true);
+    setCsvText(null);
     const { data, error } = await supabase.storage.from("command-vault").createSignedUrl(d.file_path, 300);
-    if (error || !data) return toast.error("Could not open file");
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    if (error || !data) {
+      setPreview(null);
+      setPreviewLoading(false);
+      return toast.error("Could not open file");
+    }
+    setPreview({ url: data.signedUrl, file: d });
+    // Inline-load CSV/text content for proper preview
+    const ft = (d.file_type || "").toLowerCase();
+    const fn = (d.file_name || "").toLowerCase();
+    if (ft.startsWith("text/") || ft === "text/csv" || fn.endsWith(".csv") || fn.endsWith(".txt")) {
+      try {
+        const res = await fetch(data.signedUrl);
+        const text = await res.text();
+        setCsvText(text);
+      } catch {
+        setCsvText(null);
+      }
+    }
+    setPreviewLoading(false);
   };
 
   const openEdit = (d: any) => {
