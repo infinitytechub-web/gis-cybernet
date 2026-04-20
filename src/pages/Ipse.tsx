@@ -97,6 +97,20 @@ export default function Ipse() {
     },
   });
 
+  // IPSE staff (supervisor + deputy) — for direct dashboard linkage
+  const { data: ipseUserIds = [] } = useQuery({
+    queryKey: ["ipse-staff-user-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["ipse_supervisor", "ipse_deputy_supervisor"]);
+      if (error) throw error;
+      return (data || []).map((r: any) => r.user_id);
+    },
+  });
+  const ipseUserIdSet = useMemo(() => new Set(ipseUserIds), [ipseUserIds]);
+
   // Night Guard data
   const { data: shifts = [] } = useQuery({
     queryKey: ["shifts"],
