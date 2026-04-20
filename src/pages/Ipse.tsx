@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
@@ -216,41 +217,45 @@ export default function Ipse() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Shield className="h-7 w-7 text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" />
-          <div>
-            <h1 className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">IPSE</h1>
-            <p className="text-xs text-muted-foreground">Immigration Professional Standards & Ethics</p>
+      {/* Hero header with gradient */}
+      <div className="relative overflow-hidden rounded-xl border border-[hsl(82,40%,30%)]/20 bg-gradient-to-r from-[hsl(82,40%,30%)] via-[hsl(82,35%,38%)] to-[hsl(195,55%,35%)] p-5 shadow-md">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]" />
+        <div className="relative flex items-center gap-3 flex-wrap">
+          <div className="rounded-lg bg-white/15 backdrop-blur p-2.5 ring-1 ring-white/20">
+            <Shield className="h-7 w-7 text-white" />
           </div>
+          <div className="text-white">
+            <h1 className="text-2xl font-bold tracking-tight">IPSE</h1>
+            <p className="text-xs text-white/80">Immigration Professional Standards & Ethics</p>
+          </div>
+          <Badge variant="outline" className="ml-auto bg-white/15 backdrop-blur border-white/30 text-white hover:bg-white/20">
+            Reporting chain: Staff → IPSE → 2IC → OIC
+          </Badge>
         </div>
-        <Badge variant="outline" className="ml-auto border-[hsl(82,40%,30%)]/30 text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">
-          Reporting chain: Staff → IPSE → 2IC → OIC
-        </Badge>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="dashboard" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Dashboard</TabsTrigger>
-          <TabsTrigger value="triage" className="gap-1.5"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
-          <TabsTrigger value="sanctions" className="gap-1.5"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
-          <TabsTrigger value="drilldown" className="gap-1.5"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
-          <TabsTrigger value="nightguard" className="gap-1.5"><Users className="h-4 w-4" /> Night Guard</TabsTrigger>
+        <TabsList className="flex-wrap h-auto bg-muted/60 p-1">
+          <TabsTrigger value="dashboard" className="gap-1.5 data-[state=active]:bg-[hsl(82,40%,30%)] data-[state=active]:text-white"><BarChart3 className="h-4 w-4" /> Dashboard</TabsTrigger>
+          <TabsTrigger value="triage" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
+          <TabsTrigger value="sanctions" className="gap-1.5 data-[state=active]:bg-rose-700 data-[state=active]:text-white"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
+          <TabsTrigger value="drilldown" className="gap-1.5 data-[state=active]:bg-sky-700 data-[state=active]:text-white"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
+          <TabsTrigger value="nightguard" className="gap-1.5 data-[state=active]:bg-indigo-700 data-[state=active]:text-white"><Users className="h-4 w-4" /> Night Guard</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD */}
         <TabsContent value="dashboard" className="space-y-4">
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold">{analytics.total}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
-            <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold">{analytics.avgIpseHours}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-[hsl(82,40%,30%)]"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">{analytics.total}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-amber-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-blue-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-purple-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-emerald-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold text-emerald-600">{analytics.avgIpseHours}</div></CardContent></Card>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Severity breakdown</CardTitle></CardHeader>
+            <Card className="border-t-4 border-t-rose-500">
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-rose-500" /> Severity breakdown</CardTitle></CardHeader>
               <CardContent>
                 {analytics.severityChart.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No triaged reports yet.</p>
@@ -268,8 +273,8 @@ export default function Ipse() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Submission trend (last 14 entries)</CardTitle></CardHeader>
+            <Card className="border-t-4 border-t-[hsl(82,40%,30%)]">
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[hsl(82,40%,30%)]" /> Submission trend (last 14 entries)</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={analytics.trend}>
@@ -284,8 +289,8 @@ export default function Ipse() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Top reported officers</CardTitle></CardHeader>
+          <Card className="border-t-4 border-t-sky-600">
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-sky-600" /> Top reported officers</CardTitle></CardHeader>
             <CardContent>
               {analytics.topOffenders.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No data yet.</p>
@@ -294,10 +299,10 @@ export default function Ipse() {
                   <TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Staff ID</TableHead><TableHead className="text-right">Reports</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {analytics.topOffenders.map((o) => (
-                      <TableRow key={o.id} className="cursor-pointer" onClick={() => { setDrillStaffId(o.id); setTab("drilldown"); }}>
+                      <TableRow key={o.id} className="cursor-pointer hover:bg-sky-50/60 dark:hover:bg-sky-950/20" onClick={() => { setDrillStaffId(o.id); setTab("drilldown"); }}>
                         <TableCell className="font-medium">{o.name}</TableCell>
                         <TableCell className="text-xs">{o.staff_id}</TableCell>
-                        <TableCell className="text-right"><Badge>{o.count}</Badge></TableCell>
+                        <TableCell className="text-right"><Badge className="bg-sky-600 hover:bg-sky-700">{o.count}</Badge></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -309,8 +314,8 @@ export default function Ipse() {
 
         {/* TRIAGE */}
         <TabsContent value="triage" className="space-y-3">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to 2IC → 2IC forwards to OIC → OIC issues final approval.</CardDescription></CardHeader>
+          <Card className="border-t-4 border-t-amber-500">
+            <CardHeader className="pb-2 bg-amber-50/50 dark:bg-amber-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-amber-900 dark:text-amber-200"><FileWarning className="h-4 w-4" /> Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to 2IC → 2IC forwards to OIC → OIC issues final approval.</CardDescription></CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[60vh]">
                 <Table>
@@ -368,8 +373,8 @@ export default function Ipse() {
 
         {/* SANCTIONS */}
         <TabsContent value="sanctions">
-          <Card>
-            <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Gavel className="h-4 w-4" /> Severity-of-Sanction Reference</CardTitle><CardDescription>Official scale used by IPSE before forwarding any report up the chain.</CardDescription></CardHeader>
+          <Card className="border-t-4 border-t-rose-700">
+            <CardHeader className="bg-rose-50/50 dark:bg-rose-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-rose-900 dark:text-rose-200"><Gavel className="h-4 w-4" /> Severity-of-Sanction Reference</CardTitle><CardDescription>Official scale used by IPSE before forwarding any report up the chain.</CardDescription></CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow><TableHead>Level</TableHead><TableHead>Description</TableHead><TableHead>Recommended action</TableHead></TableRow></TableHeader>
@@ -389,19 +394,27 @@ export default function Ipse() {
 
         {/* DRILL-DOWN */}
         <TabsContent value="drilldown" className="space-y-3">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Per-officer report history</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <Select value={drillStaffId} onValueChange={setDrillStaffId}>
-                <SelectTrigger className="max-w-md"><SelectValue placeholder="Select an officer" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {(profiles as any[]).map((p) => (
-                    <SelectItem key={p.user_id ?? p.id} value={p.user_id ?? p.id}>
-                      {p.last_name}, {p.first_name} ({p.staff_id})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <Card className="border-t-4 border-t-sky-700">
+            <CardHeader className="pb-2 bg-sky-50/50 dark:bg-sky-950/20 rounded-t-lg">
+              <CardTitle className="text-sm flex items-center gap-2 text-sky-900 dark:text-sky-200"><Search className="h-4 w-4" /> Per-officer report history</CardTitle>
+              <CardDescription className="text-xs">Search by first name, surname or staff ID to view that officer's full IPSE history.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-4">
+              <div className="max-w-md">
+                <StaffCombobox
+                  staff={(profiles as any[]).map((p) => ({
+                    id: p.user_id ?? p.id,
+                    first_name: p.first_name,
+                    last_name: p.last_name,
+                    staff_id: p.staff_id ?? "—",
+                  }))}
+                  value={drillStaffId}
+                  onValueChange={setDrillStaffId}
+                  placeholder="Search and select an officer…"
+                  includeAllOption
+                  allOptionLabel="Clear selection"
+                />
+              </div>
 
               {drillStaffId && (
                 <Table>
