@@ -19,8 +19,9 @@ import {
 import {
   TrendingUp, TrendingDown, Users, CalendarCheck, AlertTriangle,
   Shield, FileText, Download, Plus, Activity, PieChart as PieIcon,
-  BarChart3, Clock
+  BarChart3, Clock, UserCog
 } from "lucide-react";
+import type { AppRole } from "@/lib/types";
 import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -28,6 +29,38 @@ import { ExportMenu } from "@/components/ui/export-menu";
 const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
 const STATUS_COLORS: Record<string, string> = { open: "bg-red-100 text-red-800", investigating: "bg-yellow-100 text-yellow-800", resolved: "bg-green-100 text-green-800", closed: "bg-gray-100 text-gray-800" };
+
+// Friendly labels + display order for AppRole
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Admin",
+  oic: "OIC",
+  "2ic": "2IC",
+  staff_officer: "Staff Officer",
+  supervisor: "Supervisor",
+  ipse_supervisor: "IPSE Supervisor",
+  ipse_deputy_supervisor: "IPSE Deputy Supervisor",
+  shift_supervisor: "Shift Supervisor",
+  deputy_shift_supervisor: "Deputy Shift Supervisor",
+  shift_leader: "Shift Leader",
+  deputy_supervisor: "Deputy Supervisor",
+  deputy_shift_leader: "Deputy Shift Leader",
+  special_duties: "Special Duties",
+  deputy: "Deputy",
+  front_desk: "Front Desk",
+  official: "Official",
+  enquiry: "Enquiry",
+  storekeeper: "Storekeeper",
+  procurement_officer: "Procurement Officer",
+  staff: "Staff",
+};
+const ROLE_ORDER: AppRole[] = [
+  "admin","oic","2ic","staff_officer","supervisor",
+  "ipse_supervisor","ipse_deputy_supervisor",
+  "shift_supervisor","deputy_shift_supervisor","shift_leader","deputy_shift_leader","deputy_supervisor",
+  "special_duties","deputy",
+  "front_desk","official","enquiry","storekeeper","procurement_officer",
+  "staff",
+];
 
 type TimePeriod = "7d" | "30d" | "90d" | "12m";
 
@@ -109,6 +142,22 @@ export default function Analytics() {
         supabase.from("equipment_issuance").select("condition, returned_date"),
       ]);
       return { documents: docs.data || [], certifications: certs.data || [], equipment: equip.data || [] };
+    },
+  });
+
+  // User roles distribution (with profile info for active filtering + dept breakdown)
+  const { data: rolesData = [] } = useQuery({
+    queryKey: ["analytics-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role, user_id, profiles!user_roles_user_id_fkey(status, gender, departments(name))");
+      if (error) {
+        // Fallback if relationship name differs
+        const { data: simple } = await supabase.from("user_roles").select("role, user_id");
+        return (simple || []).map((r: any) => ({ ...r, profiles: null }));
+      }
+      return data || [];
     },
   });
 
@@ -249,6 +298,56 @@ export default function Analytics() {
     return { expiredDocs, expiringSoon, totalDocs: complianceData.documents.length, expiredCerts, totalCerts: complianceData.certifications.length, issuedEquip };
   }, [complianceData]);
 
+  // Role-type statistics
+  const rolesStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const activeCounts: Record<string, number> = {};
+    const inactiveCounts: Record<string, number> = {};
+    const deptByRole: Record<string, Record<string, number>> = {};
+    rolesData.forEach((r: any) => {
+      const role = r.role as string;
+      counts[role] = (counts[role] || 0) + 1;
+      const status = r.profiles?.status;
+      if (status === "active") activeCounts[role] = (activeCounts[role] || 0) + 1;
+      else if (status) inactiveCounts[role] = (inactiveCounts[role] || 0) + 1;
+      const dept = r.profiles?.departments?.name || "Unassigned";
+      if (!deptByRole[role]) deptByRole[role] = {};
+      deptByRole[role][dept] = (deptByRole[role][dept] || 0) + 1;
+    });
+    const total = rolesData.length;
+    const rows = ROLE_ORDER
+      .filter((role) => counts[role])
+      .map((role) => ({
+        role,
+        label: ROLE_LABELS[role],
+        count: counts[role] || 0,
+        active: activeCounts[role] || 0,
+        inactive: inactiveCounts[role] || 0,
+        pct: total ? Math.round(((counts[role] || 0) / total) * 100) : 0,
+        topDept: Object.entries(deptByRole[role] || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || "—",
+      }));
+    // Append any unknown roles not in our order
+    Object.keys(counts).forEach((role) => {
+      if (!ROLE_ORDER.includes(role as AppRole)) {
+        rows.push({
+          role: role as AppRole,
+          label: role.replace(/_/g, " "),
+          count: counts[role],
+          active: activeCounts[role] || 0,
+          inactive: inactiveCounts[role] || 0,
+          pct: total ? Math.round((counts[role] / total) * 100) : 0,
+          topDept: Object.entries(deptByRole[role] || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || "—",
+        });
+      }
+    });
+    const commandTier = (counts.admin || 0) + (counts.oic || 0) + (counts["2ic"] || 0) + (counts.staff_officer || 0) + (counts.supervisor || 0);
+    const shiftTier = (counts.shift_supervisor || 0) + (counts.deputy_shift_supervisor || 0) + (counts.shift_leader || 0) + (counts.deputy_shift_leader || 0) + (counts.deputy_supervisor || 0);
+    const ipseTier = (counts.ipse_supervisor || 0) + (counts.ipse_deputy_supervisor || 0);
+    const operationsTier = (counts.front_desk || 0) + (counts.official || 0) + (counts.enquiry || 0) + (counts.storekeeper || 0) + (counts.procurement_officer || 0);
+    const generalStaff = counts.staff || 0;
+    return { rows, total, commandTier, shiftTier, ipseTier, operationsTier, generalStaff };
+  }, [rolesData]);
+
   // KPI cards
   const totalStaff = staffStats?.length || 0;
   const activeStaff = staffStats?.filter((s: any) => s.status === "active").length || 0;
@@ -331,6 +430,14 @@ export default function Analytics() {
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
+  const getRolesData = () => ({
+    title: "Role Type Statistics",
+    filename: `GIS_ASC_Role_Statistics_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Role", "Total", "Active", "Inactive", "Share (%)", "Top Department"],
+    rows: rolesStats.rows.map((r) => [r.label, String(r.count), String(r.active), String(r.inactive), `${r.pct}%`, r.topDept]),
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Total Assigned Roles: ${rolesStats.total}`,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -382,10 +489,11 @@ export default function Analytics() {
       </div>
 
       <Tabs defaultValue="attendance" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="attendance" className="gap-1 text-xs"><Activity className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1 text-xs"><Clock className="h-3 w-3 text-orange-600 dark:text-orange-400" /> Leave</TabsTrigger>
           <TabsTrigger value="incidents" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3 text-red-600 dark:text-red-400" /> Incidents</TabsTrigger>
+          <TabsTrigger value="roles" className="gap-1 text-xs"><UserCog className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Roles</TabsTrigger>
           <TabsTrigger value="overview" className="gap-1 text-xs"><PieIcon className="h-3 w-3 text-indigo-600 dark:text-indigo-400" /> Overview</TabsTrigger>
         </TabsList>
 
@@ -807,6 +915,169 @@ export default function Analytics() {
                         <TableCell><Badge className={`text-xs ${SEVERITY_COLORS[inc.severity] || ""}`}>{inc.severity}</Badge></TableCell>
                         <TableCell><Badge className={`text-xs ${STATUS_COLORS[inc.status] || ""}`}>{inc.status}</Badge></TableCell>
                         <TableCell className="text-xs">{format(new Date(inc.created_at), "dd MMM yyyy")}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Roles Tab — statistics by role type */}
+        <TabsContent value="roles" className="space-y-4 mt-4">
+          {/* Tier summary cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <Card className="border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Command Tier</div>
+                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{rolesStats.commandTier}</div>
+                <div className="text-[10px] text-muted-foreground">Admin · OIC · 2IC · SO · Supv</div>
+              </CardContent>
+            </Card>
+            <Card className="border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Shift Leadership</div>
+                <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{rolesStats.shiftTier}</div>
+                <div className="text-[10px] text-muted-foreground">Shift Supv · Leaders</div>
+              </CardContent>
+            </Card>
+            <Card className="border-lime-300 dark:border-lime-700 bg-lime-50/50 dark:bg-lime-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">IPSE</div>
+                <div className="text-xl font-bold text-lime-600 dark:text-lime-400">{rolesStats.ipseTier}</div>
+                <div className="text-[10px] text-muted-foreground">Supervisors & Deputies</div>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Operations</div>
+                <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{rolesStats.operationsTier}</div>
+                <div className="text-[10px] text-muted-foreground">Front Desk · Stores · Proc</div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">General Staff</div>
+                <div className="text-xl font-bold text-slate-600 dark:text-slate-400">{rolesStats.generalStaff}</div>
+                <div className="text-[10px] text-muted-foreground">Standard personnel</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Role distribution pie */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <PieIcon className="h-4 w-4 text-cyan-500" />
+                  Role Distribution
+                  <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.total} assigned</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={rolesStats.rows.map((r) => ({ name: r.label, value: r.count }))}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={95}
+                      paddingAngle={2}
+                      label={({ name, percent }) => percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ""}
+                    >
+                      {rolesStats.rows.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "11px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Role bar chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-cyan-500" />
+                  Headcount by Role
+                  <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.rows.length} role types</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={Math.max(220, rolesStats.rows.length * 26 + 40)}>
+                  <BarChart data={rolesStats.rows} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="label" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={130} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "11px",
+                      }}
+                    />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
+                    <Bar dataKey="active" stackId="a" fill="#10b981" name="Active" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="inactive" stackId="a" fill="#94a3b8" name="Inactive" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Role breakdown table */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <UserCog className="h-4 w-4 text-cyan-500" />
+                Role Type Breakdown
+                <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.rows.length} roles</Badge>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getRolesData} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Role</TableHead>
+                      <TableHead className="text-xs text-center">Total</TableHead>
+                      <TableHead className="text-xs text-center">Active</TableHead>
+                      <TableHead className="text-xs text-center">Inactive</TableHead>
+                      <TableHead className="text-xs text-center">Share</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Top Department</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rolesStats.rows.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No roles assigned</TableCell></TableRow>
+                    ) : rolesStats.rows.map((r) => (
+                      <TableRow key={r.role}>
+                        <TableCell className="font-medium text-sm py-1.5">{r.label}</TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <Badge variant="secondary" className="text-[11px] px-2">{r.count}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{r.active}</span>
+                        </TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <span className="text-xs text-muted-foreground">{r.inactive}</span>
+                        </TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <span className="text-xs font-medium">{r.pct}%</span>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell py-1.5 truncate max-w-[180px]">{r.topDept}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
