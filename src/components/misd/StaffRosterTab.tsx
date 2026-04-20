@@ -55,9 +55,30 @@ const UNIT_CATALOG: Record<string, { name: string; roles: string[] }> = {
 };
 
 export function StaffRosterTab() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const qc = useQueryClient();
-  const canManage = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor"].includes(role || "");
+
+  // Determine if current user is the MISD/CYBER OIC (supervisor assigned to the MISD/CYBER department)
+  const { data: isMisdOic = false } = useQuery({
+    queryKey: ["is_misd_oic", user?.id],
+    enabled: !!user?.id && role === "supervisor",
+    queryFn: async () => {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("department_id, departments:department_id(name)")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      const depName = (prof as any)?.departments?.name?.toLowerCase() || "";
+      return depName.includes("misd") || depName.includes("cyber");
+    },
+  });
+
+  // Restricted to: System Admin, Command OIC, Command 2IC, MISD/CYBER OIC (department supervisor)
+  const canManage =
+    role === "admin" ||
+    role === "oic" ||
+    role === "2ic" ||
+    isMisdOic;
 
   const [search, setSearch] = useState("");
   const [unitFilter, setUnitFilter] = useState("all");
