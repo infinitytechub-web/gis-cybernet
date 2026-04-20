@@ -214,9 +214,49 @@ export default function Ipse() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editTarget) throw new Error("No report");
+      if (!editForm.title.trim()) throw new Error("Title required");
+      const updates: any = {
+        title: editForm.title.trim(),
+        severity: editForm.severity || null,
+        ipse_comment: editForm.ipse_comment.trim() || null,
+      };
+      const { error } = await supabase.from("report_uploads").update(updates).eq("id", editTarget.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ipse-reports"] });
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success("Report updated");
+      setEditTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!deleteTarget) throw new Error("No report");
+      if (deleteTarget.file_path) {
+        await supabase.storage.from("reports").remove([deleteTarget.file_path]);
+      }
+      const { error } = await supabase.from("report_uploads").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ipse-reports"] });
+      qc.invalidateQueries({ queryKey: ["report-uploads"] });
+      toast.success("Report deleted");
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const canActIpse = isAdmin || isIpse;
   const canAct2ic = isAdmin || is2ic;
   const canActOic = isAdmin || isOic;
+  const canManage = isAdmin || isIpse;
 
   return (
     <div className="space-y-4">
