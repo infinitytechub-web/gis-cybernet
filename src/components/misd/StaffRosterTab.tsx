@@ -1,14 +1,20 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ExportMenu } from "@/components/ui/export-menu";
-import { Users, Crown, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Users, Crown, Search, Pencil, Trash2, ArrowRightLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const UNIT_OPTIONS = [
   { key: "all", label: "All Units" },
@@ -20,10 +26,45 @@ const UNIT_OPTIONS = [
   { key: "hardware", label: "Hardware Unit" },
 ];
 
+// Manageable units (excludes "all"), with their canonical name + role catalog
+const UNIT_CATALOG: Record<string, { name: string; roles: string[] }> = {
+  cyber_risk: {
+    name: "Cybersecurity & Risk Management",
+    roles: ["Cybersecurity Analyst", "Cyber Threat Intelligence Analyst", "Information Assurance Specialist"],
+  },
+  infra_systems: {
+    name: "IT Infrastructure & Systems Engineering",
+    roles: ["IT Infrastructure Manager", "Network Architect", "Systems Engineer"],
+  },
+  data_analytics: {
+    name: "Data Analytics & Intelligence",
+    roles: ["Data Scientist", "Intelligence Data Analyst"],
+  },
+  governance: {
+    name: "Information Governance & Compliance",
+    roles: ["Information Assurance Specialist"],
+  },
+  cyber_ops: {
+    name: "Cyber Operations & Innovation Lab",
+    roles: ["Cyber Operations Specialist", "Software Developer"],
+  },
+  hardware: {
+    name: "Hardware Unit",
+    roles: ["Asset & Lifecycle Manager", "Hardware Engineer / Technician", "Field Support Specialist", "Biometrics & Peripherals Specialist"],
+  },
+};
+
 export function StaffRosterTab() {
+  const { role } = useAuth();
+  const qc = useQueryClient();
+  const canManage = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor"].includes(role || "");
+
   const [search, setSearch] = useState("");
   const [unitFilter, setUnitFilter] = useState("all");
   const [leadOnly, setLeadOnly] = useState("all");
+  const [editing, setEditing] = useState<any>(null);
+  const [reassigning, setReassigning] = useState<any>(null);
+  const [deleting, setDeleting] = useState<any>(null);
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ["misd_unit_assignments_roster"],
@@ -52,9 +93,9 @@ export function StaffRosterTab() {
         const q = search.toLowerCase();
         const name = `${a.profiles?.first_name || ""} ${a.profiles?.last_name || ""}`.toLowerCase();
         const sid = (a.profiles?.staff_id || "").toLowerCase();
-        const role = (a.role_title || "").toLowerCase();
+        const rl = (a.role_title || "").toLowerCase();
         const unit = (a.unit_name || "").toLowerCase();
-        if (!name.includes(q) && !sid.includes(q) && !role.includes(q) && !unit.includes(q)) return false;
+        if (!name.includes(q) && !sid.includes(q) && !rl.includes(q) && !unit.includes(q)) return false;
       }
       return true;
     });
@@ -66,6 +107,20 @@ export function StaffRosterTab() {
     const uniqueStaff = new Set(assignments.map((a: any) => a.profile_id)).size;
     return { total, leads, uniqueStaff };
   }, [assignments]);
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["misd_unit_assignments_roster"] });
+    qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] });
+  };
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("misd_unit_assignments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { refresh(); toast.success("Assignment removed"); setDeleting(null); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const getExportData = () => ({
     title: "MISD / CYBER Staff Roster",
@@ -155,7 +210,7 @@ export function StaffRosterTab() {
             </Select>
           </div>
 
-          <div className="rounded-md border border-border overflow-hidden">
+          <div className="rounded-md border border-border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-blue-50 dark:bg-blue-950/40">
@@ -165,13 +220,14 @@ export function StaffRosterTab() {
                   <TableHead>Unit</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="text-center">Status</TableHead>
+                  {canManage && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6 italic">No staff assignments found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-6 italic">No staff assignments found.</TableCell></TableRow>
                 ) : (
                   filtered.map((a: any) => {
                     const initials = `${a.profiles?.first_name?.[0] || ""}${a.profiles?.last_name?.[0] || ""}`.toUpperCase();
@@ -199,6 +255,36 @@ export function StaffRosterTab() {
                             <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-800 dark:text-blue-200">Member</Badge>
                           )}
                         </TableCell>
+                        {canManage && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                size="sm" variant="ghost"
+                                className="h-7 px-2 text-blue-700 dark:text-cyan-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                                onClick={() => setReassigning(a)}
+                                title="Reassign to another unit"
+                              >
+                                <ArrowRightLeft className="h-3.5 w-3.5 mr-1" />Reassign
+                              </Button>
+                              <Button
+                                size="sm" variant="ghost"
+                                className="h-7 px-2 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                                onClick={() => setEditing(a)}
+                                title="Edit role / lead status"
+                              >
+                                <Pencil className="h-3.5 w-3.5 mr-1" />Edit
+                              </Button>
+                              <Button
+                                size="sm" variant="ghost"
+                                className="h-7 px-2 text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleting(a)}
+                                title="Remove assignment"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })
@@ -212,6 +298,214 @@ export function StaffRosterTab() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      {editing && (
+        <EditAssignmentDialog
+          assignment={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => { refresh(); setEditing(null); }}
+        />
+      )}
+
+      {/* Reassign Dialog */}
+      {reassigning && (
+        <ReassignDialog
+          assignment={reassigning}
+          existingAssignments={assignments}
+          onClose={() => setReassigning(null)}
+          onSaved={() => { refresh(); setReassigning(null); }}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleting} onOpenChange={(v) => !v && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Staff Assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove <span className="font-semibold">
+                {deleting?.profiles?.first_name} {deleting?.profiles?.last_name}
+              </span> from <span className="font-semibold">{deleting?.unit_name}</span>. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleting && deleteMut.mutate(deleting.id)}
+              disabled={deleteMut.isPending}
+            >
+              {deleteMut.isPending ? "Removing…" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+/* ===== Edit (role + lead) ===== */
+function EditAssignmentDialog({ assignment, onClose, onSaved }: { assignment: any; onClose: () => void; onSaved: () => void }) {
+  const unit = UNIT_CATALOG[assignment.unit_key];
+  const [roleTitle, setRoleTitle] = useState(assignment.role_title || unit?.roles[0] || "");
+  const [isLead, setIsLead] = useState(!!assignment.is_lead);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("misd_unit_assignments")
+        .update({ role_title: roleTitle || null, is_lead: isLead })
+        .eq("id", assignment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Assignment updated"); onSaved(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Pencil className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+            Edit Assignment
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="text-sm">
+            <p className="font-medium">{assignment.profiles?.first_name} {assignment.profiles?.last_name}</p>
+            <p className="text-xs text-muted-foreground">{assignment.unit_name}</p>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium mb-1 block">Role</label>
+            <Select value={roleTitle} onValueChange={setRoleTitle}>
+              <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+              <SelectContent>
+                {(unit?.roles || []).map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={isLead} onCheckedChange={(v) => setIsLead(!!v)} />
+            <Crown className="h-3.5 w-3.5 text-cyan-600" />
+            Mark as Unit Lead
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-blue-900 hover:bg-blue-950 text-cyan-100">
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ===== Reassign (move to another unit) ===== */
+function ReassignDialog({
+  assignment, existingAssignments, onClose, onSaved,
+}: {
+  assignment: any; existingAssignments: any[]; onClose: () => void; onSaved: () => void;
+}) {
+  const otherUnitKeys = Object.keys(UNIT_CATALOG).filter((k) => k !== assignment.unit_key);
+  const [targetUnit, setTargetUnit] = useState(otherUnitKeys[0] || "");
+  const [roleTitle, setRoleTitle] = useState(UNIT_CATALOG[otherUnitKeys[0]]?.roles[0] || "");
+  const [isLead, setIsLead] = useState(false);
+
+  const onUnitChange = (k: string) => {
+    setTargetUnit(k);
+    setRoleTitle(UNIT_CATALOG[k]?.roles[0] || "");
+  };
+
+  const targetCatalog = UNIT_CATALOG[targetUnit];
+  const alreadyInTarget = existingAssignments.some(
+    (a: any) => a.profile_id === assignment.profile_id && a.unit_key === targetUnit,
+  );
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!targetCatalog) throw new Error("Select a target unit");
+      if (alreadyInTarget) throw new Error("Staff is already assigned to that unit");
+      const { error } = await supabase
+        .from("misd_unit_assignments")
+        .update({
+          unit_key: targetUnit,
+          unit_name: targetCatalog.name,
+          role_title: roleTitle || null,
+          is_lead: isLead,
+        })
+        .eq("id", assignment.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Staff reassigned"); onSaved(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ArrowRightLeft className="h-4 w-4 text-blue-700 dark:text-cyan-300" />
+            Reassign Staff to Another Unit
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div className="text-sm rounded-md bg-muted/50 p-2">
+            <p className="font-medium">{assignment.profiles?.first_name} {assignment.profiles?.last_name}</p>
+            <p className="text-xs text-muted-foreground">From: {assignment.unit_name}</p>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium mb-1 block">Target Unit</label>
+            <Select value={targetUnit} onValueChange={onUnitChange}>
+              <SelectTrigger><SelectValue placeholder="Select target unit" /></SelectTrigger>
+              <SelectContent>
+                {otherUnitKeys.map((k) => (
+                  <SelectItem key={k} value={k}>{UNIT_CATALOG[k].name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {alreadyInTarget && (
+              <p className="text-[11px] text-destructive mt-1">Staff is already in this unit.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-xs font-medium mb-1 block">Role in New Unit</label>
+            <Select value={roleTitle} onValueChange={setRoleTitle}>
+              <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
+              <SelectContent>
+                {(targetCatalog?.roles || []).map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <Checkbox checked={isLead} onCheckedChange={(v) => setIsLead(!!v)} />
+            <Crown className="h-3.5 w-3.5 text-cyan-600" />
+            Mark as Unit Lead
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={save.isPending || alreadyInTarget}
+            className="bg-blue-900 hover:bg-blue-950 text-cyan-100"
+          >
+            {save.isPending ? "Reassigning…" : "Reassign"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
