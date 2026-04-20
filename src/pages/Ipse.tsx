@@ -254,8 +254,8 @@ export default function Ipse() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Severity breakdown</CardTitle></CardHeader>
+            <Card className="border-t-4 border-t-rose-500">
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-rose-500" /> Severity breakdown</CardTitle></CardHeader>
               <CardContent>
                 {analytics.severityChart.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No triaged reports yet.</p>
@@ -273,8 +273,8 @@ export default function Ipse() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Submission trend (last 14 entries)</CardTitle></CardHeader>
+            <Card className="border-t-4 border-t-[hsl(82,40%,30%)]">
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[hsl(82,40%,30%)]" /> Submission trend (last 14 entries)</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={analytics.trend}>
@@ -289,8 +289,8 @@ export default function Ipse() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Top reported officers</CardTitle></CardHeader>
+          <Card className="border-t-4 border-t-sky-600">
+            <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-sky-600" /> Top reported officers</CardTitle></CardHeader>
             <CardContent>
               {analytics.topOffenders.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No data yet.</p>
@@ -299,10 +299,10 @@ export default function Ipse() {
                   <TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Staff ID</TableHead><TableHead className="text-right">Reports</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {analytics.topOffenders.map((o) => (
-                      <TableRow key={o.id} className="cursor-pointer" onClick={() => { setDrillStaffId(o.id); setTab("drilldown"); }}>
+                      <TableRow key={o.id} className="cursor-pointer hover:bg-sky-50/60 dark:hover:bg-sky-950/20" onClick={() => { setDrillStaffId(o.id); setTab("drilldown"); }}>
                         <TableCell className="font-medium">{o.name}</TableCell>
                         <TableCell className="text-xs">{o.staff_id}</TableCell>
-                        <TableCell className="text-right"><Badge>{o.count}</Badge></TableCell>
+                        <TableCell className="text-right"><Badge className="bg-sky-600 hover:bg-sky-700">{o.count}</Badge></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
