@@ -60,16 +60,20 @@ export function StaffRosterTab() {
     return { total, leads, uniqueStaff };
   }, [assignments]);
 
-  const exportRows = filtered.map((a: any) => ({
-    "Staff ID": a.profiles?.staff_id || "",
-    "First Name": a.profiles?.first_name || "",
-    "Last Name": a.profiles?.last_name || "",
-    Rank: a.profiles?.ranks?.name || "",
-    Unit: a.unit_name || "",
-    Role: a.role_title || "",
-    "Unit Lead": a.is_lead ? "Yes" : "No",
-    "Assigned At": a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : "",
-  }));
+  const getExportData = () => ({
+    title: "MISD / CYBER Staff Roster",
+    filename: "misd-cyber-staff-roster",
+    headers: ["Staff ID", "Name", "Rank", "Unit", "Role", "Unit Lead", "Assigned"],
+    rows: filtered.map((a: any) => [
+      a.profiles?.staff_id || "",
+      `${a.profiles?.first_name || ""} ${a.profiles?.last_name || ""}`.trim(),
+      a.profiles?.ranks?.name || "",
+      a.unit_name || "",
+      a.role_title || "",
+      a.is_lead ? "Yes" : "No",
+      a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : "",
+    ]),
+  });
 
   return (
     <div className="space-y-4">
@@ -112,7 +116,7 @@ export function StaffRosterTab() {
               <Users className="h-4 w-4 text-blue-700 dark:text-cyan-300" />
               MISD / CYBER Staff Roster
             </CardTitle>
-            <ExportMenu data={exportRows} filename="misd-cyber-staff-roster" />
+            <ExportMenu getData={getExportData} size="sm" variant="outline" />
           </div>
         </CardHeader>
         <CardContent className="space-y-3">

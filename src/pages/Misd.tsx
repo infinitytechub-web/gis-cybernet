@@ -18,6 +18,7 @@ import {
   Lock, ShieldAlert, Crosshair, FileText, TrendingUp, Clock, CheckCircle2, Printer, Users,
 } from "lucide-react";
 import { OrgStructureTab } from "@/components/misd/OrgStructureTab";
+import { StaffRosterTab } from "@/components/misd/StaffRosterTab";
 import { toast } from "sonner";
 import { format, subDays, differenceInDays } from "date-fns";
 
@@ -100,6 +101,9 @@ export default function Misd() {
           <TabsTrigger value="structure" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
             <Users className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Org Structure
           </TabsTrigger>
+          <TabsTrigger value="roster" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
+            <Users className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Staff Roster
+          </TabsTrigger>
           <TabsTrigger value="incidents" className="data-[state=active]:bg-blue-900 data-[state=active]:text-cyan-200">
             <ShieldAlert className="h-4 w-4 mr-1 text-blue-700 dark:text-cyan-300" />Incidents
           </TabsTrigger>
@@ -116,6 +120,7 @@ export default function Misd() {
 
         <TabsContent value="dashboard"><DashboardTab /></TabsContent>
         <TabsContent value="structure"><OrgStructureTab /></TabsContent>
+        <TabsContent value="roster"><StaffRosterTab /></TabsContent>
         <TabsContent value="incidents"><IncidentsTab canCreate={canCreate} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="intel"><ThreatIntelTab canCreate={canCreate} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="investigations"><InvestigationsTab canCreate={canCreate} canManage={canManage} userId={user?.id} /></TabsContent>
