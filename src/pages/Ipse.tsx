@@ -268,11 +268,12 @@ export default function Ipse() {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!deleteTarget) throw new Error("No report");
-      if (deleteTarget.file_path) {
-        await supabase.storage.from("reports").remove([deleteTarget.file_path]);
-      }
-      const { error } = await supabase.from("report_uploads").delete().eq("id", deleteTarget.id);
-      if (error) throw error;
+      await softDelete({
+        table: "report_uploads",
+        id: deleteTarget.id,
+        label: deleteTarget.title || "Report",
+        storagePaths: deleteTarget.file_path ? [{ bucket: "reports", path: deleteTarget.file_path }] : [],
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ipse-reports"] });

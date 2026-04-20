@@ -789,10 +789,18 @@ function DocumentsTab({ canManage, userId, vendors }: any) {
   };
 
   const deleteDoc = async (d: any) => {
-    if (!confirm(`Delete ${d.file_name}?`)) return;
-    await supabase.storage.from("procurement-docs").remove([d.file_path]);
-    await supabase.from("procurement_documents").delete().eq("id", d.id);
-    qc.invalidateQueries({ queryKey: ["procurement", "documents"] });
+    if (!confirm(`Move ${d.file_name} to Recycle Bin?`)) return;
+    try {
+      await softDelete({
+        table: "procurement_documents",
+        id: d.id,
+        label: d.file_name,
+        storagePaths: d.file_path ? [{ bucket: "procurement-docs", path: d.file_path }] : [],
+      });
+      qc.invalidateQueries({ queryKey: ["procurement", "documents"] });
+    } catch (e: any) {
+      toast({ title: "Delete failed", description: e.message, variant: "destructive" });
+    }
   };
 
   return (

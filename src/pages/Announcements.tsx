@@ -127,8 +127,7 @@ export default function Announcements() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("announcements").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "announcements", id, label: "Announcement" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-announcements"] });

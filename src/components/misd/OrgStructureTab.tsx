@@ -204,8 +204,7 @@ export function OrgStructureTab() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("misd_unit_assignments").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "misd_unit_assignments", id, label: "MISD unit assignment" });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["misd_unit_assignments"] }); toast.success("Removed"); },
     onError: (e: any) => toast.error(e.message),

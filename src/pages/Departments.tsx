@@ -199,8 +199,7 @@ export default function Departments() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("departments").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "departments", id, label: "Department" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["departments"] });

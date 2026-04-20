@@ -156,8 +156,7 @@ export default function DutyRoster() {
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("shift_assignments").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "shift_assignments", id, label: "Shift assignment" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roster-assignments"] });

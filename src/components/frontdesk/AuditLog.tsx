@@ -98,8 +98,7 @@ export default function AuditLog() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("front_desk_audit_log").delete().eq("id", id);
-      if (error) throw error;
+      await softDelete({ table: "front_desk_audit_log", id, label: "Audit log entry" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["front-desk-audit-log"] });
