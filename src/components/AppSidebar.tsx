@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
