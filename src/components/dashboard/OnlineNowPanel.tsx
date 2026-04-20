@@ -11,10 +11,15 @@ const ALLOWED_ROLES = [
   "admin",
   "oic",
   "2ic",
-  "supervisor",
   "staff_officer",
+  "supervisor",
+  "deputy_supervisor",
+  "ipse_supervisor",
+  "ipse_deputy_supervisor",
   "shift_supervisor",
   "deputy_shift_supervisor",
+  "shift_leader",
+  "deputy_shift_leader",
 ];
 
 export default function OnlineNowPanel() {
