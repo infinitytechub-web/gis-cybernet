@@ -1100,6 +1100,8 @@ export default function Operations() {
                             moduleTitle="Operation"
                             onEdit={(o) => openEdit(o as unknown as OperationRecord)}
                             onView={(o) => setViewingOp(o as unknown as OperationRecord)}
+                            table="operations"
+                            queryKey={["operations-data"]}
                           />
                         </TableCell>
                       </TableRow>

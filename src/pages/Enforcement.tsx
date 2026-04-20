@@ -1107,6 +1107,8 @@ export default function Enforcement() {
                             moduleTitle="Enforcement Operation"
                             onEdit={(o) => openEdit(o as unknown as EnforcementOp)}
                             onView={(o) => setViewingOp(o as unknown as EnforcementOp)}
+                            table="enforcement_operations"
+                            queryKey={["enforcement-ops"]}
                           />
                         </TableCell>
                       </TableRow>
