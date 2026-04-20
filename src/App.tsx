@@ -44,6 +44,7 @@ const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
 const Ipse = lazy(() => import("./pages/Ipse"));
 const CommandVault = lazy(() => import("./pages/CommandVault"));
+const RecycleBin = lazy(() => import("./pages/RecycleBin"));
 
 const queryClient = new QueryClient();
 
