@@ -14,6 +14,7 @@ import { Upload, Download, Trash2, FileText, Search, Eye, FolderLock } from "luc
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
+import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
 
 const DOC_TYPES = [
