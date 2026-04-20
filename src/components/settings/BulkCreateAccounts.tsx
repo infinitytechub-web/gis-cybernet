@@ -6,9 +6,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Download, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { downloadCSVString } from "@/lib/download-utils";
+import { ExportMenu } from "@/components/ui/export-menu";
 
 interface CreatedAccount {
   staffId: string;
@@ -135,12 +135,15 @@ export function BulkCreateAccounts() {
     toast.success(`Credentials copied for ${account.name}`);
   };
 
-  const downloadCSV = () => {
-    if (!results?.length) return;
-    const header = "Staff ID,Name,Username,Default Password\n";
-    const rows = results.map((r) => `${r.staffId},"${r.name}",${r.username},${r.password}`).join("\n");
-    downloadCSVString(header + rows, `staff-credentials-${new Date().toISOString().slice(0, 10)}.csv`);
-    toast.success("Credentials CSV downloaded");
+  const getCredentialsExportData = () => {
+    if (!results?.length) return null;
+    return {
+      title: "Staff Login Credentials",
+      filename: `staff-credentials-${new Date().toISOString().slice(0, 10)}`,
+      subtitle: `${results.length} accounts generated`,
+      headers: ["Staff ID", "Name", "Username", "Default Password"],
+      rows: results.map((r) => [r.staffId, r.name, r.username, r.password]),
+    };
   };
 
   const isAnyLoading = isLoading || isResetting;
@@ -227,9 +230,12 @@ export function BulkCreateAccounts() {
                 </Badge>
               )}
               {results.length > 0 && (
-                <Button variant="outline" size="sm" className="gap-1" onClick={downloadCSV}>
-                  <Download className="h-4 w-4" /> Download CSV
-                </Button>
+                <ExportMenu
+                  getData={getCredentialsExportData}
+                  label="Download"
+                  size="sm"
+                  variant="outline"
+                />
               )}
               <Button variant="ghost" size="sm" onClick={() => setResults(null)}>
                 Back
