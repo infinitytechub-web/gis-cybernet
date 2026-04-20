@@ -430,6 +430,14 @@ export default function Analytics() {
     subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
   });
 
+  const getRolesData = () => ({
+    title: "Role Type Statistics",
+    filename: `GIS_ASC_Role_Statistics_${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Role", "Total", "Active", "Inactive", "Share (%)", "Top Department"],
+    rows: rolesStats.rows.map((r) => [r.label, String(r.count), String(r.active), String(r.inactive), `${r.pct}%`, r.topDept]),
+    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Total Assigned Roles: ${rolesStats.total}`,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
