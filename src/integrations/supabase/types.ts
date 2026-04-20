@@ -3193,6 +3193,19 @@ export type Database = {
       }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
       get_misd_department_id: { Args: never; Returns: string }
+      get_profile_protected_fields: {
+        Args: { _user_id: string }
+        Returns: {
+          account_locked: boolean
+          department_id: string
+          login_enabled: boolean
+          rank_id: string
+          shift_group: string
+          staff_id: string
+          status: string
+          unit: string
+        }[]
+      }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
