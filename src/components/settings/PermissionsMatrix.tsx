@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 
-const roles = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
+const roles = ["admin", "oic", "2ic", "supervisor", "ipse_supervisor", "ipse_deputy_supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
   oic: "OIC",
   "2ic": "2IC",
   supervisor: "Supervisor",
+  ipse_supervisor: "IPSE Supervisor",
+  ipse_deputy_supervisor: "IPSE Dep. Supervisor",
   shift_supervisor: "Shift Supervisor",
   deputy_shift_supervisor: "Dep. Shift Supervisor",
   shift_leader: "Shift Leader",
