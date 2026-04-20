@@ -924,6 +924,169 @@ export default function Analytics() {
           </Card>
         </TabsContent>
 
+        {/* Roles Tab — statistics by role type */}
+        <TabsContent value="roles" className="space-y-4 mt-4">
+          {/* Tier summary cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <Card className="border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Command Tier</div>
+                <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{rolesStats.commandTier}</div>
+                <div className="text-[10px] text-muted-foreground">Admin · OIC · 2IC · SO · Supv</div>
+              </CardContent>
+            </Card>
+            <Card className="border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Shift Leadership</div>
+                <div className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{rolesStats.shiftTier}</div>
+                <div className="text-[10px] text-muted-foreground">Shift Supv · Leaders</div>
+              </CardContent>
+            </Card>
+            <Card className="border-lime-300 dark:border-lime-700 bg-lime-50/50 dark:bg-lime-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">IPSE</div>
+                <div className="text-xl font-bold text-lime-600 dark:text-lime-400">{rolesStats.ipseTier}</div>
+                <div className="text-[10px] text-muted-foreground">Supervisors & Deputies</div>
+              </CardContent>
+            </Card>
+            <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Operations</div>
+                <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{rolesStats.operationsTier}</div>
+                <div className="text-[10px] text-muted-foreground">Front Desk · Stores · Proc</div>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/20">
+              <CardContent className="p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">General Staff</div>
+                <div className="text-xl font-bold text-slate-600 dark:text-slate-400">{rolesStats.generalStaff}</div>
+                <div className="text-[10px] text-muted-foreground">Standard personnel</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Role distribution pie */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <PieIcon className="h-4 w-4 text-cyan-500" />
+                  Role Distribution
+                  <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.total} assigned</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={rolesStats.rows.map((r) => ({ name: r.label, value: r.count }))}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={95}
+                      paddingAngle={2}
+                      label={({ name, percent }) => percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ""}
+                    >
+                      {rolesStats.rows.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "11px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Role bar chart */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-cyan-500" />
+                  Headcount by Role
+                  <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.rows.length} role types</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={Math.max(220, rolesStats.rows.length * 26 + 40)}>
+                  <BarChart data={rolesStats.rows} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="label" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} width={130} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "11px",
+                      }}
+                    />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
+                    <Bar dataKey="active" stackId="a" fill="#10b981" name="Active" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="inactive" stackId="a" fill="#94a3b8" name="Inactive" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Role breakdown table */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <UserCog className="h-4 w-4 text-cyan-500" />
+                Role Type Breakdown
+                <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.rows.length} roles</Badge>
+                <ExportMenu iconOnly variant="ghost" className="h-6 w-6" getData={getRolesData} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Role</TableHead>
+                      <TableHead className="text-xs text-center">Total</TableHead>
+                      <TableHead className="text-xs text-center">Active</TableHead>
+                      <TableHead className="text-xs text-center">Inactive</TableHead>
+                      <TableHead className="text-xs text-center">Share</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Top Department</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rolesStats.rows.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No roles assigned</TableCell></TableRow>
+                    ) : rolesStats.rows.map((r) => (
+                      <TableRow key={r.role}>
+                        <TableCell className="font-medium text-sm py-1.5">{r.label}</TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <Badge variant="secondary" className="text-[11px] px-2">{r.count}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">{r.active}</span>
+                        </TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <span className="text-xs text-muted-foreground">{r.inactive}</span>
+                        </TableCell>
+                        <TableCell className="text-center py-1.5">
+                          <span className="text-xs font-medium">{r.pct}%</span>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground hidden sm:table-cell py-1.5 truncate max-w-[180px]">{r.topDept}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
