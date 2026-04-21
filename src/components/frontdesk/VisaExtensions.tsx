@@ -191,12 +191,8 @@ export default function VisaExtensions() {
     setOpen(true);
   };
 
-  const filtered = extensions.filter((e: any) => {
-    const matchesSearch = e.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
-      e.passport_number.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filtering is performed server-side via the keyset query above.
+  const filtered = extensions;
 
   const hasActiveFilters = search || statusFilter !== "all";
   const clearAllFilters = () => { setSearch(""); setStatusFilter("all"); };
