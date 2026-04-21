@@ -990,50 +990,35 @@ export default function GpsAddresses() {
                 </Button>
                 {canExportTrack ? (
                   <>
-                    <ExportMenu
-                      getData={buildTrackResultExport}
-                      label="Export result"
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5">
+                          <Download className="h-3.5 w-3.5" /> Export result
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel className="text-[11px]">Choose format</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "pdf" })} className="gap-2">
+                          <FileText className="h-4 w-4" /> PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "csv" })} className="gap-2">
+                          <FileSpreadsheet className="h-4 w-4" /> CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "excel" })} className="gap-2">
+                          <FileSpreadsheet className="h-4 w-4" /> Excel (.xlsx)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "word" })} className="gap-2">
+                          <FileType className="h-4 w-4" /> Word (.doc)
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
                       size="sm"
-                      onExported={(fmt) => {
-                        // Audit successful exfiltration of a Search & Track result
-                        // so commanders have a verifiable trail of who exported
-                        // intel-derived coordinates and in what format.
-                        if (!trackResult || !user) return;
-                        supabase.from("front_desk_audit_log").insert({
-                          action: "gps_search_track_exported",
-                          entity_type: "gps_search_track",
-                          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-                          performed_by: user.id,
-                          details: {
-                            format: fmt,
-                            query: trackQuery,
-                            display_name: trackResult.display_name,
-                            lat: trackResult.lat,
-                            lng: trackResult.lng,
-                            at: new Date().toISOString(),
-                            purpose: "cyber_intelligence_export",
-                          },
-                        }).then(() => undefined, () => undefined);
-                      }}
-                    />
-                    <Button size="sm" variant="outline" onClick={() => {
-                      printTrackResult();
-                      if (!trackResult || !user) return;
-                      supabase.from("front_desk_audit_log").insert({
-                        action: "gps_search_track_printed",
-                        entity_type: "gps_search_track",
-                        entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-                        performed_by: user.id,
-                        details: {
-                          query: trackQuery,
-                          display_name: trackResult.display_name,
-                          lat: trackResult.lat,
-                          lng: trackResult.lng,
-                          at: new Date().toISOString(),
-                          purpose: "cyber_intelligence_print",
-                        },
-                      }).then(() => undefined, () => undefined);
-                    }} className="gap-1.5">
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => requestTrackPurpose({ kind: "print" })}
+                    >
                       <Printer className="h-3.5 w-3.5" /> Print
                     </Button>
                   </>
