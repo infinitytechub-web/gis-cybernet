@@ -221,7 +221,13 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<RecipientResult[] | null>(null);
   const [attachmentConfirmed, setAttachmentConfirmed] = useState(false);
+  const [extraAttachments, setExtraAttachments] = useState<Array<{ filename: string; size: number; content_base64: string }>>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const extraFileRef = useRef<HTMLInputElement>(null);
+
+  const MAX_EXTRA_FILE_BYTES = 5 * 1024 * 1024; // 5 MB per file
+  const MAX_EXTRA_TOTAL_BYTES = 15 * 1024 * 1024; // 15 MB across all extras
+  const MAX_EXTRA_COUNT = 5;
 
   useEffect(() => {
     if (open) {
