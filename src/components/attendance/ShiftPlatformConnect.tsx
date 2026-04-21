@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -220,6 +220,67 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
   const [validation, setValidation] = useState<"idle" | "testing" | "success" | "fail">("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Refs scoped to a single auth attempt — held outside React state so the
+  // postMessage listener and popup watcher can read the latest values without
+  // re-binding on every render.
+  const popupRef = useRef<Window | null>(null);
+  const popupWatcherRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const callbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const expectedStateRef = useRef<string | null>(null);
+
+  /** Tear down any open popup, watcher, and timeout. Safe to call repeatedly. */
+  const cleanupAuthFlow = () => {
+    if (popupWatcherRef.current) {
+      clearInterval(popupWatcherRef.current);
+      popupWatcherRef.current = null;
+    }
+    if (callbackTimeoutRef.current) {
+      clearTimeout(callbackTimeoutRef.current);
+      callbackTimeoutRef.current = null;
+    }
+    if (popupRef.current && !popupRef.current.closed) {
+      try { popupRef.current.close(); } catch { /* cross-origin close — ignore */ }
+    }
+    popupRef.current = null;
+    expectedStateRef.current = null;
+  };
+
+  /**
+   * Listen for the OAuth/SAML/OIDC callback from the popup.
+   *
+   * The callback page (served at /attendance?shift_oauth=…) is expected to
+   * `window.opener.postMessage({ type: "shift-auth-callback", state, status }, origin)`.
+   * We verify the message origin matches our app and the `state` matches the
+   * nonce we generated to prevent CSRF / cross-window confusion.
+   */
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      // Same-origin guard — reject any message from a foreign window.
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (!data || data.type !== "shift-auth-callback") return;
+      if (!expectedStateRef.current || data.state !== expectedStateRef.current) {
+        // State mismatch — possibly stale popup or CSRF attempt.
+        return;
+      }
+      cleanupAuthFlow();
+      if (data.status === "success") {
+        setAuthCompleted(true);
+        setStep(3);
+        toast.success("Sign-in completed");
+      } else {
+        setAuthCompleted(false);
+        toast.error(data.message ?? "Sign-in was cancelled or failed");
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => {
+      window.removeEventListener("message", handler);
+      cleanupAuthFlow();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const platform = useMemo(
     () => PLATFORMS.find((p) => p.id === selectedPlatform),
     [selectedPlatform],
@@ -298,9 +359,19 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
 
   /**
    * Step 2 → step 3 gate: launch the platform-specific auth flow.
-   * For OAuth/SAML/OIDC we open the provider's authorize URL in a popup; the
-   * user signs in there and we mark `authCompleted` once the popup closes.
-   * For API key we just verify a token is present.
+   *
+   * For OAuth/SAML/OIDC we:
+   *   1. Generate a cryptographically-random `state` (CSRF nonce).
+   *   2. Build a `redirect_uri` that returns to our /attendance route with
+   *      `shift_oauth=<platform>` and the state echoed back.
+   *   3. Open the provider's authorize URL in a popup.
+   *   4. Wait for ONE of three completion signals:
+   *        a. `postMessage({type:"shift-auth-callback", state, status})` from
+   *           the callback page (preferred — works even if the popup stays
+   *           open or auto-closes).
+   *        b. The popup window being closed by the user (fallback for
+   *           providers that don't run our callback script).
+   *        c. A 5-minute timeout — abort and show an error.
    */
   const beginAuthFlow = async () => {
     if (!platform) return;
@@ -322,27 +393,65 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
       return;
     }
 
-    // OAuth / SAML / OIDC — open the IdP/provider in a popup window.
-    const redirectUri = `${window.location.origin}/attendance?shift_oauth=${platform.id}`;
-    const authUrl = platform.buildAuthUrl?.(tenant.trim(), redirectUri);
-    if (!authUrl) {
+    // Clear any previous attempt before starting a new one.
+    cleanupAuthFlow();
+
+    // Generate CSRF state nonce. Crypto-quality random when available, falls
+    // back to Math.random for ancient browsers (still 12+ chars of entropy).
+    const state =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    expectedStateRef.current = state;
+
+    const redirectUri = `${window.location.origin}/attendance?shift_oauth=${platform.id}&state=${encodeURIComponent(state)}`;
+    const baseAuthUrl = platform.buildAuthUrl?.(tenant.trim(), redirectUri);
+    if (!baseAuthUrl) {
       toast.error("Auth URL is not configured for this platform");
       return;
     }
+    // Append the state param to the IdP request as well so providers that
+    // forward it back will let our callback page verify before posting.
+    const sep = baseAuthUrl.includes("?") ? "&" : "?";
+    const authUrl = `${baseAuthUrl}${sep}state=${encodeURIComponent(state)}`;
+
     const popup = window.open(authUrl, "shift-auth", "width=520,height=640");
     if (!popup) {
+      expectedStateRef.current = null;
       toast.error("Popup blocked — allow popups to complete sign-in");
       return;
     }
+    popupRef.current = popup;
     toast.message("Complete sign-in in the popup window…");
-    // Wait for popup to close (best-effort; real impl would use postMessage).
-    const watcher = setInterval(() => {
+
+    // Fallback path: popup closed without sending postMessage.
+    popupWatcherRef.current = setInterval(() => {
       if (popup.closed) {
-        clearInterval(watcher);
-        setAuthCompleted(true);
-        setStep(3);
+        if (popupWatcherRef.current) {
+          clearInterval(popupWatcherRef.current);
+          popupWatcherRef.current = null;
+        }
+        // If postMessage already advanced us, the listener cleared the state
+        // ref and we should not double-fire.
+        if (expectedStateRef.current) {
+          cleanupAuthFlow();
+          // Best-effort: assume the user completed sign-in. The validate step
+          // will still probe before persisting, so a false positive here is
+          // recoverable.
+          setAuthCompleted(true);
+          setStep(3);
+        }
       }
     }, 600);
+
+    // Hard timeout — 5 minutes — to avoid leaking watchers if the user walks
+    // away from the popup.
+    callbackTimeoutRef.current = setTimeout(() => {
+      if (expectedStateRef.current) {
+        cleanupAuthFlow();
+        toast.error("Sign-in timed out. Please try again.");
+      }
+    }, 5 * 60 * 1000);
   };
 
   /**
