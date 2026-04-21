@@ -497,10 +497,15 @@ export default function GpsAddresses() {
   // Packages a single Search & Track lookup result into the same tabular shape
   // ExportMenu expects, so commanders can download the lookup as PDF / CSV /
   // Excel / Word, or print it on letterhead-friendly stationery.
-  const buildTrackResultExport = () => {
+  //
+  // For PDF exports, a static (offline) coordinate map snapshot is rasterized
+  // and embedded above the table — the snapshot is rendered entirely from the
+  // captured coordinates and contacts NO third-party tile servers, preserving
+  // the same authorization posture as the on-screen offline fallback.
+  const buildTrackResultExport = async (fmt?: import("@/lib/export-utils").ExportFormat) => {
     if (!trackResult) return null;
     const captured = format(new Date(), "dd MMM yyyy, HH:mm");
-    return {
+    const base = {
       title: "GPS Search & Track Result",
       filename: `gps_search_track_${format(new Date(), "yyyyMMdd_HHmm")}`,
       headers: ["Field", "Value"],
@@ -520,38 +525,80 @@ export default function GpsAddresses() {
       ],
       subtitle: `Cyber Intelligence · Search & Track lookup at ${captured}`,
     };
+    if (fmt === "pdf") {
+      const snap = await buildStaticMapPng({
+        lat: trackResult.lat,
+        lng: trackResult.lng,
+        label: trackResult.display_name?.slice(0, 80),
+      });
+      if (snap) {
+        return {
+          ...base,
+          image: {
+            dataUrl: snap.dataUrl,
+            width: snap.width,
+            height: snap.height,
+            caption: `Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`,
+            format: "PNG" as const,
+          },
+        };
+      }
+    }
+    return base;
   };
 
   // Browser-native print: opens a new window with a clean printable layout for
-  // the current Search & Track result — no third-party tiles fetched.
+  // the current Search & Track result. Includes an inline static SVG snapshot
+  // of the captured coordinates — no third-party tiles fetched.
   const printTrackResult = () => {
     if (!trackResult) return;
-    const data = buildTrackResultExport();
-    if (!data) return;
+    const captured = format(new Date(), "dd MMM yyyy, HH:mm");
+    const rows: [string, string][] = [
+      ["Query", trackQuery || "—"],
+      ["Display Name", trackResult.display_name],
+      ["Latitude", trackResult.lat.toFixed(6)],
+      ["Longitude", trackResult.lng.toFixed(6)],
+      ["Type", trackResult.type ?? "—"],
+      ["Confidence", typeof trackResult.importance === "number" ? `${(trackResult.importance * 100).toFixed(0)}%` : "—"],
+      ["OSM ID", trackResult.osm_id ?? "—"],
+      ["Captured", captured],
+    ];
     const win = window.open("", "_blank", "width=900,height=720");
     if (!win) {
       toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
       return;
     }
-    const rowsHtml = data.rows
+    const rowsHtml = rows
       .map(
         ([k, v]) =>
           `<tr><th style="text-align:left;padding:6px 10px;border:1px solid #ccc;background:#f5f5f5;width:200px;">${k}</th><td style="padding:6px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;word-break:break-all;">${v}</td></tr>`,
       )
       .join("");
-    win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${data.title}</title>
+    const snapshotSvg = buildStaticMapSvg({
+      lat: trackResult.lat,
+      lng: trackResult.lng,
+      label: trackResult.display_name?.slice(0, 80),
+    });
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>GPS Search & Track Result</title>
       <style>
         body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; }
         h1 { font-size: 20px; margin: 0 0 4px; }
         .sub { font-size: 12px; color: #555; margin-bottom: 20px; }
         table { border-collapse: collapse; width: 100%; }
+        .snapshot { margin: 0 0 16px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; background: #fafafa; }
+        .snapshot svg { display: block; max-width: 100%; height: auto; }
+        .snapshot .cap { font-size: 10px; color: #666; margin-top: 6px; }
         .footer { margin-top: 24px; font-size: 10px; color: #777; border-top: 1px solid #ddd; padding-top: 8px; }
         @media print { @page { margin: 18mm; } }
       </style></head><body>
-      <h1>${data.title}</h1>
-      <div class="sub">${data.subtitle ?? ""}</div>
+      <h1>GPS Search & Track Result</h1>
+      <div class="sub">Cyber Intelligence · Search & Track lookup at ${captured}</div>
+      <div class="snapshot">
+        ${snapshotSvg}
+        <div class="cap">Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}</div>
+      </div>
       <table>${rowsHtml}</table>
-      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${format(new Date(), "dd MMM yyyy, HH:mm")} · For official use only</div>
+      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only</div>
       <script>window.onload = () => { window.focus(); window.print(); };</script>
       </body></html>`);
     win.document.close();
