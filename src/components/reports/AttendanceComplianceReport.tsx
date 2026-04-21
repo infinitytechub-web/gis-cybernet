@@ -283,6 +283,18 @@ export default function AttendanceComplianceReport() {
             <p className="text-xs text-muted-foreground mt-1">{periodLabel} · {workingDays.length} working day(s)</p>
           </div>
           <div className="flex items-center gap-2">
+            {canImport && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={() => setImportOpen(true)}
+                title="Import monthly figures — re-importing the same month updates existing rows"
+              >
+                <Upload className="h-4 w-4" />
+                Import
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
