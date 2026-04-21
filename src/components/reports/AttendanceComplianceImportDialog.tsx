@@ -161,6 +161,7 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
     setParsing(true);
     setMatch(null);
     setParsedRows([]);
+    setPeriodHint(null);
     setFilename(file.name);
     try {
       const buf = await file.arrayBuffer();
@@ -180,6 +181,56 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
         return;
       }
       const headers = (aoa[headerIdx] as string[]).map((h) => String(h).trim());
+
+      // ---- Auto-detect period hint from sheet metadata so we can flag mismatches ----
+      // Search order: (1) sheet name, (2) any cell above the header, (3) a "Period"/"Month" column's first value.
+      let detected: PeriodHint | null = null;
+      const sheetHit = detectMonthYear(sheetName);
+      if (sheetHit) {
+        detected = {
+          raw: format(new Date(sheetHit.year, sheetHit.month, 1), "MMMM yyyy"),
+          startIso: format(new Date(sheetHit.year, sheetHit.month, 1), "yyyy-MM-dd"),
+          source: "sheet_name",
+        };
+      }
+      if (!detected) {
+        for (let i = 0; i < headerIdx; i++) {
+          const row = aoa[i];
+          if (!Array.isArray(row)) continue;
+          for (const cell of row) {
+            const hit = detectMonthYear(String(cell ?? ""));
+            if (hit) {
+              detected = {
+                raw: format(new Date(hit.year, hit.month, 1), "MMMM yyyy"),
+                startIso: format(new Date(hit.year, hit.month, 1), "yyyy-MM-dd"),
+                source: "metadata_row",
+              };
+              break;
+            }
+          }
+          if (detected) break;
+        }
+      }
+      if (!detected) {
+        const periodColIdx = headers.findIndex((h) => /^period$|^month$/i.test(h));
+        if (periodColIdx >= 0) {
+          for (let i = headerIdx + 1; i < Math.min(aoa.length, headerIdx + 10); i++) {
+            const row = aoa[i];
+            if (!Array.isArray(row)) continue;
+            const hit = detectMonthYear(String(row[periodColIdx] ?? ""));
+            if (hit) {
+              detected = {
+                raw: format(new Date(hit.year, hit.month, 1), "MMMM yyyy"),
+                startIso: format(new Date(hit.year, hit.month, 1), "yyyy-MM-dd"),
+                source: "period_column",
+              };
+              break;
+            }
+          }
+        }
+      }
+      setPeriodHint(detected);
+
       const missing = REQUIRED_HEADERS.filter((h) => !headers.some((x) => x.toLowerCase() === h.toLowerCase()));
       if (missing.length > 0) {
         toast.error(`Missing column(s): ${missing.join(", ")}`);
