@@ -35,7 +35,6 @@ const personnelItems = [
 
 const workforceItems = [
   { title: "Attendance", url: "/attendance", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400" },
-  { title: "Shift Connections", url: "/attendance/connections", icon: Link2, iconColor: "text-sky-600 dark:text-sky-400" },
   { title: "Office Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
   { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400" },
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
@@ -68,6 +67,11 @@ const financeItems = [
 const adminItems = [
   { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
   { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
+];
+
+// Restricted to command tier — manages tenant-wide shift platform integrations.
+const integrationsItems = [
+  { title: "Shift Connections", url: "/attendance/connections", icon: Link2, iconColor: "text-sky-600 dark:text-sky-400" },
 ];
 
 const commandVaultItems = [
@@ -247,6 +251,7 @@ export function AppSidebar() {
         {renderGroup("Logistics", logisticsItems)}
         {renderGroup("Finance & Procurement", financeItems)}
 
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", commandVaultItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
         {(role === "admin" || role === "supervisor") && renderGroup("Administration", adminItems)}
