@@ -909,3 +909,12 @@ function InfoCell({ label, value, mono }: { label: string; value: string; mono?:
     </div>
   );
 }
+
+function formatTtl(seconds: number): string {
+  if (seconds >= 3600) {
+    const h = Math.round(seconds / 3600);
+    return h === 1 ? "1 hour" : `${h} hours`;
+  }
+  const m = Math.round(seconds / 60);
+  return `${m} minute${m === 1 ? "" : "s"}`;
+}
