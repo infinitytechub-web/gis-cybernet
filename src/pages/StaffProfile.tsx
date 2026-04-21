@@ -403,6 +403,58 @@ export default function StaffProfile() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="office-history">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" /> Office History
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Every change to this staff member's office / duty post, newest first. Recorded automatically when the Office field is updated.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {officeHistory.length === 0 ? (
+                <p className="text-center py-6 text-sm text-muted-foreground">
+                  No office changes recorded yet. The current office is{" "}
+                  <strong>{currentOffice || "not set"}</strong>.
+                </p>
+              ) : (
+                <div className="rounded-lg border overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[180px]">Date</TableHead>
+                        <TableHead>Previous office</TableHead>
+                        <TableHead>New office</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {officeHistory.map((h: any) => (
+                        <TableRow key={h.id}>
+                          <TableCell className="text-xs font-mono whitespace-nowrap">
+                            {format(new Date(h.changed_at), "dd MMM yyyy, HH:mm")}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {h.previous_office
+                              ? <span>{h.previous_office}</span>
+                              : <span className="italic text-muted-foreground">— (not set)</span>}
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {h.new_office
+                              ? <span>{h.new_office}</span>
+                              : <span className="italic text-muted-foreground">cleared</span>}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="documents">
           <StaffDocumentVault
             profileId={profile.id}
