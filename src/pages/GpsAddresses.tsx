@@ -489,6 +489,11 @@ export default function GpsAddresses() {
               <CardTitle className="text-lg">All GPS Addresses</CardTitle>
               <CardDescription>Click any address to open coordinates and live map view.</CardDescription>
             </div>
+            <ExportMenu
+              getData={buildExport}
+              label="Export GPS addresses"
+              disabled={filtered.length === 0}
+            />
           </div>
           <div className="flex gap-2 items-center flex-wrap mt-3">
             <div className="relative flex-1 min-w-[220px]">
