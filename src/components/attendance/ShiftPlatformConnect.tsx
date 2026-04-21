@@ -254,7 +254,7 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
    * nonce we generated to prevent CSRF / cross-window confusion.
    */
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
+    const handler = async (event: MessageEvent) => {
       // Same-origin guard — reject any message from a foreign window.
       if (event.origin !== window.location.origin) return;
       const data = event.data;
@@ -264,13 +264,42 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
         return;
       }
       cleanupAuthFlow();
-      if (data.status === "success") {
-        setAuthCompleted(true);
-        setStep(3);
-        toast.success("Sign-in completed");
-      } else {
+
+      if (data.status !== "success") {
         setAuthCompleted(false);
         toast.error(data.message ?? "Sign-in was cancelled or failed");
+        return;
+      }
+
+      // Server-side verification — never trust postMessage alone. The edge
+      // function re-checks the state nonce, the provider status, and (in a
+      // real deployment) exchanges the auth code at the platform's token
+      // endpoint before we mark the connection as completed.
+      try {
+        const { data: verify, error } = await supabase.functions.invoke(
+          "verify-shift-auth",
+          {
+            body: {
+              platform: data.platform ?? selectedPlatform,
+              state: data.state,
+              status: data.status,
+              tenant: tenant.trim(),
+              code: data.code,
+              message: data.message,
+            },
+          },
+        );
+        if (error || !verify?.verified) {
+          setAuthCompleted(false);
+          toast.error(verify?.reason ?? error?.message ?? "Server-side verification failed");
+          return;
+        }
+        setAuthCompleted(true);
+        setStep(3);
+        toast.success("Sign-in verified by server");
+      } catch (err: any) {
+        setAuthCompleted(false);
+        toast.error(err?.message ?? "Verification request failed");
       }
     };
     window.addEventListener("message", handler);
@@ -279,7 +308,7 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
       cleanupAuthFlow();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tenant, selectedPlatform]);
 
   const platform = useMemo(
     () => PLATFORMS.find((p) => p.id === selectedPlatform),
