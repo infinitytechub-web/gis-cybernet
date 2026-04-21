@@ -3205,15 +3205,18 @@ export type Database = {
           current_visa_expiry: string
           date_of_birth: string | null
           emergency_contact: string | null
+          fee_charged: number | null
           foreign_address: string | null
           gender: string | null
           home_address: string | null
           id: string
           marital_status: string | null
+          nationality: string | null
           nearest_landmark: string | null
           next_of_kin: string | null
           notes: string | null
           passport_number: string
+          permit_type: string | null
           phone: string | null
           processed_by: string | null
           reason: string | null
@@ -3229,15 +3232,18 @@ export type Database = {
           current_visa_expiry: string
           date_of_birth?: string | null
           emergency_contact?: string | null
+          fee_charged?: number | null
           foreign_address?: string | null
           gender?: string | null
           home_address?: string | null
           id?: string
           marital_status?: string | null
+          nationality?: string | null
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
           passport_number: string
+          permit_type?: string | null
           phone?: string | null
           processed_by?: string | null
           reason?: string | null
@@ -3253,15 +3259,18 @@ export type Database = {
           current_visa_expiry?: string
           date_of_birth?: string | null
           emergency_contact?: string | null
+          fee_charged?: number | null
           foreign_address?: string | null
           gender?: string | null
           home_address?: string | null
           id?: string
           marital_status?: string | null
+          nationality?: string | null
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
           passport_number?: string
+          permit_type?: string | null
           phone?: string | null
           processed_by?: string | null
           reason?: string | null
