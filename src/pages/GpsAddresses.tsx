@@ -239,6 +239,55 @@ export default function GpsAddresses() {
     return list;
   }, [records, search, sourceFilter]);
 
+  // Keep the open dialog's record in sync with realtime updates so the live map
+  // and coordinate readouts reflect the latest data without manual reopen.
+  useEffect(() => {
+    if (!selected) return;
+    const fresh = records.find((r) => r.source === selected.source && r.id === selected.id);
+    if (fresh && (fresh.lat !== selected.lat || fresh.lng !== selected.lng || fresh.raw_location !== selected.raw_location)) {
+      setSelected(fresh);
+    }
+  }, [records, selected]);
+
+  // Pulse indicator: highlight analytics card when a new GPS record is inserted.
+  const [pulse, setPulse] = useState(false);
+  const totalRef = useRef<number>(records.length);
+  useEffect(() => {
+    if (records.length > totalRef.current) {
+      setPulse(true);
+      const t = setTimeout(() => setPulse(false), 2500);
+      totalRef.current = records.length;
+      return () => clearTimeout(t);
+    }
+    totalRef.current = records.length;
+  }, [records.length]);
+
+  const buildExport = () => {
+    const headers = ["GPS Address", "Digital", "Latitude", "Longitude", "Source", "Context", "Reference", "Status", "Captured"];
+    const rows = filtered.map((r) => [
+      r.raw_location ?? "",
+      r.digital_address ?? "",
+      r.lat != null ? r.lat.toFixed(6) : "",
+      r.lng != null ? r.lng.toFixed(6) : "",
+      SOURCE_META[r.source].label,
+      r.context ?? "",
+      r.reference ?? "",
+      r.status ?? "",
+      format(new Date(r.created_at), "dd MMM yyyy, HH:mm"),
+    ]);
+    const filterParts: string[] = [];
+    if (sourceFilter !== "all") filterParts.push(`Source: ${SOURCE_META[sourceFilter as SourceKey].label}`);
+    if (search.trim()) filterParts.push(`Search: "${search.trim()}"`);
+    const subtitle = `Command Vault · ${filtered.length} of ${records.length} GPS records${filterParts.length ? ` · ${filterParts.join(" · ")}` : ""}`;
+    return {
+      title: "GPS Address Register",
+      filename: `gps_addresses_${format(new Date(), "yyyyMMdd_HHmm")}`,
+      headers,
+      rows,
+      subtitle,
+    };
+  };
+
   const stats = useMemo(() => {
     const total = records.length;
     const mappable = records.filter((r) => r.lat != null && r.lng != null).length;
