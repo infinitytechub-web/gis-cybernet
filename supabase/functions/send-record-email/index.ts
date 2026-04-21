@@ -13,6 +13,8 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
 interface SendBody {
   to: string;
+  cc?: string[];
+  bcc?: string[];
   subject: string;
   message: string;
   attachment_base64: string;
@@ -23,6 +25,15 @@ interface SendBody {
 
 function isValidEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function sanitizeEmailList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && isValidEmail(s))
+    .slice(0, 50);
 }
 
 Deno.serve(async (req) => {
