@@ -1118,7 +1118,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || testing}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || !!testing}>
             {results ? "Close" : "Cancel"}
           </Button>
           {!results && step === "compose" && (
@@ -1136,16 +1136,41 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
           )}
           {!results && step === "preview" && (
             <>
-              <Button
-                variant="secondary"
-                onClick={handleTestSend}
-                disabled={sending || testing}
-                title="Simulate the send and write a mock audit log entry — no email dispatched"
-              >
-                <FlaskConical className="mr-2 h-4 w-4" />
-                {testing ? "Logging…" : "Test send"}
-              </Button>
-              <Button onClick={handleSend} disabled={!canSend || testing}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    disabled={sending || !!testing}
+                    title="Simulate the send and write a mock audit log entry — no email dispatched"
+                  >
+                    <FlaskConical className="mr-2 h-4 w-4" />
+                    {testing === "client"
+                      ? "Logging (client)…"
+                      : testing === "server"
+                      ? "Logging (server)…"
+                      : "Test send"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuItem onClick={() => handleTestSend("client")}>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Client-side simulation</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Browser writes the mock audit row directly.
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleTestSend("server")}>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Server-side simulation</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Edge Function writes the audit row — matches the real send path.
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button onClick={handleSend} disabled={!canSend || !!testing}>
                 {sending
                   ? "Sending..."
                   : mode === "bulk"
