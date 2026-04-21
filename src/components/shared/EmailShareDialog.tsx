@@ -35,7 +35,9 @@ interface RecipientResult {
   error?: string;
 }
 
-function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
+function parseEmailList(
+  input: string,
+): { valid: string[]; invalid: string[]; duplicates: number } {
   const parts = input
     .split(/[,;\s\n\r]+/)
     .map((s) => s.trim())
@@ -43,32 +45,65 @@ function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
   const valid: string[] = [];
   const invalid: string[] = [];
   const seen = new Set<string>();
+  let duplicates = 0;
   for (const p of parts) {
     const lower = p.toLowerCase();
-    if (seen.has(lower)) continue;
+    if (seen.has(lower)) {
+      duplicates++;
+      continue;
+    }
     seen.add(lower);
     (EMAIL_RE.test(p) ? valid : invalid).push(p);
   }
-  return { valid, invalid };
+  return { valid, invalid, duplicates };
 }
 
-function extractEmailsFromCsv(csv: string): string[] {
+function extractEmailsFromCsv(
+  csv: string,
+): { emails: string[]; duplicates: number } {
   // Split by commas, semicolons, tabs, or newlines; match anything that looks like an email.
   const tokens = csv.split(/[\n\r,;\t"]+/).map((t) => t.trim()).filter(Boolean);
   const emails: string[] = [];
   const seen = new Set<string>();
+  let duplicates = 0;
   for (const t of tokens) {
     const match = t.match(/[^\s<>()]+@[^\s<>()]+\.[^\s<>()]+/);
     if (match) {
       const e = match[0].replace(/[.,;]+$/, "");
       const lower = e.toLowerCase();
-      if (EMAIL_RE.test(e) && !seen.has(lower)) {
-        seen.add(lower);
-        emails.push(e);
+      if (!EMAIL_RE.test(e)) continue;
+      if (seen.has(lower)) {
+        duplicates++;
+        continue;
       }
+      seen.add(lower);
+      emails.push(e);
     }
   }
-  return emails;
+  return { emails, duplicates };
+}
+
+/** Merge new emails into an existing textarea value, de-duplicating case-insensitively. */
+function mergeUniqueEmails(
+  existing: string,
+  incoming: string[],
+): { merged: string; added: number; skipped: number } {
+  const current = parseEmailList(existing).valid;
+  const seen = new Set(current.map((e) => e.toLowerCase()));
+  let added = 0;
+  let skipped = 0;
+  const next = [...current];
+  for (const e of incoming) {
+    const lower = e.toLowerCase();
+    if (seen.has(lower)) {
+      skipped++;
+      continue;
+    }
+    seen.add(lower);
+    next.push(e);
+    added++;
+  }
+  return { merged: next.join("\n"), added, skipped };
 }
 
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
