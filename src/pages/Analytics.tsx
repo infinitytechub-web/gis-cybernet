@@ -976,18 +976,38 @@ export default function Analytics() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                     <Pie
                       data={rolesStats.rows.map((r) => ({ name: r.label, value: r.count }))}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={95}
+                      cy="45%"
+                      innerRadius="38%"
+                      outerRadius="62%"
                       paddingAngle={2}
-                      label={({ name, percent }) => percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ""}
+                      labelLine={false}
+                      label={({ cx, cy, midAngle, outerRadius, percent, name }) => {
+                        if (!percent || percent < 0.03) return null;
+                        const RAD = Math.PI / 180;
+                        const r = outerRadius + 14;
+                        const x = cx + r * Math.cos(-midAngle * RAD);
+                        const y = cy + r * Math.sin(-midAngle * RAD);
+                        const anchor = x > cx ? "start" : "end";
+                        return (
+                          <text
+                            x={x}
+                            y={y}
+                            fill="hsl(var(--foreground))"
+                            textAnchor={anchor}
+                            dominantBaseline="central"
+                            style={{ fontSize: 10, fontWeight: 500 }}
+                          >
+                            {`${name} ${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }}
                     >
                       {rolesStats.rows.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
@@ -998,6 +1018,12 @@ export default function Analytics() {
                         borderRadius: "8px",
                         fontSize: "11px",
                       }}
+                      formatter={(value: number, name: string) => [`${value} staff`, name]}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: "10px", paddingTop: "8px" }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
