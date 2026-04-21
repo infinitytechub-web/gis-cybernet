@@ -13,7 +13,7 @@ import {
 import { ShiftPlatformConnect } from "@/components/attendance/ShiftPlatformConnect";
 import {
   CheckCircle2, XCircle, RefreshCw, Wifi, WifiOff, Search, Link2,
-  Activity, AlertTriangle, Loader2, ShieldOff,
+  Activity, AlertTriangle, Loader2, ShieldOff, RotateCw,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -439,22 +439,45 @@ export default function ShiftConnections() {
                           ) : (
                             <span className="text-xs text-muted-foreground">Never</span>
                           )}
+                          {retryMap[c.id]?.lastError && (
+                            <div className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              {retryMap[c.id].pending
+                                ? `Retry ${retryMap[c.id].attempt}/${MAX_AUTO_RETRIES} scheduled…`
+                                : `Failed (${retryMap[c.id].attempt}/${MAX_AUTO_RETRIES} attempts)`}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                            onClick={() => syncMutation.mutate(c.id)}
-                            disabled={!c.is_connected || syncingId === c.id}
-                          >
-                            {syncingId === c.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-3.5 w-3.5" />
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => runSyncWithRetry(c.id, 0)}
+                              disabled={!c.is_connected || syncingId === c.id}
+                            >
+                              {syncingId === c.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              )}
+                              Sync now
+                            </Button>
+                            {retryMap[c.id]?.lastError && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="gap-1"
+                                onClick={() => retryNow(c.id)}
+                                disabled={syncingId === c.id}
+                                title={retryMap[c.id].lastError ?? undefined}
+                              >
+                                <RotateCw className="h-3.5 w-3.5" />
+                                Retry now
+                              </Button>
                             )}
-                            Sync now
-                          </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
