@@ -147,6 +147,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             shift_group: p.shift_group || undefined,
             rank_abbr: p.rank_abbr || undefined,
             department_name: p.department_name || undefined,
+            office: p.office || undefined,
             status: (p.status as StaffStatus) || "active",
             error: errors.length ? errors.join(", ") : undefined,
           };
@@ -186,6 +187,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
         shift_group: r.shift_group || null,
         rank_id: r.rank_abbr ? rankMap.get(r.rank_abbr.toLowerCase()) ?? null : null,
         department_id: r.department_name ? deptMap.get(r.department_name.toLowerCase()) ?? null : null,
+        office: r.office || null,
         status: r.status || "active",
       }));
 
@@ -212,8 +214,8 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["Staff ID", "First Name", "Last Name", "Gender", "Phone", "Unit", "Shift Group", "Rank", "Department", "Status"],
-      ["GIS-00001", "John", "Doe", "Male", "0201234567", "Operations", "A", "Cpl", "Administration", "active"],
+      ["Staff ID", "First Name", "Last Name", "Gender", "Phone", "Unit", "Shift Group", "Rank", "Department", "Office", "Status"],
+      ["GIS-00001", "John", "Doe", "Male", "0201234567", "Operations", "A", "Cpl", "Administration", "Amasaman HQ", "active"],
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Staff Template");
@@ -252,7 +254,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             </Button>
             <div className="text-xs text-muted-foreground space-y-1">
               <p className="font-medium">Expected columns:</p>
-              <p>Staff ID, First Name, Last Name, Gender, Phone, Unit, Shift Group, Rank (abbreviation), Department (name), Status</p>
+              <p>Staff ID, First Name, Last Name, Gender, Phone, Unit, Shift Group, Rank (abbreviation), Department (name), Office, Status</p>
             </div>
           </div>
         ) : result ? (
