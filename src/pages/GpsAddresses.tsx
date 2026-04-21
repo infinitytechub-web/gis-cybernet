@@ -13,9 +13,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
-  ExternalLink, Radio, Navigation as NavIcon, Sparkles,
+  ExternalLink, Radio, Navigation as NavIcon, Sparkles, Cloud, Copy, Check, Loader2, Timer,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { toast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
   CartesianGrid, PieChart, Pie, Cell, Legend,
@@ -288,6 +289,89 @@ export default function GpsAddresses() {
     };
   };
 
+  // ===== Cloud export (S3-style storage + time-limited signed URL) =====
+  const [cloudOpen, setCloudOpen] = useState(false);
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudResult, setCloudResult] = useState<{
+    url: string;
+    filename: string;
+    expires_at: string;
+    expires_in: number;
+    record_count: number;
+  } | null>(null);
+  const [cloudCopied, setCloudCopied] = useState(false);
+  const [linkTtl, setLinkTtl] = useState<string>("3600");
+  const [cloudCountdown, setCloudCountdown] = useState<string>("");
+
+  useEffect(() => {
+    if (!cloudResult) { setCloudCountdown(""); return; }
+    const tick = () => {
+      const ms = new Date(cloudResult.expires_at).getTime() - Date.now();
+      if (ms <= 0) { setCloudCountdown("expired"); return; }
+      const mins = Math.floor(ms / 60_000);
+      const secs = Math.floor((ms % 60_000) / 1000);
+      const hrs = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      setCloudCountdown(hrs > 0 ? `${hrs}h ${remMins}m` : `${mins}m ${secs.toString().padStart(2, "0")}s`);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [cloudResult]);
+
+  const csvEscape = (val: string) => {
+    if (val == null) return "";
+    const s = String(val);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const buildCsv = () => {
+    const exp = buildExport();
+    const lines = [exp.headers.map(csvEscape).join(",")];
+    for (const row of exp.rows) lines.push(row.map(csvEscape).join(","));
+    return { csv: lines.join("\n"), filename: `${exp.filename}.csv`, subtitle: exp.subtitle };
+  };
+
+  const runCloudExport = async () => {
+    if (filtered.length === 0) return;
+    setCloudBusy(true);
+    setCloudResult(null);
+    setCloudCopied(false);
+    try {
+      const { csv, filename, subtitle } = buildCsv();
+      const expiresIn = Number(linkTtl) || 3600;
+      const { data, error } = await supabase.functions.invoke("gps-cloud-export", {
+        body: { csv, filename, expiresIn, recordCount: filtered.length, filtersSummary: subtitle },
+      });
+      if (error) throw error;
+      const payload = data as { url: string; filename: string; expires_at: string; expires_in: number };
+      if (!payload?.url) throw new Error("No signed URL returned");
+      setCloudResult({
+        url: payload.url,
+        filename: payload.filename,
+        expires_at: payload.expires_at,
+        expires_in: payload.expires_in,
+        record_count: filtered.length,
+      });
+      toast({ title: "Uploaded to cloud", description: `Signed link valid for ${formatTtl(payload.expires_in)}.` });
+    } catch (e: any) {
+      toast({ title: "Cloud export failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
+  const copyCloudLink = async () => {
+    if (!cloudResult) return;
+    try {
+      await navigator.clipboard.writeText(cloudResult.url);
+      setCloudCopied(true);
+      window.setTimeout(() => setCloudCopied(false), 2000);
+    } catch {
+      toast({ title: "Copy failed", description: "Select and copy the link manually.", variant: "destructive" });
+    }
+  };
+
   const stats = useMemo(() => {
     const total = records.length;
     const mappable = records.filter((r) => r.lat != null && r.lng != null).length;
@@ -489,11 +573,23 @@ export default function GpsAddresses() {
               <CardTitle className="text-lg">All GPS Addresses</CardTitle>
               <CardDescription>Click any address to open coordinates and live map view.</CardDescription>
             </div>
-            <ExportMenu
-              getData={buildExport}
-              label="Export GPS addresses"
-              disabled={filtered.length === 0}
-            />
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { setCloudOpen(true); setCloudResult(null); setCloudCopied(false); }}
+                disabled={filtered.length === 0}
+                className="gap-1.5"
+              >
+                <Cloud className="h-4 w-4" />
+                Cloud export
+              </Button>
+              <ExportMenu
+                getData={buildExport}
+                label="Export GPS addresses"
+                disabled={filtered.length === 0}
+              />
+            </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap mt-3">
             <div className="relative flex-1 min-w-[220px]">
@@ -675,6 +771,103 @@ export default function GpsAddresses() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ===== Cloud export dialog ===== */}
+      <Dialog open={cloudOpen} onOpenChange={(o) => { setCloudOpen(o); if (!o) { setCloudResult(null); setCloudCopied(false); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Cloud className="h-4 w-4 text-primary" />
+              Export to Cloud Storage
+              <Badge variant="outline" className="text-[10px] ml-1">S3-style · Signed URL</Badge>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Records to export</span>
+                <span className="font-semibold tabular-nums">{filtered.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Format</span>
+                <span className="font-medium">CSV (UTF-8)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Destination</span>
+                <span className="font-mono text-[11px]">command-vault/gps-exports/</span>
+              </div>
+            </div>
+
+            {!cloudResult && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium">Link valid for</label>
+                <Select value={linkTtl} onValueChange={setLinkTtl} disabled={cloudBusy}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="900">15 minutes</SelectItem>
+                    <SelectItem value="3600">1 hour</SelectItem>
+                    <SelectItem value="14400">4 hours</SelectItem>
+                    <SelectItem value="86400">24 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  After uploading, a time-limited download link will be generated for command download.
+                </p>
+              </div>
+            )}
+
+            {cloudResult && (
+              <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                  <Check className="h-4 w-4" />
+                  Upload complete
+                </div>
+                <div className="text-[11px] text-muted-foreground space-y-0.5">
+                  <div className="font-mono truncate">{cloudResult.filename}</div>
+                  <div className="flex items-center gap-1">
+                    <Timer className="h-3 w-3" />
+                    Expires in <span className="font-semibold text-foreground">{cloudCountdown || "—"}</span>
+                  </div>
+                </div>
+                <div className="flex items-stretch gap-1 mt-2">
+                  <Input readOnly value={cloudResult.url} className="font-mono text-[11px]" onFocus={(e) => e.currentTarget.select()} />
+                  <Button size="sm" variant="outline" onClick={copyCloudLink} className="shrink-0">
+                    {cloudCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" asChild className="flex-1">
+                    <a href={cloudResult.url} target="_blank" rel="noopener noreferrer" download={cloudResult.filename}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Download
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setCloudOpen(false)} disabled={cloudBusy}>
+                Close
+              </Button>
+              {!cloudResult ? (
+                <Button onClick={runCloudExport} disabled={cloudBusy || filtered.length === 0}>
+                  {cloudBusy ? (
+                    <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Uploading…</>
+                  ) : (
+                    <><Cloud className="h-4 w-4 mr-1.5" /> Upload &amp; sign link</>
+                  )}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => { setCloudResult(null); setCloudCopied(false); }}>
+                  Generate another
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -715,4 +908,13 @@ function InfoCell({ label, value, mono }: { label: string; value: string; mono?:
       <div className={`text-xs ${mono ? "font-mono" : ""} truncate`}>{value}</div>
     </div>
   );
+}
+
+function formatTtl(seconds: number): string {
+  if (seconds >= 3600) {
+    const h = Math.round(seconds / 3600);
+    return h === 1 ? "1 hour" : `${h} hours`;
+  }
+  const m = Math.round(seconds / 60);
+  return `${m} minute${m === 1 ? "" : "s"}`;
 }
