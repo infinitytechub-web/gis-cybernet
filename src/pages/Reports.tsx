@@ -22,6 +22,7 @@ import ReportApprovalsTable from "@/components/reports/ReportApprovalsTable";
 import { ExportMenu } from "@/components/ui/export-menu";
 import AttendanceComplianceReport from "@/components/reports/AttendanceComplianceReport";
 import AttendanceRecipientsPanel from "@/components/reports/AttendanceRecipientsPanel";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
