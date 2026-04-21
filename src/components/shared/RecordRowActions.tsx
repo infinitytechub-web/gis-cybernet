@@ -66,6 +66,7 @@ export function RecordRowActions({
         label: record.applicant_name ?? RECORD_TITLES[kind],
         context: record.passport_number || record.reference_number || undefined,
       });
+      await logRowAction("delete_soft", kind, record, { table });
       invalidateKeys.forEach((k) => qc.invalidateQueries({ queryKey: k }));
       toast.success("Moved to Recycle Bin");
       setConfirmOpen(false);
@@ -79,6 +80,7 @@ export function RecordRowActions({
   const handleDownload = () => {
     try {
       downloadRecordPdf(kind, record);
+      void logRowAction("download_pdf", kind, record);
       toast.success("PDF downloaded");
     } catch (e: any) {
       toast.error(e?.message || "Download failed");
@@ -88,9 +90,20 @@ export function RecordRowActions({
   const handlePrint = () => {
     try {
       printRecordPdf(kind, record);
+      void logRowAction("print", kind, record);
     } catch (e: any) {
       toast.error(e?.message || "Print failed");
     }
+  };
+
+  const handleEdit = () => {
+    void logRowAction("edit_open", kind, record);
+    onEdit();
+  };
+
+  const handleOpenEmail = () => {
+    void logRowAction("email_open", kind, record);
+    setEmailOpen(true);
   };
 
   return (
