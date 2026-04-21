@@ -771,6 +771,103 @@ export default function GpsAddresses() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ===== Cloud export dialog ===== */}
+      <Dialog open={cloudOpen} onOpenChange={(o) => { setCloudOpen(o); if (!o) { setCloudResult(null); setCloudCopied(false); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Cloud className="h-4 w-4 text-primary" />
+              Export to Cloud Storage
+              <Badge variant="outline" className="text-[10px] ml-1">S3-style · Signed URL</Badge>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Records to export</span>
+                <span className="font-semibold tabular-nums">{filtered.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Format</span>
+                <span className="font-medium">CSV (UTF-8)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Destination</span>
+                <span className="font-mono text-[11px]">command-vault/gps-exports/</span>
+              </div>
+            </div>
+
+            {!cloudResult && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium">Link valid for</label>
+                <Select value={linkTtl} onValueChange={setLinkTtl} disabled={cloudBusy}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="900">15 minutes</SelectItem>
+                    <SelectItem value="3600">1 hour</SelectItem>
+                    <SelectItem value="14400">4 hours</SelectItem>
+                    <SelectItem value="86400">24 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  After uploading, a time-limited download link will be generated for command download.
+                </p>
+              </div>
+            )}
+
+            {cloudResult && (
+              <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                  <Check className="h-4 w-4" />
+                  Upload complete
+                </div>
+                <div className="text-[11px] text-muted-foreground space-y-0.5">
+                  <div className="font-mono truncate">{cloudResult.filename}</div>
+                  <div className="flex items-center gap-1">
+                    <Timer className="h-3 w-3" />
+                    Expires in <span className="font-semibold text-foreground">{cloudCountdown || "—"}</span>
+                  </div>
+                </div>
+                <div className="flex items-stretch gap-1 mt-2">
+                  <Input readOnly value={cloudResult.url} className="font-mono text-[11px]" onFocus={(e) => e.currentTarget.select()} />
+                  <Button size="sm" variant="outline" onClick={copyCloudLink} className="shrink-0">
+                    {cloudCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" asChild className="flex-1">
+                    <a href={cloudResult.url} target="_blank" rel="noopener noreferrer" download={cloudResult.filename}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      Download
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setCloudOpen(false)} disabled={cloudBusy}>
+                Close
+              </Button>
+              {!cloudResult ? (
+                <Button onClick={runCloudExport} disabled={cloudBusy || filtered.length === 0}>
+                  {cloudBusy ? (
+                    <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Uploading…</>
+                  ) : (
+                    <><Cloud className="h-4 w-4 mr-1.5" /> Upload &amp; sign link</>
+                  )}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => { setCloudResult(null); setCloudCopied(false); }}>
+                  Generate another
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
