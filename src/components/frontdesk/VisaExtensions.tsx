@@ -211,6 +211,18 @@ export default function VisaExtensions() {
                   </Select>
                 </div>
                 <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="col-span-2"><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
+                <div><Label>Permit Type *</Label>
+                  <Select value={form.permit_type} onValueChange={(v) => setForm({ ...form, permit_type: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select permit" /></SelectTrigger>
+                    <SelectContent>
+                      {PERMIT_TYPES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Fee Charged (GHS)</Label>
+                  <Input type="number" min="0" step="0.01" value={form.fee_charged} onChange={(e) => setForm({ ...form, fee_charged: e.target.value })} placeholder="0.00" />
+                </div>
                 <div><Label>Current Visa Expiry *</Label><Input type="date" value={form.current_visa_expiry} onChange={(e) => setForm({ ...form, current_visa_expiry: e.target.value })} required /></div>
                 <div><Label>Requested Extension Date *</Label><Input type="date" value={form.requested_extension_date} onChange={(e) => setForm({ ...form, requested_extension_date: e.target.value })} required /></div>
               </div>
