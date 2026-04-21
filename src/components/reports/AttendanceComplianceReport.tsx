@@ -447,16 +447,17 @@ export default function AttendanceComplianceReport() {
               <FileDown className="h-4 w-4" />
               Template
             </Button>
+            <AttendanceComplianceExportButton onClick={() => setExportOpen(true)} />
             <ExportMenu
-              label="Export Report"
+              label="Quick"
               size="sm"
-              variant="default"
+              variant="outline"
               getData={buildExport}
               onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
                 format: fmt, period, from: fromIso, to: toIso,
                 filters: { departmentId, shiftGroup, office },
                 row_count: rows.length,
-                location: "header",
+                location: "header_quick",
               })}
             />
           </div>
