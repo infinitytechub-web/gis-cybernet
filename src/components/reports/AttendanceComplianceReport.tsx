@@ -551,6 +551,16 @@ export default function AttendanceComplianceReport() {
         periodLabel={periodLabel}
         onClose={() => setDetailStaff(null)}
       />
+
+      <AttendanceComplianceImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        initialReferenceDate={refDate}
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: ["acr-attendances"] });
+          queryClient.invalidateQueries({ queryKey: ["attendance_compliance_snapshots"] });
+        }}
+      />
     </div>
   );
 }
