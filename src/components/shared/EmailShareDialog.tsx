@@ -603,6 +603,66 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                 </div>
               </PreviewRow>
             </div>
+
+            {/* Per-address duplicate breakdown (bulk mode) */}
+            {mode === "bulk" && bulkBreakdown.duplicates.length > 0 && (
+              <div className="rounded-md border border-dashed">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/40">
+                  <div className="text-xs font-medium">Duplicates removed</div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {bulkBreakdown.totalDuplicatesRemoved} copy
+                    {bulkBreakdown.totalDuplicatesRemoved === 1 ? "" : "ies"} dropped ·{" "}
+                    {bulkBreakdown.duplicates.length} address
+                    {bulkBreakdown.duplicates.length === 1 ? "" : "es"}
+                  </Badge>
+                </div>
+                <div className="max-h-40 overflow-y-auto divide-y">
+                  {bulkBreakdown.duplicates.map((d) => (
+                    <div
+                      key={d.email.toLowerCase()}
+                      className="flex items-center justify-between gap-3 px-3 py-1.5 text-xs"
+                    >
+                      <span className="font-mono truncate">{d.email}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        appeared {d.count}× · {d.count - 1} removed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-3 py-1.5 text-[11px] text-muted-foreground border-t">
+                  Each address will receive the email only once.
+                </div>
+              </div>
+            )}
+
+            {/* Single-mode cross-field duplicate warning */}
+            {mode === "single" &&
+              singlePreviewReport &&
+              singlePreviewReport.totalRemoved > 0 && (
+                <div className="rounded-md border border-dashed">
+                  <div className="px-3 py-2 bg-muted/40 text-xs font-medium">
+                    Duplicates removed across TO / CC / BCC
+                  </div>
+                  <div className="px-3 py-2 space-y-1 text-xs">
+                    {singlePreviewReport.removedFromCc.map((e) => (
+                      <div key={`cc-${e}`} className="flex justify-between gap-3">
+                        <span className="font-mono truncate">{e}</span>
+                        <span className="text-muted-foreground shrink-0">
+                          CC · already in TO/earlier field
+                        </span>
+                      </div>
+                    ))}
+                    {singlePreviewReport.removedFromBcc.map((e) => (
+                      <div key={`bcc-${e}`} className="flex justify-between gap-3">
+                        <span className="font-mono truncate">{e}</span>
+                        <span className="text-muted-foreground shrink-0">
+                          BCC · already in TO/CC
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         )}
 
