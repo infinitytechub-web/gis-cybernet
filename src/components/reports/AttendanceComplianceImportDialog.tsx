@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Upload, AlertTriangle, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -304,8 +305,33 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Target month</Label>
-              <Input type="date" value={referenceDate} onChange={(e) => { setReferenceDate(e.target.value); setMatch(null); }} className="h-9" />
-              <p className="text-[11px] text-muted-foreground mt-1">Period: <strong>{periodLabel}</strong> ({periodStartIso} → {periodEndIso})</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={String(selectedMonth)}
+                  onValueChange={(v) => { setSelectedMonth(Number(v)); setMatch(null); }}
+                >
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m, i) => (
+                      <SelectItem key={m} value={String(i)}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={String(selectedYear)}
+                  onValueChange={(v) => { setSelectedYear(Number(v)); setMatch(null); }}
+                >
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map((y) => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Period: <strong>{periodLabel}</strong> ({periodStartIso} → {periodEndIso}). All rows in this file are saved as <strong>monthly</strong> snapshots for this exact period — no mismatched columns possible.
+              </p>
             </div>
             <div>
               <Label className="text-xs">Spreadsheet (.xlsx / .xls / .csv)</Label>
