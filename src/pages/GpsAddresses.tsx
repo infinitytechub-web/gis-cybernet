@@ -911,16 +911,48 @@ export default function GpsAddresses() {
                         <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                           {format(new Date(r.created_at), "dd MMM yyyy, HH:mm")}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => { e.stopPropagation(); setSelected(r); }}
-                            disabled={!mappable && !r.digital_address}
-                          >
-                            <NavIcon className="h-4 w-4 mr-1" />
-                            Track
-                          </Button>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                aria-label={`Actions for ${r.raw_location}`}
+                                className="h-8 w-8"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                GPS Record
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => setViewing(r)}>
+                                <Eye className="h-4 w-4 mr-2" /> View details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setSelected(r)}
+                                disabled={!mappable && !r.digital_address}
+                              >
+                                <NavIcon className="h-4 w-4 mr-2" /> Track on map
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => navigate(SOURCE_ROUTES[r.source])}>
+                                <Pencil className="h-4 w-4 mr-2" /> Edit in {meta.label}
+                              </DropdownMenuItem>
+                              {canDelete && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleting(r)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
