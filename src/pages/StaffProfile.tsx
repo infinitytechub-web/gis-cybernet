@@ -123,6 +123,42 @@ export default function StaffProfile() {
   }
 
   const initials = `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase();
+  const currentOffice = (profile as any).office as string | null | undefined;
+
+  const saveOffice = async () => {
+    const trimmed = officeDraft.trim();
+    if (trimmed.length > 80) {
+      toast.error("Office must be 80 characters or fewer");
+      return;
+    }
+    if ((trimmed || null) === (currentOffice || null)) {
+      setEditingOffice(false);
+      return;
+    }
+    const previous = currentOffice ?? null;
+    const next = trimmed || null;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ office: next })
+      .eq("id", profile.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Office updated");
+    setEditingOffice(false);
+    logAdminAudit("staff_profile_office", "updated", {
+      staff_id: profile.staff_id,
+      name: `${profile.last_name}, ${profile.first_name}`,
+      previous, next,
+    }, profile.id);
+    // Refresh profile + every list/report that reads the office field
+    queryClient.invalidateQueries({ queryKey: ["staff-profile", id] });
+    queryClient.invalidateQueries({ queryKey: ["staff"] });
+    queryClient.invalidateQueries({ queryKey: ["acr-profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
+  };
 
   return (
     <div className="space-y-6">
