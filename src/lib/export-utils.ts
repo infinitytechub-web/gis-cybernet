@@ -24,6 +24,29 @@ export interface ExportEmbeddedImage {
   format?: "PNG" | "JPEG";
 }
 
+/**
+ * Diagonal watermark stamped across every PDF page (snapshot + table). Used
+ * for tamper-deterrence on intel exports — surfaces the authorising
+ * officer's role and department on every page.
+ */
+export interface ExportWatermark {
+  /** The watermark text. Rendered diagonally, repeated across the page. */
+  text: string;
+  /** Optional secondary text rendered below the main line. */
+  secondary?: string;
+}
+
+/**
+ * QR code rendered in the PDF footer (and inlined into print HTML by callers).
+ * Encodes a verification URL pointing at the authorisation audit entry.
+ */
+export interface ExportQrCode {
+  /** PNG data URL of the QR image. */
+  dataUrl: string;
+  /** Caption shown next to the QR (e.g., "Scan to verify authorisation"). */
+  caption?: string;
+}
+
 interface ExportOptions {
   title: string;
   filename: string;
@@ -42,9 +65,19 @@ interface ExportOptions {
    * gracefully ignore this field.
    */
   image?: ExportEmbeddedImage;
+  /**
+   * Optional diagonal watermark stamped across every PDF page. Other formats
+   * gracefully ignore this field.
+   */
+  watermark?: ExportWatermark;
+  /**
+   * Optional tamper-evident QR code rendered in the PDF footer. Other formats
+   * gracefully ignore this field.
+   */
+  qr?: ExportQrCode;
 }
 
-function generatePDF({ title, filename, headers, rows, subtitle, meta, image }: ExportOptions) {
+function generatePDF({ title, filename, headers, rows, subtitle, meta, image, watermark, qr }: ExportOptions) {
   const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
