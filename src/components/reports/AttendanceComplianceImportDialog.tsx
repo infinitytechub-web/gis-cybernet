@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Upload, AlertTriangle, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,10 +66,15 @@ function parseInt0(value: string | undefined): number {
   return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
 }
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 export function AttendanceComplianceImportDialog({ open, onOpenChange, initialReferenceDate, onImported }: Props) {
-  const [referenceDate, setReferenceDate] = useState<string>(
-    initialReferenceDate ?? format(new Date(), "yyyy-MM-dd"),
-  );
+  const initialDate = initialReferenceDate ? parseISO(initialReferenceDate) : new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(initialDate.getMonth()); // 0-11
+  const [selectedYear, setSelectedYear] = useState<number>(initialDate.getFullYear());
   const [parsing, setParsing] = useState(false);
   const [matching, setMatching] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -76,9 +82,23 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
   const [match, setMatch] = useState<MatchResult | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
 
+  // Period is fully derived from the selected month + year — no free-form date entry, so
+  // there is no way for the imported figures to land in the wrong column/period.
+  const referenceDate = useMemo(
+    () => format(new Date(selectedYear, selectedMonth, 15), "yyyy-MM-dd"),
+    [selectedMonth, selectedYear],
+  );
   const periodStartIso = useMemo(() => format(startOfMonth(parseISO(referenceDate)), "yyyy-MM-dd"), [referenceDate]);
   const periodEndIso = useMemo(() => format(endOfMonth(parseISO(referenceDate)), "yyyy-MM-dd"), [referenceDate]);
   const periodLabel = useMemo(() => format(parseISO(referenceDate), "MMMM yyyy"), [referenceDate]);
+
+  // Year range: 5 years back through next year — covers re-imports of historical data without an unbounded list.
+  const yearOptions = useMemo(() => {
+    const now = new Date().getFullYear();
+    const out: number[] = [];
+    for (let y = now + 1; y >= now - 5; y--) out.push(y);
+    return out;
+  }, []);
 
   const reset = () => {
     setParsedRows([]);
@@ -285,8 +305,33 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Target month</Label>
-              <Input type="date" value={referenceDate} onChange={(e) => { setReferenceDate(e.target.value); setMatch(null); }} className="h-9" />
-              <p className="text-[11px] text-muted-foreground mt-1">Period: <strong>{periodLabel}</strong> ({periodStartIso} → {periodEndIso})</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={String(selectedMonth)}
+                  onValueChange={(v) => { setSelectedMonth(Number(v)); setMatch(null); }}
+                >
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m, i) => (
+                      <SelectItem key={m} value={String(i)}>{m}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={String(selectedYear)}
+                  onValueChange={(v) => { setSelectedYear(Number(v)); setMatch(null); }}
+                >
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map((y) => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Period: <strong>{periodLabel}</strong> ({periodStartIso} → {periodEndIso}). All rows in this file are saved as <strong>monthly</strong> snapshots for this exact period — no mismatched columns possible.
+              </p>
             </div>
             <div>
               <Label className="text-xs">Spreadsheet (.xlsx / .xls / .csv)</Label>

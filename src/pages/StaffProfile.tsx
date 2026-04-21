@@ -103,6 +103,20 @@ export default function StaffProfile() {
     },
   });
 
+  const { data: officeHistory = [] } = useQuery({
+    queryKey: ["staff-office-history", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("profile_office_history")
+        .select("id, previous_office, new_office, changed_at, changed_by")
+        .eq("profile_id", id!)
+        .order("changed_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -154,6 +168,7 @@ export default function StaffProfile() {
     }, profile.id);
     // Refresh profile + every list/report that reads the office field
     queryClient.invalidateQueries({ queryKey: ["staff-profile", id] });
+    queryClient.invalidateQueries({ queryKey: ["staff-office-history", id] });
     queryClient.invalidateQueries({ queryKey: ["staff"] });
     queryClient.invalidateQueries({ queryKey: ["acr-profiles"] });
     queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
@@ -259,6 +274,7 @@ export default function StaffProfile() {
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>
           <TabsTrigger value="postings" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Postings</TabsTrigger>
+          <TabsTrigger value="office-history" className="gap-1"><MapPin className="h-4 w-4" /> Office History {officeHistory.length > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{officeHistory.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1"><FolderLock className="h-4 w-4" /> Documents</TabsTrigger>
         </TabsList>
 
@@ -376,6 +392,58 @@ export default function StaffProfile() {
                           <TableCell>{format(new Date(p.effective_date), "dd MMM yyyy")}</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={statusColor(p.status)}>{p.status}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="office-history">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" /> Office History
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Every change to this staff member's office / duty post, newest first. Recorded automatically when the Office field is updated.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {officeHistory.length === 0 ? (
+                <p className="text-center py-6 text-sm text-muted-foreground">
+                  No office changes recorded yet. The current office is{" "}
+                  <strong>{currentOffice || "not set"}</strong>.
+                </p>
+              ) : (
+                <div className="rounded-lg border overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[180px]">Date</TableHead>
+                        <TableHead>Previous office</TableHead>
+                        <TableHead>New office</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {officeHistory.map((h: any) => (
+                        <TableRow key={h.id}>
+                          <TableCell className="text-xs font-mono whitespace-nowrap">
+                            {format(new Date(h.changed_at), "dd MMM yyyy, HH:mm")}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {h.previous_office
+                              ? <span>{h.previous_office}</span>
+                              : <span className="italic text-muted-foreground">— (not set)</span>}
+                          </TableCell>
+                          <TableCell className="text-sm font-medium">
+                            {h.new_office
+                              ? <span>{h.new_office}</span>
+                              : <span className="italic text-muted-foreground">cleared</span>}
                           </TableCell>
                         </TableRow>
                       ))}
