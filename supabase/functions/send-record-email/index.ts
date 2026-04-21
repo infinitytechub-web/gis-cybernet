@@ -275,6 +275,9 @@ Deno.serve(async (req) => {
           record_kind: body.record_kind,
           applicant_id: body.applicant_id ?? body.record_id ?? null,
           applicant_name: body.applicant_name ?? null,
+          extra_attachments: extraAttachments.map((a) => ({ filename: a.filename, size: a.size })),
+          extra_attachments_count: extraAttachments.length,
+          extra_attachments_total_bytes: extraAttachments.reduce((s, a) => s + a.size, 0),
           sent_at: new Date().toISOString(),
           note: isDryRun ? "Simulated server-side send — no email dispatched" : undefined,
           results: results.map((r) => ({
