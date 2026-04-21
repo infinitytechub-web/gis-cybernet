@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
-  ExternalLink, Radio, Navigation as NavIcon,
+  ExternalLink, Radio, Navigation as NavIcon, Sparkles,
 } from "lucide-react";
+import { ExportMenu } from "@/components/ui/export-menu";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
   CartesianGrid, PieChart, Pie, Cell, Legend,
@@ -238,6 +239,55 @@ export default function GpsAddresses() {
     return list;
   }, [records, search, sourceFilter]);
 
+  // Keep the open dialog's record in sync with realtime updates so the live map
+  // and coordinate readouts reflect the latest data without manual reopen.
+  useEffect(() => {
+    if (!selected) return;
+    const fresh = records.find((r) => r.source === selected.source && r.id === selected.id);
+    if (fresh && (fresh.lat !== selected.lat || fresh.lng !== selected.lng || fresh.raw_location !== selected.raw_location)) {
+      setSelected(fresh);
+    }
+  }, [records, selected]);
+
+  // Pulse indicator: highlight analytics card when a new GPS record is inserted.
+  const [pulse, setPulse] = useState(false);
+  const totalRef = useRef<number>(records.length);
+  useEffect(() => {
+    if (records.length > totalRef.current) {
+      setPulse(true);
+      const t = setTimeout(() => setPulse(false), 2500);
+      totalRef.current = records.length;
+      return () => clearTimeout(t);
+    }
+    totalRef.current = records.length;
+  }, [records.length]);
+
+  const buildExport = () => {
+    const headers = ["GPS Address", "Digital", "Latitude", "Longitude", "Source", "Context", "Reference", "Status", "Captured"];
+    const rows = filtered.map((r) => [
+      r.raw_location ?? "",
+      r.digital_address ?? "",
+      r.lat != null ? r.lat.toFixed(6) : "",
+      r.lng != null ? r.lng.toFixed(6) : "",
+      SOURCE_META[r.source].label,
+      r.context ?? "",
+      r.reference ?? "",
+      r.status ?? "",
+      format(new Date(r.created_at), "dd MMM yyyy, HH:mm"),
+    ]);
+    const filterParts: string[] = [];
+    if (sourceFilter !== "all") filterParts.push(`Source: ${SOURCE_META[sourceFilter as SourceKey].label}`);
+    if (search.trim()) filterParts.push(`Search: "${search.trim()}"`);
+    const subtitle = `Command Vault · ${filtered.length} of ${records.length} GPS records${filterParts.length ? ` · ${filterParts.join(" · ")}` : ""}`;
+    return {
+      title: "GPS Address Register",
+      filename: `gps_addresses_${format(new Date(), "yyyyMMdd_HHmm")}`,
+      headers,
+      rows,
+      subtitle,
+    };
+  };
+
   const stats = useMemo(() => {
     const total = records.length;
     const mappable = records.filter((r) => r.lat != null && r.lng != null).length;
@@ -307,12 +357,19 @@ export default function GpsAddresses() {
       </div>
 
       {/* ===== Realtime analytics ===== */}
-      <Card className="border-primary/20">
+      <Card className={`border-primary/20 transition-shadow ${pulse ? "shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]" : ""}`}>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
-            <div>
-              <CardTitle className="text-base">Realtime Analytics</CardTitle>
+            <Activity className={`h-5 w-5 text-primary ${pulse ? "animate-pulse" : ""}`} />
+            <div className="flex-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                Realtime Analytics
+                {pulse && (
+                  <Badge variant="secondary" className="gap-1 text-[10px] bg-primary/10 text-primary">
+                    <Sparkles className="h-3 w-3" /> New record
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription className="text-xs">
                 Auto-refreshes on database changes · Last capture {stats.lastCapture ? formatDistanceToNow(new Date(stats.lastCapture), { addSuffix: true }) : "—"}
               </CardDescription>
@@ -432,6 +489,11 @@ export default function GpsAddresses() {
               <CardTitle className="text-lg">All GPS Addresses</CardTitle>
               <CardDescription>Click any address to open coordinates and live map view.</CardDescription>
             </div>
+            <ExportMenu
+              getData={buildExport}
+              label="Export GPS addresses"
+              disabled={filtered.length === 0}
+            />
           </div>
           <div className="flex gap-2 items-center flex-wrap mt-3">
             <div className="relative flex-1 min-w-[220px]">
@@ -538,6 +600,10 @@ export default function GpsAddresses() {
             <DialogTitle className="flex items-center gap-2">
               <NavIcon className="h-4 w-4 text-primary" />
               Live Map View
+              <Badge variant="outline" className="text-[10px] gap-1 ml-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                Live
+              </Badge>
             </DialogTitle>
           </DialogHeader>
           {selected && (
