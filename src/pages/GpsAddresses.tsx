@@ -37,6 +37,12 @@ import {
 import { GpsLiveMap } from "@/components/command-vault/GpsLiveMap";
 import { StaticCoordinateMap } from "@/components/command-vault/StaticCoordinateMap";
 import { buildStaticMapSvg, buildStaticMapPng } from "@/lib/static-map-snapshot";
+import {
+  fetchViewerStamp,
+  buildOfficialWatermark,
+  buildAuditQrDataUrl,
+  buildAuditVerificationUrl,
+} from "@/lib/official-stamp";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
