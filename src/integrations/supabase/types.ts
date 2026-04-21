@@ -2404,6 +2404,44 @@ export type Database = {
           },
         ]
       }
+      profile_office_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_office: string | null
+          note: string | null
+          previous_office: string | null
+          profile_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_office?: string | null
+          note?: string | null
+          previous_office?: string | null
+          profile_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_office?: string | null
+          note?: string | null
+          previous_office?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_office_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_locked: boolean
