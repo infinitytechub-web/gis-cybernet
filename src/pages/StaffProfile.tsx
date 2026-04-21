@@ -37,7 +37,12 @@ export default function StaffProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "attendance";
-  const { user, role } = useAuth();
+  const { user, role, isAdminOrSupervisor } = useAuth();
+  const queryClient = useQueryClient();
+  const canEditOffice = isAdminOrSupervisor;
+
+  const [editingOffice, setEditingOffice] = useState(false);
+  const [officeDraft, setOfficeDraft] = useState("");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["staff-profile", id],
