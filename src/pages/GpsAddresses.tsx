@@ -1143,6 +1143,88 @@ export default function GpsAddresses() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ===== View details dialog ===== */}
+      <Dialog open={!!viewing} onOpenChange={(o) => { if (!o) setViewing(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" /> GPS Record Details
+            </DialogTitle>
+            <DialogDescription>Full metadata for the selected GPS address.</DialogDescription>
+          </DialogHeader>
+          {viewing && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className={SOURCE_META[viewing.source].color}>
+                  {(() => { const I = SOURCE_META[viewing.source].icon; return <I className="h-3 w-3 mr-1" />; })()}
+                  {SOURCE_META[viewing.source].label}
+                </Badge>
+                {viewing.status && (
+                  <Badge variant="outline" className="text-[10px] capitalize">{viewing.status.replace(/_/g, " ")}</Badge>
+                )}
+                {viewing.lat != null && viewing.lng != null && (
+                  <Badge variant="outline" className="text-[10px] gap-1">
+                    <MapPin className="h-3 w-3" /> Mappable
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <InfoCell label="Address" value={viewing.raw_location} mono />
+                <InfoCell label="Digital code" value={viewing.digital_address ?? "—"} mono />
+                <InfoCell label="Latitude" value={viewing.lat != null ? viewing.lat.toFixed(6) : "—"} mono />
+                <InfoCell label="Longitude" value={viewing.lng != null ? viewing.lng.toFixed(6) : "—"} mono />
+                <InfoCell label="Context" value={viewing.context || "—"} />
+                <InfoCell label="Reference" value={viewing.reference || "—"} mono />
+                <InfoCell label="Captured" value={format(new Date(viewing.created_at), "dd MMM yyyy, HH:mm")} />
+                <InfoCell label="Record ID" value={viewing.id} mono />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+            <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
+            {viewing && (viewing.lat != null && viewing.lng != null) && (
+              <Button onClick={() => { setSelected(viewing); setViewing(null); }} className="gap-1.5">
+                <NavIcon className="h-4 w-4" /> Track on map
+              </Button>
+            )}
+            {viewing && (
+              <Button variant="outline" onClick={() => { navigate(SOURCE_ROUTES[viewing.source]); setViewing(null); }} className="gap-1.5">
+                <Pencil className="h-4 w-4" /> Edit in {SOURCE_META[viewing.source].label}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Delete confirmation ===== */}
+      <AlertDialog open={!!deleting} onOpenChange={(o) => { if (!o && !deleteBusy) setDeleting(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" /> Delete GPS record?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This moves the underlying{" "}
+              <span className="font-medium">{deleting ? SOURCE_META[deleting.source].label : ""}</span>{" "}
+              record to the Recycle Bin where it can be restored within 30 days.
+              <span className="block mt-2 font-mono text-[11px] text-foreground break-all">
+                {deleting?.raw_location}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); performDelete(); }}
+              disabled={deleteBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Deleting…</> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
