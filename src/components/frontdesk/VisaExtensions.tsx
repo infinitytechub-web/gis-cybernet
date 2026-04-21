@@ -83,7 +83,7 @@ export default function VisaExtensions() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["visa-extensions", { search, statusFilter }],
+    queryKey: ["visa-extensions", { search: debouncedSearch, statusFilter }],
     initialPageParam: null as Cursor,
     queryFn: async ({ pageParam }) => {
       let q = (supabase as any)
@@ -94,8 +94,8 @@ export default function VisaExtensions() {
         .limit(PAGE_SIZE + 1);
 
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
-      if (search.trim()) {
-        const term = `%${search.trim()}%`;
+      if (debouncedSearch) {
+        const term = `%${debouncedSearch}%`;
         q = q.or(`applicant_name.ilike.${term},passport_number.ilike.${term}`);
       }
       if (pageParam) {
