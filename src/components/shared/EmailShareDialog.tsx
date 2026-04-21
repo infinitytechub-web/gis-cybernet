@@ -662,13 +662,86 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                   {message || "(empty)"}
                 </div>
               </PreviewRow>
-              <PreviewRow label="Attachment">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="font-mono text-xs break-all">{attachmentFilename}</span>
-                  <Badge variant="outline" className="text-[10px]">PDF</Badge>
+            </div>
+
+            {/* Recipient list CSV export */}
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-xs font-medium">Final recipient list</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Export the exact TO/CC/BCC (or bulk) addresses after dedup.
                 </div>
-              </PreviewRow>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadRecipientsCsv}
+              >
+                <Download className="mr-2 h-3.5 w-3.5" /> CSV
+              </Button>
+            </div>
+
+            {/* Attachment review — explicit confirmation required before send */}
+            <div className="rounded-md border-2 border-primary/20 bg-primary/5">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <div className="text-xs font-semibold">Attachment — final review</div>
+              </div>
+              <div className="px-3 py-3 space-y-2">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-8 w-8 text-muted-foreground shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-mono text-xs break-all">{attachmentFilename}</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px]">PDF</Badge>
+                      {attachmentMeta && <span>{formatBytes(attachmentMeta.size)}</span>}
+                      <span>·</span>
+                      <span>{RECORD_TITLES[kind]}</span>
+                      {record.applicant_name && (
+                        <>
+                          <span>·</span>
+                          <span className="truncate">{record.applicant_name}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {attachmentMeta && (
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => window.open(attachmentMeta.url, "_blank")}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        asChild
+                      >
+                        <a href={attachmentMeta.url} download={attachmentFilename}>
+                          <Download className="mr-1 h-3 w-3" /> Save
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <label className="flex items-start gap-2 pt-1 cursor-pointer select-none">
+                  <Checkbox
+                    checked={attachmentConfirmed}
+                    onCheckedChange={(v) => setAttachmentConfirmed(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs">
+                    I confirm the attachment above matches the document I want to send.
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* Per-address duplicate breakdown (bulk mode) */}
