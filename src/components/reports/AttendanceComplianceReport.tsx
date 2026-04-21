@@ -53,6 +53,7 @@ export default function AttendanceComplianceReport() {
   const [shiftGroup, setShiftGroup] = useState<string>(ALL);
   const [office, setOffice] = useState<string>(ALL);
   const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const { from, to } = useMemo(() => periodRange(period, parseISO(refDate)), [period, refDate]);
   const fromIso = format(from, "yyyy-MM-dd");
