@@ -120,6 +120,11 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       ? validEmail && !ccInvalid && !bccInvalid
       : bulkList.length > 0);
 
+  const safeName = String(record.applicant_name || record.id || "record")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "");
+  const attachmentFilename = `${kind}_${safeName}.pdf`;
+
   const handleFile = async (file: File) => {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
