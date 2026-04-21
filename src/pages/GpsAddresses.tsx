@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
-  ExternalLink, Radio, Navigation as NavIcon,
+  ExternalLink, Radio, Navigation as NavIcon, Sparkles,
 } from "lucide-react";
+import { ExportMenu } from "@/components/ui/export-menu";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
   CartesianGrid, PieChart, Pie, Cell, Legend,
