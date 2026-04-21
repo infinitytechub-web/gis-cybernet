@@ -274,6 +274,7 @@ export default function StaffProfile() {
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>
           <TabsTrigger value="postings" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Postings</TabsTrigger>
+          <TabsTrigger value="office-history" className="gap-1"><MapPin className="h-4 w-4" /> Office History {officeHistory.length > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{officeHistory.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1"><FolderLock className="h-4 w-4" /> Documents</TabsTrigger>
         </TabsList>
 
