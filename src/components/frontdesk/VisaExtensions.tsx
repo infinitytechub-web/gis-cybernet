@@ -17,8 +17,15 @@ import { Plus, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { CountryCombobox } from "@/components/ui/country-combobox";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
+const PERMIT_TYPES = [
+  { value: "residence_permit", label: "Residence Permit" },
+  { value: "student_permit", label: "Student Permit" },
+  { value: "visitors_permit", label: "Visitor's Permit" },
+  { value: "work_permit", label: "Work Permit" },
+];
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
