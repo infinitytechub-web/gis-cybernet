@@ -286,6 +286,114 @@ export default function GpsAddresses() {
     totalRef.current = records.length;
   }, [records.length]);
 
+  // ===== Search & Track (cyber-intel address lookup) =====
+  // Geocodes any address/place using OpenStreetMap Nominatim (no API key) and
+  // shows it on the live map. This lets analysts retrieve coordinates for
+  // addresses that have NOT been captured into a source module yet.
+  const [trackQuery, setTrackQuery] = useState("");
+  const [trackBusy, setTrackBusy] = useState(false);
+  const [trackResult, setTrackResult] = useState<{
+    lat: number;
+    lng: number;
+    display_name: string;
+    type?: string | null;
+    importance?: number | null;
+    osm_id?: string | null;
+    bbox?: [number, number, number, number] | null;
+  } | null>(null);
+  const [trackError, setTrackError] = useState<string | null>(null);
+
+  const runSearchTrack = async () => {
+    const q = trackQuery.trim();
+    if (!q) return;
+    setTrackBusy(true);
+    setTrackError(null);
+    setTrackResult(null);
+    try {
+      // 1) Try to parse explicit "lat, lng" or "(lat, lng)" first — instant, offline.
+      const direct = q.match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
+      if (direct) {
+        const lat = parseFloat(direct[1]);
+        const lng = parseFloat(direct[2]);
+        if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          setTrackResult({ lat, lng, display_name: `Coordinates ${lat.toFixed(6)}, ${lng.toFixed(6)}`, type: "coordinates", importance: 1 });
+          return;
+        }
+      }
+      // 2) Try Ghana Post digital address with our offline lookup.
+      const upper = q.toUpperCase();
+      const digitalMatch = upper.match(/[A-Z]{2}-\d{3}-\d{4}/);
+      if (digitalMatch) {
+        const c = digitalAddressToCoords(digitalMatch[0]);
+        if (c) {
+          setTrackResult({ lat: c[0], lng: c[1], display_name: `Digital address ${digitalMatch[0]} (approximate)`, type: "digital_address", importance: 0.7 });
+          return;
+        }
+      }
+      // 3) Fall back to Nominatim geocoding (publicly accessible, no key required).
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      if (!res.ok) throw new Error(`Lookup failed (${res.status})`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) throw new Error("No matching location found.");
+      const hit = data[0];
+      setTrackResult({
+        lat: parseFloat(hit.lat),
+        lng: parseFloat(hit.lon),
+        display_name: hit.display_name,
+        type: hit.type ?? hit.class ?? null,
+        importance: typeof hit.importance === "number" ? hit.importance : null,
+        osm_id: hit.osm_id ? String(hit.osm_id) : null,
+        bbox: Array.isArray(hit.boundingbox) && hit.boundingbox.length === 4
+          ? [parseFloat(hit.boundingbox[0]), parseFloat(hit.boundingbox[1]), parseFloat(hit.boundingbox[2]), parseFloat(hit.boundingbox[3])]
+          : null,
+      });
+    } catch (e: any) {
+      setTrackError(e?.message ?? String(e));
+    } finally {
+      setTrackBusy(false);
+    }
+  };
+
+  const openTrackResultOnMap = () => {
+    if (!trackResult) return;
+    setSelected({
+      id: `lookup-${Date.now()}`,
+      source: "cyber_incidents",
+      raw_location: `${trackResult.display_name} (${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)})`,
+      digital_address: null,
+      lat: trackResult.lat,
+      lng: trackResult.lng,
+      context: "Search & Track lookup",
+      reference: trackResult.osm_id ?? "lookup",
+      created_at: new Date().toISOString(),
+      status: "lookup",
+    });
+  };
+
+  // ===== Row delete (admin/OIC only) =====
+  const performDelete = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    try {
+      const { error } = await supabase.rpc("soft_delete_record", {
+        _table: deleting.source,
+        _record_id: deleting.id,
+        _display_label: deleting.raw_location,
+        _display_context: `${SOURCE_META[deleting.source].label} · ${deleting.context}`,
+        _storage_paths: [],
+      });
+      if (error) throw error;
+      toast({ title: "Moved to Recycle Bin", description: `${SOURCE_META[deleting.source].label} record removed.` });
+      setDeleting(null);
+      qc.invalidateQueries({ queryKey: ["gps-addresses"] });
+    } catch (e: any) {
+      toast({ title: "Delete failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
   const buildExport = () => {
     const headers = ["GPS Address", "Digital", "Latitude", "Longitude", "Source", "Context", "Reference", "Status", "Captured"];
     const rows = filtered.map((r) => [
