@@ -22,7 +22,7 @@ import {
 import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
   ExternalLink, Radio, Navigation as NavIcon, Sparkles, Cloud, Copy, Check, Loader2, Timer,
-  MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert,
+  MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert, Printer,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +31,7 @@ import {
   CartesianGrid, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { GpsLiveMap } from "@/components/command-vault/GpsLiveMap";
+import { StaticCoordinateMap } from "@/components/command-vault/StaticCoordinateMap";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
