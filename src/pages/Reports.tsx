@@ -289,6 +289,10 @@ export default function Reports() {
               }
               return payload;
             }}
+            onExported={(fmt) => logAdminAudit("report_export", "exported", {
+              format: fmt, report_type: reportType,
+              from: startDate, to: endDate,
+            })}
           />
           <p className="text-[11px] text-muted-foreground">
             Generated exports are downloaded directly. To submit a report for supervisor approval, save the file and upload it below.
