@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
 import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
+import { GhanaGPSInput } from "@/components/shared/GhanaGPSInput";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -131,42 +132,11 @@ const INITIAL_FORM = {
   contact_details: "",
 };
 
-function GhanaGPSButton({ onAddress }: { onAddress: (addr: string) => void }) {
-  const [loading, setLoading] = React.useState(false);
+// GhanaGPSButton was inlined here; the shared GhanaGPSInput component
+// (manual digital address + live GPS capture) now lives in
+// `src/components/shared/GhanaGPSInput.tsx` so every module that records a
+// location stores the same canonical GPS string.
 
-  const getGPS = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported by your browser");
-      return;
-    }
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const latStr = Math.abs(latitude).toFixed(4).replace(".", "");
-        const lngStr = Math.abs(longitude).toFixed(4).replace(".", "");
-        const regionCode = latitude >= 5.5 ? "GA" : latitude >= 5.0 ? "AK" : "GS";
-        const digitAddr = `${regionCode}-${latStr.slice(0, 3)}-${lngStr.slice(0, 4)}`;
-        const gpsAddr = `${digitAddr} (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`;
-        onAddress(gpsAddr);
-        setLoading(false);
-        toast.success("GPS address captured");
-      },
-      (err) => {
-        setLoading(false);
-        toast.error(`Location error: ${err.message}`);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  return (
-    <Button type="button" variant="outline" size="sm" className="gap-1 text-xs" onClick={getGPS} disabled={loading}>
-      <Navigation className="h-3 w-3" />
-      {loading ? "Getting GPS..." : "Get GPS Address"}
-    </Button>
-  );
-}
 
 function StaffPickerDialog({ value, onChange, profiles }: {
   value: string;
@@ -285,11 +255,9 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
         </div>
       </div>
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Location</Label>
-          <GhanaGPSButton onAddress={(addr) => setForm(p => ({ ...p, location: addr }))} />
-        </div>
-        <Input placeholder="e.g. Amasaman Barrier, Pokuase or use GPS..." value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
+        <Label>Location</Label>
+        <Input placeholder="e.g. Amasaman Barrier, Pokuase — or use the digital address / GPS below" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
+        <GhanaGPSInput onAddress={(addr) => setForm(p => ({ ...p, location: addr }))} />
       </div>
       <div className="space-y-2">
         <Label>Intel By (Officer)</Label>
