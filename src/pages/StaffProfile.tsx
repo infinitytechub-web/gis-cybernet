@@ -1,17 +1,21 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award, FolderLock, MapPin } from "lucide-react";
+import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award, FolderLock, MapPin, Pencil, Check, X } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
+import { useState } from "react";
+import { toast } from "sonner";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
@@ -33,7 +37,12 @@ export default function StaffProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "attendance";
-  const { user, role } = useAuth();
+  const { user, role, isAdminOrSupervisor } = useAuth();
+  const queryClient = useQueryClient();
+  const canEditOffice = isAdminOrSupervisor;
+
+  const [editingOffice, setEditingOffice] = useState(false);
+  const [officeDraft, setOfficeDraft] = useState("");
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["staff-profile", id],
@@ -114,6 +123,42 @@ export default function StaffProfile() {
   }
 
   const initials = `${profile.first_name.charAt(0)}${profile.last_name.charAt(0)}`.toUpperCase();
+  const currentOffice = (profile as any).office as string | null | undefined;
+
+  const saveOffice = async () => {
+    const trimmed = officeDraft.trim();
+    if (trimmed.length > 80) {
+      toast.error("Office must be 80 characters or fewer");
+      return;
+    }
+    if ((trimmed || null) === (currentOffice || null)) {
+      setEditingOffice(false);
+      return;
+    }
+    const previous = currentOffice ?? null;
+    const next = trimmed || null;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ office: next })
+      .eq("id", profile.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Office updated");
+    setEditingOffice(false);
+    logAdminAudit("staff_profile_office", "updated", {
+      staff_id: profile.staff_id,
+      name: `${profile.last_name}, ${profile.first_name}`,
+      previous, next,
+    }, profile.id);
+    // Refresh profile + every list/report that reads the office field
+    queryClient.invalidateQueries({ queryKey: ["staff-profile", id] });
+    queryClient.invalidateQueries({ queryKey: ["staff"] });
+    queryClient.invalidateQueries({ queryKey: ["acr-profiles"] });
+    queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
+  };
 
   return (
     <div className="space-y-6">
@@ -155,12 +200,47 @@ export default function StaffProfile() {
                     <span>{profile.unit}</span>
                   </div>
                 )}
-                {(profile as any).office && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>{(profile as any).office}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                  <MapPin className="h-4 w-4 text-primary shrink-0" />
+                  {editingOffice ? (
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      <Input
+                        autoFocus
+                        value={officeDraft}
+                        onChange={(e) => setOfficeDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); saveOffice(); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingOffice(false); }
+                        }}
+                        placeholder="Office / duty post"
+                        maxLength={80}
+                        className="h-7 text-sm"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveOffice} aria-label="Save office">
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingOffice(false)} aria-label="Cancel">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="truncate">{currentOffice || <span className="italic">No office set</span>}</span>
+                      {canEditOffice && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 ml-1"
+                          onClick={() => { setOfficeDraft(currentOffice ?? ""); setEditingOffice(true); }}
+                          aria-label="Edit office"
+                          title="Edit office"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
                 {profile.phone && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4 text-primary" />
