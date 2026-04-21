@@ -609,6 +609,103 @@ export default function GpsAddresses() {
     win.document.close();
   };
 
+  // ===== Authorization-purpose prompt =====
+  // Every Search & Track export or print must be accompanied by a written
+  // authorization reason ("purpose") so that the audit trail captures WHY the
+  // intel-derived coordinates were exfiltrated, not just by whom and when.
+  // The reason is required (10–500 chars) and is written into the audit log
+  // entry's `details.purpose` field.
+  type TrackAction = { kind: "export"; format: ExportFormat } | { kind: "print" };
+  const [purposeOpen, setPurposeOpen] = useState(false);
+  const [purposeAction, setPurposeAction] = useState<TrackAction | null>(null);
+  const [purposeText, setPurposeText] = useState("");
+  const [purposeBusy, setPurposeBusy] = useState(false);
+
+  const requestTrackPurpose = (action: TrackAction) => {
+    if (!trackResult || !canExportTrack) return;
+    setPurposeAction(action);
+    setPurposeText("");
+    setPurposeOpen(true);
+  };
+
+  const cancelPurpose = () => {
+    if (purposeBusy) return;
+    setPurposeOpen(false);
+    setPurposeAction(null);
+    setPurposeText("");
+  };
+
+  const confirmTrackPurpose = async () => {
+    const action = purposeAction;
+    if (!action || !trackResult || !user) return;
+    const reason = purposeText.trim();
+    if (reason.length < 10) {
+      toast({
+        title: "Authorization reason required",
+        description: "Provide at least 10 characters describing the operational purpose.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (reason.length > 500) {
+      toast({
+        title: "Reason too long",
+        description: "Keep the authorization reason under 500 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPurposeBusy(true);
+    try {
+      if (action.kind === "export") {
+        const data = await buildTrackResultExport(action.format);
+        if (!data) throw new Error("Nothing to export");
+        exportReport(action.format, data);
+        await supabase.from("front_desk_audit_log").insert({
+          action: "gps_search_track_exported",
+          entity_type: "gps_search_track",
+          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+          performed_by: user.id,
+          details: {
+            format: action.format,
+            query: trackQuery,
+            display_name: trackResult.display_name,
+            lat: trackResult.lat,
+            lng: trackResult.lng,
+            at: new Date().toISOString(),
+            purpose: reason,
+            authorization_category: "cyber_intelligence_export",
+          },
+        });
+        toast({ title: `${getFormatLabel(action.format)} downloaded`, description: "Authorization reason recorded in the audit log." });
+      } else {
+        printTrackResult();
+        await supabase.from("front_desk_audit_log").insert({
+          action: "gps_search_track_printed",
+          entity_type: "gps_search_track",
+          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+          performed_by: user.id,
+          details: {
+            query: trackQuery,
+            display_name: trackResult.display_name,
+            lat: trackResult.lat,
+            lng: trackResult.lng,
+            at: new Date().toISOString(),
+            purpose: reason,
+            authorization_category: "cyber_intelligence_print",
+          },
+        });
+        toast({ title: "Print dialog opened", description: "Authorization reason recorded in the audit log." });
+      }
+      setPurposeOpen(false);
+      setPurposeAction(null);
+      setPurposeText("");
+    } catch (e: any) {
+      toast({ title: "Action failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setPurposeBusy(false);
+    }
+  };
 
 
   const buildExport = () => {
