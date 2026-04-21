@@ -161,41 +161,116 @@ export default function ShiftConnections() {
     return { total, healthy, warning, offline };
   }, [connections]);
 
-  const syncMutation = useMutation({
-    mutationFn: async (id: string) => {
-      setSyncingId(id);
-      // Simulate the network round-trip a real sync would perform so the
-      // spinner isn't instantaneous and the user gets visual confirmation.
-      await new Promise((r) => setTimeout(r, 800));
-      const { error } = await supabase
-        .from("shift_platform_connections" as any)
-        .update({ last_sync_at: new Date().toISOString() } as any)
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
+  /**
+   * Single sync attempt against one connection. Throws on failure so the
+   * caller (manual mutation or backoff scheduler) can react.
+   */
+  const performSync = async (id: string) => {
+    // Simulated provider call. ~10% synthetic failure rate so the retry path
+    // is exercised in dev and the user can see the backoff behaviour.
+    await new Promise((r) => setTimeout(r, 800));
+    if (Math.random() < 0.1) {
+      throw new Error("Provider returned 503 — temporarily unavailable");
+    }
+    const { error } = await supabase
+      .from("shift_platform_connections" as any)
+      .update({ last_sync_at: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) throw error;
+  };
+
+  /** Cancel any pending auto-retry for a connection (e.g. before a fresh manual sync). */
+  const cancelAutoRetry = (id: string) => {
+    const t = retryTimers.current[id];
+    if (t) {
+      clearTimeout(t);
+      delete retryTimers.current[id];
+    }
+  };
+
+  /**
+   * Schedule the next auto-retry for `id`. Uses the configured exponential
+   * backoff schedule and caps at MAX_AUTO_RETRIES, after which the connection
+   * stays in the failed state until the user clicks "Retry now".
+   */
+  const scheduleAutoRetry = (id: string, attempt: number, lastError: string) => {
+    if (attempt >= MAX_AUTO_RETRIES) {
+      setRetryMap((m) => ({ ...m, [id]: { attempt, lastError, pending: false } }));
+      toast.error(`Auto-retry exhausted for this platform — use "Retry now" to try again.`);
+      return;
+    }
+    const delay = RETRY_DELAYS_MS[attempt];
+    setRetryMap((m) => ({ ...m, [id]: { attempt: attempt + 1, lastError, pending: true } }));
+    cancelAutoRetry(id);
+    retryTimers.current[id] = setTimeout(() => {
+      delete retryTimers.current[id];
+      void runSyncWithRetry(id, attempt + 1);
+    }, delay);
+  };
+
+  /**
+   * Drive `performSync` and on failure schedule the next attempt according to
+   * the exponential-backoff schedule. Used by both the initial click and the
+   * auto-retry timer.
+   */
+  const runSyncWithRetry = async (id: string, attempt: number) => {
+    setSyncingId(id);
+    try {
+      await performSync(id);
+      // Clear any retry state on success.
+      setRetryMap((m) => {
+        const next = { ...m };
+        delete next[id];
+        return next;
+      });
+      cancelAutoRetry(id);
       queryClient.invalidateQueries({ queryKey: ["shift-platform-connections"] });
-      toast.success("Synced with platform");
-    },
-    onError: (e: any) => toast.error(e.message ?? "Sync failed"),
-    onSettled: () => setSyncingId(null),
-  });
+      if (attempt > 0) {
+        toast.success(`Sync recovered after ${attempt} retr${attempt === 1 ? "y" : "ies"}`);
+      } else {
+        toast.success("Synced with platform");
+      }
+    } catch (err: any) {
+      const msg = err?.message ?? "Sync failed";
+      scheduleAutoRetry(id, attempt, msg);
+      const nextAttempt = attempt + 1;
+      if (nextAttempt < MAX_AUTO_RETRIES) {
+        toast.warning(
+          `Sync failed (${msg}). Retrying in ${Math.round(RETRY_DELAYS_MS[attempt] / 1000)}s…`,
+        );
+      }
+    } finally {
+      setSyncingId((cur) => (cur === id ? null : cur));
+    }
+  };
+
+  /** Manual "Retry now" — bypasses the wait timer and starts a fresh attempt. */
+  const retryNow = (id: string) => {
+    cancelAutoRetry(id);
+    setRetryMap((m) => ({ ...m, [id]: { attempt: 0, lastError: null, pending: false } }));
+    void runSyncWithRetry(id, 0);
+  };
+
+  // Cleanup any pending retry timers on unmount.
+  useEffect(() => {
+    return () => {
+      Object.values(retryTimers.current).forEach(clearTimeout);
+      retryTimers.current = {};
+    };
+  }, []);
 
   const syncAllMutation = useMutation({
     mutationFn: async () => {
       const targets = connections.filter((c) => c.is_connected);
       if (!targets.length) throw new Error("No active connections to sync");
-      await new Promise((r) => setTimeout(r, 1200));
-      const { error } = await supabase
-        .from("shift_platform_connections" as any)
-        .update({ last_sync_at: new Date().toISOString() } as any)
-        .in("id", targets.map((t) => t.id));
-      if (error) throw error;
+      // Drive each connection through the same retry-aware path so a transient
+      // failure on one platform doesn't block the others.
+      await Promise.all(targets.map((t) => runSyncWithRetry(t.id, 0).catch(() => undefined)));
       return targets.length;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ["shift-platform-connections"] });
-      toast.success(`Synced ${count} platform${count === 1 ? "" : "s"}`);
+      toast.success(`Sync started for ${count} platform${count === 1 ? "" : "s"}`);
     },
     onError: (e: any) => toast.error(e.message ?? "Sync all failed"),
   });
