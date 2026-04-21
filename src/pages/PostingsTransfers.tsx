@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { PostingRequestForm } from "@/components/postings/PostingRequestForm";
 import { MyPostingHistory } from "@/components/postings/MyPostingHistory";
+import { PostingTimeline } from "@/components/postings/PostingTimeline";
 import { PostingApprovalQueue } from "@/components/postings/PostingApprovalQueue";
 
 export default function PostingsTransfers() {
@@ -11,6 +12,7 @@ export default function PostingsTransfers() {
       <h1 className="text-2xl font-bold text-secondary">Postings, Transfers & Reassignment</h1>
 
       <PostingRequestForm />
+      <PostingTimeline />
       <MyPostingHistory />
 
       {isAdminOrSupervisor && (

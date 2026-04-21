@@ -224,7 +224,7 @@ export function AppSidebar() {
 
   return (
     <TooltipProvider>
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" aria-label="Primary navigation" aria-expanded={!collapsed}>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <img src={gisLogo} alt="GIS" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
@@ -237,7 +237,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent role="navigation" aria-label={collapsed ? "Collapsed navigation menu" : "Expanded navigation menu"}>
         {renderGroup("Command & Control", commandItems)}
         {renderGroup("Personnel Management", personnelItems)}
         {renderGroup("Workforce Operations", workforceItems)}
