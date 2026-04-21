@@ -513,10 +513,13 @@ export default function GpsAddresses() {
   // and embedded above the table — the snapshot is rendered entirely from the
   // captured coordinates and contacts NO third-party tile servers, preserving
   // the same authorization posture as the on-screen offline fallback.
-  const buildTrackResultExport = async (fmt?: import("@/lib/export-utils").ExportFormat) => {
+  const buildTrackResultExport = async (
+    fmt?: import("@/lib/export-utils").ExportFormat,
+    stamp?: { watermarkText?: string; qrDataUrl?: string; qrCaption?: string; meta?: import("@/lib/export-utils").ExportMetaField[] },
+  ) => {
     if (!trackResult) return null;
     const captured = format(new Date(), "dd MMM yyyy, HH:mm");
-    const base = {
+    const base: any = {
       title: "GPS Search & Track Result",
       filename: `gps_search_track_${format(new Date(), "yyyyMMdd_HHmm")}`,
       headers: ["Field", "Value"],
@@ -536,22 +539,30 @@ export default function GpsAddresses() {
       ],
       subtitle: `Cyber Intelligence · Search & Track lookup at ${captured}`,
     };
+    if (stamp?.meta && stamp.meta.length > 0) base.meta = stamp.meta;
+    if (stamp?.watermarkText) {
+      base.watermark = {
+        text: stamp.watermarkText,
+        secondary: "OFFICIAL · CYBER INTELLIGENCE",
+      };
+    }
+    if (stamp?.qrDataUrl) {
+      base.qr = { dataUrl: stamp.qrDataUrl, caption: stamp.qrCaption ?? "Scan to verify" };
+    }
     if (fmt === "pdf") {
       const snap = await buildStaticMapPng({
         lat: trackResult.lat,
         lng: trackResult.lng,
         label: trackResult.display_name?.slice(0, 80),
+        watermark: stamp?.watermarkText,
       });
       if (snap) {
-        return {
-          ...base,
-          image: {
-            dataUrl: snap.dataUrl,
-            width: snap.width,
-            height: snap.height,
-            caption: `Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`,
-            format: "PNG" as const,
-          },
+        base.image = {
+          dataUrl: snap.dataUrl,
+          width: snap.width,
+          height: snap.height,
+          caption: `Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`,
+          format: "PNG" as const,
         };
       }
     }
