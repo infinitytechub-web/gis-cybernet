@@ -405,10 +405,40 @@ export default function AttendanceComplianceReport() {
                     <TableRow
                       key={r.id}
                       className={`cursor-pointer hover:bg-muted/40 ${r.missing > 0 ? "bg-amber-50/60" : ""}`}
-                      onClick={() => setDetailStaff(r)}
+                      onClick={() => {
+                        setDetailStaff(r);
+                        logAdminAudit(
+                          "attendance_compliance_staff_detail",
+                          "opened",
+                          {
+                            staff_id: r.staff_id, name: r.name,
+                            department: r.department, office: r.office, shift: r.shift,
+                            period, from: fromIso, to: toIso,
+                            missing: r.missing, compliance_pct: Number(r.rate.toFixed(1)),
+                          },
+                          r.id,
+                        );
+                      }}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailStaff(r); } }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setDetailStaff(r);
+                          logAdminAudit(
+                            "attendance_compliance_staff_detail",
+                            "opened",
+                            {
+                              staff_id: r.staff_id, name: r.name,
+                              department: r.department, office: r.office, shift: r.shift,
+                              period, from: fromIso, to: toIso,
+                              missing: r.missing, compliance_pct: Number(r.rate.toFixed(1)),
+                              via: "keyboard",
+                            },
+                            r.id,
+                          );
+                        }
+                      }}
                       aria-label={`View attendance breakdown for ${r.name}`}
                     >
                       <TableCell>
