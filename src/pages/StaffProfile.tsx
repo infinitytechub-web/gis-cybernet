@@ -168,6 +168,7 @@ export default function StaffProfile() {
     }, profile.id);
     // Refresh profile + every list/report that reads the office field
     queryClient.invalidateQueries({ queryKey: ["staff-profile", id] });
+    queryClient.invalidateQueries({ queryKey: ["staff-office-history", id] });
     queryClient.invalidateQueries({ queryKey: ["staff"] });
     queryClient.invalidateQueries({ queryKey: ["acr-profiles"] });
     queryClient.invalidateQueries({ queryKey: ["staff-directory"] });
