@@ -42,11 +42,15 @@ function periodRange(period: Period, ref: Date) {
 
 export default function AttendanceComplianceReport() {
   const today = new Date();
+  const { role } = useAuthContext();
+  const queryClient = useQueryClient();
+  const canImport = role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer";
   const [period, setPeriod] = useState<Period>("weekly");
   const [refDate, setRefDate] = useState(format(today, "yyyy-MM-dd"));
   const [departmentId, setDepartmentId] = useState<string>(ALL);
   const [shiftGroup, setShiftGroup] = useState<string>(ALL);
   const [office, setOffice] = useState<string>(ALL);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { from, to } = useMemo(() => periodRange(period, parseISO(refDate)), [period, refDate]);
   const fromIso = format(from, "yyyy-MM-dd");
