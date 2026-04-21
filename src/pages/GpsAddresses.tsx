@@ -600,6 +600,10 @@ export default function GpsAddresses() {
             <DialogTitle className="flex items-center gap-2">
               <NavIcon className="h-4 w-4 text-primary" />
               Live Map View
+              <Badge variant="outline" className="text-[10px] gap-1 ml-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live
+              </Badge>
             </DialogTitle>
           </DialogHeader>
           {selected && (
