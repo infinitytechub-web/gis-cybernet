@@ -16,6 +16,8 @@ import { toast } from "sonner";
  */
 
 const DIGITAL_RE = /^[A-Z]{2}-\d{3}-\d{4}$/;
+const DIGITAL_WITH_COORDS_RE = /^[A-Z]{2}-\d{3}-\d{4} \(-?\d+(\.\d+)?, ?-?\d+(\.\d+)?\)$/;
+const DIGITAL_PREFIX_RE = /^[a-z]{2}-\d{3}-\d{4}( |$|\()/i;
 
 export function normalizeDigitalAddress(input: string): string {
   return input.trim().toUpperCase().replace(/\s+/g, "");
@@ -23,6 +25,39 @@ export function normalizeDigitalAddress(input: string): string {
 
 export function isValidDigitalAddress(input: string): boolean {
   return DIGITAL_RE.test(normalizeDigitalAddress(input));
+}
+
+/**
+ * Canonicalize a free-form location string the same way the database trigger
+ * `normalize_gps_location` does: trim surrounding whitespace, collapse internal
+ * runs to a single space, and uppercase the value when it looks like a Ghana
+ * Post digital address (`XX-###-####` optionally followed by `(lat, lng)`).
+ *
+ * Plain landmark text (e.g. "Amasaman Barrier") is left untouched so the DB
+ * trigger's heuristic fallback continues to accept it.
+ *
+ * Returns `null` for empty/whitespace-only input so callers can persist NULL.
+ */
+export function canonicalizeGpsLocation(input: string | null | undefined): string | null {
+  if (input == null) return null;
+  const collapsed = input.trim().replace(/\s+/g, " ");
+  if (!collapsed) return null;
+  if (DIGITAL_PREFIX_RE.test(collapsed)) {
+    return collapsed.toUpperCase();
+  }
+  return collapsed;
+}
+
+/**
+ * Returns true when a canonicalized string is safe to submit — either a plain
+ * landmark or a strictly-formatted digital address (with optional coords).
+ * Mirrors the DB trigger's strict validation so the UI can fail fast.
+ */
+export function isValidGpsLocation(input: string | null | undefined): boolean {
+  const norm = canonicalizeGpsLocation(input);
+  if (norm == null) return true; // null/empty is allowed
+  if (!DIGITAL_PREFIX_RE.test(norm)) return true; // plain landmark
+  return DIGITAL_RE.test(norm) || DIGITAL_WITH_COORDS_RE.test(norm);
 }
 
 interface GhanaGPSInputProps {
