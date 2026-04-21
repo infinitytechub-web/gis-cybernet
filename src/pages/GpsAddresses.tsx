@@ -22,7 +22,7 @@ import {
 import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
   ExternalLink, Radio, Navigation as NavIcon, Sparkles, Cloud, Copy, Check, Loader2, Timer,
-  MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert,
+  MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert, Printer,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +31,7 @@ import {
   CartesianGrid, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import { GpsLiveMap } from "@/components/command-vault/GpsLiveMap";
+import { StaticCoordinateMap } from "@/components/command-vault/StaticCoordinateMap";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
@@ -444,6 +445,72 @@ export default function GpsAddresses() {
     }
   };
 
+  // ===== Search & Track result export / print =====
+  // Packages a single Search & Track lookup result into the same tabular shape
+  // ExportMenu expects, so commanders can download the lookup as PDF / CSV /
+  // Excel / Word, or print it on letterhead-friendly stationery.
+  const buildTrackResultExport = () => {
+    if (!trackResult) return null;
+    const captured = format(new Date(), "dd MMM yyyy, HH:mm");
+    return {
+      title: "GPS Search & Track Result",
+      filename: `gps_search_track_${format(new Date(), "yyyyMMdd_HHmm")}`,
+      headers: ["Field", "Value"],
+      rows: [
+        ["Query", trackQuery || "—"],
+        ["Display Name", trackResult.display_name],
+        ["Latitude", trackResult.lat.toFixed(6)],
+        ["Longitude", trackResult.lng.toFixed(6)],
+        ["Type", trackResult.type ?? "—"],
+        ["Confidence", typeof trackResult.importance === "number" ? `${(trackResult.importance * 100).toFixed(0)}%` : "—"],
+        ["OSM ID", trackResult.osm_id ?? "—"],
+        ["Bounding Box", trackResult.bbox ? trackResult.bbox.map((n) => n.toFixed(4)).join(", ") : "—"],
+        ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${trackResult.lat},${trackResult.lng}`],
+        ["Street View", `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${trackResult.lat},${trackResult.lng}`],
+        ["OpenStreetMap", `https://www.openstreetmap.org/?mlat=${trackResult.lat}&mlon=${trackResult.lng}#map=18/${trackResult.lat}/${trackResult.lng}`],
+        ["Captured", captured],
+      ],
+      subtitle: `Cyber Intelligence · Search & Track lookup at ${captured}`,
+    };
+  };
+
+  // Browser-native print: opens a new window with a clean printable layout for
+  // the current Search & Track result — no third-party tiles fetched.
+  const printTrackResult = () => {
+    if (!trackResult) return;
+    const data = buildTrackResultExport();
+    if (!data) return;
+    const win = window.open("", "_blank", "width=900,height=720");
+    if (!win) {
+      toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
+      return;
+    }
+    const rowsHtml = data.rows
+      .map(
+        ([k, v]) =>
+          `<tr><th style="text-align:left;padding:6px 10px;border:1px solid #ccc;background:#f5f5f5;width:200px;">${k}</th><td style="padding:6px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;word-break:break-all;">${v}</td></tr>`,
+      )
+      .join("");
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${data.title}</title>
+      <style>
+        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .sub { font-size: 12px; color: #555; margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        .footer { margin-top: 24px; font-size: 10px; color: #777; border-top: 1px solid #ddd; padding-top: 8px; }
+        @media print { @page { margin: 18mm; } }
+      </style></head><body>
+      <h1>${data.title}</h1>
+      <div class="sub">${data.subtitle ?? ""}</div>
+      <table>${rowsHtml}</table>
+      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${format(new Date(), "dd MMM yyyy, HH:mm")} · For official use only</div>
+      <script>window.onload = () => { window.focus(); window.print(); };</script>
+      </body></html>`);
+    win.document.close();
+  };
+
+
+
   const buildExport = () => {
     const headers = ["GPS Address", "Digital", "Latitude", "Longitude", "Source", "Context", "Reference", "Status", "Captured"];
     const rows = filtered.map((r) => [
@@ -723,6 +790,14 @@ export default function GpsAddresses() {
                   }}
                 >
                   <Copy className="h-3 w-3 mr-1" /> Copy coords
+                </Button>
+                <ExportMenu
+                  getData={buildTrackResultExport}
+                  label="Export result"
+                  size="sm"
+                />
+                <Button size="sm" variant="outline" onClick={printTrackResult} className="gap-1.5">
+                  <Printer className="h-3.5 w-3.5" /> Print
                 </Button>
               </div>
               <p className="text-[10px] text-muted-foreground">
@@ -1104,43 +1179,79 @@ export default function GpsAddresses() {
                     </p>
                   </>
                 ) : (
-                  // Authorization gate — online tiles are NOT requested until
-                  // the operator explicitly confirms. Anyone below the command
-                  // tier sees a hard block instead of an authorize button.
-                  <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-5 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold">Online tracking authorization required</p>
-                        <p className="text-xs text-muted-foreground">
-                          Loading live online map tiles transmits the target coordinates to third-party tile
-                          servers (OpenStreetMap / Carto). Per cyber-intelligence handling protocol, you must
-                          confirm authorization for this specific record before tiles are requested. The action
-                          will be written to the audit trail with your identity, the target coordinates, and a
-                          timestamp.
-                        </p>
-                        <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
-                          <li>Use only for sanctioned cyber-intelligence operations.</li>
-                          <li>Do not authorize on shared or untrusted networks.</li>
-                          <li>Closing this dialog revokes authorization for the next session.</li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {canAuthorizeTiles ? (
-                        <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
-                          {authorizing ? (
-                            <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
-                          ) : (
-                            <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
-                          )}
+                  // Authorization gate — online tiles are NOT requested. We
+                  // still render an OFFLINE static coordinate view so operators
+                  // can read/copy the captured coordinates without any third-
+                  // party network request being made on their behalf.
+                  <div className="space-y-3">
+                    <StaticCoordinateMap
+                      lat={selected.lat}
+                      lng={selected.lng}
+                      label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
+                      height={320}
+                    />
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(`${selected.lat!.toFixed(6)}, ${selected.lng!.toFixed(6)}`);
+                          toast({ title: "Coordinates copied" });
+                        }}
+                        className="gap-1.5"
+                      >
+                        <Copy className="h-3 w-3" /> Copy coordinates
+                      </Button>
+                      {selected.digital_address && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(selected.digital_address!);
+                            toast({ title: "Digital address copied" });
+                          }}
+                          className="gap-1.5"
+                        >
+                          <Copy className="h-3 w-3" /> Copy digital address
                         </Button>
-                      ) : (
-                        <Badge variant="destructive" className="gap-1 text-[11px]">
-                          <Lock className="h-3 w-3" /> Command-tier authorization required
-                        </Badge>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
+                    </div>
+
+                    <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold">Online tracking authorization required</p>
+                          <p className="text-xs text-muted-foreground">
+                            You are viewing the offline static coordinate fallback — no third-party tile servers
+                            (OpenStreetMap / Carto) have been contacted. To load live online map tiles you must
+                            confirm the cyber-intelligence tracking authorization. The action is recorded in the
+                            audit trail with your identity, the target coordinates, and a timestamp.
+                          </p>
+                          <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
+                            <li>Use only for sanctioned cyber-intelligence operations.</li>
+                            <li>Do not authorize on shared or untrusted networks.</li>
+                            <li>Closing this dialog revokes authorization for the next session.</li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {canAuthorizeTiles ? (
+                          <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
+                            {authorizing ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
+                            ) : (
+                              <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
+                            )}
+                          </Button>
+                        ) : (
+                          <Badge variant="destructive" className="gap-1 text-[11px]">
+                            <Lock className="h-3 w-3" /> Command-tier authorization required
+                          </Badge>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
+                      </div>
                     </div>
                   </div>
                 )
