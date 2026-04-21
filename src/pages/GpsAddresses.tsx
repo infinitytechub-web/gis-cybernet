@@ -873,7 +873,7 @@ export default function GpsAddresses() {
                     <TableHead className="hidden md:table-cell">Context</TableHead>
                     <TableHead className="hidden md:table-cell">Reference</TableHead>
                     <TableHead className="hidden lg:table-cell">Captured</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
