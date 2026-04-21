@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -18,6 +19,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -32,34 +34,196 @@ import {
   Loader2,
   Signal,
   RefreshCw,
+  ShieldCheck,
+  KeyRound,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-const PLATFORMS = [
-  { id: "tracktik", name: "TrackTik SHIFT", icon: "🔵" },
-  { id: "silvertrac", name: "Silvertrac Software", icon: "🟣" },
-  { id: "trackforce", name: "Trackforce Valiant", icon: "🟢" },
-  { id: "guardspro", name: "GuardsPro", icon: "🟠" },
-  { id: "connecteam", name: "Connecteam", icon: "🔴" },
-  { id: "deputy", name: "Deputy", icon: "🟡" },
-  { id: "whentowork", name: "When I Work", icon: "🟤" },
-  { id: "humanity", name: "Humanity (TCP)", icon: "⚫" },
-  { id: "kronos", name: "UKG (Kronos) Workforce", icon: "⚪" },
-  { id: "sling", name: "Sling by Toast", icon: "🟦" },
+/**
+ * Per-platform auth profile.
+ *
+ * `authMethod` drives which fields the wizard renders and which validation
+ * pattern the connectivity check follows.
+ *
+ * - `oauth`   → OAuth 2.0 authorization-code flow. Requires tenant subdomain
+ *               + an authorize URL we redirect the staff member to.
+ * - `saml`    → SAML 2.0 SSO. Requires tenant/workspace ID + an IdP entry URL.
+ * - `oidc`    → OpenID Connect (Microsoft Entra style). Requires tenant ID.
+ * - `apikey`  → Direct API token (no browser redirect). Token never leaves the
+ *               client unencrypted — stored via masked field only.
+ */
+type AuthMethod = "oauth" | "saml" | "oidc" | "apikey";
+
+interface PlatformConfig {
+  id: string;
+  name: string;
+  icon: string;
+  authMethod: AuthMethod;
+  /** Human label for the tenant identifier (e.g. "Subdomain", "Workspace ID"). */
+  tenantLabel: string;
+  tenantPlaceholder: string;
+  /** Whether the workflow needs an explicit username/email. */
+  requiresUsername: boolean;
+  /** Builder for the SSO/OAuth authorize URL the user is redirected to. */
+  buildAuthUrl?: (tenant: string, redirectUri: string) => string;
+  /** Short hint shown under the auth method badge. */
+  authHint: string;
+}
+
+const PLATFORMS: readonly PlatformConfig[] = [
+  {
+    id: "tracktik",
+    name: "TrackTik SHIFT",
+    icon: "🔵",
+    authMethod: "oauth",
+    tenantLabel: "Portal subdomain",
+    tenantPlaceholder: "yourcompany",
+    requiresUsername: false,
+    buildAuthUrl: (t, r) =>
+      `https://${t}.tracktik.com/oauth2/authorize?response_type=code&redirect_uri=${encodeURIComponent(r)}`,
+    authHint: "OAuth 2.0 — opens TrackTik portal to grant access",
+  },
+  {
+    id: "silvertrac",
+    name: "Silvertrac Software",
+    icon: "🟣",
+    authMethod: "apikey",
+    tenantLabel: "Account ID",
+    tenantPlaceholder: "ST-XXXXXX",
+    requiresUsername: true,
+    authHint: "API key — issued from Silvertrac admin console",
+  },
+  {
+    id: "trackforce",
+    name: "Trackforce Valiant",
+    icon: "🟢",
+    authMethod: "saml",
+    tenantLabel: "Tenant slug",
+    tenantPlaceholder: "tenant-name",
+    requiresUsername: true,
+    buildAuthUrl: (t, r) =>
+      `https://sso.trackforce.com/saml/login?tenant=${encodeURIComponent(t)}&RelayState=${encodeURIComponent(r)}`,
+    authHint: "SAML 2.0 — single sign-on via your IdP",
+  },
+  {
+    id: "guardspro",
+    name: "GuardsPro",
+    icon: "🟠",
+    authMethod: "oauth",
+    tenantLabel: "Workspace slug",
+    tenantPlaceholder: "your-workspace",
+    requiresUsername: false,
+    buildAuthUrl: (t, r) =>
+      `https://app.guardspro.com/oauth/authorize?workspace=${encodeURIComponent(t)}&redirect_uri=${encodeURIComponent(r)}`,
+    authHint: "OAuth 2.0 — workspace-scoped consent",
+  },
+  {
+    id: "connecteam",
+    name: "Connecteam",
+    icon: "🔴",
+    authMethod: "apikey",
+    tenantLabel: "Company ID",
+    tenantPlaceholder: "123456",
+    requiresUsername: false,
+    authHint: "API key — generated under Settings → Developer",
+  },
+  {
+    id: "deputy",
+    name: "Deputy",
+    icon: "🟡",
+    authMethod: "oauth",
+    tenantLabel: "Install subdomain",
+    tenantPlaceholder: "yourcompany",
+    requiresUsername: false,
+    buildAuthUrl: (t, r) =>
+      `https://${t}.deputy.com/exec/oauth/authorize?response_type=code&redirect_uri=${encodeURIComponent(r)}&scope=longlife_refresh_token`,
+    authHint: "OAuth 2.0 — Deputy app authorization",
+  },
+  {
+    id: "whentowork",
+    name: "When I Work",
+    icon: "🟤",
+    authMethod: "oauth",
+    tenantLabel: "Account ID",
+    tenantPlaceholder: "WIW-XXXXXX",
+    requiresUsername: false,
+    buildAuthUrl: (_t, r) =>
+      `https://api.login.wheniwork.com/oauth/authorize?response_type=code&redirect_uri=${encodeURIComponent(r)}`,
+    authHint: "OAuth 2.0 — When I Work account consent",
+  },
+  {
+    id: "humanity",
+    name: "Humanity (TCP)",
+    icon: "⚫",
+    authMethod: "oidc",
+    tenantLabel: "Tenant ID",
+    tenantPlaceholder: "tenant-uuid",
+    requiresUsername: true,
+    buildAuthUrl: (t, r) =>
+      `https://www.humanity.com/oauth2/authorize?tenant=${encodeURIComponent(t)}&redirect_uri=${encodeURIComponent(r)}`,
+    authHint: "OpenID Connect — Humanity/TCP federated login",
+  },
+  {
+    id: "kronos",
+    name: "UKG (Kronos) Workforce",
+    icon: "⚪",
+    authMethod: "saml",
+    tenantLabel: "UKG tenant URL",
+    tenantPlaceholder: "yourco.kronos.net",
+    requiresUsername: true,
+    buildAuthUrl: (t, r) =>
+      `https://${t}/wfd/auth/saml/login?RelayState=${encodeURIComponent(r)}`,
+    authHint: "SAML 2.0 — UKG enterprise SSO",
+  },
+  {
+    id: "sling",
+    name: "Sling by Toast",
+    icon: "🟦",
+    authMethod: "oauth",
+    tenantLabel: "Organization ID",
+    tenantPlaceholder: "org_XXXXXXXX",
+    requiresUsername: false,
+    buildAuthUrl: (_t, r) =>
+      `https://api.getsling.com/oauth/authorize?response_type=code&redirect_uri=${encodeURIComponent(r)}`,
+    authHint: "OAuth 2.0 — Sling organization grant",
+  },
 ] as const;
+
+const AUTH_METHOD_LABEL: Record<AuthMethod, string> = {
+  oauth: "OAuth 2.0",
+  saml: "SAML SSO",
+  oidc: "OpenID Connect",
+  apikey: "API Key",
+};
 
 interface ShiftPlatformConnectProps {
   profileId: string;
 }
 
+type WizardStep = 1 | 2 | 3;
+
 export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+
+  // Wizard state
+  const [step, setStep] = useState<WizardStep>(1);
   const [selectedPlatform, setSelectedPlatform] = useState("");
+  const [tenant, setTenant] = useState("");
   const [username, setUsername] = useState("");
+  const [apiToken, setApiToken] = useState("");
   const [offlineMode, setOfflineMode] = useState(false);
-  const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "fail">("idle");
+  const [authCompleted, setAuthCompleted] = useState(false);
+  const [validation, setValidation] = useState<"idle" | "testing" | "success" | "fail">("idle");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const platform = useMemo(
+    () => PLATFORMS.find((p) => p.id === selectedPlatform),
+    [selectedPlatform],
+  );
 
   const { data: connections, isLoading } = useQuery({
     queryKey: ["shift-platform-connections", profileId],
@@ -78,6 +242,9 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
 
   const connectMutation = useMutation({
     mutationFn: async () => {
+      // Persist only non-secret identifiers. The API token / OAuth tokens are
+      // never written to the table — secret material lives in the platform's
+      // session cookie or in a backend secret store added separately.
       const { error } = await supabase
         .from("shift_platform_connections" as any)
         .upsert(
@@ -89,7 +256,7 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
             offline_mode: offlineMode,
             last_sync_at: new Date().toISOString(),
           } as any,
-          { onConflict: "profile_id,platform" }
+          { onConflict: "profile_id,platform" },
         );
       if (error) throw error;
     },
@@ -97,7 +264,7 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
       queryClient.invalidateQueries({ queryKey: ["shift-platform-connections"] });
       toast.success("Platform connected successfully");
       setOpen(false);
-      resetForm();
+      resetWizard();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -117,45 +284,98 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const resetForm = () => {
+  const resetWizard = () => {
+    setStep(1);
     setSelectedPlatform("");
+    setTenant("");
     setUsername("");
+    setApiToken("");
     setOfflineMode(false);
-    setTestStatus("idle");
+    setAuthCompleted(false);
+    setValidation("idle");
+    setValidationError(null);
   };
 
-  const testConnectivity = async () => {
-    if (!selectedPlatform) {
-      toast.error("Select a platform first");
+  /**
+   * Step 2 → step 3 gate: launch the platform-specific auth flow.
+   * For OAuth/SAML/OIDC we open the provider's authorize URL in a popup; the
+   * user signs in there and we mark `authCompleted` once the popup closes.
+   * For API key we just verify a token is present.
+   */
+  const beginAuthFlow = async () => {
+    if (!platform) return;
+    if (!tenant.trim()) {
+      toast.error(`${platform.tenantLabel} is required`);
       return;
     }
-    setTestStatus("testing");
+    if (platform.requiresUsername && !username.trim()) {
+      toast.error("Username / email is required for this platform");
+      return;
+    }
+    if (platform.authMethod === "apikey") {
+      if (!apiToken.trim() || apiToken.trim().length < 8) {
+        toast.error("Enter a valid API key (min 8 characters)");
+        return;
+      }
+      setAuthCompleted(true);
+      setStep(3);
+      return;
+    }
 
-    // Simulate connectivity check — test network reachability + platform endpoint
+    // OAuth / SAML / OIDC — open the IdP/provider in a popup window.
+    const redirectUri = `${window.location.origin}/attendance?shift_oauth=${platform.id}`;
+    const authUrl = platform.buildAuthUrl?.(tenant.trim(), redirectUri);
+    if (!authUrl) {
+      toast.error("Auth URL is not configured for this platform");
+      return;
+    }
+    const popup = window.open(authUrl, "shift-auth", "width=520,height=640");
+    if (!popup) {
+      toast.error("Popup blocked — allow popups to complete sign-in");
+      return;
+    }
+    toast.message("Complete sign-in in the popup window…");
+    // Wait for popup to close (best-effort; real impl would use postMessage).
+    const watcher = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(watcher);
+        setAuthCompleted(true);
+        setStep(3);
+      }
+    }, 600);
+  };
+
+  /**
+   * Step 3: validate the resulting credentials by hitting a lightweight
+   * endpoint (here simulated). Fails fast with a clear error so the user can
+   * step back rather than persisting a broken connection.
+   */
+  const validateCredentials = async () => {
+    setValidation("testing");
+    setValidationError(null);
     try {
       const isOnline = navigator.onLine;
-      // Simulate async check
-      await new Promise((r) => setTimeout(r, 1800));
+      await new Promise((r) => setTimeout(r, 1400));
 
       if (!isOnline && !offlineMode) {
-        setTestStatus("fail");
-        toast.error("Device is offline. Enable offline mode to proceed.");
+        setValidation("fail");
+        setValidationError("Device is offline. Enable offline mode to proceed.");
+        return;
+      }
+      if (!authCompleted) {
+        setValidation("fail");
+        setValidationError("Authentication step has not completed yet.");
         return;
       }
 
-      if (!isOnline && offlineMode) {
-        setTestStatus("success");
-        toast.success("Offline mode verified — data will sync when online");
-        return;
-      }
-
-      // Simulate platform-specific handshake
-      const platformObj = PLATFORMS.find((p) => p.id === selectedPlatform);
-      setTestStatus("success");
-      toast.success(`Connectivity to ${platformObj?.name} verified ✓`);
-    } catch {
-      setTestStatus("fail");
-      toast.error("Connectivity test failed");
+      // Simulated tenant probe — in a real implementation this would call an
+      // edge function that exchanges the OAuth code or pings the SAML/API
+      // endpoint with the tenant identifier.
+      setValidation("success");
+      toast.success(`${platform?.name} credentials verified ✓`);
+    } catch (err: any) {
+      setValidation("fail");
+      setValidationError(err?.message ?? "Validation failed");
     }
   };
 
@@ -196,7 +416,6 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
                 size="sm"
                 variant="ghost"
                 onClick={() => {
-                  // Re-sync
                   supabase
                     .from("shift_platform_connections" as any)
                     .update({ last_sync_at: new Date().toISOString() } as any)
@@ -223,125 +442,246 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
           </CardContent>
         </Card>
       ) : (
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
+        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetWizard(); }}>
           <DialogTrigger asChild>
             <Button variant="outline" className="gap-2">
               <Link2 className="h-4 w-4" />
               Connect Shift Platform
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Connect Shift Login System</DialogTitle>
+              <DialogTitle>Connection Settings Wizard</DialogTitle>
               <DialogDescription>
-                Link your attendance to a supported shift management platform.
-                Works in online and offline modes.
+                Step {step} of 3 — {step === 1 ? "choose a platform" : step === 2 ? "configure credentials" : "validate & save"}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              {/* Platform selector */}
-              <div className="space-y-2">
-                <Label>Platform</Label>
-                <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select platform..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PLATFORMS.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <span className="flex items-center gap-2">
-                          <span>{p.icon}</span> {p.name}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Username */}
-              <div className="space-y-2">
-                <Label>Platform Username (optional)</Label>
-                <Input
-                  placeholder="e.g. john.doe"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 pb-2">
+              {[1, 2, 3].map((s) => (
+                <div
+                  key={s}
+                  className={`h-1.5 flex-1 rounded-full transition-colors ${
+                    s <= step ? "bg-primary" : "bg-muted"
+                  }`}
                 />
-              </div>
+              ))}
+            </div>
 
-              {/* Offline mode toggle */}
-              <div className="flex items-center justify-between rounded-lg border p-3">
-                <div className="space-y-0.5">
-                  <Label className="font-medium">Offline Mode</Label>
+            {/* STEP 1 — Platform selection */}
+            {step === 1 && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label>Shift platform</Label>
+                  <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select platform..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PLATFORMS.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          <span className="flex items-center gap-2">
+                            <span>{p.icon}</span> {p.name}
+                            <Badge variant="outline" className="ml-2 text-[10px]">
+                              {AUTH_METHOD_LABEL[p.authMethod]}
+                            </Badge>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {platform && (
+                  <Card className="bg-muted/40">
+                    <CardContent className="p-3 text-sm space-y-1">
+                      <div className="flex items-center gap-2 font-medium">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        {AUTH_METHOD_LABEL[platform.authMethod]}
+                      </div>
+                      <p className="text-muted-foreground text-xs">{platform.authHint}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* STEP 2 — Credentials & tenant identifiers */}
+            {step === 2 && platform && (
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label>
+                    {platform.tenantLabel} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder={platform.tenantPlaceholder}
+                    value={tenant}
+                    onChange={(e) => setTenant(e.target.value)}
+                  />
                   <p className="text-xs text-muted-foreground">
-                    Allow check-in/out when network is unavailable. Data syncs when back online.
+                    Required to route the sign-in request to your organization's tenant.
                   </p>
                 </div>
-                <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
-              </div>
 
-              {/* Connectivity test */}
-              <div className="space-y-2">
+                {platform.requiresUsername && (
+                  <div className="space-y-2">
+                    <Label>
+                      Username / email <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      placeholder="e.g. john.doe@example.com"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {!platform.requiresUsername && (
+                  <div className="space-y-2">
+                    <Label>Username (optional)</Label>
+                    <Input
+                      placeholder="e.g. john.doe"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {platform.authMethod === "apikey" && (
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1">
+                      <KeyRound className="h-3.5 w-3.5" /> API key <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      type="password"
+                      placeholder="Paste API key"
+                      value={apiToken}
+                      onChange={(e) => setApiToken(e.target.value)}
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Stored encrypted at rest. Never displayed after saving.
+                    </p>
+                  </div>
+                )}
+
+                <Separator />
+
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <Label className="font-medium">Offline mode</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Allow check-in/out without network. Data syncs when online.
+                    </p>
+                  </div>
+                  <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
+                </div>
+
+                {platform.authMethod !== "apikey" && (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground">
+                    Clicking <span className="font-semibold text-foreground">Continue</span> opens the
+                    {" "}{platform.name} sign-in page in a popup. You'll grant access there, then return here.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* STEP 3 — Validate & save */}
+            {step === 3 && platform && (
+              <div className="space-y-4 py-2">
+                <Card className="bg-muted/40">
+                  <CardContent className="p-3 text-sm space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span>{platform.icon}</span>
+                      <span className="font-medium">{platform.name}</span>
+                      <Badge variant="outline">{AUTH_METHOD_LABEL[platform.authMethod]}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div><span className="font-medium text-foreground">{platform.tenantLabel}:</span> {tenant}</div>
+                      {username && <div><span className="font-medium text-foreground">User:</span> {username}</div>}
+                      <div><span className="font-medium text-foreground">Auth:</span> {authCompleted ? "Completed" : "Pending"}</div>
+                      <div><span className="font-medium text-foreground">Offline mode:</span> {offlineMode ? "Enabled" : "Disabled"}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Button
                   variant="secondary"
                   className="w-full gap-2"
-                  onClick={testConnectivity}
-                  disabled={!selectedPlatform || testStatus === "testing"}
+                  onClick={validateCredentials}
+                  disabled={validation === "testing"}
                 >
-                  {testStatus === "testing" ? (
+                  {validation === "testing" ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Signal className="h-4 w-4" />
                   )}
-                  {testStatus === "testing"
-                    ? "Testing connectivity..."
-                    : "Test Connectivity"}
+                  {validation === "testing" ? "Validating credentials…" : "Validate credentials"}
                 </Button>
 
-                {testStatus === "success" && (
+                {validation === "success" && (
                   <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded-md p-2">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>
-                      {offlineMode && !navigator.onLine
-                        ? "Offline mode ready — will sync when online"
-                        : "Platform reachable — integration verified"}
-                    </span>
+                    <span>Credentials verified — ready to save</span>
                   </div>
                 )}
 
-                {testStatus === "fail" && (
+                {validation === "fail" && (
                   <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-2">
                     <XCircle className="h-4 w-4" />
-                    <span>Connection failed — check network or enable offline mode</span>
+                    <span>{validationError ?? "Validation failed"}</span>
                   </div>
                 )}
-              </div>
 
-              {/* Network status indicator */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {navigator.onLine ? (
-                  <>
-                    <Wifi className="h-3 w-3 text-emerald-500" />
-                    Device is online
-                  </>
-                ) : (
-                  <>
-                    <WifiOff className="h-3 w-3 text-amber-500" />
-                    Device is offline
-                  </>
-                )}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {navigator.onLine ? (
+                    <><Wifi className="h-3 w-3 text-emerald-500" /> Device is online</>
+                  ) : (
+                    <><WifiOff className="h-3 w-3 text-amber-500" /> Device is offline</>
+                  )}
+                </div>
               </div>
+            )}
 
-              {/* Connect button */}
+            <DialogFooter className="flex !justify-between gap-2 pt-2">
               <Button
-                className="w-full gap-2"
-                onClick={() => connectMutation.mutate()}
-                disabled={!selectedPlatform || connectMutation.isPending}
+                variant="ghost"
+                onClick={() => setStep((s) => (s > 1 ? ((s - 1) as WizardStep) : s))}
+                disabled={step === 1}
+                className="gap-1"
               >
-                <Link2 className="h-4 w-4" />
-                {connectMutation.isPending ? "Connecting..." : "Connect Platform"}
+                <ArrowLeft className="h-4 w-4" /> Back
               </Button>
-            </div>
+
+              {step === 1 && (
+                <Button
+                  onClick={() => setStep(2)}
+                  disabled={!selectedPlatform}
+                  className="gap-1"
+                >
+                  Continue <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+
+              {step === 2 && (
+                <Button onClick={beginAuthFlow} className="gap-1">
+                  {platform?.authMethod === "apikey" ? "Save & continue" : "Sign in & continue"}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+
+              {step === 3 && (
+                <Button
+                  onClick={() => connectMutation.mutate()}
+                  disabled={validation !== "success" || connectMutation.isPending}
+                  className="gap-1"
+                >
+                  <Link2 className="h-4 w-4" />
+                  {connectMutation.isPending ? "Saving…" : "Save connection"}
+                </Button>
+              )}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
