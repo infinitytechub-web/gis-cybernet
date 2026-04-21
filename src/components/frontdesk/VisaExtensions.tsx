@@ -42,9 +42,17 @@ export default function VisaExtensions() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const PAGE_SIZE = 25;
+
+  // Debounce search input so pagination resets only after the user pauses typing.
+  // The query key uses `debouncedSearch`, so keystrokes don't trigger server calls.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     const channel = supabase
@@ -75,7 +83,7 @@ export default function VisaExtensions() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ["visa-extensions", { search, statusFilter }],
+    queryKey: ["visa-extensions", { search: debouncedSearch, statusFilter }],
     initialPageParam: null as Cursor,
     queryFn: async ({ pageParam }) => {
       let q = (supabase as any)
@@ -86,8 +94,8 @@ export default function VisaExtensions() {
         .limit(PAGE_SIZE + 1);
 
       if (statusFilter !== "all") q = q.eq("status", statusFilter);
-      if (search.trim()) {
-        const term = `%${search.trim()}%`;
+      if (debouncedSearch) {
+        const term = `%${debouncedSearch}%`;
         q = q.or(`applicant_name.ilike.${term},passport_number.ilike.${term}`);
       }
       if (pageParam) {
