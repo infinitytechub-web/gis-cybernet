@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
 import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
+import { GhanaGPSInput } from "@/components/shared/GhanaGPSInput";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
