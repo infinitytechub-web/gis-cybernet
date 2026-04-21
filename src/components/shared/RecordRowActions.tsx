@@ -28,6 +28,7 @@ import {
   RECORD_TITLES,
 } from "@/lib/record-pdf";
 import { EmailShareDialog } from "./EmailShareDialog";
+import { logRowAction } from "@/lib/row-action-audit";
 
 export interface RecordRowActionsProps {
   kind: RecordKind;
@@ -65,6 +66,7 @@ export function RecordRowActions({
         label: record.applicant_name ?? RECORD_TITLES[kind],
         context: record.passport_number || record.reference_number || undefined,
       });
+      await logRowAction("delete_soft", kind, record, { table });
       invalidateKeys.forEach((k) => qc.invalidateQueries({ queryKey: k }));
       toast.success("Moved to Recycle Bin");
       setConfirmOpen(false);
@@ -78,6 +80,7 @@ export function RecordRowActions({
   const handleDownload = () => {
     try {
       downloadRecordPdf(kind, record);
+      void logRowAction("download_pdf", kind, record);
       toast.success("PDF downloaded");
     } catch (e: any) {
       toast.error(e?.message || "Download failed");
@@ -87,9 +90,20 @@ export function RecordRowActions({
   const handlePrint = () => {
     try {
       printRecordPdf(kind, record);
+      void logRowAction("print", kind, record);
     } catch (e: any) {
       toast.error(e?.message || "Print failed");
     }
+  };
+
+  const handleEdit = () => {
+    void logRowAction("edit_open", kind, record);
+    onEdit();
+  };
+
+  const handleOpenEmail = () => {
+    void logRowAction("email_open", kind, record);
+    setEmailOpen(true);
   };
 
   return (
@@ -101,7 +115,7 @@ export function RecordRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onClick={onEdit}>
+          <DropdownMenuItem onClick={handleEdit}>
             <Edit className="mr-2 h-4 w-4" /> Edit
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleDownload}>
@@ -110,7 +124,7 @@ export function RecordRowActions({
           <DropdownMenuItem onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> Print
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEmailOpen(true)}>
+          <DropdownMenuItem onClick={handleOpenEmail}>
             <Mail className="mr-2 h-4 w-4" /> Send via Email
           </DropdownMenuItem>
           {canDelete && (
