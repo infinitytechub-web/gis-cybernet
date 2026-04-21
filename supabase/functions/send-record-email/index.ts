@@ -32,6 +32,9 @@ interface SendBody {
   attachment_generated_at?: string | null;
   applicant_id?: string | null;
   applicant_name?: string | null;
+
+  // Server-side dry run: validate + dedup + write audit log, but skip delivery.
+  dry_run?: boolean;
 }
 
 interface RecipientResult {
