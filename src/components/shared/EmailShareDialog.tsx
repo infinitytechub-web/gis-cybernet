@@ -262,6 +262,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
 
   const canSend =
     !sending &&
+    attachmentConfirmed &&
     (mode === "single"
       ? validEmail && !ccInvalid && !bccInvalid
       : bulkList.length > 0);
@@ -270,6 +271,64 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     .replace(/[^a-z0-9]+/gi, "_")
     .replace(/^_+|_+$/g, "");
   const attachmentFilename = `${kind}_${safeName}.pdf`;
+
+  // Build the PDF once per preview entry so we can show the real byte size
+  // and offer preview/download of the exact file that will be attached.
+  const attachmentMeta = useMemo(() => {
+    if (step !== "preview" || results) return null;
+    try {
+      const doc = buildRecordPdf(kind, record);
+      const blob = doc.output("blob") as Blob;
+      return { blob, size: blob.size, url: URL.createObjectURL(blob) };
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, results, kind, record]);
+
+  // Release the object URL when the component unmounts or meta changes.
+  useEffect(() => {
+    return () => {
+      if (attachmentMeta?.url) URL.revokeObjectURL(attachmentMeta.url);
+    };
+  }, [attachmentMeta?.url]);
+
+  /** Build the final deduped recipient list as a downloadable CSV. */
+  const handleDownloadRecipientsCsv = () => {
+    const rows: Array<{ role: string; email: string }> = [];
+    if (mode === "single") {
+      const clean = finalDedupeSingle(to, ccParsed.valid, bccParsed.valid);
+      if (clean.to) rows.push({ role: "TO", email: clean.to });
+      clean.cc.forEach((e) => rows.push({ role: "CC", email: e }));
+      clean.bcc.forEach((e) => rows.push({ role: "BCC", email: e }));
+    } else {
+      const clean = finalDedupeBulk(bulkList);
+      clean.recipients.forEach((e) => rows.push({ role: "TO", email: e }));
+    }
+    if (rows.length === 0) {
+      toast.error("No recipients to export");
+      return;
+    }
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv =
+      "role,email\n" + rows.map((r) => `${escape(r.role)},${escape(r.email)}`).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${kind}_${safeName}_recipients.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} recipient${rows.length === 1 ? "" : "s"} to CSV`);
+  };
+
+  const formatBytes = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  };
 
   const handleFile = async (file: File) => {
     if (!file) return;
