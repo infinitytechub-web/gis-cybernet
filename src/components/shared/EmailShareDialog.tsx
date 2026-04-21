@@ -22,8 +22,25 @@ interface EmailShareDialogProps {
   record: Record<string, any>;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
+  const parts = input
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  for (const p of parts) {
+    (EMAIL_RE.test(p) ? valid : invalid).push(p);
+  }
+  return { valid, invalid };
+}
+
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
   const [to, setTo] = useState("");
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -31,6 +48,8 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   useEffect(() => {
     if (open) {
       setTo("");
+      setCc("");
+      setBcc("");
       setSubject(
         `${RECORD_TITLES[kind]} — ${record.applicant_name ?? record.id ?? ""}`.trim()
       );
@@ -42,11 +61,23 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     }
   }, [open, kind, record]);
 
-  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to.trim());
+  const validEmail = EMAIL_RE.test(to.trim());
+  const ccParsed = parseEmailList(cc);
+  const bccParsed = parseEmailList(bcc);
+  const ccInvalid = ccParsed.invalid.length > 0;
+  const bccInvalid = bccParsed.invalid.length > 0;
 
   const handleSend = async () => {
     if (!validEmail) {
-      toast.error("Please enter a valid email address");
+      toast.error("Please enter a valid recipient email address");
+      return;
+    }
+    if (ccInvalid) {
+      toast.error(`Invalid CC address: ${ccParsed.invalid.join(", ")}`);
+      return;
+    }
+    if (bccInvalid) {
+      toast.error(`Invalid BCC address: ${bccParsed.invalid.join(", ")}`);
       return;
     }
     setSending(true);
@@ -60,6 +91,8 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       const { data, error } = await supabase.functions.invoke("send-record-email", {
         body: {
           to: to.trim(),
+          cc: ccParsed.valid,
+          bcc: bccParsed.valid,
           subject,
           message,
           attachment_base64: attachment,
