@@ -379,7 +379,15 @@ export default function AttendanceComplianceReport() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => (
-                    <TableRow key={r.id} className={r.missing > 0 ? "bg-amber-50/60" : ""}>
+                    <TableRow
+                      key={r.id}
+                      className={`cursor-pointer hover:bg-muted/40 ${r.missing > 0 ? "bg-amber-50/60" : ""}`}
+                      onClick={() => setDetailStaff(r)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailStaff(r); } }}
+                      aria-label={`View attendance breakdown for ${r.name}`}
+                    >
                       <TableCell>
                         <div className="font-medium text-sm flex items-center gap-1.5">
                           {r.name}
