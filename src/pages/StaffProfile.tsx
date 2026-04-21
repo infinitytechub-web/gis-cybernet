@@ -103,6 +103,20 @@ export default function StaffProfile() {
     },
   });
 
+  const { data: officeHistory = [] } = useQuery({
+    queryKey: ["staff-office-history", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("profile_office_history")
+        .select("id, previous_office, new_office, changed_at, changed_by")
+        .eq("profile_id", id!)
+        .order("changed_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
