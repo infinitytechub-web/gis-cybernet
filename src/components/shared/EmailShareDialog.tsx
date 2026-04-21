@@ -1013,8 +1013,13 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
 
         {results && results.length > 0 && (
           <div className="border rounded-md divide-y max-h-64 overflow-y-auto">
-            <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
-              Delivery results ({results.length})
+            <div className="px-3 py-2 bg-muted/50 text-xs font-medium flex items-center gap-2">
+              <span>Delivery results ({results.length})</span>
+              {results[0]?.message_id?.startsWith("test_") && (
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  <FlaskConical className="h-3 w-3" /> Simulated
+                </Badge>
+              )}
             </div>
             {results.map((r, i) => (
               <div key={`${r.email}-${i}`} className="px-3 py-2 text-sm flex items-start justify-between gap-3">
