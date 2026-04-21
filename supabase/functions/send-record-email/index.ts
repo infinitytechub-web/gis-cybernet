@@ -93,7 +93,32 @@ Deno.serve(async (req) => {
       );
     }
 
+    const ccList = sanitizeEmailList(body.cc);
+    const bccList = sanitizeEmailList(body.bcc);
+
     // Send via Resend connector gateway
+    const resendPayload: Record<string, unknown> = {
+      from: "Ghana Immigration Service <onboarding@resend.dev>",
+      to: [body.to],
+      subject: body.subject,
+      text: body.message,
+      html: `<div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a">
+        <p>${body.message.replace(/\n/g, "<br/>")}</p>
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
+        <p style="font-size:12px;color:#64748b">
+          Ghana Immigration Service — Amasaman Sector Command · Cybernet
+        </p>
+      </div>`,
+      attachments: [
+        {
+          filename: body.attachment_filename,
+          content: body.attachment_base64,
+        },
+      ],
+    };
+    if (ccList.length) resendPayload.cc = ccList;
+    if (bccList.length) resendPayload.bcc = bccList;
+
     const resendResp = await fetch(`${GATEWAY_URL}/emails`, {
       method: "POST",
       headers: {
@@ -101,25 +126,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "X-Connection-Api-Key": RESEND_API_KEY,
       },
-      body: JSON.stringify({
-        from: "Ghana Immigration Service <onboarding@resend.dev>",
-        to: [body.to],
-        subject: body.subject,
-        text: body.message,
-        html: `<div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a">
-          <p>${body.message.replace(/\n/g, "<br/>")}</p>
-          <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
-          <p style="font-size:12px;color:#64748b">
-            Ghana Immigration Service — Amasaman Sector Command · Cybernet
-          </p>
-        </div>`,
-        attachments: [
-          {
-            filename: body.attachment_filename,
-            content: body.attachment_base64,
-          },
-        ],
-      }),
+      body: JSON.stringify(resendPayload),
     });
 
     const respText = await resendResp.text();
@@ -140,7 +147,12 @@ Deno.serve(async (req) => {
         entity_type: body.record_kind,
         entity_id: body.record_id ?? "",
         performed_by: userId,
-        details: { recipient: body.to, subject: body.subject },
+        details: {
+          recipient: body.to,
+          cc: ccList,
+          bcc: bccList,
+          subject: body.subject,
+        },
       });
     } catch (_e) { /* ignore — audit is best-effort */ }
 
