@@ -13,8 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { downloadAttendanceComplianceTemplate } from "@/lib/attendance-compliance-template";
+import { AttendanceComplianceImportDialog } from "@/components/reports/AttendanceComplianceImportDialog";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff, FileDown } from "lucide-react";
+import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff, FileDown, Upload } from "lucide-react";
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   eachDayOfInterval, format, isWeekend, parseISO,
@@ -39,11 +42,15 @@ function periodRange(period: Period, ref: Date) {
 
 export default function AttendanceComplianceReport() {
   const today = new Date();
+  const { role } = useAuthContext();
+  const queryClient = useQueryClient();
+  const canImport = role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer";
   const [period, setPeriod] = useState<Period>("weekly");
   const [refDate, setRefDate] = useState(format(today, "yyyy-MM-dd"));
   const [departmentId, setDepartmentId] = useState<string>(ALL);
   const [shiftGroup, setShiftGroup] = useState<string>(ALL);
   const [office, setOffice] = useState<string>(ALL);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { from, to } = useMemo(() => periodRange(period, parseISO(refDate)), [period, refDate]);
   const fromIso = format(from, "yyyy-MM-dd");
@@ -276,6 +283,18 @@ export default function AttendanceComplianceReport() {
             <p className="text-xs text-muted-foreground mt-1">{periodLabel} · {workingDays.length} working day(s)</p>
           </div>
           <div className="flex items-center gap-2">
+            {canImport && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={() => setImportOpen(true)}
+                title="Import monthly figures — re-importing the same month updates existing rows"
+              >
+                <Upload className="h-4 w-4" />
+                Import
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -531,6 +550,16 @@ export default function AttendanceComplianceReport() {
         staff={detailStaff}
         periodLabel={periodLabel}
         onClose={() => setDetailStaff(null)}
+      />
+
+      <AttendanceComplianceImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        initialReferenceDate={refDate}
+        onImported={() => {
+          queryClient.invalidateQueries({ queryKey: ["acr-attendances"] });
+          queryClient.invalidateQueries({ queryKey: ["attendance_compliance_snapshots"] });
+        }}
       />
     </div>
   );

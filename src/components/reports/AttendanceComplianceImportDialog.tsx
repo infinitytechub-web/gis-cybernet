@@ -1,0 +1,388 @@
+import { useState, useMemo } from "react";
+import * as XLSX from "xlsx";
+import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { Loader2, Upload, AlertTriangle, CheckCircle2, FileSpreadsheet } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { logAdminAudit } from "@/lib/admin-audit";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  /** Defaults to current month; the dialog shows month-of-period explicitly. */
+  initialReferenceDate?: string; // yyyy-MM-dd
+  /** Notify the parent so it can refetch the snapshot view. */
+  onImported?: () => void;
+}
+
+interface ParsedRow {
+  rowIndex: number; // 1-based row number in the spreadsheet (after header)
+  raw: Record<string, string>;
+  staff_id: string;
+  name: string;
+  department: string;
+  office: string;
+  shift: string;
+  working_days: number;
+  present: number;
+  absent: number;
+  late: number;
+  leave_days: number;
+  missing_logs: number;
+  compliance_pct: number;
+  log_completeness_pct: number;
+}
+
+interface MatchResult {
+  matched: Array<ParsedRow & { profile_id: string; existed: boolean }>;
+  unknown: ParsedRow[];
+  invalid: { rowIndex: number; reason: string }[];
+}
+
+const REQUIRED_HEADERS = [
+  "Staff ID", "Name", "Department", "Office", "Shift",
+  "Working Days", "Present", "Absent", "Late", "Leave",
+  "Missing Logs", "Compliance %", "Log Completeness %",
+];
+
+function parsePct(value: string | undefined): number {
+  if (!value) return 0;
+  const cleaned = value.toString().replace("%", "").trim();
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function parseInt0(value: string | undefined): number {
+  if (!value) return 0;
+  const n = Number(value.toString().trim());
+  return Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+}
+
+export function AttendanceComplianceImportDialog({ open, onOpenChange, initialReferenceDate, onImported }: Props) {
+  const [referenceDate, setReferenceDate] = useState<string>(
+    initialReferenceDate ?? format(new Date(), "yyyy-MM-dd"),
+  );
+  const [parsing, setParsing] = useState(false);
+  const [matching, setMatching] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
+  const [match, setMatch] = useState<MatchResult | null>(null);
+  const [filename, setFilename] = useState<string | null>(null);
+
+  const periodStartIso = useMemo(() => format(startOfMonth(parseISO(referenceDate)), "yyyy-MM-dd"), [referenceDate]);
+  const periodEndIso = useMemo(() => format(endOfMonth(parseISO(referenceDate)), "yyyy-MM-dd"), [referenceDate]);
+  const periodLabel = useMemo(() => format(parseISO(referenceDate), "MMMM yyyy"), [referenceDate]);
+
+  const reset = () => {
+    setParsedRows([]);
+    setMatch(null);
+    setFilename(null);
+  };
+
+  const handleFile = async (file: File) => {
+    setParsing(true);
+    setMatch(null);
+    setParsedRows([]);
+    setFilename(file.name);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      // Prefer the "Compliance Data" sheet; otherwise first sheet.
+      const sheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("compliance")) ?? wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const aoa = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: "", raw: false });
+      if (!aoa || aoa.length === 0) {
+        toast.error("Sheet is empty");
+        return;
+      }
+      // Find header row (must contain "Staff ID")
+      const headerIdx = aoa.findIndex((r) => Array.isArray(r) && r.some((c) => String(c).trim().toLowerCase() === "staff id"));
+      if (headerIdx === -1) {
+        toast.error("Could not find a 'Staff ID' header row. Use the downloadable template.");
+        return;
+      }
+      const headers = (aoa[headerIdx] as string[]).map((h) => String(h).trim());
+      const missing = REQUIRED_HEADERS.filter((h) => !headers.some((x) => x.toLowerCase() === h.toLowerCase()));
+      if (missing.length > 0) {
+        toast.error(`Missing column(s): ${missing.join(", ")}`);
+        return;
+      }
+      const idx = (label: string) => headers.findIndex((h) => h.toLowerCase() === label.toLowerCase());
+      const colMap = Object.fromEntries(REQUIRED_HEADERS.map((h) => [h, idx(h)])) as Record<string, number>;
+
+      const rows: ParsedRow[] = [];
+      for (let i = headerIdx + 1; i < aoa.length; i++) {
+        const r = aoa[i];
+        if (!Array.isArray(r) || r.every((c) => !String(c ?? "").trim())) continue;
+        const staffId = String(r[colMap["Staff ID"]] ?? "").trim();
+        if (!staffId) continue; // silently skip blank rows
+        rows.push({
+          rowIndex: i + 1,
+          raw: Object.fromEntries(headers.map((h, j) => [h, String(r[j] ?? "")])),
+          staff_id: staffId,
+          name: String(r[colMap["Name"]] ?? "").trim(),
+          department: String(r[colMap["Department"]] ?? "").trim(),
+          office: String(r[colMap["Office"]] ?? "").trim(),
+          shift: String(r[colMap["Shift"]] ?? "").trim(),
+          working_days: parseInt0(String(r[colMap["Working Days"]] ?? "")),
+          present: parseInt0(String(r[colMap["Present"]] ?? "")),
+          absent: parseInt0(String(r[colMap["Absent"]] ?? "")),
+          late: parseInt0(String(r[colMap["Late"]] ?? "")),
+          leave_days: parseInt0(String(r[colMap["Leave"]] ?? "")),
+          missing_logs: parseInt0(String(r[colMap["Missing Logs"]] ?? "")),
+          compliance_pct: parsePct(String(r[colMap["Compliance %"]] ?? "")),
+          log_completeness_pct: parsePct(String(r[colMap["Log Completeness %"]] ?? "")),
+        });
+      }
+      if (rows.length === 0) {
+        toast.error("No data rows found in the sheet");
+        return;
+      }
+      setParsedRows(rows);
+
+      // Match against profiles
+      setMatching(true);
+      const ids = Array.from(new Set(rows.map((r) => r.staff_id)));
+      const { data: profiles, error } = await supabase
+        .from("profiles")
+        .select("id, staff_id")
+        .in("staff_id", ids);
+      if (error) throw error;
+      const byStaffId = new Map<string, string>();
+      (profiles ?? []).forEach((p: any) => byStaffId.set(p.staff_id, p.id));
+
+      // Existing snapshots for this period (so we can show "will update" vs "new")
+      const profileIds = Array.from(byStaffId.values());
+      let existingIds = new Set<string>();
+      if (profileIds.length > 0) {
+        const { data: existing } = await supabase
+          .from("attendance_compliance_snapshots")
+          .select("profile_id")
+          .eq("period_type", "monthly")
+          .eq("period_start", periodStartIso)
+          .in("profile_id", profileIds);
+        existingIds = new Set((existing ?? []).map((e: any) => e.profile_id));
+      }
+
+      const matched: MatchResult["matched"] = [];
+      const unknown: ParsedRow[] = [];
+      const invalid: MatchResult["invalid"] = [];
+      for (const row of rows) {
+        const profileId = byStaffId.get(row.staff_id);
+        if (!profileId) {
+          unknown.push(row);
+          continue;
+        }
+        if (row.compliance_pct < 0 || row.compliance_pct > 100) {
+          invalid.push({ rowIndex: row.rowIndex, reason: "Compliance % out of range (0–100)" });
+          continue;
+        }
+        matched.push({ ...row, profile_id: profileId, existed: existingIds.has(profileId) });
+      }
+      setMatch({ matched, unknown, invalid });
+      toast.success(`Parsed ${rows.length} row(s) — ${matched.length} ready to import`);
+    } catch (e: any) {
+      console.error("Import parse failure", e);
+      toast.error(e?.message ?? "Could not read the file");
+    } finally {
+      setParsing(false);
+      setMatching(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!match || match.matched.length === 0) {
+      toast.error("Nothing to import");
+      return;
+    }
+    setImporting(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id ?? null;
+
+      const payload = match.matched.map((r) => ({
+        profile_id: r.profile_id,
+        period_type: "monthly",
+        period_start: periodStartIso,
+        period_end: periodEndIso,
+        staff_id_snapshot: r.staff_id,
+        name_snapshot: r.name,
+        department_snapshot: r.department,
+        office_snapshot: r.office,
+        shift_snapshot: r.shift,
+        working_days: r.working_days,
+        present: r.present,
+        absent: r.absent,
+        late: r.late,
+        leave_days: r.leave_days,
+        missing_logs: r.missing_logs,
+        compliance_pct: r.compliance_pct,
+        log_completeness_pct: r.log_completeness_pct,
+        source: "import",
+        imported_by: uid,
+        imported_at: new Date().toISOString(),
+        filters: { period_label: periodLabel, source_file: filename },
+      }));
+
+      const { error } = await supabase
+        .from("attendance_compliance_snapshots")
+        .upsert(payload, { onConflict: "profile_id,period_type,period_start" });
+      if (error) throw error;
+
+      const updated = match.matched.filter((r) => r.existed).length;
+      const inserted = match.matched.length - updated;
+      toast.success(`Imported ${match.matched.length} row(s) — ${inserted} new, ${updated} updated`);
+
+      logAdminAudit("attendance_compliance_snapshots", "imported", {
+        period_type: "monthly",
+        period_start: periodStartIso,
+        period_end: periodEndIso,
+        period_label: periodLabel,
+        source_file: filename,
+        rows_total: parsedRows.length,
+        rows_inserted: inserted,
+        rows_updated: updated,
+        rows_skipped_unknown: match.unknown.length,
+        rows_invalid: match.invalid.length,
+        unknown_staff_ids: match.unknown.map((r) => r.staff_id),
+      });
+
+      reset();
+      onOpenChange(false);
+      onImported?.();
+    } catch (e: any) {
+      console.error("Import failed", e);
+      toast.error(e?.message ?? "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const updatedCount = match?.matched.filter((r) => r.existed).length ?? 0;
+  const newCount = (match?.matched.length ?? 0) - updatedCount;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="h-4 w-4 text-primary" /> Import Monthly Compliance
+          </DialogTitle>
+          <DialogDescription>
+            Re-importing for the same month <strong>updates</strong> existing staff figures instead of creating duplicates.
+            Use the downloadable template to keep columns aligned.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Target month</Label>
+              <Input type="date" value={referenceDate} onChange={(e) => { setReferenceDate(e.target.value); setMatch(null); }} className="h-9" />
+              <p className="text-[11px] text-muted-foreground mt-1">Period: <strong>{periodLabel}</strong> ({periodStartIso} → {periodEndIso})</p>
+            </div>
+            <div>
+              <Label className="text-xs">Spreadsheet (.xlsx / .xls / .csv)</Label>
+              <Input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                disabled={parsing || importing}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                  e.currentTarget.value = "";
+                }}
+                className="h-9"
+              />
+              {filename && (
+                <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                  <FileSpreadsheet className="h-3 w-3" /> {filename}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {(parsing || matching) && (
+            <div className="text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" /> Reading spreadsheet…
+            </div>
+          )}
+
+          {match && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 text-xs">
+                <Badge variant="outline" className="gap-1"><CheckCircle2 className="h-3 w-3 text-emerald-600" />{match.matched.length} ready</Badge>
+                <Badge variant="outline" className="gap-1">{newCount} new · {updatedCount} will update</Badge>
+                {match.unknown.length > 0 && (
+                  <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3 text-amber-600" />{match.unknown.length} unknown staff ID</Badge>
+                )}
+                {match.invalid.length > 0 && (
+                  <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3 text-red-600" />{match.invalid.length} invalid</Badge>
+                )}
+              </div>
+
+              {match.unknown.length > 0 && (
+                <Alert variant="default" className="border-amber-300 bg-amber-50 text-amber-900 [&>svg]:text-amber-700">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>{match.unknown.length} row(s) will be skipped</AlertTitle>
+                  <AlertDescription className="text-amber-800">
+                    These Staff IDs were not found in the directory and will not be imported:
+                    <ScrollArea className="mt-2 max-h-28 rounded border border-amber-200 bg-white/60 p-2 text-[11px]">
+                      <ul className="space-y-0.5">
+                        {match.unknown.map((r) => (
+                          <li key={r.rowIndex}>Row {r.rowIndex}: <code>{r.staff_id}</code> — {r.name || "(no name)"}</li>
+                        ))}
+                      </ul>
+                    </ScrollArea>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {match.invalid.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>{match.invalid.length} invalid row(s)</AlertTitle>
+                  <AlertDescription>
+                    <ul className="text-xs mt-1 space-y-0.5">
+                      {match.invalid.map((r) => (
+                        <li key={r.rowIndex}>Row {r.rowIndex}: {r.reason}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {updatedCount > 0 && (
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertTitle>Existing records will be updated</AlertTitle>
+                  <AlertDescription className="text-xs">
+                    {updatedCount} staff already have a {periodLabel} snapshot. Their figures will be overwritten with the values in this file.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>Cancel</Button>
+          <Button
+            onClick={handleImport}
+            disabled={importing || parsing || !match || match.matched.length === 0}
+          >
+            {importing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+            Import {match ? `(${match.matched.length})` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
