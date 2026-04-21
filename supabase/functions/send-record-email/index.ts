@@ -1,8 +1,13 @@
 // Send Record Email — delivers a record PDF as an attachment using the Resend connector.
 // Gracefully reports a "not configured" error if the connector isn't linked yet.
 
-import { corsHeaders } from "@supabase/supabase-js/cors";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
