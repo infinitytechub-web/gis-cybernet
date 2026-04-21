@@ -463,6 +463,14 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     const next = [...extraAttachments];
     let added = 0;
     for (const f of incoming) {
+      if (!isAllowedFile(f)) {
+        toast.error(`"${f.name}" is not an allowed file type and was skipped`);
+        continue;
+      }
+      if (f.size === 0) {
+        toast.error(`"${f.name}" is empty and was skipped`);
+        continue;
+      }
       if (f.size > MAX_EXTRA_FILE_BYTES) {
         toast.error(`"${f.name}" is over 5 MB and was skipped`);
         continue;
