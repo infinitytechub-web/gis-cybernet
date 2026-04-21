@@ -33,7 +33,7 @@ interface SnapshotOptions {
  * consistently inside print windows and PDF rasterization where CSS custom
  * properties are unavailable.
  */
-export function buildStaticMapSvg({ lat, lng, label, width = 600, height = 360 }: SnapshotOptions): string {
+export function buildStaticMapSvg({ lat, lng, label, width = 600, height = 360, watermark }: SnapshotOptions): string {
   const W = width;
   const H = height;
   const gridStep = 30;
