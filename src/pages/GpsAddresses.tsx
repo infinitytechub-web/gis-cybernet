@@ -560,8 +560,15 @@ export default function GpsAddresses() {
 
   // Browser-native print: opens a new window with a clean printable layout for
   // the current Search & Track result. Includes an inline static SVG snapshot
-  // of the captured coordinates — no third-party tiles fetched.
-  const printTrackResult = () => {
+  // of the captured coordinates — no third-party tiles fetched. When a stamp
+  // is provided, the snapshot and table are watermarked with the viewer's
+  // official identity, and a QR code linking to the audit-trail entry is
+  // rendered in the page header for tamper-evident verification.
+  const printTrackResult = (opts?: {
+    watermarkText?: string;
+    qrDataUrl?: string;
+    qrCaption?: string;
+  }) => {
     if (!trackResult) return;
     const captured = format(new Date(), "dd MMM yyyy, HH:mm");
     const rows: [string, string][] = [
@@ -589,27 +596,63 @@ export default function GpsAddresses() {
       lat: trackResult.lat,
       lng: trackResult.lng,
       label: trackResult.display_name?.slice(0, 80),
+      watermark: opts?.watermarkText,
     });
+
+    // Diagonal CSS watermark stamped behind the table so the printed
+    // document carries the official identity on every section.
+    const watermarkCss = opts?.watermarkText
+      ? `<div class="page-watermark"><span>${opts.watermarkText.replace(/[<>&]/g, (c) => c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;")}</span></div>`
+      : "";
+    const qrBlock = opts?.qrDataUrl
+      ? `<div class="qr-block">
+          <img src="${opts.qrDataUrl}" alt="Audit verification QR" />
+          <div class="qr-cap">${(opts.qrCaption ?? "Scan to verify authorisation in Cybernet audit trail").replace(/[<>&]/g, (c) => c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;")}</div>
+        </div>`
+      : "";
+
     win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>GPS Search & Track Result</title>
       <style>
-        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; }
+        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; position: relative; }
         h1 { font-size: 20px; margin: 0 0 4px; }
         .sub { font-size: 12px; color: #555; margin-bottom: 20px; }
+        .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .header-row .left { flex: 1; }
+        .qr-block { text-align: center; }
+        .qr-block img { width: 110px; height: 110px; display: block; }
+        .qr-cap { font-size: 9px; color: #555; margin-top: 4px; max-width: 130px; }
         table { border-collapse: collapse; width: 100%; }
         .snapshot { margin: 0 0 16px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; background: #fafafa; }
         .snapshot svg { display: block; max-width: 100%; height: auto; }
         .snapshot .cap { font-size: 10px; color: #666; margin-top: 6px; }
         .footer { margin-top: 24px; font-size: 10px; color: #777; border-top: 1px solid #ddd; padding-top: 8px; }
-        @media print { @page { margin: 18mm; } }
+        .page-watermark {
+          position: fixed; inset: 0; pointer-events: none; z-index: 0;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden;
+        }
+        .page-watermark span {
+          font-size: 64px; font-weight: 800; color: rgba(15, 23, 42, 0.07);
+          transform: rotate(-30deg); white-space: nowrap; letter-spacing: 2px;
+          text-align: center; line-height: 1.1;
+        }
+        body > *:not(.page-watermark) { position: relative; z-index: 1; }
+        @media print { @page { margin: 18mm; } .page-watermark span { color: rgba(15, 23, 42, 0.10); } }
       </style></head><body>
-      <h1>GPS Search & Track Result</h1>
-      <div class="sub">Cyber Intelligence · Search & Track lookup at ${captured}</div>
+      ${watermarkCss}
+      <div class="header-row">
+        <div class="left">
+          <h1>GPS Search &amp; Track Result</h1>
+          <div class="sub">Cyber Intelligence · Search &amp; Track lookup at ${captured}</div>
+        </div>
+        ${qrBlock}
+      </div>
       <div class="snapshot">
         ${snapshotSvg}
         <div class="cap">Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}</div>
       </div>
       <table>${rowsHtml}</table>
-      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only</div>
+      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only${opts?.watermarkText ? ` · ${opts.watermarkText}` : ""}</div>
       <script>window.onload = () => { window.focus(); window.print(); };</script>
       </body></html>`);
     win.document.close();
