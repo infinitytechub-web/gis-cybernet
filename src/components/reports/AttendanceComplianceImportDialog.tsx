@@ -561,7 +561,8 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>Cancel</Button>
           <Button
             onClick={handleImport}
-            disabled={importing || parsing || !match || match.matched.length === 0}
+            disabled={importing || parsing || !match || match.matched.length === 0 || periodMismatch}
+            title={periodMismatch ? "Resolve the period mismatch before importing" : undefined}
           >
             {importing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             Import {match ? `(${match.matched.length})` : ""}
