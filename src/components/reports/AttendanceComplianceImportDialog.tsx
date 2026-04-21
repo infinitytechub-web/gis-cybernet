@@ -130,6 +130,7 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [match, setMatch] = useState<MatchResult | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
+  const [periodHint, setPeriodHint] = useState<PeriodHint | null>(null);
 
   // Period is fully derived from the selected month + year — no free-form date entry, so
   // there is no way for the imported figures to land in the wrong column/period.
