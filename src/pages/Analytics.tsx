@@ -977,22 +977,41 @@ export default function Analytics() {
                   <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.total} assigned</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+              <CardContent className="overflow-visible">
+                <ResponsiveContainer width="100%" height={isMobile ? 340 : 300}>
+                  <PieChart margin={{ top: 12, right: 12, bottom: 8, left: 12 }}>
                     <Pie
                       data={rolesStats.rows.map((r) => ({ name: r.label, value: r.count }))}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
-                      cy="45%"
-                      innerRadius="38%"
-                      outerRadius="62%"
+                      cy={isMobile ? "42%" : "45%"}
+                      innerRadius={isMobile ? "32%" : "38%"}
+                      outerRadius={isMobile ? "55%" : "62%"}
                       paddingAngle={2}
                       labelLine={false}
-                      label={({ cx, cy, midAngle, outerRadius, percent, name }) => {
-                        if (!percent || percent < 0.03) return null;
+                      label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                        if (!percent || percent < 0.05) return null;
                         const RAD = Math.PI / 180;
+                        // On mobile, render labels INSIDE slices to avoid clipping
+                        if (isMobile) {
+                          const r = innerRadius + (outerRadius - innerRadius) * 0.55;
+                          const x = cx + r * Math.cos(-midAngle * RAD);
+                          const y = cy + r * Math.sin(-midAngle * RAD);
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="#fff"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              style={{ fontSize: 10, fontWeight: 600 }}
+                            >
+                              {`${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }
+                        // Desktop: outside labels with name + percent
                         const r = outerRadius + 14;
                         const x = cx + r * Math.cos(-midAngle * RAD);
                         const y = cy + r * Math.sin(-midAngle * RAD);
@@ -1026,6 +1045,14 @@ export default function Analytics() {
                       iconType="circle"
                       iconSize={8}
                       wrapperStyle={{ fontSize: "10px", paddingTop: "8px" }}
+                      formatter={(value, entry: any) => {
+                        const v = entry?.payload?.value;
+                        return (
+                          <span style={{ color: "hsl(var(--foreground))" }}>
+                            {value}{typeof v === "number" ? ` (${v})` : ""}
+                          </span>
+                        );
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
