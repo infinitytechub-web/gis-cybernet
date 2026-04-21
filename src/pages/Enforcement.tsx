@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
 import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
-import { GhanaGPSInput } from "@/components/shared/GhanaGPSInput";
+import { GhanaGPSInput, canonicalizeGpsLocation, isValidGpsLocation } from "@/components/shared/GhanaGPSInput";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -369,10 +369,14 @@ export default function Enforcement() {
 
   const createMutation = useMutation({
     mutationFn: async (values: typeof INITIAL_FORM) => {
+      const canonicalLocation = canonicalizeGpsLocation(values.location);
+      if (!isValidGpsLocation(canonicalLocation)) {
+        throw new Error("Invalid GPS digital address. Use format XX-###-#### e.g. GA-123-4567");
+      }
       const { error } = await supabase.from("enforcement_operations").insert({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
-        location: values.location || null,
+        location: canonicalLocation,
         description: values.description || null,
         severity: values.severity,
         suspects_count: values.suspects_count,
@@ -397,10 +401,14 @@ export default function Enforcement() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: typeof INITIAL_FORM }) => {
+      const canonicalLocation = canonicalizeGpsLocation(values.location);
+      if (!isValidGpsLocation(canonicalLocation)) {
+        throw new Error("Invalid GPS digital address. Use format XX-###-#### e.g. GA-123-4567");
+      }
       const { error } = await supabase.from("enforcement_operations").update({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
-        location: values.location || null,
+        location: canonicalLocation,
         description: values.description || null,
         severity: values.severity,
         suspects_count: values.suspects_count,
