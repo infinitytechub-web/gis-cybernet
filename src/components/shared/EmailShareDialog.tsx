@@ -168,13 +168,24 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     }
     try {
       const text = await file.text();
-      const emails = extractEmailsFromCsv(text);
+      const { emails, duplicates: csvDupes } = extractEmailsFromCsv(text);
       if (emails.length === 0) {
         toast.error("No valid email addresses found in file");
         return;
       }
-      setBulkText(emails.join("\n"));
-      toast.success(`Loaded ${emails.length} recipient${emails.length === 1 ? "" : "s"}`);
+      // Merge into existing textarea, deduping case-insensitively across both.
+      const { merged, added, skipped } = mergeUniqueEmails(bulkText, emails);
+      setBulkText(merged);
+      const totalSkipped = skipped + csvDupes;
+      if (added === 0) {
+        toast.info(`No new recipients — all ${emails.length} already in the list`);
+      } else if (totalSkipped > 0) {
+        toast.success(
+          `Added ${added} recipient${added === 1 ? "" : "s"} · skipped ${totalSkipped} duplicate${totalSkipped === 1 ? "" : "s"}`,
+        );
+      } else {
+        toast.success(`Added ${added} recipient${added === 1 ? "" : "s"}`);
+      }
     } catch {
       toast.error("Could not read the file");
     } finally {
