@@ -255,11 +255,9 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
         </div>
       </div>
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Location</Label>
-          <GhanaGPSButton onAddress={(addr) => setForm(p => ({ ...p, location: addr }))} />
-        </div>
-        <Input placeholder="e.g. Amasaman Barrier, Pokuase or use GPS..." value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
+        <Label>Location</Label>
+        <Input placeholder="e.g. Amasaman Barrier, Pokuase — or use the digital address / GPS below" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
+        <GhanaGPSInput onAddress={(addr) => setForm(p => ({ ...p, location: addr }))} />
       </div>
       <div className="space-y-2">
         <Label>Intel By (Officer)</Label>
