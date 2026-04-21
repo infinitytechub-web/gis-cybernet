@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
     const queued = results.filter((r) => r.status === "queued").length;
     const failed = results.filter((r) => r.status === "failed").length;
 
-    // Audit trail — best effort, per-recipient summary + message ids
+    // Audit trail — best effort, per-recipient summary + message ids + compliance metadata
     try {
       await supabase.from("front_desk_audit_log").insert({
         action: "email_share",
@@ -213,6 +213,14 @@ Deno.serve(async (req) => {
           cc: ccList,
           bcc: bccList,
           subject: body.subject,
+          // Compliance metadata — verifiable document identity
+          attachment_filename: body.attachment_filename,
+          attachment_sha256: body.attachment_sha256 ?? null,
+          attachment_generated_at: body.attachment_generated_at ?? null,
+          record_kind: body.record_kind,
+          applicant_id: body.applicant_id ?? body.record_id ?? null,
+          applicant_name: body.applicant_name ?? null,
+          sent_at: new Date().toISOString(),
           results: results.map((r) => ({
             email: r.email,
             status: r.status,
