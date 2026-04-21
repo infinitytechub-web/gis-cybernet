@@ -25,6 +25,10 @@ import {
   MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert, Printer,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
+import { FileText, FileSpreadsheet, FileType, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
@@ -605,6 +609,103 @@ export default function GpsAddresses() {
     win.document.close();
   };
 
+  // ===== Authorization-purpose prompt =====
+  // Every Search & Track export or print must be accompanied by a written
+  // authorization reason ("purpose") so that the audit trail captures WHY the
+  // intel-derived coordinates were exfiltrated, not just by whom and when.
+  // The reason is required (10–500 chars) and is written into the audit log
+  // entry's `details.purpose` field.
+  type TrackAction = { kind: "export"; format: ExportFormat } | { kind: "print" };
+  const [purposeOpen, setPurposeOpen] = useState(false);
+  const [purposeAction, setPurposeAction] = useState<TrackAction | null>(null);
+  const [purposeText, setPurposeText] = useState("");
+  const [purposeBusy, setPurposeBusy] = useState(false);
+
+  const requestTrackPurpose = (action: TrackAction) => {
+    if (!trackResult || !canExportTrack) return;
+    setPurposeAction(action);
+    setPurposeText("");
+    setPurposeOpen(true);
+  };
+
+  const cancelPurpose = () => {
+    if (purposeBusy) return;
+    setPurposeOpen(false);
+    setPurposeAction(null);
+    setPurposeText("");
+  };
+
+  const confirmTrackPurpose = async () => {
+    const action = purposeAction;
+    if (!action || !trackResult || !user) return;
+    const reason = purposeText.trim();
+    if (reason.length < 10) {
+      toast({
+        title: "Authorization reason required",
+        description: "Provide at least 10 characters describing the operational purpose.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (reason.length > 500) {
+      toast({
+        title: "Reason too long",
+        description: "Keep the authorization reason under 500 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPurposeBusy(true);
+    try {
+      if (action.kind === "export") {
+        const data = await buildTrackResultExport(action.format);
+        if (!data) throw new Error("Nothing to export");
+        exportReport(action.format, data);
+        await supabase.from("front_desk_audit_log").insert({
+          action: "gps_search_track_exported",
+          entity_type: "gps_search_track",
+          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+          performed_by: user.id,
+          details: {
+            format: action.format,
+            query: trackQuery,
+            display_name: trackResult.display_name,
+            lat: trackResult.lat,
+            lng: trackResult.lng,
+            at: new Date().toISOString(),
+            purpose: reason,
+            authorization_category: "cyber_intelligence_export",
+          },
+        });
+        toast({ title: `${getFormatLabel(action.format)} downloaded`, description: "Authorization reason recorded in the audit log." });
+      } else {
+        printTrackResult();
+        await supabase.from("front_desk_audit_log").insert({
+          action: "gps_search_track_printed",
+          entity_type: "gps_search_track",
+          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+          performed_by: user.id,
+          details: {
+            query: trackQuery,
+            display_name: trackResult.display_name,
+            lat: trackResult.lat,
+            lng: trackResult.lng,
+            at: new Date().toISOString(),
+            purpose: reason,
+            authorization_category: "cyber_intelligence_print",
+          },
+        });
+        toast({ title: "Print dialog opened", description: "Authorization reason recorded in the audit log." });
+      }
+      setPurposeOpen(false);
+      setPurposeAction(null);
+      setPurposeText("");
+    } catch (e: any) {
+      toast({ title: "Action failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setPurposeBusy(false);
+    }
+  };
 
 
   const buildExport = () => {
@@ -889,50 +990,35 @@ export default function GpsAddresses() {
                 </Button>
                 {canExportTrack ? (
                   <>
-                    <ExportMenu
-                      getData={buildTrackResultExport}
-                      label="Export result"
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="gap-1.5">
+                          <Download className="h-3.5 w-3.5" /> Export result
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel className="text-[11px]">Choose format</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "pdf" })} className="gap-2">
+                          <FileText className="h-4 w-4" /> PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "csv" })} className="gap-2">
+                          <FileSpreadsheet className="h-4 w-4" /> CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "excel" })} className="gap-2">
+                          <FileSpreadsheet className="h-4 w-4" /> Excel (.xlsx)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => requestTrackPurpose({ kind: "export", format: "word" })} className="gap-2">
+                          <FileType className="h-4 w-4" /> Word (.doc)
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
                       size="sm"
-                      onExported={(fmt) => {
-                        // Audit successful exfiltration of a Search & Track result
-                        // so commanders have a verifiable trail of who exported
-                        // intel-derived coordinates and in what format.
-                        if (!trackResult || !user) return;
-                        supabase.from("front_desk_audit_log").insert({
-                          action: "gps_search_track_exported",
-                          entity_type: "gps_search_track",
-                          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-                          performed_by: user.id,
-                          details: {
-                            format: fmt,
-                            query: trackQuery,
-                            display_name: trackResult.display_name,
-                            lat: trackResult.lat,
-                            lng: trackResult.lng,
-                            at: new Date().toISOString(),
-                            purpose: "cyber_intelligence_export",
-                          },
-                        }).then(() => undefined, () => undefined);
-                      }}
-                    />
-                    <Button size="sm" variant="outline" onClick={() => {
-                      printTrackResult();
-                      if (!trackResult || !user) return;
-                      supabase.from("front_desk_audit_log").insert({
-                        action: "gps_search_track_printed",
-                        entity_type: "gps_search_track",
-                        entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-                        performed_by: user.id,
-                        details: {
-                          query: trackQuery,
-                          display_name: trackResult.display_name,
-                          lat: trackResult.lat,
-                          lng: trackResult.lng,
-                          at: new Date().toISOString(),
-                          purpose: "cyber_intelligence_print",
-                        },
-                      }).then(() => undefined, () => undefined);
-                    }} className="gap-1.5">
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => requestTrackPurpose({ kind: "print" })}
+                    >
                       <Printer className="h-3.5 w-3.5" /> Print
                     </Button>
                   </>
@@ -1700,6 +1786,54 @@ export default function GpsAddresses() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ===== Authorization-purpose prompt for Search & Track export/print ===== */}
+      <Dialog open={purposeOpen} onOpenChange={(o) => { if (!o) cancelPurpose(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-primary" />
+              Authorization reason required
+            </DialogTitle>
+            <DialogDescription>
+              State the operational purpose for {purposeAction?.kind === "print"
+                ? "printing"
+                : `exporting (${purposeAction ? getFormatLabel((purposeAction as { kind: "export"; format: ExportFormat }).format) : ""})`}
+              {" "}this Search & Track result. The reason will be written to the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="track-purpose" className="text-xs">
+              Authorization reason <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="track-purpose"
+              value={purposeText}
+              onChange={(e) => setPurposeText(e.target.value.slice(0, 500))}
+              placeholder="e.g., Cyber-intel briefing for OIC on suspect movement at flagged coordinates (Case #INC-2024-014)."
+              rows={4}
+              maxLength={500}
+              disabled={purposeBusy}
+              autoFocus
+            />
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Minimum 10 characters · 500 max</span>
+              <span className={purposeText.trim().length < 10 ? "text-destructive" : ""}>
+                {purposeText.trim().length}/500
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelPurpose} disabled={purposeBusy}>
+              Cancel
+            </Button>
+            <Button onClick={confirmTrackPurpose} disabled={purposeBusy || purposeText.trim().length < 10}>
+              {purposeBusy && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              Confirm & {purposeAction?.kind === "print" ? "print" : "export"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
