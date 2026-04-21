@@ -228,6 +228,39 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const MAX_EXTRA_FILE_BYTES = 5 * 1024 * 1024; // 5 MB per file
   const MAX_EXTRA_TOTAL_BYTES = 15 * 1024 * 1024; // 15 MB across all extras
   const MAX_EXTRA_COUNT = 5;
+  // Whitelist of allowed document/image formats — anything else is rejected
+  // before the file is read, so unsupported binaries never hit the edge function.
+  const ALLOWED_EXTS = [
+    "pdf",
+    "doc", "docx",
+    "xls", "xlsx", "csv",
+    "ppt", "pptx",
+    "txt", "rtf",
+    "png", "jpg", "jpeg", "webp", "heic",
+  ] as const;
+  const ALLOWED_MIME_PREFIXES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument",
+    "application/vnd.ms-excel",
+    "application/vnd.ms-powerpoint",
+    "application/rtf",
+    "text/plain",
+    "text/csv",
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/heic",
+  ];
+  const ACCEPT_ATTR = ALLOWED_EXTS.map((e) => `.${e}`).join(",");
+
+  const isAllowedFile = (f: File): boolean => {
+    const ext = (f.name.split(".").pop() ?? "").toLowerCase();
+    if (ext && (ALLOWED_EXTS as readonly string[]).includes(ext)) return true;
+    const mime = (f.type || "").toLowerCase();
+    if (mime && ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p))) return true;
+    return false;
+  };
 
   useEffect(() => {
     if (open) {
@@ -430,6 +463,14 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     const next = [...extraAttachments];
     let added = 0;
     for (const f of incoming) {
+      if (!isAllowedFile(f)) {
+        toast.error(`"${f.name}" is not an allowed file type and was skipped`);
+        continue;
+      }
+      if (f.size === 0) {
+        toast.error(`"${f.name}" is empty and was skipped`);
+        continue;
+      }
       if (f.size > MAX_EXTRA_FILE_BYTES) {
         toast.error(`"${f.name}" is over 5 MB and was skipped`);
         continue;
@@ -918,6 +959,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                   ref={extraFileRef}
                   type="file"
                   multiple
+                  accept={ACCEPT_ATTR}
                   className="hidden"
                   onChange={(e) => handleExtraFiles(e.target.files)}
                 />
@@ -931,7 +973,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                   <Paperclip className="mr-2 h-3.5 w-3.5" /> Attach files
                 </Button>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Max {MAX_EXTRA_COUNT} files, 5 MB each, 15 MB total. Sent in addition to the record PDF.
+                  Max {MAX_EXTRA_COUNT} files, 5 MB each, 15 MB total. Allowed: PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, PNG/JPG/WEBP/HEIC. Sent in addition to the record PDF.
                 </p>
                 {extraAttachments.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
