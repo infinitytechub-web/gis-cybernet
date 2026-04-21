@@ -408,6 +408,108 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     if (validateCompose()) setStep("preview");
   };
 
+  /**
+   * Dry-run: generate the PDF, compute its SHA-256, and write a mock entry
+   * to front_desk_audit_log so the compliance workflow can be verified
+   * end-to-end without emailing real recipients. No network call to the
+   * send-record-email edge function is made.
+   */
+  const [testing, setTesting] = useState(false);
+  const handleTestSend = async () => {
+    if (!validateCompose()) return;
+    setTesting(true);
+    try {
+      // Build the exact PDF and hash its bytes
+      const attachment = recordPdfBase64(kind, record);
+      let sha: string | null = null;
+      try {
+        const bin = atob(attachment);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        sha = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      } catch { /* best-effort */ }
+
+      // Resolve final recipient set (same dedup path as a real send)
+      let recipientsList: string[] = [];
+      let ccList: string[] = [];
+      let bccList: string[] = [];
+      if (mode === "single") {
+        const clean = finalDedupeSingle(to, ccParsed.valid, bccParsed.valid);
+        recipientsList = clean.to ? [clean.to] : [];
+        ccList = clean.cc;
+        bccList = clean.bcc;
+      } else {
+        recipientsList = finalDedupeBulk(bulkList).recipients;
+      }
+
+      // Authenticated user for audit attribution
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) {
+        toast.error("You must be signed in to run a test send");
+        setTesting(false);
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+      const mockResults: RecipientResult[] = recipientsList.map((e) => ({
+        email: e,
+        status: "sent" as const,
+        message_id: `test_${crypto.randomUUID()}`,
+      }));
+
+      const { error: logError } = await supabase
+        .from("front_desk_audit_log")
+        .insert({
+          action: "email_share_test",
+          entity_type: kind,
+          entity_id: record.id ?? "",
+          performed_by: uid,
+          details: {
+            test_mode: true,
+            mode: mode === "single" ? "single" : "bulk",
+            recipient_count: recipientsList.length,
+            sent: 0,
+            queued: 0,
+            failed: 0,
+            cc: ccList,
+            bcc: bccList,
+            subject,
+            attachment_filename: attachmentFilename,
+            attachment_sha256: sha,
+            attachment_generated_at: nowIso,
+            record_kind: kind,
+            applicant_id: record.id ?? null,
+            applicant_name: record.applicant_name ?? null,
+            sent_at: nowIso,
+            note: "Simulated send — no email dispatched",
+            results: mockResults.map((r) => ({
+              email: r.email,
+              status: "simulated",
+              message_id: r.message_id,
+              error: null,
+            })),
+          },
+        });
+
+      if (logError) throw logError;
+
+      setResults(mockResults);
+      toast.success(
+        `Test send logged · SHA-256 ${sha ? sha.slice(0, 10) + "…" : "n/a"} · ${recipientsList.length} recipient${
+          recipientsList.length === 1 ? "" : "s"
+        } simulated`,
+      );
+    } catch (e: any) {
+      toast.error(e?.message || "Test send failed");
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!validateCompose()) return;
 
