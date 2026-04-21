@@ -1135,6 +1135,37 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               </div>
             </div>
 
+            {/* Additional attachment preview chips */}
+            {extraAttachments.length > 0 && (
+              <div className="rounded-md border">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b">
+                  <div className="text-xs font-medium flex items-center gap-1.5">
+                    <Paperclip className="h-3.5 w-3.5" /> Additional attachments
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {extraAttachments.length} file{extraAttachments.length === 1 ? "" : "s"} · {formatBytes(totalExtraBytes)}
+                  </Badge>
+                </div>
+                <div className="px-3 py-2 flex flex-wrap gap-1.5">
+                  {extraAttachments.map((a, i) => (
+                    <Badge
+                      key={`prev-${a.filename}-${i}`}
+                      variant="secondary"
+                      className="gap-1.5 max-w-[260px]"
+                    >
+                      <Paperclip className="h-3 w-3 shrink-0" />
+                      <span className="truncate font-mono text-[11px]" title={a.filename}>
+                        {a.filename}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {formatBytes(a.size)}
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Per-address duplicate breakdown (bulk mode) */}
             {mode === "bulk" && bulkBreakdown.duplicates.length > 0 && (
               <div className="rounded-md border border-dashed">
