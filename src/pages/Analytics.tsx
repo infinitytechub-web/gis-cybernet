@@ -67,6 +67,7 @@ type TimePeriod = "7d" | "30d" | "90d" | "12m";
 
 export default function Analytics() {
   const { isAdmin, isAdminOrSupervisor, user } = useAuth();
+  const isMobile = useIsMobile();
   const [period, setPeriod] = useState<TimePeriod>("30d");
   const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
   const [incidentForm, setIncidentForm] = useState({
