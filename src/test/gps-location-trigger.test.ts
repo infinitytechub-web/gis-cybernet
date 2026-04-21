@@ -130,4 +130,103 @@ describeIfDb("normalize_gps_location trigger", { timeout: 30_000 }, () => {
       });
     },
   );
+
+  // Lightweight performance smoke-test: bulk-insert hundreds of varied GPS
+  // values through the trigger and assert the average per-row trigger time
+  // stays within an acceptable threshold. Everything runs inside a single
+  // transaction that is rolled back, so nothing is persisted.
+  describe("performance", () => {
+    const BULK_ROWS = 500;
+    // Generous ceilings — these are smoke thresholds, not micro-benchmarks.
+    // They guard against an order-of-magnitude regression (e.g. someone
+    // adding a per-row subquery to the trigger).
+    const MAX_TOTAL_MS = 5_000; // entire bulk insert, server-side
+    const MAX_AVG_MS_PER_ROW = 8; // per-row average through the trigger
+
+    it(`normalises ${BULK_ROWS} rows within performance budget`, () => {
+      // Build a VALUES list mixing every shape the trigger handles:
+      // lowercase digital, uppercase digital, digital + coords, free-form
+      // landmark text, and surrounding whitespace.
+      const samples: string[] = [];
+      for (let i = 0; i < BULK_ROWS; i++) {
+        const region = ["GA", "AK", "GS", "CR", "WR"][i % 5];
+        const mid = String(100 + (i % 900)).padStart(3, "0");
+        const tail = String(1000 + ((i * 13) % 9000)).padStart(4, "0");
+        const variant = i % 5;
+        if (variant === 0) {
+          samples.push(`${region.toLowerCase()}-${mid}-${tail}`);
+        } else if (variant === 1) {
+          samples.push(`  ${region}-${mid}-${tail}  `);
+        } else if (variant === 2) {
+          const lat = (5 + (i % 100) / 100).toFixed(6);
+          const lng = (-0.1 - (i % 100) / 1000).toFixed(6);
+          samples.push(
+            `${region.toLowerCase()}-${mid}-${tail}   (${lat}, ${lng})`,
+          );
+        } else if (variant === 3) {
+          samples.push(`Amasaman   Barrier #${i}`);
+        } else {
+          samples.push(`Pokuase Junction stop ${i}`);
+        }
+      }
+
+      // Single multi-row INSERT — exercises the BEFORE trigger once per row
+      // but only one round-trip from the test process to Postgres.
+      const valuesSql = samples
+        .map(
+          (s) =>
+            `('patrol', CURRENT_DATE, '00000000-0000-0000-0000-000000000000'::uuid, $lov$${s.replace(
+              /\$lov\$/g,
+              "",
+            )}$lov$)`,
+        )
+        .join(",\n");
+
+      const sql = `
+        BEGIN;
+        DO $$
+        DECLARE
+          _start timestamptz := clock_timestamp();
+          _elapsed_ms numeric;
+        BEGIN
+          INSERT INTO public.enforcement_operations
+            (operation_type, operation_date, reported_by, location)
+          VALUES
+            ${valuesSql};
+          _elapsed_ms := EXTRACT(EPOCH FROM (clock_timestamp() - _start)) * 1000;
+          RAISE NOTICE 'BULK_TRIGGER_MS=%', _elapsed_ms;
+        END
+        $$;
+        ROLLBACK;
+      `;
+
+      const wallStart = Date.now();
+      const res = runSql(sql);
+      const wallMs = Date.now() - wallStart;
+
+      if (!res.ok) {
+        throw new Error(res.stderr || "psql failed during bulk insert");
+      }
+
+      // Extract the server-side elapsed time from the NOTICE message.
+      const noticeMatch = /BULK_TRIGGER_MS=([0-9]+(?:\.[0-9]+)?)/.exec(
+        res.stderr,
+      );
+      const serverMs = noticeMatch ? parseFloat(noticeMatch[1]) : NaN;
+      expect(Number.isFinite(serverMs)).toBe(true);
+
+      const avgMsPerRow = serverMs / BULK_ROWS;
+
+      // Surface the numbers so a regression run shows the actual timings.
+      // eslint-disable-next-line no-console
+      console.log(
+        `[gps-trigger perf] rows=${BULK_ROWS} server=${serverMs.toFixed(
+          1,
+        )}ms avg=${avgMsPerRow.toFixed(3)}ms/row wall=${wallMs}ms`,
+      );
+
+      expect(serverMs).toBeLessThan(MAX_TOTAL_MS);
+      expect(avgMsPerRow).toBeLessThan(MAX_AVG_MS_PER_ROW);
+    });
+  });
 });
