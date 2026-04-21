@@ -114,10 +114,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Connector credentials
+    const isDryRun = body.dry_run === true;
+
+    // Connector credentials — only required for real sends.
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!LOVABLE_API_KEY || !RESEND_API_KEY) {
+    if (!isDryRun && (!LOVABLE_API_KEY || !RESEND_API_KEY)) {
       return new Response(
         JSON.stringify({
           error:
