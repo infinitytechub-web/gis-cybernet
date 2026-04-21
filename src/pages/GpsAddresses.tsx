@@ -164,6 +164,56 @@ export default function GpsAddresses() {
   const [deleting, setDeleting] = useState<GpsRecord | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
+  // ===== Online-tracking authorization gate =====
+  // Live online map tiles (OpenStreetMap / Carto) are only loaded after the
+  // operator confirms an explicit cyber-intel tracking authorization. The
+  // consent is per-record: closing the dialog re-arms the gate so that every
+  // new tracking session must be re-authorized and audit-logged.
+  const [tilesAuthorized, setTilesAuthorized] = useState(false);
+  const [authorizing, setAuthorizing] = useState(false);
+  // Only the command tier can authorize live online tile loading.
+  const canAuthorizeTiles = isAdmin || isOic || is2ic || role === "staff_officer";
+
+  const authorizeLiveTiles = async () => {
+    if (!selected || !canAuthorizeTiles) return;
+    setAuthorizing(true);
+    try {
+      // Audit the authorization event so commanders have a verifiable trail of
+      // who loaded online map tiles for which GPS record.
+      await supabase.from("front_desk_audit_log").insert({
+        action: "gps_live_tiles_authorized",
+        entity_type: selected.source,
+        entity_id: selected.id,
+        performed_by: (await supabase.auth.getUser()).data.user?.id ?? "",
+        details: {
+          raw_location: selected.raw_location,
+          digital_address: selected.digital_address,
+          lat: selected.lat,
+          lng: selected.lng,
+          context: selected.context,
+          authorized_at: new Date().toISOString(),
+          purpose: "cyber_intelligence_live_tracking",
+        },
+      });
+      setTilesAuthorized(true);
+      toast({
+        title: "Live tracking authorized",
+        description: "Online map tiles loaded for this record. Authorization recorded in the audit trail.",
+      });
+    } catch (e: any) {
+      // Authorization is recorded best-effort; failure to log should not block
+      // the operator, but we surface a warning so the audit gap is visible.
+      setTilesAuthorized(true);
+      toast({
+        title: "Authorized (audit log warning)",
+        description: e?.message ?? "Could not write authorization event to the audit log.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthorizing(false);
+    }
+  };
+
   // Realtime: invalidate on changes to any of the source tables
   useEffect(() => {
     if (!allowed) return;
