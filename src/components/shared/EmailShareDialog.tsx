@@ -217,12 +217,29 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const attachment = recordPdfBase64(kind, record);
 
+      // Dedup single-mode: CC/BCC must not repeat the TO address or each other.
+      const toAddr = to.trim();
+      const toLower = toAddr.toLowerCase();
+      const seenSingle = new Set<string>([toLower]);
+      const dedupedCc = ccParsed.valid.filter((e) => {
+        const l = e.toLowerCase();
+        if (seenSingle.has(l)) return false;
+        seenSingle.add(l);
+        return true;
+      });
+      const dedupedBcc = bccParsed.valid.filter((e) => {
+        const l = e.toLowerCase();
+        if (seenSingle.has(l)) return false;
+        seenSingle.add(l);
+        return true;
+      });
+
       const payload =
         mode === "single"
           ? {
-              to: to.trim(),
-              cc: ccParsed.valid,
-              bcc: bccParsed.valid,
+              to: toAddr,
+              cc: dedupedCc,
+              bcc: dedupedBcc,
               subject,
               message,
               attachment_base64: attachment,
@@ -232,7 +249,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             }
           : {
               bulk: true,
-              recipients: bulkList,
+              recipients: bulkList, // already deduped by parseEmailList
               subject,
               message,
               attachment_base64: attachment,
