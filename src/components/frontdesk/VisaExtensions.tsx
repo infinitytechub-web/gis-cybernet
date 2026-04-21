@@ -17,8 +17,15 @@ import { Plus, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { CountryCombobox } from "@/components/ui/country-combobox";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
+const PERMIT_TYPES = [
+  { value: "residence_permit", label: "Residence Permit" },
+  { value: "student_permit", label: "Student Permit" },
+  { value: "visitors_permit", label: "Visitor's Permit" },
+  { value: "work_permit", label: "Work Permit" },
+];
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
@@ -52,6 +59,7 @@ export default function VisaExtensions() {
     requested_extension_date: "", reason: "", notes: "", status: "submitted",
     phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "",
     date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "",
+    nationality: "Ghanaian", permit_type: "", fee_charged: "",
   });
 
   const { data: extensions = [], isLoading } = useQuery({
@@ -65,7 +73,14 @@ export default function VisaExtensions() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, date_of_birth: form.date_of_birth || null, processed_by: user?.id };
+      const payload = {
+        ...form,
+        date_of_birth: form.date_of_birth || null,
+        nationality: form.nationality || null,
+        permit_type: form.permit_type || null,
+        fee_charged: form.fee_charged === "" ? null : Number(form.fee_charged),
+        processed_by: user?.id,
+      };
 
       let previousStatus: string | null = null;
       if (editId) {
@@ -110,7 +125,7 @@ export default function VisaExtensions() {
   });
 
   const resetForm = () => {
-    setForm({ applicant_name: "", passport_number: "", current_visa_expiry: "", requested_extension_date: "", reason: "", notes: "", status: "submitted", phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "", date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "" });
+    setForm({ applicant_name: "", passport_number: "", current_visa_expiry: "", requested_extension_date: "", reason: "", notes: "", status: "submitted", phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "", date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "", nationality: "Ghanaian", permit_type: "", fee_charged: "" });
     setEditId(null);
     setOpen(false);
   };
@@ -125,6 +140,8 @@ export default function VisaExtensions() {
       date_of_birth: ext.date_of_birth || "", next_of_kin: ext.next_of_kin || "",
       emergency_contact: ext.emergency_contact || "", street_name: ext.street_name || "",
       nearest_landmark: ext.nearest_landmark || "",
+      nationality: ext.nationality || "Ghanaian", permit_type: ext.permit_type || "",
+      fee_charged: ext.fee_charged != null ? String(ext.fee_charged) : "",
     });
     setEditId(ext.id);
     setOpen(true);
@@ -194,6 +211,18 @@ export default function VisaExtensions() {
                   </Select>
                 </div>
                 <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="col-span-2"><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
+                <div><Label>Permit Type *</Label>
+                  <Select value={form.permit_type} onValueChange={(v) => setForm({ ...form, permit_type: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select permit" /></SelectTrigger>
+                    <SelectContent>
+                      {PERMIT_TYPES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Fee Charged (GHS)</Label>
+                  <Input type="number" min="0" step="0.01" value={form.fee_charged} onChange={(e) => setForm({ ...form, fee_charged: e.target.value })} placeholder="0.00" />
+                </div>
                 <div><Label>Current Visa Expiry *</Label><Input type="date" value={form.current_visa_expiry} onChange={(e) => setForm({ ...form, current_visa_expiry: e.target.value })} required /></div>
                 <div><Label>Requested Extension Date *</Label><Input type="date" value={form.requested_extension_date} onChange={(e) => setForm({ ...form, requested_extension_date: e.target.value })} required /></div>
               </div>
