@@ -152,9 +152,13 @@ const SOURCE_ROUTES: Record<SourceKey, string> = {
 };
 
 export default function GpsAddresses() {
-  const { isAdmin, isOic, is2ic, role, loading } = useAuth();
+  const { user, isAdmin, isOic, is2ic, isIpse, role, loading } = useAuth();
   const allowed = isAdmin || isOic || is2ic || role === "staff_officer";
   const canDelete = isAdmin || isOic; // Stricter — only admin/OIC can delete GPS source records
+  // Search & Track exports / prints are restricted to cyber-intelligence
+  // authorized roles. Lower-tier viewers can see results on screen but cannot
+  // exfiltrate them to disk, paper, or other endpoints.
+  const canExportTrack = isAdmin || isOic || is2ic || role === "staff_officer" || isIpse;
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -214,6 +218,50 @@ export default function GpsAddresses() {
       setAuthorizing(false);
     }
   };
+
+  // ===== Prior live-tracking authorizations (audit sidebar) =====
+  // Pulls historic gps_live_tiles_authorized events for the currently selected
+  // GPS record, plus a separate "my authorizations" stream so operators can
+  // verify their own footprint at a glance.
+  const { data: recordAuthorizations = [], isLoading: recordAuthLoading } = useQuery({
+    queryKey: ["gps-tile-auth", "record", selected?.source, selected?.id],
+    enabled: !!selected && allowed,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("front_desk_audit_log")
+        .select("id, action, performed_by, details, created_at")
+        .eq("action", "gps_live_tiles_authorized")
+        .eq("entity_type", selected!.source)
+        .eq("entity_id", selected!.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: myAuthorizations = [], isLoading: myAuthLoading } = useQuery({
+    queryKey: ["gps-tile-auth", "self", user?.id],
+    enabled: !!user && !!selected && allowed,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("front_desk_audit_log")
+        .select("id, action, entity_type, entity_id, details, created_at")
+        .eq("action", "gps_live_tiles_authorized")
+        .eq("performed_by", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Refresh audit panels after a fresh authorization so the new entry shows up
+  // immediately without a manual reload.
+  useEffect(() => {
+    if (!tilesAuthorized) return;
+    qc.invalidateQueries({ queryKey: ["gps-tile-auth"] });
+  }, [tilesAuthorized, qc]);
 
   // Realtime: invalidate on changes to any of the source tables
   useEffect(() => {
@@ -791,17 +839,64 @@ export default function GpsAddresses() {
                 >
                   <Copy className="h-3 w-3 mr-1" /> Copy coords
                 </Button>
-                <ExportMenu
-                  getData={buildTrackResultExport}
-                  label="Export result"
-                  size="sm"
-                />
-                <Button size="sm" variant="outline" onClick={printTrackResult} className="gap-1.5">
-                  <Printer className="h-3.5 w-3.5" /> Print
-                </Button>
+                {canExportTrack ? (
+                  <>
+                    <ExportMenu
+                      getData={buildTrackResultExport}
+                      label="Export result"
+                      size="sm"
+                      onExported={(fmt) => {
+                        // Audit successful exfiltration of a Search & Track result
+                        // so commanders have a verifiable trail of who exported
+                        // intel-derived coordinates and in what format.
+                        if (!trackResult || !user) return;
+                        supabase.from("front_desk_audit_log").insert({
+                          action: "gps_search_track_exported",
+                          entity_type: "gps_search_track",
+                          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+                          performed_by: user.id,
+                          details: {
+                            format: fmt,
+                            query: trackQuery,
+                            display_name: trackResult.display_name,
+                            lat: trackResult.lat,
+                            lng: trackResult.lng,
+                            at: new Date().toISOString(),
+                            purpose: "cyber_intelligence_export",
+                          },
+                        }).then(() => undefined, () => undefined);
+                      }}
+                    />
+                    <Button size="sm" variant="outline" onClick={() => {
+                      printTrackResult();
+                      if (!trackResult || !user) return;
+                      supabase.from("front_desk_audit_log").insert({
+                        action: "gps_search_track_printed",
+                        entity_type: "gps_search_track",
+                        entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+                        performed_by: user.id,
+                        details: {
+                          query: trackQuery,
+                          display_name: trackResult.display_name,
+                          lat: trackResult.lat,
+                          lng: trackResult.lng,
+                          at: new Date().toISOString(),
+                          purpose: "cyber_intelligence_print",
+                        },
+                      }).then(() => undefined, () => undefined);
+                    }} className="gap-1.5">
+                      <Printer className="h-3.5 w-3.5" /> Print
+                    </Button>
+                  </>
+                ) : (
+                  <Badge variant="destructive" className="gap-1 text-[11px]">
+                    <Lock className="h-3 w-3" /> Export & print restricted to cyber-intelligence roles
+                  </Badge>
+                )}
               </div>
               <p className="text-[10px] text-muted-foreground">
                 Geocoding via OpenStreetMap (Nominatim). Use only for lawful intelligence operations.
+                {!canExportTrack && " Export and print are gated to admin, OIC, 2IC, Staff Officer, and IPSE supervisors."}
               </p>
             </div>
           )}
@@ -1101,7 +1196,7 @@ export default function GpsAddresses() {
           }
         }}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-5xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <NavIcon className="h-4 w-4 text-primary" />
@@ -1118,148 +1213,262 @@ export default function GpsAddresses() {
             </DialogTitle>
           </DialogHeader>
           {selected && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                <InfoCell label="Address" value={selected.raw_location} mono />
-                <InfoCell label="Digital" value={selected.digital_address ?? "—"} mono />
-                <InfoCell
-                  label="Latitude"
-                  value={selected.lat != null ? selected.lat.toFixed(6) : "—"}
-                  mono
-                />
-                <InfoCell
-                  label="Longitude"
-                  value={selected.lng != null ? selected.lng.toFixed(6) : "—"}
-                  mono
-                />
-              </div>
+            <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+              {/* ----- Main map / authorization column ----- */}
+              <div className="space-y-3 min-w-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <InfoCell label="Address" value={selected.raw_location} mono />
+                  <InfoCell label="Digital" value={selected.digital_address ?? "—"} mono />
+                  <InfoCell
+                    label="Latitude"
+                    value={selected.lat != null ? selected.lat.toFixed(6) : "—"}
+                    mono
+                  />
+                  <InfoCell
+                    label="Longitude"
+                    value={selected.lng != null ? selected.lng.toFixed(6) : "—"}
+                    mono
+                  />
+                </div>
 
-              {selected.lat != null && selected.lng != null ? (
-                tilesAuthorized ? (
-                  <>
-                    <GpsLiveMap
-                      lat={selected.lat}
-                      lng={selected.lng}
-                      label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
-                      height={380}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" asChild>
-                        <a
-                          href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selected.lat},${selected.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" /> Street View
-                        </a>
-                      </Button>
-                      <Button size="sm" variant="outline" asChild>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${selected.lat},${selected.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" /> Google Maps
-                        </a>
-                      </Button>
-                      <Button size="sm" variant="outline" asChild>
-                        <a
-                          href={`https://www.openstreetmap.org/?mlat=${selected.lat}&mlon=${selected.lng}#map=18/${selected.lat}/${selected.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" /> OpenStreetMap
-                        </a>
-                      </Button>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {selected.raw_location.includes("(")
-                        ? "Coordinates parsed directly from the captured GPS address."
-                        : "Coordinates derived from the digital address / known landmark — approximate."}
-                    </p>
-                  </>
-                ) : (
-                  // Authorization gate — online tiles are NOT requested. We
-                  // still render an OFFLINE static coordinate view so operators
-                  // can read/copy the captured coordinates without any third-
-                  // party network request being made on their behalf.
-                  <div className="space-y-3">
-                    <StaticCoordinateMap
-                      lat={selected.lat}
-                      lng={selected.lng}
-                      label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
-                      height={320}
-                    />
+                {selected.lat != null && selected.lng != null ? (
+                  tilesAuthorized ? (
+                    <>
+                      <GpsLiveMap
+                        lat={selected.lat}
+                        lng={selected.lng}
+                        label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
+                        height={380}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="outline" asChild>
+                          <a
+                            href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selected.lat},${selected.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" /> Street View
+                          </a>
+                        </Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${selected.lat},${selected.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" /> Google Maps
+                          </a>
+                        </Button>
+                        <Button size="sm" variant="outline" asChild>
+                          <a
+                            href={`https://www.openstreetmap.org/?mlat=${selected.lat}&mlon=${selected.lng}#map=18/${selected.lat}/${selected.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" /> OpenStreetMap
+                          </a>
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {selected.raw_location.includes("(")
+                          ? "Coordinates parsed directly from the captured GPS address."
+                          : "Coordinates derived from the digital address / known landmark — approximate."}
+                      </p>
+                    </>
+                  ) : (
+                    // Authorization gate — online tiles are NOT requested. We
+                    // still render an OFFLINE static coordinate view so operators
+                    // can read/copy the captured coordinates without any third-
+                    // party network request being made on their behalf.
+                    <div className="space-y-3">
+                      <StaticCoordinateMap
+                        lat={selected.lat}
+                        lng={selected.lng}
+                        label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
+                        height={320}
+                      />
 
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(`${selected.lat!.toFixed(6)}, ${selected.lng!.toFixed(6)}`);
-                          toast({ title: "Coordinates copied" });
-                        }}
-                        className="gap-1.5"
-                      >
-                        <Copy className="h-3 w-3" /> Copy coordinates
-                      </Button>
-                      {selected.digital_address && (
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={async () => {
-                            await navigator.clipboard.writeText(selected.digital_address!);
-                            toast({ title: "Digital address copied" });
+                            await navigator.clipboard.writeText(`${selected.lat!.toFixed(6)}, ${selected.lng!.toFixed(6)}`);
+                            toast({ title: "Coordinates copied" });
                           }}
                           className="gap-1.5"
                         >
-                          <Copy className="h-3 w-3" /> Copy digital address
+                          <Copy className="h-3 w-3" /> Copy coordinates
                         </Button>
-                      )}
-                    </div>
+                        {selected.digital_address && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              await navigator.clipboard.writeText(selected.digital_address!);
+                              toast({ title: "Digital address copied" });
+                            }}
+                            className="gap-1.5"
+                          >
+                            <Copy className="h-3 w-3" /> Copy digital address
+                          </Button>
+                        )}
+                      </div>
 
-                    <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold">Online tracking authorization required</p>
-                          <p className="text-xs text-muted-foreground">
-                            You are viewing the offline static coordinate fallback — no third-party tile servers
-                            (OpenStreetMap / Carto) have been contacted. To load live online map tiles you must
-                            confirm the cyber-intelligence tracking authorization. The action is recorded in the
-                            audit trail with your identity, the target coordinates, and a timestamp.
-                          </p>
-                          <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
-                            <li>Use only for sanctioned cyber-intelligence operations.</li>
-                            <li>Do not authorize on shared or untrusted networks.</li>
-                            <li>Closing this dialog revokes authorization for the next session.</li>
-                          </ul>
+                      <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold">Online tracking authorization required</p>
+                            <p className="text-xs text-muted-foreground">
+                              You are viewing the offline static coordinate fallback — no third-party tile servers
+                              (OpenStreetMap / Carto) have been contacted. To load live online map tiles you must
+                              confirm the cyber-intelligence tracking authorization. The action is recorded in the
+                              audit trail with your identity, the target coordinates, and a timestamp.
+                            </p>
+                            <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
+                              <li>Use only for sanctioned cyber-intelligence operations.</li>
+                              <li>Do not authorize on shared or untrusted networks.</li>
+                              <li>Closing this dialog revokes authorization for the next session.</li>
+                            </ul>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          {canAuthorizeTiles ? (
+                            <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
+                              {authorizing ? (
+                                <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
+                              ) : (
+                                <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
+                              )}
+                            </Button>
+                          ) : (
+                            <Badge variant="destructive" className="gap-1 text-[11px]">
+                              <Lock className="h-3 w-3" /> Command-tier authorization required
+                            </Badge>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        {canAuthorizeTiles ? (
-                          <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
-                            {authorizing ? (
-                              <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
-                            ) : (
-                              <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
-                            )}
-                          </Button>
-                        ) : (
-                          <Badge variant="destructive" className="gap-1 text-[11px]">
-                            <Lock className="h-3 w-3" /> Command-tier authorization required
-                          </Badge>
-                        )}
-                        <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
-                      </div>
                     </div>
+                  )
+                ) : (
+                  <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                    This record has no resolvable coordinates. Re-capture using "Get GPS Address" to enable live tracking.
                   </div>
-                )
-              ) : (
-                <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  This record has no resolvable coordinates. Re-capture using "Get GPS Address" to enable live tracking.
+                )}
+              </div>
+
+              {/* ----- Audit sidebar: prior live-tracking authorizations ----- */}
+              <aside className="space-y-3 lg:border-l lg:pl-4 min-w-0">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    <ShieldAlert className="h-3.5 w-3.5 text-primary" /> Authorization Audit
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Live-tracking authorizations recorded for this record and your account.
+                  </p>
                 </div>
-              )}
+
+                {/* This record's authorizations */}
+                <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      This record
+                    </span>
+                    <Badge variant="outline" className="text-[10px] tabular-nums">
+                      {recordAuthLoading ? "…" : recordAuthorizations.length}
+                    </Badge>
+                  </div>
+                  {recordAuthLoading ? (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Loading…
+                    </div>
+                  ) : recordAuthorizations.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      No prior authorizations for this GPS record.
+                    </p>
+                  ) : (
+                    <ul className="space-y-1.5 max-h-[180px] overflow-y-auto pr-1">
+                      {recordAuthorizations.map((entry: any) => {
+                        const isMe = entry.performed_by === user?.id;
+                        return (
+                          <li key={entry.id} className="rounded border bg-card p-2 text-[11px] space-y-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono truncate" title={entry.performed_by}>
+                                {isMe ? "You" : `${String(entry.performed_by).slice(0, 8)}…`}
+                              </span>
+                              {isMe && (
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1">me</Badge>
+                              )}
+                            </div>
+                            <div className="text-muted-foreground" title={format(new Date(entry.created_at), "dd MMM yyyy, HH:mm:ss")}>
+                              {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                            </div>
+                            {entry.details?.purpose && (
+                              <div className="text-[10px] text-muted-foreground capitalize truncate">
+                                {String(entry.details.purpose).replace(/_/g, " ")}
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+
+                {/* My recent authorizations across all records */}
+                <div className="rounded-md border bg-muted/20 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      My recent authorizations
+                    </span>
+                    <Badge variant="outline" className="text-[10px] tabular-nums">
+                      {myAuthLoading ? "…" : myAuthorizations.length}
+                    </Badge>
+                  </div>
+                  {user?.id && (
+                    <p className="text-[10px] text-muted-foreground font-mono break-all" title={user.id}>
+                      uid: {user.id.slice(0, 8)}…{user.id.slice(-4)}
+                    </p>
+                  )}
+                  {myAuthLoading ? (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Loading…
+                    </div>
+                  ) : myAuthorizations.length === 0 ? (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      You have no recorded authorizations yet.
+                    </p>
+                  ) : (
+                    <ul className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                      {myAuthorizations.map((entry: any) => {
+                        const isCurrent = entry.entity_id === selected.id && entry.entity_type === selected.source;
+                        return (
+                          <li key={entry.id} className={`rounded border bg-card p-2 text-[11px] space-y-0.5 ${isCurrent ? "border-primary/50" : ""}`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="capitalize truncate">
+                                {String(entry.entity_type).replace(/_/g, " ")}
+                              </span>
+                              {isCurrent && (
+                                <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-primary/15 text-primary">current</Badge>
+                              )}
+                            </div>
+                            <div className="text-muted-foreground" title={format(new Date(entry.created_at), "dd MMM yyyy, HH:mm:ss")}>
+                              {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+                            </div>
+                            {(entry.details?.lat != null && entry.details?.lng != null) && (
+                              <div className="text-[10px] text-muted-foreground font-mono truncate">
+                                {Number(entry.details.lat).toFixed(4)}, {Number(entry.details.lng).toFixed(4)}
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </aside>
             </div>
           )}
         </DialogContent>
