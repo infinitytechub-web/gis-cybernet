@@ -182,6 +182,24 @@ export default function ShiftConnections() {
     onError: (e: any) => toast.error(e.message ?? "Sync all failed"),
   });
 
+  // Block unauthorized roles AFTER hooks have been registered to keep hook
+  // order stable across renders. Sync mutations are also gated below.
+  if (!isAuthorized) {
+    return (
+      <Card className="max-w-xl mx-auto mt-8">
+        <CardContent className="p-8 text-center space-y-3">
+          <ShieldOff className="h-10 w-10 mx-auto text-destructive" />
+          <h2 className="text-lg font-semibold">Restricted area</h2>
+          <p className="text-sm text-muted-foreground">
+            Shift platform integrations are managed by the command tier
+            (Admin, OIC, 2IC, Staff Officer, Supervisor). Contact your supervisor
+            if you need a platform connected to your account.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
