@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { CountryCombobox } from "@/components/ui/country-combobox";
+import { FeeInput } from "@/components/ui/fee-input";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
 const PERMIT_TYPES = [
@@ -221,7 +222,7 @@ export default function VisaExtensions() {
                   </Select>
                 </div>
                 <div><Label>Fee Charged (GHS)</Label>
-                  <Input type="number" min="0" step="0.01" value={form.fee_charged} onChange={(e) => setForm({ ...form, fee_charged: e.target.value })} placeholder="0.00" />
+                  <FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} />
                 </div>
                 <div><Label>Current Visa Expiry *</Label><Input type="date" value={form.current_visa_expiry} onChange={(e) => setForm({ ...form, current_visa_expiry: e.target.value })} required /></div>
                 <div><Label>Requested Extension Date *</Label><Input type="date" value={form.requested_extension_date} onChange={(e) => setForm({ ...form, requested_extension_date: e.target.value })} required /></div>
