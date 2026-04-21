@@ -717,49 +717,93 @@ export default function GpsAddresses() {
     }
     setPurposeBusy(true);
     try {
+      // 1) Fetch the viewer's official identity (rank/role + department) so
+      //    every exported/printed artefact is watermarked back to the
+      //    authorising officer.
+      const stamp = await fetchViewerStamp(user.id, role ?? null);
+      const watermarkText = buildOfficialWatermark(stamp);
+
+      // 2) Insert the audit row FIRST so we can encode its primary key into
+      //    the QR code. The QR therefore points at a verifiable trail entry
+      //    that already exists when the document leaves the system.
+      const authorizedAt = new Date().toISOString();
+      const auditAction =
+        action.kind === "export" ? "gps_search_track_exported" : "gps_search_track_printed";
+      const auditDetails: Record<string, any> = {
+        query: trackQuery,
+        display_name: trackResult.display_name,
+        lat: trackResult.lat,
+        lng: trackResult.lng,
+        at: authorizedAt,
+        purpose: reason,
+        authorization_category:
+          action.kind === "export" ? "cyber_intelligence_export" : "cyber_intelligence_print",
+        watermark: {
+          role: stamp.roleLabel,
+          officer: stamp.fullName,
+          staff_id: stamp.staffId,
+          department: stamp.department,
+          text: watermarkText,
+        },
+      };
+      if (action.kind === "export") auditDetails.format = action.format;
+
+      const { data: auditRow, error: auditError } = await supabase
+        .from("front_desk_audit_log")
+        .insert({
+          action: auditAction,
+          entity_type: "gps_search_track",
+          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+          performed_by: user.id,
+          details: auditDetails,
+        })
+        .select("id, created_at")
+        .single();
+      if (auditError) throw auditError;
+
+      // 3) Build the QR pointing at the freshly-inserted audit row. The QR is
+      //    therefore tamper-evident: the linked entry already exists and
+      //    contains the authorised-at timestamp + officer identity.
+      const verificationUrl = buildAuditVerificationUrl(auditRow.id, authorizedAt);
+      const qrDataUrl = await buildAuditQrDataUrl(verificationUrl).catch(() => "");
+      const qrCaption = `Audit ${auditRow.id.slice(0, 8)} · ${format(new Date(authorizedAt), "dd MMM HH:mm")}`;
+
+      // 4) Apply watermark + QR to the export / print pipeline.
       if (action.kind === "export") {
-        const data = await buildTrackResultExport(action.format);
+        const data = await buildTrackResultExport(action.format, {
+          watermarkText,
+          qrDataUrl: qrDataUrl || undefined,
+          qrCaption,
+          meta: [
+            { label: "Authorised Officer", value: `${stamp.roleLabel} · ${stamp.fullName}` },
+            { label: "Department", value: stamp.department },
+            { label: "Authorisation Reason", value: reason },
+            { label: "Audit Reference", value: auditRow.id },
+            { label: "Authorised At", value: format(new Date(authorizedAt), "dd MMM yyyy, HH:mm") },
+          ],
+        });
         if (!data) throw new Error("Nothing to export");
         exportReport(action.format, data);
-        await supabase.from("front_desk_audit_log").insert({
-          action: "gps_search_track_exported",
-          entity_type: "gps_search_track",
-          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-          performed_by: user.id,
-          details: {
-            format: action.format,
-            query: trackQuery,
-            display_name: trackResult.display_name,
-            lat: trackResult.lat,
-            lng: trackResult.lng,
-            at: new Date().toISOString(),
-            purpose: reason,
-            authorization_category: "cyber_intelligence_export",
-          },
+        toast({
+          title: `${getFormatLabel(action.format)} downloaded`,
+          description: "Watermarked with your official identity. QR links to the audit entry.",
         });
-        toast({ title: `${getFormatLabel(action.format)} downloaded`, description: "Authorization reason recorded in the audit log." });
       } else {
-        printTrackResult();
-        await supabase.from("front_desk_audit_log").insert({
-          action: "gps_search_track_printed",
-          entity_type: "gps_search_track",
-          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-          performed_by: user.id,
-          details: {
-            query: trackQuery,
-            display_name: trackResult.display_name,
-            lat: trackResult.lat,
-            lng: trackResult.lng,
-            at: new Date().toISOString(),
-            purpose: reason,
-            authorization_category: "cyber_intelligence_print",
-          },
+        printTrackResult({
+          watermarkText,
+          qrDataUrl: qrDataUrl || undefined,
+          qrCaption,
         });
-        toast({ title: "Print dialog opened", description: "Authorization reason recorded in the audit log." });
+        toast({
+          title: "Print dialog opened",
+          description: "Watermarked with your official identity. QR links to the audit entry.",
+        });
       }
       setPurposeOpen(false);
       setPurposeAction(null);
       setPurposeText("");
+      // Refresh audit sidebar so the new entry shows up immediately.
+      qc.invalidateQueries({ queryKey: ["gps-tile-auth"] });
     } catch (e: any) {
       toast({ title: "Action failed", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
