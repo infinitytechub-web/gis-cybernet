@@ -614,6 +614,9 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             record_kind: kind,
             applicant_id: record.id ?? null,
             applicant_name: record.applicant_name ?? null,
+            extra_attachments: extraAttachments.map((a) => ({ filename: a.filename, size: a.size })),
+            extra_attachments_count: extraAttachments.length,
+            extra_attachments_total_bytes: totalExtraBytes,
             sent_at: nowIso,
             note: "Simulated client-side send — no email dispatched",
             results: mockResults.map((r) => ({
