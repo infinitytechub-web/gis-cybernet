@@ -16,8 +16,16 @@ import { toast } from "sonner";
  */
 
 const DIGITAL_RE = /^[A-Z]{2}-\d{3}-\d{4}$/;
-const DIGITAL_WITH_COORDS_RE = /^[A-Z]{2}-\d{3}-\d{4} \(-?\d+(\.\d+)?, ?-?\d+(\.\d+)?\)$/;
+const DIGITAL_WITH_COORDS_RE = /^[A-Z]{2}-\d{3}-\d{4} \(-?\d+(\.\d+)?, -?\d+(\.\d+)?\)$/;
 const DIGITAL_PREFIX_RE = /^[a-z]{2}-\d{3}-\d{4}( |$|\()/i;
+// Captures a digital prefix and an optional coordinate pair (any spacing,
+// optional sign, optional decimals) so we can reformat into the canonical
+// "XX-###-#### (lat, lng)" shape the DB trigger expects.
+const DIGITAL_WITH_LOOSE_COORDS_RE =
+  /^([A-Za-z]{2}-\d{3}-\d{4})\s*\(\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)$/;
+// Max decimal places preserved for lat/lng — matches the precision emitted by
+// the live GPS capture button (toFixed(6)).
+const COORD_PRECISION = 6;
 
 export function normalizeDigitalAddress(input: string): string {
   return input.trim().toUpperCase().replace(/\s+/g, "");
@@ -27,14 +35,27 @@ export function isValidDigitalAddress(input: string): boolean {
   return DIGITAL_RE.test(normalizeDigitalAddress(input));
 }
 
+function trimCoord(raw: string): string {
+  // Preserve sign + integer part; cap fractional digits at COORD_PRECISION
+  // and strip trailing zeros so "5.6000000" → "5.6" but "5" stays "5".
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return raw;
+  const fixed = num.toFixed(COORD_PRECISION);
+  return fixed.includes(".") ? fixed.replace(/0+$/, "").replace(/\.$/, "") : fixed;
+}
+
 /**
  * Canonicalize a free-form location string the same way the database trigger
- * `normalize_gps_location` does: trim surrounding whitespace, collapse internal
- * runs to a single space, and uppercase the value when it looks like a Ghana
- * Post digital address (`XX-###-####` optionally followed by `(lat, lng)`).
+ * `normalize_gps_location` does, with extra normalisation for the optional
+ * coordinate suffix:
+ *   - trims surrounding whitespace and collapses internal runs to one space
+ *   - uppercases the digital-address prefix
+ *   - reformats any `(lat, lng)` suffix into exactly `" (lat, lng)"`
+ *     (single space before the paren, single space after the comma, no
+ *     padding inside the parens, trailing zeros stripped)
  *
- * Plain landmark text (e.g. "Amasaman Barrier") is left untouched so the DB
- * trigger's heuristic fallback continues to accept it.
+ * Plain landmark text (e.g. "Amasaman Barrier") is preserved as-is (just
+ * trimmed) so the DB trigger's heuristic fallback continues to accept it.
  *
  * Returns `null` for empty/whitespace-only input so callers can persist NULL.
  */
@@ -42,9 +63,19 @@ export function canonicalizeGpsLocation(input: string | null | undefined): strin
   if (input == null) return null;
   const collapsed = input.trim().replace(/\s+/g, " ");
   if (!collapsed) return null;
+
+  // Digital + coords (any spacing) → reformat to canonical shape.
+  const coordsMatch = DIGITAL_WITH_LOOSE_COORDS_RE.exec(collapsed);
+  if (coordsMatch) {
+    const [, prefix, lat, lng] = coordsMatch;
+    return `${prefix.toUpperCase()} (${trimCoord(lat)}, ${trimCoord(lng)})`;
+  }
+
+  // Bare digital address → uppercase.
   if (DIGITAL_PREFIX_RE.test(collapsed)) {
     return collapsed.toUpperCase();
   }
+
   return collapsed;
 }
 
