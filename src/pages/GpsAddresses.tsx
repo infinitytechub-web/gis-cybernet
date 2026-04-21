@@ -219,6 +219,50 @@ export default function GpsAddresses() {
     }
   };
 
+  // ===== Prior live-tracking authorizations (audit sidebar) =====
+  // Pulls historic gps_live_tiles_authorized events for the currently selected
+  // GPS record, plus a separate "my authorizations" stream so operators can
+  // verify their own footprint at a glance.
+  const { data: recordAuthorizations = [], isLoading: recordAuthLoading } = useQuery({
+    queryKey: ["gps-tile-auth", "record", selected?.source, selected?.id],
+    enabled: !!selected && allowed,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("front_desk_audit_log")
+        .select("id, action, performed_by, details, created_at")
+        .eq("action", "gps_live_tiles_authorized")
+        .eq("entity_type", selected!.source)
+        .eq("entity_id", selected!.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: myAuthorizations = [], isLoading: myAuthLoading } = useQuery({
+    queryKey: ["gps-tile-auth", "self", user?.id],
+    enabled: !!user && !!selected && allowed,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("front_desk_audit_log")
+        .select("id, action, entity_type, entity_id, details, created_at")
+        .eq("action", "gps_live_tiles_authorized")
+        .eq("performed_by", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Refresh audit panels after a fresh authorization so the new entry shows up
+  // immediately without a manual reload.
+  useEffect(() => {
+    if (!tilesAuthorized) return;
+    qc.invalidateQueries({ queryKey: ["gps-tile-auth"] });
+  }, [tilesAuthorized, qc]);
+
   // Realtime: invalidate on changes to any of the source tables
   useEffect(() => {
     if (!allowed) return;
