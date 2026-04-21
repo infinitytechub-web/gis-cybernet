@@ -152,9 +152,13 @@ const SOURCE_ROUTES: Record<SourceKey, string> = {
 };
 
 export default function GpsAddresses() {
-  const { isAdmin, isOic, is2ic, role, loading } = useAuth();
+  const { user, isAdmin, isOic, is2ic, isIpse, role, loading } = useAuth();
   const allowed = isAdmin || isOic || is2ic || role === "staff_officer";
   const canDelete = isAdmin || isOic; // Stricter — only admin/OIC can delete GPS source records
+  // Search & Track exports / prints are restricted to cyber-intelligence
+  // authorized roles. Lower-tier viewers can see results on screen but cannot
+  // exfiltrate them to disk, paper, or other endpoints.
+  const canExportTrack = isAdmin || isOic || is2ic || role === "staff_officer" || isIpse;
   const qc = useQueryClient();
   const navigate = useNavigate();
 
