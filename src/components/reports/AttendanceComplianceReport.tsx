@@ -9,11 +9,19 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff } from "lucide-react";
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
-  eachDayOfInterval, format, isWeekend, isSameDay, parseISO,
+  eachDayOfInterval, format, isWeekend, parseISO,
 } from "date-fns";
+
+type DayKind = "present" | "late" | "absent" | "leave" | "missing" | "holiday" | "weekend";
+interface DayDetail {
+  date: string;
+  kind: DayKind;
+  note?: string;
+}
 
 type Period = "weekly" | "monthly";
 const ALL = "__all__";
