@@ -51,9 +51,20 @@ export function buildStaticMapSvg({ lat, lng, label, width = 600, height = 360, 
     gridLines.push(`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#e2e8f0" stroke-width="0.5" />`);
   }
 
-  const safeLabel = (label ?? "").replace(/[<>&]/g, (c) =>
+  const escape = (s: string) => s.replace(/[<>&]/g, (c) =>
     c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;",
   );
+  const safeLabel = escape(label ?? "");
+  const safeWatermark = escape(watermark ?? "");
+
+  // Diagonal watermark stamped across the centre of the snapshot. Repeated
+  // twice (offset) so the stamp survives even if the snapshot is cropped.
+  const watermarkSvg = safeWatermark
+    ? `<g opacity="0.14" font-family="Helvetica, Arial, sans-serif" font-weight="bold" fill="#0f172a">
+    <text x="${W / 2}" y="${H / 2}" text-anchor="middle" font-size="22" transform="rotate(-22 ${W / 2} ${H / 2})">${safeWatermark}</text>
+    <text x="${W / 2}" y="${H / 2 + 36}" text-anchor="middle" font-size="14" transform="rotate(-22 ${W / 2} ${H / 2 + 36})">OFFICIAL · CYBER INTELLIGENCE</text>
+  </g>`
+    : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
@@ -64,6 +75,7 @@ export function buildStaticMapSvg({ lat, lng, label, width = 600, height = 360, 
   <circle cx="${cx}" cy="${cy}" r="26" fill="rgba(15,23,42,0.10)" stroke="rgba(15,23,42,0.35)" stroke-width="1" />
   <circle cx="${cx}" cy="${cy}" r="14" fill="rgba(15,23,42,0.20)" stroke="rgba(15,23,42,0.55)" stroke-width="1" />
   <circle cx="${cx}" cy="${cy}" r="6" fill="#0f172a" stroke="#ffffff" stroke-width="2" />
+  ${watermarkSvg}
   <g>
     <rect x="12" y="${H - 56}" width="260" height="44" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
     <text x="22" y="${H - 36}" font-size="11" font-family="monospace" fill="#0f172a">lat ${lat.toFixed(6)}</text>
