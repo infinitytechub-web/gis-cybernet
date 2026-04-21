@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy, FlaskConical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
