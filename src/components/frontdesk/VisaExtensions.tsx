@@ -59,6 +59,7 @@ export default function VisaExtensions() {
     requested_extension_date: "", reason: "", notes: "", status: "submitted",
     phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "",
     date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "",
+    nationality: "Ghanaian", permit_type: "", fee_charged: "",
   });
 
   const { data: extensions = [], isLoading } = useQuery({
