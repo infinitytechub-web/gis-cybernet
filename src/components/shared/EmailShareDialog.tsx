@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { recordPdfBase64, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
+import { recordPdfBase64, buildRecordPdf, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
 
 interface EmailShareDialogProps {
   open: boolean;
@@ -213,6 +214,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<RecipientResult[] | null>(null);
+  const [attachmentConfirmed, setAttachmentConfirmed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -224,6 +226,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       setBcc("");
       setBulkText("");
       setResults(null);
+      setAttachmentConfirmed(false);
       setSubject(
         `${RECORD_TITLES[kind]} — ${record.applicant_name ?? record.id ?? ""}`.trim()
       );
@@ -234,6 +237,11 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       );
     }
   }, [open, kind, record]);
+
+  // Reset attachment confirmation whenever user leaves the preview step.
+  useEffect(() => {
+    if (step !== "preview") setAttachmentConfirmed(false);
+  }, [step]);
 
   const validEmail = EMAIL_RE.test(to.trim());
   const ccParsed = parseEmailList(cc);
@@ -254,6 +262,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
 
   const canSend =
     !sending &&
+    attachmentConfirmed &&
     (mode === "single"
       ? validEmail && !ccInvalid && !bccInvalid
       : bulkList.length > 0);
@@ -262,6 +271,64 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     .replace(/[^a-z0-9]+/gi, "_")
     .replace(/^_+|_+$/g, "");
   const attachmentFilename = `${kind}_${safeName}.pdf`;
+
+  // Build the PDF once per preview entry so we can show the real byte size
+  // and offer preview/download of the exact file that will be attached.
+  const attachmentMeta = useMemo(() => {
+    if (step !== "preview" || results) return null;
+    try {
+      const doc = buildRecordPdf(kind, record);
+      const blob = doc.output("blob") as Blob;
+      return { blob, size: blob.size, url: URL.createObjectURL(blob) };
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, results, kind, record]);
+
+  // Release the object URL when the component unmounts or meta changes.
+  useEffect(() => {
+    return () => {
+      if (attachmentMeta?.url) URL.revokeObjectURL(attachmentMeta.url);
+    };
+  }, [attachmentMeta?.url]);
+
+  /** Build the final deduped recipient list as a downloadable CSV. */
+  const handleDownloadRecipientsCsv = () => {
+    const rows: Array<{ role: string; email: string }> = [];
+    if (mode === "single") {
+      const clean = finalDedupeSingle(to, ccParsed.valid, bccParsed.valid);
+      if (clean.to) rows.push({ role: "TO", email: clean.to });
+      clean.cc.forEach((e) => rows.push({ role: "CC", email: e }));
+      clean.bcc.forEach((e) => rows.push({ role: "BCC", email: e }));
+    } else {
+      const clean = finalDedupeBulk(bulkList);
+      clean.recipients.forEach((e) => rows.push({ role: "TO", email: e }));
+    }
+    if (rows.length === 0) {
+      toast.error("No recipients to export");
+      return;
+    }
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv =
+      "role,email\n" + rows.map((r) => `${escape(r.role)},${escape(r.email)}`).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${kind}_${safeName}_recipients.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} recipient${rows.length === 1 ? "" : "s"} to CSV`);
+  };
+
+  const formatBytes = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  };
 
   const handleFile = async (file: File) => {
     if (!file) return;
@@ -595,13 +662,86 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                   {message || "(empty)"}
                 </div>
               </PreviewRow>
-              <PreviewRow label="Attachment">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="font-mono text-xs break-all">{attachmentFilename}</span>
-                  <Badge variant="outline" className="text-[10px]">PDF</Badge>
+            </div>
+
+            {/* Recipient list CSV export */}
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-xs font-medium">Final recipient list</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Export the exact TO/CC/BCC (or bulk) addresses after dedup.
                 </div>
-              </PreviewRow>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadRecipientsCsv}
+              >
+                <Download className="mr-2 h-3.5 w-3.5" /> CSV
+              </Button>
+            </div>
+
+            {/* Attachment review — explicit confirmation required before send */}
+            <div className="rounded-md border-2 border-primary/20 bg-primary/5">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <div className="text-xs font-semibold">Attachment — final review</div>
+              </div>
+              <div className="px-3 py-3 space-y-2">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-8 w-8 text-muted-foreground shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-mono text-xs break-all">{attachmentFilename}</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px]">PDF</Badge>
+                      {attachmentMeta && <span>{formatBytes(attachmentMeta.size)}</span>}
+                      <span>·</span>
+                      <span>{RECORD_TITLES[kind]}</span>
+                      {record.applicant_name && (
+                        <>
+                          <span>·</span>
+                          <span className="truncate">{record.applicant_name}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {attachmentMeta && (
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => window.open(attachmentMeta.url, "_blank")}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        asChild
+                      >
+                        <a href={attachmentMeta.url} download={attachmentFilename}>
+                          <Download className="mr-1 h-3 w-3" /> Save
+                        </a>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <label className="flex items-start gap-2 pt-1 cursor-pointer select-none">
+                  <Checkbox
+                    checked={attachmentConfirmed}
+                    onCheckedChange={(v) => setAttachmentConfirmed(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs">
+                    I confirm the attachment above matches the document I want to send.
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* Per-address duplicate breakdown (bulk mode) */}
