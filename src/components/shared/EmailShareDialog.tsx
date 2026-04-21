@@ -405,6 +405,56 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     }
   };
 
+  const totalExtraBytes = extraAttachments.reduce((s, a) => s + a.size, 0);
+
+  const fileToBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const result = r.result as string;
+        const idx = result.indexOf(",");
+        resolve(idx >= 0 ? result.slice(idx + 1) : result);
+      };
+      r.onerror = () => reject(new Error("Could not read file"));
+      r.readAsDataURL(file);
+    });
+
+  const handleExtraFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files);
+    if (extraAttachments.length + incoming.length > MAX_EXTRA_COUNT) {
+      toast.error(`Up to ${MAX_EXTRA_COUNT} extra attachments allowed`);
+      return;
+    }
+    let runningTotal = totalExtraBytes;
+    const next = [...extraAttachments];
+    let added = 0;
+    for (const f of incoming) {
+      if (f.size > MAX_EXTRA_FILE_BYTES) {
+        toast.error(`"${f.name}" is over 5 MB and was skipped`);
+        continue;
+      }
+      if (runningTotal + f.size > MAX_EXTRA_TOTAL_BYTES) {
+        toast.error("Total extra attachments would exceed 15 MB — some files were skipped");
+        break;
+      }
+      try {
+        const b64 = await fileToBase64(f);
+        next.push({ filename: f.name, size: f.size, content_base64: b64 });
+        runningTotal += f.size;
+        added++;
+      } catch {
+        toast.error(`Could not read "${f.name}"`);
+      }
+    }
+    setExtraAttachments(next);
+    if (extraFileRef.current) extraFileRef.current.value = "";
+    if (added > 0) toast.success(`Added ${added} attachment${added === 1 ? "" : "s"}`);
+  };
+
+  const removeExtra = (idx: number) =>
+    setExtraAttachments((prev) => prev.filter((_, i) => i !== idx));
+
   const validateCompose = (): boolean => {
     if (mode === "single") {
       if (!validEmail) { toast.error("Please enter a valid recipient email"); return false; }
