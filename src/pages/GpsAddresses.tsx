@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,10 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
   ExternalLink, Radio, Navigation as NavIcon, Sparkles, Cloud, Copy, Check, Loader2, Timer,
+  MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { toast } from "@/hooks/use-toast";
@@ -132,14 +141,28 @@ function parseLocation(raw: string): { lat: number | null; lng: number | null; d
   return { lat: null, lng: null, digital, approximate: false };
 }
 
+// Where to route the user when they click "Edit" on a GPS row.
+// Each source module owns its own edit UI; this dashboard simply opens it.
+const SOURCE_ROUTES: Record<SourceKey, string> = {
+  operations: "/operations",
+  enforcement_operations: "/enforcement",
+  cyber_incidents: "/command-vault",
+  inventory_items: "/stores",
+};
+
 export default function GpsAddresses() {
   const { isAdmin, isOic, is2ic, role, loading } = useAuth();
   const allowed = isAdmin || isOic || is2ic || role === "staff_officer";
+  const canDelete = isAdmin || isOic; // Stricter — only admin/OIC can delete GPS source records
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceKey | "all">("all");
   const [selected, setSelected] = useState<GpsRecord | null>(null);
+  const [viewing, setViewing] = useState<GpsRecord | null>(null);
+  const [deleting, setDeleting] = useState<GpsRecord | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   // Realtime: invalidate on changes to any of the source tables
   useEffect(() => {
@@ -262,6 +285,114 @@ export default function GpsAddresses() {
     }
     totalRef.current = records.length;
   }, [records.length]);
+
+  // ===== Search & Track (cyber-intel address lookup) =====
+  // Geocodes any address/place using OpenStreetMap Nominatim (no API key) and
+  // shows it on the live map. This lets analysts retrieve coordinates for
+  // addresses that have NOT been captured into a source module yet.
+  const [trackQuery, setTrackQuery] = useState("");
+  const [trackBusy, setTrackBusy] = useState(false);
+  const [trackResult, setTrackResult] = useState<{
+    lat: number;
+    lng: number;
+    display_name: string;
+    type?: string | null;
+    importance?: number | null;
+    osm_id?: string | null;
+    bbox?: [number, number, number, number] | null;
+  } | null>(null);
+  const [trackError, setTrackError] = useState<string | null>(null);
+
+  const runSearchTrack = async () => {
+    const q = trackQuery.trim();
+    if (!q) return;
+    setTrackBusy(true);
+    setTrackError(null);
+    setTrackResult(null);
+    try {
+      // 1) Try to parse explicit "lat, lng" or "(lat, lng)" first — instant, offline.
+      const direct = q.match(/(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
+      if (direct) {
+        const lat = parseFloat(direct[1]);
+        const lng = parseFloat(direct[2]);
+        if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          setTrackResult({ lat, lng, display_name: `Coordinates ${lat.toFixed(6)}, ${lng.toFixed(6)}`, type: "coordinates", importance: 1 });
+          return;
+        }
+      }
+      // 2) Try Ghana Post digital address with our offline lookup.
+      const upper = q.toUpperCase();
+      const digitalMatch = upper.match(/[A-Z]{2}-\d{3}-\d{4}/);
+      if (digitalMatch) {
+        const c = digitalAddressToCoords(digitalMatch[0]);
+        if (c) {
+          setTrackResult({ lat: c[0], lng: c[1], display_name: `Digital address ${digitalMatch[0]} (approximate)`, type: "digital_address", importance: 0.7 });
+          return;
+        }
+      }
+      // 3) Fall back to Nominatim geocoding (publicly accessible, no key required).
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      if (!res.ok) throw new Error(`Lookup failed (${res.status})`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) throw new Error("No matching location found.");
+      const hit = data[0];
+      setTrackResult({
+        lat: parseFloat(hit.lat),
+        lng: parseFloat(hit.lon),
+        display_name: hit.display_name,
+        type: hit.type ?? hit.class ?? null,
+        importance: typeof hit.importance === "number" ? hit.importance : null,
+        osm_id: hit.osm_id ? String(hit.osm_id) : null,
+        bbox: Array.isArray(hit.boundingbox) && hit.boundingbox.length === 4
+          ? [parseFloat(hit.boundingbox[0]), parseFloat(hit.boundingbox[1]), parseFloat(hit.boundingbox[2]), parseFloat(hit.boundingbox[3])]
+          : null,
+      });
+    } catch (e: any) {
+      setTrackError(e?.message ?? String(e));
+    } finally {
+      setTrackBusy(false);
+    }
+  };
+
+  const openTrackResultOnMap = () => {
+    if (!trackResult) return;
+    setSelected({
+      id: `lookup-${Date.now()}`,
+      source: "cyber_incidents",
+      raw_location: `${trackResult.display_name} (${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)})`,
+      digital_address: null,
+      lat: trackResult.lat,
+      lng: trackResult.lng,
+      context: "Search & Track lookup",
+      reference: trackResult.osm_id ?? "lookup",
+      created_at: new Date().toISOString(),
+      status: "lookup",
+    });
+  };
+
+  // ===== Row delete (admin/OIC only) =====
+  const performDelete = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    try {
+      const { error } = await supabase.rpc("soft_delete_record", {
+        _table: deleting.source,
+        _record_id: deleting.id,
+        _display_label: deleting.raw_location,
+        _display_context: `${SOURCE_META[deleting.source].label} · ${deleting.context}`,
+        _storage_paths: [],
+      });
+      if (error) throw error;
+      toast({ title: "Moved to Recycle Bin", description: `${SOURCE_META[deleting.source].label} record removed.` });
+      setDeleting(null);
+      qc.invalidateQueries({ queryKey: ["gps-addresses"] });
+    } catch (e: any) {
+      toast({ title: "Delete failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
 
   const buildExport = () => {
     const headers = ["GPS Address", "Digital", "Latitude", "Longitude", "Source", "Context", "Reference", "Status", "Captured"];
@@ -439,6 +570,118 @@ export default function GpsAddresses() {
           <MapPin className="h-3 w-3" /> {records.length} GPS record{records.length === 1 ? "" : "s"}
         </Badge>
       </div>
+
+      {/* ===== Search & Track (cyber-intel address lookup) ===== */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="h-9 w-9 rounded-md bg-primary/15 flex items-center justify-center">
+              <Satellite className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-[220px]">
+              <CardTitle className="text-base flex items-center gap-2">
+                Search & Track
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  <ShieldAlert className="h-3 w-3" /> Cyber Intelligence
+                </Badge>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Resolve coordinates for any GPS address, place name, digital code, or
+                <span className="font-mono"> lat,lng</span> pair. Authorized for command-tier use only.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder='e.g. "Amasaman Police Station", "GA-543-2210", or "5.7000, -0.2833"'
+                value={trackQuery}
+                onChange={(e) => setTrackQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") runSearchTrack(); }}
+                className="pl-8"
+                disabled={trackBusy}
+              />
+            </div>
+            <Button onClick={runSearchTrack} disabled={trackBusy || !trackQuery.trim()} className="gap-1.5">
+              {trackBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <NavIcon className="h-4 w-4" />}
+              {trackBusy ? "Locating…" : "Search & Track"}
+            </Button>
+            {(trackResult || trackError) && (
+              <Button
+                variant="ghost"
+                onClick={() => { setTrackResult(null); setTrackError(null); setTrackQuery(""); }}
+                disabled={trackBusy}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {trackError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-xs text-destructive">
+              {trackError}
+            </div>
+          )}
+
+          {trackResult && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2.5">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium truncate">{trackResult.display_name}</div>
+                  <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                    <span className="font-mono">lat {trackResult.lat.toFixed(6)}</span>
+                    <span className="font-mono">lng {trackResult.lng.toFixed(6)}</span>
+                    {trackResult.type && <span className="capitalize">type: {trackResult.type}</span>}
+                    {typeof trackResult.importance === "number" && (
+                      <span>confidence: {(trackResult.importance * 100).toFixed(0)}%</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={openTrackResultOnMap} className="gap-1.5">
+                  <NavIcon className="h-3.5 w-3.5" /> Open live map
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${trackResult.lat},${trackResult.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" /> Google Maps
+                  </a>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a
+                    href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${trackResult.lat},${trackResult.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" /> Street View
+                  </a>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(`${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`);
+                    toast({ title: "Coordinates copied" });
+                  }}
+                >
+                  <Copy className="h-3 w-3 mr-1" /> Copy coords
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Geocoding via OpenStreetMap (Nominatim). Use only for lawful intelligence operations.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ===== Realtime analytics ===== */}
       <Card className={`border-primary/20 transition-shadow ${pulse ? "shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]" : ""}`}>
@@ -630,7 +873,7 @@ export default function GpsAddresses() {
                     <TableHead className="hidden md:table-cell">Context</TableHead>
                     <TableHead className="hidden md:table-cell">Reference</TableHead>
                     <TableHead className="hidden lg:table-cell">Captured</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -668,16 +911,48 @@ export default function GpsAddresses() {
                         <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                           {format(new Date(r.created_at), "dd MMM yyyy, HH:mm")}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => { e.stopPropagation(); setSelected(r); }}
-                            disabled={!mappable && !r.digital_address}
-                          >
-                            <NavIcon className="h-4 w-4 mr-1" />
-                            Track
-                          </Button>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                aria-label={`Actions for ${r.raw_location}`}
+                                className="h-8 w-8"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                GPS Record
+                              </DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => setViewing(r)}>
+                                <Eye className="h-4 w-4 mr-2" /> View details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setSelected(r)}
+                                disabled={!mappable && !r.digital_address}
+                              >
+                                <NavIcon className="h-4 w-4 mr-2" /> Track on map
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => navigate(SOURCE_ROUTES[r.source])}>
+                                <Pencil className="h-4 w-4 mr-2" /> Edit in {meta.label}
+                              </DropdownMenuItem>
+                              {canDelete && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setDeleting(r)}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -868,6 +1143,88 @@ export default function GpsAddresses() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ===== View details dialog ===== */}
+      <Dialog open={!!viewing} onOpenChange={(o) => { if (!o) setViewing(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" /> GPS Record Details
+            </DialogTitle>
+            <DialogDescription>Full metadata for the selected GPS address.</DialogDescription>
+          </DialogHeader>
+          {viewing && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="secondary" className={SOURCE_META[viewing.source].color}>
+                  {(() => { const I = SOURCE_META[viewing.source].icon; return <I className="h-3 w-3 mr-1" />; })()}
+                  {SOURCE_META[viewing.source].label}
+                </Badge>
+                {viewing.status && (
+                  <Badge variant="outline" className="text-[10px] capitalize">{viewing.status.replace(/_/g, " ")}</Badge>
+                )}
+                {viewing.lat != null && viewing.lng != null && (
+                  <Badge variant="outline" className="text-[10px] gap-1">
+                    <MapPin className="h-3 w-3" /> Mappable
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <InfoCell label="Address" value={viewing.raw_location} mono />
+                <InfoCell label="Digital code" value={viewing.digital_address ?? "—"} mono />
+                <InfoCell label="Latitude" value={viewing.lat != null ? viewing.lat.toFixed(6) : "—"} mono />
+                <InfoCell label="Longitude" value={viewing.lng != null ? viewing.lng.toFixed(6) : "—"} mono />
+                <InfoCell label="Context" value={viewing.context || "—"} />
+                <InfoCell label="Reference" value={viewing.reference || "—"} mono />
+                <InfoCell label="Captured" value={format(new Date(viewing.created_at), "dd MMM yyyy, HH:mm")} />
+                <InfoCell label="Record ID" value={viewing.id} mono />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2 flex-wrap">
+            <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
+            {viewing && (viewing.lat != null && viewing.lng != null) && (
+              <Button onClick={() => { setSelected(viewing); setViewing(null); }} className="gap-1.5">
+                <NavIcon className="h-4 w-4" /> Track on map
+              </Button>
+            )}
+            {viewing && (
+              <Button variant="outline" onClick={() => { navigate(SOURCE_ROUTES[viewing.source]); setViewing(null); }} className="gap-1.5">
+                <Pencil className="h-4 w-4" /> Edit in {SOURCE_META[viewing.source].label}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== Delete confirmation ===== */}
+      <AlertDialog open={!!deleting} onOpenChange={(o) => { if (!o && !deleteBusy) setDeleting(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" /> Delete GPS record?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This moves the underlying{" "}
+              <span className="font-medium">{deleting ? SOURCE_META[deleting.source].label : ""}</span>{" "}
+              record to the Recycle Bin where it can be restored within 30 days.
+              <span className="block mt-2 font-mono text-[11px] text-foreground break-all">
+                {deleting?.raw_location}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); performDelete(); }}
+              disabled={deleteBusy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Deleting…</> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
