@@ -142,13 +142,55 @@ function generatePDF({ title, filename, headers, rows, subtitle, meta, image, wa
     margin: { left: 14, right: 14 },
   });
   const pageCount = doc.getNumberOfPages();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+
+    // Diagonal watermark — drawn BEFORE footer so footer text stays legible.
+    if (watermark?.text) {
+      try {
+        doc.saveGraphicsState();
+        const anyDoc = doc as any;
+        if (typeof anyDoc.GState === "function" && typeof anyDoc.setGState === "function") {
+          anyDoc.setGState(new anyDoc.GState({ opacity: 0.08 }));
+        }
+        doc.setTextColor(40, 40, 40);
+        doc.setFont(undefined, "bold");
+        doc.setFontSize(46);
+        doc.text(watermark.text, pageWidth / 2, pageHeight / 2, { align: "center", angle: 45 });
+        if (watermark.secondary) {
+          doc.setFontSize(18);
+          doc.text(watermark.secondary, pageWidth / 2, pageHeight / 2 + 18, { align: "center", angle: 45 });
+        }
+        doc.setFont(undefined, "normal");
+        doc.restoreGraphicsState();
+      } catch {
+        // Watermark is best-effort — never block the export.
+      }
+    }
+
+    // Footer band: timestamp on left, attribution + optional QR on right.
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    const ph = doc.internal.pageSize.height;
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Page ${i} of ${pageCount}`, 14, ph - 8);
-    doc.text("Powered by Infinity Techub Intelligence", doc.internal.pageSize.width - 14, ph - 8, { align: "right" });
+    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Page ${i} of ${pageCount}`, 14, pageHeight - 8);
+    doc.text("Powered by Infinity Techub Intelligence", pageWidth - 14, pageHeight - 8, { align: "right" });
+
+    if (qr?.dataUrl) {
+      try {
+        const qrSize = 22; // mm — small enough to nestle in the footer
+        const qrX = pageWidth - 14 - qrSize;
+        const qrY = pageHeight - 14 - qrSize;
+        doc.addImage(qr.dataUrl, "PNG", qrX, qrY, qrSize, qrSize);
+        if (qr.caption) {
+          doc.setFontSize(6);
+          doc.setTextColor(110, 110, 110);
+          doc.text(qr.caption, qrX - 2, qrY + qrSize / 2, { align: "right", maxWidth: 50 });
+        }
+      } catch {
+        // Skip silently — footer text already identifies the export.
+      }
+    }
   }
   doc.save(`${filename}.pdf`);
 }
