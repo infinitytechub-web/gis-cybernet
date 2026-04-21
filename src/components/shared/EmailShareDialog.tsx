@@ -221,7 +221,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const statusBadge = (r: RecipientResult) => {
     if (r.status === "sent")
       return (
-        <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+        <Badge variant="secondary" className="gap-1">
           <CheckCircle2 className="h-3 w-3" /> Sent
         </Badge>
       );
