@@ -139,6 +139,27 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             />
           </div>
           <div>
+            <Label>CC</Label>
+            <Input
+              placeholder="cc1@example.com, cc2@example.com"
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+              aria-invalid={ccInvalid}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Separate multiple addresses with commas.
+            </p>
+          </div>
+          <div>
+            <Label>BCC</Label>
+            <Input
+              placeholder="bcc@example.com"
+              value={bcc}
+              onChange={(e) => setBcc(e.target.value)}
+              aria-invalid={bccInvalid}
+            />
+          </div>
+          <div>
             <Label>Subject</Label>
             <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
           </div>
@@ -151,7 +172,10 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
             Cancel
           </Button>
-          <Button onClick={handleSend} disabled={!validEmail || sending}>
+          <Button
+            onClick={handleSend}
+            disabled={!validEmail || ccInvalid || bccInvalid || sending}
+          >
             {sending ? "Sending..." : "Send Email"}
           </Button>
         </DialogFooter>
