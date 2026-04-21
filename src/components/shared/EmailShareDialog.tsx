@@ -106,6 +106,102 @@ function mergeUniqueEmails(
   return { merged: next.join("\n"), added, skipped };
 }
 
+/**
+ * Per-address occurrence breakdown for bulk textarea input.
+ * Returns the first-seen form of each address with how many times it appeared
+ * (so "1" means unique, ">1" means N-1 copies were dropped).
+ */
+export interface BulkBreakdownEntry {
+  email: string;
+  count: number;
+}
+function computeBulkBreakdown(input: string): {
+  unique: BulkBreakdownEntry[];
+  duplicates: BulkBreakdownEntry[];
+  totalDuplicatesRemoved: number;
+} {
+  const parts = input
+    .split(/[,;\s\n\r]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((p) => EMAIL_RE.test(p));
+  const map = new Map<string, BulkBreakdownEntry>();
+  for (const p of parts) {
+    const lower = p.toLowerCase();
+    const existing = map.get(lower);
+    if (existing) existing.count++;
+    else map.set(lower, { email: p, count: 1 });
+  }
+  const unique = Array.from(map.values());
+  const duplicates = unique.filter((e) => e.count > 1);
+  const totalDuplicatesRemoved = duplicates.reduce((s, e) => s + (e.count - 1), 0);
+  return { unique, duplicates, totalDuplicatesRemoved };
+}
+
+/**
+ * Final, authoritative dedup pass run immediately before the network request.
+ * Returns the cleaned address sets plus a report of what was removed and why.
+ */
+export interface FinalDedupeReport {
+  removedFromCc: string[];
+  removedFromBcc: string[];
+  removedFromBulk: string[];
+  totalRemoved: number;
+}
+function finalDedupeSingle(
+  to: string,
+  cc: string[],
+  bcc: string[],
+): { to: string; cc: string[]; bcc: string[]; report: FinalDedupeReport } {
+  const seen = new Set<string>();
+  const toLower = to.trim().toLowerCase();
+  seen.add(toLower);
+  const cleanCc: string[] = [];
+  const removedFromCc: string[] = [];
+  for (const e of cc) {
+    const l = e.toLowerCase();
+    if (seen.has(l)) removedFromCc.push(e);
+    else { seen.add(l); cleanCc.push(e); }
+  }
+  const cleanBcc: string[] = [];
+  const removedFromBcc: string[] = [];
+  for (const e of bcc) {
+    const l = e.toLowerCase();
+    if (seen.has(l)) removedFromBcc.push(e);
+    else { seen.add(l); cleanBcc.push(e); }
+  }
+  return {
+    to: to.trim(),
+    cc: cleanCc,
+    bcc: cleanBcc,
+    report: {
+      removedFromCc,
+      removedFromBcc,
+      removedFromBulk: [],
+      totalRemoved: removedFromCc.length + removedFromBcc.length,
+    },
+  };
+}
+function finalDedupeBulk(recipients: string[]): { recipients: string[]; report: FinalDedupeReport } {
+  const seen = new Set<string>();
+  const clean: string[] = [];
+  const removed: string[] = [];
+  for (const e of recipients) {
+    const l = e.toLowerCase();
+    if (seen.has(l)) removed.push(e);
+    else { seen.add(l); clean.push(e); }
+  }
+  return {
+    recipients: clean,
+    report: {
+      removedFromCc: [],
+      removedFromBcc: [],
+      removedFromBulk: removed,
+      totalRemoved: removed.length,
+    },
+  };
+}
+
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
   const [step, setStep] = useState<"compose" | "preview">("compose");
   const [mode, setMode] = useState<"single" | "bulk">("single");
@@ -148,6 +244,13 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const bulkParsed = parseEmailList(bulkText);
   const bulkList = bulkParsed.valid.slice(0, BULK_MAX);
   const bulkOverflow = bulkParsed.valid.length > BULK_MAX;
+  const bulkBreakdown = computeBulkBreakdown(bulkText);
+
+  // Preview-time dedup report for single mode (what *would* be removed at send).
+  const singlePreviewReport =
+    mode === "single"
+      ? finalDedupeSingle(to, ccParsed.valid, bccParsed.valid).report
+      : null;
 
   const canSend =
     !sending &&
@@ -217,29 +320,47 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const attachment = recordPdfBase64(kind, record);
 
-      // Dedup single-mode: CC/BCC must not repeat the TO address or each other.
-      const toAddr = to.trim();
-      const toLower = toAddr.toLowerCase();
-      const seenSingle = new Set<string>([toLower]);
-      const dedupedCc = ccParsed.valid.filter((e) => {
-        const l = e.toLowerCase();
-        if (seenSingle.has(l)) return false;
-        seenSingle.add(l);
-        return true;
-      });
-      const dedupedBcc = bccParsed.valid.filter((e) => {
-        const l = e.toLowerCase();
-        if (seenSingle.has(l)) return false;
-        seenSingle.add(l);
-        return true;
-      });
+      // -------- Final authoritative dedup pass (runs every time, right before send).
+      // This is intentionally redundant with earlier filtering — it guarantees the
+      // outgoing payload never contains overlapping TO/CC/BCC or repeat bulk recipients
+      // even if state somehow drifted between preview and send.
+      let singleClean: ReturnType<typeof finalDedupeSingle> | null = null;
+      let bulkClean: ReturnType<typeof finalDedupeBulk> | null = null;
+      if (mode === "single") {
+        singleClean = finalDedupeSingle(to, ccParsed.valid, bccParsed.valid);
+        const { report } = singleClean;
+        if (report.totalRemoved > 0) {
+          const bits: string[] = [];
+          if (report.removedFromCc.length)
+            bits.push(`CC: ${report.removedFromCc.join(", ")}`);
+          if (report.removedFromBcc.length)
+            bits.push(`BCC: ${report.removedFromBcc.join(", ")}`);
+          toast.info(
+            `Removed ${report.totalRemoved} duplicate${report.totalRemoved === 1 ? "" : "s"} — ${bits.join(" · ")}`,
+          );
+        }
+      } else {
+        bulkClean = finalDedupeBulk(bulkList);
+        if (bulkClean.report.removedFromBulk.length > 0) {
+          toast.info(
+            `Removed ${bulkClean.report.removedFromBulk.length} duplicate recipient${
+              bulkClean.report.removedFromBulk.length === 1 ? "" : "s"
+            } before sending`,
+          );
+        }
+        if (bulkClean.recipients.length === 0) {
+          toast.error("No unique recipients left after dedup");
+          setSending(false);
+          return;
+        }
+      }
 
       const payload =
-        mode === "single"
+        mode === "single" && singleClean
           ? {
-              to: toAddr,
-              cc: dedupedCc,
-              bcc: dedupedBcc,
+              to: singleClean.to,
+              cc: singleClean.cc,
+              bcc: singleClean.bcc,
               subject,
               message,
               attachment_base64: attachment,
@@ -249,7 +370,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             }
           : {
               bulk: true,
-              recipients: bulkList, // already deduped by parseEmailList
+              recipients: bulkClean!.recipients,
               subject,
               message,
               attachment_base64: attachment,
@@ -482,6 +603,66 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                 </div>
               </PreviewRow>
             </div>
+
+            {/* Per-address duplicate breakdown (bulk mode) */}
+            {mode === "bulk" && bulkBreakdown.duplicates.length > 0 && (
+              <div className="rounded-md border border-dashed">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/40">
+                  <div className="text-xs font-medium">Duplicates removed</div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {bulkBreakdown.totalDuplicatesRemoved} copy
+                    {bulkBreakdown.totalDuplicatesRemoved === 1 ? "" : "ies"} dropped ·{" "}
+                    {bulkBreakdown.duplicates.length} address
+                    {bulkBreakdown.duplicates.length === 1 ? "" : "es"}
+                  </Badge>
+                </div>
+                <div className="max-h-40 overflow-y-auto divide-y">
+                  {bulkBreakdown.duplicates.map((d) => (
+                    <div
+                      key={d.email.toLowerCase()}
+                      className="flex items-center justify-between gap-3 px-3 py-1.5 text-xs"
+                    >
+                      <span className="font-mono truncate">{d.email}</span>
+                      <span className="text-muted-foreground shrink-0">
+                        appeared {d.count}× · {d.count - 1} removed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="px-3 py-1.5 text-[11px] text-muted-foreground border-t">
+                  Each address will receive the email only once.
+                </div>
+              </div>
+            )}
+
+            {/* Single-mode cross-field duplicate warning */}
+            {mode === "single" &&
+              singlePreviewReport &&
+              singlePreviewReport.totalRemoved > 0 && (
+                <div className="rounded-md border border-dashed">
+                  <div className="px-3 py-2 bg-muted/40 text-xs font-medium">
+                    Duplicates removed across TO / CC / BCC
+                  </div>
+                  <div className="px-3 py-2 space-y-1 text-xs">
+                    {singlePreviewReport.removedFromCc.map((e) => (
+                      <div key={`cc-${e}`} className="flex justify-between gap-3">
+                        <span className="font-mono truncate">{e}</span>
+                        <span className="text-muted-foreground shrink-0">
+                          CC · already in TO/earlier field
+                        </span>
+                      </div>
+                    ))}
+                    {singlePreviewReport.removedFromBcc.map((e) => (
+                      <div key={`bcc-${e}`} className="flex justify-between gap-3">
+                        <span className="font-mono truncate">{e}</span>
+                        <span className="text-muted-foreground shrink-0">
+                          BCC · already in TO/CC
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         )}
 
