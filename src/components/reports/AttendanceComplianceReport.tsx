@@ -13,8 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { downloadAttendanceComplianceTemplate } from "@/lib/attendance-compliance-template";
+import { AttendanceComplianceImportDialog } from "@/components/reports/AttendanceComplianceImportDialog";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff, FileDown } from "lucide-react";
+import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff, FileDown, Upload } from "lucide-react";
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   eachDayOfInterval, format, isWeekend, parseISO,
