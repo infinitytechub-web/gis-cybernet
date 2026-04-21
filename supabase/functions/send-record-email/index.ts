@@ -32,6 +32,9 @@ interface SendBody {
   attachment_generated_at?: string | null;
   applicant_id?: string | null;
   applicant_name?: string | null;
+
+  // Server-side dry run: validate + dedup + write audit log, but skip delivery.
+  dry_run?: boolean;
 }
 
 interface RecipientResult {
@@ -111,10 +114,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Connector credentials
+    const isDryRun = body.dry_run === true;
+
+    // Connector credentials — only required for real sends.
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!LOVABLE_API_KEY || !RESEND_API_KEY) {
+    if (!isDryRun && (!LOVABLE_API_KEY || !RESEND_API_KEY)) {
       return new Response(
         JSON.stringify({
           error:
@@ -186,25 +191,40 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Throttled sequential send (avoid hammering gateway)
+    // Throttled sequential send (avoid hammering gateway). In dry-run mode we
+    // skip the connector entirely and synthesise "simulated" outcomes so the
+    // audit log is written from the exact same server path as a real send.
     const results: RecipientResult[] = [];
-    for (const r of recipients) {
-      const res = await sendOne(r);
-      results.push(res);
+    if (isDryRun) {
+      for (const r of recipients) {
+        results.push({
+          email: r,
+          status: "sent",
+          message_id: `test_${crypto.randomUUID()}`,
+        });
+      }
+    } else {
+      for (const r of recipients) {
+        const res = await sendOne(r);
+        results.push(res);
+      }
     }
 
     const sent = results.filter((r) => r.status === "sent").length;
     const queued = results.filter((r) => r.status === "queued").length;
     const failed = results.filter((r) => r.status === "failed").length;
 
-    // Audit trail — best effort, per-recipient summary + message ids + compliance metadata
+    // Audit trail — best effort, per-recipient summary + message ids + compliance metadata.
+    // Dry runs use a distinct action so they can be filtered out of compliance reports.
     try {
       await supabase.from("front_desk_audit_log").insert({
-        action: "email_share",
+        action: isDryRun ? "email_share_test" : "email_share",
         entity_type: body.record_kind,
         entity_id: body.record_id ?? "",
         performed_by: userId,
         details: {
+          test_mode: isDryRun,
+          source: "edge_function",
           mode: isBulk ? "bulk" : "single",
           recipient_count: recipients.length,
           sent,
@@ -221,9 +241,10 @@ Deno.serve(async (req) => {
           applicant_id: body.applicant_id ?? body.record_id ?? null,
           applicant_name: body.applicant_name ?? null,
           sent_at: new Date().toISOString(),
+          note: isDryRun ? "Simulated server-side send — no email dispatched" : undefined,
           results: results.map((r) => ({
             email: r.email,
-            status: r.status,
+            status: isDryRun ? "simulated" : r.status,
             message_id: r.message_id ?? null,
             error: r.error ?? null,
           })),
@@ -234,6 +255,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: failed === 0,
+        dry_run: isDryRun,
         summary: { total: recipients.length, sent, queued, failed },
         results,
       }),
