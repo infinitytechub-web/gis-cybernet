@@ -86,11 +86,29 @@ function StatusBadge({ status }: { status: ReturnType<typeof deriveStatus> }) {
   );
 }
 
+/**
+ * Exponential backoff schedule for automatic sync retries.
+ * Attempt 1 → 1s, 2 → 2s, 3 → 4s, 4 → 8s, then give up.
+ * Caps the wait time and the number of attempts to keep UX responsive.
+ */
+const RETRY_DELAYS_MS = [1_000, 2_000, 4_000, 8_000];
+const MAX_AUTO_RETRIES = RETRY_DELAYS_MS.length;
+
+interface RetryState {
+  attempt: number;
+  lastError: string | null;
+  /** True while the auto-retry timer is scheduled. */
+  pending: boolean;
+}
+
 export default function ShiftConnections() {
   const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  // Per-connection retry tracking — keyed by connection id.
+  const [retryMap, setRetryMap] = useState<Record<string, RetryState>>({});
+  const retryTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const isAuthorized = !!role && (ALLOWED_ROLES as readonly string[]).includes(role);
 
