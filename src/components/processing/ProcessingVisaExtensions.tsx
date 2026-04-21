@@ -148,6 +148,9 @@ export default function ProcessingVisaExtensions() {
             <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
               <div><span className="text-muted-foreground">Name:</span> {reviewItem.applicant_name}</div>
               <div><span className="text-muted-foreground">Passport:</span> {reviewItem.passport_number}</div>
+              {reviewItem.nationality && <div><span className="text-muted-foreground">Nationality:</span> {reviewItem.nationality}</div>}
+              {reviewItem.permit_type && <div><span className="text-muted-foreground">Permit Type:</span> {reviewItem.permit_type.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}</div>}
+              {reviewItem.fee_charged != null && <div><span className="text-muted-foreground">Fee Charged:</span> GHS {Number(reviewItem.fee_charged).toFixed(2)}</div>}
               <div><span className="text-muted-foreground">Visa Expiry:</span> {reviewItem.current_visa_expiry}</div>
               <div><span className="text-muted-foreground">Requested Date:</span> {reviewItem.requested_extension_date}</div>
               {reviewItem.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewItem.phone}</div>}
