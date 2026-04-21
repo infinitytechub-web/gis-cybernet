@@ -97,6 +97,98 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_compliance_snapshots: {
+        Row: {
+          absent: number
+          compliance_pct: number
+          created_at: string
+          department_snapshot: string | null
+          filters: Json | null
+          id: string
+          imported_at: string
+          imported_by: string | null
+          late: number
+          leave_days: number
+          log_completeness_pct: number
+          missing_logs: number
+          name_snapshot: string | null
+          notes: string | null
+          office_snapshot: string | null
+          period_end: string
+          period_start: string
+          period_type: string
+          present: number
+          profile_id: string
+          shift_snapshot: string | null
+          source: string
+          staff_id_snapshot: string | null
+          updated_at: string
+          working_days: number
+        }
+        Insert: {
+          absent?: number
+          compliance_pct?: number
+          created_at?: string
+          department_snapshot?: string | null
+          filters?: Json | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          late?: number
+          leave_days?: number
+          log_completeness_pct?: number
+          missing_logs?: number
+          name_snapshot?: string | null
+          notes?: string | null
+          office_snapshot?: string | null
+          period_end: string
+          period_start: string
+          period_type?: string
+          present?: number
+          profile_id: string
+          shift_snapshot?: string | null
+          source?: string
+          staff_id_snapshot?: string | null
+          updated_at?: string
+          working_days?: number
+        }
+        Update: {
+          absent?: number
+          compliance_pct?: number
+          created_at?: string
+          department_snapshot?: string | null
+          filters?: Json | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          late?: number
+          leave_days?: number
+          log_completeness_pct?: number
+          missing_logs?: number
+          name_snapshot?: string | null
+          notes?: string | null
+          office_snapshot?: string | null
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          present?: number
+          profile_id?: string
+          shift_snapshot?: string | null
+          source?: string
+          staff_id_snapshot?: string | null
+          updated_at?: string
+          working_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_compliance_snapshots_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_report_recipients: {
         Row: {
           created_at: string
