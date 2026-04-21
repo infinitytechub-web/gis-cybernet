@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Upload, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { recordPdfBase64, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
@@ -23,33 +26,71 @@ interface EmailShareDialogProps {
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BULK_MAX = 200;
+
+interface RecipientResult {
+  email: string;
+  status: "sent" | "queued" | "failed";
+  message_id?: string;
+  error?: string;
+}
 
 function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
   const parts = input
-    .split(/[,;\n]+/)
+    .split(/[,;\s\n\r]+/)
     .map((s) => s.trim())
     .filter(Boolean);
   const valid: string[] = [];
   const invalid: string[] = [];
+  const seen = new Set<string>();
   for (const p of parts) {
+    const lower = p.toLowerCase();
+    if (seen.has(lower)) continue;
+    seen.add(lower);
     (EMAIL_RE.test(p) ? valid : invalid).push(p);
   }
   return { valid, invalid };
 }
 
+function extractEmailsFromCsv(csv: string): string[] {
+  // Split by commas, semicolons, tabs, or newlines; match anything that looks like an email.
+  const tokens = csv.split(/[\n\r,;\t"]+/).map((t) => t.trim()).filter(Boolean);
+  const emails: string[] = [];
+  const seen = new Set<string>();
+  for (const t of tokens) {
+    const match = t.match(/[^\s<>()]+@[^\s<>()]+\.[^\s<>()]+/);
+    if (match) {
+      const e = match[0].replace(/[.,;]+$/, "");
+      const lower = e.toLowerCase();
+      if (EMAIL_RE.test(e) && !seen.has(lower)) {
+        seen.add(lower);
+        emails.push(e);
+      }
+    }
+  }
+  return emails;
+}
+
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
+  const [mode, setMode] = useState<"single" | "bulk">("single");
   const [to, setTo] = useState("");
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
+  const [bulkText, setBulkText] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [results, setResults] = useState<RecipientResult[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
+      setMode("single");
       setTo("");
       setCc("");
       setBcc("");
+      setBulkText("");
+      setResults(null);
       setSubject(
         `${RECORD_TITLES[kind]} — ${record.applicant_name ?? record.id ?? ""}`.trim()
       );
@@ -67,20 +108,49 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const ccInvalid = ccParsed.invalid.length > 0;
   const bccInvalid = bccParsed.invalid.length > 0;
 
+  const bulkParsed = parseEmailList(bulkText);
+  const bulkList = bulkParsed.valid.slice(0, BULK_MAX);
+  const bulkOverflow = bulkParsed.valid.length > BULK_MAX;
+
+  const canSend =
+    !sending &&
+    (mode === "single"
+      ? validEmail && !ccInvalid && !bccInvalid
+      : bulkList.length > 0);
+
+  const handleFile = async (file: File) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("CSV must be under 2 MB");
+      return;
+    }
+    try {
+      const text = await file.text();
+      const emails = extractEmailsFromCsv(text);
+      if (emails.length === 0) {
+        toast.error("No valid email addresses found in file");
+        return;
+      }
+      setBulkText(emails.join("\n"));
+      toast.success(`Loaded ${emails.length} recipient${emails.length === 1 ? "" : "s"}`);
+    } catch {
+      toast.error("Could not read the file");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   const handleSend = async () => {
-    if (!validEmail) {
-      toast.error("Please enter a valid recipient email address");
-      return;
+    if (mode === "single") {
+      if (!validEmail) return toast.error("Please enter a valid recipient email");
+      if (ccInvalid) return toast.error(`Invalid CC: ${ccParsed.invalid.join(", ")}`);
+      if (bccInvalid) return toast.error(`Invalid BCC: ${bccParsed.invalid.join(", ")}`);
+    } else if (bulkList.length === 0) {
+      return toast.error("Add at least one valid recipient");
     }
-    if (ccInvalid) {
-      toast.error(`Invalid CC address: ${ccParsed.invalid.join(", ")}`);
-      return;
-    }
-    if (bccInvalid) {
-      toast.error(`Invalid BCC address: ${bccParsed.invalid.join(", ")}`);
-      return;
-    }
+
     setSending(true);
+    setResults(null);
     try {
       const attachment = recordPdfBase64(kind, record);
       const safeName = String(record.applicant_name || record.id || "record")
@@ -88,25 +158,54 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
         .replace(/^_+|_+$/g, "");
       const filename = `${kind}_${safeName}.pdf`;
 
+      const payload =
+        mode === "single"
+          ? {
+              to: to.trim(),
+              cc: ccParsed.valid,
+              bcc: bccParsed.valid,
+              subject,
+              message,
+              attachment_base64: attachment,
+              attachment_filename: filename,
+              record_kind: kind,
+              record_id: record.id,
+            }
+          : {
+              bulk: true,
+              recipients: bulkList,
+              subject,
+              message,
+              attachment_base64: attachment,
+              attachment_filename: filename,
+              record_kind: kind,
+              record_id: record.id,
+            };
+
       const { data, error } = await supabase.functions.invoke("send-record-email", {
-        body: {
-          to: to.trim(),
-          cc: ccParsed.valid,
-          bcc: bccParsed.valid,
-          subject,
-          message,
-          attachment_base64: attachment,
-          attachment_filename: filename,
-          record_kind: kind,
-          record_id: record.id,
-        },
+        body: payload,
       });
 
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      toast.success(`Document sent to ${to}`);
-      onOpenChange(false);
+      const r: RecipientResult[] = (data as any)?.results ?? [];
+      const summary = (data as any)?.summary ?? { total: r.length, sent: 0, queued: 0, failed: 0 };
+      setResults(r);
+
+      if (summary.failed === 0) {
+        toast.success(
+          summary.total === 1
+            ? `Document sent to ${r[0]?.email ?? "recipient"}`
+            : `Sent to ${summary.sent + summary.queued} of ${summary.total} recipients`
+        );
+      } else if (summary.sent + summary.queued > 0) {
+        toast.warning(
+          `Partial delivery — ${summary.sent + summary.queued} sent, ${summary.failed} failed`
+        );
+      } else {
+        toast.error("All sends failed — see details below");
+      }
     } catch (e: any) {
       const msg = e?.message || "Failed to send email";
       if (/not configured|RESEND_API_KEY|connector/i.test(msg)) {
@@ -119,64 +218,163 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     }
   };
 
+  const statusBadge = (r: RecipientResult) => {
+    if (r.status === "sent")
+      return (
+        <Badge variant="secondary" className="gap-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+          <CheckCircle2 className="h-3 w-3" /> Sent
+        </Badge>
+      );
+    if (r.status === "queued")
+      return (
+        <Badge variant="secondary" className="gap-1">
+          <Clock className="h-3 w-3" /> Queued
+        </Badge>
+      );
+    return (
+      <Badge variant="destructive" className="gap-1">
+        <XCircle className="h-3 w-3" /> Failed
+      </Badge>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Send via Email</DialogTitle>
           <DialogDescription>
-            A PDF of this {RECORD_TITLES[kind].toLowerCase()} will be attached to the message.
+            A PDF of this {RECORD_TITLES[kind].toLowerCase()} will be attached.
           </DialogDescription>
         </DialogHeader>
+
+        <Tabs value={mode} onValueChange={(v) => setMode(v as "single" | "bulk")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="single">Single</TabsTrigger>
+            <TabsTrigger value="bulk">Bulk send</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="single" className="space-y-3 pt-3">
+            <div>
+              <Label>Recipient email *</Label>
+              <Input
+                type="email"
+                placeholder="recipient@example.com"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>CC</Label>
+              <Input
+                placeholder="cc1@example.com, cc2@example.com"
+                value={cc}
+                onChange={(e) => setCc(e.target.value)}
+                aria-invalid={ccInvalid}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Separate multiple addresses with commas.
+              </p>
+            </div>
+            <div>
+              <Label>BCC</Label>
+              <Input
+                placeholder="bcc@example.com"
+                value={bcc}
+                onChange={(e) => setBcc(e.target.value)}
+                aria-invalid={bccInvalid}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="bulk" className="space-y-3 pt-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Recipients (one per line or comma-separated)</Label>
+                <div>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".csv,text/csv,text/plain"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-3.5 w-3.5" /> Upload CSV
+                  </Button>
+                </div>
+              </div>
+              <Textarea
+                rows={6}
+                placeholder="alice@example.com&#10;bob@example.com, carol@example.com"
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                <Badge variant="secondary">{bulkList.length} valid</Badge>
+                {bulkParsed.invalid.length > 0 && (
+                  <Badge variant="destructive">{bulkParsed.invalid.length} invalid</Badge>
+                )}
+                {bulkOverflow && (
+                  <Badge variant="outline">Only first {BULK_MAX} will be sent</Badge>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
         <div className="space-y-3">
-          <div>
-            <Label>Recipient email *</Label>
-            <Input
-              type="email"
-              placeholder="recipient@example.com"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>CC</Label>
-            <Input
-              placeholder="cc1@example.com, cc2@example.com"
-              value={cc}
-              onChange={(e) => setCc(e.target.value)}
-              aria-invalid={ccInvalid}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Separate multiple addresses with commas.
-            </p>
-          </div>
-          <div>
-            <Label>BCC</Label>
-            <Input
-              placeholder="bcc@example.com"
-              value={bcc}
-              onChange={(e) => setBcc(e.target.value)}
-              aria-invalid={bccInvalid}
-            />
-          </div>
           <div>
             <Label>Subject</Label>
             <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
           </div>
           <div>
             <Label>Message</Label>
-            <Textarea rows={5} value={message} onChange={(e) => setMessage(e.target.value)} />
+            <Textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
           </div>
         </div>
+
+        {results && results.length > 0 && (
+          <div className="border rounded-md divide-y max-h-64 overflow-y-auto">
+            <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
+              Delivery results ({results.length})
+            </div>
+            {results.map((r, i) => (
+              <div key={`${r.email}-${i}`} className="px-3 py-2 text-sm flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{r.email}</div>
+                  {r.message_id && (
+                    <div className="text-xs text-muted-foreground font-mono truncate">
+                      id: {r.message_id}
+                    </div>
+                  )}
+                  {r.error && (
+                    <div className="text-xs text-destructive truncate" title={r.error}>
+                      {r.error}
+                    </div>
+                  )}
+                </div>
+                {statusBadge(r)}
+              </div>
+            ))}
+          </div>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            Cancel
+            {results ? "Close" : "Cancel"}
           </Button>
-          <Button
-            onClick={handleSend}
-            disabled={!validEmail || ccInvalid || bccInvalid || sending}
-          >
-            {sending ? "Sending..." : "Send Email"}
+          <Button onClick={handleSend} disabled={!canSend}>
+            {sending
+              ? "Sending..."
+              : mode === "bulk"
+              ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
+              : "Send Email"}
           </Button>
         </DialogFooter>
       </DialogContent>
