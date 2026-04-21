@@ -80,6 +80,46 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+const MONTH_BY_NAME: Record<string, number> = MONTHS.reduce((acc, m, i) => {
+  acc[m.toLowerCase()] = i;
+  acc[m.toLowerCase().slice(0, 3)] = i; // Jan, Feb, ...
+  return acc;
+}, {} as Record<string, number>);
+
+/**
+ * Try to extract a "Month YYYY" hint from any free-text string.
+ * Recognises "March 2026", "Mar 2026", "2026-03", "03/2026", etc.
+ * Returns the matched month (0-11) and year, or null.
+ */
+function detectMonthYear(text: string): { month: number; year: number } | null {
+  if (!text) return null;
+  const cleaned = String(text).trim();
+  if (!cleaned) return null;
+
+  // 1) "March 2026" / "Mar 2026"
+  const mName = cleaned.match(/\b([A-Za-z]{3,9})\s+(\d{4})\b/);
+  if (mName) {
+    const m = MONTH_BY_NAME[mName[1].toLowerCase()];
+    const y = Number(mName[2]);
+    if (m !== undefined && Number.isFinite(y)) return { month: m, year: y };
+  }
+  // 2) "2026-03" or "2026/03"
+  const mIso = cleaned.match(/\b(\d{4})[-/](\d{1,2})\b/);
+  if (mIso) {
+    const y = Number(mIso[1]);
+    const m = Number(mIso[2]) - 1;
+    if (m >= 0 && m <= 11 && Number.isFinite(y)) return { month: m, year: y };
+  }
+  // 3) "03/2026" or "3-2026"
+  const mUs = cleaned.match(/\b(\d{1,2})[-/](\d{4})\b/);
+  if (mUs) {
+    const m = Number(mUs[1]) - 1;
+    const y = Number(mUs[2]);
+    if (m >= 0 && m <= 11 && Number.isFinite(y)) return { month: m, year: y };
+  }
+  return null;
+}
+
 export function AttendanceComplianceImportDialog({ open, onOpenChange, initialReferenceDate, onImported }: Props) {
   const initialDate = initialReferenceDate ? parseISO(initialReferenceDate) : new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(initialDate.getMonth()); // 0-11
