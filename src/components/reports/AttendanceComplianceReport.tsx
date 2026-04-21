@@ -259,7 +259,18 @@ export default function AttendanceComplianceReport() {
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">{periodLabel} · {workingDays.length} working day(s)</p>
           </div>
-          <ExportMenu label="Export Report" size="sm" variant="default" getData={buildExport} />
+          <ExportMenu
+            label="Export Report"
+            size="sm"
+            variant="default"
+            getData={buildExport}
+            onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
+              format: fmt, period, from: fromIso, to: toIso,
+              filters: { departmentId, shiftGroup, office },
+              row_count: rows.length,
+              location: "header",
+            })}
+          />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
