@@ -97,6 +97,30 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_report_recipients: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          period: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          period: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          period?: string
+        }
+        Relationships: []
+      }
       attendances: {
         Row: {
           check_in: string | null
@@ -2302,6 +2326,7 @@ export type Database = {
           intake: number | null
           last_name: string
           login_enabled: boolean
+          office: string | null
           phone: string | null
           photo_url: string | null
           rank_id: string | null
@@ -2329,6 +2354,7 @@ export type Database = {
           intake?: number | null
           last_name: string
           login_enabled?: boolean
+          office?: string | null
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
@@ -2356,6 +2382,7 @@ export type Database = {
           intake?: number | null
           last_name?: string
           login_enabled?: boolean
+          office?: string | null
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
