@@ -33,8 +33,37 @@ interface SendBody {
   applicant_id?: string | null;
   applicant_name?: string | null;
 
+  // Optional extra user-picked attachments (in addition to the record PDF)
+  extra_attachments?: Array<{ filename: string; content_base64: string; size?: number }>;
+
   // Server-side dry run: validate + dedup + write audit log, but skip delivery.
   dry_run?: boolean;
+}
+
+const MAX_EXTRA_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_EXTRA_TOTAL_BYTES = 15 * 1024 * 1024;
+const MAX_EXTRA_COUNT = 5;
+
+function sanitizeExtraAttachments(
+  v: unknown,
+): Array<{ filename: string; content_base64: string; size: number }> {
+  if (!Array.isArray(v)) return [];
+  const out: Array<{ filename: string; content_base64: string; size: number }> = [];
+  let total = 0;
+  for (const item of v) {
+    if (!item || typeof item !== "object") continue;
+    const filename = String((item as any).filename ?? "").trim().slice(0, 200);
+    const content_base64 = String((item as any).content_base64 ?? "");
+    if (!filename || content_base64.length < 4) continue;
+    // approx decoded byte size from base64 length
+    const approxSize = Math.floor((content_base64.length * 3) / 4);
+    if (approxSize > MAX_EXTRA_FILE_BYTES) continue;
+    if (total + approxSize > MAX_EXTRA_TOTAL_BYTES) break;
+    total += approxSize;
+    out.push({ filename, content_base64, size: approxSize });
+    if (out.length >= MAX_EXTRA_COUNT) break;
+  }
+  return out;
 }
 
 interface RecipientResult {
@@ -141,6 +170,8 @@ Deno.serve(async (req) => {
         </p>
       </div>`;
 
+    const extraAttachments = sanitizeExtraAttachments(body.extra_attachments);
+
     async function sendOne(recipient: string): Promise<RecipientResult> {
       const payload: Record<string, unknown> = {
         from: "Ghana Immigration Service <onboarding@resend.dev>",
@@ -153,6 +184,10 @@ Deno.serve(async (req) => {
             filename: body.attachment_filename,
             content: body.attachment_base64,
           },
+          ...extraAttachments.map((a) => ({
+            filename: a.filename,
+            content: a.content_base64,
+          })),
         ],
       };
       if (ccList.length) payload.cc = ccList;
@@ -240,6 +275,9 @@ Deno.serve(async (req) => {
           record_kind: body.record_kind,
           applicant_id: body.applicant_id ?? body.record_id ?? null,
           applicant_name: body.applicant_name ?? null,
+          extra_attachments: extraAttachments.map((a) => ({ filename: a.filename, size: a.size })),
+          extra_attachments_count: extraAttachments.length,
+          extra_attachments_total_bytes: extraAttachments.reduce((s, a) => s + a.size, 0),
           sent_at: new Date().toISOString(),
           note: isDryRun ? "Simulated server-side send — no email dispatched" : undefined,
           results: results.map((r) => ({

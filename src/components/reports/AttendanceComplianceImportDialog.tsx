@@ -47,6 +47,15 @@ interface MatchResult {
   invalid: { rowIndex: number; reason: string }[];
 }
 
+interface PeriodHint {
+  /** Human-readable hint as found in the spreadsheet (e.g. "March 2026"). */
+  raw: string;
+  /** First day of the detected month in yyyy-MM-dd, when parseable. */
+  startIso: string | null;
+  /** Where the hint was discovered — surfaced in the mismatch warning. */
+  source: "sheet_name" | "metadata_row" | "period_column";
+}
+
 const REQUIRED_HEADERS = [
   "Staff ID", "Name", "Department", "Office", "Shift",
   "Working Days", "Present", "Absent", "Late", "Leave",
@@ -71,6 +80,46 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+const MONTH_BY_NAME: Record<string, number> = MONTHS.reduce((acc, m, i) => {
+  acc[m.toLowerCase()] = i;
+  acc[m.toLowerCase().slice(0, 3)] = i; // Jan, Feb, ...
+  return acc;
+}, {} as Record<string, number>);
+
+/**
+ * Try to extract a "Month YYYY" hint from any free-text string.
+ * Recognises "March 2026", "Mar 2026", "2026-03", "03/2026", etc.
+ * Returns the matched month (0-11) and year, or null.
+ */
+function detectMonthYear(text: string): { month: number; year: number } | null {
+  if (!text) return null;
+  const cleaned = String(text).trim();
+  if (!cleaned) return null;
+
+  // 1) "March 2026" / "Mar 2026"
+  const mName = cleaned.match(/\b([A-Za-z]{3,9})\s+(\d{4})\b/);
+  if (mName) {
+    const m = MONTH_BY_NAME[mName[1].toLowerCase()];
+    const y = Number(mName[2]);
+    if (m !== undefined && Number.isFinite(y)) return { month: m, year: y };
+  }
+  // 2) "2026-03" or "2026/03"
+  const mIso = cleaned.match(/\b(\d{4})[-/](\d{1,2})\b/);
+  if (mIso) {
+    const y = Number(mIso[1]);
+    const m = Number(mIso[2]) - 1;
+    if (m >= 0 && m <= 11 && Number.isFinite(y)) return { month: m, year: y };
+  }
+  // 3) "03/2026" or "3-2026"
+  const mUs = cleaned.match(/\b(\d{1,2})[-/](\d{4})\b/);
+  if (mUs) {
+    const m = Number(mUs[1]) - 1;
+    const y = Number(mUs[2]);
+    if (m >= 0 && m <= 11 && Number.isFinite(y)) return { month: m, year: y };
+  }
+  return null;
+}
+
 export function AttendanceComplianceImportDialog({ open, onOpenChange, initialReferenceDate, onImported }: Props) {
   const initialDate = initialReferenceDate ? parseISO(initialReferenceDate) : new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(initialDate.getMonth()); // 0-11
@@ -81,6 +130,7 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [match, setMatch] = useState<MatchResult | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
+  const [periodHint, setPeriodHint] = useState<PeriodHint | null>(null);
 
   // Period is fully derived from the selected month + year — no free-form date entry, so
   // there is no way for the imported figures to land in the wrong column/period.
@@ -104,12 +154,14 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
     setParsedRows([]);
     setMatch(null);
     setFilename(null);
+    setPeriodHint(null);
   };
 
   const handleFile = async (file: File) => {
     setParsing(true);
     setMatch(null);
     setParsedRows([]);
+    setPeriodHint(null);
     setFilename(file.name);
     try {
       const buf = await file.arrayBuffer();
@@ -129,6 +181,56 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
         return;
       }
       const headers = (aoa[headerIdx] as string[]).map((h) => String(h).trim());
+
+      // ---- Auto-detect period hint from sheet metadata so we can flag mismatches ----
+      // Search order: (1) sheet name, (2) any cell above the header, (3) a "Period"/"Month" column's first value.
+      let detected: PeriodHint | null = null;
+      const sheetHit = detectMonthYear(sheetName);
+      if (sheetHit) {
+        detected = {
+          raw: format(new Date(sheetHit.year, sheetHit.month, 1), "MMMM yyyy"),
+          startIso: format(new Date(sheetHit.year, sheetHit.month, 1), "yyyy-MM-dd"),
+          source: "sheet_name",
+        };
+      }
+      if (!detected) {
+        for (let i = 0; i < headerIdx; i++) {
+          const row = aoa[i];
+          if (!Array.isArray(row)) continue;
+          for (const cell of row) {
+            const hit = detectMonthYear(String(cell ?? ""));
+            if (hit) {
+              detected = {
+                raw: format(new Date(hit.year, hit.month, 1), "MMMM yyyy"),
+                startIso: format(new Date(hit.year, hit.month, 1), "yyyy-MM-dd"),
+                source: "metadata_row",
+              };
+              break;
+            }
+          }
+          if (detected) break;
+        }
+      }
+      if (!detected) {
+        const periodColIdx = headers.findIndex((h) => /^period$|^month$/i.test(h));
+        if (periodColIdx >= 0) {
+          for (let i = headerIdx + 1; i < Math.min(aoa.length, headerIdx + 10); i++) {
+            const row = aoa[i];
+            if (!Array.isArray(row)) continue;
+            const hit = detectMonthYear(String(row[periodColIdx] ?? ""));
+            if (hit) {
+              detected = {
+                raw: format(new Date(hit.year, hit.month, 1), "MMMM yyyy"),
+                startIso: format(new Date(hit.year, hit.month, 1), "yyyy-MM-dd"),
+                source: "period_column",
+              };
+              break;
+            }
+          }
+        }
+      }
+      setPeriodHint(detected);
+
       const missing = REQUIRED_HEADERS.filter((h) => !headers.some((x) => x.toLowerCase() === h.toLowerCase()));
       if (missing.length > 0) {
         toast.error(`Missing column(s): ${missing.join(", ")}`);
@@ -288,6 +390,17 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
   const updatedCount = match?.matched.filter((r) => r.existed).length ?? 0;
   const newCount = (match?.matched.length ?? 0) - updatedCount;
 
+  // Mismatch = file clearly says one month, selector says another.
+  const periodMismatch = !!(periodHint?.startIso && periodHint.startIso !== periodStartIso);
+
+  const applyDetectedPeriod = () => {
+    if (!periodHint?.startIso) return;
+    const d = parseISO(periodHint.startIso);
+    setSelectedMonth(d.getMonth());
+    setSelectedYear(d.getFullYear());
+    setMatch(null);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-2xl">
@@ -360,6 +473,33 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
             </div>
           )}
 
+          {/* Period auto-detection feedback */}
+          {periodHint && !periodMismatch && !parsing && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>File period matches selected month</AlertTitle>
+              <AlertDescription className="text-xs">
+                Detected <strong>{periodHint.raw}</strong> in the spreadsheet's {periodHint.source.replace("_", " ")} — same as the target period <strong>{periodLabel}</strong>.
+              </AlertDescription>
+            </Alert>
+          )}
+          {periodHint && periodMismatch && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Period mismatch — import blocked</AlertTitle>
+              <AlertDescription className="text-xs space-y-2">
+                <div>
+                  The spreadsheet's {periodHint.source.replace("_", " ")} says <strong>{periodHint.raw}</strong>,
+                  but the target month is set to <strong>{periodLabel}</strong>. Importing now would file these
+                  figures under the wrong period.
+                </div>
+                <Button size="sm" variant="outline" onClick={applyDetectedPeriod} className="h-7">
+                  Use detected period ({periodHint.raw})
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {match && (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-2 text-xs">
@@ -421,7 +561,8 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>Cancel</Button>
           <Button
             onClick={handleImport}
-            disabled={importing || parsing || !match || match.matched.length === 0}
+            disabled={importing || parsing || !match || match.matched.length === 0 || periodMismatch}
+            title={periodMismatch ? "Resolve the period mismatch before importing" : undefined}
           >
             {importing && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             Import {match ? `(${match.matched.length})` : ""}
