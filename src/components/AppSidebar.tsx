@@ -16,6 +16,7 @@ import {
   SidebarFooter, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 
@@ -158,23 +159,38 @@ export function AppSidebar() {
       <SidebarGroupLabel className="text-sidebar-foreground/50">{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <NavLink to={item.url} end={item.url === "/"} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                  <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
-                  {!collapsed && <span>{item.title}</span>}
-                  {renderBadge(item)}
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const link = (
+              <NavLink to={item.url} end={item.url === "/"} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
+                {!collapsed && <span>{item.title}</span>}
+                {renderBadge(item)}
+              </NavLink>
+            );
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild>
+                  {collapsed ? (
+                    <Tooltip delayDuration={100}>
+                      <TooltipTrigger asChild>{link}</TooltipTrigger>
+                      <TooltipContent side="right" className="font-medium">
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    link
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
   );
 
   return (
+    <TooltipProvider>
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
@@ -216,5 +232,6 @@ export function AppSidebar() {
         </Button>
       </SidebarFooter>
     </Sidebar>
+    </TooltipProvider>
   );
 }
