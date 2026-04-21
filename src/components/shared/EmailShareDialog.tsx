@@ -959,6 +959,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                   ref={extraFileRef}
                   type="file"
                   multiple
+                  accept={ACCEPT_ATTR}
                   className="hidden"
                   onChange={(e) => handleExtraFiles(e.target.files)}
                 />
@@ -972,7 +973,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                   <Paperclip className="mr-2 h-3.5 w-3.5" /> Attach files
                 </Button>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Max {MAX_EXTRA_COUNT} files, 5 MB each, 15 MB total. Sent in addition to the record PDF.
+                  Max {MAX_EXTRA_COUNT} files, 5 MB each, 15 MB total. Allowed: PDF, Word, Excel, PowerPoint, CSV, TXT, RTF, PNG/JPG/WEBP/HEIC. Sent in addition to the record PDF.
                 </p>
                 {extraAttachments.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
