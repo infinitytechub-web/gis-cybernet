@@ -571,6 +571,118 @@ export default function GpsAddresses() {
         </Badge>
       </div>
 
+      {/* ===== Search & Track (cyber-intel address lookup) ===== */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-card to-card">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="h-9 w-9 rounded-md bg-primary/15 flex items-center justify-center">
+              <Satellite className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-[220px]">
+              <CardTitle className="text-base flex items-center gap-2">
+                Search & Track
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  <ShieldAlert className="h-3 w-3" /> Cyber Intelligence
+                </Badge>
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Resolve coordinates for any GPS address, place name, digital code, or
+                <span className="font-mono"> lat,lng</span> pair. Authorized for command-tier use only.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <div className="relative flex-1 min-w-[260px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder='e.g. "Amasaman Police Station", "GA-543-2210", or "5.7000, -0.2833"'
+                value={trackQuery}
+                onChange={(e) => setTrackQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") runSearchTrack(); }}
+                className="pl-8"
+                disabled={trackBusy}
+              />
+            </div>
+            <Button onClick={runSearchTrack} disabled={trackBusy || !trackQuery.trim()} className="gap-1.5">
+              {trackBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <NavIcon className="h-4 w-4" />}
+              {trackBusy ? "Locating…" : "Search & Track"}
+            </Button>
+            {(trackResult || trackError) && (
+              <Button
+                variant="ghost"
+                onClick={() => { setTrackResult(null); setTrackError(null); setTrackQuery(""); }}
+                disabled={trackBusy}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {trackError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2.5 text-xs text-destructive">
+              {trackError}
+            </div>
+          )}
+
+          {trackResult && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 space-y-2.5">
+              <div className="flex items-start gap-2">
+                <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium truncate">{trackResult.display_name}</div>
+                  <div className="text-[11px] text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                    <span className="font-mono">lat {trackResult.lat.toFixed(6)}</span>
+                    <span className="font-mono">lng {trackResult.lng.toFixed(6)}</span>
+                    {trackResult.type && <span className="capitalize">type: {trackResult.type}</span>}
+                    {typeof trackResult.importance === "number" && (
+                      <span>confidence: {(trackResult.importance * 100).toFixed(0)}%</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={openTrackResultOnMap} className="gap-1.5">
+                  <NavIcon className="h-3.5 w-3.5" /> Open live map
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${trackResult.lat},${trackResult.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" /> Google Maps
+                  </a>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a
+                    href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${trackResult.lat},${trackResult.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" /> Street View
+                  </a>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(`${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`);
+                    toast({ title: "Coordinates copied" });
+                  }}
+                >
+                  <Copy className="h-3 w-3 mr-1" /> Copy coords
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Geocoding via OpenStreetMap (Nominatim). Use only for lawful intelligence operations.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* ===== Realtime analytics ===== */}
       <Card className={`border-primary/20 transition-shadow ${pulse ? "shadow-[0_0_0_3px_hsl(var(--primary)/0.25)]" : ""}`}>
         <CardHeader className="pb-3">
