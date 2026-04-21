@@ -172,12 +172,12 @@ export function AppSidebar() {
                 end={item.url === "/"}
                 onClick={handleNavClick}
                 aria-current={active ? "page" : undefined}
-                className={`hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
-                  active && collapsed
+                className={`hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
+                  active
                     ? "ring-2 ring-sidebar-primary bg-sidebar-primary/10 text-sidebar-primary"
                     : ""
                 }`}
-                activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                activeClassName="font-medium"
               >
                 <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
                 {!collapsed && <span>{item.title}</span>}
