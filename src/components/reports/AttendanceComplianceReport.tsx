@@ -10,8 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ExportMenu } from "@/components/ui/export-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { logAdminAudit } from "@/lib/admin-audit";
-import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff } from "lucide-react";
+import { downloadAttendanceComplianceTemplate } from "@/lib/attendance-compliance-template";
+import { toast } from "sonner";
+import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff, FileDown } from "lucide-react";
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   eachDayOfInterval, format, isWeekend, parseISO,
@@ -272,18 +275,44 @@ export default function AttendanceComplianceReport() {
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">{periodLabel} · {workingDays.length} working day(s)</p>
           </div>
-          <ExportMenu
-            label="Export Report"
-            size="sm"
-            variant="default"
-            getData={buildExport}
-            onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
-              format: fmt, period, from: fromIso, to: toIso,
-              filters: { departmentId, shiftGroup, office },
-              row_count: rows.length,
-              location: "header",
-            })}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              onClick={() => {
+                try {
+                  const filename = downloadAttendanceComplianceTemplate({
+                    departments: (departments as any[]).map((d) => d.name),
+                    offices: officeOptions,
+                  });
+                  toast.success("Template downloaded");
+                  logAdminAudit("attendance_compliance_template", "downloaded", {
+                    filename,
+                    departments_count: (departments as any[]).length,
+                    offices_count: officeOptions.length,
+                  });
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Could not generate template");
+                }
+              }}
+            >
+              <FileDown className="h-4 w-4" />
+              Template
+            </Button>
+            <ExportMenu
+              label="Export Report"
+              size="sm"
+              variant="default"
+              getData={buildExport}
+              onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
+                format: fmt, period, from: fromIso, to: toIso,
+                filters: { departmentId, shiftGroup, office },
+                row_count: rows.length,
+                location: "header",
+              })}
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
