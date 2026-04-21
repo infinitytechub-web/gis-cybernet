@@ -23,6 +23,7 @@ interface ParsedRow {
   shift_group?: string;
   rank_abbr?: string;
   department_name?: string;
+  office?: string;
   status?: StaffStatus;
   error?: string;
 }
@@ -59,6 +60,10 @@ const COLUMN_MAP: Record<string, keyof ParsedRow> = {
   "rank abbreviation": "rank_abbr",
   "department": "department_name",
   "dept": "department_name",
+  "office": "office",
+  "office location": "office",
+  "location": "office",
+  "duty post": "office",
   "status": "status",
 };
 
