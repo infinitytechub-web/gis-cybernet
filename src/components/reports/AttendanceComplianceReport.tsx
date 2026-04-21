@@ -250,12 +250,15 @@ export default function AttendanceComplianceReport() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <CalendarCheck className="h-4 w-4 text-primary" />
-            Attendance Compliance Report
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">{periodLabel} · {workingDays.length} working day(s)</p>
+        <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <CalendarCheck className="h-4 w-4 text-primary" />
+              Attendance Compliance Report
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">{periodLabel} · {workingDays.length} working day(s)</p>
+          </div>
+          <ExportMenu label="Export Report" size="sm" variant="default" getData={buildExport} />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
