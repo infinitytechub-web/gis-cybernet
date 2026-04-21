@@ -25,6 +25,7 @@ import type { AppRole } from "@/lib/types";
 import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
@@ -66,6 +67,7 @@ type TimePeriod = "7d" | "30d" | "90d" | "12m";
 
 export default function Analytics() {
   const { isAdmin, isAdminOrSupervisor, user } = useAuth();
+  const isMobile = useIsMobile();
   const [period, setPeriod] = useState<TimePeriod>("30d");
   const [incidentDialogOpen, setIncidentDialogOpen] = useState(false);
   const [incidentForm, setIncidentForm] = useState({
@@ -975,19 +977,58 @@ export default function Analytics() {
                   <Badge variant="outline" className="ml-auto text-[10px]">{rolesStats.total} assigned</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
+              <CardContent className="overflow-visible">
+                <ResponsiveContainer width="100%" height={isMobile ? 340 : 300}>
+                  <PieChart margin={{ top: 12, right: 12, bottom: 8, left: 12 }}>
                     <Pie
                       data={rolesStats.rows.map((r) => ({ name: r.label, value: r.count }))}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={95}
+                      cy={isMobile ? "42%" : "45%"}
+                      innerRadius={isMobile ? "32%" : "38%"}
+                      outerRadius={isMobile ? "55%" : "62%"}
                       paddingAngle={2}
-                      label={({ name, percent }) => percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ""}
+                      labelLine={false}
+                      label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                        if (!percent || percent < 0.05) return null;
+                        const RAD = Math.PI / 180;
+                        // On mobile, render labels INSIDE slices to avoid clipping
+                        if (isMobile) {
+                          const r = innerRadius + (outerRadius - innerRadius) * 0.55;
+                          const x = cx + r * Math.cos(-midAngle * RAD);
+                          const y = cy + r * Math.sin(-midAngle * RAD);
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="#fff"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              style={{ fontSize: 10, fontWeight: 600 }}
+                            >
+                              {`${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }
+                        // Desktop: outside labels with name + percent
+                        const r = outerRadius + 14;
+                        const x = cx + r * Math.cos(-midAngle * RAD);
+                        const y = cy + r * Math.sin(-midAngle * RAD);
+                        const anchor = x > cx ? "start" : "end";
+                        return (
+                          <text
+                            x={x}
+                            y={y}
+                            fill="hsl(var(--foreground))"
+                            textAnchor={anchor}
+                            dominantBaseline="central"
+                            style={{ fontSize: 10, fontWeight: 500 }}
+                          >
+                            {`${name} ${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }}
                     >
                       {rolesStats.rows.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Pie>
@@ -997,6 +1038,20 @@ export default function Analytics() {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "8px",
                         fontSize: "11px",
+                      }}
+                      formatter={(value: number, name: string) => [`${value} staff`, name]}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: "10px", paddingTop: "8px" }}
+                      formatter={(value, entry: any) => {
+                        const v = entry?.payload?.value;
+                        return (
+                          <span style={{ color: "hsl(var(--foreground))" }}>
+                            {value}{typeof v === "number" ? ` (${v})` : ""}
+                          </span>
+                        );
                       }}
                     />
                   </PieChart>
