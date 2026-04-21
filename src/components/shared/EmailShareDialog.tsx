@@ -244,6 +244,13 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const bulkParsed = parseEmailList(bulkText);
   const bulkList = bulkParsed.valid.slice(0, BULK_MAX);
   const bulkOverflow = bulkParsed.valid.length > BULK_MAX;
+  const bulkBreakdown = computeBulkBreakdown(bulkText);
+
+  // Preview-time dedup report for single mode (what *would* be removed at send).
+  const singlePreviewReport =
+    mode === "single"
+      ? finalDedupeSingle(to, ccParsed.valid, bccParsed.valid).report
+      : null;
 
   const canSend =
     !sending &&
