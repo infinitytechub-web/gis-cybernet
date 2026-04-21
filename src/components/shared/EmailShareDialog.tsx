@@ -35,7 +35,9 @@ interface RecipientResult {
   error?: string;
 }
 
-function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
+function parseEmailList(
+  input: string,
+): { valid: string[]; invalid: string[]; duplicates: number } {
   const parts = input
     .split(/[,;\s\n\r]+/)
     .map((s) => s.trim())
@@ -43,32 +45,65 @@ function parseEmailList(input: string): { valid: string[]; invalid: string[] } {
   const valid: string[] = [];
   const invalid: string[] = [];
   const seen = new Set<string>();
+  let duplicates = 0;
   for (const p of parts) {
     const lower = p.toLowerCase();
-    if (seen.has(lower)) continue;
+    if (seen.has(lower)) {
+      duplicates++;
+      continue;
+    }
     seen.add(lower);
     (EMAIL_RE.test(p) ? valid : invalid).push(p);
   }
-  return { valid, invalid };
+  return { valid, invalid, duplicates };
 }
 
-function extractEmailsFromCsv(csv: string): string[] {
+function extractEmailsFromCsv(
+  csv: string,
+): { emails: string[]; duplicates: number } {
   // Split by commas, semicolons, tabs, or newlines; match anything that looks like an email.
   const tokens = csv.split(/[\n\r,;\t"]+/).map((t) => t.trim()).filter(Boolean);
   const emails: string[] = [];
   const seen = new Set<string>();
+  let duplicates = 0;
   for (const t of tokens) {
     const match = t.match(/[^\s<>()]+@[^\s<>()]+\.[^\s<>()]+/);
     if (match) {
       const e = match[0].replace(/[.,;]+$/, "");
       const lower = e.toLowerCase();
-      if (EMAIL_RE.test(e) && !seen.has(lower)) {
-        seen.add(lower);
-        emails.push(e);
+      if (!EMAIL_RE.test(e)) continue;
+      if (seen.has(lower)) {
+        duplicates++;
+        continue;
       }
+      seen.add(lower);
+      emails.push(e);
     }
   }
-  return emails;
+  return { emails, duplicates };
+}
+
+/** Merge new emails into an existing textarea value, de-duplicating case-insensitively. */
+function mergeUniqueEmails(
+  existing: string,
+  incoming: string[],
+): { merged: string; added: number; skipped: number } {
+  const current = parseEmailList(existing).valid;
+  const seen = new Set(current.map((e) => e.toLowerCase()));
+  let added = 0;
+  let skipped = 0;
+  const next = [...current];
+  for (const e of incoming) {
+    const lower = e.toLowerCase();
+    if (seen.has(lower)) {
+      skipped++;
+      continue;
+    }
+    seen.add(lower);
+    next.push(e);
+    added++;
+  }
+  return { merged: next.join("\n"), added, skipped };
 }
 
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
@@ -133,13 +168,24 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     }
     try {
       const text = await file.text();
-      const emails = extractEmailsFromCsv(text);
+      const { emails, duplicates: csvDupes } = extractEmailsFromCsv(text);
       if (emails.length === 0) {
         toast.error("No valid email addresses found in file");
         return;
       }
-      setBulkText(emails.join("\n"));
-      toast.success(`Loaded ${emails.length} recipient${emails.length === 1 ? "" : "s"}`);
+      // Merge into existing textarea, deduping case-insensitively across both.
+      const { merged, added, skipped } = mergeUniqueEmails(bulkText, emails);
+      setBulkText(merged);
+      const totalSkipped = skipped + csvDupes;
+      if (added === 0) {
+        toast.info(`No new recipients — all ${emails.length} already in the list`);
+      } else if (totalSkipped > 0) {
+        toast.success(
+          `Added ${added} recipient${added === 1 ? "" : "s"} · skipped ${totalSkipped} duplicate${totalSkipped === 1 ? "" : "s"}`,
+        );
+      } else {
+        toast.success(`Added ${added} recipient${added === 1 ? "" : "s"}`);
+      }
     } catch {
       toast.error("Could not read the file");
     } finally {
@@ -171,12 +217,29 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const attachment = recordPdfBase64(kind, record);
 
+      // Dedup single-mode: CC/BCC must not repeat the TO address or each other.
+      const toAddr = to.trim();
+      const toLower = toAddr.toLowerCase();
+      const seenSingle = new Set<string>([toLower]);
+      const dedupedCc = ccParsed.valid.filter((e) => {
+        const l = e.toLowerCase();
+        if (seenSingle.has(l)) return false;
+        seenSingle.add(l);
+        return true;
+      });
+      const dedupedBcc = bccParsed.valid.filter((e) => {
+        const l = e.toLowerCase();
+        if (seenSingle.has(l)) return false;
+        seenSingle.add(l);
+        return true;
+      });
+
       const payload =
         mode === "single"
           ? {
-              to: to.trim(),
-              cc: ccParsed.valid,
-              bcc: bccParsed.valid,
+              to: toAddr,
+              cc: dedupedCc,
+              bcc: dedupedBcc,
               subject,
               message,
               attachment_base64: attachment,
@@ -186,7 +249,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             }
           : {
               bulk: true,
-              recipients: bulkList,
+              recipients: bulkList, // already deduped by parseEmailList
               subject,
               message,
               attachment_base64: attachment,
@@ -335,7 +398,12 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                     onChange={(e) => setBulkText(e.target.value)}
                   />
                   <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                    <Badge variant="secondary">{bulkList.length} valid</Badge>
+                    <Badge variant="secondary">{bulkList.length} unique</Badge>
+                    {bulkParsed.duplicates > 0 && (
+                      <Badge variant="outline" title="Duplicate addresses are automatically removed — each recipient is sent the email only once.">
+                        {bulkParsed.duplicates} duplicate{bulkParsed.duplicates === 1 ? "" : "s"} removed
+                      </Badge>
+                    )}
                     {bulkParsed.invalid.length > 0 && (
                       <Badge variant="destructive">{bulkParsed.invalid.length} invalid</Badge>
                     )}
