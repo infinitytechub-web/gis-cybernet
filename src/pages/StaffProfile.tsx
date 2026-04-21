@@ -1,17 +1,21 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award, FolderLock, MapPin } from "lucide-react";
+import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award, FolderLock, MapPin, Pencil, Check, X } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
+import { useState } from "react";
+import { toast } from "sonner";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
