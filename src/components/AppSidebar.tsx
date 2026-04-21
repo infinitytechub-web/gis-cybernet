@@ -166,12 +166,20 @@ export function AppSidebar() {
         <SidebarMenu>
           {items.map((item) => {
             const active = isActiveRoute(item.url);
+            const badgeCount =
+              item.badge === "processing" ? processingCount :
+              item.badge === "frontdesk" ? frontDeskCount : null;
+            const ariaLabel = collapsed
+              ? `${item.title}${active ? ", current page" : ""}${badgeCount ? `, ${badgeCount} pending` : ""}`
+              : undefined;
             const link = (
               <NavLink
                 to={item.url}
                 end={item.url === "/"}
                 onClick={handleNavClick}
                 aria-current={active ? "page" : undefined}
+                aria-label={ariaLabel}
+                title={collapsed ? undefined : item.title}
                 className={`hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
                   active
                     ? "ring-2 ring-sidebar-primary bg-sidebar-primary/10 text-sidebar-primary"
@@ -179,7 +187,7 @@ export function AppSidebar() {
                 }`}
                 activeClassName="font-medium"
               >
-                <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
+                <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
                 {!collapsed && <span>{item.title}</span>}
                 {renderBadge(item)}
               </NavLink>
