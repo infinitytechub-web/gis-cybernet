@@ -690,6 +690,13 @@ export default function AttendanceComplianceReport() {
           queryClient.invalidateQueries({ queryKey: ["attendance_compliance_snapshots"] });
         }}
       />
+
+      <AttendanceComplianceExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        initial={{ fromIso, toIso, departmentId, office }}
+        onExport={handleScopedExport}
+      />
     </div>
   );
 }
