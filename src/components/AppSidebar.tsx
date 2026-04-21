@@ -232,5 +232,6 @@ export function AppSidebar() {
         </Button>
       </SidebarFooter>
     </Sidebar>
+    </TooltipProvider>
   );
 }
