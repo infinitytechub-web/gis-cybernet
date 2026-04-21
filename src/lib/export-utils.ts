@@ -11,6 +11,19 @@ export interface ExportMetaField {
   value: string;
 }
 
+export interface ExportEmbeddedImage {
+  /** PNG/JPEG data URL of the image. */
+  dataUrl: string;
+  /** Native pixel width — used to preserve aspect ratio in the PDF. */
+  width: number;
+  /** Native pixel height — used to preserve aspect ratio in the PDF. */
+  height: number;
+  /** Caption rendered below the image in the PDF. Optional. */
+  caption?: string;
+  /** Image format for jsPDF. Defaults to "PNG". */
+  format?: "PNG" | "JPEG";
+}
+
 interface ExportOptions {
   title: string;
   filename: string;
@@ -23,6 +36,12 @@ interface ExportOptions {
    * and the generated-at timestamp.
    */
   meta?: ExportMetaField[];
+  /**
+   * Optional image embedded above the table in the PDF export (e.g., an
+   * offline coordinate snapshot for Search & Track results). Other formats
+   * gracefully ignore this field.
+   */
+  image?: ExportEmbeddedImage;
 }
 
 function generatePDF({ title, filename, headers, rows, subtitle, meta }: ExportOptions) {
