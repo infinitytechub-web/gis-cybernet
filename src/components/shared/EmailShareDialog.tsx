@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -291,6 +291,30 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, results, kind, record]);
 
+  // Compute SHA-256 of the generated PDF for tamper-evidence / integrity check.
+  // Full 64-char hex is stored in audit; UI shows short prefix with copy button.
+  const [attachmentHash, setAttachmentHash] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!attachmentMeta?.blob) {
+      setAttachmentHash(null);
+      return;
+    }
+    (async () => {
+      try {
+        const buf = await attachmentMeta.blob.arrayBuffer();
+        const digest = await crypto.subtle.digest("SHA-256", buf);
+        const hex = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (!cancelled) setAttachmentHash(hex);
+      } catch {
+        if (!cancelled) setAttachmentHash(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [attachmentMeta?.blob]);
+
   // Release the object URL when the component unmounts or meta changes.
   useEffect(() => {
     return () => {
@@ -392,6 +416,21 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const attachment = recordPdfBase64(kind, record);
 
+      // Recompute SHA-256 over the exact bytes being sent so the audit hash
+      // matches the attachment payload, not just what was previewed.
+      let sendHash: string | null = null;
+      try {
+        const bin = atob(attachment);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        sendHash = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      } catch { /* best-effort */ }
+
+      const generatedAtIso = new Date().toISOString();
+
       // -------- Final authoritative dedup pass (runs every time, right before send).
       // This is intentionally redundant with earlier filtering — it guarantees the
       // outgoing payload never contains overlapping TO/CC/BCC or repeat bulk recipients
@@ -427,6 +466,14 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
         }
       }
 
+      // Compliance metadata — recorded in the audit log for every send.
+      const attachmentMetaPayload = {
+        attachment_sha256: sendHash,
+        attachment_generated_at: generatedAtIso,
+        applicant_id: record.id ?? null,
+        applicant_name: record.applicant_name ?? null,
+      };
+
       const payload =
         mode === "single" && singleClean
           ? {
@@ -439,6 +486,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
+              ...attachmentMetaPayload,
             }
           : {
               bulk: true,
@@ -449,6 +497,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
+              ...attachmentMetaPayload,
             };
 
       const { data, error } = await supabase.functions.invoke("send-record-email", {
@@ -726,6 +775,37 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                               timeStyle: "short",
                             })
                           : "—"}
+                      </span>
+
+                      <span className="text-muted-foreground">SHA-256</span>
+                      <span className="flex items-center gap-1 min-w-0">
+                        {attachmentHash ? (
+                          <>
+                            <span
+                              className="font-mono truncate"
+                              title={attachmentHash}
+                            >
+                              {attachmentHash.slice(0, 16)}…
+                            </span>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground shrink-0"
+                              title="Copy full hash"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(attachmentHash);
+                                  toast.success("SHA-256 copied");
+                                } catch {
+                                  toast.error("Could not copy hash");
+                                }
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">computing…</span>
+                        )}
                       </span>
                     </div>
                   </div>
