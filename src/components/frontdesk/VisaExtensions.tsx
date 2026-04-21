@@ -42,9 +42,17 @@ export default function VisaExtensions() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const PAGE_SIZE = 25;
+
+  // Debounce search input so pagination resets only after the user pauses typing.
+  // The query key uses `debouncedSearch`, so keystrokes don't trigger server calls.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     const channel = supabase
