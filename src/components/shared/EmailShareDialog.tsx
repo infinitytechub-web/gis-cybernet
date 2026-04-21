@@ -535,6 +535,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                 attachment_generated_at: nowIso,
                 applicant_id: record.id ?? null,
                 applicant_name: record.applicant_name ?? null,
+                extra_attachments: extraAttachments,
                 dry_run: true,
               }
             : {
@@ -550,6 +551,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                 attachment_generated_at: nowIso,
                 applicant_id: record.id ?? null,
                 applicant_name: record.applicant_name ?? null,
+                extra_attachments: extraAttachments,
                 dry_run: true,
               };
 
