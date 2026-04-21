@@ -147,23 +147,29 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     }
   };
 
-  const handleSend = async () => {
+  const validateCompose = (): boolean => {
     if (mode === "single") {
-      if (!validEmail) return toast.error("Please enter a valid recipient email");
-      if (ccInvalid) return toast.error(`Invalid CC: ${ccParsed.invalid.join(", ")}`);
-      if (bccInvalid) return toast.error(`Invalid BCC: ${bccParsed.invalid.join(", ")}`);
+      if (!validEmail) { toast.error("Please enter a valid recipient email"); return false; }
+      if (ccInvalid) { toast.error(`Invalid CC: ${ccParsed.invalid.join(", ")}`); return false; }
+      if (bccInvalid) { toast.error(`Invalid BCC: ${bccParsed.invalid.join(", ")}`); return false; }
     } else if (bulkList.length === 0) {
-      return toast.error("Add at least one valid recipient");
+      toast.error("Add at least one valid recipient");
+      return false;
     }
+    return true;
+  };
+
+  const handleReview = () => {
+    if (validateCompose()) setStep("preview");
+  };
+
+  const handleSend = async () => {
+    if (!validateCompose()) return;
 
     setSending(true);
     setResults(null);
     try {
       const attachment = recordPdfBase64(kind, record);
-      const safeName = String(record.applicant_name || record.id || "record")
-        .replace(/[^a-z0-9]+/gi, "_")
-        .replace(/^_+|_+$/g, "");
-      const filename = `${kind}_${safeName}.pdf`;
 
       const payload =
         mode === "single"
@@ -174,7 +180,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               subject,
               message,
               attachment_base64: attachment,
-              attachment_filename: filename,
+              attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
             }
@@ -184,7 +190,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               subject,
               message,
               attachment_base64: attachment,
-              attachment_filename: filename,
+              attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
             };
