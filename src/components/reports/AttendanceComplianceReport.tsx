@@ -431,6 +431,106 @@ export default function AttendanceComplianceReport() {
           )}
         </CardContent>
       </Card>
+
+      <StaffDetailDialog
+        staff={detailStaff}
+        periodLabel={periodLabel}
+        onClose={() => setDetailStaff(null)}
+      />
     </div>
+  );
+}
+
+const KIND_META: Record<DayKind, { label: string; icon: any; className: string }> = {
+  present:  { label: "Present",          icon: CheckCircle2, className: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  late:     { label: "Late",             icon: Clock,        className: "bg-amber-100 text-amber-800 border-amber-200" },
+  absent:   { label: "Absent",           icon: XCircle,      className: "bg-red-100 text-red-800 border-red-200" },
+  leave:    { label: "Approved leave",   icon: Plane,        className: "bg-blue-100 text-blue-800 border-blue-200" },
+  missing:  { label: "Missing log",      icon: FileWarning,  className: "bg-amber-100 text-amber-900 border-amber-300" },
+  holiday:  { label: "Public holiday",   icon: PartyPopper,  className: "bg-purple-100 text-purple-800 border-purple-200" },
+  weekend:  { label: "Weekend / off",    icon: CalendarOff,  className: "bg-muted text-muted-foreground border-border" },
+};
+
+function StaffDetailDialog({
+  staff,
+  periodLabel,
+  onClose,
+}: {
+  staff: any | null;
+  periodLabel: string;
+  onClose: () => void;
+}) {
+  const open = !!staff;
+  const counts = staff ? staff.dayDetails.reduce((acc: Record<DayKind, number>, d: DayDetail) => {
+    acc[d.kind] = (acc[d.kind] ?? 0) + 1;
+    return acc;
+  }, {} as Record<DayKind, number>) : null;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        {staff && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{staff.name}</DialogTitle>
+              <DialogDescription>
+                {staff.staff_id} · {staff.department} · {staff.office} · Shift {staff.shift}
+                <br />
+                <span className="text-xs">{periodLabel}</span>
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 my-3">
+              {(["present", "late", "absent", "leave", "missing", "holiday", "weekend"] as DayKind[]).map((k) => {
+                const Icon = KIND_META[k].icon;
+                const n = counts?.[k] ?? 0;
+                if (n === 0) return null;
+                return (
+                  <div key={k} className={`rounded-md border p-2 text-xs ${KIND_META[k].className}`}>
+                    <div className="flex items-center gap-1.5 font-medium"><Icon className="h-3.5 w-3.5" />{KIND_META[k].label}</div>
+                    <div className="text-lg font-bold mt-0.5">{n}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[140px]">Date</TableHead>
+                    <TableHead>Day</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Note</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {staff.dayDetails.map((d: DayDetail) => {
+                    const meta = KIND_META[d.kind];
+                    const Icon = meta.icon;
+                    return (
+                      <TableRow key={d.date}>
+                        <TableCell className="text-xs font-mono">{format(parseISO(d.date), "EEE, dd MMM")}</TableCell>
+                        <TableCell className="text-xs">{format(parseISO(d.date), "EEEE")}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`gap-1 ${meta.className}`}>
+                            <Icon className="h-3 w-3" /> {meta.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{d.note ?? "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Compliance counts only working days (excluding weekends &amp; public holidays). Missing logs are working days with no recorded check-in and are treated as absences.
+            </p>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
