@@ -28,6 +28,7 @@ import {
   RECORD_TITLES,
 } from "@/lib/record-pdf";
 import { EmailShareDialog } from "./EmailShareDialog";
+import { logRowAction } from "@/lib/row-action-audit";
 
 export interface RecordRowActionsProps {
   kind: RecordKind;
