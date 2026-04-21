@@ -189,13 +189,14 @@ export default function AttendanceComplianceReport() {
     return {
       title: `Attendance Compliance — ${period === "weekly" ? "Weekly" : "Monthly"}`,
       filename: `attendance_compliance_${period}_${fromIso}_to_${toIso}`,
-      headers: ["Staff ID", "Name", "Department", "Office", "Shift", "Working Days", "Present", "Absent", "Late", "Leave", "Compliance %"],
+      headers: ["Staff ID", "Name", "Department", "Office", "Shift", "Working Days", "Present", "Absent", "Late", "Leave", "Missing Logs", "Compliance %", "Log Completeness %"],
       rows: rows.map((r) => [
         r.staff_id, r.name, r.department, r.office, r.shift,
         String(r.expected), String(r.present), String(r.absent),
-        String(r.late), String(r.leave), `${r.rate.toFixed(1)}%`,
+        String(r.late), String(r.leave), String(r.missing),
+        `${r.rate.toFixed(1)}%`, `${r.completeness.toFixed(1)}%`,
       ]),
-      subtitle: `Period: ${periodLabel} | Staff: ${totals.staff} | Overall: ${totals.overallRate.toFixed(1)}%`,
+      subtitle: `Period: ${periodLabel} | Staff: ${totals.staff} | Overall: ${totals.overallRate.toFixed(1)}% | Missing logs: ${totals.missing} across ${totals.incompleteStaff} staff`,
     };
   };
 
@@ -272,7 +273,7 @@ export default function AttendanceComplianceReport() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <Card><CardContent className="p-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Percent className="h-3.5 w-3.5" /> Overall compliance</div>
           <div className="text-2xl font-bold mt-1">{totals.overallRate.toFixed(1)}%</div>
@@ -289,7 +290,23 @@ export default function AttendanceComplianceReport() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><AlertTriangle className="h-3.5 w-3.5" /> Late</div>
           <div className="text-2xl font-bold mt-1 text-amber-600">{totals.late}</div>
         </CardContent></Card>
+        <Card><CardContent className="p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><FileWarning className="h-3.5 w-3.5" /> Missing logs</div>
+          <div className="text-2xl font-bold mt-1 text-amber-700">{totals.missing}</div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">{totals.incompleteStaff} staff incomplete</div>
+        </CardContent></Card>
       </div>
+
+      {totals.missing > 0 && (
+        <Alert variant="default" className="border-amber-300 bg-amber-50 text-amber-900 [&>svg]:text-amber-700">
+          <FileWarning className="h-4 w-4" />
+          <AlertTitle>Incomplete attendance logs detected</AlertTitle>
+          <AlertDescription className="text-amber-800">
+            {totals.missing} working day{totals.missing === 1 ? "" : "s"} have no recorded check-in for {totals.incompleteStaff} staff member{totals.incompleteStaff === 1 ? "" : "s"} in this period.
+            Compliance metrics treat these as absences — review the highlighted rows below before circulating this report.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
@@ -312,14 +329,23 @@ export default function AttendanceComplianceReport() {
                     <TableHead className="text-right">Absent</TableHead>
                     <TableHead className="text-right">Late</TableHead>
                     <TableHead className="text-right">Leave</TableHead>
+                    <TableHead className="text-right">Missing</TableHead>
                     <TableHead className="text-right">Compliance</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} className={r.missing > 0 ? "bg-amber-50/60" : ""}>
                       <TableCell>
-                        <div className="font-medium text-sm">{r.name}</div>
+                        <div className="font-medium text-sm flex items-center gap-1.5">
+                          {r.name}
+                          {r.missing > 0 && (
+                            <FileWarning
+                              className="h-3.5 w-3.5 text-amber-600"
+                              aria-label={`${r.missing} missing attendance log${r.missing === 1 ? "" : "s"}`}
+                            />
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">{r.staff_id}</div>
                       </TableCell>
                       <TableCell className="text-xs">{r.department}</TableCell>
@@ -329,6 +355,19 @@ export default function AttendanceComplianceReport() {
                       <TableCell className="text-right text-xs text-red-600">{r.absent}</TableCell>
                       <TableCell className="text-right text-xs text-amber-600">{r.late}</TableCell>
                       <TableCell className="text-right text-xs">{r.leave}</TableCell>
+                      <TableCell className="text-right text-xs">
+                        {r.missing > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-amber-100 text-amber-800 border-amber-200"
+                            title={`Missing dates: ${r.missingDates.slice(0, 5).join(", ")}${r.missingDates.length > 5 ? "…" : ""}`}
+                          >
+                            {r.missing}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Badge variant="outline" className={rateBadge(r.rate)}>{r.rate.toFixed(1)}%</Badge>
                       </TableCell>
