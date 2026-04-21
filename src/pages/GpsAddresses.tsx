@@ -37,6 +37,12 @@ import {
 import { GpsLiveMap } from "@/components/command-vault/GpsLiveMap";
 import { StaticCoordinateMap } from "@/components/command-vault/StaticCoordinateMap";
 import { buildStaticMapSvg, buildStaticMapPng } from "@/lib/static-map-snapshot";
+import {
+  fetchViewerStamp,
+  buildOfficialWatermark,
+  buildAuditQrDataUrl,
+  buildAuditVerificationUrl,
+} from "@/lib/official-stamp";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
@@ -507,10 +513,13 @@ export default function GpsAddresses() {
   // and embedded above the table — the snapshot is rendered entirely from the
   // captured coordinates and contacts NO third-party tile servers, preserving
   // the same authorization posture as the on-screen offline fallback.
-  const buildTrackResultExport = async (fmt?: import("@/lib/export-utils").ExportFormat) => {
+  const buildTrackResultExport = async (
+    fmt?: import("@/lib/export-utils").ExportFormat,
+    stamp?: { watermarkText?: string; qrDataUrl?: string; qrCaption?: string; meta?: import("@/lib/export-utils").ExportMetaField[] },
+  ) => {
     if (!trackResult) return null;
     const captured = format(new Date(), "dd MMM yyyy, HH:mm");
-    const base = {
+    const base: any = {
       title: "GPS Search & Track Result",
       filename: `gps_search_track_${format(new Date(), "yyyyMMdd_HHmm")}`,
       headers: ["Field", "Value"],
@@ -530,22 +539,30 @@ export default function GpsAddresses() {
       ],
       subtitle: `Cyber Intelligence · Search & Track lookup at ${captured}`,
     };
+    if (stamp?.meta && stamp.meta.length > 0) base.meta = stamp.meta;
+    if (stamp?.watermarkText) {
+      base.watermark = {
+        text: stamp.watermarkText,
+        secondary: "OFFICIAL · CYBER INTELLIGENCE",
+      };
+    }
+    if (stamp?.qrDataUrl) {
+      base.qr = { dataUrl: stamp.qrDataUrl, caption: stamp.qrCaption ?? "Scan to verify" };
+    }
     if (fmt === "pdf") {
       const snap = await buildStaticMapPng({
         lat: trackResult.lat,
         lng: trackResult.lng,
         label: trackResult.display_name?.slice(0, 80),
+        watermark: stamp?.watermarkText,
       });
       if (snap) {
-        return {
-          ...base,
-          image: {
-            dataUrl: snap.dataUrl,
-            width: snap.width,
-            height: snap.height,
-            caption: `Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`,
-            format: "PNG" as const,
-          },
+        base.image = {
+          dataUrl: snap.dataUrl,
+          width: snap.width,
+          height: snap.height,
+          caption: `Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}`,
+          format: "PNG" as const,
         };
       }
     }
@@ -554,8 +571,15 @@ export default function GpsAddresses() {
 
   // Browser-native print: opens a new window with a clean printable layout for
   // the current Search & Track result. Includes an inline static SVG snapshot
-  // of the captured coordinates — no third-party tiles fetched.
-  const printTrackResult = () => {
+  // of the captured coordinates — no third-party tiles fetched. When a stamp
+  // is provided, the snapshot and table are watermarked with the viewer's
+  // official identity, and a QR code linking to the audit-trail entry is
+  // rendered in the page header for tamper-evident verification.
+  const printTrackResult = (opts?: {
+    watermarkText?: string;
+    qrDataUrl?: string;
+    qrCaption?: string;
+  }) => {
     if (!trackResult) return;
     const captured = format(new Date(), "dd MMM yyyy, HH:mm");
     const rows: [string, string][] = [
@@ -583,27 +607,63 @@ export default function GpsAddresses() {
       lat: trackResult.lat,
       lng: trackResult.lng,
       label: trackResult.display_name?.slice(0, 80),
+      watermark: opts?.watermarkText,
     });
+
+    // Diagonal CSS watermark stamped behind the table so the printed
+    // document carries the official identity on every section.
+    const watermarkCss = opts?.watermarkText
+      ? `<div class="page-watermark"><span>${opts.watermarkText.replace(/[<>&]/g, (c) => c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;")}</span></div>`
+      : "";
+    const qrBlock = opts?.qrDataUrl
+      ? `<div class="qr-block">
+          <img src="${opts.qrDataUrl}" alt="Audit verification QR" />
+          <div class="qr-cap">${(opts.qrCaption ?? "Scan to verify authorisation in Cybernet audit trail").replace(/[<>&]/g, (c) => c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;")}</div>
+        </div>`
+      : "";
+
     win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>GPS Search & Track Result</title>
       <style>
-        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; }
+        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; position: relative; }
         h1 { font-size: 20px; margin: 0 0 4px; }
         .sub { font-size: 12px; color: #555; margin-bottom: 20px; }
+        .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+        .header-row .left { flex: 1; }
+        .qr-block { text-align: center; }
+        .qr-block img { width: 110px; height: 110px; display: block; }
+        .qr-cap { font-size: 9px; color: #555; margin-top: 4px; max-width: 130px; }
         table { border-collapse: collapse; width: 100%; }
         .snapshot { margin: 0 0 16px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; background: #fafafa; }
         .snapshot svg { display: block; max-width: 100%; height: auto; }
         .snapshot .cap { font-size: 10px; color: #666; margin-top: 6px; }
         .footer { margin-top: 24px; font-size: 10px; color: #777; border-top: 1px solid #ddd; padding-top: 8px; }
-        @media print { @page { margin: 18mm; } }
+        .page-watermark {
+          position: fixed; inset: 0; pointer-events: none; z-index: 0;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden;
+        }
+        .page-watermark span {
+          font-size: 64px; font-weight: 800; color: rgba(15, 23, 42, 0.07);
+          transform: rotate(-30deg); white-space: nowrap; letter-spacing: 2px;
+          text-align: center; line-height: 1.1;
+        }
+        body > *:not(.page-watermark) { position: relative; z-index: 1; }
+        @media print { @page { margin: 18mm; } .page-watermark span { color: rgba(15, 23, 42, 0.10); } }
       </style></head><body>
-      <h1>GPS Search & Track Result</h1>
-      <div class="sub">Cyber Intelligence · Search & Track lookup at ${captured}</div>
+      ${watermarkCss}
+      <div class="header-row">
+        <div class="left">
+          <h1>GPS Search &amp; Track Result</h1>
+          <div class="sub">Cyber Intelligence · Search &amp; Track lookup at ${captured}</div>
+        </div>
+        ${qrBlock}
+      </div>
       <div class="snapshot">
         ${snapshotSvg}
         <div class="cap">Offline coordinate snapshot · No online tiles fetched · ${trackResult.lat.toFixed(6)}, ${trackResult.lng.toFixed(6)}</div>
       </div>
       <table>${rowsHtml}</table>
-      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only</div>
+      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only${opts?.watermarkText ? ` · ${opts.watermarkText}` : ""}</div>
       <script>window.onload = () => { window.focus(); window.print(); };</script>
       </body></html>`);
     win.document.close();
@@ -657,49 +717,93 @@ export default function GpsAddresses() {
     }
     setPurposeBusy(true);
     try {
+      // 1) Fetch the viewer's official identity (rank/role + department) so
+      //    every exported/printed artefact is watermarked back to the
+      //    authorising officer.
+      const stamp = await fetchViewerStamp(user.id, role ?? null);
+      const watermarkText = buildOfficialWatermark(stamp);
+
+      // 2) Insert the audit row FIRST so we can encode its primary key into
+      //    the QR code. The QR therefore points at a verifiable trail entry
+      //    that already exists when the document leaves the system.
+      const authorizedAt = new Date().toISOString();
+      const auditAction =
+        action.kind === "export" ? "gps_search_track_exported" : "gps_search_track_printed";
+      const auditDetails: Record<string, any> = {
+        query: trackQuery,
+        display_name: trackResult.display_name,
+        lat: trackResult.lat,
+        lng: trackResult.lng,
+        at: authorizedAt,
+        purpose: reason,
+        authorization_category:
+          action.kind === "export" ? "cyber_intelligence_export" : "cyber_intelligence_print",
+        watermark: {
+          role: stamp.roleLabel,
+          officer: stamp.fullName,
+          staff_id: stamp.staffId,
+          department: stamp.department,
+          text: watermarkText,
+        },
+      };
+      if (action.kind === "export") auditDetails.format = action.format;
+
+      const { data: auditRow, error: auditError } = await supabase
+        .from("front_desk_audit_log")
+        .insert({
+          action: auditAction,
+          entity_type: "gps_search_track",
+          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+          performed_by: user.id,
+          details: auditDetails,
+        })
+        .select("id, created_at")
+        .single();
+      if (auditError) throw auditError;
+
+      // 3) Build the QR pointing at the freshly-inserted audit row. The QR is
+      //    therefore tamper-evident: the linked entry already exists and
+      //    contains the authorised-at timestamp + officer identity.
+      const verificationUrl = buildAuditVerificationUrl(auditRow.id, authorizedAt);
+      const qrDataUrl = await buildAuditQrDataUrl(verificationUrl).catch(() => "");
+      const qrCaption = `Audit ${auditRow.id.slice(0, 8)} · ${format(new Date(authorizedAt), "dd MMM HH:mm")}`;
+
+      // 4) Apply watermark + QR to the export / print pipeline.
       if (action.kind === "export") {
-        const data = await buildTrackResultExport(action.format);
+        const data = await buildTrackResultExport(action.format, {
+          watermarkText,
+          qrDataUrl: qrDataUrl || undefined,
+          qrCaption,
+          meta: [
+            { label: "Authorised Officer", value: `${stamp.roleLabel} · ${stamp.fullName}` },
+            { label: "Department", value: stamp.department },
+            { label: "Authorisation Reason", value: reason },
+            { label: "Audit Reference", value: auditRow.id },
+            { label: "Authorised At", value: format(new Date(authorizedAt), "dd MMM yyyy, HH:mm") },
+          ],
+        });
         if (!data) throw new Error("Nothing to export");
         exportReport(action.format, data);
-        await supabase.from("front_desk_audit_log").insert({
-          action: "gps_search_track_exported",
-          entity_type: "gps_search_track",
-          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-          performed_by: user.id,
-          details: {
-            format: action.format,
-            query: trackQuery,
-            display_name: trackResult.display_name,
-            lat: trackResult.lat,
-            lng: trackResult.lng,
-            at: new Date().toISOString(),
-            purpose: reason,
-            authorization_category: "cyber_intelligence_export",
-          },
+        toast({
+          title: `${getFormatLabel(action.format)} downloaded`,
+          description: "Watermarked with your official identity. QR links to the audit entry.",
         });
-        toast({ title: `${getFormatLabel(action.format)} downloaded`, description: "Authorization reason recorded in the audit log." });
       } else {
-        printTrackResult();
-        await supabase.from("front_desk_audit_log").insert({
-          action: "gps_search_track_printed",
-          entity_type: "gps_search_track",
-          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
-          performed_by: user.id,
-          details: {
-            query: trackQuery,
-            display_name: trackResult.display_name,
-            lat: trackResult.lat,
-            lng: trackResult.lng,
-            at: new Date().toISOString(),
-            purpose: reason,
-            authorization_category: "cyber_intelligence_print",
-          },
+        printTrackResult({
+          watermarkText,
+          qrDataUrl: qrDataUrl || undefined,
+          qrCaption,
         });
-        toast({ title: "Print dialog opened", description: "Authorization reason recorded in the audit log." });
+        toast({
+          title: "Print dialog opened",
+          description: "Watermarked with your official identity. QR links to the audit entry.",
+        });
       }
       setPurposeOpen(false);
       setPurposeAction(null);
       setPurposeText("");
+      // Refresh audit sidebar so the new entry shows up immediately.
+      qc.invalidateQueries({ queryKey: ["gps-tile-auth"] });
     } catch (e: any) {
       toast({ title: "Action failed", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
