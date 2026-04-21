@@ -84,6 +84,26 @@ export function PostingTimeline() {
     setStatus(ALL);
   };
 
+  const buildExport = () => {
+    if (filtered.length === 0) return null;
+    const today = format(new Date(), "yyyy-MM-dd");
+    return {
+      title: "My Postings & Transfers Timeline",
+      filename: `postings_timeline_${today}`,
+      headers: ["Effective Date", "Type", "From Department", "To Department", "Status", "Remarks", "Recorded"],
+      rows: filtered.map((r: any) => [
+        format(parseISO(r.effective_date), "yyyy-MM-dd"),
+        String(r.type ?? "—"),
+        r.from_dept?.name ?? "—",
+        r.to_dept?.name ?? "—",
+        statusMeta(r.status).label,
+        r.remarks ?? "",
+        format(new Date(r.created_at), "yyyy-MM-dd"),
+      ]),
+      subtitle: `${filtered.length} of ${records.length} event${records.length === 1 ? "" : "s"}`,
+    };
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -92,11 +112,21 @@ export function PostingTimeline() {
             <CalendarClock className="h-5 w-5 text-primary" />
             Posting Timeline
           </CardTitle>
-          {records.length > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Showing {filtered.length} of {records.length} event{records.length === 1 ? "" : "s"}
-            </p>
-          )}
+          <div className="flex items-center gap-3">
+            {records.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Showing {filtered.length} of {records.length} event{records.length === 1 ? "" : "s"}
+              </p>
+            )}
+            <ExportMenu
+              label="Export"
+              size="sm"
+              variant="outline"
+              formats={["pdf", "csv"]}
+              getData={buildExport}
+              disabled={filtered.length === 0}
+            />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
