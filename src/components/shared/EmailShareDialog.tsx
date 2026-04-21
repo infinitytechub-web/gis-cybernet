@@ -214,6 +214,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<RecipientResult[] | null>(null);
+  const [attachmentConfirmed, setAttachmentConfirmed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -225,6 +226,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       setBcc("");
       setBulkText("");
       setResults(null);
+      setAttachmentConfirmed(false);
       setSubject(
         `${RECORD_TITLES[kind]} — ${record.applicant_name ?? record.id ?? ""}`.trim()
       );
@@ -235,6 +237,11 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       );
     }
   }, [open, kind, record]);
+
+  // Reset attachment confirmation whenever user leaves the preview step.
+  useEffect(() => {
+    if (step !== "preview") setAttachmentConfirmed(false);
+  }, [step]);
 
   const validEmail = EMAIL_RE.test(to.trim());
   const ccParsed = parseEmailList(cc);
