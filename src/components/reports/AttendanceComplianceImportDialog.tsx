@@ -473,6 +473,33 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
             </div>
           )}
 
+          {/* Period auto-detection feedback */}
+          {periodHint && !periodMismatch && !parsing && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>File period matches selected month</AlertTitle>
+              <AlertDescription className="text-xs">
+                Detected <strong>{periodHint.raw}</strong> in the spreadsheet's {periodHint.source.replace("_", " ")} — same as the target period <strong>{periodLabel}</strong>.
+              </AlertDescription>
+            </Alert>
+          )}
+          {periodHint && periodMismatch && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Period mismatch — import blocked</AlertTitle>
+              <AlertDescription className="text-xs space-y-2">
+                <div>
+                  The spreadsheet's {periodHint.source.replace("_", " ")} says <strong>{periodHint.raw}</strong>,
+                  but the target month is set to <strong>{periodLabel}</strong>. Importing now would file these
+                  figures under the wrong period.
+                </div>
+                <Button size="sm" variant="outline" onClick={applyDetectedPeriod} className="h-7">
+                  Use detected period ({periodHint.raw})
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {match && (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-2 text-xs">
