@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { downloadAttendanceComplianceTemplate } from "@/lib/attendance-compliance-template";
 import { AttendanceComplianceImportDialog } from "@/components/reports/AttendanceComplianceImportDialog";
+import { AttendanceComplianceExportDialog, AttendanceComplianceExportButton } from "@/components/reports/AttendanceComplianceExportDialog";
+import { exportReport, type ExportFormat } from "@/lib/export-utils";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -51,6 +53,7 @@ export default function AttendanceComplianceReport() {
   const [shiftGroup, setShiftGroup] = useState<string>(ALL);
   const [office, setOffice] = useState<string>(ALL);
   const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const { from, to } = useMemo(() => periodRange(period, parseISO(refDate)), [period, refDate]);
   const fromIso = format(from, "yyyy-MM-dd");
@@ -265,6 +268,131 @@ export default function AttendanceComplianceReport() {
     };
   };
 
+  /**
+   * Build an export payload for an arbitrary date range + dept/office subset by
+   * re-querying the database. Used by the scoped export dialog so the user can
+   * pick a custom range/scope without changing the on-screen view.
+   */
+  const buildScopedExport = async (opts: {
+    fromIso: string;
+    toIso: string;
+    departmentIds: string[];
+    offices: string[];
+  }) => {
+    const fromD = parseISO(opts.fromIso);
+    const toD = parseISO(opts.toIso);
+
+    // Profiles in scope
+    let profileQuery = supabase
+      .from("profiles")
+      .select("id, staff_id, first_name, last_name, department_id, shift_group, office, status, departments(name)")
+      .eq("status", "active");
+    if (opts.departmentIds.length > 0) profileQuery = profileQuery.in("department_id", opts.departmentIds);
+    if (opts.offices.length > 0) profileQuery = profileQuery.in("office", opts.offices);
+    const { data: scopedProfiles, error: pErr } = await profileQuery;
+    if (pErr) throw pErr;
+    const ids = (scopedProfiles ?? []).map((p: any) => p.id);
+    if (ids.length === 0) {
+      return { rows: [], payload: null };
+    }
+
+    const [{ data: att, error: aErr }, { data: lv, error: lErr }, { data: hol, error: hErr }] = await Promise.all([
+      supabase.from("attendances").select("profile_id, date, status, check_in, notes")
+        .gte("date", opts.fromIso).lte("date", opts.toIso).in("profile_id", ids),
+      supabase.from("leave_requests").select("profile_id, start_date, end_date, status")
+        .eq("status", "approved").lte("start_date", opts.toIso).gte("end_date", opts.fromIso).in("profile_id", ids),
+      supabase.from("holidays").select("date").gte("date", opts.fromIso).lte("date", opts.toIso),
+    ]);
+    if (aErr) throw aErr;
+    if (lErr) throw lErr;
+    if (hErr) throw hErr;
+    const holidaysList = (hol ?? []).map((h: any) => h.date as string);
+    const allDays = eachDayOfInterval({ start: fromD, end: toD });
+    const workDays = allDays.filter((d) => !isWeekend(d) && !holidaysList.includes(format(d, "yyyy-MM-dd")));
+
+    const scopedRows = (scopedProfiles ?? []).map((p: any) => {
+      const attMap = new Map<string, any>();
+      (att ?? []).filter((a: any) => a.profile_id === p.id).forEach((a: any) => attMap.set(a.date, a));
+      const leaveRanges = (lv ?? []).filter((l: any) => l.profile_id === p.id);
+      let present = 0, absent = 0, late = 0, leave = 0, missing = 0;
+      allDays.forEach((d) => {
+        if (isWeekend(d)) return;
+        const iso = format(d, "yyyy-MM-dd");
+        if (holidaysList.includes(iso)) return;
+        const onLeave = leaveRanges.some((l: any) => iso >= l.start_date && iso <= l.end_date);
+        const a = attMap.get(iso);
+        if (onLeave) { leave++; return; }
+        if (!a) { absent++; missing++; return; }
+        if (a.status === "present") present++;
+        else if (a.status === "late") { present++; late++; }
+        else if (a.status === "absent") absent++;
+        else if (a.status === "leave" || a.status === "on_leave") leave++;
+        else absent++;
+      });
+      const expected = workDays.length;
+      const rate = expected > 0 ? (present / expected) * 100 : 0;
+      const completeness = expected > 0 ? ((expected - missing) / expected) * 100 : 100;
+      return {
+        staff_id: p.staff_id,
+        name: `${p.last_name}, ${p.first_name}`,
+        department: p.departments?.name ?? "—",
+        office: p.office ?? "—",
+        shift: p.shift_group ?? "—",
+        present, absent, late, leave, expected, missing, rate, completeness,
+      };
+    }).sort((a, b) => a.rate - b.rate);
+
+    const deptNames = opts.departmentIds.length === 0
+      ? "All departments"
+      : (departments as any[]).filter((d) => opts.departmentIds.includes(d.id)).map((d) => d.name).join(", ");
+    const officeNames = opts.offices.length === 0 ? "All offices" : opts.offices.join(", ");
+    const periodLbl = `${format(fromD, "dd MMM yyyy")} – ${format(toD, "dd MMM yyyy")}`;
+    const totalsExpected = scopedRows.reduce((s, r) => s + r.expected, 0);
+    const totalsPresent = scopedRows.reduce((s, r) => s + r.present, 0);
+    const totalsMissing = scopedRows.reduce((s, r) => s + r.missing, 0);
+    const incomplete = scopedRows.filter((r) => r.missing > 0).length;
+    const overall = totalsExpected > 0 ? (totalsPresent / totalsExpected) * 100 : 0;
+
+    const payload = {
+      title: "Attendance Compliance — Custom range",
+      filename: `attendance_compliance_${opts.fromIso}_to_${opts.toIso}`,
+      headers: ["Staff ID", "Name", "Department", "Office", "Shift", "Working Days", "Present", "Absent", "Late", "Leave", "Missing Logs", "Compliance %", "Log Completeness %"],
+      rows: scopedRows.map((r) => [
+        r.staff_id, r.name, r.department, r.office, r.shift,
+        String(r.expected), String(r.present), String(r.absent),
+        String(r.late), String(r.leave), String(r.missing),
+        `${r.rate.toFixed(1)}%`, `${r.completeness.toFixed(1)}%`,
+      ]),
+      subtitle: `Period: ${periodLbl} | Staff: ${scopedRows.length} | Overall: ${overall.toFixed(1)}% | Missing logs: ${totalsMissing} across ${incomplete} staff`,
+      meta: [
+        { label: "Report period", value: `Custom — ${periodLbl}` },
+        { label: "Working days", value: `${workDays.length}` },
+        { label: "Department filter", value: deptNames },
+        { label: "Office filter", value: officeNames },
+        { label: "Generated at", value: format(new Date(), "dd MMM yyyy, HH:mm") },
+      ],
+    };
+
+    return { rows: scopedRows, payload };
+  };
+
+  const handleScopedExport = async (
+    opts: { fromIso: string; toIso: string; departmentIds: string[]; offices: string[] },
+    fmt: ExportFormat,
+  ): Promise<number> => {
+    const { rows: r, payload } = await buildScopedExport(opts);
+    if (!payload || r.length === 0) return 0;
+    exportReport(fmt, payload);
+    logAdminAudit("attendance_compliance_report", "exported", {
+      format: fmt,
+      from: opts.fromIso, to: opts.toIso,
+      filters: { departmentIds: opts.departmentIds, offices: opts.offices },
+      row_count: r.length,
+      location: "scoped_dialog",
+    });
+    return r.length;
+  };
+
   const rateBadge = (rate: number) => {
     if (rate >= 90) return "bg-emerald-100 text-emerald-800 border-emerald-200";
     if (rate >= 75) return "bg-amber-100 text-amber-800 border-amber-200";
@@ -319,16 +447,17 @@ export default function AttendanceComplianceReport() {
               <FileDown className="h-4 w-4" />
               Template
             </Button>
+            <AttendanceComplianceExportButton onClick={() => setExportOpen(true)} />
             <ExportMenu
-              label="Export Report"
+              label="Quick"
               size="sm"
-              variant="default"
+              variant="outline"
               getData={buildExport}
               onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
                 format: fmt, period, from: fromIso, to: toIso,
                 filters: { departmentId, shiftGroup, office },
                 row_count: rows.length,
-                location: "header",
+                location: "header_quick",
               })}
             />
           </div>
@@ -560,6 +689,13 @@ export default function AttendanceComplianceReport() {
           queryClient.invalidateQueries({ queryKey: ["acr-attendances"] });
           queryClient.invalidateQueries({ queryKey: ["attendance_compliance_snapshots"] });
         }}
+      />
+
+      <AttendanceComplianceExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        initial={{ fromIso, toIso, departmentId, office }}
+        onExport={handleScopedExport}
       />
     </div>
   );

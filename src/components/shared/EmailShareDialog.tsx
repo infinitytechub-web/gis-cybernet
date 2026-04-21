@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy, FlaskConical } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy, FlaskConical, Paperclip, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -221,7 +221,13 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   const [sending, setSending] = useState(false);
   const [results, setResults] = useState<RecipientResult[] | null>(null);
   const [attachmentConfirmed, setAttachmentConfirmed] = useState(false);
+  const [extraAttachments, setExtraAttachments] = useState<Array<{ filename: string; size: number; content_base64: string }>>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const extraFileRef = useRef<HTMLInputElement>(null);
+
+  const MAX_EXTRA_FILE_BYTES = 5 * 1024 * 1024; // 5 MB per file
+  const MAX_EXTRA_TOTAL_BYTES = 15 * 1024 * 1024; // 15 MB across all extras
+  const MAX_EXTRA_COUNT = 5;
 
   useEffect(() => {
     if (open) {
@@ -233,6 +239,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       setBulkText("");
       setResults(null);
       setAttachmentConfirmed(false);
+      setExtraAttachments([]);
       setSubject(
         `${RECORD_TITLES[kind]} — ${record.applicant_name ?? record.id ?? ""}`.trim()
       );
@@ -397,6 +404,56 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       if (fileRef.current) fileRef.current.value = "";
     }
   };
+
+  const totalExtraBytes = extraAttachments.reduce((s, a) => s + a.size, 0);
+
+  const fileToBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const result = r.result as string;
+        const idx = result.indexOf(",");
+        resolve(idx >= 0 ? result.slice(idx + 1) : result);
+      };
+      r.onerror = () => reject(new Error("Could not read file"));
+      r.readAsDataURL(file);
+    });
+
+  const handleExtraFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const incoming = Array.from(files);
+    if (extraAttachments.length + incoming.length > MAX_EXTRA_COUNT) {
+      toast.error(`Up to ${MAX_EXTRA_COUNT} extra attachments allowed`);
+      return;
+    }
+    let runningTotal = totalExtraBytes;
+    const next = [...extraAttachments];
+    let added = 0;
+    for (const f of incoming) {
+      if (f.size > MAX_EXTRA_FILE_BYTES) {
+        toast.error(`"${f.name}" is over 5 MB and was skipped`);
+        continue;
+      }
+      if (runningTotal + f.size > MAX_EXTRA_TOTAL_BYTES) {
+        toast.error("Total extra attachments would exceed 15 MB — some files were skipped");
+        break;
+      }
+      try {
+        const b64 = await fileToBase64(f);
+        next.push({ filename: f.name, size: f.size, content_base64: b64 });
+        runningTotal += f.size;
+        added++;
+      } catch {
+        toast.error(`Could not read "${f.name}"`);
+      }
+    }
+    setExtraAttachments(next);
+    if (extraFileRef.current) extraFileRef.current.value = "";
+    if (added > 0) toast.success(`Added ${added} attachment${added === 1 ? "" : "s"}`);
+  };
+
+  const removeExtra = (idx: number) =>
+    setExtraAttachments((prev) => prev.filter((_, i) => i !== idx));
 
   const validateCompose = (): boolean => {
     if (mode === "single") {
