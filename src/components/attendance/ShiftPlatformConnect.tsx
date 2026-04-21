@@ -42,6 +42,11 @@ const PLATFORMS = [
   { id: "trackforce", name: "Trackforce Valiant", icon: "🟢" },
   { id: "guardspro", name: "GuardsPro", icon: "🟠" },
   { id: "connecteam", name: "Connecteam", icon: "🔴" },
+  { id: "deputy", name: "Deputy", icon: "🟡" },
+  { id: "whentowork", name: "When I Work", icon: "🟤" },
+  { id: "humanity", name: "Humanity (TCP)", icon: "⚫" },
+  { id: "kronos", name: "UKG (Kronos) Workforce", icon: "⚪" },
+  { id: "sling", name: "Sling by Toast", icon: "🟦" },
 ] as const;
 
 interface ShiftPlatformConnectProps {
