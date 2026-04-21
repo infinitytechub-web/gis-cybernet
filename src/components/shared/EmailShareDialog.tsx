@@ -1048,7 +1048,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || testing}>
             {results ? "Close" : "Cancel"}
           </Button>
           {!results && step === "compose" && (
@@ -1065,13 +1065,24 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             </Button>
           )}
           {!results && step === "preview" && (
-            <Button onClick={handleSend} disabled={!canSend}>
-              {sending
-                ? "Sending..."
-                : mode === "bulk"
-                ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
-                : "Send Email"}
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                onClick={handleTestSend}
+                disabled={sending || testing}
+                title="Simulate the send and write a mock audit log entry — no email dispatched"
+              >
+                <FlaskConical className="mr-2 h-4 w-4" />
+                {testing ? "Logging…" : "Test send"}
+              </Button>
+              <Button onClick={handleSend} disabled={!canSend || testing}>
+                {sending
+                  ? "Sending..."
+                  : mode === "bulk"
+                  ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
+                  : "Send Email"}
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>
