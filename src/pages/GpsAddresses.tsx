@@ -1105,43 +1105,79 @@ export default function GpsAddresses() {
                     </p>
                   </>
                 ) : (
-                  // Authorization gate — online tiles are NOT requested until
-                  // the operator explicitly confirms. Anyone below the command
-                  // tier sees a hard block instead of an authorize button.
-                  <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-5 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold">Online tracking authorization required</p>
-                        <p className="text-xs text-muted-foreground">
-                          Loading live online map tiles transmits the target coordinates to third-party tile
-                          servers (OpenStreetMap / Carto). Per cyber-intelligence handling protocol, you must
-                          confirm authorization for this specific record before tiles are requested. The action
-                          will be written to the audit trail with your identity, the target coordinates, and a
-                          timestamp.
-                        </p>
-                        <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
-                          <li>Use only for sanctioned cyber-intelligence operations.</li>
-                          <li>Do not authorize on shared or untrusted networks.</li>
-                          <li>Closing this dialog revokes authorization for the next session.</li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 pt-1">
-                      {canAuthorizeTiles ? (
-                        <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
-                          {authorizing ? (
-                            <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
-                          ) : (
-                            <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
-                          )}
+                  // Authorization gate — online tiles are NOT requested. We
+                  // still render an OFFLINE static coordinate view so operators
+                  // can read/copy the captured coordinates without any third-
+                  // party network request being made on their behalf.
+                  <div className="space-y-3">
+                    <StaticCoordinateMap
+                      lat={selected.lat}
+                      lng={selected.lng}
+                      label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
+                      height={320}
+                    />
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(`${selected.lat!.toFixed(6)}, ${selected.lng!.toFixed(6)}`);
+                          toast({ title: "Coordinates copied" });
+                        }}
+                        className="gap-1.5"
+                      >
+                        <Copy className="h-3 w-3" /> Copy coordinates
+                      </Button>
+                      {selected.digital_address && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(selected.digital_address!);
+                            toast({ title: "Digital address copied" });
+                          }}
+                          className="gap-1.5"
+                        >
+                          <Copy className="h-3 w-3" /> Copy digital address
                         </Button>
-                      ) : (
-                        <Badge variant="destructive" className="gap-1 text-[11px]">
-                          <Lock className="h-3 w-3" /> Command-tier authorization required
-                        </Badge>
                       )}
-                      <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
+                    </div>
+
+                    <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold">Online tracking authorization required</p>
+                          <p className="text-xs text-muted-foreground">
+                            You are viewing the offline static coordinate fallback — no third-party tile servers
+                            (OpenStreetMap / Carto) have been contacted. To load live online map tiles you must
+                            confirm the cyber-intelligence tracking authorization. The action is recorded in the
+                            audit trail with your identity, the target coordinates, and a timestamp.
+                          </p>
+                          <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
+                            <li>Use only for sanctioned cyber-intelligence operations.</li>
+                            <li>Do not authorize on shared or untrusted networks.</li>
+                            <li>Closing this dialog revokes authorization for the next session.</li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {canAuthorizeTiles ? (
+                          <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
+                            {authorizing ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
+                            ) : (
+                              <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
+                            )}
+                          </Button>
+                        ) : (
+                          <Badge variant="destructive" className="gap-1 text-[11px]">
+                            <Lock className="h-3 w-3" /> Command-tier authorization required
+                          </Badge>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
+                      </div>
                     </div>
                   </div>
                 )
