@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck, Copy, FlaskConical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -406,6 +406,108 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
 
   const handleReview = () => {
     if (validateCompose()) setStep("preview");
+  };
+
+  /**
+   * Dry-run: generate the PDF, compute its SHA-256, and write a mock entry
+   * to front_desk_audit_log so the compliance workflow can be verified
+   * end-to-end without emailing real recipients. No network call to the
+   * send-record-email edge function is made.
+   */
+  const [testing, setTesting] = useState(false);
+  const handleTestSend = async () => {
+    if (!validateCompose()) return;
+    setTesting(true);
+    try {
+      // Build the exact PDF and hash its bytes
+      const attachment = recordPdfBase64(kind, record);
+      let sha: string | null = null;
+      try {
+        const bin = atob(attachment);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        sha = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      } catch { /* best-effort */ }
+
+      // Resolve final recipient set (same dedup path as a real send)
+      let recipientsList: string[] = [];
+      let ccList: string[] = [];
+      let bccList: string[] = [];
+      if (mode === "single") {
+        const clean = finalDedupeSingle(to, ccParsed.valid, bccParsed.valid);
+        recipientsList = clean.to ? [clean.to] : [];
+        ccList = clean.cc;
+        bccList = clean.bcc;
+      } else {
+        recipientsList = finalDedupeBulk(bulkList).recipients;
+      }
+
+      // Authenticated user for audit attribution
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) {
+        toast.error("You must be signed in to run a test send");
+        setTesting(false);
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+      const mockResults: RecipientResult[] = recipientsList.map((e) => ({
+        email: e,
+        status: "sent" as const,
+        message_id: `test_${crypto.randomUUID()}`,
+      }));
+
+      const { error: logError } = await supabase
+        .from("front_desk_audit_log")
+        .insert({
+          action: "email_share_test",
+          entity_type: kind,
+          entity_id: record.id ?? "",
+          performed_by: uid,
+          details: {
+            test_mode: true,
+            mode: mode === "single" ? "single" : "bulk",
+            recipient_count: recipientsList.length,
+            sent: 0,
+            queued: 0,
+            failed: 0,
+            cc: ccList,
+            bcc: bccList,
+            subject,
+            attachment_filename: attachmentFilename,
+            attachment_sha256: sha,
+            attachment_generated_at: nowIso,
+            record_kind: kind,
+            applicant_id: record.id ?? null,
+            applicant_name: record.applicant_name ?? null,
+            sent_at: nowIso,
+            note: "Simulated send — no email dispatched",
+            results: mockResults.map((r) => ({
+              email: r.email,
+              status: "simulated",
+              message_id: r.message_id,
+              error: null,
+            })),
+          },
+        });
+
+      if (logError) throw logError;
+
+      setResults(mockResults);
+      toast.success(
+        `Test send logged · SHA-256 ${sha ? sha.slice(0, 10) + "…" : "n/a"} · ${recipientsList.length} recipient${
+          recipientsList.length === 1 ? "" : "s"
+        } simulated`,
+      );
+    } catch (e: any) {
+      toast.error(e?.message || "Test send failed");
+    } finally {
+      setTesting(false);
+    }
   };
 
   const handleSend = async () => {
@@ -911,8 +1013,13 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
 
         {results && results.length > 0 && (
           <div className="border rounded-md divide-y max-h-64 overflow-y-auto">
-            <div className="px-3 py-2 bg-muted/50 text-xs font-medium">
-              Delivery results ({results.length})
+            <div className="px-3 py-2 bg-muted/50 text-xs font-medium flex items-center gap-2">
+              <span>Delivery results ({results.length})</span>
+              {results[0]?.message_id?.startsWith("test_") && (
+                <Badge variant="outline" className="gap-1 text-[10px]">
+                  <FlaskConical className="h-3 w-3" /> Simulated
+                </Badge>
+              )}
             </div>
             {results.map((r, i) => (
               <div key={`${r.email}-${i}`} className="px-3 py-2 text-sm flex items-start justify-between gap-3">
@@ -946,7 +1053,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || testing}>
             {results ? "Close" : "Cancel"}
           </Button>
           {!results && step === "compose" && (
@@ -963,13 +1070,24 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             </Button>
           )}
           {!results && step === "preview" && (
-            <Button onClick={handleSend} disabled={!canSend}>
-              {sending
-                ? "Sending..."
-                : mode === "bulk"
-                ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
-                : "Send Email"}
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                onClick={handleTestSend}
+                disabled={sending || testing}
+                title="Simulate the send and write a mock audit log entry — no email dispatched"
+              >
+                <FlaskConical className="mr-2 h-4 w-4" />
+                {testing ? "Logging…" : "Test send"}
+              </Button>
+              <Button onClick={handleSend} disabled={!canSend || testing}>
+                {sending
+                  ? "Sending..."
+                  : mode === "bulk"
+                  ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
+                  : "Send Email"}
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>
