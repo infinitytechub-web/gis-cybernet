@@ -791,6 +791,14 @@ export default function GpsAddresses() {
                 >
                   <Copy className="h-3 w-3 mr-1" /> Copy coords
                 </Button>
+                <ExportMenu
+                  getData={buildTrackResultExport}
+                  label="Export result"
+                  size="sm"
+                />
+                <Button size="sm" variant="outline" onClick={printTrackResult} className="gap-1.5">
+                  <Printer className="h-3.5 w-3.5" /> Print
+                </Button>
               </div>
               <p className="text-[10px] text-muted-foreground">
                 Geocoding via OpenStreetMap (Nominatim). Use only for lawful intelligence operations.
