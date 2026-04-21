@@ -154,14 +154,20 @@ export function AppSidebar() {
     return null;
   };
 
+  const isActiveRoute = (url: string) => {
+    if (url === "/") return location.pathname === "/";
+    return location.pathname === url || location.pathname.startsWith(url + "/");
+  };
+
   const renderGroup = (label: string, items: NavItem[]) => (
     <SidebarGroup key={label}>
       <SidebarGroupLabel className="text-sidebar-foreground/50">{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
+            const active = isActiveRoute(item.url);
             const link = (
-              <NavLink to={item.url} end={item.url === "/"} onClick={handleNavClick} className="hover:bg-sidebar-accent" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+              <NavLink to={item.url} end={item.url === "/"} onClick={handleNavClick} className="hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                 <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} />
                 {!collapsed && <span>{item.title}</span>}
                 {renderBadge(item)}
@@ -173,8 +179,16 @@ export function AppSidebar() {
                   {collapsed ? (
                     <Tooltip delayDuration={100}>
                       <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent side="right" className="font-medium">
+                      <TooltipContent
+                        side="right"
+                        className={
+                          active
+                            ? "font-semibold bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
+                            : "font-medium"
+                        }
+                      >
                         {item.title}
+                        {active && <span className="sr-only"> (current page)</span>}
                       </TooltipContent>
                     </Tooltip>
                   ) : (
