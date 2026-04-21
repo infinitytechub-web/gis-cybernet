@@ -131,42 +131,11 @@ const INITIAL_FORM = {
   contact_details: "",
 };
 
-function GhanaGPSButton({ onAddress }: { onAddress: (addr: string) => void }) {
-  const [loading, setLoading] = React.useState(false);
+// GhanaGPSButton was inlined here; the shared GhanaGPSInput component
+// (manual digital address + live GPS capture) now lives in
+// `src/components/shared/GhanaGPSInput.tsx` so every module that records a
+// location stores the same canonical GPS string.
 
-  const getGPS = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported by your browser");
-      return;
-    }
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const latStr = Math.abs(latitude).toFixed(4).replace(".", "");
-        const lngStr = Math.abs(longitude).toFixed(4).replace(".", "");
-        const regionCode = latitude >= 5.5 ? "GA" : latitude >= 5.0 ? "AK" : "GS";
-        const digitAddr = `${regionCode}-${latStr.slice(0, 3)}-${lngStr.slice(0, 4)}`;
-        const gpsAddr = `${digitAddr} (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`;
-        onAddress(gpsAddr);
-        setLoading(false);
-        toast.success("GPS address captured");
-      },
-      (err) => {
-        setLoading(false);
-        toast.error(`Location error: ${err.message}`);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  return (
-    <Button type="button" variant="outline" size="sm" className="gap-1 text-xs" onClick={getGPS} disabled={loading}>
-      <Navigation className="h-3 w-3" />
-      {loading ? "Getting GPS..." : "Get GPS Address"}
-    </Button>
-  );
-}
 
 function StaffPickerDialog({ value, onChange, profiles }: {
   value: string;
