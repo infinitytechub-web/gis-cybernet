@@ -73,7 +73,14 @@ export default function VisaExtensions() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, date_of_birth: form.date_of_birth || null, processed_by: user?.id };
+      const payload = {
+        ...form,
+        date_of_birth: form.date_of_birth || null,
+        nationality: form.nationality || null,
+        permit_type: form.permit_type || null,
+        fee_charged: form.fee_charged === "" ? null : Number(form.fee_charged),
+        processed_by: user?.id,
+      };
 
       let previousStatus: string | null = null;
       if (editId) {
@@ -118,7 +125,7 @@ export default function VisaExtensions() {
   });
 
   const resetForm = () => {
-    setForm({ applicant_name: "", passport_number: "", current_visa_expiry: "", requested_extension_date: "", reason: "", notes: "", status: "submitted", phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "", date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "" });
+    setForm({ applicant_name: "", passport_number: "", current_visa_expiry: "", requested_extension_date: "", reason: "", notes: "", status: "submitted", phone: "", home_address: "", gender: "", marital_status: "", foreign_address: "", date_of_birth: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "", nationality: "Ghanaian", permit_type: "", fee_charged: "" });
     setEditId(null);
     setOpen(false);
   };
@@ -133,6 +140,8 @@ export default function VisaExtensions() {
       date_of_birth: ext.date_of_birth || "", next_of_kin: ext.next_of_kin || "",
       emergency_contact: ext.emergency_contact || "", street_name: ext.street_name || "",
       nearest_landmark: ext.nearest_landmark || "",
+      nationality: ext.nationality || "Ghanaian", permit_type: ext.permit_type || "",
+      fee_charged: ext.fee_charged != null ? String(ext.fee_charged) : "",
     });
     setEditId(ext.id);
     setOpen(true);
