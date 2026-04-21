@@ -72,6 +72,7 @@ function extractEmailsFromCsv(csv: string): string[] {
 }
 
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
+  const [step, setStep] = useState<"compose" | "preview">("compose");
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [to, setTo] = useState("");
   const [cc, setCc] = useState("");
@@ -85,6 +86,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
 
   useEffect(() => {
     if (open) {
+      setStep("compose");
       setMode("single");
       setTo("");
       setCc("");
