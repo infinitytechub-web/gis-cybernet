@@ -136,6 +136,8 @@ export default function AttendanceComplianceReport() {
     });
   }, [from, to, holidays]);
 
+  const allPeriodDays = useMemo(() => eachDayOfInterval({ start: from, end: to }), [from, to]);
+
   const rows = useMemo(() => {
     return filteredProfiles.map((p: any) => {
       const attMap = new Map<string, any>();
@@ -144,23 +146,51 @@ export default function AttendanceComplianceReport() {
 
       let present = 0, absent = 0, late = 0, leave = 0, missing = 0;
       const missingDates: string[] = [];
-      workingDays.forEach((d) => {
+      const dayDetails: DayDetail[] = [];
+
+      allPeriodDays.forEach((d) => {
         const iso = format(d, "yyyy-MM-dd");
+        const isHoliday = holidays.includes(iso);
         const onLeave = leaveRanges.some((l: any) => iso >= l.start_date && iso <= l.end_date);
-        if (onLeave) { leave++; return; }
         const att = attMap.get(iso);
+
+        // Categorise the day for the modal regardless of whether it counts towards compliance
+        if (isWeekend(d)) {
+          dayDetails.push({ date: iso, kind: "weekend" });
+          return;
+        }
+        if (isHoliday) {
+          dayDetails.push({ date: iso, kind: "holiday" });
+          return;
+        }
+        if (onLeave) {
+          leave++;
+          dayDetails.push({ date: iso, kind: "leave", note: "Approved leave" });
+          return;
+        }
         if (!att) {
-          // No log at all for this working day → flag as missing/incomplete
           absent++;
           missing++;
           missingDates.push(iso);
+          dayDetails.push({ date: iso, kind: "missing", note: "Expected working day — no log" });
           return;
         }
-        if (att.status === "present") present++;
-        else if (att.status === "late") { present++; late++; }
-        else if (att.status === "absent") absent++;
-        else if (att.status === "leave" || att.status === "on_leave") leave++;
-        else absent++;
+        if (att.status === "present") {
+          present++;
+          dayDetails.push({ date: iso, kind: "present" });
+        } else if (att.status === "late") {
+          present++; late++;
+          dayDetails.push({ date: iso, kind: "late" });
+        } else if (att.status === "absent") {
+          absent++;
+          dayDetails.push({ date: iso, kind: "absent" });
+        } else if (att.status === "leave" || att.status === "on_leave") {
+          leave++;
+          dayDetails.push({ date: iso, kind: "leave", note: att.notes ?? "Leave" });
+        } else {
+          absent++;
+          dayDetails.push({ date: iso, kind: "absent", note: att.status });
+        }
       });
 
       const expected = workingDays.length;
@@ -174,10 +204,10 @@ export default function AttendanceComplianceReport() {
         shift: p.shift_group ?? "—",
         office: p.office ?? "—",
         present, absent, late, leave, expected, rate,
-        missing, completeness, missingDates,
+        missing, completeness, missingDates, dayDetails,
       };
     }).sort((a, b) => a.rate - b.rate);
-  }, [filteredProfiles, attendances, leaves, workingDays]);
+  }, [filteredProfiles, attendances, leaves, workingDays, allPeriodDays, holidays]);
 
   const totals = useMemo(() => {
     const expected = rows.reduce((s, r) => s + r.expected, 0);
@@ -189,6 +219,9 @@ export default function AttendanceComplianceReport() {
     const overallRate = expected > 0 ? (present / expected) * 100 : 0;
     return { staff: rows.length, expected, present, absent, late, overallRate, missing, incompleteStaff };
   }, [rows]);
+
+  const [detailStaff, setDetailStaff] = useState<typeof rows[number] | null>(null);
+
 
   const periodLabel = `${format(from, "dd MMM yyyy")} – ${format(to, "dd MMM yyyy")}`;
 
