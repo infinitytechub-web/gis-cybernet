@@ -6,12 +6,23 @@ import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 
 export type ExportFormat = "pdf" | "csv" | "excel" | "word";
 
+export interface ExportMetaField {
+  label: string;
+  value: string;
+}
+
 interface ExportOptions {
   title: string;
   filename: string;
   headers: string[];
   rows: string[][];
   subtitle?: string;
+  /**
+   * Optional structured header rendered above the table in every export
+   * format. Use to surface report context such as period, active filters,
+   * and the generated-at timestamp.
+   */
+  meta?: ExportMetaField[];
 }
 
 function generatePDF({ title, filename, headers, rows, subtitle }: ExportOptions) {
