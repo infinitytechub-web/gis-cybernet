@@ -154,6 +154,7 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
     setParsedRows([]);
     setMatch(null);
     setFilename(null);
+    setPeriodHint(null);
   };
 
   const handleFile = async (file: File) => {
