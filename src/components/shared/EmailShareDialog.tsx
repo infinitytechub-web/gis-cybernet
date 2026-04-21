@@ -381,7 +381,12 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                     onChange={(e) => setBulkText(e.target.value)}
                   />
                   <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                    <Badge variant="secondary">{bulkList.length} valid</Badge>
+                    <Badge variant="secondary">{bulkList.length} unique</Badge>
+                    {bulkParsed.duplicates > 0 && (
+                      <Badge variant="outline" title="Duplicate addresses are automatically removed — each recipient is sent the email only once.">
+                        {bulkParsed.duplicates} duplicate{bulkParsed.duplicates === 1 ? "" : "s"} removed
+                      </Badge>
+                    )}
                     {bulkParsed.invalid.length > 0 && (
                       <Badge variant="destructive">{bulkParsed.invalid.length} invalid</Badge>
                     )}
