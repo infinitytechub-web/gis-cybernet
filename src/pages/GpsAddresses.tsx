@@ -1786,6 +1786,54 @@ export default function GpsAddresses() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ===== Authorization-purpose prompt for Search & Track export/print ===== */}
+      <Dialog open={purposeOpen} onOpenChange={(o) => { if (!o) cancelPurpose(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-primary" />
+              Authorization reason required
+            </DialogTitle>
+            <DialogDescription>
+              State the operational purpose for {purposeAction?.kind === "print"
+                ? "printing"
+                : `exporting (${purposeAction ? getFormatLabel((purposeAction as { kind: "export"; format: ExportFormat }).format) : ""})`}
+              {" "}this Search & Track result. The reason will be written to the audit log.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="track-purpose" className="text-xs">
+              Authorization reason <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              id="track-purpose"
+              value={purposeText}
+              onChange={(e) => setPurposeText(e.target.value.slice(0, 500))}
+              placeholder="e.g., Cyber-intel briefing for OIC on suspect movement at flagged coordinates (Case #INC-2024-014)."
+              rows={4}
+              maxLength={500}
+              disabled={purposeBusy}
+              autoFocus
+            />
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Minimum 10 characters · 500 max</span>
+              <span className={purposeText.trim().length < 10 ? "text-destructive" : ""}>
+                {purposeText.trim().length}/500
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelPurpose} disabled={purposeBusy}>
+              Cancel
+            </Button>
+            <Button onClick={confirmTrackPurpose} disabled={purposeBusy || purposeText.trim().length < 10}>
+              {purposeBusy && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+              Confirm & {purposeAction?.kind === "print" ? "print" : "export"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
