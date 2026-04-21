@@ -19,6 +19,12 @@ interface SnapshotOptions {
   width?: number;
   /** SVG viewBox height — defaults to 360 to match the on-screen component. */
   height?: number;
+  /**
+   * Optional diagonal watermark text stamped across the snapshot. Used to
+   * mark the embedded map with the authorising officer's role + department
+   * so a printed/exported snapshot is traceable on its own.
+   */
+  watermark?: string;
 }
 
 /**
