@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { downloadAttendanceComplianceTemplate } from "@/lib/attendance-compliance-template";
 import { AttendanceComplianceImportDialog } from "@/components/reports/AttendanceComplianceImportDialog";
+import { AttendanceComplianceExportDialog, AttendanceComplianceExportButton } from "@/components/reports/AttendanceComplianceExportDialog";
+import { exportReport, type ExportFormat } from "@/lib/export-utils";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
