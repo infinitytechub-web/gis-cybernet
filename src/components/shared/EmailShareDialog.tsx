@@ -279,7 +279,12 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const doc = buildRecordPdf(kind, record);
       const blob = doc.output("blob") as Blob;
-      return { blob, size: blob.size, url: URL.createObjectURL(blob) };
+      return {
+        blob,
+        size: blob.size,
+        url: URL.createObjectURL(blob),
+        generatedAt: new Date(),
+      };
     } catch {
       return null;
     }
