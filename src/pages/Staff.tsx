@@ -70,6 +70,7 @@ export default function Staff() {
   const [bloodGroup, setBloodGroup] = useState<string>("");
   const [trainingDesignation, setTrainingDesignation] = useState<string>("");
   const [staffCategory, setStaffCategory] = useState<string>("");
+  const [office, setOffice] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -173,6 +174,7 @@ export default function Staff() {
     setBloodGroup(s.blood_group || "");
     setTrainingDesignation(s.training_designation || "");
     setStaffCategory(s.staff_category || "");
+    setOffice(s.office || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -243,6 +245,7 @@ export default function Staff() {
         blood_group: bloodGroup || null,
         training_designation: trainingDesignation || null,
         staff_category: staffCategory || null,
+        office: office || null,
       };
 
       if (editing) {

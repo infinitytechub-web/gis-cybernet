@@ -20,6 +20,8 @@ import ReportPreviewDialog from "@/components/reports/ReportPreviewDialog";
 import ReportScheduleManager from "@/components/reports/ReportScheduleManager";
 import ReportApprovalsTable from "@/components/reports/ReportApprovalsTable";
 import { ExportMenu } from "@/components/ui/export-menu";
+import AttendanceComplianceReport from "@/components/reports/AttendanceComplianceReport";
+import AttendanceRecipientsPanel from "@/components/reports/AttendanceRecipientsPanel";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
@@ -294,6 +296,18 @@ export default function Reports() {
       </Card>
 
       {isAdminOrSupervisor && <ReportScheduleManager />}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <CalendarCheck className="h-4 w-4 text-primary" /> Attendance Compliance
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <AttendanceComplianceReport />
+          {isAdminOrSupervisor && <AttendanceRecipientsPanel />}
+        </CardContent>
+      </Card>
 
       {/* Approval workflow */}
       <Card>
