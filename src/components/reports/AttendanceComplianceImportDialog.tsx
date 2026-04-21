@@ -390,6 +390,17 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
   const updatedCount = match?.matched.filter((r) => r.existed).length ?? 0;
   const newCount = (match?.matched.length ?? 0) - updatedCount;
 
+  // Mismatch = file clearly says one month, selector says another.
+  const periodMismatch = !!(periodHint?.startIso && periodHint.startIso !== periodStartIso);
+
+  const applyDetectedPeriod = () => {
+    if (!periodHint?.startIso) return;
+    const d = parseISO(periodHint.startIso);
+    setSelectedMonth(d.getMonth());
+    setSelectedYear(d.getFullYear());
+    setMatch(null);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-2xl">
