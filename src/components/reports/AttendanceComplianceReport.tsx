@@ -134,13 +134,20 @@ export default function AttendanceComplianceReport() {
       attendances.filter((a: any) => a.profile_id === p.id).forEach((a: any) => attMap.set(a.date, a));
       const leaveRanges = leaves.filter((l: any) => l.profile_id === p.id);
 
-      let present = 0, absent = 0, late = 0, leave = 0;
+      let present = 0, absent = 0, late = 0, leave = 0, missing = 0;
+      const missingDates: string[] = [];
       workingDays.forEach((d) => {
         const iso = format(d, "yyyy-MM-dd");
         const onLeave = leaveRanges.some((l: any) => iso >= l.start_date && iso <= l.end_date);
         if (onLeave) { leave++; return; }
         const att = attMap.get(iso);
-        if (!att) { absent++; return; }
+        if (!att) {
+          // No log at all for this working day → flag as missing/incomplete
+          absent++;
+          missing++;
+          missingDates.push(iso);
+          return;
+        }
         if (att.status === "present") present++;
         else if (att.status === "late") { present++; late++; }
         else if (att.status === "absent") absent++;
@@ -150,6 +157,7 @@ export default function AttendanceComplianceReport() {
 
       const expected = workingDays.length;
       const rate = expected > 0 ? (present / expected) * 100 : 0;
+      const completeness = expected > 0 ? ((expected - missing) / expected) * 100 : 100;
       return {
         id: p.id,
         staff_id: p.staff_id,
@@ -158,6 +166,7 @@ export default function AttendanceComplianceReport() {
         shift: p.shift_group ?? "—",
         office: p.office ?? "—",
         present, absent, late, leave, expected, rate,
+        missing, completeness, missingDates,
       };
     }).sort((a, b) => a.rate - b.rate);
   }, [filteredProfiles, attendances, leaves, workingDays]);
@@ -167,8 +176,10 @@ export default function AttendanceComplianceReport() {
     const present = rows.reduce((s, r) => s + r.present, 0);
     const absent = rows.reduce((s, r) => s + r.absent, 0);
     const late = rows.reduce((s, r) => s + r.late, 0);
+    const missing = rows.reduce((s, r) => s + r.missing, 0);
+    const incompleteStaff = rows.filter((r) => r.missing > 0).length;
     const overallRate = expected > 0 ? (present / expected) * 100 : 0;
-    return { staff: rows.length, expected, present, absent, late, overallRate };
+    return { staff: rows.length, expected, present, absent, late, overallRate, missing, incompleteStaff };
   }, [rows]);
 
   const periodLabel = `${format(from, "dd MMM yyyy")} – ${format(to, "dd MMM yyyy")}`;
