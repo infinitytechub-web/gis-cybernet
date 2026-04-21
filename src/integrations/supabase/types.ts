@@ -3292,7 +3292,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      front_desk_visa_extensions_view: {
+        Row: {
+          applicant_name: string | null
+          created_at: string | null
+          current_visa_expiry: string | null
+          fee_charged: number | null
+          id: string | null
+          nationality: string | null
+          notes: string | null
+          passport_number: string | null
+          permit_type: string | null
+          processed_by: string | null
+          processed_by_first_name: string | null
+          processed_by_last_name: string | null
+          processed_by_name: string | null
+          processed_by_staff_id: string | null
+          reason: string | null
+          requested_extension_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_reset_failed_attempts: {
