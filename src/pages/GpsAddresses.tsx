@@ -289,6 +289,89 @@ export default function GpsAddresses() {
     };
   };
 
+  // ===== Cloud export (S3-style storage + time-limited signed URL) =====
+  const [cloudOpen, setCloudOpen] = useState(false);
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudResult, setCloudResult] = useState<{
+    url: string;
+    filename: string;
+    expires_at: string;
+    expires_in: number;
+    record_count: number;
+  } | null>(null);
+  const [cloudCopied, setCloudCopied] = useState(false);
+  const [linkTtl, setLinkTtl] = useState<string>("3600");
+  const [cloudCountdown, setCloudCountdown] = useState<string>("");
+
+  useEffect(() => {
+    if (!cloudResult) { setCloudCountdown(""); return; }
+    const tick = () => {
+      const ms = new Date(cloudResult.expires_at).getTime() - Date.now();
+      if (ms <= 0) { setCloudCountdown("expired"); return; }
+      const mins = Math.floor(ms / 60_000);
+      const secs = Math.floor((ms % 60_000) / 1000);
+      const hrs = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      setCloudCountdown(hrs > 0 ? `${hrs}h ${remMins}m` : `${mins}m ${secs.toString().padStart(2, "0")}s`);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [cloudResult]);
+
+  const csvEscape = (val: string) => {
+    if (val == null) return "";
+    const s = String(val);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const buildCsv = () => {
+    const exp = buildExport();
+    const lines = [exp.headers.map(csvEscape).join(",")];
+    for (const row of exp.rows) lines.push(row.map(csvEscape).join(","));
+    return { csv: lines.join("\n"), filename: `${exp.filename}.csv`, subtitle: exp.subtitle };
+  };
+
+  const runCloudExport = async () => {
+    if (filtered.length === 0) return;
+    setCloudBusy(true);
+    setCloudResult(null);
+    setCloudCopied(false);
+    try {
+      const { csv, filename, subtitle } = buildCsv();
+      const expiresIn = Number(linkTtl) || 3600;
+      const { data, error } = await supabase.functions.invoke("gps-cloud-export", {
+        body: { csv, filename, expiresIn, recordCount: filtered.length, filtersSummary: subtitle },
+      });
+      if (error) throw error;
+      const payload = data as { url: string; filename: string; expires_at: string; expires_in: number };
+      if (!payload?.url) throw new Error("No signed URL returned");
+      setCloudResult({
+        url: payload.url,
+        filename: payload.filename,
+        expires_at: payload.expires_at,
+        expires_in: payload.expires_in,
+        record_count: filtered.length,
+      });
+      toast({ title: "Uploaded to cloud", description: `Signed link valid for ${formatTtl(payload.expires_in)}.` });
+    } catch (e: any) {
+      toast({ title: "Cloud export failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
+  const copyCloudLink = async () => {
+    if (!cloudResult) return;
+    try {
+      await navigator.clipboard.writeText(cloudResult.url);
+      setCloudCopied(true);
+      window.setTimeout(() => setCloudCopied(false), 2000);
+    } catch {
+      toast({ title: "Copy failed", description: "Select and copy the link manually.", variant: "destructive" });
+    }
+  };
+
   const stats = useMemo(() => {
     const total = records.length;
     const mappable = records.filter((r) => r.lat != null && r.lng != null).length;
