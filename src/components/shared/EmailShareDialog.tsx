@@ -291,6 +291,30 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, results, kind, record]);
 
+  // Compute SHA-256 of the generated PDF for tamper-evidence / integrity check.
+  // Full 64-char hex is stored in audit; UI shows short prefix with copy button.
+  const [attachmentHash, setAttachmentHash] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!attachmentMeta?.blob) {
+      setAttachmentHash(null);
+      return;
+    }
+    (async () => {
+      try {
+        const buf = await attachmentMeta.blob.arrayBuffer();
+        const digest = await crypto.subtle.digest("SHA-256", buf);
+        const hex = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        if (!cancelled) setAttachmentHash(hex);
+      } catch {
+        if (!cancelled) setAttachmentHash(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [attachmentMeta?.blob]);
+
   // Release the object URL when the component unmounts or meta changes.
   useEffect(() => {
     return () => {
