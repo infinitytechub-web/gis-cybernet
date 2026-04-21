@@ -228,6 +228,11 @@ export default function AttendanceComplianceReport() {
 
   const buildExport = () => {
     if (rows.length === 0) return null;
+    const departmentName = departmentId === ALL
+      ? "All departments"
+      : (departments as any[]).find((d) => d.id === departmentId)?.name ?? "—";
+    const shiftName = shiftGroup === ALL ? "All shifts" : `Shift ${shiftGroup}`;
+    const officeName = office === ALL ? "All offices" : office;
     return {
       title: `Attendance Compliance — ${period === "weekly" ? "Weekly" : "Monthly"}`,
       filename: `attendance_compliance_${period}_${fromIso}_to_${toIso}`,
@@ -239,6 +244,14 @@ export default function AttendanceComplianceReport() {
         `${r.rate.toFixed(1)}%`, `${r.completeness.toFixed(1)}%`,
       ]),
       subtitle: `Period: ${periodLabel} | Staff: ${totals.staff} | Overall: ${totals.overallRate.toFixed(1)}% | Missing logs: ${totals.missing} across ${totals.incompleteStaff} staff`,
+      meta: [
+        { label: "Report period", value: `${period === "weekly" ? "Weekly" : "Monthly"} — ${periodLabel}` },
+        { label: "Working days", value: `${workingDays.length}` },
+        { label: "Department filter", value: departmentName },
+        { label: "Shift filter", value: shiftName },
+        { label: "Office filter", value: officeName },
+        { label: "Generated at", value: format(new Date(), "dd MMM yyyy, HH:mm") },
+      ],
     };
   };
 
