@@ -896,6 +896,64 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                 <Label>Message</Label>
                 <Textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
               </div>
+
+              {/* Extra attachments picker — appended alongside the auto-generated record PDF */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <Label className="flex items-center gap-1.5">
+                    <Paperclip className="h-3.5 w-3.5" /> Additional attachments
+                  </Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {extraAttachments.length}/{MAX_EXTRA_COUNT} files · {formatBytes(totalExtraBytes)} / {formatBytes(MAX_EXTRA_TOTAL_BYTES)}
+                  </span>
+                </div>
+                <input
+                  ref={extraFileRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleExtraFiles(e.target.files)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => extraFileRef.current?.click()}
+                  disabled={extraAttachments.length >= MAX_EXTRA_COUNT}
+                >
+                  <Paperclip className="mr-2 h-3.5 w-3.5" /> Attach files
+                </Button>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Max {MAX_EXTRA_COUNT} files, 5 MB each, 15 MB total. Sent in addition to the record PDF.
+                </p>
+                {extraAttachments.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {extraAttachments.map((a, i) => (
+                      <Badge
+                        key={`${a.filename}-${i}`}
+                        variant="secondary"
+                        className="gap-1.5 pr-1 max-w-[260px]"
+                      >
+                        <Paperclip className="h-3 w-3 shrink-0" />
+                        <span className="truncate font-mono text-[11px]" title={a.filename}>
+                          {a.filename}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {formatBytes(a.size)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeExtra(i)}
+                          className="ml-0.5 rounded-sm p-0.5 hover:bg-background"
+                          aria-label={`Remove ${a.filename}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
