@@ -25,6 +25,10 @@ import {
   MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert, Printer,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { exportReport, type ExportFormat, getFormatLabel } from "@/lib/export-utils";
+import { FileText, FileSpreadsheet, FileType, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip,
