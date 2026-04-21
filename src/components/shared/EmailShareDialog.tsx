@@ -255,102 +255,167 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Send via Email</DialogTitle>
+          <DialogTitle>
+            {step === "preview" && !results ? "Review & Send" : "Send via Email"}
+          </DialogTitle>
           <DialogDescription>
-            A PDF of this {RECORD_TITLES[kind].toLowerCase()} will be attached.
+            {step === "preview" && !results
+              ? "Confirm the details below before sending."
+              : `A PDF of this ${RECORD_TITLES[kind].toLowerCase()} will be attached.`}
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as "single" | "bulk")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single">Single</TabsTrigger>
-            <TabsTrigger value="bulk">Bulk send</TabsTrigger>
-          </TabsList>
+        {step === "compose" && !results && (
+          <>
+            <Tabs value={mode} onValueChange={(v) => setMode(v as "single" | "bulk")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="single">Single</TabsTrigger>
+                <TabsTrigger value="bulk">Bulk send</TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="single" className="space-y-3 pt-3">
-            <div>
-              <Label>Recipient email *</Label>
-              <Input
-                type="email"
-                placeholder="recipient@example.com"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>CC</Label>
-              <Input
-                placeholder="cc1@example.com, cc2@example.com"
-                value={cc}
-                onChange={(e) => setCc(e.target.value)}
-                aria-invalid={ccInvalid}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Separate multiple addresses with commas.
-              </p>
-            </div>
-            <div>
-              <Label>BCC</Label>
-              <Input
-                placeholder="bcc@example.com"
-                value={bcc}
-                onChange={(e) => setBcc(e.target.value)}
-                aria-invalid={bccInvalid}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="bulk" className="space-y-3 pt-3">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label>Recipients (one per line or comma-separated)</Label>
+              <TabsContent value="single" className="space-y-3 pt-3">
                 <div>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept=".csv,text/csv,text/plain"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                  <Label>Recipient email *</Label>
+                  <Input
+                    type="email"
+                    placeholder="recipient@example.com"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileRef.current?.click()}
-                  >
-                    <Upload className="mr-2 h-3.5 w-3.5" /> Upload CSV
-                  </Button>
                 </div>
+                <div>
+                  <Label>CC</Label>
+                  <Input
+                    placeholder="cc1@example.com, cc2@example.com"
+                    value={cc}
+                    onChange={(e) => setCc(e.target.value)}
+                    aria-invalid={ccInvalid}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Separate multiple addresses with commas.
+                  </p>
+                </div>
+                <div>
+                  <Label>BCC</Label>
+                  <Input
+                    placeholder="bcc@example.com"
+                    value={bcc}
+                    onChange={(e) => setBcc(e.target.value)}
+                    aria-invalid={bccInvalid}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="bulk" className="space-y-3 pt-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label>Recipients (one per line or comma-separated)</Label>
+                    <div>
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".csv,text/csv,text/plain"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileRef.current?.click()}
+                      >
+                        <Upload className="mr-2 h-3.5 w-3.5" /> Upload CSV
+                      </Button>
+                    </div>
+                  </div>
+                  <Textarea
+                    rows={6}
+                    placeholder="alice@example.com&#10;bob@example.com, carol@example.com"
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
+                  />
+                  <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                    <Badge variant="secondary">{bulkList.length} valid</Badge>
+                    {bulkParsed.invalid.length > 0 && (
+                      <Badge variant="destructive">{bulkParsed.invalid.length} invalid</Badge>
+                    )}
+                    {bulkOverflow && (
+                      <Badge variant="outline">Only first {BULK_MAX} will be sent</Badge>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="space-y-3">
+              <div>
+                <Label>Subject</Label>
+                <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
               </div>
-              <Textarea
-                rows={6}
-                placeholder="alice@example.com&#10;bob@example.com, carol@example.com"
-                value={bulkText}
-                onChange={(e) => setBulkText(e.target.value)}
-              />
-              <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                <Badge variant="secondary">{bulkList.length} valid</Badge>
-                {bulkParsed.invalid.length > 0 && (
-                  <Badge variant="destructive">{bulkParsed.invalid.length} invalid</Badge>
-                )}
-                {bulkOverflow && (
-                  <Badge variant="outline">Only first {BULK_MAX} will be sent</Badge>
-                )}
+              <div>
+                <Label>Message</Label>
+                <Textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
 
-        <div className="space-y-3">
-          <div>
-            <Label>Subject</Label>
-            <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+        {step === "preview" && !results && (
+          <div className="space-y-3 text-sm">
+            <div className="rounded-md border divide-y">
+              <PreviewRow label="To">
+                {mode === "single" ? (
+                  <span className="break-all">{to.trim()}</span>
+                ) : (
+                  <div className="space-y-1">
+                    <Badge variant="secondary">
+                      {bulkList.length} recipient{bulkList.length === 1 ? "" : "s"}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground break-all line-clamp-3">
+                      {bulkList.slice(0, 8).join(", ")}
+                      {bulkList.length > 8 ? `, +${bulkList.length - 8} more` : ""}
+                    </div>
+                  </div>
+                )}
+              </PreviewRow>
+              {mode === "single" && (
+                <>
+                  <PreviewRow label="CC">
+                    {ccParsed.valid.length > 0 ? (
+                      <span className="break-all">{ccParsed.valid.join(", ")}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </PreviewRow>
+                  <PreviewRow label="BCC">
+                    {bccParsed.valid.length > 0 ? (
+                      <span className="break-all">{bccParsed.valid.join(", ")}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </PreviewRow>
+                </>
+              )}
+              <PreviewRow label="Subject">
+                <span className="break-words">
+                  {subject || <span className="text-muted-foreground">(no subject)</span>}
+                </span>
+              </PreviewRow>
+              <PreviewRow label="Message">
+                <div className="whitespace-pre-wrap text-xs text-muted-foreground max-h-32 overflow-y-auto">
+                  {message || "(empty)"}
+                </div>
+              </PreviewRow>
+              <PreviewRow label="Attachment">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="font-mono text-xs break-all">{attachmentFilename}</span>
+                  <Badge variant="outline" className="text-[10px]">PDF</Badge>
+                </div>
+              </PreviewRow>
+            </div>
           </div>
-          <div>
-            <Label>Message</Label>
-            <Textarea rows={4} value={message} onChange={(e) => setMessage(e.target.value)} />
-          </div>
-        </div>
+        )}
 
         {results && results.length > 0 && (
           <div className="border rounded-md divide-y max-h-64 overflow-y-auto">
@@ -379,18 +444,52 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
         )}
 
         <DialogFooter>
+          {step === "preview" && !results && (
+            <Button
+              variant="outline"
+              onClick={() => setStep("compose")}
+              disabled={sending}
+              className="mr-auto"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
             {results ? "Close" : "Cancel"}
           </Button>
-          <Button onClick={handleSend} disabled={!canSend}>
-            {sending
-              ? "Sending..."
-              : mode === "bulk"
-              ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
-              : "Send Email"}
-          </Button>
+          {!results && step === "compose" && (
+            <Button
+              onClick={handleReview}
+              disabled={
+                sending ||
+                (mode === "single"
+                  ? !(validEmail && !ccInvalid && !bccInvalid)
+                  : bulkList.length === 0)
+              }
+            >
+              Review
+            </Button>
+          )}
+          {!results && step === "preview" && (
+            <Button onClick={handleSend} disabled={!canSend}>
+              {sending
+                ? "Sending..."
+                : mode === "bulk"
+                ? `Send to ${bulkList.length} recipient${bulkList.length === 1 ? "" : "s"}`
+                : "Send Email"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PreviewRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[90px_1fr] gap-3 px-3 py-2">
+      <div className="text-xs font-medium text-muted-foreground pt-0.5">{label}</div>
+      <div className="min-w-0">{children}</div>
+    </div>
   );
 }
