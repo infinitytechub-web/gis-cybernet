@@ -13,10 +13,14 @@ import {
 import { ShiftPlatformConnect } from "@/components/attendance/ShiftPlatformConnect";
 import {
   CheckCircle2, XCircle, RefreshCw, Wifi, WifiOff, Search, Link2,
-  Activity, AlertTriangle, Loader2,
+  Activity, AlertTriangle, Loader2, ShieldOff,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+
+/** Roles permitted to view & manage shift platform integrations. */
+const ALLOWED_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor"] as const;
+type AllowedRole = (typeof ALLOWED_ROLES)[number];
 
 /**
  * Minimal display catalogue for the platforms we support — kept in sync with
@@ -83,10 +87,12 @@ function StatusBadge({ status }: { status: ReturnType<typeof deriveStatus> }) {
 }
 
 export default function ShiftConnections() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const isAuthorized = !!role && (ALLOWED_ROLES as readonly string[]).includes(role);
 
   // Resolve the current user's profile ID — connections are scoped per profile.
   const { data: profile } = useQuery({
@@ -175,6 +181,24 @@ export default function ShiftConnections() {
     },
     onError: (e: any) => toast.error(e.message ?? "Sync all failed"),
   });
+
+  // Block unauthorized roles AFTER hooks have been registered to keep hook
+  // order stable across renders. Sync mutations are also gated below.
+  if (!isAuthorized) {
+    return (
+      <Card className="max-w-xl mx-auto mt-8">
+        <CardContent className="p-8 text-center space-y-3">
+          <ShieldOff className="h-10 w-10 mx-auto text-destructive" />
+          <h2 className="text-lg font-semibold">Restricted area</h2>
+          <p className="text-sm text-muted-foreground">
+            Shift platform integrations are managed by the command tier
+            (Admin, OIC, 2IC, Staff Officer, Supervisor). Contact your supervisor
+            if you need a platform connected to your account.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
