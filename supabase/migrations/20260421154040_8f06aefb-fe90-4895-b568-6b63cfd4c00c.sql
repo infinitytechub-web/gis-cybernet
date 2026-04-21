@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_visa_extensions_processed_by ON public.visa_extensions (processed_by);
