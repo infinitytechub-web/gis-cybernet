@@ -445,6 +445,72 @@ export default function GpsAddresses() {
     }
   };
 
+  // ===== Search & Track result export / print =====
+  // Packages a single Search & Track lookup result into the same tabular shape
+  // ExportMenu expects, so commanders can download the lookup as PDF / CSV /
+  // Excel / Word, or print it on letterhead-friendly stationery.
+  const buildTrackResultExport = () => {
+    if (!trackResult) return null;
+    const captured = format(new Date(), "dd MMM yyyy, HH:mm");
+    return {
+      title: "GPS Search & Track Result",
+      filename: `gps_search_track_${format(new Date(), "yyyyMMdd_HHmm")}`,
+      headers: ["Field", "Value"],
+      rows: [
+        ["Query", trackQuery || "—"],
+        ["Display Name", trackResult.display_name],
+        ["Latitude", trackResult.lat.toFixed(6)],
+        ["Longitude", trackResult.lng.toFixed(6)],
+        ["Type", trackResult.type ?? "—"],
+        ["Confidence", typeof trackResult.importance === "number" ? `${(trackResult.importance * 100).toFixed(0)}%` : "—"],
+        ["OSM ID", trackResult.osm_id ?? "—"],
+        ["Bounding Box", trackResult.bbox ? trackResult.bbox.map((n) => n.toFixed(4)).join(", ") : "—"],
+        ["Google Maps", `https://www.google.com/maps/search/?api=1&query=${trackResult.lat},${trackResult.lng}`],
+        ["Street View", `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${trackResult.lat},${trackResult.lng}`],
+        ["OpenStreetMap", `https://www.openstreetmap.org/?mlat=${trackResult.lat}&mlon=${trackResult.lng}#map=18/${trackResult.lat}/${trackResult.lng}`],
+        ["Captured", captured],
+      ],
+      subtitle: `Cyber Intelligence · Search & Track lookup at ${captured}`,
+    };
+  };
+
+  // Browser-native print: opens a new window with a clean printable layout for
+  // the current Search & Track result — no third-party tiles fetched.
+  const printTrackResult = () => {
+    if (!trackResult) return;
+    const data = buildTrackResultExport();
+    if (!data) return;
+    const win = window.open("", "_blank", "width=900,height=720");
+    if (!win) {
+      toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
+      return;
+    }
+    const rowsHtml = data.rows
+      .map(
+        ([k, v]) =>
+          `<tr><th style="text-align:left;padding:6px 10px;border:1px solid #ccc;background:#f5f5f5;width:200px;">${k}</th><td style="padding:6px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;word-break:break-all;">${v}</td></tr>`,
+      )
+      .join("");
+    win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${data.title}</title>
+      <style>
+        body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        .sub { font-size: 12px; color: #555; margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        .footer { margin-top: 24px; font-size: 10px; color: #777; border-top: 1px solid #ddd; padding-top: 8px; }
+        @media print { @page { margin: 18mm; } }
+      </style></head><body>
+      <h1>${data.title}</h1>
+      <div class="sub">${data.subtitle ?? ""}</div>
+      <table>${rowsHtml}</table>
+      <div class="footer">Ghana Immigration Service · Cybernet · Generated ${format(new Date(), "dd MMM yyyy, HH:mm")} · For official use only</div>
+      <script>window.onload = () => { window.focus(); window.print(); };</script>
+      </body></html>`);
+    win.document.close();
+  };
+
+
+
   const buildExport = () => {
     const headers = ["GPS Address", "Digital", "Latitude", "Longitude", "Source", "Context", "Reference", "Status", "Captured"];
     const rows = filtered.map((r) => [
