@@ -313,29 +313,47 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const attachment = recordPdfBase64(kind, record);
 
-      // Dedup single-mode: CC/BCC must not repeat the TO address or each other.
-      const toAddr = to.trim();
-      const toLower = toAddr.toLowerCase();
-      const seenSingle = new Set<string>([toLower]);
-      const dedupedCc = ccParsed.valid.filter((e) => {
-        const l = e.toLowerCase();
-        if (seenSingle.has(l)) return false;
-        seenSingle.add(l);
-        return true;
-      });
-      const dedupedBcc = bccParsed.valid.filter((e) => {
-        const l = e.toLowerCase();
-        if (seenSingle.has(l)) return false;
-        seenSingle.add(l);
-        return true;
-      });
+      // -------- Final authoritative dedup pass (runs every time, right before send).
+      // This is intentionally redundant with earlier filtering — it guarantees the
+      // outgoing payload never contains overlapping TO/CC/BCC or repeat bulk recipients
+      // even if state somehow drifted between preview and send.
+      let singleClean: ReturnType<typeof finalDedupeSingle> | null = null;
+      let bulkClean: ReturnType<typeof finalDedupeBulk> | null = null;
+      if (mode === "single") {
+        singleClean = finalDedupeSingle(to, ccParsed.valid, bccParsed.valid);
+        const { report } = singleClean;
+        if (report.totalRemoved > 0) {
+          const bits: string[] = [];
+          if (report.removedFromCc.length)
+            bits.push(`CC: ${report.removedFromCc.join(", ")}`);
+          if (report.removedFromBcc.length)
+            bits.push(`BCC: ${report.removedFromBcc.join(", ")}`);
+          toast.info(
+            `Removed ${report.totalRemoved} duplicate${report.totalRemoved === 1 ? "" : "s"} — ${bits.join(" · ")}`,
+          );
+        }
+      } else {
+        bulkClean = finalDedupeBulk(bulkList);
+        if (bulkClean.report.removedFromBulk.length > 0) {
+          toast.info(
+            `Removed ${bulkClean.report.removedFromBulk.length} duplicate recipient${
+              bulkClean.report.removedFromBulk.length === 1 ? "" : "s"
+            } before sending`,
+          );
+        }
+        if (bulkClean.recipients.length === 0) {
+          toast.error("No unique recipients left after dedup");
+          setSending(false);
+          return;
+        }
+      }
 
       const payload =
-        mode === "single"
+        mode === "single" && singleClean
           ? {
-              to: toAddr,
-              cc: dedupedCc,
-              bcc: dedupedBcc,
+              to: singleClean.to,
+              cc: singleClean.cc,
+              bcc: singleClean.bcc,
               subject,
               message,
               attachment_base64: attachment,
@@ -345,7 +363,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             }
           : {
               bulk: true,
-              recipients: bulkList, // already deduped by parseEmailList
+              recipients: bulkClean!.recipients,
               subject,
               message,
               attachment_base64: attachment,
