@@ -47,6 +47,15 @@ interface MatchResult {
   invalid: { rowIndex: number; reason: string }[];
 }
 
+interface PeriodHint {
+  /** Human-readable hint as found in the spreadsheet (e.g. "March 2026"). */
+  raw: string;
+  /** First day of the detected month in yyyy-MM-dd, when parseable. */
+  startIso: string | null;
+  /** Where the hint was discovered — surfaced in the mismatch warning. */
+  source: "sheet_name" | "metadata_row" | "period_column";
+}
+
 const REQUIRED_HEADERS = [
   "Staff ID", "Name", "Department", "Office", "Shift",
   "Working Days", "Present", "Absent", "Late", "Leave",
