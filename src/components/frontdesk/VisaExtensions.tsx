@@ -44,6 +44,8 @@ export default function VisaExtensions() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const PAGE_SIZE = 25;
+
   useEffect(() => {
     const channel = supabase
       .channel("frontdesk-ext-realtime")
@@ -63,14 +65,55 @@ export default function VisaExtensions() {
     nationality: "Ghanaian", permit_type: "", fee_charged: "",
   });
 
-  const { data: extensions = [], isLoading } = useQuery({
-    queryKey: ["visa-extensions"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("visa_extensions").select("*").order("created_at", { ascending: false });
+  // Keyset pagination against the Front Desk view, ordered by (created_at DESC, id DESC).
+  // Cursor = { created_at, id } of the last row on the previous page.
+  type Cursor = { created_at: string; id: string } | null;
+  const {
+    data: pages,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["visa-extensions", { search, statusFilter }],
+    initialPageParam: null as Cursor,
+    queryFn: async ({ pageParam }) => {
+      let q = (supabase as any)
+        .from("front_desk_visa_extensions_view")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(PAGE_SIZE + 1);
+
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      if (search.trim()) {
+        const term = `%${search.trim()}%`;
+        q = q.or(`applicant_name.ilike.${term},passport_number.ilike.${term}`);
+      }
+      if (pageParam) {
+        // (created_at, id) < (cursor.created_at, cursor.id) in DESC order
+        q = q.or(
+          `created_at.lt.${pageParam.created_at},and(created_at.eq.${pageParam.created_at},id.lt.${pageParam.id})`
+        );
+      }
+
+      const { data, error } = await q;
       if (error) throw error;
-      return data;
+      const rows = (data ?? []) as any[];
+      const hasMore = rows.length > PAGE_SIZE;
+      const items = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+      const last = items[items.length - 1];
+      const nextCursor: Cursor = hasMore && last ? { created_at: last.created_at, id: last.id } : null;
+      return { items, nextCursor };
     },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
+
+  const extensions = useMemo(
+    () => (pages?.pages ?? []).flatMap((p) => p.items),
+    [pages]
+  );
+
 
   const saveMutation = useMutation({
     mutationFn: async () => {
