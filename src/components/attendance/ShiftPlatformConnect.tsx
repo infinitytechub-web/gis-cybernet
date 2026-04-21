@@ -463,12 +463,36 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
         // If postMessage already advanced us, the listener cleared the state
         // ref and we should not double-fire.
         if (expectedStateRef.current) {
+          const stateValue = expectedStateRef.current;
           cleanupAuthFlow();
-          // Best-effort: assume the user completed sign-in. The validate step
-          // will still probe before persisting, so a false positive here is
-          // recoverable.
-          setAuthCompleted(true);
-          setStep(3);
+          // Popup closed without a postMessage — fall back to a server-side
+          // verification call so we still avoid trusting the client alone.
+          (async () => {
+            try {
+              const { data: verify, error } = await supabase.functions.invoke(
+                "verify-shift-auth",
+                {
+                  body: {
+                    platform: selectedPlatform,
+                    state: stateValue,
+                    status: "success",
+                    tenant: tenant.trim(),
+                  },
+                },
+              );
+              if (error || !verify?.verified) {
+                setAuthCompleted(false);
+                toast.error(verify?.reason ?? error?.message ?? "Could not verify sign-in");
+                return;
+              }
+              setAuthCompleted(true);
+              setStep(3);
+              toast.success("Sign-in verified by server");
+            } catch (err: any) {
+              setAuthCompleted(false);
+              toast.error(err?.message ?? "Verification request failed");
+            }
+          })();
         }
       }
     }, 600);
