@@ -1015,7 +1015,17 @@ export default function GpsAddresses() {
       </Card>
 
       {/* ===== Live map dialog ===== */}
-      <Dialog open={!!selected} onOpenChange={(o) => { if (!o) setSelected(null); }}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(o) => {
+          if (!o) {
+            setSelected(null);
+            // Re-arm the authorization gate so the next tracking session must
+            // be explicitly re-authorized before online tiles load again.
+            setTilesAuthorized(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1025,6 +1035,11 @@ export default function GpsAddresses() {
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                 Live
               </Badge>
+              {tilesAuthorized && (
+                <Badge variant="secondary" className="text-[10px] gap-1 ml-1">
+                  <ShieldAlert className="h-3 w-3" /> Authorized
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
           {selected && (
@@ -1045,48 +1060,90 @@ export default function GpsAddresses() {
               </div>
 
               {selected.lat != null && selected.lng != null ? (
-                <>
-                  <GpsLiveMap
-                    lat={selected.lat}
-                    lng={selected.lng}
-                    label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
-                    height={380}
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" asChild>
-                      <a
-                        href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selected.lat},${selected.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" /> Street View
-                      </a>
-                    </Button>
-                    <Button size="sm" variant="outline" asChild>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${selected.lat},${selected.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" /> Google Maps
-                      </a>
-                    </Button>
-                    <Button size="sm" variant="outline" asChild>
-                      <a
-                        href={`https://www.openstreetmap.org/?mlat=${selected.lat}&mlon=${selected.lng}#map=18/${selected.lat}/${selected.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" /> OpenStreetMap
-                      </a>
-                    </Button>
+                tilesAuthorized ? (
+                  <>
+                    <GpsLiveMap
+                      lat={selected.lat}
+                      lng={selected.lng}
+                      label={`${SOURCE_META[selected.source].label} — ${selected.context}`}
+                      height={380}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" asChild>
+                        <a
+                          href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selected.lat},${selected.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" /> Street View
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="outline" asChild>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${selected.lat},${selected.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" /> Google Maps
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="outline" asChild>
+                        <a
+                          href={`https://www.openstreetmap.org/?mlat=${selected.lat}&mlon=${selected.lng}#map=18/${selected.lat}/${selected.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" /> OpenStreetMap
+                        </a>
+                      </Button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {selected.raw_location.includes("(")
+                        ? "Coordinates parsed directly from the captured GPS address."
+                        : "Coordinates derived from the digital address / known landmark — approximate."}
+                    </p>
+                  </>
+                ) : (
+                  // Authorization gate — online tiles are NOT requested until
+                  // the operator explicitly confirms. Anyone below the command
+                  // tier sees a hard block instead of an authorize button.
+                  <div className="rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-5 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">Online tracking authorization required</p>
+                        <p className="text-xs text-muted-foreground">
+                          Loading live online map tiles transmits the target coordinates to third-party tile
+                          servers (OpenStreetMap / Carto). Per cyber-intelligence handling protocol, you must
+                          confirm authorization for this specific record before tiles are requested. The action
+                          will be written to the audit trail with your identity, the target coordinates, and a
+                          timestamp.
+                        </p>
+                        <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-0.5 pt-1">
+                          <li>Use only for sanctioned cyber-intelligence operations.</li>
+                          <li>Do not authorize on shared or untrusted networks.</li>
+                          <li>Closing this dialog revokes authorization for the next session.</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {canAuthorizeTiles ? (
+                        <Button size="sm" onClick={authorizeLiveTiles} disabled={authorizing} className="gap-1.5">
+                          {authorizing ? (
+                            <><Loader2 className="h-3 w-3 animate-spin" /> Authorizing…</>
+                          ) : (
+                            <><ShieldAlert className="h-3 w-3" /> Authorize live tracking</>
+                          )}
+                        </Button>
+                      ) : (
+                        <Badge variant="destructive" className="gap-1 text-[11px]">
+                          <Lock className="h-3 w-3" /> Command-tier authorization required
+                        </Badge>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {selected.raw_location.includes("(")
-                      ? "Coordinates parsed directly from the captured GPS address."
-                      : "Coordinates derived from the digital address / known landmark — approximate."}
-                  </p>
-                </>
+                )
               ) : (
                 <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
                   This record has no resolvable coordinates. Re-capture using "Get GPS Address" to enable live tracking.
