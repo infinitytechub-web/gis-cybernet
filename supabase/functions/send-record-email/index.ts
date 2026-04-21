@@ -170,6 +170,8 @@ Deno.serve(async (req) => {
         </p>
       </div>`;
 
+    const extraAttachments = sanitizeExtraAttachments(body.extra_attachments);
+
     async function sendOne(recipient: string): Promise<RecipientResult> {
       const payload: Record<string, unknown> = {
         from: "Ghana Immigration Service <onboarding@resend.dev>",
@@ -182,6 +184,10 @@ Deno.serve(async (req) => {
             filename: body.attachment_filename,
             content: body.attachment_base64,
           },
+          ...extraAttachments.map((a) => ({
+            filename: a.filename,
+            content: a.content_base64,
+          })),
         ],
       };
       if (ccList.length) payload.cc = ccList;
