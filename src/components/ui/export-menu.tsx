@@ -9,19 +9,27 @@ import { Download, FileText, FileSpreadsheet, FileType } from "lucide-react";
 import { toast } from "sonner";
 import { exportReport, getFormatLabel, type ExportFormat } from "@/lib/export-utils";
 
+type ExportPayload = {
+  title: string;
+  filename: string;
+  headers: string[];
+  rows: string[][];
+  subtitle?: string;
+  /** Forwarded straight to exportReport — see ExportEmbeddedImage. */
+  image?: import("@/lib/export-utils").ExportEmbeddedImage;
+};
+
 interface ExportMenuProps {
   /**
    * Returns the data to export. Called lazily when a format is selected so that
    * filtered/computed data is always fresh. Return `null` to silently abort
    * (e.g., when nothing is selected). For an "empty" toast, return rows: [].
+   *
+   * The chosen format is passed in so callers can attach format-specific
+   * payload (e.g., embed an offline coordinate snapshot only for PDF). May
+   * return a Promise to support async snapshot rasterization.
    */
-  getData: () => {
-    title: string;
-    filename: string;
-    headers: string[];
-    rows: string[][];
-    subtitle?: string;
-  } | null;
+  getData: (fmt: ExportFormat) => ExportPayload | Promise<ExportPayload | null> | null;
   /** Visible label inside the trigger button. Defaults to "Export". */
   label?: string;
   /** Show only the icon (no label). */
@@ -60,9 +68,10 @@ export function ExportMenu({
   formats = DEFAULT_FORMATS,
   onExported,
 }: ExportMenuProps) {
-  const handleExport = (fmt: ExportFormat) => {
+  const handleExport = async (fmt: ExportFormat) => {
     try {
-      const data = getData();
+      const result = getData(fmt);
+      const data = result instanceof Promise ? await result : result;
       if (!data) return;
       if (!data.rows || data.rows.length === 0) {
         toast.error("No data to export");

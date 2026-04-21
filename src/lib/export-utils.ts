@@ -11,6 +11,19 @@ export interface ExportMetaField {
   value: string;
 }
 
+export interface ExportEmbeddedImage {
+  /** PNG/JPEG data URL of the image. */
+  dataUrl: string;
+  /** Native pixel width — used to preserve aspect ratio in the PDF. */
+  width: number;
+  /** Native pixel height — used to preserve aspect ratio in the PDF. */
+  height: number;
+  /** Caption rendered below the image in the PDF. Optional. */
+  caption?: string;
+  /** Image format for jsPDF. Defaults to "PNG". */
+  format?: "PNG" | "JPEG";
+}
+
 interface ExportOptions {
   title: string;
   filename: string;
@@ -23,9 +36,15 @@ interface ExportOptions {
    * and the generated-at timestamp.
    */
   meta?: ExportMetaField[];
+  /**
+   * Optional image embedded above the table in the PDF export (e.g., an
+   * offline coordinate snapshot for Search & Track results). Other formats
+   * gracefully ignore this field.
+   */
+  image?: ExportEmbeddedImage;
 }
 
-function generatePDF({ title, filename, headers, rows, subtitle, meta }: ExportOptions) {
+function generatePDF({ title, filename, headers, rows, subtitle, meta, image }: ExportOptions) {
   const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
@@ -54,6 +73,30 @@ function generatePDF({ title, filename, headers, rows, subtitle, meta }: ExportO
       cursorY += 4.5;
     }
     cursorY += 1;
+  }
+
+  // Optional embedded image (e.g., offline coordinate snapshot). Scaled to fit
+  // a reasonable width while preserving the source aspect ratio.
+  if (image && image.dataUrl) {
+    try {
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const maxWidthMm = Math.min(pageWidth - 28, 120);
+      const aspect = image.height && image.width ? image.height / image.width : 0.6;
+      const drawWidth = maxWidthMm;
+      const drawHeight = drawWidth * aspect;
+      cursorY += 2;
+      doc.addImage(image.dataUrl, image.format ?? "PNG", 14, cursorY, drawWidth, drawHeight);
+      cursorY += drawHeight + 2;
+      if (image.caption) {
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.text(image.caption, 14, cursorY);
+        cursorY += 4;
+      }
+      cursorY += 2;
+    } catch {
+      // Silently skip — table still renders below.
+    }
   }
 
   autoTable(doc, {
