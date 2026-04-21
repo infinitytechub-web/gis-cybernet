@@ -6,15 +6,26 @@ import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 
 export type ExportFormat = "pdf" | "csv" | "excel" | "word";
 
+export interface ExportMetaField {
+  label: string;
+  value: string;
+}
+
 interface ExportOptions {
   title: string;
   filename: string;
   headers: string[];
   rows: string[][];
   subtitle?: string;
+  /**
+   * Optional structured header rendered above the table in every export
+   * format. Use to surface report context such as period, active filters,
+   * and the generated-at timestamp.
+   */
+  meta?: ExportMetaField[];
 }
 
-function generatePDF({ title, filename, headers, rows, subtitle }: ExportOptions) {
+function generatePDF({ title, filename, headers, rows, subtitle, meta }: ExportOptions) {
   const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
@@ -22,15 +33,33 @@ function generatePDF({ title, filename, headers, rows, subtitle }: ExportOptions
   doc.setFontSize(12);
   doc.setTextColor(60, 60, 60);
   doc.text(title, 14, 23);
+
+  let cursorY = 28;
   if (subtitle) {
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
-    doc.text(subtitle, 14, 29);
+    doc.text(subtitle, 14, cursorY + 1);
+    cursorY += 6;
   }
+  if (meta && meta.length > 0) {
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    cursorY += 2;
+    for (const m of meta) {
+      doc.setFont(undefined, "bold");
+      doc.text(`${m.label}:`, 14, cursorY);
+      const labelWidth = doc.getTextWidth(`${m.label}:`) + 2;
+      doc.setFont(undefined, "normal");
+      doc.text(m.value, 14 + labelWidth, cursorY);
+      cursorY += 4.5;
+    }
+    cursorY += 1;
+  }
+
   autoTable(doc, {
     head: [headers],
     body: rows,
-    startY: subtitle ? 34 : 28,
+    startY: cursorY + 2,
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: [0, 102, 153], textColor: 255, fontStyle: "bold" },
     alternateRowStyles: { fillColor: [240, 248, 255] },
@@ -48,22 +77,43 @@ function generatePDF({ title, filename, headers, rows, subtitle }: ExportOptions
   doc.save(`${filename}.pdf`);
 }
 
-function generateCSV({ filename, headers, rows }: ExportOptions) {
-  const csv = [
-    headers.join(","),
-    ...rows.map((r) => r.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(",")),
-  ].join("\n");
-  downloadCSVString(csv, `${filename}.csv`);
+function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
+  const escape = (c: string) => `"${(c ?? "").replace(/"/g, '""')}"`;
+  const lines: string[] = [];
+  lines.push(escape("GIS Amasaman Sector Command"));
+  lines.push(escape(title));
+  if (subtitle) lines.push(escape(subtitle));
+  if (meta && meta.length > 0) {
+    for (const m of meta) lines.push([escape(m.label), escape(m.value)].join(","));
+  }
+  lines.push(escape(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`));
+  lines.push("");
+  lines.push(headers.map(escape).join(","));
+  rows.forEach((r) => lines.push(r.map(escape).join(",")));
+  downloadCSVString(lines.join("\n"), `${filename}.csv`);
 }
 
-function generateExcel({ filename, headers, rows, title }: ExportOptions) {
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+function generateExcel({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
+  const aoa: string[][] = [];
+  aoa.push(["GIS Amasaman Sector Command"]);
+  aoa.push([title]);
+  if (subtitle) aoa.push([subtitle]);
+  if (meta && meta.length > 0) {
+    for (const m of meta) aoa.push([m.label, m.value]);
+  }
+  aoa.push([`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`]);
+  aoa.push([]);
+  aoa.push(headers);
+  rows.forEach((r) => aoa.push(r));
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = [{ wch: 28 }, { wch: 60 }, ...headers.slice(2).map(() => ({ wch: 18 }))];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, title.slice(0, 31));
   XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
-function generateWord({ filename, title, headers, rows, subtitle }: ExportOptions) {
+function generateWord({ filename, title, headers, rows, subtitle, meta }: ExportOptions) {
   const tableRows = rows
     .map(
       (r) =>
@@ -72,6 +122,15 @@ function generateWord({ filename, title, headers, rows, subtitle }: ExportOption
     .join("");
   const headerRow = `<tr>${headers.map((h) => `<th style="border:1px solid #006699;padding:4px 8px;background:#006699;color:#fff;font-size:10pt">${h}</th>`).join("")}</tr>`;
 
+  const metaHtml = meta && meta.length > 0
+    ? `<table style="border-collapse:collapse;margin:8px 0 12px 0;font-size:10pt">
+        ${meta.map((m) => `<tr>
+          <td style="padding:2px 12px 2px 0;color:#475569;font-weight:bold;vertical-align:top">${m.label}</td>
+          <td style="padding:2px 0;color:#0f172a">${m.value}</td>
+        </tr>`).join("")}
+      </table>`
+    : "";
+
   const html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office"
           xmlns:w="urn:schemas-microsoft-com:office:word"
@@ -79,14 +138,15 @@ function generateWord({ filename, title, headers, rows, subtitle }: ExportOption
     <head><meta charset="utf-8">
     <style>
       body { font-family: Arial, sans-serif; }
-      table { border-collapse: collapse; width: 100%; }
-      tr:nth-child(even) td { background: #f0f8ff; }
+      table.data { border-collapse: collapse; width: 100%; }
+      table.data tr:nth-child(even) td { background: #f0f8ff; }
     </style></head>
     <body>
       <h2 style="color:#006699;margin:0">GIS Amasaman Sector Command</h2>
       <h3 style="color:#3c3c3c;margin:4px 0">${title}</h3>
       ${subtitle ? `<p style="color:#787878;font-size:9pt;margin:2px 0">${subtitle}</p>` : ""}
-      <table>${headerRow}${tableRows}</table>
+      ${metaHtml}
+      <table class="data">${headerRow}${tableRows}</table>
       <p style="font-size:7pt;color:#969696;margin-top:12px">Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Powered by Infinity Techub Intelligence</p>
     </body></html>`;
 
