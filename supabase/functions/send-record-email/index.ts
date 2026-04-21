@@ -26,6 +26,12 @@ interface SendBody {
   attachment_filename: string;
   record_kind: string;
   record_id?: string;
+
+  // Compliance metadata (optional — older clients may omit)
+  attachment_sha256?: string | null;
+  attachment_generated_at?: string | null;
+  applicant_id?: string | null;
+  applicant_name?: string | null;
 }
 
 interface RecipientResult {
