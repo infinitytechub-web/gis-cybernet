@@ -115,7 +115,7 @@ export function RecordRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onClick={onEdit}>
+          <DropdownMenuItem onClick={handleEdit}>
             <Edit className="mr-2 h-4 w-4" /> Edit
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleDownload}>
@@ -124,7 +124,7 @@ export function RecordRowActions({
           <DropdownMenuItem onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> Print
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEmailOpen(true)}>
+          <DropdownMenuItem onClick={handleOpenEmail}>
             <Mail className="mr-2 h-4 w-4" /> Send via Email
           </DropdownMenuItem>
           {canDelete && (
