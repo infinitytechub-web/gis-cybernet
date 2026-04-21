@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { CountryCombobox } from "@/components/ui/country-combobox";
@@ -328,9 +329,13 @@ export default function VisaExtensions() {
                 <TableCell>{statusBadge(ext.status)}</TableCell>
                 <TableCell className="text-sm">{format(new Date(ext.created_at), "dd MMM yyyy")}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(ext)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <RecordRowActions
+                    kind="visa_extension"
+                    table="visa_extensions"
+                    record={ext}
+                    onEdit={() => openEdit(ext)}
+                    invalidateKeys={[["visa-extensions"]]}
+                  />
                 </TableCell>
               </TableRow>
             ))}

@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Search, Edit } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
+import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
@@ -254,7 +255,15 @@ export default function EnquiryApplications() {
                 <TableCell><Badge variant="outline">{app.enquiry_type.replace("_", " ")}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
                 <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
-                <TableCell><Button variant="ghost" size="icon" onClick={() => openEdit(app)}><Edit className="h-4 w-4" /></Button></TableCell>
+                <TableCell>
+                  <RecordRowActions
+                    kind="enquiry_application"
+                    table="enquiry_applications"
+                    record={app}
+                    onEdit={() => openEdit(app)}
+                    invalidateKeys={[["enquiry-applications"]]}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

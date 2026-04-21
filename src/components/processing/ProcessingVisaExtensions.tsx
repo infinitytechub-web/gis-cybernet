@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Edit } from "lucide-react";
+import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
@@ -208,9 +209,13 @@ export default function ProcessingVisaExtensions() {
                 <TableCell>{statusBadge(ext.status)}</TableCell>
                 <TableCell className="text-sm">{format(new Date(ext.created_at), "dd MMM yyyy")}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => openReview(ext)} title="Review">
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <RecordRowActions
+                    kind="visa_extension"
+                    table="visa_extensions"
+                    record={ext}
+                    onEdit={() => openReview(ext)}
+                    invalidateKeys={[["visa-extensions-processing"], ["visa-extensions"]]}
+                  />
                 </TableCell>
               </TableRow>
             ))}
