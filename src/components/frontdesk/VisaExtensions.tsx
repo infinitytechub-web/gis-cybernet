@@ -329,6 +329,14 @@ export default function VisaExtensions() {
           </TableBody>
         </Table>
       </div></CardContent></Card>
+
+      {hasNextPage && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+            {isFetchingNextPage ? "Loading..." : "Load more"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
