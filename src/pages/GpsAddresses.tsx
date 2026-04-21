@@ -141,14 +141,28 @@ function parseLocation(raw: string): { lat: number | null; lng: number | null; d
   return { lat: null, lng: null, digital, approximate: false };
 }
 
+// Where to route the user when they click "Edit" on a GPS row.
+// Each source module owns its own edit UI; this dashboard simply opens it.
+const SOURCE_ROUTES: Record<SourceKey, string> = {
+  operations: "/operations",
+  enforcement_operations: "/enforcement",
+  cyber_incidents: "/command-vault",
+  inventory_items: "/stores",
+};
+
 export default function GpsAddresses() {
   const { isAdmin, isOic, is2ic, role, loading } = useAuth();
   const allowed = isAdmin || isOic || is2ic || role === "staff_officer";
+  const canDelete = isAdmin || isOic; // Stricter — only admin/OIC can delete GPS source records
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceKey | "all">("all");
   const [selected, setSelected] = useState<GpsRecord | null>(null);
+  const [viewing, setViewing] = useState<GpsRecord | null>(null);
+  const [deleting, setDeleting] = useState<GpsRecord | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   // Realtime: invalidate on changes to any of the source tables
   useEffect(() => {
