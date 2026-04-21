@@ -239,6 +239,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       setBulkText("");
       setResults(null);
       setAttachmentConfirmed(false);
+      setExtraAttachments([]);
       setSubject(
         `${RECORD_TITLES[kind]} — ${record.applicant_name ?? record.id ?? ""}`.trim()
       );
