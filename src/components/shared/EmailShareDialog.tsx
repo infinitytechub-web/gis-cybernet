@@ -701,14 +701,32 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                       <Badge variant="outline" className="text-[10px]">PDF</Badge>
                       {attachmentMeta && <span>{formatBytes(attachmentMeta.size)}</span>}
-                      <span>·</span>
-                      <span>{RECORD_TITLES[kind]}</span>
-                      {record.applicant_name && (
-                        <>
-                          <span>·</span>
-                          <span className="truncate">{record.applicant_name}</span>
-                        </>
-                      )}
+                    </div>
+
+                    {/* Verification summary — confirm document identity at a glance */}
+                    <div className="mt-2 grid grid-cols-[70px_1fr] gap-x-3 gap-y-1 text-[11px] rounded border bg-background/60 px-2 py-1.5">
+                      <span className="text-muted-foreground">Kind</span>
+                      <span className="font-medium">{RECORD_TITLES[kind]}</span>
+
+                      <span className="text-muted-foreground">Applicant</span>
+                      <span className="font-medium truncate" title={record.applicant_name ?? undefined}>
+                        {record.applicant_name || <span className="text-muted-foreground">—</span>}
+                      </span>
+
+                      <span className="text-muted-foreground">Record ID</span>
+                      <span className="font-mono truncate" title={record.id ?? undefined}>
+                        {record.id ? String(record.id).slice(0, 8) + "…" : <span className="text-muted-foreground">—</span>}
+                      </span>
+
+                      <span className="text-muted-foreground">Generated</span>
+                      <span>
+                        {attachmentMeta
+                          ? attachmentMeta.generatedAt.toLocaleString(undefined, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
+                          : "—"}
+                      </span>
                     </div>
                   </div>
                   {attachmentMeta && (
