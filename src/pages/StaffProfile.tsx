@@ -200,12 +200,47 @@ export default function StaffProfile() {
                     <span>{profile.unit}</span>
                   </div>
                 )}
-                {(profile as any).office && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>{(profile as any).office}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                  <MapPin className="h-4 w-4 text-primary shrink-0" />
+                  {editingOffice ? (
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      <Input
+                        autoFocus
+                        value={officeDraft}
+                        onChange={(e) => setOfficeDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); saveOffice(); }
+                          if (e.key === "Escape") { e.preventDefault(); setEditingOffice(false); }
+                        }}
+                        placeholder="Office / duty post"
+                        maxLength={80}
+                        className="h-7 text-sm"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveOffice} aria-label="Save office">
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingOffice(false)} aria-label="Cancel">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="truncate">{currentOffice || <span className="italic">No office set</span>}</span>
+                      {canEditOffice && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 ml-1"
+                          onClick={() => { setOfficeDraft(currentOffice ?? ""); setEditingOffice(true); }}
+                          aria-label="Edit office"
+                          title="Edit office"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
                 {profile.phone && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4 text-primary" />
