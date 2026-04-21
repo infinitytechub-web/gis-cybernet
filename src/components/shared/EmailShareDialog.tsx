@@ -751,6 +751,37 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                             })
                           : "—"}
                       </span>
+
+                      <span className="text-muted-foreground">SHA-256</span>
+                      <span className="flex items-center gap-1 min-w-0">
+                        {attachmentHash ? (
+                          <>
+                            <span
+                              className="font-mono truncate"
+                              title={attachmentHash}
+                            >
+                              {attachmentHash.slice(0, 16)}…
+                            </span>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground shrink-0"
+                              title="Copy full hash"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(attachmentHash);
+                                  toast.success("SHA-256 copied");
+                                } catch {
+                                  toast.error("Could not copy hash");
+                                }
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">computing…</span>
+                        )}
+                      </span>
                     </div>
                   </div>
                   {attachmentMeta && (
