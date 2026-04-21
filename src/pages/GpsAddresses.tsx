@@ -839,17 +839,64 @@ export default function GpsAddresses() {
                 >
                   <Copy className="h-3 w-3 mr-1" /> Copy coords
                 </Button>
-                <ExportMenu
-                  getData={buildTrackResultExport}
-                  label="Export result"
-                  size="sm"
-                />
-                <Button size="sm" variant="outline" onClick={printTrackResult} className="gap-1.5">
-                  <Printer className="h-3.5 w-3.5" /> Print
-                </Button>
+                {canExportTrack ? (
+                  <>
+                    <ExportMenu
+                      getData={buildTrackResultExport}
+                      label="Export result"
+                      size="sm"
+                      onExported={(fmt) => {
+                        // Audit successful exfiltration of a Search & Track result
+                        // so commanders have a verifiable trail of who exported
+                        // intel-derived coordinates and in what format.
+                        if (!trackResult || !user) return;
+                        supabase.from("front_desk_audit_log").insert({
+                          action: "gps_search_track_exported",
+                          entity_type: "gps_search_track",
+                          entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+                          performed_by: user.id,
+                          details: {
+                            format: fmt,
+                            query: trackQuery,
+                            display_name: trackResult.display_name,
+                            lat: trackResult.lat,
+                            lng: trackResult.lng,
+                            at: new Date().toISOString(),
+                            purpose: "cyber_intelligence_export",
+                          },
+                        }).then(() => undefined, () => undefined);
+                      }}
+                    />
+                    <Button size="sm" variant="outline" onClick={() => {
+                      printTrackResult();
+                      if (!trackResult || !user) return;
+                      supabase.from("front_desk_audit_log").insert({
+                        action: "gps_search_track_printed",
+                        entity_type: "gps_search_track",
+                        entity_id: trackResult.osm_id ?? `${trackResult.lat.toFixed(6)},${trackResult.lng.toFixed(6)}`,
+                        performed_by: user.id,
+                        details: {
+                          query: trackQuery,
+                          display_name: trackResult.display_name,
+                          lat: trackResult.lat,
+                          lng: trackResult.lng,
+                          at: new Date().toISOString(),
+                          purpose: "cyber_intelligence_print",
+                        },
+                      }).then(() => undefined, () => undefined);
+                    }} className="gap-1.5">
+                      <Printer className="h-3.5 w-3.5" /> Print
+                    </Button>
+                  </>
+                ) : (
+                  <Badge variant="destructive" className="gap-1 text-[11px]">
+                    <Lock className="h-3 w-3" /> Export & print restricted to cyber-intelligence roles
+                  </Badge>
+                )}
               </div>
               <p className="text-[10px] text-muted-foreground">
                 Geocoding via OpenStreetMap (Nominatim). Use only for lawful intelligence operations.
+                {!canExportTrack && " Export and print are gated to admin, OIC, 2IC, Staff Officer, and IPSE supervisors."}
               </p>
             </div>
           )}
