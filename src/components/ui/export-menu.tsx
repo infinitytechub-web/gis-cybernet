@@ -68,9 +68,10 @@ export function ExportMenu({
   formats = DEFAULT_FORMATS,
   onExported,
 }: ExportMenuProps) {
-  const handleExport = (fmt: ExportFormat) => {
+  const handleExport = async (fmt: ExportFormat) => {
     try {
-      const data = getData();
+      const result = getData(fmt);
+      const data = result instanceof Promise ? await result : result;
       if (!data) return;
       if (!data.rows || data.rows.length === 0) {
         toast.error("No data to export");
