@@ -106,6 +106,102 @@ function mergeUniqueEmails(
   return { merged: next.join("\n"), added, skipped };
 }
 
+/**
+ * Per-address occurrence breakdown for bulk textarea input.
+ * Returns the first-seen form of each address with how many times it appeared
+ * (so "1" means unique, ">1" means N-1 copies were dropped).
+ */
+export interface BulkBreakdownEntry {
+  email: string;
+  count: number;
+}
+function computeBulkBreakdown(input: string): {
+  unique: BulkBreakdownEntry[];
+  duplicates: BulkBreakdownEntry[];
+  totalDuplicatesRemoved: number;
+} {
+  const parts = input
+    .split(/[,;\s\n\r]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((p) => EMAIL_RE.test(p));
+  const map = new Map<string, BulkBreakdownEntry>();
+  for (const p of parts) {
+    const lower = p.toLowerCase();
+    const existing = map.get(lower);
+    if (existing) existing.count++;
+    else map.set(lower, { email: p, count: 1 });
+  }
+  const unique = Array.from(map.values());
+  const duplicates = unique.filter((e) => e.count > 1);
+  const totalDuplicatesRemoved = duplicates.reduce((s, e) => s + (e.count - 1), 0);
+  return { unique, duplicates, totalDuplicatesRemoved };
+}
+
+/**
+ * Final, authoritative dedup pass run immediately before the network request.
+ * Returns the cleaned address sets plus a report of what was removed and why.
+ */
+export interface FinalDedupeReport {
+  removedFromCc: string[];
+  removedFromBcc: string[];
+  removedFromBulk: string[];
+  totalRemoved: number;
+}
+function finalDedupeSingle(
+  to: string,
+  cc: string[],
+  bcc: string[],
+): { to: string; cc: string[]; bcc: string[]; report: FinalDedupeReport } {
+  const seen = new Set<string>();
+  const toLower = to.trim().toLowerCase();
+  seen.add(toLower);
+  const cleanCc: string[] = [];
+  const removedFromCc: string[] = [];
+  for (const e of cc) {
+    const l = e.toLowerCase();
+    if (seen.has(l)) removedFromCc.push(e);
+    else { seen.add(l); cleanCc.push(e); }
+  }
+  const cleanBcc: string[] = [];
+  const removedFromBcc: string[] = [];
+  for (const e of bcc) {
+    const l = e.toLowerCase();
+    if (seen.has(l)) removedFromBcc.push(e);
+    else { seen.add(l); cleanBcc.push(e); }
+  }
+  return {
+    to: to.trim(),
+    cc: cleanCc,
+    bcc: cleanBcc,
+    report: {
+      removedFromCc,
+      removedFromBcc,
+      removedFromBulk: [],
+      totalRemoved: removedFromCc.length + removedFromBcc.length,
+    },
+  };
+}
+function finalDedupeBulk(recipients: string[]): { recipients: string[]; report: FinalDedupeReport } {
+  const seen = new Set<string>();
+  const clean: string[] = [];
+  const removed: string[] = [];
+  for (const e of recipients) {
+    const l = e.toLowerCase();
+    if (seen.has(l)) removed.push(e);
+    else { seen.add(l); clean.push(e); }
+  }
+  return {
+    recipients: clean,
+    report: {
+      removedFromCc: [],
+      removedFromBcc: [],
+      removedFromBulk: removed,
+      totalRemoved: removed.length,
+    },
+  };
+}
+
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
   const [step, setStep] = useState<"compose" | "preview">("compose");
   const [mode, setMode] = useState<"single" | "bulk">("single");
