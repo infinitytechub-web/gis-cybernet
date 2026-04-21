@@ -416,6 +416,21 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
     try {
       const attachment = recordPdfBase64(kind, record);
 
+      // Recompute SHA-256 over the exact bytes being sent so the audit hash
+      // matches the attachment payload, not just what was previewed.
+      let sendHash: string | null = null;
+      try {
+        const bin = atob(attachment);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        sendHash = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      } catch { /* best-effort */ }
+
+      const generatedAtIso = new Date().toISOString();
+
       // -------- Final authoritative dedup pass (runs every time, right before send).
       // This is intentionally redundant with earlier filtering — it guarantees the
       // outgoing payload never contains overlapping TO/CC/BCC or repeat bulk recipients
@@ -451,6 +466,14 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
         }
       }
 
+      // Compliance metadata — recorded in the audit log for every send.
+      const attachmentMetaPayload = {
+        attachment_sha256: sendHash,
+        attachment_generated_at: generatedAtIso,
+        applicant_id: record.id ?? null,
+        applicant_name: record.applicant_name ?? null,
+      };
+
       const payload =
         mode === "single" && singleClean
           ? {
@@ -463,6 +486,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
+              ...attachmentMetaPayload,
             }
           : {
               bulk: true,
@@ -473,6 +497,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
+              ...attachmentMetaPayload,
             };
 
       const { data, error } = await supabase.functions.invoke("send-record-email", {
