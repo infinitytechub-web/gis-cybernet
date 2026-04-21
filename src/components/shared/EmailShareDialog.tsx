@@ -411,13 +411,18 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
   /**
    * Dry-run: generate the PDF, compute its SHA-256, and write a mock entry
    * to front_desk_audit_log so the compliance workflow can be verified
-   * end-to-end without emailing real recipients. No network call to the
-   * send-record-email edge function is made.
+   * end-to-end without emailing real recipients.
+   *
+   * Two modes:
+   *   - "client": writes the audit row directly from the browser.
+   *   - "server": invokes the send-record-email edge function with
+   *     dry_run=true so the audit row is written from the exact same
+   *     server path as a real send (same auth, same payload shape).
    */
-  const [testing, setTesting] = useState(false);
-  const handleTestSend = async () => {
+  const [testing, setTesting] = useState<false | "client" | "server">(false);
+  const handleTestSend = async (via: "client" | "server" = "client") => {
     if (!validateCompose()) return;
-    setTesting(true);
+    setTesting(via);
     try {
       // Build the exact PDF and hash its bytes
       const attachment = recordPdfBase64(kind, record);
@@ -445,7 +450,67 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
         recipientsList = finalDedupeBulk(bulkList).recipients;
       }
 
-      // Authenticated user for audit attribution
+      const nowIso = new Date().toISOString();
+
+      if (via === "server") {
+        // Route through the exact same edge function as a real send, with
+        // dry_run=true. The function validates, dedups, and writes the audit
+        // row server-side — matching the production write path byte-for-byte.
+        const payload =
+          mode === "single"
+            ? {
+                to: recipientsList[0] ?? "",
+                cc: ccList,
+                bcc: bccList,
+                subject,
+                message,
+                attachment_base64: attachment,
+                attachment_filename: attachmentFilename,
+                record_kind: kind,
+                record_id: record.id,
+                attachment_sha256: sha,
+                attachment_generated_at: nowIso,
+                applicant_id: record.id ?? null,
+                applicant_name: record.applicant_name ?? null,
+                dry_run: true,
+              }
+            : {
+                bulk: true,
+                recipients: recipientsList,
+                subject,
+                message,
+                attachment_base64: attachment,
+                attachment_filename: attachmentFilename,
+                record_kind: kind,
+                record_id: record.id,
+                attachment_sha256: sha,
+                attachment_generated_at: nowIso,
+                applicant_id: record.id ?? null,
+                applicant_name: record.applicant_name ?? null,
+                dry_run: true,
+              };
+
+        const { data, error } = await supabase.functions.invoke("send-record-email", {
+          body: payload,
+        });
+        if (error) throw error;
+        if ((data as any)?.error) throw new Error((data as any).error);
+
+        const r: RecipientResult[] = ((data as any)?.results ?? []).map((x: any) => ({
+          email: x.email,
+          status: "sent" as const,
+          message_id: x.message_id ?? `test_${crypto.randomUUID()}`,
+        }));
+        setResults(r);
+        toast.success(
+          `Server test logged · SHA-256 ${sha ? sha.slice(0, 10) + "…" : "n/a"} · ${r.length} recipient${
+            r.length === 1 ? "" : "s"
+          } simulated`,
+        );
+        return;
+      }
+
+      // Client-side path: write the mock audit row directly.
       const { data: auth } = await supabase.auth.getUser();
       const uid = auth.user?.id;
       if (!uid) {
@@ -454,7 +519,6 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
         return;
       }
 
-      const nowIso = new Date().toISOString();
       const mockResults: RecipientResult[] = recipientsList.map((e) => ({
         email: e,
         status: "sent" as const,
@@ -470,6 +534,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
           performed_by: uid,
           details: {
             test_mode: true,
+            source: "client",
             mode: mode === "single" ? "single" : "bulk",
             recipient_count: recipientsList.length,
             sent: 0,
@@ -485,7 +550,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
             applicant_id: record.id ?? null,
             applicant_name: record.applicant_name ?? null,
             sent_at: nowIso,
-            note: "Simulated send — no email dispatched",
+            note: "Simulated client-side send — no email dispatched",
             results: mockResults.map((r) => ({
               email: r.email,
               status: "simulated",
