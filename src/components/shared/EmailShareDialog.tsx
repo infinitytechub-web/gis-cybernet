@@ -721,6 +721,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
+              extra_attachments: extraAttachments,
               ...attachmentMetaPayload,
             }
           : {
@@ -732,6 +733,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
               attachment_filename: attachmentFilename,
               record_kind: kind,
               record_id: record.id,
+              extra_attachments: extraAttachments,
               ...attachmentMetaPayload,
             };
 
