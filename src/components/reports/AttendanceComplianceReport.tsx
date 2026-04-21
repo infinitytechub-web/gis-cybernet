@@ -367,7 +367,18 @@ export default function AttendanceComplianceReport() {
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-sm">Per-staff breakdown</CardTitle>
-          <ExportMenu label="Export" size="sm" variant="outline" getData={buildExport} />
+          <ExportMenu
+            label="Export"
+            size="sm"
+            variant="outline"
+            getData={buildExport}
+            onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
+              format: fmt, period, from: fromIso, to: toIso,
+              filters: { departmentId, shiftGroup, office },
+              row_count: rows.length,
+              location: "table",
+            })}
+          />
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
