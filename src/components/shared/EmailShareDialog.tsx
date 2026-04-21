@@ -13,10 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, FileText, ArrowLeft, Download, ShieldCheck } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { recordPdfBase64, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
+import { recordPdfBase64, buildRecordPdf, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
 
 interface EmailShareDialogProps {
   open: boolean;
