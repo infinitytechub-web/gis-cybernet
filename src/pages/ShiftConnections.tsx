@@ -13,10 +13,14 @@ import {
 import { ShiftPlatformConnect } from "@/components/attendance/ShiftPlatformConnect";
 import {
   CheckCircle2, XCircle, RefreshCw, Wifi, WifiOff, Search, Link2,
-  Activity, AlertTriangle, Loader2,
+  Activity, AlertTriangle, Loader2, ShieldOff,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+
+/** Roles permitted to view & manage shift platform integrations. */
+const ALLOWED_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor"] as const;
+type AllowedRole = (typeof ALLOWED_ROLES)[number];
 
 /**
  * Minimal display catalogue for the platforms we support — kept in sync with
@@ -83,10 +87,12 @@ function StatusBadge({ status }: { status: ReturnType<typeof deriveStatus> }) {
 }
 
 export default function ShiftConnections() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const isAuthorized = !!role && (ALLOWED_ROLES as readonly string[]).includes(role);
 
   // Resolve the current user's profile ID — connections are scoped per profile.
   const { data: profile } = useQuery({
