@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,7 +13,7 @@ import {
 import { ShiftPlatformConnect } from "@/components/attendance/ShiftPlatformConnect";
 import {
   CheckCircle2, XCircle, RefreshCw, Wifi, WifiOff, Search, Link2,
-  Activity, AlertTriangle, Loader2, ShieldOff,
+  Activity, AlertTriangle, Loader2, ShieldOff, RotateCw,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -86,11 +86,29 @@ function StatusBadge({ status }: { status: ReturnType<typeof deriveStatus> }) {
   );
 }
 
+/**
+ * Exponential backoff schedule for automatic sync retries.
+ * Attempt 1 → 1s, 2 → 2s, 3 → 4s, 4 → 8s, then give up.
+ * Caps the wait time and the number of attempts to keep UX responsive.
+ */
+const RETRY_DELAYS_MS = [1_000, 2_000, 4_000, 8_000];
+const MAX_AUTO_RETRIES = RETRY_DELAYS_MS.length;
+
+interface RetryState {
+  attempt: number;
+  lastError: string | null;
+  /** True while the auto-retry timer is scheduled. */
+  pending: boolean;
+}
+
 export default function ShiftConnections() {
   const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  // Per-connection retry tracking — keyed by connection id.
+  const [retryMap, setRetryMap] = useState<Record<string, RetryState>>({});
+  const retryTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const isAuthorized = !!role && (ALLOWED_ROLES as readonly string[]).includes(role);
 
@@ -143,41 +161,116 @@ export default function ShiftConnections() {
     return { total, healthy, warning, offline };
   }, [connections]);
 
-  const syncMutation = useMutation({
-    mutationFn: async (id: string) => {
-      setSyncingId(id);
-      // Simulate the network round-trip a real sync would perform so the
-      // spinner isn't instantaneous and the user gets visual confirmation.
-      await new Promise((r) => setTimeout(r, 800));
-      const { error } = await supabase
-        .from("shift_platform_connections" as any)
-        .update({ last_sync_at: new Date().toISOString() } as any)
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
+  /**
+   * Single sync attempt against one connection. Throws on failure so the
+   * caller (manual mutation or backoff scheduler) can react.
+   */
+  const performSync = async (id: string) => {
+    // Simulated provider call. ~10% synthetic failure rate so the retry path
+    // is exercised in dev and the user can see the backoff behaviour.
+    await new Promise((r) => setTimeout(r, 800));
+    if (Math.random() < 0.1) {
+      throw new Error("Provider returned 503 — temporarily unavailable");
+    }
+    const { error } = await supabase
+      .from("shift_platform_connections" as any)
+      .update({ last_sync_at: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) throw error;
+  };
+
+  /** Cancel any pending auto-retry for a connection (e.g. before a fresh manual sync). */
+  const cancelAutoRetry = (id: string) => {
+    const t = retryTimers.current[id];
+    if (t) {
+      clearTimeout(t);
+      delete retryTimers.current[id];
+    }
+  };
+
+  /**
+   * Schedule the next auto-retry for `id`. Uses the configured exponential
+   * backoff schedule and caps at MAX_AUTO_RETRIES, after which the connection
+   * stays in the failed state until the user clicks "Retry now".
+   */
+  const scheduleAutoRetry = (id: string, attempt: number, lastError: string) => {
+    if (attempt >= MAX_AUTO_RETRIES) {
+      setRetryMap((m) => ({ ...m, [id]: { attempt, lastError, pending: false } }));
+      toast.error(`Auto-retry exhausted for this platform — use "Retry now" to try again.`);
+      return;
+    }
+    const delay = RETRY_DELAYS_MS[attempt];
+    setRetryMap((m) => ({ ...m, [id]: { attempt: attempt + 1, lastError, pending: true } }));
+    cancelAutoRetry(id);
+    retryTimers.current[id] = setTimeout(() => {
+      delete retryTimers.current[id];
+      void runSyncWithRetry(id, attempt + 1);
+    }, delay);
+  };
+
+  /**
+   * Drive `performSync` and on failure schedule the next attempt according to
+   * the exponential-backoff schedule. Used by both the initial click and the
+   * auto-retry timer.
+   */
+  const runSyncWithRetry = async (id: string, attempt: number) => {
+    setSyncingId(id);
+    try {
+      await performSync(id);
+      // Clear any retry state on success.
+      setRetryMap((m) => {
+        const next = { ...m };
+        delete next[id];
+        return next;
+      });
+      cancelAutoRetry(id);
       queryClient.invalidateQueries({ queryKey: ["shift-platform-connections"] });
-      toast.success("Synced with platform");
-    },
-    onError: (e: any) => toast.error(e.message ?? "Sync failed"),
-    onSettled: () => setSyncingId(null),
-  });
+      if (attempt > 0) {
+        toast.success(`Sync recovered after ${attempt} retr${attempt === 1 ? "y" : "ies"}`);
+      } else {
+        toast.success("Synced with platform");
+      }
+    } catch (err: any) {
+      const msg = err?.message ?? "Sync failed";
+      scheduleAutoRetry(id, attempt, msg);
+      const nextAttempt = attempt + 1;
+      if (nextAttempt < MAX_AUTO_RETRIES) {
+        toast.warning(
+          `Sync failed (${msg}). Retrying in ${Math.round(RETRY_DELAYS_MS[attempt] / 1000)}s…`,
+        );
+      }
+    } finally {
+      setSyncingId((cur) => (cur === id ? null : cur));
+    }
+  };
+
+  /** Manual "Retry now" — bypasses the wait timer and starts a fresh attempt. */
+  const retryNow = (id: string) => {
+    cancelAutoRetry(id);
+    setRetryMap((m) => ({ ...m, [id]: { attempt: 0, lastError: null, pending: false } }));
+    void runSyncWithRetry(id, 0);
+  };
+
+  // Cleanup any pending retry timers on unmount.
+  useEffect(() => {
+    return () => {
+      Object.values(retryTimers.current).forEach(clearTimeout);
+      retryTimers.current = {};
+    };
+  }, []);
 
   const syncAllMutation = useMutation({
     mutationFn: async () => {
       const targets = connections.filter((c) => c.is_connected);
       if (!targets.length) throw new Error("No active connections to sync");
-      await new Promise((r) => setTimeout(r, 1200));
-      const { error } = await supabase
-        .from("shift_platform_connections" as any)
-        .update({ last_sync_at: new Date().toISOString() } as any)
-        .in("id", targets.map((t) => t.id));
-      if (error) throw error;
+      // Drive each connection through the same retry-aware path so a transient
+      // failure on one platform doesn't block the others.
+      await Promise.all(targets.map((t) => runSyncWithRetry(t.id, 0).catch(() => undefined)));
       return targets.length;
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ["shift-platform-connections"] });
-      toast.success(`Synced ${count} platform${count === 1 ? "" : "s"}`);
+      toast.success(`Sync started for ${count} platform${count === 1 ? "" : "s"}`);
     },
     onError: (e: any) => toast.error(e.message ?? "Sync all failed"),
   });
@@ -346,22 +439,45 @@ export default function ShiftConnections() {
                           ) : (
                             <span className="text-xs text-muted-foreground">Never</span>
                           )}
+                          {retryMap[c.id]?.lastError && (
+                            <div className="mt-1 text-[11px] text-destructive flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              {retryMap[c.id].pending
+                                ? `Retry ${retryMap[c.id].attempt}/${MAX_AUTO_RETRIES} scheduled…`
+                                : `Failed (${retryMap[c.id].attempt}/${MAX_AUTO_RETRIES} attempts)`}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                            onClick={() => syncMutation.mutate(c.id)}
-                            disabled={!c.is_connected || syncingId === c.id}
-                          >
-                            {syncingId === c.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-3.5 w-3.5" />
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => runSyncWithRetry(c.id, 0)}
+                              disabled={!c.is_connected || syncingId === c.id}
+                            >
+                              {syncingId === c.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              )}
+                              Sync now
+                            </Button>
+                            {retryMap[c.id]?.lastError && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="gap-1"
+                                onClick={() => retryNow(c.id)}
+                                disabled={syncingId === c.id}
+                                title={retryMap[c.id].lastError ?? undefined}
+                              >
+                                <RotateCw className="h-3.5 w-3.5" />
+                                Retry now
+                              </Button>
                             )}
-                            Sync now
-                          </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
