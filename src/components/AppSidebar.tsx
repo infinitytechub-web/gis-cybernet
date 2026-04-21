@@ -190,6 +190,7 @@ export function AppSidebar() {
   );
 
   return (
+    <TooltipProvider>
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
