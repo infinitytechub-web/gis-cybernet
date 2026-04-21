@@ -22,6 +22,7 @@ import ReportApprovalsTable from "@/components/reports/ReportApprovalsTable";
 import { ExportMenu } from "@/components/ui/export-menu";
 import AttendanceComplianceReport from "@/components/reports/AttendanceComplianceReport";
 import AttendanceRecipientsPanel from "@/components/reports/AttendanceRecipientsPanel";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
@@ -288,6 +289,10 @@ export default function Reports() {
               }
               return payload;
             }}
+            onExported={(fmt) => logAdminAudit("report_export", "exported", {
+              format: fmt, report_type: reportType,
+              from: startDate, to: endDate,
+            })}
           />
           <p className="text-[11px] text-muted-foreground">
             Generated exports are downloaded directly. To submit a report for supervisor approval, save the file and upload it below.

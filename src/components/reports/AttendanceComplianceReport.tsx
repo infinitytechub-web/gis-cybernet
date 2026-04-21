@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ExportMenu } from "@/components/ui/export-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { logAdminAudit } from "@/lib/admin-audit";
 import { CalendarCheck, Users, AlertTriangle, Percent, FileWarning, CheckCircle2, XCircle, Clock, Plane, PartyPopper, CalendarOff } from "lucide-react";
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -258,7 +259,18 @@ export default function AttendanceComplianceReport() {
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">{periodLabel} · {workingDays.length} working day(s)</p>
           </div>
-          <ExportMenu label="Export Report" size="sm" variant="default" getData={buildExport} />
+          <ExportMenu
+            label="Export Report"
+            size="sm"
+            variant="default"
+            getData={buildExport}
+            onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
+              format: fmt, period, from: fromIso, to: toIso,
+              filters: { departmentId, shiftGroup, office },
+              row_count: rows.length,
+              location: "header",
+            })}
+          />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -355,7 +367,18 @@ export default function AttendanceComplianceReport() {
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-sm">Per-staff breakdown</CardTitle>
-          <ExportMenu label="Export" size="sm" variant="outline" getData={buildExport} />
+          <ExportMenu
+            label="Export"
+            size="sm"
+            variant="outline"
+            getData={buildExport}
+            onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
+              format: fmt, period, from: fromIso, to: toIso,
+              filters: { departmentId, shiftGroup, office },
+              row_count: rows.length,
+              location: "table",
+            })}
+          />
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
@@ -382,10 +405,40 @@ export default function AttendanceComplianceReport() {
                     <TableRow
                       key={r.id}
                       className={`cursor-pointer hover:bg-muted/40 ${r.missing > 0 ? "bg-amber-50/60" : ""}`}
-                      onClick={() => setDetailStaff(r)}
+                      onClick={() => {
+                        setDetailStaff(r);
+                        logAdminAudit(
+                          "attendance_compliance_staff_detail",
+                          "opened",
+                          {
+                            staff_id: r.staff_id, name: r.name,
+                            department: r.department, office: r.office, shift: r.shift,
+                            period, from: fromIso, to: toIso,
+                            missing: r.missing, compliance_pct: Number(r.rate.toFixed(1)),
+                          },
+                          r.id,
+                        );
+                      }}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailStaff(r); } }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setDetailStaff(r);
+                          logAdminAudit(
+                            "attendance_compliance_staff_detail",
+                            "opened",
+                            {
+                              staff_id: r.staff_id, name: r.name,
+                              department: r.department, office: r.office, shift: r.shift,
+                              period, from: fromIso, to: toIso,
+                              missing: r.missing, compliance_pct: Number(r.rate.toFixed(1)),
+                              via: "keyboard",
+                            },
+                            r.id,
+                          );
+                        }
+                      }}
                       aria-label={`View attendance breakdown for ${r.name}`}
                     >
                       <TableCell>
