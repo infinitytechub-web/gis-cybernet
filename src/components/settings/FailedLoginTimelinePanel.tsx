@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { History, RefreshCw, Loader2, Search, Globe, IdCard, AlertTriangle, MapPin, Filter, Download } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { lookupIp, formatGeo, type IpGeo } from "@/lib/ip-geolocation";
-import { downloadBlob } from "@/lib/download-utils";
+import { downloadCSVString } from "@/lib/download-utils";
 import { toast } from "sonner";
 
 interface AttemptRow {
