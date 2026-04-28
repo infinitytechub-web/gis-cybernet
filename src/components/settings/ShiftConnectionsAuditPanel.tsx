@@ -199,8 +199,8 @@ export function ShiftConnectionsAuditPanel() {
   }, [filtered]);
 
   const handleExportCsv = () => {
-    if (!isAdmin) {
-      toast.error("Only admins can export shift platform connections.");
+    if (!can.export) {
+      toast.error("You don't have permission to export shift platform connections.");
       return;
     }
     const headers = [
