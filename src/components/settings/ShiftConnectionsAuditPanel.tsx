@@ -697,11 +697,12 @@ export function ShiftConnectionsAuditPanel() {
                   )}
                 </div>
 
-                {!isAdmin && (
+                {(!can.disconnect && !can.reconnect && !can.export) && (
                   <div className="mt-3 flex items-start gap-2 rounded-md border border-dashed bg-muted/40 p-2.5 text-xs text-muted-foreground">
                     <ShieldAlert className="h-3.5 w-3.5 mt-0.5 text-amber-600" />
                     <span>
-                      Disconnect, reconnect and export actions are restricted to admins.
+                      Disconnect, reconnect and export actions are not enabled for your role. Ask an
+                      admin to update the Shift Connection Permissions matrix in Settings.
                     </span>
                   </div>
                 )}
