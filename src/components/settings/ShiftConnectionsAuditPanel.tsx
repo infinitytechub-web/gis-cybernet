@@ -251,6 +251,10 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleDisconnectDevice = async () => {
     if (!openRow) return;
+    if (!isAdmin) {
+      toast.error("Only admins can disconnect shift platform devices.");
+      return;
+    }
     setIsDisconnecting(true);
     try {
       const { error } = await supabase
