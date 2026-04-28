@@ -90,7 +90,7 @@ export function ShiftConnectionsAuditPanel() {
         .order("synced_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return (data ?? []) as Array<{
+      return ((data ?? []) as unknown) as Array<{
         id: string;
         action: string;
         sync_status: string;
