@@ -237,6 +237,10 @@ export function ShiftConnectionsAuditPanel() {
   };
 
   const handlePurgeAll = async () => {
+    if (!can.purge) {
+      toast.error("You don't have permission to purge shift platform connections.");
+      return;
+    }
     setIsPurging(true);
     try {
       const { data, error } = await supabase.rpc("admin_purge_shift_connections" as any);
