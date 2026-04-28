@@ -301,8 +301,8 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleExportConnection = (fmt: "csv" | "json") => {
     if (!openRow) return;
-    if (!isAdmin) {
-      toast.error("Only admins can export connection details.");
+    if (!can.export) {
+      toast.error("You don't have permission to export connection details.");
       return;
     }
     const p = profileMap.get(openRow.profile_id);
