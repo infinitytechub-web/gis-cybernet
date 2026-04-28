@@ -343,6 +343,9 @@ export function FailedLoginTimelinePanel() {
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5">
               <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Refresh
             </Button>
+            <Button variant="outline" size="sm" onClick={handleExportCsv} className="gap-1.5">
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </Button>
           </div>
         </div>
       </CardHeader>
