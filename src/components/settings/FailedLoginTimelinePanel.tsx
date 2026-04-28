@@ -167,6 +167,49 @@ export function FailedLoginTimelinePanel() {
   const staffBursts = useMemo(() => groupBursts("staff_id"), [filtered]);
   const ipBursts = useMemo(() => groupBursts("ip_address"), [filtered]);
 
+  // CSV export of the currently-filtered timeline (incl. approximate location).
+  const handleExportCsv = () => {
+    if (filtered.length === 0) {
+      toast.info("No rows to export for the current filters.");
+      return;
+    }
+    const esc = (v: unknown) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const headers = [
+      "Attempted At (ISO)",
+      "Attempted At (Local)",
+      "Staff ID",
+      "IP Address",
+      "Country",
+      "Country Code",
+      "Region",
+      "City",
+      "Location (approx)",
+    ];
+    const lines = [headers.join(",")];
+    for (const r of filtered) {
+      const geo = r.ip_address ? geoMap[r.ip_address] : undefined;
+      lines.push([
+        r.attempted_at,
+        format(new Date(r.attempted_at), "yyyy-MM-dd HH:mm:ss"),
+        r.staff_id,
+        r.ip_address ?? "",
+        geo?.country ?? "",
+        geo?.country_code ?? "",
+        geo?.region ?? "",
+        geo?.city ?? "",
+        geo ? formatGeo(geo) : "",
+      ].map(esc).join(","));
+    }
+    const stamp = format(new Date(), "yyyyMMdd-HHmm");
+    const scope = staffFilter !== ALL_STAFF ? `_${staffFilter}` : "";
+    downloadCSVString(lines.join("\n"), `failed-login-timeline${scope}_${stamp}.csv`);
+    toast.success(`Exported ${filtered.length} attempt${filtered.length === 1 ? "" : "s"}.`);
+  };
+
+
   // Renders an IP with its country/city tag.
   const renderIpCell = (ip: string | null) => {
     if (!ip) return <span className="italic text-muted-foreground">unknown</span>;
