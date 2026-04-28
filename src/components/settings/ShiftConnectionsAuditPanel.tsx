@@ -42,7 +42,14 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { downloadCSVString } from "@/lib/download-utils";
+import { downloadBlob, downloadCSVString } from "@/lib/download-utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PowerOff, FileJson, FileSpreadsheet } from "lucide-react";
 
 interface ConnectionRow {
   id: string;
@@ -76,6 +83,8 @@ export function ShiftConnectionsAuditPanel() {
   const [statusFilter, setStatusFilter] = useState<string>(ALL);
   const [isPurging, setIsPurging] = useState(false);
   const [openRow, setOpenRow] = useState<ConnectionRow | null>(null);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
 
   const { data: history = [], isLoading: historyLoading } = useQuery({
     queryKey: ["admin-shift-connection-history", openRow?.profile_id, openRow?.platform],
@@ -230,6 +239,77 @@ export function ShiftConnectionsAuditPanel() {
     } finally {
       setIsPurging(false);
     }
+  };
+
+  const handleDisconnectDevice = async () => {
+    if (!openRow) return;
+    setIsDisconnecting(true);
+    try {
+      const { error } = await supabase
+        .from("shift_platform_connections" as any)
+        .update({ is_connected: false, offline_mode: false, updated_at: new Date().toISOString() })
+        .eq("id", openRow.id);
+      if (error) throw error;
+      toast.success(`Disconnected ${openRow.platform} for this staff profile.`);
+      setOpenRow({ ...openRow, is_connected: false, offline_mode: false });
+      setConfirmDisconnect(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to disconnect device.");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  const handleExportConnection = (fmt: "csv" | "json") => {
+    if (!openRow) return;
+    const p = profileMap.get(openRow.profile_id);
+    const stamp = format(new Date(), "yyyyMMdd-HHmm");
+    const tag = (p?.staff_id ?? openRow.profile_id.slice(0, 8)).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const baseName = `connection_${tag}_${openRow.platform}_${stamp}`;
+
+    if (fmt === "json") {
+      const payload = {
+        exported_at: new Date().toISOString(),
+        staff: p
+          ? { id: p.id, staff_id: p.staff_id, first_name: p.first_name, last_name: p.last_name }
+          : { id: openRow.profile_id },
+        platform: {
+          name: openRow.platform,
+          username: openRow.platform_username,
+          is_connected: openRow.is_connected,
+          offline_mode: openRow.offline_mode,
+          connected_at: openRow.created_at,
+          last_sync_at: openRow.last_sync_at,
+          updated_at: openRow.updated_at,
+        },
+        sync_history: history,
+      };
+      downloadBlob(
+        new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+        `${baseName}.json`,
+      );
+    } else {
+      const lines: string[] = [];
+      lines.push("Section,Field,Value");
+      lines.push(["Staff", "Staff ID", p?.staff_id ?? ""].map(esc).join(","));
+      lines.push(["Staff", "Name", p ? `${p.first_name} ${p.last_name}`.trim() : ""].map(esc).join(","));
+      lines.push(["Staff", "Profile ID", openRow.profile_id].map(esc).join(","));
+      lines.push(["Platform", "Name", openRow.platform].map(esc).join(","));
+      lines.push(["Platform", "Username", openRow.platform_username ?? ""].map(esc).join(","));
+      lines.push(["Platform", "Status", openRow.is_connected ? "Connected" : "Disconnected"].map(esc).join(","));
+      lines.push(["Platform", "Offline mode", openRow.offline_mode ? "Yes" : "No"].map(esc).join(","));
+      lines.push(["Platform", "Connected at", openRow.created_at].map(esc).join(","));
+      lines.push(["Platform", "Last sync", openRow.last_sync_at ?? ""].map(esc).join(","));
+      lines.push("");
+      lines.push("Sync History");
+      lines.push(["Synced At", "Action", "Status", "Error"].map(esc).join(","));
+      for (const h of history) {
+        lines.push([h.synced_at, h.action, h.sync_status, h.error_message ?? ""].map(esc).join(","));
+      }
+      downloadCSVString(lines.join("\n"), `${baseName}.csv`);
+    }
+    toast.success(`Exported connection as ${fmt.toUpperCase()}.`);
   };
 
   return (
@@ -461,6 +541,65 @@ export function ShiftConnectionsAuditPanel() {
                     Staff/device pairing and recent sync history for this shift platform link.
                   </SheetDescription>
                 </SheetHeader>
+
+                {/* Drawer actions */}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1.5" disabled={historyLoading}>
+                        <Download className="h-3.5 w-3.5" /> Export this connection
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => handleExportConnection("csv")} className="gap-2">
+                        <FileSpreadsheet className="h-4 w-4" /> Download as CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportConnection("json")} className="gap-2">
+                        <FileJson className="h-4 w-4" /> Download as JSON
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <AlertDialog open={confirmDisconnect} onOpenChange={setConfirmDisconnect}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={!openRow.is_connected || isDisconnecting}
+                      >
+                        {isDisconnecting ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <PowerOff className="h-3.5 w-3.5" />
+                        )}
+                        Disconnect device
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Disconnect this device?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will disable the <strong>{openRow.platform}</strong> connection for{" "}
+                          <strong>
+                            {p ? `${p.first_name} ${p.last_name} (${p.staff_id})` : "this staff profile"}
+                          </strong>
+                          . They will need to re-link the platform to resume syncing. The connection
+                          record and its history will be preserved.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDisconnectDevice}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Disconnect
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
 
                 <div className="space-y-4 mt-4">
                   {/* Staff card */}
