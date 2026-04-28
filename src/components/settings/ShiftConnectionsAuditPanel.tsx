@@ -275,6 +275,10 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleExportConnection = (fmt: "csv" | "json") => {
     if (!openRow) return;
+    if (!isAdmin) {
+      toast.error("Only admins can export connection details.");
+      return;
+    }
     const p = profileMap.get(openRow.profile_id);
     const stamp = format(new Date(), "yyyyMMdd-HHmm");
     const tag = (p?.staff_id ?? openRow.profile_id.slice(0, 8)).replace(/[^a-zA-Z0-9_-]/g, "_");
