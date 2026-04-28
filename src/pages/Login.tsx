@@ -43,11 +43,18 @@ export default function Login() {
         return;
       }
 
+      // Best-effort client IP lookup (used by admin alert trigger)
+      let clientIp: string | null = null;
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        if (ipRes.ok) clientIp = (await ipRes.json())?.ip ?? null;
+      } catch { /* ignore network errors */ }
+
       // Look up the auth email from the Staff/Admin ID
       const { data: emailData, error: emailErr } = await supabase.rpc("get_email_by_staff_id", { _staff_id: trimmedId });
       if (emailErr || !emailData) {
         // Record as failed attempt to prevent enumeration timing attacks
-        await supabase.rpc("record_failed_login", { _staff_id: trimmedId });
+        await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
         throw new Error("Invalid ID or password");
       }
 
@@ -58,7 +65,7 @@ export default function Login() {
         navigate("/");
       } catch (signInErr) {
         // Record failed attempt server-side
-        const { data: result } = await supabase.rpc("record_failed_login", { _staff_id: trimmedId });
+        const { data: result } = await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
         const r = result as { attempts?: number; locked?: boolean; remaining?: number } | null;
         if (r?.locked) {
           toast({
