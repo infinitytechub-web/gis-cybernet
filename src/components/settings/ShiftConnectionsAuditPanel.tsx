@@ -598,8 +598,8 @@ export function ShiftConnectionsAuditPanel() {
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
-                        disabled={historyLoading || !isAdmin}
-                        title={!isAdmin ? "Admins only" : undefined}
+                        disabled={historyLoading || !can.export}
+                        title={!can.export ? "You don't have export permission" : undefined}
                       >
                         <Download className="h-3.5 w-3.5" /> Export this connection
                       </Button>
