@@ -95,6 +95,7 @@ export default function Settings() {
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
+        <TabsContent value="login-audit"><FailedLoginTimelinePanel /></TabsContent>
         <TabsContent value="recycle">
           <Card>
             <CardHeader>
