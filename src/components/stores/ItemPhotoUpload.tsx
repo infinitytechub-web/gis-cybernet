@@ -18,10 +18,20 @@ export function ItemPhotoUpload({ value, onChange }: ItemPhotoUploadProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Resolve display URL when value changes
-  useState(() => {
-    if (value) resolveSignedUrl(value).then(setSignedUrl);
-  });
+  useEffect(() => {
+    if (!value) {
+      setSignedUrl(null);
+      return;
+    }
+    let active = true;
+    resolveSignedUrl(value).then((u) => {
+      if (active) setSignedUrl(u);
+    });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   async function resolveSignedUrl(path: string): Promise<string | null> {
     if (path.startsWith("http")) return path;
