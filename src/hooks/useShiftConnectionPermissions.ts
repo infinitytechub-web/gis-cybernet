@@ -28,7 +28,7 @@ export function useShiftConnectionPermissions() {
         purge: false,
         export: false,
       };
-      for (const row of (data ?? []) as Array<{ action: ShiftConnectionAction; allowed: boolean }>) {
+      for (const row of ((data ?? []) as unknown) as Array<{ action: ShiftConnectionAction; allowed: boolean }>) {
         map[row.action] = !!row.allowed;
       }
       return map;
