@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PowerOff, FileJson, FileSpreadsheet, Power, ShieldAlert } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useShiftConnectionPermissions } from "@/hooks/useShiftConnectionPermissions";
 
 interface ConnectionRow {
   id: string;
