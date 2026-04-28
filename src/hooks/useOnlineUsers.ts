@@ -128,7 +128,13 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
               window_minutes: windowMinutes,
               details: { phase: "subscribed" },
             });
-            void supabase.rpc("purge_old_presence_events", { _retention_days: 7 });
+            {
+              const stored = typeof window !== "undefined"
+                ? Number(window.localStorage.getItem("presence_events.retention_days"))
+                : NaN;
+              const retentionDays = Number.isFinite(stored) && stored >= 1 && stored <= 365 ? stored : 7;
+              void supabase.rpc("purge_old_presence_events", { _retention_days: retentionDays });
+            }
 
             // Heartbeat: refresh lastActiveAt so we're not pruned as stale.
             heartbeat = setInterval(() => {

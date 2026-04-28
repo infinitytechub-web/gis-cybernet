@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter } from "lucide-react";
+import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
+
+const RETENTION_STORAGE_KEY = "presence_events.retention_days";
+const DEFAULT_RETENTION_DAYS = 7;
 
 interface PresenceEventRow {
   id: string;
@@ -41,7 +45,42 @@ export function PresenceEventsPanel() {
   const [hours, setHours] = useState(24);
   const [typeFilter, setTypeFilter] = useState<string>(ALL);
   const [search, setSearch] = useState("");
+  const [retentionDays, setRetentionDays] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_RETENTION_DAYS;
+    const v = Number(window.localStorage.getItem(RETENTION_STORAGE_KEY));
+    return Number.isFinite(v) && v >= 1 && v <= 365 ? v : DEFAULT_RETENTION_DAYS;
+  });
+  const [retentionInput, setRetentionInput] = useState<string>(String(retentionDays));
+  const [isPurging, setIsPurging] = useState(false);
 
+  const saveRetention = () => {
+    const n = Math.floor(Number(retentionInput));
+    if (!Number.isFinite(n) || n < 1 || n > 365) {
+      toast.error("Retention must be a whole number between 1 and 365 days.");
+      return;
+    }
+    setRetentionDays(n);
+    setRetentionInput(String(n));
+    try { window.localStorage.setItem(RETENTION_STORAGE_KEY, String(n)); } catch {}
+    toast.success(`Retention set to ${n} day${n === 1 ? "" : "s"}.`);
+  };
+
+  const runPurge = async () => {
+    const n = Math.floor(Number(retentionInput));
+    const useDays = Number.isFinite(n) && n >= 1 && n <= 365 ? n : retentionDays;
+    setIsPurging(true);
+    try {
+      const { data, error } = await supabase.rpc("purge_old_presence_events", { _retention_days: useDays });
+      if (error) throw error;
+      const deleted = typeof data === "number" ? data : 0;
+      toast.success(`Purged ${deleted} presence event${deleted === 1 ? "" : "s"} older than ${useDays} day${useDays === 1 ? "" : "s"}.`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to purge presence events.");
+    } finally {
+      setIsPurging(false);
+    }
+  };
   const { data: events = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["presence-events", hours],
     queryFn: async (): Promise<PresenceEventRow[]> => {
@@ -118,7 +157,7 @@ export function PresenceEventsPanel() {
             </CardTitle>
             <CardDescription>
               Heartbeat and prune events recorded per user (admin troubleshooting for the “Online Now” panel).
-              Rows older than 7 days are auto-purged.
+              Rows older than the retention window below are auto-purged.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -137,6 +176,42 @@ export function PresenceEventsPanel() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                <Settings2 className="h-4 w-4 text-primary" /> Retention settings
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current retention: <span className="font-semibold tabular-nums">{retentionDays} day{retentionDays === 1 ? "" : "s"}</span>.
+                Purge removes presence events older than the value below.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="retention-days" className="text-xs text-muted-foreground">Keep for</label>
+                <Input
+                  id="retention-days"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={retentionInput}
+                  onChange={(e) => setRetentionInput(e.target.value)}
+                  className="w-[90px] h-9"
+                />
+                <span className="text-xs text-muted-foreground">days</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={saveRetention} className="gap-1.5">
+                <Settings2 className="h-3.5 w-3.5" /> Save
+              </Button>
+              <Button variant="destructive" size="sm" onClick={runPurge} disabled={isPurging} className="gap-1.5">
+                {isPurging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Purge now
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Tile label="Total events" value={stats.total} />
           <Tile label="Heartbeats" value={stats.heartbeats} />
