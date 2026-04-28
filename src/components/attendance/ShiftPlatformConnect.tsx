@@ -38,6 +38,9 @@ import {
   KeyRound,
   ArrowLeft,
   ArrowRight,
+  ChevronUp,
+  ChevronDown,
+  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -219,6 +222,8 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
   const [authCompleted, setAuthCompleted] = useState(false);
   const [validation, setValidation] = useState<"idle" | "testing" | "success" | "fail">("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
+  // Step 1 — auth-method filter for the platform list
+  const [methodFilter, setMethodFilter] = useState<"all" | AuthMethod>("all");
 
   // Refs scoped to a single auth attempt — held outside React state so the
   // postMessage listener and popup watcher can read the latest values without
@@ -632,42 +637,126 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
             </div>
 
             {/* STEP 1 — Platform selection */}
-            {step === 1 && (
-              <div className="space-y-4 py-2">
-                <div className="space-y-2">
-                  <Label>Shift platform</Label>
-                  <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select platform..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PLATFORMS.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="flex items-center gap-2">
-                            <span>{p.icon}</span> {p.name}
-                            <Badge variant="outline" className="ml-2 text-[10px]">
-                              {AUTH_METHOD_LABEL[p.authMethod]}
-                            </Badge>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {step === 1 && (() => {
+              const filteredPlatforms = methodFilter === "all"
+                ? PLATFORMS
+                : PLATFORMS.filter((p) => p.authMethod === methodFilter);
+              const currentIdx = filteredPlatforms.findIndex((p) => p.id === selectedPlatform);
+              const stepPlatform = (delta: 1 | -1) => {
+                if (filteredPlatforms.length === 0) return;
+                const base = currentIdx === -1 ? (delta === 1 ? -1 : 0) : currentIdx;
+                const next = (base + delta + filteredPlatforms.length) % filteredPlatforms.length;
+                setSelectedPlatform(filteredPlatforms[next].id);
+              };
+              return (
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5">
+                      <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                      Filter by auth method
+                    </Label>
+                    <Select
+                      value={methodFilter}
+                      onValueChange={(v) => {
+                        setMethodFilter(v as "all" | AuthMethod);
+                        // Clear selection if it no longer matches the filter
+                        if (v !== "all" && selectedPlatform) {
+                          const sel = PLATFORMS.find((p) => p.id === selectedPlatform);
+                          if (sel && sel.authMethod !== v) setSelectedPlatform("");
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All methods ({PLATFORMS.length})</SelectItem>
+                        {(["oauth", "saml", "oidc", "apikey"] as AuthMethod[]).map((m) => {
+                          const count = PLATFORMS.filter((p) => p.authMethod === m).length;
+                          return (
+                            <SelectItem key={m} value={m} disabled={count === 0}>
+                              {AUTH_METHOD_LABEL[m]} ({count})
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {platform && (
-                  <Card className="bg-muted/40">
-                    <CardContent className="p-3 text-sm space-y-1">
-                      <div className="flex items-center gap-2 font-medium">
-                        <ShieldCheck className="h-4 w-4 text-primary" />
-                        {AUTH_METHOD_LABEL[platform.authMethod]}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Shift platform</Label>
+                      {filteredPlatforms.length > 0 && (
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {currentIdx === -1 ? "—" : currentIdx + 1} / {filteredPlatforms.length}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              filteredPlatforms.length === 0
+                                ? "No platforms match the filter"
+                                : "Select platform..."
+                            } />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredPlatforms.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                <span className="flex items-center gap-2">
+                                  <span>{p.icon}</span> {p.name}
+                                  <Badge variant="outline" className="ml-2 text-[10px]">
+                                    {AUTH_METHOD_LABEL[p.authMethod]}
+                                  </Badge>
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <p className="text-muted-foreground text-xs">{platform.authHint}</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-5 w-8"
+                          aria-label="Previous platform"
+                          disabled={filteredPlatforms.length === 0}
+                          onClick={() => stepPlatform(-1)}
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-5 w-8"
+                          aria-label="Next platform"
+                          disabled={filteredPlatforms.length === 0}
+                          onClick={() => stepPlatform(1)}
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {platform && (
+                    <Card className="bg-muted/40">
+                      <CardContent className="p-3 text-sm space-y-1">
+                        <div className="flex items-center gap-2 font-medium">
+                          <ShieldCheck className="h-4 w-4 text-primary" />
+                          {AUTH_METHOD_LABEL[platform.authMethod]}
+                        </div>
+                        <p className="text-muted-foreground text-xs">{platform.authHint}</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* STEP 2 — Credentials & tenant identifiers */}
             {step === 2 && platform && (
