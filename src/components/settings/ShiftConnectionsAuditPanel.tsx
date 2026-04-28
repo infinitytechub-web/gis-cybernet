@@ -621,8 +621,8 @@ export function ShiftConnectionsAuditPanel() {
                           variant="destructive"
                           size="sm"
                           className="gap-1.5"
-                          disabled={isDisconnecting || !isAdmin}
-                          title={!isAdmin ? "Admins only" : undefined}
+                          disabled={isDisconnecting || !can.disconnect}
+                          title={!can.disconnect ? "You don't have disconnect permission" : undefined}
                         >
                           {isDisconnecting ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
