@@ -315,6 +315,41 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenant, selectedPlatform]);
 
+  // Keyboard nav for Step 1 platform list (ArrowUp/ArrowDown to step through
+  // the auth-method-filtered list; Enter to advance to Step 2).
+  useEffect(() => {
+    if (!open || step !== 1) return;
+    const handleKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      // Don't hijack typing in inputs/textareas, and don't fight the Radix
+      // Select while it's open (its listbox swallows arrow keys itself).
+      if (target?.closest("input, textarea, [role='listbox'], [data-radix-select-content]")) return;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown" && e.key !== "Enter") return;
+
+      const list = methodFilter === "all"
+        ? PLATFORMS
+        : PLATFORMS.filter((p) => p.authMethod === methodFilter);
+      if (list.length === 0) return;
+
+      if (e.key === "Enter") {
+        if (selectedPlatform) {
+          e.preventDefault();
+          setStep(2);
+        }
+        return;
+      }
+
+      e.preventDefault();
+      const delta = e.key === "ArrowDown" ? 1 : -1;
+      const idx = list.findIndex((p) => p.id === selectedPlatform);
+      const base = idx === -1 ? (delta === 1 ? -1 : 0) : idx;
+      const next = (base + delta + list.length) % list.length;
+      setSelectedPlatform(list[next].id);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open, step, methodFilter, selectedPlatform]);
+
   const platform = useMemo(
     () => PLATFORMS.find((p) => p.id === selectedPlatform),
     [selectedPlatform],
@@ -741,6 +776,9 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
                         </Button>
                       </div>
                     </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tip: use ↑ / ↓ to step through platforms, Enter to continue.
+                    </p>
                   </div>
 
                   {platform && (

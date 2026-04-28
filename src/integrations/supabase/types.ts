@@ -3510,6 +3510,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_purge_shift_connections: { Args: never; Returns: number }
       admin_reset_failed_attempts: {
         Args: { _staff_id: string }
         Returns: undefined
