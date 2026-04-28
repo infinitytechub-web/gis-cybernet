@@ -176,6 +176,42 @@ export function PresenceEventsPanel() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-sm font-medium">
+                <Settings2 className="h-4 w-4 text-primary" /> Retention settings
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current retention: <span className="font-semibold tabular-nums">{retentionDays} day{retentionDays === 1 ? "" : "s"}</span>.
+                Purge removes presence events older than the value below.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <label htmlFor="retention-days" className="text-xs text-muted-foreground">Keep for</label>
+                <Input
+                  id="retention-days"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={retentionInput}
+                  onChange={(e) => setRetentionInput(e.target.value)}
+                  className="w-[90px] h-9"
+                />
+                <span className="text-xs text-muted-foreground">days</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={saveRetention} className="gap-1.5">
+                <Settings2 className="h-3.5 w-3.5" /> Save
+              </Button>
+              <Button variant="destructive" size="sm" onClick={runPurge} disabled={isPurging} className="gap-1.5">
+                {isPurging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Purge now
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Tile label="Total events" value={stats.total} />
           <Tile label="Heartbeats" value={stats.heartbeats} />
