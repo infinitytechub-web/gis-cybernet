@@ -222,6 +222,8 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
   const [authCompleted, setAuthCompleted] = useState(false);
   const [validation, setValidation] = useState<"idle" | "testing" | "success" | "fail">("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
+  // Step 1 — auth-method filter for the platform list
+  const [methodFilter, setMethodFilter] = useState<"all" | AuthMethod>("all");
 
   // Refs scoped to a single auth attempt — held outside React state so the
   // postMessage listener and popup watcher can read the latest values without
