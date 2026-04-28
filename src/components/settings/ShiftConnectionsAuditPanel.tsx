@@ -662,8 +662,8 @@ export function ShiftConnectionsAuditPanel() {
                           variant="default"
                           size="sm"
                           className="gap-1.5"
-                          disabled={isReconnecting || !isAdmin}
-                          title={!isAdmin ? "Admins only" : undefined}
+                          disabled={isReconnecting || !can.reconnect}
+                          title={!can.reconnect ? "You don't have reconnect permission" : undefined}
                         >
                           {isReconnecting ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
