@@ -588,7 +588,13 @@ export function ShiftConnectionsAuditPanel() {
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1.5" disabled={historyLoading}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={historyLoading || !isAdmin}
+                        title={!isAdmin ? "Admins only" : undefined}
+                      >
                         <Download className="h-3.5 w-3.5" /> Export this connection
                       </Button>
                     </DropdownMenuTrigger>
@@ -602,46 +608,97 @@ export function ShiftConnectionsAuditPanel() {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  <AlertDialog open={confirmDisconnect} onOpenChange={setConfirmDisconnect}>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="gap-1.5"
-                        disabled={!openRow.is_connected || isDisconnecting}
-                      >
-                        {isDisconnecting ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <PowerOff className="h-3.5 w-3.5" />
-                        )}
-                        Disconnect device
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Disconnect this device?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will disable the <strong>{openRow.platform}</strong> connection for{" "}
-                          <strong>
-                            {p ? `${p.first_name} ${p.last_name} (${p.staff_id})` : "this staff profile"}
-                          </strong>
-                          . They will need to re-link the platform to resume syncing. The connection
-                          record and its history will be preserved.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDisconnectDevice}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  {openRow.is_connected ? (
+                    <AlertDialog open={confirmDisconnect} onOpenChange={setConfirmDisconnect}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="gap-1.5"
+                          disabled={isDisconnecting || !isAdmin}
+                          title={!isAdmin ? "Admins only" : undefined}
                         >
-                          Disconnect
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          {isDisconnecting ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <PowerOff className="h-3.5 w-3.5" />
+                          )}
+                          Disconnect device
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Disconnect this device?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will disable the <strong>{openRow.platform}</strong> connection for{" "}
+                            <strong>
+                              {p ? `${p.first_name} ${p.last_name} (${p.staff_id})` : "this staff profile"}
+                            </strong>
+                            . They will need to re-link the platform to resume syncing. The connection
+                            record and its history will be preserved.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDisconnectDevice}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Disconnect
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <AlertDialog open={confirmReconnect} onOpenChange={setConfirmReconnect}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-1.5"
+                          disabled={isReconnecting || !isAdmin}
+                          title={!isAdmin ? "Admins only" : undefined}
+                        >
+                          {isReconnecting ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Power className="h-3.5 w-3.5" />
+                          )}
+                          Reconnect device
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Reconnect this device?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will re-enable the <strong>{openRow.platform}</strong> connection
+                            for{" "}
+                            <strong>
+                              {p ? `${p.first_name} ${p.last_name} (${p.staff_id})` : "this staff profile"}
+                            </strong>
+                            . Sync will resume on the next heartbeat. Confirm only if this device is
+                            authorised to re-link.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleReconnectDevice}>
+                            Reconnect
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
+
+                {!isAdmin && (
+                  <div className="mt-3 flex items-start gap-2 rounded-md border border-dashed bg-muted/40 p-2.5 text-xs text-muted-foreground">
+                    <ShieldAlert className="h-3.5 w-3.5 mt-0.5 text-amber-600" />
+                    <span>
+                      Disconnect, reconnect and export actions are restricted to admins.
+                    </span>
+                  </div>
+                )}
 
                 <div className="space-y-4 mt-4">
                   {/* Staff card */}
