@@ -447,7 +447,153 @@ export function ShiftConnectionsAuditPanel() {
           </div>
         )}
       </CardContent>
+
+      <Sheet open={!!openRow} onOpenChange={(v) => { if (!v) setOpenRow(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          {openRow && (() => {
+            const p = profileMap.get(openRow.profile_id);
+            return (
+              <>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2 text-base">
+                    <Link2 className="h-4 w-4 text-primary" /> Connection details
+                  </SheetTitle>
+                  <SheetDescription>
+                    Staff/device pairing and recent sync history for this shift platform link.
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="space-y-4 mt-4">
+                  {/* Staff card */}
+                  <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Staff
+                    </div>
+                    {p ? (
+                      <>
+                        <div className="font-medium">{p.first_name} {p.last_name}</div>
+                        <div className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
+                          <IdCard className="h-3 w-3" /> {p.staff_id}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs font-mono text-muted-foreground">
+                        Profile {openRow.profile_id.slice(0, 8)}…
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Connection card */}
+                  <div className="rounded-lg border p-3 space-y-2 text-sm">
+                    <Field label="Platform" value={openRow.platform} mono />
+                    <Field
+                      label="Platform username"
+                      value={openRow.platform_username ?? "—"}
+                      mono={!!openRow.platform_username}
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">Status</span>
+                      {openRow.is_connected ? (
+                        <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
+                          <Wifi className="h-3 w-3" /> Connected
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1 text-muted-foreground">
+                          <WifiOff className="h-3 w-3" /> Disconnected
+                        </Badge>
+                      )}
+                    </div>
+                    {openRow.offline_mode && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground">Mode</span>
+                        <Badge variant="secondary" className="text-[10px]">Offline mode</Badge>
+                      </div>
+                    )}
+                    <Field
+                      label="Last seen"
+                      value={
+                        openRow.last_sync_at
+                          ? `${format(new Date(openRow.last_sync_at), "PPp")} (${formatDistanceToNow(new Date(openRow.last_sync_at), { addSuffix: true })})`
+                          : "Never"
+                      }
+                    />
+                    <Field
+                      label="Connected at"
+                      value={format(new Date(openRow.created_at), "PPp")}
+                    />
+                  </div>
+
+                  {/* Sync history */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium flex items-center gap-1.5">
+                        <Clock className="h-4 w-4 text-primary" /> Connection history
+                      </h3>
+                      {!historyLoading && (
+                        <Badge variant="secondary" className="text-[10px]">{history.length}</Badge>
+                      )}
+                    </div>
+                    {historyLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading history…
+                      </div>
+                    ) : history.length === 0 ? (
+                      <div className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
+                        No sync history recorded for this connection yet.
+                      </div>
+                    ) : (
+                      <ol className="space-y-2 relative border-l border-border pl-4">
+                        {history.map((h) => {
+                          const ok = h.sync_status === "success";
+                          return (
+                            <li key={h.id} className="relative">
+                              <span
+                                className={`absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-background ${
+                                  ok ? "bg-emerald-500" : "bg-destructive"
+                                }`}
+                              />
+                              <div className="rounded-md border bg-card px-3 py-2 text-xs space-y-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-medium capitalize">{h.action}</span>
+                                  {ok ? (
+                                    <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
+                                      <CheckCircle2 className="h-3 w-3" /> {h.sync_status}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="gap-1 border-destructive/30 text-destructive">
+                                      <XCircle className="h-3 w-3" /> {h.sync_status}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {format(new Date(h.synced_at), "PPp")} · {formatDistanceToNow(new Date(h.synced_at), { addSuffix: true })}
+                                </div>
+                                {h.error_message && (
+                                  <div className="text-destructive">{h.error_message}</div>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </Card>
+  );
+}
+
+function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={`text-xs ${mono ? "font-mono" : ""}`}>{value}</span>
+    </div>
   );
 }
 
