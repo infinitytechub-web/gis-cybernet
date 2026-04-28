@@ -380,7 +380,11 @@ export function ShiftConnectionsAuditPanel() {
                 {filtered.map((c) => {
                   const p = profileMap.get(c.profile_id);
                   return (
-                    <TableRow key={c.id}>
+                    <TableRow
+                      key={c.id}
+                      className="cursor-pointer hover:bg-muted/40"
+                      onClick={() => setOpenRow(c)}
+                    >
                       <TableCell className="text-xs">
                         {p ? (
                           <div>
