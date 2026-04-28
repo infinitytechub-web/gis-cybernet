@@ -1969,6 +1969,42 @@ export type Database = {
           },
         ]
       }
+      presence_events: {
+        Row: {
+          created_at: string
+          current_page: string | null
+          details: Json
+          event_type: Database["public"]["Enums"]["presence_event_type"]
+          id: string
+          last_active_at: string
+          pruned_at: string | null
+          user_id: string
+          window_minutes: number | null
+        }
+        Insert: {
+          created_at?: string
+          current_page?: string | null
+          details?: Json
+          event_type: Database["public"]["Enums"]["presence_event_type"]
+          id?: string
+          last_active_at?: string
+          pruned_at?: string | null
+          user_id: string
+          window_minutes?: number | null
+        }
+        Update: {
+          created_at?: string
+          current_page?: string | null
+          details?: Json
+          event_type?: Database["public"]["Enums"]["presence_event_type"]
+          id?: string
+          last_active_at?: string
+          pruned_at?: string | null
+          user_id?: string
+          window_minutes?: number | null
+        }
+        Relationships: []
+      }
       processing_jobs: {
         Row: {
           created_at: string
@@ -3541,6 +3577,10 @@ export type Database = {
         Returns: undefined
       }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
+      purge_old_presence_events: {
+        Args: { _retention_days?: number }
+        Returns: number
+      }
       purge_recycle_bin_entry: { Args: { _bin_id: string }; Returns: Json }
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }
@@ -3586,6 +3626,7 @@ export type Database = {
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
+      presence_event_type: "heartbeat" | "prune"
       shift_pattern: "8h" | "12h" | "custom"
       staff_status: "active" | "inactive" | "study_leave" | "transferred"
       transfer_type: "posting" | "transfer"
@@ -3741,6 +3782,7 @@ export const Constants = {
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
+      presence_event_type: ["heartbeat", "prune"],
       shift_pattern: ["8h", "12h", "custom"],
       staff_status: ["active", "inactive", "study_leave", "transferred"],
       transfer_type: ["posting", "transfer"],

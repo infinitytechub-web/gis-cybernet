@@ -16,6 +16,7 @@ import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
 import { AppSettings } from "@/components/settings/AppSettings";
 import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttemptsPanel";
 import { FailedLoginTimelinePanel } from "@/components/settings/FailedLoginTimelinePanel";
+import { PresenceEventsPanel } from "@/components/settings/PresenceEventsPanel";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
@@ -85,6 +86,7 @@ export default function Settings() {
           <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
           <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
           <TabsTrigger value="login-audit" className="gap-1.5"><History className="h-4 w-4 text-destructive" /> Login Audit</TabsTrigger>
+          <TabsTrigger value="presence" className="gap-1.5"><Activity className="h-4 w-4 text-primary" /> Presence Log</TabsTrigger>
           <TabsTrigger value="recycle" className="gap-1.5"><Trash2 className="h-4 w-4 text-destructive" /> Recycle Bin</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
           <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
@@ -96,6 +98,7 @@ export default function Settings() {
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
         <TabsContent value="login-audit"><FailedLoginTimelinePanel /></TabsContent>
+        <TabsContent value="presence"><PresenceEventsPanel /></TabsContent>
         <TabsContent value="recycle">
           <Card>
             <CardHeader>
