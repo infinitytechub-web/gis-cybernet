@@ -97,6 +97,24 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_tag_counters: {
+        Row: {
+          next_value: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          next_value?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          next_value?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       attendance_compliance_snapshots: {
         Row: {
           absent: number
@@ -1252,55 +1270,73 @@ export type Database = {
       }
       inventory_items: {
         Row: {
+          asset_tag: string | null
           category_id: string | null
           condition: string | null
           created_at: string
           id: string
           is_active: boolean
           location: string | null
+          manufacturer: string | null
           min_stock: number
+          model: string | null
           name: string
           notes: string | null
           photo_url: string | null
+          purchase_date: string | null
           qty_on_hand: number
+          serial_number: string | null
           sku: string | null
           unit: string
           unit_cost: number | null
           updated_at: string
+          warranty_expires: string | null
         }
         Insert: {
+          asset_tag?: string | null
           category_id?: string | null
           condition?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           location?: string | null
+          manufacturer?: string | null
           min_stock?: number
+          model?: string | null
           name: string
           notes?: string | null
           photo_url?: string | null
+          purchase_date?: string | null
           qty_on_hand?: number
+          serial_number?: string | null
           sku?: string | null
           unit?: string
           unit_cost?: number | null
           updated_at?: string
+          warranty_expires?: string | null
         }
         Update: {
+          asset_tag?: string | null
           category_id?: string | null
           condition?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           location?: string | null
+          manufacturer?: string | null
           min_stock?: number
+          model?: string | null
           name?: string
           notes?: string | null
           photo_url?: string | null
+          purchase_date?: string | null
           qty_on_hand?: number
+          serial_number?: string | null
           sku?: string | null
           unit?: string
           unit_cost?: number | null
           updated_at?: string
+          warranty_expires?: string | null
         }
         Relationships: [
           {
@@ -3553,6 +3589,7 @@ export type Database = {
         Returns: undefined
       }
       empty_recycle_bin: { Args: never; Returns: Json }
+      generate_asset_tag: { Args: never; Returns: string }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
       get_misd_department_id: { Args: never; Returns: string }
       get_profile_protected_fields: {
