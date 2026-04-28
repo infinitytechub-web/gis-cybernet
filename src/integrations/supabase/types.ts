@@ -3126,6 +3126,33 @@ export type Database = {
           },
         ]
       }
+      shift_connection_permissions: {
+        Row: {
+          action: string
+          allowed: boolean
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          action: string
+          allowed?: boolean
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          action?: string
+          allowed?: boolean
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       shift_platform_connections: {
         Row: {
           created_at: string
@@ -3516,6 +3543,10 @@ export type Database = {
         Returns: undefined
       }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      can_shift_connection_action: {
+        Args: { _action: string }
+        Returns: boolean
+      }
       can_use_recycle_bin: { Args: { _user_id: string }; Returns: boolean }
       clear_failed_login_attempts: {
         Args: { _staff_id: string }
