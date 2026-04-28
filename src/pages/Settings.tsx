@@ -17,6 +17,7 @@ import { AppSettings } from "@/components/settings/AppSettings";
 import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttemptsPanel";
 import { FailedLoginTimelinePanel } from "@/components/settings/FailedLoginTimelinePanel";
 import { PresenceEventsPanel } from "@/components/settings/PresenceEventsPanel";
+import { ShiftConnectionsAuditPanel } from "@/components/settings/ShiftConnectionsAuditPanel";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
