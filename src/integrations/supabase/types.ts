@@ -3542,7 +3542,9 @@ export type Database = {
       }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
       purge_recycle_bin_entry: { Args: { _bin_id: string }; Returns: Json }
-      record_failed_login: { Args: { _staff_id: string }; Returns: Json }
+      record_failed_login:
+        | { Args: { _staff_id: string }; Returns: Json }
+        | { Args: { _ip_address?: string; _staff_id: string }; Returns: Json }
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
