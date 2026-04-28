@@ -24,7 +24,7 @@ const ALLOWED_ROLES = [
 
 export default function OnlineNowPanel() {
   const { role } = useAuth();
-  const { onlineUsers, onlineCount } = useOnlineUsers();
+  const { onlineUsers, onlineCount, windowMinutes } = useOnlineUsers();
 
   if (!role || !ALLOWED_ROLES.includes(role)) return null;
 
@@ -37,6 +37,9 @@ export default function OnlineNowPanel() {
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
           </span>
           Online Now — Live Presence
+          <span className="text-[10px] font-normal text-muted-foreground">
+            (active in last {windowMinutes} min)
+          </span>
           <Badge variant="outline" className="ml-auto text-[10px]">
             {onlineCount} user{onlineCount !== 1 ? "s" : ""}
           </Badge>
