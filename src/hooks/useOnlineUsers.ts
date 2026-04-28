@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +13,7 @@ export interface OnlineUser {
   photoUrl: string | null;
   currentPage: string;
   onlineSince: string;
+  lastActiveAt: string;
 }
 
 const ROUTE_LABELS: Record<string, string> = {
@@ -45,22 +46,31 @@ const ROUTE_LABELS: Record<string, string> = {
 
 function labelForPath(pathname: string): string {
   if (ROUTE_LABELS[pathname]) return ROUTE_LABELS[pathname];
-  // try first segment match
   const seg = "/" + pathname.split("/").filter(Boolean)[0];
   return ROUTE_LABELS[seg] ?? pathname;
 }
 
-export function useOnlineUsers() {
+// How long a user is considered "online" since their last heartbeat / activity.
+// Default 5 minutes; consumers may override.
+export const DEFAULT_ONLINE_WINDOW_MINUTES = 5;
+// Heartbeat cadence — must be < window so users don't drop out unexpectedly.
+const HEARTBEAT_INTERVAL_MS = 60_000;
+// How often we re-evaluate the staleness filter on the client.
+const PRUNE_INTERVAL_MS = 30_000;
+
+export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MINUTES) {
   const { user } = useAuth();
   const location = useLocation();
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [allUsers, setAllUsers] = useState<OnlineUser[]>([]);
+  const [now, setNow] = useState<number>(Date.now());
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const payloadRef = useRef<OnlineUser | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
     let cancelled = false;
-    let currentPayload: OnlineUser | null = null;
+    let heartbeat: ReturnType<typeof setInterval> | null = null;
 
     const setup = async () => {
       const { data: profile } = await supabase
@@ -73,8 +83,9 @@ export function useOnlineUsers() {
 
       const deptName = (profile as any)?.departments?.name ?? "";
       const rankName = (profile as any)?.ranks?.name ?? "";
+      const nowIso = new Date().toISOString();
 
-      currentPayload = {
+      payloadRef.current = {
         userId: user.id,
         firstName: profile?.first_name ?? "Unknown",
         lastName: profile?.last_name ?? "",
@@ -83,17 +94,19 @@ export function useOnlineUsers() {
         rank: rankName,
         photoUrl: (profile as any)?.photo_url ?? null,
         currentPage: labelForPath(location.pathname),
-        onlineSince: new Date().toISOString(),
+        onlineSince: nowIso,
+        lastActiveAt: nowIso,
       };
 
-      channel = supabase.channel(`online-users-${user.id}-${Date.now()}`, {
+      const ch = supabase.channel(`online-users-${user.id}-${Date.now()}`, {
         config: { presence: { key: user.id } },
       });
+      channelRef.current = ch;
 
-      channel
+      ch
         .on("presence", { event: "sync" }, () => {
-          if (cancelled || !channel) return;
-          const state = channel.presenceState<OnlineUser>();
+          if (cancelled) return;
+          const state = ch.presenceState<OnlineUser>();
           const users: OnlineUser[] = [];
           for (const key of Object.keys(state)) {
             const presences = state[key];
@@ -101,11 +114,20 @@ export function useOnlineUsers() {
               users.push(presences[0] as unknown as OnlineUser);
             }
           }
-          setOnlineUsers(users);
+          setAllUsers(users);
         })
         .subscribe(async (status) => {
-          if (status === "SUBSCRIBED" && channel && !cancelled && currentPayload) {
-            await channel.track(currentPayload);
+          if (status === "SUBSCRIBED" && !cancelled && payloadRef.current) {
+            await ch.track(payloadRef.current);
+            // Heartbeat: refresh lastActiveAt so we're not pruned as stale.
+            heartbeat = setInterval(() => {
+              if (!payloadRef.current || !channelRef.current) return;
+              payloadRef.current = {
+                ...payloadRef.current,
+                lastActiveAt: new Date().toISOString(),
+              };
+              channelRef.current.track(payloadRef.current);
+            }, HEARTBEAT_INTERVAL_MS);
           }
         });
     };
@@ -114,26 +136,46 @@ export function useOnlineUsers() {
 
     return () => {
       cancelled = true;
-      if (channel) {
-        channel.untrack();
-        supabase.removeChannel(channel);
+      if (heartbeat) clearInterval(heartbeat);
+      const ch = channelRef.current;
+      if (ch) {
+        ch.untrack();
+        supabase.removeChannel(ch);
       }
+      channelRef.current = null;
+      payloadRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Update presence when route changes (without recreating channel)
+  // Update presence when route changes (counts as activity).
   useEffect(() => {
-    if (!user) return;
-    const channels = supabase.getChannels();
-    const ch = channels.find((c) => c.topic.startsWith(`realtime:online-users-${user.id}-`));
-    if (!ch) return;
-    const state = (ch as any).presenceState?.();
-    const mine = state?.[user.id]?.[0] as OnlineUser | undefined;
-    if (mine) {
-      ch.track({ ...mine, currentPage: labelForPath(location.pathname) });
-    }
+    if (!user || !channelRef.current || !payloadRef.current) return;
+    payloadRef.current = {
+      ...payloadRef.current,
+      currentPage: labelForPath(location.pathname),
+      lastActiveAt: new Date().toISOString(),
+    };
+    channelRef.current.track(payloadRef.current);
   }, [location.pathname, user]);
 
-  return { onlineUsers, onlineCount: onlineUsers.length };
+  // Periodically advance "now" so the staleness filter re-evaluates even
+  // when no presence sync arrives.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), PRUNE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  // Apply expiry window: only show users whose last activity is within window.
+  const cutoff = now - windowMinutes * 60_000;
+  const onlineUsers = allUsers.filter((u) => {
+    const last = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : new Date(u.onlineSince).getTime();
+    return last >= cutoff;
+  });
+
+  return {
+    onlineUsers,
+    onlineCount: onlineUsers.length,
+    windowMinutes,
+  };
 }
