@@ -776,6 +776,9 @@ export function ShiftPlatformConnect({ profileId }: ShiftPlatformConnectProps) {
                         </Button>
                       </div>
                     </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Tip: use ↑ / ↓ to step through platforms, Enter to continue.
+                    </p>
                   </div>
 
                   {platform && (
