@@ -241,6 +241,77 @@ export function ShiftConnectionsAuditPanel() {
     }
   };
 
+  const handleDisconnectDevice = async () => {
+    if (!openRow) return;
+    setIsDisconnecting(true);
+    try {
+      const { error } = await supabase
+        .from("shift_platform_connections" as any)
+        .update({ is_connected: false, offline_mode: false, updated_at: new Date().toISOString() })
+        .eq("id", openRow.id);
+      if (error) throw error;
+      toast.success(`Disconnected ${openRow.platform} for this staff profile.`);
+      setOpenRow({ ...openRow, is_connected: false, offline_mode: false });
+      setConfirmDisconnect(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to disconnect device.");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
+
+  const handleExportConnection = (fmt: "csv" | "json") => {
+    if (!openRow) return;
+    const p = profileMap.get(openRow.profile_id);
+    const stamp = format(new Date(), "yyyyMMdd-HHmm");
+    const tag = (p?.staff_id ?? openRow.profile_id.slice(0, 8)).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const baseName = `connection_${tag}_${openRow.platform}_${stamp}`;
+
+    if (fmt === "json") {
+      const payload = {
+        exported_at: new Date().toISOString(),
+        staff: p
+          ? { id: p.id, staff_id: p.staff_id, first_name: p.first_name, last_name: p.last_name }
+          : { id: openRow.profile_id },
+        platform: {
+          name: openRow.platform,
+          username: openRow.platform_username,
+          is_connected: openRow.is_connected,
+          offline_mode: openRow.offline_mode,
+          connected_at: openRow.created_at,
+          last_sync_at: openRow.last_sync_at,
+          updated_at: openRow.updated_at,
+        },
+        sync_history: history,
+      };
+      downloadBlob(
+        new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+        `${baseName}.json`,
+      );
+    } else {
+      const lines: string[] = [];
+      lines.push("Section,Field,Value");
+      lines.push(["Staff", "Staff ID", p?.staff_id ?? ""].map(esc).join(","));
+      lines.push(["Staff", "Name", p ? `${p.first_name} ${p.last_name}`.trim() : ""].map(esc).join(","));
+      lines.push(["Staff", "Profile ID", openRow.profile_id].map(esc).join(","));
+      lines.push(["Platform", "Name", openRow.platform].map(esc).join(","));
+      lines.push(["Platform", "Username", openRow.platform_username ?? ""].map(esc).join(","));
+      lines.push(["Platform", "Status", openRow.is_connected ? "Connected" : "Disconnected"].map(esc).join(","));
+      lines.push(["Platform", "Offline mode", openRow.offline_mode ? "Yes" : "No"].map(esc).join(","));
+      lines.push(["Platform", "Connected at", openRow.created_at].map(esc).join(","));
+      lines.push(["Platform", "Last sync", openRow.last_sync_at ?? ""].map(esc).join(","));
+      lines.push("");
+      lines.push("Sync History");
+      lines.push(["Synced At", "Action", "Status", "Error"].map(esc).join(","));
+      for (const h of history) {
+        lines.push([h.synced_at, h.action, h.sync_status, h.error_message ?? ""].map(esc).join(","));
+      }
+      downloadCSVString(lines.join("\n"), `${baseName}.csv`);
+    }
+    toast.success(`Exported connection as ${fmt.toUpperCase()}.`);
+  };
+
   return (
     <Card>
       <CardHeader>
