@@ -49,7 +49,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PowerOff, FileJson, FileSpreadsheet } from "lucide-react";
+import { PowerOff, FileJson, FileSpreadsheet, Power, ShieldAlert } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 interface ConnectionRow {
   id: string;
