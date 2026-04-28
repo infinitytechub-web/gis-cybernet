@@ -42,7 +42,14 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { downloadCSVString } from "@/lib/download-utils";
+import { downloadBlob, downloadCSVString } from "@/lib/download-utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { PowerOff, FileJson, FileSpreadsheet } from "lucide-react";
 
 interface ConnectionRow {
   id: string;
