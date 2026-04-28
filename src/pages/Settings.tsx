@@ -88,6 +88,7 @@ export default function Settings() {
           <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
           <TabsTrigger value="login-audit" className="gap-1.5"><History className="h-4 w-4 text-destructive" /> Login Audit</TabsTrigger>
           <TabsTrigger value="presence" className="gap-1.5"><Activity className="h-4 w-4 text-primary" /> Presence Log</TabsTrigger>
+          <TabsTrigger value="shift-connections" className="gap-1.5"><Link2 className="h-4 w-4 text-chart-3" /> Shift Connections</TabsTrigger>
           <TabsTrigger value="recycle" className="gap-1.5"><Trash2 className="h-4 w-4 text-destructive" /> Recycle Bin</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
           <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
