@@ -379,7 +379,8 @@ export function ShiftConnectionsAuditPanel() {
               variant="outline"
               size="sm"
               onClick={handleExportCsv}
-              disabled={filtered.length === 0}
+              disabled={filtered.length === 0 || !isAdmin}
+              title={!isAdmin ? "Admins only" : undefined}
               className="gap-1.5"
             >
               <Download className="h-3.5 w-3.5" /> Export CSV
