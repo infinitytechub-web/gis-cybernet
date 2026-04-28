@@ -157,7 +157,7 @@ export function PresenceEventsPanel() {
             </CardTitle>
             <CardDescription>
               Heartbeat and prune events recorded per user (admin troubleshooting for the “Online Now” panel).
-              Rows older than 7 days are auto-purged.
+              Rows older than the retention window below are auto-purged.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
