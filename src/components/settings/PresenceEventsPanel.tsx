@@ -45,7 +45,42 @@ export function PresenceEventsPanel() {
   const [hours, setHours] = useState(24);
   const [typeFilter, setTypeFilter] = useState<string>(ALL);
   const [search, setSearch] = useState("");
+  const [retentionDays, setRetentionDays] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_RETENTION_DAYS;
+    const v = Number(window.localStorage.getItem(RETENTION_STORAGE_KEY));
+    return Number.isFinite(v) && v >= 1 && v <= 365 ? v : DEFAULT_RETENTION_DAYS;
+  });
+  const [retentionInput, setRetentionInput] = useState<string>(String(retentionDays));
+  const [isPurging, setIsPurging] = useState(false);
 
+  const saveRetention = () => {
+    const n = Math.floor(Number(retentionInput));
+    if (!Number.isFinite(n) || n < 1 || n > 365) {
+      toast.error("Retention must be a whole number between 1 and 365 days.");
+      return;
+    }
+    setRetentionDays(n);
+    setRetentionInput(String(n));
+    try { window.localStorage.setItem(RETENTION_STORAGE_KEY, String(n)); } catch {}
+    toast.success(`Retention set to ${n} day${n === 1 ? "" : "s"}.`);
+  };
+
+  const runPurge = async () => {
+    const n = Math.floor(Number(retentionInput));
+    const useDays = Number.isFinite(n) && n >= 1 && n <= 365 ? n : retentionDays;
+    setIsPurging(true);
+    try {
+      const { data, error } = await supabase.rpc("purge_old_presence_events", { _retention_days: useDays });
+      if (error) throw error;
+      const deleted = typeof data === "number" ? data : 0;
+      toast.success(`Purged ${deleted} presence event${deleted === 1 ? "" : "s"} older than ${useDays} day${useDays === 1 ? "" : "s"}.`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to purge presence events.");
+    } finally {
+      setIsPurging(false);
+    }
+  };
   const { data: events = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["presence-events", hours],
     queryFn: async (): Promise<PresenceEventRow[]> => {
