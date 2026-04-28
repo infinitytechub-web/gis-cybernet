@@ -542,6 +542,65 @@ export function ShiftConnectionsAuditPanel() {
                   </SheetDescription>
                 </SheetHeader>
 
+                {/* Drawer actions */}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1.5" disabled={historyLoading}>
+                        <Download className="h-3.5 w-3.5" /> Export this connection
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => handleExportConnection("csv")} className="gap-2">
+                        <FileSpreadsheet className="h-4 w-4" /> Download as CSV
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportConnection("json")} className="gap-2">
+                        <FileJson className="h-4 w-4" /> Download as JSON
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <AlertDialog open={confirmDisconnect} onOpenChange={setConfirmDisconnect}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={!openRow.is_connected || isDisconnecting}
+                      >
+                        {isDisconnecting ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <PowerOff className="h-3.5 w-3.5" />
+                        )}
+                        Disconnect device
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Disconnect this device?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will disable the <strong>{openRow.platform}</strong> connection for{" "}
+                          <strong>
+                            {p ? `${p.first_name} ${p.last_name} (${p.staff_id})` : "this staff profile"}
+                          </strong>
+                          . They will need to re-link the platform to resume syncing. The connection
+                          record and its history will be preserved.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDisconnectDevice}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Disconnect
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+
                 <div className="space-y-4 mt-4">
                   {/* Staff card */}
                   <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
