@@ -75,6 +75,30 @@ export function ShiftConnectionsAuditPanel() {
   const [platformFilter, setPlatformFilter] = useState<string>(ALL);
   const [statusFilter, setStatusFilter] = useState<string>(ALL);
   const [isPurging, setIsPurging] = useState(false);
+  const [openRow, setOpenRow] = useState<ConnectionRow | null>(null);
+
+  const openProfile = openRow ? null : null;
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ["admin-shift-connection-history", openRow?.profile_id, openRow?.platform],
+    enabled: !!openRow,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("platform_sync_history" as any)
+        .select("id, action, sync_status, synced_at, error_message")
+        .eq("profile_id", openRow!.profile_id)
+        .eq("platform", openRow!.platform)
+        .order("synced_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        action: string;
+        sync_status: string;
+        synced_at: string;
+        error_message: string | null;
+      }>;
+    },
+  });
 
   const { data: connections = [], isLoading, refetch, isFetching } = useQuery({
     queryKey: ["admin-shift-connections"],
