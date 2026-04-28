@@ -273,6 +273,30 @@ export function ShiftConnectionsAuditPanel() {
     }
   };
 
+  const handleReconnectDevice = async () => {
+    if (!openRow) return;
+    if (!isAdmin) {
+      toast.error("Only admins can reconnect shift platform devices.");
+      return;
+    }
+    setIsReconnecting(true);
+    try {
+      const { error } = await supabase
+        .from("shift_platform_connections" as any)
+        .update({ is_connected: true, updated_at: new Date().toISOString() })
+        .eq("id", openRow.id);
+      if (error) throw error;
+      toast.success(`Reconnected ${openRow.platform} for this staff profile.`);
+      setOpenRow({ ...openRow, is_connected: true });
+      setConfirmReconnect(false);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to reconnect device.");
+    } finally {
+      setIsReconnecting(false);
+    }
+  };
+
   const handleExportConnection = (fmt: "csv" | "json") => {
     if (!openRow) return;
     if (!isAdmin) {
