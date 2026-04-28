@@ -35,6 +35,10 @@ import {
   Trash2,
   Wifi,
   WifiOff,
+  IdCard,
+  CheckCircle2,
+  XCircle,
+  Clock,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
