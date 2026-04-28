@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PowerOff, FileJson, FileSpreadsheet, Power, ShieldAlert } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useShiftConnectionPermissions } from "@/hooks/useShiftConnectionPermissions";
 
 interface ConnectionRow {
   id: string;
@@ -89,6 +90,7 @@ export function ShiftConnectionsAuditPanel() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [confirmReconnect, setConfirmReconnect] = useState(false);
   const { isAdmin } = useAuthContext();
+  const { can } = useShiftConnectionPermissions();
 
   const { data: history = [], isLoading: historyLoading } = useQuery({
     queryKey: ["admin-shift-connection-history", openRow?.profile_id, openRow?.platform],
@@ -197,8 +199,8 @@ export function ShiftConnectionsAuditPanel() {
   }, [filtered]);
 
   const handleExportCsv = () => {
-    if (!isAdmin) {
-      toast.error("Only admins can export shift platform connections.");
+    if (!can.export) {
+      toast.error("You don't have permission to export shift platform connections.");
       return;
     }
     const headers = [
@@ -235,6 +237,10 @@ export function ShiftConnectionsAuditPanel() {
   };
 
   const handlePurgeAll = async () => {
+    if (!can.purge) {
+      toast.error("You don't have permission to purge shift platform connections.");
+      return;
+    }
     setIsPurging(true);
     try {
       const { data, error } = await supabase.rpc("admin_purge_shift_connections" as any);
@@ -251,8 +257,8 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleDisconnectDevice = async () => {
     if (!openRow) return;
-    if (!isAdmin) {
-      toast.error("Only admins can disconnect shift platform devices.");
+    if (!can.disconnect) {
+      toast.error("You don't have permission to disconnect shift platform devices.");
       return;
     }
     setIsDisconnecting(true);
@@ -275,8 +281,8 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleReconnectDevice = async () => {
     if (!openRow) return;
-    if (!isAdmin) {
-      toast.error("Only admins can reconnect shift platform devices.");
+    if (!can.reconnect) {
+      toast.error("You don't have permission to reconnect shift platform devices.");
       return;
     }
     setIsReconnecting(true);
@@ -299,8 +305,8 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleExportConnection = (fmt: "csv" | "json") => {
     if (!openRow) return;
-    if (!isAdmin) {
-      toast.error("Only admins can export connection details.");
+    if (!can.export) {
+      toast.error("You don't have permission to export connection details.");
       return;
     }
     const p = profileMap.get(openRow.profile_id);
@@ -379,8 +385,8 @@ export function ShiftConnectionsAuditPanel() {
               variant="outline"
               size="sm"
               onClick={handleExportCsv}
-              disabled={filtered.length === 0 || !isAdmin}
-              title={!isAdmin ? "Admins only" : undefined}
+              disabled={filtered.length === 0 || !can.export}
+              title={!can.export ? "You don't have export permission" : undefined}
               className="gap-1.5"
             >
               <Download className="h-3.5 w-3.5" /> Export CSV
@@ -390,8 +396,8 @@ export function ShiftConnectionsAuditPanel() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  disabled={connections.length === 0 || isPurging || !isAdmin}
-                  title={!isAdmin ? "Admins only" : undefined}
+                  disabled={connections.length === 0 || isPurging || !can.purge}
+                  title={!can.purge ? "You don't have purge permission" : undefined}
                   className="gap-1.5"
                 >
                   {isPurging ? (
@@ -592,8 +598,8 @@ export function ShiftConnectionsAuditPanel() {
                         variant="outline"
                         size="sm"
                         className="gap-1.5"
-                        disabled={historyLoading || !isAdmin}
-                        title={!isAdmin ? "Admins only" : undefined}
+                        disabled={historyLoading || !can.export}
+                        title={!can.export ? "You don't have export permission" : undefined}
                       >
                         <Download className="h-3.5 w-3.5" /> Export this connection
                       </Button>
@@ -615,8 +621,8 @@ export function ShiftConnectionsAuditPanel() {
                           variant="destructive"
                           size="sm"
                           className="gap-1.5"
-                          disabled={isDisconnecting || !isAdmin}
-                          title={!isAdmin ? "Admins only" : undefined}
+                          disabled={isDisconnecting || !can.disconnect}
+                          title={!can.disconnect ? "You don't have disconnect permission" : undefined}
                         >
                           {isDisconnecting ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -656,8 +662,8 @@ export function ShiftConnectionsAuditPanel() {
                           variant="default"
                           size="sm"
                           className="gap-1.5"
-                          disabled={isReconnecting || !isAdmin}
-                          title={!isAdmin ? "Admins only" : undefined}
+                          disabled={isReconnecting || !can.reconnect}
+                          title={!can.reconnect ? "You don't have reconnect permission" : undefined}
                         >
                           {isReconnecting ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -691,11 +697,12 @@ export function ShiftConnectionsAuditPanel() {
                   )}
                 </div>
 
-                {!isAdmin && (
+                {(!can.disconnect && !can.reconnect && !can.export) && (
                   <div className="mt-3 flex items-start gap-2 rounded-md border border-dashed bg-muted/40 p-2.5 text-xs text-muted-foreground">
                     <ShieldAlert className="h-3.5 w-3.5 mt-0.5 text-amber-600" />
                     <span>
-                      Disconnect, reconnect and export actions are restricted to admins.
+                      Disconnect, reconnect and export actions are not enabled for your role. Ask an
+                      admin to update the Shift Connection Permissions matrix in Settings.
                     </span>
                   </div>
                 )}

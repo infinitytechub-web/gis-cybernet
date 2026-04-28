@@ -18,6 +18,7 @@ import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttem
 import { FailedLoginTimelinePanel } from "@/components/settings/FailedLoginTimelinePanel";
 import { PresenceEventsPanel } from "@/components/settings/PresenceEventsPanel";
 import { ShiftConnectionsAuditPanel } from "@/components/settings/ShiftConnectionsAuditPanel";
+import { ShiftConnectionPermissionsMatrix } from "@/components/settings/ShiftConnectionPermissionsMatrix";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
@@ -89,6 +90,7 @@ export default function Settings() {
           <TabsTrigger value="login-audit" className="gap-1.5"><History className="h-4 w-4 text-destructive" /> Login Audit</TabsTrigger>
           <TabsTrigger value="presence" className="gap-1.5"><Activity className="h-4 w-4 text-primary" /> Presence Log</TabsTrigger>
           <TabsTrigger value="shift-connections" className="gap-1.5"><Link2 className="h-4 w-4 text-chart-3" /> Shift Connections</TabsTrigger>
+          <TabsTrigger value="shift-conn-perms" className="gap-1.5"><KeyRound className="h-4 w-4 text-primary" /> Shift Conn. Perms</TabsTrigger>
           <TabsTrigger value="recycle" className="gap-1.5"><Trash2 className="h-4 w-4 text-destructive" /> Recycle Bin</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
           <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
@@ -102,6 +104,7 @@ export default function Settings() {
         <TabsContent value="login-audit"><FailedLoginTimelinePanel /></TabsContent>
         <TabsContent value="presence"><PresenceEventsPanel /></TabsContent>
         <TabsContent value="shift-connections"><ShiftConnectionsAuditPanel /></TabsContent>
+        <TabsContent value="shift-conn-perms"><ShiftConnectionPermissionsMatrix /></TabsContent>
         <TabsContent value="recycle">
           <Card>
             <CardHeader>
