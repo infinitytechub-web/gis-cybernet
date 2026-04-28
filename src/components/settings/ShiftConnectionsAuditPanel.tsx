@@ -86,6 +86,9 @@ export function ShiftConnectionsAuditPanel() {
   const [openRow, setOpenRow] = useState<ConnectionRow | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [confirmReconnect, setConfirmReconnect] = useState(false);
+  const { isAdmin } = useAuthContext();
 
   const { data: history = [], isLoading: historyLoading } = useQuery({
     queryKey: ["admin-shift-connection-history", openRow?.profile_id, openRow?.platform],
