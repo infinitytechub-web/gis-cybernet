@@ -390,7 +390,8 @@ export function ShiftConnectionsAuditPanel() {
                 <Button
                   variant="destructive"
                   size="sm"
-                  disabled={connections.length === 0 || isPurging}
+                  disabled={connections.length === 0 || isPurging || !isAdmin}
+                  title={!isAdmin ? "Admins only" : undefined}
                   className="gap-1.5"
                 >
                   {isPurging ? (
