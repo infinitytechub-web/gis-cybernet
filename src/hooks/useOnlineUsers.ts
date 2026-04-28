@@ -192,6 +192,28 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
     return last >= cutoff;
   });
 
+  // Log a prune event when this user transitions from "in-window" to "stale".
+  const wasOnlineRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (!user) return;
+    const me = allUsers.find((u) => u.userId === user.id);
+    if (!me) return;
+    const last = me.lastActiveAt ? new Date(me.lastActiveAt).getTime() : new Date(me.onlineSince).getTime();
+    const isVisible = last >= cutoff;
+    if (wasOnlineRef.current && !isVisible) {
+      void supabase.from("presence_events").insert({
+        user_id: user.id,
+        event_type: "prune",
+        current_page: me.currentPage,
+        last_active_at: me.lastActiveAt ?? me.onlineSince,
+        pruned_at: new Date().toISOString(),
+        window_minutes: windowMinutes,
+        details: { reason: "expired_window" },
+      });
+    }
+    wasOnlineRef.current = isVisible;
+  }, [allUsers, cutoff, user, windowMinutes]);
+
   return {
     onlineUsers,
     onlineCount: onlineUsers.length,
