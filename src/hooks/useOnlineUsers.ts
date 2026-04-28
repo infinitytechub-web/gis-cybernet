@@ -119,14 +119,33 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
         .subscribe(async (status) => {
           if (status === "SUBSCRIBED" && !cancelled && payloadRef.current) {
             await ch.track(payloadRef.current);
+            // First heartbeat row + opportunistic purge of old events
+            void supabase.from("presence_events").insert({
+              user_id: user.id,
+              event_type: "heartbeat",
+              current_page: payloadRef.current.currentPage,
+              last_active_at: payloadRef.current.lastActiveAt,
+              window_minutes: windowMinutes,
+              details: { phase: "subscribed" },
+            });
+            void supabase.rpc("purge_old_presence_events", { _retention_days: 7 });
+
             // Heartbeat: refresh lastActiveAt so we're not pruned as stale.
             heartbeat = setInterval(() => {
               if (!payloadRef.current || !channelRef.current) return;
+              const nowIso = new Date().toISOString();
               payloadRef.current = {
                 ...payloadRef.current,
-                lastActiveAt: new Date().toISOString(),
+                lastActiveAt: nowIso,
               };
               channelRef.current.track(payloadRef.current);
+              void supabase.from("presence_events").insert({
+                user_id: user.id,
+                event_type: "heartbeat",
+                current_page: payloadRef.current.currentPage,
+                last_active_at: nowIso,
+                window_minutes: windowMinutes,
+              });
             }, HEARTBEAT_INTERVAL_MS);
           }
         });
