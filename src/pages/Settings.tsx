@@ -101,6 +101,7 @@ export default function Settings() {
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
         <TabsContent value="login-audit"><FailedLoginTimelinePanel /></TabsContent>
         <TabsContent value="presence"><PresenceEventsPanel /></TabsContent>
+        <TabsContent value="shift-connections"><ShiftConnectionsAuditPanel /></TabsContent>
         <TabsContent value="recycle">
           <Card>
             <CardHeader>
