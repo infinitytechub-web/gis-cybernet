@@ -277,8 +277,8 @@ export function ShiftConnectionsAuditPanel() {
 
   const handleReconnectDevice = async () => {
     if (!openRow) return;
-    if (!isAdmin) {
-      toast.error("Only admins can reconnect shift platform devices.");
+    if (!can.reconnect) {
+      toast.error("You don't have permission to reconnect shift platform devices.");
       return;
     }
     setIsReconnecting(true);
