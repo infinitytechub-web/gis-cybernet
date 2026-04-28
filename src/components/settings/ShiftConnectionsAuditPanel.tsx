@@ -77,7 +77,6 @@ export function ShiftConnectionsAuditPanel() {
   const [isPurging, setIsPurging] = useState(false);
   const [openRow, setOpenRow] = useState<ConnectionRow | null>(null);
 
-  const openProfile = openRow ? null : null;
   const { data: history = [], isLoading: historyLoading } = useQuery({
     queryKey: ["admin-shift-connection-history", openRow?.profile_id, openRow?.platform],
     enabled: !!openRow,
