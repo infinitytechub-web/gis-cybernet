@@ -61,6 +61,7 @@ export function PostingApprovalQueue() {
     },
     onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["approval-audit"] });
       // Send notification to the staff member
       if (selectedRecord) {
         const userId = await getUserIdFromProfileId(selectedRecord.profile_id);
