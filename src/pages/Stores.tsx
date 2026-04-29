@@ -17,10 +17,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ExportMenu } from "@/components/ui/export-menu";
-import { Package, Plus, Pencil, Trash2, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Sliders, Boxes, TrendingDown, Activity, Truck, Tag, BarChart3 } from "lucide-react";
+import { Package, Plus, Pencil, Trash2, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Sliders, Boxes, TrendingDown, Activity, Truck, Tag, BarChart3, LayoutGrid, List, FileBarChart, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { ItemDetailDrawer } from "@/components/stores/ItemDetailDrawer";
+import { AssetScanner } from "@/components/stores/AssetScanner";
+import { ItemPhotoUpload } from "@/components/stores/ItemPhotoUpload";
+import { StoresReportsTab } from "@/components/stores/StoresReportsTab";
+import { printAssetLabel } from "@/components/stores/AssetLabelPrint";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 const MOVEMENT_TYPES = [
