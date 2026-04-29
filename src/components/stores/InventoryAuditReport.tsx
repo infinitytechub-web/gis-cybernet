@@ -17,6 +17,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { InventoryAlertSettings } from "./InventoryAlertSettings";
 import { InventoryAlertOverrides } from "./InventoryAlertOverrides";
+import { InventoryThresholdAuditTrail } from "./InventoryThresholdAuditTrail";
 import { InventoryAuditScheduler } from "./InventoryAuditScheduler";
 
 export function InventoryAuditReport() {
@@ -142,6 +143,7 @@ export function InventoryAuditReport() {
     <div className="space-y-4">
       <InventoryAlertSettings />
       <InventoryAlertOverrides />
+      <InventoryThresholdAuditTrail />
       <InventoryAuditScheduler />
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Tile label="Tracked" value={stats.total} />
