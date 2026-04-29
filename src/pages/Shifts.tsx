@@ -223,6 +223,9 @@ export default function Shifts() {
             </span>
             <Shield className="h-4 w-4" /> Night Guard
           </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="rules" className="gap-1"><Clock className="h-4 w-4" /> Window Rules</TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="calendar">
           <ShiftCalendarTab shifts={shifts} assignments={assignments} weekStart={weekStart} setWeekStart={setWeekStart} />
@@ -230,6 +233,11 @@ export default function Shifts() {
         <TabsContent value="nightguard">
           <NightGuardTab nightGuardStaff={nightGuardStaff} allStaff={profiles} shifts={shifts} weekStart={weekStart} setWeekStart={setWeekStart} isAdmin={isAdmin} />
         </TabsContent>
+        {isAdmin && (
+          <TabsContent value="rules">
+            <ShiftWindowRulesTab shifts={shifts as any} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <Dialog open={shiftDialogOpen} onOpenChange={setShiftDialogOpen}>
