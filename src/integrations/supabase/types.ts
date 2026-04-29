@@ -4623,6 +4623,17 @@ export type Database = {
         Args: { _bin_id: string }
         Returns: undefined
       }
+      search_authorising_officers: {
+        Args: { _limit?: number; _search?: string }
+        Returns: {
+          department_name: string
+          first_name: string
+          id: string
+          last_name: string
+          rank_abbrev: string
+          role: string
+        }[]
+      }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
