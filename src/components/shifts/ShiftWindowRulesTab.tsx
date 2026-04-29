@@ -198,7 +198,7 @@ export default function ShiftWindowRulesTab({ shifts }: Props) {
             Per-shift overrides
           </CardTitle>
           <CardDescription>
-            Customise grace and check-in/out windows per shift type (e.g. day vs night). Leave a field blank to inherit the global value.
+            Customise grace and check-in/out windows per shift, optionally scoped to a date range. Overlapping ranges for the same shift are blocked — resolve the existing rule before saving a new one.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -207,12 +207,12 @@ export default function ShiftWindowRulesTab({ shifts }: Props) {
           ) : shifts.length === 0 ? (
             <div className="text-sm text-muted-foreground">No shifts defined yet.</div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {shifts.map((s) => (
-                <ShiftOverrideRow
+                <ShiftOverridesGroup
                   key={s.id}
                   shift={s}
-                  override={overrideByShift.get(s.id)}
+                  rules={overridesByShift.get(s.id) ?? []}
                   global={g}
                   onSaved={() => queryClient.invalidateQueries({ queryKey: ["shift-window-overrides"] })}
                 />
