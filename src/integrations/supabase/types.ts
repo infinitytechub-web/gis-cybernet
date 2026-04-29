@@ -4559,6 +4559,15 @@ export type Database = {
         }
         Returns: string
       }
+      test_profile_office_history_access: {
+        Args: never
+        Returns: {
+          actual_visible: number
+          expected_visible: number
+          scenario: string
+          status: string
+        }[]
+      }
       unblock_ip: { Args: { _block_id: string }; Returns: undefined }
       verify_otp: { Args: { _code: string }; Returns: boolean }
       verify_threshold_audit_chain: {
