@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 
 export function PostingApprovalQueue() {
   const { user } = useAuth();
@@ -60,6 +61,7 @@ export function PostingApprovalQueue() {
     },
     onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      queryClient.invalidateQueries({ queryKey: ["approval-audit"] });
       // Send notification to the staff member
       if (selectedRecord) {
         const userId = await getUserIdFromProfileId(selectedRecord.profile_id);
@@ -185,6 +187,10 @@ export function PostingApprovalQueue() {
               <div>
                 <Label>Admin Comments</Label>
                 <Textarea value={comments} onChange={(e) => setComments(e.target.value)} rows={2} placeholder="Add comments..." />
+              </div>
+              <div className="border-t pt-3">
+                <h4 className="text-sm font-semibold mb-1">Approval History</h4>
+                <ApprovalAuditTrail entityType="posting_transfer" entityId={selectedRecord.id} />
               </div>
               <div className="flex gap-2">
                 <Button className="flex-1 gap-1" onClick={() => approveMutation.mutate({ id: selectedRecord.id, action: "approved" })} disabled={approveMutation.isPending}>

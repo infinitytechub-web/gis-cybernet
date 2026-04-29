@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format, differenceInDays } from "date-fns";
 import { Search, CheckCircle2, XCircle, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 
 export function LeaveApprovalQueue() {
   const { user } = useAuth();
@@ -68,6 +69,7 @@ export function LeaveApprovalQueue() {
     },
     onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["approval-audit"] });
       // Send notification to the staff member
       if (selectedRequest) {
         const userId = await getUserIdFromProfileId(selectedRequest.profile_id);
@@ -248,6 +250,10 @@ export function LeaveApprovalQueue() {
               <div>
                 <Label>Comments (optional)</Label>
                 <Textarea value={comments} onChange={(e) => setComments(e.target.value)} rows={2} placeholder="Add admin comments..." />
+              </div>
+              <div className="border-t pt-3">
+                <h4 className="text-sm font-semibold mb-1">Approval History</h4>
+                <ApprovalAuditTrail entityType="leave_request" entityId={selectedRequest.id} />
               </div>
               <div className="flex gap-2">
                 <Button
