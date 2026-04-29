@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { CalendarIcon, Plus, AlertCircle, CheckCircle2, XCircle, Clock, Ban, MessageSquare } from "lucide-react";
@@ -78,7 +78,7 @@ export function ShiftChangeRequestPanel({ profileId, userId, shifts, defaultDate
   });
 
   // Realtime
-  useState(() => {
+  useEffect(() => {
     const channel = supabase
       .channel(`shift-change-requests-${profileId}`)
       .on(
@@ -90,7 +90,7 @@ export function ShiftChangeRequestPanel({ profileId, userId, shifts, defaultDate
     return () => {
       supabase.removeChannel(channel);
     };
-  });
+  }, [profileId, queryClient]);
 
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
