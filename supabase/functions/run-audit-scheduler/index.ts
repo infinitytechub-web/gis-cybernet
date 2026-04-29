@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { jsPDF } from "https://esm.sh/jspdf@2.5.2";
+import autoTable from "https://esm.sh/jspdf-autotable@3.8.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,12 +23,78 @@ function toCsv(headers: string[], rows: (string | number | null)[][]): string {
   return lines.join("\n");
 }
 
+function buildPdf(opts: {
+  title: string;
+  generatedAt: string;
+  summary: Record<string, string | number>;
+  headers: string[];
+  rows: (string | number | null)[][];
+  overrides: { scope: string; qty: number; value: number }[];
+}): Uint8Array {
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+  const w = doc.internal.pageSize.getWidth();
+
+  doc.setFont("helvetica", "bold").setFontSize(14);
+  doc.text("GIS CYBERNET — Inventory Audit Compliance Summary", w / 2, 36, { align: "center" });
+  doc.setFont("helvetica", "normal").setFontSize(9);
+  doc.text(`Generated: ${opts.generatedAt}`, w / 2, 52, { align: "center" });
+
+  // Summary block
+  let y = 72;
+  doc.setFontSize(10).setFont("helvetica", "bold").text("Summary", 40, y);
+  y += 6;
+  const summaryRows = Object.entries(opts.summary).map(([k, v]) => [k, String(v)]);
+  autoTable(doc, {
+    startY: y + 4,
+    head: [["Metric", "Value"]],
+    body: summaryRows,
+    theme: "grid",
+    styles: { fontSize: 8, cellPadding: 3 },
+    headStyles: { fillColor: [13, 64, 36], textColor: 255 },
+    margin: { left: 40, right: w / 2 + 10 },
+  });
+
+  if (opts.overrides.length) {
+    autoTable(doc, {
+      startY: y + 4,
+      head: [["Per-location threshold", "Qty", "Value (₵)"]],
+      body: opts.overrides.map((o) => [o.scope, o.qty, o.value]),
+      theme: "grid",
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [28, 56, 110], textColor: 255 },
+      margin: { left: w / 2 + 10, right: 40 },
+    });
+  }
+
+  // @ts-ignore lastAutoTable
+  const startY = (doc as any).lastAutoTable.finalY + 16;
+  doc.setFont("helvetica", "bold").setFontSize(10).text("Item-level variance", 40, startY);
+  autoTable(doc, {
+    startY: startY + 6,
+    head: [opts.headers],
+    body: opts.rows.map((r) => r.map((c) => (c === null || c === undefined ? "" : String(c)))),
+    theme: "striped",
+    styles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" },
+    headStyles: { fillColor: [13, 64, 36], textColor: 255 },
+    margin: { left: 40, right: 40 },
+    didDrawPage: () => {
+      const pg = doc.getNumberOfPages();
+      doc.setFontSize(7).setTextColor(110);
+      doc.text(
+        `CONFIDENTIAL — GIS Amasaman Sector Command • Page ${pg}`,
+        w / 2,
+        doc.internal.pageSize.getHeight() - 16,
+        { align: "center" },
+      );
+      doc.setTextColor(0);
+    },
+  });
+
+  return doc.output("arraybuffer") as unknown as Uint8Array;
+}
+
 async function postWebhook(url: string, payload: any) {
-  // Slack/Teams/Discord-compatible: send `text` plus structured JSON
-  const body = {
-    text: payload.text ?? "Inventory variance alert",
-    ...payload,
-  };
+  const body = { text: payload.text ?? "Inventory variance alert", ...payload };
   try {
     const r = await fetch(url, {
       method: "POST",
@@ -39,27 +107,12 @@ async function postWebhook(url: string, payload: any) {
   }
 }
 
-async function trySendEmail(
-  supabase: any,
-  to: string[],
-  subject: string,
-  html: string,
-) {
+async function trySendEmail(supabase: any, to: string[], subject: string, html: string) {
   if (!to.length) return { skipped: true, reason: "no recipients" };
   try {
-    // Will succeed once Lovable email infra is provisioned; otherwise returns error.
-    const { data, error } = await supabase.functions.invoke(
-      "send-transactional-email",
-      {
-        body: {
-          to,
-          subject,
-          html,
-          purpose: "transactional",
-          template_name: "inventory-audit",
-        },
-      },
-    );
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      body: { to, subject, html, purpose: "transactional", template_name: "inventory-audit" },
+    });
     if (error) return { ok: false, error: error.message };
     return { ok: true, data };
   } catch (e) {
@@ -98,7 +151,6 @@ async function runAuditForSchedule(
   triggeredBy: string | null,
   kind: "scheduled" | "manual",
 ) {
-  // Fetch items and latest counts
   const { data: items = [] } = await supabase
     .from("inventory_items")
     .select(
@@ -109,6 +161,29 @@ async function runAuditForSchedule(
     .select("item_id, physical_count, system_qty, variance, counted_at")
     .order("counted_at", { ascending: false })
     .limit(5000);
+  const { data: settings } = await supabase
+    .from("inventory_alert_settings")
+    .select(
+      "variance_qty_threshold, variance_value_threshold, webhook_url, alert_webhook_enabled, alert_email_enabled, email_recipients",
+    )
+    .limit(1)
+    .maybeSingle();
+  const { data: overrides = [] } = await supabase
+    .from("inventory_alert_overrides")
+    .select("scope_type, scope_value, variance_qty_threshold, variance_value_threshold, enabled")
+    .eq("enabled", true);
+
+  const overrideMap = new Map<string, { qty: number; value: number }>();
+  for (const o of overrides as any[]) {
+    if (o.scope_type === "location") {
+      overrideMap.set(String(o.scope_value).toLowerCase(), {
+        qty: o.variance_qty_threshold,
+        value: Number(o.variance_value_threshold),
+      });
+    }
+  }
+  const defaultQty = settings?.variance_qty_threshold ?? 1;
+  const defaultVal = Number(settings?.variance_value_threshold ?? 100);
 
   const latest = new Map<string, any>();
   for (const c of counts) if (!latest.has(c.item_id)) latest.set(c.item_id, c);
@@ -116,16 +191,27 @@ async function runAuditForSchedule(
   const rows: any[] = [];
   let mismatched = 0;
   let netValue = 0;
+  let breaches = 0;
   for (const it of items as any[]) {
     const last = latest.get(it.id);
     const phys = last ? Number(last.physical_count) : null;
     const sys = Number(it.qty_on_hand);
     const variance = phys === null ? null : phys - sys;
-    const variValue =
-      variance === null ? null : variance * Number(it.unit_cost ?? 0);
+    const variValue = variance === null ? null : variance * Number(it.unit_cost ?? 0);
+    const loc = (it.location ?? "").toLowerCase();
+    const ov = overrideMap.get(loc);
+    const qty_th = ov?.qty ?? defaultQty;
+    const val_th = ov?.value ?? defaultVal;
+    let breach = "";
     if (variance !== null && variance !== 0) {
       mismatched += 1;
       netValue += variValue ?? 0;
+      const absQ = Math.abs(variance);
+      const absV = Math.abs(variValue ?? 0);
+      if (absQ >= qty_th || absV >= val_th) {
+        breaches += 1;
+        breach = "BREACH";
+      }
     }
     rows.push([
       it.asset_tag ?? "",
@@ -136,82 +222,117 @@ async function runAuditForSchedule(
       sys,
       phys ?? "",
       variance ?? "",
-      variValue === null ? "" : variValue.toFixed(2),
+      variValue === null ? "" : Number(variValue).toFixed(2),
+      `${qty_th}/${val_th}`,
+      breach,
       last ? new Date(last.counted_at).toISOString() : "",
     ]);
   }
 
-  const csv = toCsv(
-    [
-      "Asset Tag",
-      "Item",
-      "Category",
-      "Location",
-      "Condition",
-      "System Qty",
-      "Physical Count",
-      "Variance",
-      "Variance Value (₵)",
-      "Last Counted",
-    ],
-    rows,
-  );
+  const headers = [
+    "Asset Tag",
+    "Item",
+    "Category",
+    "Location",
+    "Condition",
+    "System Qty",
+    "Physical Count",
+    "Variance",
+    "Variance Value (₵)",
+    "Threshold (qty/₵)",
+    "Status",
+    "Last Counted",
+  ];
+
+  const csv = toCsv(headers, rows);
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const csvPath = `inventory-audit/${stamp}-audit.csv`;
-  const { error: upErr } = await supabase.storage
+  const pdfPath = `inventory-audit/${stamp}-audit.pdf`;
+
+  const { error: csvErr } = await supabase.storage
     .from("reports")
     .upload(csvPath, new Blob([csv], { type: "text/csv" }), {
       contentType: "text/csv",
       upsert: true,
     });
-  if (upErr) console.error("CSV upload failed", upErr);
+  if (csvErr) console.error("CSV upload failed", csvErr);
+
+  let pdfOk = true;
+  try {
+    const pdfBytes = buildPdf({
+      title: "Inventory Audit Compliance Summary",
+      generatedAt: new Date().toISOString(),
+      summary: {
+        "Total items": items.length,
+        Counted: latest.size,
+        Mismatched: mismatched,
+        "Threshold breaches": breaches,
+        "Net variance value (₵)": Number(netValue.toFixed(2)),
+        "Default thresholds": `${defaultQty} units / ₵${defaultVal}`,
+        Trigger: kind,
+      },
+      headers,
+      rows,
+      overrides: (overrides as any[]).map((o) => ({
+        scope: `${o.scope_type}: ${o.scope_value}`,
+        qty: o.variance_qty_threshold,
+        value: Number(o.variance_value_threshold),
+      })),
+    });
+    const { error: pdfErr } = await supabase.storage
+      .from("reports")
+      .upload(pdfPath, new Blob([pdfBytes], { type: "application/pdf" }), {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+    if (pdfErr) {
+      pdfOk = false;
+      console.error("PDF upload failed", pdfErr);
+    }
+  } catch (e) {
+    pdfOk = false;
+    console.error("PDF render failed", e);
+  }
 
   const summary = {
     generated_at: new Date().toISOString(),
     items_total: items.length,
     counted: latest.size,
     mismatched,
+    threshold_breaches: breaches,
     net_variance_value: Number(netValue.toFixed(2)),
     schedule_id: scheduleId,
     kind,
+    overrides_applied: overrideMap.size,
   };
 
-  // Settings
-  const { data: settings } = await supabase
-    .from("inventory_alert_settings")
-    .select(
-      "webhook_url, alert_webhook_enabled, alert_email_enabled, email_recipients",
-    )
-    .limit(1)
-    .maybeSingle();
+  const delivery: any = { csv_path: csvPath, pdf_path: pdfOk ? pdfPath : null };
 
-  const delivery: any = { csv_path: csvPath };
-
-  // Webhook
   if (settings?.alert_webhook_enabled && settings?.webhook_url) {
     delivery.webhook = await postWebhook(settings.webhook_url, {
-      text: `📦 Inventory audit summary — ${mismatched} mismatched item(s), net variance ₵${summary.net_variance_value}`,
+      text: `📦 Audit summary — ${mismatched} mismatched, ${breaches} threshold breaches, net ₵${summary.net_variance_value}`,
       summary,
     });
   }
 
-  // Email
   if (
     settings?.alert_email_enabled &&
     Array.isArray(settings?.email_recipients) &&
     settings.email_recipients.length > 0
   ) {
     const html = `
-      <h2>Inventory Audit Summary</h2>
+      <h2>Inventory Audit Compliance Summary</h2>
       <p>Generated: ${summary.generated_at}</p>
       <ul>
         <li>Total items: ${summary.items_total}</li>
         <li>Counted: ${summary.counted}</li>
         <li><strong>Mismatched: ${mismatched}</strong></li>
+        <li>Threshold breaches: ${breaches}</li>
         <li>Net variance: ₵${summary.net_variance_value}</li>
+        <li>Per-location overrides applied: ${overrideMap.size}</li>
       </ul>
-      <p>Full CSV: <code>${csvPath}</code> (in Reports bucket).</p>
+      <p>CSV: <code>${csvPath}</code>${pdfOk ? ` &middot; PDF: <code>${pdfPath}</code>` : ""}</p>
     `;
     delivery.email = await trySendEmail(
       supabase,
@@ -221,7 +342,6 @@ async function runAuditForSchedule(
     );
   }
 
-  // Insert run record
   const { data: run } = await supabase
     .from("inventory_audit_runs")
     .insert({
@@ -232,24 +352,27 @@ async function runAuditForSchedule(
       net_variance_value: Number(netValue.toFixed(2)),
       summary_json: summary,
       report_csv_path: csvPath,
+      report_pdf_path: pdfOk ? pdfPath : null,
       delivery_status: delivery,
     })
     .select("id")
     .maybeSingle();
 
-  return { ...summary, csvPath, run_id: run?.id, delivery };
+  return { ...summary, csvPath, pdfPath: pdfOk ? pdfPath : null, run_id: run?.id, delivery };
 }
 
 async function dispatchVarianceAlert(supabase: any, payload: any) {
   const { data: settings } = await supabase
     .from("inventory_alert_settings")
-    .select(
-      "webhook_url, alert_webhook_enabled, alert_email_enabled, email_recipients",
-    )
+    .select("webhook_url, alert_webhook_enabled, alert_email_enabled, email_recipients")
     .limit(1)
     .maybeSingle();
 
-  const text = `⚠️ Variance alert: ${payload.item_name} — variance ${payload.variance_qty} ${payload.item_unit} (≈ ₵${payload.variance_value}).`;
+  const locTxt = payload.item_location ? ` [${payload.item_location}]` : "";
+  const thTxt = payload.threshold_qty
+    ? ` (threshold ${payload.threshold_qty}/${payload.threshold_value})`
+    : "";
+  const text = `⚠️ Variance alert: ${payload.item_name}${locTxt} — variance ${payload.variance_qty} ${payload.item_unit} (≈ ₵${payload.variance_value})${thTxt}.`;
   const out: any = {};
 
   if (settings?.alert_webhook_enabled && settings?.webhook_url) {
@@ -272,8 +395,7 @@ async function dispatchVarianceAlert(supabase: any, payload: any) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS")
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { persistSession: false },
@@ -288,7 +410,6 @@ Deno.serve(async (req) => {
     }
     const mode = body?.mode ?? "tick";
 
-    // Variance fan-out from DB trigger
     if (mode === "variance_alert") {
       const result = await dispatchVarianceAlert(supabase, body);
       return new Response(JSON.stringify({ ok: true, result }), {
@@ -296,7 +417,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Manual run (called from UI)
     if (mode === "manual") {
       const result = await runAuditForSchedule(
         supabase,
@@ -309,7 +429,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Default: cron tick — run all due schedules
     const { data: due = [] } = await supabase
       .from("inventory_audit_schedules")
       .select("id, frequency, enabled, next_run_at")
@@ -326,6 +445,7 @@ Deno.serve(async (req) => {
           last_run_at: new Date().toISOString(),
           next_run_at: next,
           last_report_path: r.csvPath,
+          last_report_pdf_path: r.pdfPath,
         })
         .eq("id", s.id);
       results.push({ schedule_id: s.id, ...r, next_run_at: next });
@@ -339,10 +459,7 @@ Deno.serve(async (req) => {
     console.error(e);
     return new Response(
       JSON.stringify({ ok: false, error: e?.message ?? String(e) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
