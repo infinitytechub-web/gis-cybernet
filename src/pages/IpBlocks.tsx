@@ -42,6 +42,21 @@ export default function IpBlocks() {
     },
   });
 
+  const { data: audit = [] } = useQuery({
+    queryKey: ["ip_block_audit"],
+    enabled: isAdmin,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ip_block_audit" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!ip.trim()) throw new Error("IP address is required");
