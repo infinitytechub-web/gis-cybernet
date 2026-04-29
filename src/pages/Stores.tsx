@@ -97,7 +97,9 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const [filterStock, setFilterStock] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "" });
+  const [form, setForm] = useState<any>({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "", photo_url: null, manufacturer: "", model: "", serial_number: "", purchase_date: "", warranty_expires: "" });
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [openItem, setOpenItem] = useState<any>(null);
   const [newCatOpen, setNewCatOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
 
