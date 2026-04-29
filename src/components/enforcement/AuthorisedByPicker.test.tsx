@@ -43,6 +43,14 @@ vi.mock("@/integrations/supabase/client", () => {
       };
       return builder;
     }
+    if (table === "profile_departments") {
+      const builder: any = {
+        select: () => builder,
+        eq: () => Promise.resolve({ data: [], error: null }),
+        in: () => Promise.resolve({ data: [], error: null }),
+      };
+      return builder;
+    }
     return { select: () => ({ then: (r: any) => r({ data: [], error: null }) }) };
   };
 
