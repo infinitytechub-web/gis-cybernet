@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Users, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
+import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 
 import gisLogo from "@/assets/gis-logo.jpeg";
 
@@ -49,6 +50,26 @@ export default function Login() {
         const ipRes = await fetch("https://api.ipify.org?format=json");
         if (ipRes.ok) clientIp = (await ipRes.json())?.ip ?? null;
       } catch { /* ignore network errors */ }
+
+      // Device fingerprint for block check
+      const fingerprint = await getDeviceFingerprint();
+
+      // Block check (IP and/or device fingerprint)
+      if (clientIp || fingerprint) {
+        const { data: blocked } = await supabase.rpc("is_ip_blocked", {
+          _ip: clientIp ?? "",
+          _fingerprint: fingerprint || null,
+        });
+        if (blocked === true) {
+          toast({
+            title: "Access Blocked",
+            description: "This device or network has been temporarily blocked by an administrator.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
 
       // Look up the auth email from the Staff/Admin ID
       const { data: emailData, error: emailErr } = await supabase.rpc("get_email_by_staff_id", { _staff_id: trimmedId });

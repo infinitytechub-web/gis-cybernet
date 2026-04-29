@@ -1820,6 +1820,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_blocks: {
+        Row: {
+          active: boolean
+          blocked_at: string
+          blocked_by: string | null
+          blocked_until: string | null
+          created_at: string
+          device_fingerprint: string | null
+          id: string
+          ip_address: string
+          notes: string | null
+          reason: string
+          unblocked_at: string | null
+          unblocked_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          blocked_at?: string
+          blocked_by?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address: string
+          notes?: string | null
+          reason?: string
+          unblocked_at?: string | null
+          unblocked_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          blocked_at?: string
+          blocked_by?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string
+          notes?: string | null
+          reason?: string
+          unblocked_at?: string | null
+          unblocked_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ipse_sanctions: {
         Row: {
           code: string
@@ -4193,6 +4241,16 @@ export type Database = {
         Args: { _staff_id: string }
         Returns: undefined
       }
+      block_ip: {
+        Args: {
+          _duration_minutes?: number
+          _fingerprint?: string
+          _ip: string
+          _notes?: string
+          _reason?: string
+        }
+        Returns: string
+      }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
       can_shift_connection_action: {
         Args: { _action: string }
@@ -4204,6 +4262,7 @@ export type Database = {
         Returns: undefined
       }
       empty_recycle_bin: { Args: never; Returns: Json }
+      expire_ip_blocks: { Args: never; Returns: number }
       generate_asset_tag: { Args: never; Returns: string }
       get_effective_attendance_window: {
         Args: { _shift_id: string }
@@ -4242,6 +4301,10 @@ export type Database = {
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
       is_frontdesk_realtime_topic: {
         Args: { _topic: string }
+        Returns: boolean
+      }
+      is_ip_blocked: {
+        Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
       }
       is_ipse_tier: { Args: { _user_id: string }; Returns: boolean }
@@ -4336,6 +4399,7 @@ export type Database = {
         }
         Returns: string
       }
+      unblock_ip: { Args: { _block_id: string }; Returns: undefined }
       verify_otp: { Args: { _code: string }; Returns: boolean }
       verify_threshold_audit_chain: {
         Args: never

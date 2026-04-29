@@ -1,0 +1,192 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { ShieldOff, Ban, Clock } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+
+export default function IpBlocks() {
+  const { isAdmin, loading } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const [ip, setIp] = useState("");
+  const [fingerprint, setFingerprint] = useState("");
+  const [duration, setDuration] = useState<number>(60);
+  const [reason, setReason] = useState("Repeated failed login attempts");
+  const [notes, setNotes] = useState("");
+
+  const { data: blocks = [], refetch } = useQuery({
+    queryKey: ["ip_blocks"],
+    enabled: isAdmin,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      // auto-expire on view
+      await supabase.rpc("expire_ip_blocks");
+      const { data, error } = await supabase
+        .from("ip_blocks")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: async () => {
+      if (!ip.trim()) throw new Error("IP address is required");
+      const { error } = await supabase.rpc("block_ip", {
+        _ip: ip.trim(),
+        _fingerprint: fingerprint.trim() || null,
+        _duration_minutes: duration > 0 ? duration : null,
+        _reason: reason || "Manual block",
+        _notes: notes || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "IP blocked", description: ip });
+      setIp(""); setFingerprint(""); setNotes("");
+      qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+    },
+    onError: (e: any) => toast({ title: "Block failed", description: e.message, variant: "destructive" }),
+  });
+
+  const unblockMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("unblock_ip", { _block_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Unblocked" });
+      qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+    },
+    onError: (e: any) => toast({ title: "Unblock failed", description: e.message, variant: "destructive" }),
+  });
+
+  if (loading) return <div className="p-6">Loading…</div>;
+  if (!isAdmin) return <Navigate to="/" replace />;
+
+  const isActive = (b: any) =>
+    b.active && (!b.blocked_until || new Date(b.blocked_until) > new Date());
+
+  return (
+    <div className="container py-6 space-y-6">
+      <div className="flex items-center gap-2">
+        <Ban className="h-6 w-6 text-destructive" />
+        <h1 className="text-2xl font-bold">IP & Device Blocks</h1>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Block an IP / Device</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>IP Address *</Label>
+            <Input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="e.g. 41.66.10.22" />
+          </div>
+          <div className="space-y-2">
+            <Label>Device Fingerprint (optional)</Label>
+            <Input value={fingerprint} onChange={(e) => setFingerprint(e.target.value)} placeholder="SHA-256 hash" />
+          </div>
+          <div className="space-y-2">
+            <Label>Duration (minutes, 0 = permanent)</Label>
+            <Input type="number" min={0} value={duration} onChange={(e) => setDuration(parseInt(e.target.value || "0", 10))} />
+          </div>
+          <div className="space-y-2">
+            <Label>Reason</Label>
+            <Input value={reason} onChange={(e) => setReason(e.target.value)} />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Notes</Label>
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+          <div className="md:col-span-2">
+            <Button onClick={() => blockMutation.mutate()} disabled={blockMutation.isPending || !ip.trim()}>
+              <Ban className="h-4 w-4 mr-2" /> Block
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-base">Block list ({blocks.length})</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Refresh</Button>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div style={{ minWidth: 700 }}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Status</TableHead>
+                <TableHead>IP</TableHead>
+                <TableHead>Fingerprint</TableHead>
+                <TableHead>Reason</TableHead>
+                <TableHead>Blocked</TableHead>
+                <TableHead>Unblock at</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {blocks.map((b: any) => {
+                const active = isActive(b);
+                return (
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      {active ? (
+                        <Badge variant="destructive">Active</Badge>
+                      ) : (
+                        <Badge variant="secondary">Inactive</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{b.ip_address}</TableCell>
+                    <TableCell className="font-mono text-xs max-w-[140px] truncate" title={b.device_fingerprint || ""}>
+                      {b.device_fingerprint || "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">{b.reason}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(b.blocked_at), { addSuffix: true })}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {b.blocked_until ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(b.blocked_until).toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Permanent</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {active && (
+                        <Button size="sm" variant="outline" onClick={() => unblockMutation.mutate(b.id)}>
+                          <ShieldOff className="h-4 w-4 mr-1" /> Unblock
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {blocks.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No blocks yet.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

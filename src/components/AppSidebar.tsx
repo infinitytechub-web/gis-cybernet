@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,6 +46,7 @@ const workforceItems = [
 const staffApprovalsItem = { title: "Staff Approvals", url: "/staff-approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" };
 const shiftWindowAuditItem = { title: "Shift Rules Audit", url: "/shift-window-audit", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
 const sensitiveAccessLogItem = { title: "Sensitive Access Log", url: "/sensitive-access-log", icon: ScrollText, iconColor: "text-rose-700 dark:text-rose-300" };
+const ipBlocksItem = { title: "IP & Device Blocks", url: "/ip-blocks", icon: Ban, iconColor: "text-destructive" };
 
 const immigrationItems = [
   { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400", badge: "frontdesk" as const },
@@ -268,9 +269,11 @@ export function AppSidebar() {
         {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "staff_officer") &&
           renderGroup(
             "Administration",
-            (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer")
-              ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
-              : adminItems,
+            (role === "admin")
+              ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem, ipBlocksItem]
+              : (role === "oic" || role === "2ic" || role === "staff_officer")
+                ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
+                : adminItems,
           )}
       </SidebarContent>
 
