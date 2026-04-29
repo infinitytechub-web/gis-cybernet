@@ -113,7 +113,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   });
 
   const filtered = useMemo(() => items.filter((i: any) => {
-    if (search && !`${i.name} ${i.sku || ""}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !`${i.name} ${i.sku || ""} ${i.asset_tag || ""}`.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCat !== "all" && i.category_id !== filterCat) return false;
     if (filterStock === "low" && Number(i.qty_on_hand) > Number(i.min_stock)) return false;
     if (filterStock === "out" && Number(i.qty_on_hand) > 0) return false;
