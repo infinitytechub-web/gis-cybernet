@@ -69,6 +69,7 @@ export function LeaveApprovalQueue() {
     },
     onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["approval-audit"] });
       // Send notification to the staff member
       if (selectedRequest) {
         const userId = await getUserIdFromProfileId(selectedRequest.profile_id);
