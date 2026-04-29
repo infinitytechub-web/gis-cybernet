@@ -298,14 +298,16 @@ export function StoresReportsTab() {
               </CardTitle>
               <CardDescription>Identify how much value sits in damaged, fair, or unspecified stock.</CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Stock Valuation by Condition",
-                filename: `stock-valuation-condition-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Condition", "Value (₵)"],
-                rows: valuation.byCondition.map((r) => [r.name, r.value.toFixed(2)]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Stock Valuation by Condition",
+                  filename: `stock-valuation-condition-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Condition", "Value (₵)"],
+                  rows: valuation.byCondition.map((r) => [r.name, r.value.toFixed(2)]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-4">
