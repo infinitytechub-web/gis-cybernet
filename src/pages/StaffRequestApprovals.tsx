@@ -380,6 +380,8 @@ export default function StaffRequestApprovals() {
               {shiftRows.map((r) => (
                 <RequestCard
                   key={r.id}
+                  kind="shift_change"
+                  requestId={r.id}
                   status={r.status}
                   who={staffName(r.profiles)}
                   staffId={r.profiles?.staff_id ?? null}
@@ -387,12 +389,8 @@ export default function StaffRequestApprovals() {
                   reason={r.reason}
                   reviewComment={r.review_comment}
                   createdAt={r.created_at}
-                  onApprove={() =>
-                    setReview({ open: true, action: "approve", req: { kind: "shift", ...r }, comment: "" })
-                  }
-                  onReject={() =>
-                    setReview({ open: true, action: "reject", req: { kind: "shift", ...r }, comment: "" })
-                  }
+                  onApprove={() => openReview("approve", { kind: "shift", ...r })}
+                  onReject={() => openReview("reject", { kind: "shift", ...r })}
                   details={
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <div>Type: <span className="font-medium capitalize text-foreground">{r.request_type}</span></div>
@@ -421,6 +419,8 @@ export default function StaffRequestApprovals() {
               {attRows.map((r) => (
                 <RequestCard
                   key={r.id}
+                  kind="attendance_edit"
+                  requestId={r.id}
                   status={r.status}
                   who={staffName(r.profiles)}
                   staffId={r.profiles?.staff_id ?? null}
@@ -428,12 +428,8 @@ export default function StaffRequestApprovals() {
                   reason={r.reason}
                   reviewComment={r.review_comment}
                   createdAt={r.created_at}
-                  onApprove={() =>
-                    setReview({ open: true, action: "approve", req: { kind: "attendance", ...r }, comment: "" })
-                  }
-                  onReject={() =>
-                    setReview({ open: true, action: "reject", req: { kind: "attendance", ...r }, comment: "" })
-                  }
+                  onApprove={() => openReview("approve", { kind: "attendance", ...r })}
+                  onReject={() => openReview("reject", { kind: "attendance", ...r })}
                   details={
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <div>Field: <span className="font-medium capitalize text-foreground">{r.field.replace("_","-")}</span></div>
