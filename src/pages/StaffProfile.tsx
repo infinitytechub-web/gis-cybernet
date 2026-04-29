@@ -13,7 +13,7 @@ import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
 
