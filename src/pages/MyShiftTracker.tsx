@@ -30,6 +30,7 @@ import {
   LogIn,
   LogOut,
   Filter,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { ShiftChangeRequestPanel } from "@/components/shifts/ShiftChangeRequestPanel";
 import { cn } from "@/lib/utils";
 
 type Profile = {
