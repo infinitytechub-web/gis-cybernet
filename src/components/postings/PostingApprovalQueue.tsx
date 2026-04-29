@@ -187,6 +187,10 @@ export function PostingApprovalQueue() {
                 <Label>Admin Comments</Label>
                 <Textarea value={comments} onChange={(e) => setComments(e.target.value)} rows={2} placeholder="Add comments..." />
               </div>
+              <div className="border-t pt-3">
+                <h4 className="text-sm font-semibold mb-1">Approval History</h4>
+                <ApprovalAuditTrail entityType="posting_transfer" entityId={selectedRecord.id} />
+              </div>
               <div className="flex gap-2">
                 <Button className="flex-1 gap-1" onClick={() => approveMutation.mutate({ id: selectedRecord.id, action: "approved" })} disabled={approveMutation.isPending}>
                   <CheckCircle2 className="h-4 w-4" /> Approve
