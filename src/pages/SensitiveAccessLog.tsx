@@ -99,6 +99,35 @@ export default function SensitiveAccessLog() {
                 <SelectItem value="view_detail">View detail</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              disabled={filtered.length === 0}
+              onClick={() => {
+                const esc = (v: any) => {
+                  const s = v === null || v === undefined ? "" : String(v);
+                  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                };
+                const headers = ["When", "User", "User ID", "Table", "Action", "Records", "Reason", "Filters"];
+                const lines = [headers.join(",")];
+                for (const r of filtered) {
+                  lines.push([
+                    format(new Date(r.created_at), "yyyy-MM-dd HH:mm:ss"),
+                    r.accessed_by_name ?? "",
+                    r.accessed_by ?? "",
+                    r.table_name,
+                    r.action,
+                    r.record_count ?? "",
+                    r.reason ?? "",
+                    r.filters ? JSON.stringify(r.filters) : "",
+                  ].map(esc).join(","));
+                }
+                downloadCSVString(lines.join("\n"), `sensitive-access-log-${format(new Date(), "yyyyMMdd-HHmm")}.csv`);
+              }}
+            >
+              <Download className="h-4 w-4 mr-1" /> Export CSV
+            </Button>
           </div>
 
           <div className="overflow-x-auto rounded-md border">
