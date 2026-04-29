@@ -467,10 +467,103 @@ export default function MyShiftTracker() {
               live={!!todayAtt?.check_in && !todayAtt?.check_out}
             />
           </div>
+
+          {/* Quick check-in / check-out */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {!todayAtt?.check_in ? (
+              <Button
+                onClick={() => checkInMutation.mutate()}
+                disabled={checkInMutation.isPending || !profile?.id}
+                className="gap-2"
+                size="sm"
+              >
+                <LogIn className="h-4 w-4" />
+                {checkInMutation.isPending ? "Checking in..." : "Check in now"}
+              </Button>
+            ) : !todayAtt?.check_out ? (
+              <Button
+                onClick={() => checkOutMutation.mutate()}
+                disabled={checkOutMutation.isPending}
+                variant="destructive"
+                className="gap-2"
+                size="sm"
+              >
+                <LogOut className="h-4 w-4" />
+                {checkOutMutation.isPending ? "Checking out..." : "Check out now"}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 text-emerald-600 text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="font-medium">Today's attendance completed</span>
+              </div>
+            )}
+            {!todayShift && !todayAtt?.check_in && (
+              <span className="text-xs text-muted-foreground">
+                No shift assigned for today — check-in still allowed if you are on duty.
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Calendar */}
+      {/* Export filtered monthly summary */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Filter className="h-4 w-4 text-primary" />
+            Export monthly summary
+          </CardTitle>
+          <CardDescription>
+            Download your {metrics.monthName} shift &amp; attendance summary as CSV or PDF with the filters below applied.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Scope</Label>
+              <Select value={exportScope} onValueChange={(v) => setExportScope(v as typeof exportScope)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All days</SelectItem>
+                  <SelectItem value="scheduled">Scheduled only</SelectItem>
+                  <SelectItem value="worked">Worked (checked in)</SelectItem>
+                  <SelectItem value="missed">Missed (scheduled, not in)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Attendance status</Label>
+              <Select value={exportStatus} onValueChange={(v) => setExportStatus(v as typeof exportStatus)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any status</SelectItem>
+                  <SelectItem value="present">Present</SelectItem>
+                  <SelectItem value="late">Late</SelectItem>
+                  <SelectItem value="absent">Absent</SelectItem>
+                  <SelectItem value="excused">Excused</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Period</Label>
+              <div className="h-9 px-3 rounded-md border bg-muted/30 flex items-center text-sm font-mono">
+                {format(monthStart, "dd MMM")} – {format(monthEnd, "dd MMM yyyy")}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <Badge variant="secondary" className="font-normal">
+              {exportRows.length} record{exportRows.length === 1 ? "" : "s"} match
+            </Badge>
+            <ExportMenu
+              label="Download summary"
+              formats={["pdf", "csv"]}
+              getData={buildExportPayload}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
