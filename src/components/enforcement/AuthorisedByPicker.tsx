@@ -65,7 +65,7 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
   });
 
   // Server-side search against user_roles → profiles, scoped to OIC / 2IC
-  const { data: officers = [], isFetching } = useQuery({
+  const { data: officers = [], isFetching, isLoading, isError, error: queryError, refetch } = useQuery({
     queryKey: ["authorising-officers", debounced],
     enabled: open,
     queryFn: async () => {
