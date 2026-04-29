@@ -92,6 +92,7 @@ function App() {
           <Route path="/staff-approvals" element={<ProtectedRoute><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
           <Route path="/shift-window-audit" element={<ProtectedRoute><Layout><ShiftWindowAudit /></Layout></ProtectedRoute>} />
           <Route path="/sensitive-access-log" element={<ProtectedRoute><Layout><SensitiveAccessLog /></Layout></ProtectedRoute>} />
+          <Route path="/ip-blocks" element={<ProtectedRoute><Layout><IpBlocks /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute><Layout><Holidays /></Layout></ProtectedRoute>} />
           <Route path="/postings" element={<ProtectedRoute><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />
