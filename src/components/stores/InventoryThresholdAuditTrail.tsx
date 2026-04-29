@@ -177,6 +177,15 @@ export function InventoryThresholdAuditTrail() {
                       {e.new_values.webhook_enabled ? " · webhook on" : ""}
                     </div>
                   )}
+                  {e.entry_hash && (
+                    <div
+                      className="font-mono text-[10px] text-muted-foreground/80 break-all"
+                      title={`prev: ${e.prev_hash ?? "(genesis)"}\nhash: ${e.entry_hash}`}
+                    >
+                      <ShieldCheck className="inline h-3 w-3 mr-1 text-emerald-600" />
+                      sha256: {e.entry_hash.slice(0, 16)}…{e.entry_hash.slice(-8)}
+                    </div>
+                  )}
                 </div>
               );
             })}
