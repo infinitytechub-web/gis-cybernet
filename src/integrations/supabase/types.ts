@@ -1014,6 +1014,45 @@ export type Database = {
           },
         ]
       }
+      enforcement_field_audit: {
+        Row: {
+          action: string
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       enforcement_operations: {
         Row: {
           arrests_count: number
