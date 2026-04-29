@@ -19,7 +19,17 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { Coins, AlertTriangle, Users, Package } from "lucide-react";
+import { Coins, AlertTriangle, Users, Package, Wrench, FileBarChart } from "lucide-react";
+import { InventoryAuditReport } from "./InventoryAuditReport";
+import { exportReport } from "@/lib/export-utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
