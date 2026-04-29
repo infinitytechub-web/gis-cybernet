@@ -26,6 +26,7 @@ import GenderStatisticsWidget from "@/components/dashboard/GenderStatisticsWidge
 import LowStockWidget from "@/components/dashboard/LowStockWidget";
 import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget";
 import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget";
+import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -258,6 +259,9 @@ export default function Dashboard() {
       {/* Announcements */}
       <AnnouncementsBanner />
 
+
+      {/* Live GPS Map — Admin / OIC / 2IC / Staff Officer (Head of Admin & Chief Staff Officer) */}
+      <LiveGpsMapWidget />
 
       {/* Daily Occurrences - visible to all users */}
       <DailyOccurrencesWidget />
