@@ -330,7 +330,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
       </Card>
       )}
 
-      <ItemDetailDrawer item={openItem} open={!!openItem} onOpenChange={(o) => !o && setOpenItem(null)} />
+      <ItemDetailDrawer item={openItem} onOpenChange={(o) => !o && setOpenItem(null)} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
