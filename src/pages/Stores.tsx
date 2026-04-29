@@ -74,6 +74,7 @@ export default function Stores() {
           <TabsTrigger value="suppliers" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><Truck className="h-4 w-4 mr-1 text-indigo-700 dark:text-indigo-400" />Suppliers</TabsTrigger>
           <TabsTrigger value="categories" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"><Tag className="h-4 w-4 mr-1 text-violet-700 dark:text-violet-400" />Categories</TabsTrigger>
           <TabsTrigger value="analytics" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Analytics</TabsTrigger>
+          <TabsTrigger value="reports" className="data-[state=active]:bg-emerald-700 data-[state=active]:text-white"><FileBarChart className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items"><ItemsTab canManage={canManage} userId={user?.id} /></TabsContent>
@@ -82,6 +83,7 @@ export default function Stores() {
         <TabsContent value="suppliers"><SuppliersTab canManage={canManage} /></TabsContent>
         <TabsContent value="categories"><CategoriesTab canManage={canManage} /></TabsContent>
         <TabsContent value="analytics"><AnalyticsTab /></TabsContent>
+        <TabsContent value="reports"><StoresReportsTab /></TabsContent>
       </Tabs>
     </div>
   );
