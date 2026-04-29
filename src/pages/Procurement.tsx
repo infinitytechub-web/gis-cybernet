@@ -201,6 +201,7 @@ export default function Procurement() {
             <TabsTrigger value="contracts" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><FileSignature className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Contracts</TabsTrigger>
             <TabsTrigger value="vendors" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Briefcase className="h-4 w-4 mr-1 text-cyan-700 dark:text-cyan-400" />Vendors</TabsTrigger>
             <TabsTrigger value="documents" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><Package className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Document Vault</TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white"><FileBarChart className="h-4 w-4 mr-1 text-rose-700 dark:text-rose-400" />Reports</TabsTrigger>
           </TabsList>
         </ScrollArea>
 
