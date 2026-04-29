@@ -549,10 +549,29 @@ export default function MyShiftTracker() {
               </span>
             )}
           </div>
+
+          {/* Punctuality alert for today */}
+          {todayPunctuality && todayPunctuality.kind !== "ontime" && (
+            <div
+              className={cn(
+                "mt-3 flex items-start gap-2 rounded-md border p-2.5 text-xs",
+                todayPunctuality.kind === "late" && "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
+                todayPunctuality.kind === "early" && "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                todayPunctuality.kind === "outside" && "border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-300",
+              )}
+            >
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-semibold">Check-in {todayPunctuality.kind} the assigned shift window</div>
+                <div className="opacity-90">
+                  {todayPunctuality.label} · scheduled {todayShift?.start_time?.slice(0,5)}–{todayShift?.end_time?.slice(0,5)}
+                  {todayAtt?.check_in ? `, you checked in at ${format(parseISO(todayAtt.check_in), "HH:mm")}` : ""}.
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Export filtered monthly summary */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
