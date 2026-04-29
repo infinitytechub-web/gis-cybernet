@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Search, ShieldCheck, X } from "lucide-react";
+import { Loader2, Search, ShieldCheck, X } from "lucide-react";
 
 interface Props {
   value: string | null;          // profile.id
@@ -23,18 +23,67 @@ type AuthProfile = {
 /**
  * Picker for the OIC or 2IC who authorised a record. Lists only profiles
  * whose linked user holds the `oic` or `2ic` role.
+ *
+ * Server-side search (debounced) keeps the result-set small even as the
+ * directory grows. A Clear button is always visible in edit mode so an
+ * existing authoriser can be removed without re-opening the dialog.
  */
 export function AuthorisedByPicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
 
-  const { data: officers = [] } = useQuery({
-    queryKey: ["authorising-officers"],
+  // Debounce the search input (250ms) to avoid hammering the database
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search.trim()), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Resolve the currently-selected officer label (independent of the search list)
+  const { data: selected } = useQuery({
+    queryKey: ["authorising-officer-selected", value],
+    enabled: !!value,
     queryFn: async () => {
       const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, ranks(abbreviation), departments(name), user_roles(role)")
+        .eq("id", value!)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+      const role = (data as any).user_roles?.find((r: any) => r.role === "oic" || r.role === "2ic")?.role
+        ?? (data as any).user_roles?.[0]?.role ?? "";
+      return {
+        id: data.id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        ranks: (data as any).ranks,
+        departments: (data as any).departments,
+        role,
+      } as AuthProfile;
+    },
+  });
+
+  // Server-side search against user_roles → profiles, scoped to OIC / 2IC
+  const { data: officers = [], isFetching } = useQuery({
+    queryKey: ["authorising-officers", debounced],
+    enabled: open,
+    queryFn: async () => {
+      let query = supabase
         .from("user_roles")
         .select("role, user_id, profiles!inner(id, first_name, last_name, ranks(abbreviation), departments(name))")
-        .in("role", ["oic", "2ic"]);
+        .in("role", ["oic", "2ic"])
+        .limit(50);
+
+      if (debounced) {
+        const term = `%${debounced}%`;
+        query = query.or(
+          `first_name.ilike.${term},last_name.ilike.${term}`,
+          { foreignTable: "profiles" },
+        );
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return ((data ?? []) as any[]).map((r) => ({
         id: r.profiles.id,
@@ -47,65 +96,87 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     },
   });
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return officers;
-    return officers.filter((o) => {
-      const blob = `${o.first_name} ${o.last_name} ${o.ranks?.abbreviation ?? ""} ${o.departments?.name ?? ""} ${o.role}`.toLowerCase();
-      return blob.includes(q);
-    });
-  }, [officers, search]);
-
-  const selected = officers.find((o) => o.id === value);
   const selectedLabel = selected
-    ? `${selected.ranks?.abbreviation ? selected.ranks.abbreviation + " " : ""}${selected.first_name} ${selected.last_name} (${selected.role.toUpperCase()})`
+    ? `${selected.ranks?.abbreviation ? selected.ranks.abbreviation + " " : ""}${selected.first_name} ${selected.last_name}${selected.role ? ` (${selected.role.toUpperCase()})` : ""}`
     : "";
 
+  const isEditMode = !!value;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="w-full justify-start">
-          <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
-          {selected ? selectedLabel : "Select OIC / 2IC..."}
-          {selected && (
-            <X
-              className="h-4 w-4 ml-auto text-muted-foreground hover:text-destructive"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(null, null); }}
-            />
-          )}
+    <div className="flex items-center gap-2">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" className="flex-1 justify-start">
+            <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+            {value ? (selectedLabel || "Loading...") : "Select OIC / 2IC..."}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" /> Authorised By (OIC / 2IC)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by first or last name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 pr-9"
+                autoFocus
+              />
+              {isFetching && (
+                <Loader2 className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
+              )}
+            </div>
+            {isEditMode && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => { onChange(null, null); setOpen(false); }}
+              >
+                <X className="h-4 w-4 mr-2" /> Clear current authoriser
+              </Button>
+            )}
+            <div className="max-h-[320px] overflow-y-auto border rounded-md divide-y">
+              {officers.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground text-center">
+                  {isFetching ? "Searching..." : "No matching OIC / 2IC found."}
+                </div>
+              ) : officers.map((o) => {
+                const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
+                return (
+                  <button
+                    key={o.id + o.role}
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between"
+                    onClick={() => { onChange(o.id, label); setOpen(false); }}
+                  >
+                    <span>{label}<span className="text-xs text-muted-foreground"> — {o.departments?.name ?? "—"}</span></span>
+                    <span className="text-[10px] uppercase font-mono text-primary">{o.role}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {isEditMode && (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          title="Clear authoriser"
+          onClick={() => onChange(null, null)}
+        >
+          <X className="h-4 w-4 text-destructive" />
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" /> Authorised By (OIC / 2IC)
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2">
-          <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search by name, rank or department..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" autoFocus />
-          </div>
-          <div className="max-h-[320px] overflow-y-auto border rounded-md divide-y">
-            {filtered.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground text-center">No matching OIC / 2IC found.</div>
-            ) : filtered.map((o) => {
-              const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
-              return (
-                <button
-                  key={o.id + o.role}
-                  type="button"
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between"
-                  onClick={() => { onChange(o.id, label); setOpen(false); }}
-                >
-                  <span>{label}<span className="text-xs text-muted-foreground"> — {o.departments?.name ?? "—"}</span></span>
-                  <span className="text-[10px] uppercase font-mono text-primary">{o.role}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    </div>
   );
 }
