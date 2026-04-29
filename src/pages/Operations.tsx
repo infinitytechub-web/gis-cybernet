@@ -309,6 +309,21 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
         <Label>Notes</Label>
         <Textarea placeholder="Additional notes..." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
       </div>
+      <div className="space-y-2">
+        <Label>Suspect Mugshot Photo</Label>
+        <MugshotUpload
+          value={form.mugshot_path}
+          onChange={(path) => setForm(p => ({ ...p, mugshot_path: path }))}
+          folder="operations"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Authorised By (OIC / 2IC) *</Label>
+        <AuthorisedByPicker
+          value={form.authorized_by}
+          onChange={(id) => setForm(p => ({ ...p, authorized_by: id }))}
+        />
+      </div>
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isPending}>{isPending ? "Saving…" : submitLabel}</Button>
