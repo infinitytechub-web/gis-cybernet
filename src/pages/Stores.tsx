@@ -196,6 +196,17 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   return (
     <div className="space-y-3">
       {/* Low Stock Summary Banner */}
+  return (
+    <div className="space-y-3">
+      {/* KPI Tiles */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3 flex items-center gap-3"><Boxes className="h-8 w-8 text-amber-600" /><div><div className="text-xs text-muted-foreground">Total Items</div><div className="text-xl font-bold">{totalItems}</div></div></CardContent></Card>
+        <Card><CardContent className="p-3 flex items-center gap-3"><Coins className="h-8 w-8 text-emerald-600" /><div><div className="text-xs text-muted-foreground">Stock Value</div><div className="text-xl font-bold">₵{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></div></CardContent></Card>
+        <Card className={lowStockCount ? "border-amber-300" : ""}><CardContent className="p-3 flex items-center gap-3"><TrendingDown className="h-8 w-8 text-amber-600" /><div><div className="text-xs text-muted-foreground">Low Stock</div><div className="text-xl font-bold text-amber-700">{lowStockCount}</div></div></CardContent></Card>
+        <Card className={outOfStockCount ? "border-destructive/40" : ""}><CardContent className="p-3 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-destructive" /><div><div className="text-xs text-muted-foreground">Out of Stock</div><div className="text-xl font-bold text-destructive">{outOfStockCount}</div></div></CardContent></Card>
+      </div>
+
+      {/* Low Stock Summary Banner */}
       {(lowStockCount > 0 || outOfStockCount > 0) && (
         <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
           <CardContent className="p-3 flex items-center gap-3 flex-wrap">
@@ -209,7 +220,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Input placeholder="Search name or SKU…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+        <Input placeholder="Search name, SKU or asset tag…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
         <Select value={filterCat} onValueChange={setFilterCat}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All categories</SelectItem>{cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
@@ -218,11 +229,16 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All stock</SelectItem><SelectItem value="low">Low stock</SelectItem><SelectItem value="out">Out of stock</SelectItem></SelectContent>
         </Select>
+        <AssetScanner onScan={handleScan} />
+        <div className="inline-flex rounded-md border overflow-hidden">
+          <Button variant={view === "grid" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setView("grid")}><LayoutGrid className="h-4 w-4" /></Button>
+          <Button variant={view === "list" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setView("list")}><List className="h-4 w-4" /></Button>
+        </div>
         <ExportMenu getData={() => ({
           title: "Inventory Items",
           filename: `inventory-items-${format(new Date(), "yyyy-MM-dd")}`,
-          headers: ["Name", "SKU", "Category", "Unit", "Qty on hand", "Min stock", "Location", "Condition"],
-          rows: filtered.map((i: any) => [i.name, i.sku || "-", i.inventory_categories?.name || "-", i.unit, String(i.qty_on_hand), String(i.min_stock), i.location || "-", i.condition || "-"]),
+          headers: ["Name", "Asset Tag", "SKU", "Category", "Unit", "Qty on hand", "Min stock", "Location", "Condition"],
+          rows: filtered.map((i: any) => [i.name, i.asset_tag || "-", i.sku || "-", i.inventory_categories?.name || "-", i.unit, String(i.qty_on_hand), String(i.min_stock), i.location || "-", i.condition || "-"]),
         })} />
         {canManage && <Button onClick={() => open()} className="ml-auto gap-1"><Plus className="h-4 w-4" />Add Item</Button>}
       </div>
