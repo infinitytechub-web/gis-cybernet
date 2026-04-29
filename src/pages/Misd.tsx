@@ -54,7 +54,7 @@ const INDICATOR_TYPES = ["ip", "domain", "email", "url", "hash", "phone", "accou
 const NAVY_PALETTE = ["#0B2447", "#19376D", "#1E3A8A", "#0E7490", "#22D3EE", "#67E8F9", "#A5F3FC", "#CFFAFE"];
 
 const MisdBadge = () => (
-  <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900 text-[9px] px-1.5 py-0 h-4 font-bold tracking-wider">MISD</Badge>
+  <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900 text-[10px] px-1.5 py-0 h-4 font-bold tracking-wider">MISD</Badge>
 );
 
 export default function Misd() {
