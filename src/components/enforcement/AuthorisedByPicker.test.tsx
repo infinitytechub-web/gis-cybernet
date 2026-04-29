@@ -235,4 +235,38 @@ describe("AuthorisedByPicker — empty results & errors", () => {
 
     errSpy.mockRestore();
   });
+
+  it("shows a distinct offline message with Try again, and keeps Arrow/Enter/Escape safe", async () => {
+    // Force navigator.onLine = false BEFORE rendering so initial state picks it up
+    const onlineSpy = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    // The query may still resolve successfully — the offline branch is rendered
+    // regardless of fetch state because connectivity is what we care about here.
+    mockState.searchResult = { data: null, error: { message: "network down" } };
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const user = userEvent.setup();
+    const { onChange } = renderPicker();
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/you appear to be offline/i)).toBeInTheDocument(),
+    );
+    // Distinct from the generic error copy
+    expect(screen.queryByText(/couldn't load officers/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+
+    // Keyboard nav stays safe with no items
+    await user.keyboard("{ArrowDown}{ArrowUp}{Enter}");
+    expect(onChange).not.toHaveBeenCalled();
+
+    // Escape still closes cleanly
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.queryByText(/you appear to be offline/i)).not.toBeInTheDocument(),
+    );
+
+    onlineSpy.mockRestore();
+    errSpy.mockRestore();
+  });
 });
