@@ -14,12 +14,15 @@ const officers = [
   { id: "p3", first_name: "Yaw",  last_name: "Owusu",   ranks: { abbreviation: "CI"  }, departments: { name: "OPS"  } },
 ];
 
-vi.mock("@/integrations/supabase/client", () => {
-  const buildSearchResult = () => ({
-    data: officers.map((p) => ({ role: "oic", user_id: `u-${p.id}`, profiles: p })),
-    error: null,
-  });
+// Each test can override what the search query returns.
+type MockResult = { data: any[] | null; error: { message: string } | null };
+const defaultResult: MockResult = {
+  data: officers.map((p) => ({ role: "oic", user_id: `u-${p.id}`, profiles: p })),
+  error: null,
+};
+const mockState: { searchResult: MockResult } = { searchResult: defaultResult };
 
+vi.mock("@/integrations/supabase/client", () => {
   const fromImpl = (table: string) => {
     if (table === "user_roles") {
       const builder: any = {
@@ -27,8 +30,7 @@ vi.mock("@/integrations/supabase/client", () => {
         in: () => builder,
         limit: () => builder,
         or: () => builder,
-        // Awaiting the builder resolves to the result
-        then: (resolve: any) => resolve(buildSearchResult()),
+        then: (resolve: any) => resolve(mockState.searchResult),
       };
       return builder;
     }
@@ -66,7 +68,10 @@ const openDialog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe("AuthorisedByPicker — keyboard navigation", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.searchResult = defaultResult;
+  });
 
   it("highlights the first option when the dialog opens", async () => {
     const user = userEvent.setup();
@@ -128,5 +133,83 @@ describe("AuthorisedByPicker — keyboard navigation", () => {
       expect(screen.queryByRole("option")).not.toBeInTheDocument();
     });
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("AuthorisedByPicker — empty results & errors", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.searchResult = defaultResult;
+  });
+
+  const openEmptyDialog = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+    // Wait for the empty-state copy
+    await waitFor(() =>
+      expect(screen.getByText(/no matching oic \/ 2ic found/i)).toBeInTheDocument(),
+    );
+  };
+
+  it("renders the empty-state when no officers are returned", async () => {
+    mockState.searchResult = { data: [], error: null };
+    const user = userEvent.setup();
+    renderPicker();
+    await openEmptyDialog(user);
+
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
+  });
+
+  it("ignores ArrowDown / Enter when the result list is empty (no crash, no selection)", async () => {
+    mockState.searchResult = { data: [], error: null };
+    const user = userEvent.setup();
+    const { onChange } = renderPicker();
+    await openEmptyDialog(user);
+
+    // These keystrokes should be safe no-ops
+    await user.keyboard("{ArrowDown}{ArrowDown}{ArrowUp}{Enter}");
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText(/no matching oic \/ 2ic found/i)).toBeInTheDocument();
+  });
+
+  it("Escape still closes the dialog when the list is empty", async () => {
+    mockState.searchResult = { data: [], error: null };
+    const user = userEvent.setup();
+    const { onChange } = renderPicker();
+    await openEmptyDialog(user);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(screen.queryByText(/no matching oic \/ 2ic found/i)).not.toBeInTheDocument(),
+    );
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("treats a Supabase query error as an empty list and keeps Escape working", async () => {
+    // React Query throws when the queryFn rejects; the picker treats absence of data as empty.
+    mockState.searchResult = { data: null, error: { message: "boom" } };
+    // Silence the expected console.error from React Query's failed fetch
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const user = userEvent.setup();
+    const { onChange } = renderPicker();
+
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/no matching oic \/ 2ic found/i)).toBeInTheDocument(),
+    );
+
+    // Keyboard navigation should not throw with no items
+    await user.keyboard("{ArrowDown}{Enter}");
+    expect(onChange).not.toHaveBeenCalled();
+
+    // Escape closes cleanly
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.queryByText(/no matching oic \/ 2ic found/i)).not.toBeInTheDocument(),
+    );
+
+    errSpy.mockRestore();
   });
 });
