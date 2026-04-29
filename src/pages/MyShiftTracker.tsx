@@ -30,6 +30,7 @@ import {
   LogIn,
   LogOut,
   Filter,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { ShiftChangeRequestPanel } from "@/components/shifts/ShiftChangeRequestPanel";
 import { cn } from "@/lib/utils";
 
 type Profile = {
@@ -103,6 +105,34 @@ function fmtMinutes(mins: number) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return `${h}h ${m}m`;
+}
+
+const GRACE_MIN = 5; // tolerance window in minutes either side of scheduled start
+type Punctuality = {
+  kind: "early" | "ontime" | "late" | "outside";
+  diffMin: number;
+  label: string;
+};
+function computePunctuality(checkInIso: string, dateKey: string, shift: { start_time: string | null; end_time: string | null } | undefined | null): Punctuality | null {
+  if (!shift?.start_time || !shift?.end_time) return null;
+  const start = new Date(`${dateKey}T${shift.start_time}`);
+  // If end < start, shift crosses midnight
+  let end = new Date(`${dateKey}T${shift.end_time}`);
+  if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+  const checkIn = new Date(checkInIso);
+  const diffMs = checkIn.getTime() - start.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  // Outside window entirely (more than 4h before shift start, or after shift end)
+  if (diffMin < -240 || checkIn > end) {
+    return { kind: "outside", diffMin, label: `Outside shift window (${fmtMinutes(Math.abs(diffMin))} ${diffMin < 0 ? "before start" : "after end"})` };
+  }
+  if (diffMin < -GRACE_MIN) {
+    return { kind: "early", diffMin, label: `Early by ${fmtMinutes(Math.abs(diffMin))}` };
+  }
+  if (diffMin > GRACE_MIN) {
+    return { kind: "late", diffMin, label: `Late by ${fmtMinutes(diffMin)}` };
+  }
+  return { kind: "ontime", diffMin, label: "On time" };
 }
 
 export default function MyShiftTracker() {
@@ -186,9 +216,9 @@ export default function MyShiftTracker() {
     };
   }, [profile?.id, queryClient]);
 
-  // Map date -> assignment(s) and attendance
+  // Map date -> assignment(s) and attendance + punctuality alert
   const dateMap = useMemo(() => {
-    const m = new Map<string, { assignments: Assignment[]; attendance?: Attendance }>();
+    const m = new Map<string, { assignments: Assignment[]; attendance?: Attendance; punctuality?: Punctuality | null }>();
     days.forEach((d) => {
       const key = format(d, "yyyy-MM-dd");
       const dayAssign = assignments.filter((a) => {
@@ -197,7 +227,9 @@ export default function MyShiftTracker() {
         return key >= s && key <= e;
       });
       const att = attendances.find((x) => x.date === key);
-      m.set(key, { assignments: dayAssign, attendance: att });
+      const shift = dayAssign[0]?.shifts ?? null;
+      const punctuality = att?.check_in ? computePunctuality(att.check_in, key, shift) : null;
+      m.set(key, { assignments: dayAssign, attendance: att, punctuality });
     });
     return m;
   }, [days, assignments, attendances]);
@@ -247,6 +279,20 @@ export default function MyShiftTracker() {
   const todayEntry = dateMap.get(format(now, "yyyy-MM-dd"));
   const todayShift = todayEntry?.assignments[0]?.shifts;
   const todayAtt = todayEntry?.attendance;
+  const todayPunctuality = todayEntry?.punctuality ?? null;
+
+  // List of all shifts for the change/override request form
+  const { data: allShifts = [] } = useQuery({
+    queryKey: ["my-shift-tracker", "all-shifts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id, name, start_time, end_time")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; start_time: string | null; end_time: string | null }[];
+    },
+  });
 
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
@@ -503,10 +549,29 @@ export default function MyShiftTracker() {
               </span>
             )}
           </div>
+
+          {/* Punctuality alert for today */}
+          {todayPunctuality && todayPunctuality.kind !== "ontime" && (
+            <div
+              className={cn(
+                "mt-3 flex items-start gap-2 rounded-md border p-2.5 text-xs",
+                todayPunctuality.kind === "late" && "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
+                todayPunctuality.kind === "early" && "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+                todayPunctuality.kind === "outside" && "border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-300",
+              )}
+            >
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-semibold">Check-in {todayPunctuality.kind} the assigned shift window</div>
+                <div className="opacity-90">
+                  {todayPunctuality.label} · scheduled {todayShift?.start_time?.slice(0,5)}–{todayShift?.end_time?.slice(0,5)}
+                  {todayAtt?.check_in ? `, you checked in at ${format(parseISO(todayAtt.check_in), "HH:mm")}` : ""}.
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Export filtered monthly summary */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -634,31 +699,52 @@ export default function MyShiftTracker() {
                           workedMins = metrics.liveMinutes;
                         }
 
+                        const punc = entry?.punctuality;
+                        const puncRing =
+                          punc?.kind === "late" ? "ring-1 ring-red-500/70" :
+                          punc?.kind === "early" ? "ring-1 ring-amber-500/70" :
+                          punc?.kind === "outside" ? "ring-1 ring-purple-500/70" : "";
+
                         return (
                           <div
                             key={key}
+                            title={punc ? `${punc.label}` : undefined}
                             className={cn(
                               "relative h-20 rounded-md border p-1.5 text-xs flex flex-col transition-colors",
                               inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
                               today && "ring-2 ring-primary",
-                              checkedIn && !today && "ring-1 ring-emerald-500/60",
+                              !today && checkedIn && !punc && "ring-1 ring-emerald-500/60",
+                              !today && puncRing,
                             )}
                           >
                             <div className="flex items-center justify-between">
                               <span className={cn("font-semibold", today && "text-primary")}>{format(d, "d")}</span>
-                              {hasShift && (
-                                <span
-                                  className={cn(
-                                    "h-2 w-2 rounded-full",
-                                    profile?.shift_group === "A" && "bg-emerald-500",
-                                    profile?.shift_group === "B" && "bg-sky-500",
-                                    profile?.shift_group === "C" && "bg-amber-500",
-                                    profile?.shift_group === "D" && "bg-violet-500",
-                                    !profile?.shift_group && "bg-primary",
-                                  )}
-                                  aria-label="Scheduled"
-                                />
-                              )}
+                              <div className="flex items-center gap-1">
+                                {punc && punc.kind !== "ontime" && (
+                                  <AlertTriangle
+                                    className={cn(
+                                      "h-3 w-3",
+                                      punc.kind === "late" && "text-red-500",
+                                      punc.kind === "early" && "text-amber-500",
+                                      punc.kind === "outside" && "text-purple-500",
+                                    )}
+                                    aria-label={punc.label}
+                                  />
+                                )}
+                                {hasShift && (
+                                  <span
+                                    className={cn(
+                                      "h-2 w-2 rounded-full",
+                                      profile?.shift_group === "A" && "bg-emerald-500",
+                                      profile?.shift_group === "B" && "bg-sky-500",
+                                      profile?.shift_group === "C" && "bg-amber-500",
+                                      profile?.shift_group === "D" && "bg-violet-500",
+                                      !profile?.shift_group && "bg-primary",
+                                    )}
+                                    aria-label="Scheduled"
+                                  />
+                                )}
+                              </div>
                             </div>
                             {hasShift && (
                               <div className="mt-1 truncate text-[10px] text-muted-foreground">
@@ -695,9 +781,29 @@ export default function MyShiftTracker() {
             <span className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
             </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-red-500" /> Late
+            </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-amber-500" /> Early
+            </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-purple-500" /> Outside window
+            </span>
           </div>
         </CardContent>
       </Card>
+
+      {/* Shift change / override requests */}
+      {profile?.id && user?.id && (
+        <ShiftChangeRequestPanel
+          profileId={profile.id}
+          userId={user.id}
+          shifts={allShifts}
+          defaultDate={new Date()}
+          defaultCurrentShiftId={todayEntry?.assignments[0]?.shift_id ?? null}
+        />
+      )}
     </div>
   );
 }

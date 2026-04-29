@@ -3427,6 +3427,85 @@ export type Database = {
           },
         ]
       }
+      shift_change_requests: {
+        Row: {
+          affected_date: string
+          created_at: string
+          current_shift_id: string | null
+          id: string
+          profile_id: string
+          reason: string
+          request_type: string
+          requested_by: string
+          requested_end_time: string | null
+          requested_shift_id: string | null
+          requested_start_time: string | null
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          affected_date: string
+          created_at?: string
+          current_shift_id?: string | null
+          id?: string
+          profile_id: string
+          reason: string
+          request_type: string
+          requested_by: string
+          requested_end_time?: string | null
+          requested_shift_id?: string | null
+          requested_start_time?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          affected_date?: string
+          created_at?: string
+          current_shift_id?: string | null
+          id?: string
+          profile_id?: string
+          reason?: string
+          request_type?: string
+          requested_by?: string
+          requested_end_time?: string | null
+          requested_shift_id?: string | null
+          requested_start_time?: string | null
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_change_requests_current_shift_id_fkey"
+            columns: ["current_shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_requested_shift_id_fkey"
+            columns: ["requested_shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_connection_permissions: {
         Row: {
           action: string
