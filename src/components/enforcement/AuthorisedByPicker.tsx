@@ -102,6 +102,39 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
 
   const isEditMode = !!value;
 
+  // Keyboard navigation state for the results list
+  const [highlight, setHighlight] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setHighlight(0); }, [debounced, officers.length]);
+
+  useEffect(() => {
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-idx="${highlight}"]`);
+    el?.scrollIntoView({ block: "nearest" });
+  }, [highlight]);
+
+  const commitSelection = (o: AuthProfile) => {
+    const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
+    onChange(o.id, label);
+    setOpen(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (officers.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlight((h) => (h + 1) % officers.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => (h - 1 + officers.length) % officers.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const target = officers[highlight];
+      if (target) commitSelection(target);
+    }
+    // Escape is handled natively by Radix Dialog
+  };
+
   return (
     <div className="flex items-center gap-2">
       <Dialog open={open} onOpenChange={setOpen}>
@@ -111,7 +144,7 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
             {value ? (selectedLabel || "Loading...") : "Select OIC / 2IC..."}
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" onKeyDown={handleKeyDown}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" /> Authorised By (OIC / 2IC)
@@ -126,6 +159,8 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 pr-9"
                 autoFocus
+                aria-activedescendant={officers[highlight] ? `auth-opt-${highlight}` : undefined}
+                aria-controls="auth-results-list"
               />
               {isFetching && (
                 <Loader2 className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
@@ -142,19 +177,30 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
                 <X className="h-4 w-4 mr-2" /> Clear current authoriser
               </Button>
             )}
-            <div className="max-h-[320px] overflow-y-auto border rounded-md divide-y">
+            <div
+              id="auth-results-list"
+              ref={listRef}
+              role="listbox"
+              className="max-h-[320px] overflow-y-auto border rounded-md divide-y"
+            >
               {officers.length === 0 ? (
                 <div className="p-4 text-sm text-muted-foreground text-center">
                   {isFetching ? "Searching..." : "No matching OIC / 2IC found."}
                 </div>
-              ) : officers.map((o) => {
+              ) : officers.map((o, idx) => {
                 const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
+                const active = idx === highlight;
                 return (
                   <button
                     key={o.id + o.role}
+                    id={`auth-opt-${idx}`}
+                    data-idx={idx}
                     type="button"
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between"
-                    onClick={() => { onChange(o.id, label); setOpen(false); }}
+                    role="option"
+                    aria-selected={active}
+                    className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between ${active ? "bg-accent" : "hover:bg-accent"}`}
+                    onMouseEnter={() => setHighlight(idx)}
+                    onClick={() => commitSelection(o)}
                   >
                     <span>{label}<span className="text-xs text-muted-foreground"> — {o.departments?.name ?? "—"}</span></span>
                     <span className="text-[10px] uppercase font-mono text-primary">{o.role}</span>
