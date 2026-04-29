@@ -282,7 +282,7 @@ function KpiCard({ title, value, icon: Icon, variant }: { title: string; value: 
   return (
     <Card className={`border-2 ${styles}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-medium opacity-80">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-4 w-4" />
       </CardHeader>
       <CardContent className="px-3 pb-3"><div className="text-2xl font-bold">{value}</div></CardContent>
