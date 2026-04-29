@@ -503,6 +503,9 @@ export function StoresReportsTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Inventory audit */}
+      <InventoryAuditReport />
     </div>
   );
 }
