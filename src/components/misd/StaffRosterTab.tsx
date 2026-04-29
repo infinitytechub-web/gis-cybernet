@@ -262,7 +262,7 @@ export function StaffRosterTab() {
                         </TableCell>
                         <TableCell>
                           <div className="font-medium text-sm">{a.profiles?.first_name} {a.profiles?.last_name}</div>
-                          <div className="text-[11px] text-muted-foreground">{a.profiles?.staff_id || "—"}</div>
+                          <div className="text-xs text-muted-foreground">{a.profiles?.staff_id || "—"}</div>
                         </TableCell>
                         <TableCell className="text-xs">{a.profiles?.ranks?.name || "—"}</TableCell>
                         <TableCell className="text-xs">{a.unit_name}</TableCell>
@@ -314,7 +314,7 @@ export function StaffRosterTab() {
             </Table>
           </div>
 
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Showing {filtered.length} of {assignments.length} assignments
           </p>
         </CardContent>
@@ -494,7 +494,7 @@ function ReassignDialog({
               </SelectContent>
             </Select>
             {alreadyInTarget && (
-              <p className="text-[11px] text-destructive mt-1">Staff is already in this unit.</p>
+              <p className="text-xs text-destructive mt-1">Staff is already in this unit.</p>
             )}
           </div>
 

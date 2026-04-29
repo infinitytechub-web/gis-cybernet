@@ -54,7 +54,7 @@ const INDICATOR_TYPES = ["ip", "domain", "email", "url", "hash", "phone", "accou
 const NAVY_PALETTE = ["#0B2447", "#19376D", "#1E3A8A", "#0E7490", "#22D3EE", "#67E8F9", "#A5F3FC", "#CFFAFE"];
 
 const MisdBadge = () => (
-  <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900 text-[9px] px-1.5 py-0 h-4 font-bold tracking-wider">MISD</Badge>
+  <Badge className="bg-blue-900 text-cyan-200 hover:bg-blue-900 text-[10px] px-1.5 py-0 h-4 font-bold tracking-wider">MISD</Badge>
 );
 
 export default function Misd() {
@@ -282,7 +282,7 @@ function KpiCard({ title, value, icon: Icon, variant }: { title: string; value: 
   return (
     <Card className={`border-2 ${styles}`}>
       <CardHeader className="flex flex-row items-center justify-between pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-medium opacity-80">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <Icon className="h-4 w-4" />
       </CardHeader>
       <CardContent className="px-3 pb-3"><div className="text-2xl font-bold">{value}</div></CardContent>

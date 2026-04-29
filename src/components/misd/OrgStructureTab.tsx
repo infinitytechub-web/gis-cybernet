@@ -255,7 +255,7 @@ export function OrgStructureTab() {
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={analytics.byUnit}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={9} interval={0} angle={-15} textAnchor="end" height={50} />
+                <XAxis dataKey="name" fontSize={10} interval={0} angle={-15} textAnchor="end" height={50} />
                 <YAxis fontSize={10} allowDecimals={false} />
                 <Tooltip />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
@@ -275,11 +275,11 @@ export function OrgStructureTab() {
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={analytics.byUnit.filter((d) => d.value > 0)} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} fontSize={9}>
+                <Pie data={analytics.byUnit.filter((d) => d.value > 0)} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} fontSize={10}>
                   {analytics.byUnit.map((_, i) => <Cell key={i} fill={NAVY_PALETTE[i % NAVY_PALETTE.length]} />)}
                 </Pie>
                 <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 9 }} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -330,7 +330,7 @@ export function OrgStructureTab() {
                           <span className={r.lead ? "font-semibold text-blue-900 dark:text-blue-200" : ""}>{r.title}</span>
                         </span>
                         {r.lead && (
-                          <Badge variant="outline" className="text-[9px] h-4 border-cyan-500 text-cyan-700 dark:text-cyan-300">Unit Lead</Badge>
+                          <Badge variant="outline" className="text-[10px] h-4 border-cyan-500 text-cyan-700 dark:text-cyan-300">Unit Lead</Badge>
                         )}
                       </li>
                     ))}
@@ -348,7 +348,7 @@ export function OrgStructureTab() {
                     )}
                   </div>
                   {unitAssigned.length === 0 ? (
-                    <p className="text-[11px] text-muted-foreground italic px-2 py-1.5">No staff assigned yet.</p>
+                    <p className="text-xs text-muted-foreground italic px-2 py-1.5">No staff assigned yet.</p>
                   ) : (
                     <ul className="space-y-1 max-h-44 overflow-y-auto pr-1">
                       {unitAssigned.map((a: any) => (
