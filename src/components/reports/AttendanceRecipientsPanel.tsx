@@ -24,13 +24,12 @@ export default function AttendanceRecipientsPanel() {
   const { data: recipients = [], isLoading } = useQuery({
     queryKey: ["attendance-recipients"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance_report_recipients")
-        .select("*")
-        .order("period")
-        .order("email");
+      // Logged read — every access is recorded in sensitive_table_access_log
+      const { data, error } = await supabase.rpc("read_attendance_report_recipients" as any, {
+        _reason: "panel_view",
+      });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as any[];
     },
   });
 
