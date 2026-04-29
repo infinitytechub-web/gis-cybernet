@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
 import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
 import { GhanaGPSInput, canonicalizeGpsLocation, isValidGpsLocation } from "@/components/shared/GhanaGPSInput";
+import { MugshotUpload } from "@/components/enforcement/MugshotUpload";
+import { AuthorisedByPicker } from "@/components/enforcement/AuthorisedByPicker";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -130,6 +132,8 @@ const INITIAL_FORM = {
   notes: "",
   officer_in_charge: "" as string,
   contact_details: "",
+  mugshot_path: null as string | null,
+  authorized_by: null as string | null,
 };
 
 // GhanaGPSButton was inlined here; the shared GhanaGPSInput component
@@ -305,6 +309,21 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
         <Label>Notes</Label>
         <Textarea placeholder="Additional notes..." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
       </div>
+      <div className="space-y-2">
+        <Label>Suspect Mugshot Photo</Label>
+        <MugshotUpload
+          value={form.mugshot_path}
+          onChange={(path) => setForm(p => ({ ...p, mugshot_path: path }))}
+          folder="operations"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Authorised By (OIC / 2IC) *</Label>
+        <AuthorisedByPicker
+          value={form.authorized_by}
+          onChange={(id) => setForm(p => ({ ...p, authorized_by: id }))}
+        />
+      </div>
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit" disabled={isPending}>{isPending ? "Saving…" : submitLabel}</Button>
@@ -373,6 +392,9 @@ export default function Operations() {
       if (!isValidGpsLocation(canonicalLocation)) {
         throw new Error("Invalid GPS digital address. Use format XX-###-#### e.g. GA-123-4567");
       }
+      if (!values.authorized_by) {
+        throw new Error("Please select the authorising OIC or 2IC.");
+      }
       const { error } = await supabase.from("operations").insert({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
@@ -387,6 +409,8 @@ export default function Operations() {
         reported_by: user?.id ?? "",
         officer_in_charge: values.officer_in_charge || null,
         contact_details: values.contact_details || null,
+        mugshot_path: values.mugshot_path,
+        authorized_by: values.authorized_by,
       });
       if (error) throw error;
     },
@@ -405,6 +429,9 @@ export default function Operations() {
       if (!isValidGpsLocation(canonicalLocation)) {
         throw new Error("Invalid GPS digital address. Use format XX-###-#### e.g. GA-123-4567");
       }
+      if (!values.authorized_by) {
+        throw new Error("Please select the authorising OIC or 2IC.");
+      }
       const { error } = await supabase.from("operations").update({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
@@ -418,6 +445,8 @@ export default function Operations() {
         notes: values.notes || null,
         officer_in_charge: values.officer_in_charge || null,
         contact_details: values.contact_details || null,
+        mugshot_path: values.mugshot_path,
+        authorized_by: values.authorized_by,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -445,6 +474,8 @@ export default function Operations() {
       notes: op.notes || "",
       officer_in_charge: op.officer_in_charge || "",
       contact_details: op.contact_details || "",
+      mugshot_path: (op as any).mugshot_path ?? null,
+      authorized_by: (op as any).authorized_by ?? null,
     });
   }, []);
 
