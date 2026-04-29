@@ -15,6 +15,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import { ClipboardCheck, AlertTriangle, Plus, CheckCircle2, MinusCircle, PlusCircle } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { InventoryAlertSettings } from "./InventoryAlertSettings";
 
 export function InventoryAuditReport() {
   const { user, role } = useAuth();
