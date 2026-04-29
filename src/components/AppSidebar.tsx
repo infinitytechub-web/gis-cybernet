@@ -264,7 +264,13 @@ export function AppSidebar() {
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", commandVaultItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
-        {(role === "admin" || role === "supervisor") && renderGroup("Administration", adminItems)}
+        {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "staff_officer") &&
+          renderGroup(
+            "Administration",
+            (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer")
+              ? [...adminItems, shiftWindowAuditItem]
+              : adminItems,
+          )}
       </SidebarContent>
 
       <SidebarFooter className="p-4">
