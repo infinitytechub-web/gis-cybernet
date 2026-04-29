@@ -24,6 +24,7 @@ export function InventoryAuditScheduler() {
   const { role } = useAuth();
   const qc = useQueryClient();
   const canManage = ["admin", "oic", "2ic", "storekeeper"].includes(role || "");
+  const canDownload = ["admin", "oic", "2ic", "storekeeper", "procurement_officer"].includes(role || "");
   const [newFreq, setNewFreq] = useState<Freq>("daily");
 
   const { data: schedules = [] } = useQuery({
@@ -114,6 +115,10 @@ export function InventoryAuditScheduler() {
   };
 
   const downloadReport = async (path: string) => {
+    if (!canDownload) {
+      toast.error("You don't have permission to download compliance reports.");
+      return;
+    }
     try {
       const { data, error } = await supabase.storage
         .from("reports")
