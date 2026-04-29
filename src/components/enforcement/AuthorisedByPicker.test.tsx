@@ -270,3 +270,62 @@ describe("AuthorisedByPicker — empty results & errors", () => {
     errSpy.mockRestore();
   });
 });
+
+describe("AuthorisedByPicker — accessibility announcements", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.searchResult = defaultResult;
+  });
+
+  it("announces the error state assertively with a distinct Retry label", async () => {
+    mockState.searchResult = { data: null, error: { message: "boom" } };
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveAttribute("aria-live", "assertive");
+    expect(alert).toHaveAttribute("aria-atomic", "true");
+    expect(alert).toHaveTextContent(/couldn't load officers/i);
+
+    // Distinct, descriptive button label (not just the visible "Retry" text)
+    expect(
+      screen.getByRole("button", { name: /retry loading officers/i }),
+    ).toBeInTheDocument();
+
+    errSpy.mockRestore();
+  });
+
+  it("announces the offline state politely with a distinct Try-again label", async () => {
+    const onlineSpy = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    mockState.searchResult = { data: [], error: null };
+
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+
+    const status = await screen.findByRole("status");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveAttribute("aria-atomic", "true");
+    expect(status).toHaveTextContent(/you appear to be offline/i);
+
+    expect(
+      screen.getByRole("button", { name: /try again to load officers \(offline\)/i }),
+    ).toBeInTheDocument();
+
+    onlineSpy.mockRestore();
+  });
+
+  it("the listbox carries an aria-label and toggles aria-busy while fetching", async () => {
+    const user = userEvent.setup();
+    renderPicker();
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+
+    const listbox = await screen.findByRole("listbox");
+    expect(listbox).toHaveAttribute("aria-label", "OIC and 2IC officers");
+    // After data has loaded, aria-busy should settle to "false"
+    await waitFor(() => expect(listbox).toHaveAttribute("aria-busy", "false"));
+  });
+});
