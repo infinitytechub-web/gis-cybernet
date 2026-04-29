@@ -25,6 +25,7 @@ import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
 import GenderStatisticsWidget from "@/components/dashboard/GenderStatisticsWidget";
 import LowStockWidget from "@/components/dashboard/LowStockWidget";
 import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget";
+import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -309,6 +310,9 @@ export default function Dashboard() {
 
       {/* Low Stock Alerts */}
       <LowStockWidget />
+
+      {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
+      {isAdmin && <SecurityThreatsWidget />}
 
       {/* System Health Widget */}
       {systemHealth && (

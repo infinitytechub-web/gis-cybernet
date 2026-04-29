@@ -4188,6 +4188,7 @@ export type Database = {
           unit: string
         }[]
       }
+      get_security_threat_summary: { Args: never; Returns: Json }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
