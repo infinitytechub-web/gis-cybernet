@@ -73,6 +73,7 @@ export default function IpBlocks() {
       toast({ title: "IP blocked", description: ip });
       setIp(""); setFingerprint(""); setNotes("");
       qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+      qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
     onError: (e: any) => toast({ title: "Block failed", description: e.message, variant: "destructive" }),
   });
