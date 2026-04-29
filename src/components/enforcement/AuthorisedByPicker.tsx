@@ -196,12 +196,19 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
               id="auth-results-list"
               ref={listRef}
               role="listbox"
+              aria-label="OIC and 2IC officers"
+              aria-busy={isFetching || isLoading}
               className="max-h-[320px] overflow-y-auto border rounded-md divide-y"
             >
               {!isOnline ? (
-                <div className="p-4 text-sm text-center space-y-3" role="alert" aria-live="polite">
+                <div
+                  className="p-4 text-sm text-center space-y-3"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
                   <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
-                    <WifiOff className="h-4 w-4" />
+                    <WifiOff className="h-4 w-4" aria-hidden="true" />
                     <span>You appear to be offline.</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -213,18 +220,24 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
                     size="sm"
                     onClick={() => { void refetch(); }}
                     disabled={isFetching}
+                    aria-label={isFetching ? "Retrying offline connection" : "Try again to load officers (offline)"}
                   >
                     {isFetching ? (
-                      <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Retrying...</>
+                      <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" /> Retrying…</>
                     ) : (
-                      <><RefreshCw className="h-3.5 w-3.5 mr-2" /> Try again</>
+                      <><RefreshCw className="h-3.5 w-3.5 mr-2" aria-hidden="true" /> Try again</>
                     )}
                   </Button>
                 </div>
               ) : isError ? (
-                <div className="p-4 text-sm text-center space-y-3" role="alert" aria-live="polite">
+                <div
+                  className="p-4 text-sm text-center space-y-3"
+                  role="alert"
+                  aria-live="assertive"
+                  aria-atomic="true"
+                >
                   <div className="flex items-center justify-center gap-2 text-destructive">
-                    <AlertCircle className="h-4 w-4" />
+                    <AlertCircle className="h-4 w-4" aria-hidden="true" />
                     <span>Couldn't load officers.</span>
                   </div>
                   {queryError instanceof Error && queryError.message && (
@@ -236,20 +249,34 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
                     size="sm"
                     onClick={() => { void refetch(); }}
                     disabled={isFetching}
+                    aria-label={isFetching ? "Retrying officer search" : "Retry loading officers"}
                   >
                     {isFetching ? (
-                      <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Retrying...</>
+                      <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" aria-hidden="true" /> Retrying…</>
                     ) : (
-                      <><RefreshCw className="h-3.5 w-3.5 mr-2" /> Retry</>
+                      <><RefreshCw className="h-3.5 w-3.5 mr-2" aria-hidden="true" /> Retry</>
                     )}
                   </Button>
                 </div>
               ) : isLoading || (isFetching && officers.length === 0) ? (
-                <div className="p-6 flex items-center justify-center gap-2 text-sm text-muted-foreground" aria-live="polite">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading officers...
+                <div
+                  className="p-6 flex items-center justify-center gap-2 text-sm text-muted-foreground"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <span>Loading officers…</span>
                 </div>
               ) : officers.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">No matching OIC / 2IC found.</div>
+                <div
+                  className="p-4 text-sm text-muted-foreground text-center"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  No matching OIC / 2IC found.
+                </div>
               ) : officers.map((o, idx) => {
                 const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
                 const active = idx === highlight;
