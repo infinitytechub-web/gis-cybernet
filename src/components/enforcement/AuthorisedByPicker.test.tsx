@@ -186,10 +186,8 @@ describe("AuthorisedByPicker — empty results & errors", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("treats a Supabase query error as an empty list and keeps Escape working", async () => {
-    // React Query throws when the queryFn rejects; the picker treats absence of data as empty.
+  it("shows an error state with a Retry button when the query fails, and keeps Arrow/Enter/Escape safe", async () => {
     mockState.searchResult = { data: null, error: { message: "boom" } };
-    // Silence the expected console.error from React Query's failed fetch
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const user = userEvent.setup();
@@ -197,18 +195,43 @@ describe("AuthorisedByPicker — empty results & errors", () => {
 
     await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
     await waitFor(() =>
-      expect(screen.getByText(/no matching oic \/ 2ic found/i)).toBeInTheDocument(),
+      expect(screen.getByText(/couldn't load officers/i)).toBeInTheDocument(),
     );
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+    expect(screen.queryAllByRole("option")).toHaveLength(0);
 
-    // Keyboard navigation should not throw with no items
+    // Keyboard nav stays safe with no items
     await user.keyboard("{ArrowDown}{Enter}");
     expect(onChange).not.toHaveBeenCalled();
 
-    // Escape closes cleanly
+    // Escape still closes cleanly
     await user.keyboard("{Escape}");
     await waitFor(() =>
-      expect(screen.queryByText(/no matching oic \/ 2ic found/i)).not.toBeInTheDocument(),
+      expect(screen.queryByText(/couldn't load officers/i)).not.toBeInTheDocument(),
     );
+
+    errSpy.mockRestore();
+  });
+
+  it("Retry recovers the list when the query starts succeeding", async () => {
+    mockState.searchResult = { data: null, error: { message: "boom" } };
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const user = userEvent.setup();
+    renderPicker();
+
+    await user.click(screen.getByRole("button", { name: /select oic \/ 2ic/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/couldn't load officers/i)).toBeInTheDocument(),
+    );
+
+    // Heal the data source, then click Retry
+    mockState.searchResult = defaultResult;
+    await user.click(screen.getByRole("button", { name: /retry/i }));
+
+    await waitFor(() => expect(screen.getByText(/Ama Mensah/)).toBeInTheDocument());
+    expect(screen.queryByText(/couldn't load officers/i)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
 
     errSpy.mockRestore();
   });
