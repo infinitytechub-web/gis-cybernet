@@ -286,6 +286,16 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                 >
                   <QrCode className="h-3.5 w-3.5" /> Download QR
                 </Button>
+                <Button
+                  size="sm"
+                  variant={inQueue ? "secondary" : "outline"}
+                  className="gap-1.5"
+                  disabled={!item.asset_tag}
+                  onClick={addToQueue}
+                >
+                  {inQueue ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                  {inQueue ? "Remove from queue" : "Add to print queue"}
+                </Button>
                 {out ? (
                   <Badge variant="destructive" className="gap-1">
                     <AlertTriangle className="h-3 w-3" /> Out of stock
