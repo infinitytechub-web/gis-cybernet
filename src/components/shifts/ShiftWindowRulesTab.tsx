@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Sliders, Save, RotateCcw, Sun, Moon, Globe2 } from "lucide-react";
+import { Sliders, Save, RotateCcw, Sun, Moon, Globe2, Plus, Trash2, CalendarRange } from "lucide-react";
 
 type Shift = {
   id: string;
@@ -34,6 +34,8 @@ type Override = {
   late_checkout_minutes: number | null;
   enforce_window: boolean | null;
   notes: string | null;
+  effective_from: string | null;
+  effective_to: string | null;
 };
 
 const DEFAULTS: GlobalSettings = {
@@ -111,15 +113,20 @@ export default function ShiftWindowRulesTab({ shifts }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shift_attendance_window_overrides")
-        .select("id, shift_id, grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window, notes");
+        .select("id, shift_id, grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window, notes, effective_from, effective_to")
+        .order("effective_from", { ascending: true, nullsFirst: true });
       if (error) throw error;
       return (data ?? []) as Override[];
     },
   });
 
-  const overrideByShift = useMemo(() => {
-    const m = new Map<string, Override>();
-    overrides.forEach((o) => m.set(o.shift_id, o));
+  const overridesByShift = useMemo(() => {
+    const m = new Map<string, Override[]>();
+    overrides.forEach((o) => {
+      const arr = m.get(o.shift_id) ?? [];
+      arr.push(o);
+      m.set(o.shift_id, arr);
+    });
     return m;
   }, [overrides]);
 
@@ -191,7 +198,7 @@ export default function ShiftWindowRulesTab({ shifts }: Props) {
             Per-shift overrides
           </CardTitle>
           <CardDescription>
-            Customise grace and check-in/out windows per shift type (e.g. day vs night). Leave a field blank to inherit the global value.
+            Customise grace and check-in/out windows per shift, optionally scoped to a date range. Overlapping ranges for the same shift are blocked — resolve the existing rule before saving a new one.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -200,12 +207,12 @@ export default function ShiftWindowRulesTab({ shifts }: Props) {
           ) : shifts.length === 0 ? (
             <div className="text-sm text-muted-foreground">No shifts defined yet.</div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {shifts.map((s) => (
-                <ShiftOverrideRow
+                <ShiftOverridesGroup
                   key={s.id}
                   shift={s}
-                  override={overrideByShift.get(s.id)}
+                  rules={overridesByShift.get(s.id) ?? []}
                   global={g}
                   onSaved={() => queryClient.invalidateQueries({ queryKey: ["shift-window-overrides"] })}
                 />
@@ -241,85 +248,38 @@ function NumberField({
   );
 }
 
-function ShiftOverrideRow({
+function ShiftOverridesGroup({
   shift,
-  override,
+  rules,
   global,
   onSaved,
 }: {
   shift: Shift;
-  override: Override | undefined;
+  rules: Override[];
   global: GlobalSettings;
   onSaved: () => void;
 }) {
   const night = isNightShift(shift);
-  const [grace, setGrace] = useState<string>(override?.grace_minutes?.toString() ?? "");
-  const [early, setEarly] = useState<string>(override?.early_checkin_minutes?.toString() ?? "");
-  const [late, setLate] = useState<string>(override?.late_checkout_minutes?.toString() ?? "");
-  const [enforce, setEnforce] = useState<"inherit" | "on" | "off">(
-    override?.enforce_window === null || override?.enforce_window === undefined
-      ? "inherit"
-      : override.enforce_window
-        ? "on"
-        : "off",
-  );
-  const [notes, setNotes] = useState<string>(override?.notes ?? "");
+  const [drafts, setDrafts] = useState<Override[]>([]);
 
-  useEffect(() => {
-    setGrace(override?.grace_minutes?.toString() ?? "");
-    setEarly(override?.early_checkin_minutes?.toString() ?? "");
-    setLate(override?.late_checkout_minutes?.toString() ?? "");
-    setEnforce(
-      override?.enforce_window === null || override?.enforce_window === undefined
-        ? "inherit"
-        : override.enforce_window
-          ? "on"
-          : "off",
-    );
-    setNotes(override?.notes ?? "");
-  }, [override?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const parse = (s: string) => (s.trim() === "" ? null : Math.max(0, Math.min(480, parseInt(s, 10) || 0)));
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const payload = {
+  const addDraft = () => {
+    setDrafts((d) => [
+      ...d,
+      {
         shift_id: shift.id,
-        grace_minutes: parse(grace),
-        early_checkin_minutes: parse(early),
-        late_checkout_minutes: parse(late),
-        enforce_window: enforce === "inherit" ? null : enforce === "on",
-        notes: notes.trim() || null,
-      };
-      const { error } = await supabase
-        .from("shift_attendance_window_overrides")
-        .upsert(payload, { onConflict: "shift_id" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success(`Override saved for ${shift.name}`);
-      onSaved();
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Save failed"),
-  });
+        grace_minutes: null,
+        early_checkin_minutes: null,
+        late_checkout_minutes: null,
+        enforce_window: null,
+        notes: null,
+        effective_from: null,
+        effective_to: null,
+      },
+    ]);
+  };
 
-  const reset = useMutation({
-    mutationFn: async () => {
-      if (!override?.id) return;
-      const { error } = await supabase
-        .from("shift_attendance_window_overrides")
-        .delete()
-        .eq("id", override.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success(`Reset ${shift.name} to global rules`);
-      onSaved();
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Reset failed"),
-  });
-
-  const hasOverride = !!override?.id;
+  const dismissDraft = (idx: number) =>
+    setDrafts((d) => d.filter((_, i) => i !== idx));
 
   return (
     <div className="rounded-md border p-3 space-y-3">
@@ -338,44 +298,175 @@ function ShiftOverrideRow({
             </div>
           </div>
         </div>
-        <Badge variant={hasOverride ? "default" : "outline"} className="text-[10px]">
-          {hasOverride ? "Custom rule" : "Inherits global"}
+        <Badge variant={rules.length > 0 ? "default" : "outline"} className="text-[10px]">
+          {rules.length === 0 ? "Inherits global" : `${rules.length} custom rule${rules.length > 1 ? "s" : ""}`}
         </Badge>
+      </div>
+
+      {rules.length === 0 && drafts.length === 0 && (
+        <div className="text-xs text-muted-foreground">No custom rules. Click "Add rule" to create a date-scoped or always-on override.</div>
+      )}
+
+      <div className="space-y-3">
+        {rules.map((r) => (
+          <ShiftOverrideRule
+            key={r.id}
+            shift={shift}
+            rule={r}
+            global={global}
+            onSaved={onSaved}
+          />
+        ))}
+        {drafts.map((d, i) => (
+          <ShiftOverrideRule
+            key={`draft-${i}`}
+            shift={shift}
+            rule={d}
+            global={global}
+            isDraft
+            onCancel={() => dismissDraft(i)}
+            onSaved={() => {
+              dismissDraft(i);
+              onSaved();
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={addDraft} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Add rule
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ShiftOverrideRule({
+  shift,
+  rule,
+  global,
+  onSaved,
+  onCancel,
+  isDraft = false,
+}: {
+  shift: Shift;
+  rule: Override;
+  global: GlobalSettings;
+  onSaved: () => void;
+  onCancel?: () => void;
+  isDraft?: boolean;
+}) {
+  const [grace, setGrace] = useState<string>(rule.grace_minutes?.toString() ?? "");
+  const [early, setEarly] = useState<string>(rule.early_checkin_minutes?.toString() ?? "");
+  const [late, setLate] = useState<string>(rule.late_checkout_minutes?.toString() ?? "");
+  const [enforce, setEnforce] = useState<"inherit" | "on" | "off">(
+    rule.enforce_window === null || rule.enforce_window === undefined
+      ? "inherit"
+      : rule.enforce_window
+        ? "on"
+        : "off",
+  );
+  const [notes, setNotes] = useState<string>(rule.notes ?? "");
+  const [from, setFrom] = useState<string>(rule.effective_from ?? "");
+  const [to, setTo] = useState<string>(rule.effective_to ?? "");
+
+  const parse = (s: string) => (s.trim() === "" ? null : Math.max(0, Math.min(480, parseInt(s, 10) || 0)));
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (from && to && from > to) {
+        throw new Error("Effective from cannot be after effective to.");
+      }
+      const payload = {
+        shift_id: shift.id,
+        grace_minutes: parse(grace),
+        early_checkin_minutes: parse(early),
+        late_checkout_minutes: parse(late),
+        enforce_window: enforce === "inherit" ? null : enforce === "on",
+        notes: notes.trim() || null,
+        effective_from: from || null,
+        effective_to: to || null,
+      };
+      if (rule.id) {
+        const { error } = await supabase
+          .from("shift_attendance_window_overrides")
+          .update(payload)
+          .eq("id", rule.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("shift_attendance_window_overrides")
+          .insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(`Rule saved for ${shift.name}`);
+      onSaved();
+    },
+    onError: (e: any) => {
+      const msg = e?.message ?? "Save failed";
+      // Surface the trigger's friendly overlap message verbatim
+      toast.error(msg.includes("Overlapping") ? msg : msg);
+    },
+  });
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      if (!rule.id) return;
+      const { error } = await supabase
+        .from("shift_attendance_window_overrides")
+        .delete()
+        .eq("id", rule.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Rule deleted");
+      onSaved();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
+  });
+
+  return (
+    <div className="rounded-md border bg-muted/20 p-3 space-y-3">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <CalendarRange className="h-3.5 w-3.5" />
+        <span>
+          Effective:{" "}
+          <span className="font-mono text-foreground">
+            {from || "open start"} → {to || "open end"}
+          </span>
+        </span>
+        {isDraft && <Badge variant="secondary" className="ml-1">Unsaved</Badge>}
+      </div>
+
+      <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+        <div>
+          <Label className="text-xs">Effective from</Label>
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div>
+          <Label className="text-xs">Effective to</Label>
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
+        <div className="md:col-span-2 text-[11px] text-muted-foreground self-end pb-2">
+          Leave blank for an always-on rule. Date ranges may not overlap with another rule for this shift.
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <Label className="text-xs">Grace (min)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={480}
-            placeholder={`Inherit (${global.grace_minutes})`}
-            value={grace}
-            onChange={(e) => setGrace(e.target.value)}
-          />
+          <Input type="number" min={0} max={480} placeholder={`Inherit (${global.grace_minutes})`} value={grace} onChange={(e) => setGrace(e.target.value)} />
         </div>
         <div>
           <Label className="text-xs">Earliest in (min before)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={480}
-            placeholder={`Inherit (${global.early_checkin_minutes})`}
-            value={early}
-            onChange={(e) => setEarly(e.target.value)}
-          />
+          <Input type="number" min={0} max={480} placeholder={`Inherit (${global.early_checkin_minutes})`} value={early} onChange={(e) => setEarly(e.target.value)} />
         </div>
         <div>
           <Label className="text-xs">Latest out (min after)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={480}
-            placeholder={`Inherit (${global.late_checkout_minutes})`}
-            value={late}
-            onChange={(e) => setLate(e.target.value)}
-          />
+          <Input type="number" min={0} max={480} placeholder={`Inherit (${global.late_checkout_minutes})`} value={late} onChange={(e) => setLate(e.target.value)} />
         </div>
         <div>
           <Label className="text-xs">Enforce</Label>
@@ -400,21 +491,18 @@ function ShiftOverrideRow({
         />
       </div>
       <div className="flex items-center justify-end gap-2">
-        {hasOverride && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => reset.mutate()}
-            disabled={reset.isPending}
-            className="gap-1.5"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset to global
-          </Button>
+        {isDraft ? (
+          <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+        ) : (
+          rule.id && (
+            <Button variant="ghost" size="sm" onClick={() => remove.mutate()} disabled={remove.isPending} className="gap-1.5 text-red-600 hover:text-red-700">
+              <Trash2 className="h-4 w-4" /> Delete
+            </Button>
+          )
         )}
         <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending} className="gap-1.5">
           <Save className="h-4 w-4" />
-          {save.isPending ? "Saving..." : "Save override"}
+          {save.isPending ? "Saving..." : isDraft ? "Save new rule" : "Save changes"}
         </Button>
       </div>
     </div>

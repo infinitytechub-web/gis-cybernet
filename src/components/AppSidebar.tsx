@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +44,7 @@ const workforceItems = [
 ];
 
 const staffApprovalsItem = { title: "Staff Approvals", url: "/staff-approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" };
+const shiftWindowAuditItem = { title: "Shift Rules Audit", url: "/shift-window-audit", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
 
 const immigrationItems = [
   { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400", badge: "frontdesk" as const },
@@ -263,7 +264,13 @@ export function AppSidebar() {
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", commandVaultItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
-        {(role === "admin" || role === "supervisor") && renderGroup("Administration", adminItems)}
+        {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "staff_officer") &&
+          renderGroup(
+            "Administration",
+            (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer")
+              ? [...adminItems, shiftWindowAuditItem]
+              : adminItems,
+          )}
       </SidebarContent>
 
       <SidebarFooter className="p-4">

@@ -28,6 +28,7 @@ const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
 const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
+const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
 const ShiftConnections = lazy(() => import("./pages/ShiftConnections"));
 const LeaveRequests = lazy(() => import("./pages/LeaveRequests"));
 const Holidays = lazy(() => import("./pages/Holidays"));
@@ -87,6 +88,7 @@ function App() {
           <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals" element={<ProtectedRoute><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/shift-window-audit" element={<ProtectedRoute><Layout><ShiftWindowAudit /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute><Layout><Holidays /></Layout></ProtectedRoute>} />
           <Route path="/postings" element={<ProtectedRoute><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />

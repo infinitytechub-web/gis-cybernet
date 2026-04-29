@@ -3532,6 +3532,8 @@ export type Database = {
         Row: {
           created_at: string
           early_checkin_minutes: number | null
+          effective_from: string | null
+          effective_to: string | null
           enforce_window: boolean | null
           grace_minutes: number | null
           id: string
@@ -3544,6 +3546,8 @@ export type Database = {
         Insert: {
           created_at?: string
           early_checkin_minutes?: number | null
+          effective_from?: string | null
+          effective_to?: string | null
           enforce_window?: boolean | null
           grace_minutes?: number | null
           id?: string
@@ -3556,6 +3560,8 @@ export type Database = {
         Update: {
           created_at?: string
           early_checkin_minutes?: number | null
+          effective_from?: string | null
+          effective_to?: string | null
           enforce_window?: boolean | null
           grace_minutes?: number | null
           id?: string
@@ -3569,7 +3575,7 @@ export type Database = {
           {
             foreignKeyName: "shift_attendance_window_overrides_shift_id_fkey"
             columns: ["shift_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "shifts"
             referencedColumns: ["id"]
           },
@@ -3724,6 +3730,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shift_window_override_audit: {
+        Row: {
+          action: string
+          changed_fields: string[] | null
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          override_id: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+          shift_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          override_id?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          shift_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          override_id?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          shift_id?: string | null
+        }
+        Relationships: []
       }
       shifts: {
         Row: {

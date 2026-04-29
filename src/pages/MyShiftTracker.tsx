@@ -323,16 +323,21 @@ export default function MyShiftTracker() {
   });
   const globalWin = windowSettings ?? DEFAULT_WINDOW;
 
-  // Per-shift overrides (admin-configurable per shift type, e.g. day vs night)
+  // Per-shift overrides (admin-configurable per shift type and optional date range)
   const todayShiftId = todayEntry?.assignments[0]?.shift_id ?? null;
+  const todayDateKey = format(now, "yyyy-MM-dd");
   const { data: shiftOverride } = useQuery({
-    queryKey: ["attendance-window-override", todayShiftId],
+    queryKey: ["attendance-window-override", todayShiftId, todayDateKey],
     enabled: !!todayShiftId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shift_attendance_window_overrides")
-        .select("grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window")
+        .select("grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window, effective_from, effective_to")
         .eq("shift_id", todayShiftId!)
+        .or(`effective_from.is.null,effective_from.lte.${todayDateKey}`)
+        .or(`effective_to.is.null,effective_to.gte.${todayDateKey}`)
+        .order("effective_from", { ascending: false, nullsFirst: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data as Partial<WindowSettings> | null;
