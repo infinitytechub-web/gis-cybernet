@@ -3486,6 +3486,48 @@ export type Database = {
           },
         ]
       }
+      sensitive_table_access_log: {
+        Row: {
+          accessed_by: string | null
+          accessed_by_name: string | null
+          action: string
+          created_at: string
+          filters: Json | null
+          id: string
+          ip_address: string | null
+          reason: string | null
+          record_count: number | null
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_by?: string | null
+          accessed_by_name?: string | null
+          action: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          record_count?: number | null
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_by?: string | null
+          accessed_by_name?: string | null
+          action?: string
+          created_at?: string
+          filters?: Json | null
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          record_count?: number | null
+          table_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       shift_assignments: {
         Row: {
           created_at: string
@@ -4219,6 +4261,16 @@ export type Database = {
         Args: { _purpose?: string; _ttl_minutes?: number }
         Returns: string
       }
+      log_sensitive_access: {
+        Args: {
+          _action: string
+          _filters?: Json
+          _reason?: string
+          _record_count?: number
+          _table_name: string
+        }
+        Returns: undefined
+      }
       notify_roles: {
         Args: {
           _message: string
@@ -4235,6 +4287,38 @@ export type Database = {
         Returns: number
       }
       purge_recycle_bin_entry: { Args: { _bin_id: string }; Returns: Json }
+      read_attendance_report_recipients: {
+        Args: { _reason?: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          period: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "attendance_report_recipients"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      read_failed_login_attempts: {
+        Args: { _limit?: number; _reason?: string }
+        Returns: {
+          attempted_at: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          staff_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "failed_login_attempts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }
         | { Args: { _ip_address?: string; _staff_id: string }; Returns: Json }
