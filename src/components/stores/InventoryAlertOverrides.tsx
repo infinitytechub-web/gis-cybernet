@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, Plus, Trash2, MapPin } from "lucide-react";
+import { Building2, Plus, Trash2, MapPin, Webhook } from "lucide-react";
 import { toast } from "sonner";
 
 type Override = {
@@ -25,6 +25,8 @@ type Override = {
   variance_qty_threshold: number;
   variance_value_threshold: number;
   enabled: boolean;
+  webhook_url: string | null;
+  webhook_enabled: boolean;
 };
 
 export function InventoryAlertOverrides() {
@@ -37,7 +39,7 @@ export function InventoryAlertOverrides() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory_alert_overrides" as any)
-        .select("id, scope_type, scope_value, variance_qty_threshold, variance_value_threshold, enabled")
+        .select("id, scope_type, scope_value, variance_qty_threshold, variance_value_threshold, enabled, webhook_url, webhook_enabled")
         .order("scope_type")
         .order("scope_value");
       if (error) throw error;
@@ -178,54 +180,77 @@ export function InventoryAlertOverrides() {
         ) : (
           <div className="space-y-2">
             {overrides.map((o) => (
-              <div key={o.id} className="rounded-md border p-2 flex flex-wrap items-center gap-2 text-sm">
-                <Badge variant="secondary" className="capitalize gap-1">
-                  <MapPin className="h-3 w-3" /> {o.scope_type}
-                </Badge>
-                <span className="font-medium">{o.scope_value}</span>
-                <div className="flex items-center gap-1 ml-2">
-                  <Label className="text-[11px] text-muted-foreground">Qty</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    className="h-7 w-20"
-                    disabled={!canManage}
-                    value={o.variance_qty_threshold}
-                    onChange={(e) =>
-                      updateMut.mutate({ id: o.id, variance_qty_threshold: Number(e.target.value) || 0 })
-                    }
-                  />
+              <div key={o.id} className="rounded-md border p-2 space-y-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="capitalize gap-1">
+                    <MapPin className="h-3 w-3" /> {o.scope_type}
+                  </Badge>
+                  <span className="font-medium">{o.scope_value}</span>
+                  <div className="flex items-center gap-1 ml-2">
+                    <Label className="text-[11px] text-muted-foreground">Qty</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="h-7 w-20"
+                      disabled={!canManage}
+                      value={o.variance_qty_threshold}
+                      onChange={(e) =>
+                        updateMut.mutate({ id: o.id, variance_qty_threshold: Number(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Label className="text-[11px] text-muted-foreground">₵</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="h-7 w-24"
+                      disabled={!canManage}
+                      value={o.variance_value_threshold}
+                      onChange={(e) =>
+                        updateMut.mutate({ id: o.id, variance_value_threshold: Number(e.target.value) || 0 })
+                      }
+                    />
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Switch
+                      checked={o.enabled}
+                      disabled={!canManage}
+                      onCheckedChange={(v) => updateMut.mutate({ id: o.id, enabled: v })}
+                    />
+                    {canManage && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-destructive"
+                        onClick={() => deleteMut.mutate(o.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Label className="text-[11px] text-muted-foreground">₵</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    className="h-7 w-24"
-                    disabled={!canManage}
-                    value={o.variance_value_threshold}
-                    onChange={(e) =>
-                      updateMut.mutate({ id: o.id, variance_value_threshold: Number(e.target.value) || 0 })
-                    }
-                  />
-                </div>
-                <div className="ml-auto flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 pl-1">
+                  <Webhook className="h-3.5 w-3.5 text-primary" />
+                  <Label className="text-[11px] text-muted-foreground">Webhook</Label>
                   <Switch
-                    checked={o.enabled}
+                    checked={o.webhook_enabled}
                     disabled={!canManage}
-                    onCheckedChange={(v) => updateMut.mutate({ id: o.id, enabled: v })}
+                    onCheckedChange={(v) => updateMut.mutate({ id: o.id, webhook_enabled: v })}
                   />
-                  {canManage && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-destructive"
-                      onClick={() => deleteMut.mutate(o.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
+                  <Input
+                    placeholder="https://hooks.slack.com/services/... (overrides global)"
+                    className="h-7 flex-1 min-w-[220px]"
+                    disabled={!canManage || !o.webhook_enabled}
+                    defaultValue={o.webhook_url ?? ""}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim() || null;
+                      if (v !== (o.webhook_url ?? null)) {
+                        updateMut.mutate({ id: o.id, webhook_url: v as any });
+                      }
+                    }}
+                  />
                 </div>
               </div>
             ))}
