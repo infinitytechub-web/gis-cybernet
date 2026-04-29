@@ -108,9 +108,100 @@ export function StoresReportsTab() {
     return ledger.filter((r: any) => r.expected_return_date && r.expected_return_date < today);
   }, [ledger]);
 
+  const exportCombined = (fmt: "pdf" | "csv") => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    const sections: { title: string; headers: string[]; rows: string[][] }[] = [
+      {
+        title: "Stock Valuation by Category",
+        headers: ["Category", "Value"],
+        rows: valuation.byCategory.map(r => [r.name, `₵${r.value.toFixed(2)}`]),
+      },
+      {
+        title: "Stock Valuation by Location",
+        headers: ["Location", "Value"],
+        rows: valuation.byLocation.map(r => [r.name, `₵${r.value.toFixed(2)}`]),
+      },
+      {
+        title: "Stock Valuation by Condition",
+        headers: ["Condition", "Value"],
+        rows: valuation.byCondition.map(r => [r.name, `₵${r.value.toFixed(2)}`]),
+      },
+      {
+        title: "Reorder List",
+        headers: ["Asset Tag", "Item", "Category", "On Hand", "Min", "Suggested PO"],
+        rows: reorder.map((r: any) => [r.asset_tag ?? "", r.name, r.inventory_categories?.name ?? "", `${r._qty} ${r.unit}`, String(r._min), `${r._suggested} ${r.unit}`]),
+      },
+      {
+        title: "Open Asset Issuance",
+        headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
+        rows: ledger.map((r: any) => [
+          format(new Date(r.issued_at), "yyyy-MM-dd"),
+          r.inventory_items?.name ?? "",
+          `${Number(r.quantity)} ${r.inventory_items?.unit ?? ""}`,
+          `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+          r.profiles?.staff_id ?? "",
+          r.profiles?.departments?.name ?? "",
+          r.expected_return_date ?? "",
+        ]),
+      },
+    ];
+
+    if (fmt === "csv") {
+      const lines: string[] = [];
+      lines.push(`"Stores & Inventory — Combined Report"`);
+      lines.push(`"Generated","${format(new Date(), "PPpp")}"`);
+      lines.push(`"Total stock value","₵${valuation.total.toFixed(2)}"`);
+      lines.push("");
+      sections.forEach(s => {
+        lines.push(`"# ${s.title}"`);
+        lines.push(s.headers.map(h => `"${h}"`).join(","));
+        s.rows.forEach(r => lines.push(r.map(c => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")));
+        lines.push("");
+      });
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `stores-combined-report-${today}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Combined report (CSV) downloaded");
+      return;
+    }
+
+    const headers = ["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7"];
+    const rows: string[][] = [];
+    sections.forEach(s => {
+      rows.push([`▶ ${s.title}`, "", "", "", "", "", ""]);
+      rows.push([...s.headers, ...Array(Math.max(0, 7 - s.headers.length)).fill("")]);
+      s.rows.forEach(r => rows.push([...r, ...Array(Math.max(0, 7 - r.length)).fill("")]));
+      rows.push(["", "", "", "", "", "", ""]);
+    });
+    exportReport("pdf", {
+      title: "Stores & Inventory — Combined Report",
+      subtitle: `Generated ${format(new Date(), "PPpp")} · Total value ₵${valuation.total.toFixed(2)}`,
+      filename: `stores-combined-report-${today}`,
+      headers,
+      rows,
+    });
+    toast.success("Combined report (PDF) downloaded");
+  };
+
   return (
     <div className="space-y-4">
-      {/* KPI tiles */}
+      <div className="flex items-center justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="gap-1.5">
+              <FileBarChart className="h-4 w-4" /> Export combined report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tile
           icon={Coins}
