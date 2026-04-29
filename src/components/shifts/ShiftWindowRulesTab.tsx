@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Sliders, Save, RotateCcw, Sun, Moon, Globe2 } from "lucide-react";
+import { Sliders, Save, RotateCcw, Sun, Moon, Globe2, Plus, Trash2, CalendarRange } from "lucide-react";
 
 type Shift = {
   id: string;
