@@ -113,6 +113,21 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     el?.scrollIntoView({ block: "nearest" });
   }, [highlight]);
 
+  // Online/offline awareness for a distinct retry message when the network is down
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  useEffect(() => {
+    const goOnline = () => { setIsOnline(true); void refetch(); };
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, [refetch]);
+
   const commitSelection = (o: AuthProfile) => {
     const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
     onChange(o.id, label);
