@@ -31,10 +31,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
+const STORES_EXPORT_ROLES = ["admin", "oic", "2ic", "storekeeper", "procurement_officer"] as const;
+
 export function StoresReportsTab() {
+  const { role } = useAuth();
+  const canExport = STORES_EXPORT_ROLES.includes((role || "") as any);
   const { data: items = [] } = useQuery({
     queryKey: ["inventory_items", "reports"],
     queryFn: async () => {
@@ -189,19 +194,21 @@ export function StoresReportsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" className="gap-1.5">
-              <FileBarChart className="h-4 w-4" /> Export combined report
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {canExport && (
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" className="gap-1.5">
+                <FileBarChart className="h-4 w-4" /> Export combined report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tile
@@ -241,14 +248,16 @@ export function StoresReportsTab() {
               </CardTitle>
               <CardDescription>Inventory worth by category and storage location.</CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Stock Valuation by Category",
-                filename: `stock-valuation-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Category", "Value (₵)"],
-                rows: valuation.byCategory.map((r) => [r.name, r.value.toFixed(2)]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Stock Valuation by Category",
+                  filename: `stock-valuation-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Category", "Value (₵)"],
+                  rows: valuation.byCategory.map((r) => [r.name, r.value.toFixed(2)]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-4">
@@ -289,14 +298,16 @@ export function StoresReportsTab() {
               </CardTitle>
               <CardDescription>Identify how much value sits in damaged, fair, or unspecified stock.</CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Stock Valuation by Condition",
-                filename: `stock-valuation-condition-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Condition", "Value (₵)"],
-                rows: valuation.byCondition.map((r) => [r.name, r.value.toFixed(2)]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Stock Valuation by Condition",
+                  filename: `stock-valuation-condition-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Condition", "Value (₵)"],
+                  rows: valuation.byCondition.map((r) => [r.name, r.value.toFixed(2)]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-4">
@@ -348,21 +359,23 @@ export function StoresReportsTab() {
                 Suggested order quantity = (2 × min stock) − current qty. Bring stock back to a safety buffer.
               </CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Reorder List",
-                filename: `reorder-list-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Asset Tag", "Item", "Category", "On Hand", "Min", "Suggested PO"],
-                rows: reorder.map((r: any) => [
-                  r.asset_tag ?? "",
-                  r.name,
-                  r.inventory_categories?.name ?? "",
-                  `${r._qty} ${r.unit}`,
-                  String(r._min),
-                  `${r._suggested} ${r.unit}`,
-                ]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Reorder List",
+                  filename: `reorder-list-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Asset Tag", "Item", "Category", "On Hand", "Min", "Suggested PO"],
+                  rows: reorder.map((r: any) => [
+                    r.asset_tag ?? "",
+                    r.name,
+                    r.inventory_categories?.name ?? "",
+                    `${r._qty} ${r.unit}`,
+                    String(r._min),
+                    `${r._suggested} ${r.unit}`,
+                  ]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -425,22 +438,24 @@ export function StoresReportsTab() {
                 Open issues — items currently held by staff. Overdue rows are flagged.
               </CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Open Asset Issuance",
-                filename: `issuance-open-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
-                rows: ledger.map((r: any) => [
-                  format(new Date(r.issued_at), "yyyy-MM-dd"),
-                  r.inventory_items?.name ?? "",
-                  `${Number(r.quantity)} ${r.inventory_items?.unit ?? ""}`,
-                  `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
-                  r.profiles?.staff_id ?? "",
-                  r.profiles?.departments?.name ?? "",
-                  r.expected_return_date ?? "",
-                ]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Open Asset Issuance",
+                  filename: `issuance-open-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
+                  rows: ledger.map((r: any) => [
+                    format(new Date(r.issued_at), "yyyy-MM-dd"),
+                    r.inventory_items?.name ?? "",
+                    `${Number(r.quantity)} ${r.inventory_items?.unit ?? ""}`,
+                    `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+                    r.profiles?.staff_id ?? "",
+                    r.profiles?.departments?.name ?? "",
+                    r.expected_return_date ?? "",
+                  ]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">

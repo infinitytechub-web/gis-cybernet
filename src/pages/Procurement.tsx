@@ -17,8 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Briefcase, FileText, ShoppingCart, Receipt, FileSignature, Package, Search, Upload, Download,
-  Plus, TrendingUp, AlertCircle, CheckCircle2, Clock, X, Trash2,
+  Plus, TrendingUp, AlertCircle, CheckCircle2, Clock, X, Trash2, FileBarChart,
 } from "lucide-react";
+import { ProcurementReportsTab } from "@/components/procurement/ProcurementReportsTab";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid,
   PieChart, Pie, Cell, Legend, LineChart, Line,
@@ -200,6 +201,7 @@ export default function Procurement() {
             <TabsTrigger value="contracts" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><FileSignature className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Contracts</TabsTrigger>
             <TabsTrigger value="vendors" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Briefcase className="h-4 w-4 mr-1 text-cyan-700 dark:text-cyan-400" />Vendors</TabsTrigger>
             <TabsTrigger value="documents" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><Package className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Document Vault</TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white"><FileBarChart className="h-4 w-4 mr-1 text-rose-700 dark:text-rose-400" />Reports</TabsTrigger>
           </TabsList>
         </ScrollArea>
 
@@ -280,6 +282,7 @@ export default function Procurement() {
         <TabsContent value="contracts"><ContractsTab contracts={contracts} vendors={vendors} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="vendors"><VendorsTab vendors={vendors} canManage={canManage} /></TabsContent>
         <TabsContent value="documents"><DocumentsTab canManage={canManage} userId={user?.id} vendors={vendors} /></TabsContent>
+        <TabsContent value="reports"><ProcurementReportsTab /></TabsContent>
       </Tabs>
     </div>
   );
