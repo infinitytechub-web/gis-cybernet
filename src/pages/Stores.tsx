@@ -333,9 +333,13 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
       <ItemDetailDrawer item={openItem} onOpenChange={(o) => !o && setOpenItem(null)} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? "Edit Item" : "Add Item"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit Item" : "Add Item"}</DialogTitle>
+            {editing?.asset_tag && <div className="text-xs font-mono text-muted-foreground">Asset Tag: {editing.asset_tag}</div>}
+          </DialogHeader>
           <div className="space-y-3">
+            <ItemPhotoUpload value={form.photo_url} onChange={(url) => setForm(p => ({ ...p, photo_url: url }))} />
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
               <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm(p => ({ ...p, sku: e.target.value }))} /></div>
