@@ -3528,6 +3528,53 @@ export type Database = {
           },
         ]
       }
+      shift_attendance_window_overrides: {
+        Row: {
+          created_at: string
+          early_checkin_minutes: number | null
+          enforce_window: boolean | null
+          grace_minutes: number | null
+          id: string
+          late_checkout_minutes: number | null
+          notes: string | null
+          shift_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          early_checkin_minutes?: number | null
+          enforce_window?: boolean | null
+          grace_minutes?: number | null
+          id?: string
+          late_checkout_minutes?: number | null
+          notes?: string | null
+          shift_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          early_checkin_minutes?: number | null
+          enforce_window?: boolean | null
+          grace_minutes?: number | null
+          id?: string
+          late_checkout_minutes?: number | null
+          notes?: string | null
+          shift_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_attendance_window_overrides_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: true
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_change_requests: {
         Row: {
           affected_date: string
@@ -4035,6 +4082,16 @@ export type Database = {
       }
       empty_recycle_bin: { Args: never; Returns: Json }
       generate_asset_tag: { Args: never; Returns: string }
+      get_effective_attendance_window: {
+        Args: { _shift_id: string }
+        Returns: {
+          early_checkin_minutes: number
+          enforce_window: boolean
+          grace_minutes: number
+          late_checkout_minutes: number
+          source: string
+        }[]
+      }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
       get_misd_department_id: { Args: never; Returns: string }
       get_profile_protected_fields: {
