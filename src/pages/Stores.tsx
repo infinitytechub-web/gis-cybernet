@@ -195,9 +195,6 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
 
   return (
     <div className="space-y-3">
-      {/* Low Stock Summary Banner */}
-  return (
-    <div className="space-y-3">
       {/* KPI Tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card><CardContent className="p-3 flex items-center gap-3"><Boxes className="h-8 w-8 text-amber-600" /><div><div className="text-xs text-muted-foreground">Total Items</div><div className="text-xl font-bold">{totalItems}</div></div></CardContent></Card>
