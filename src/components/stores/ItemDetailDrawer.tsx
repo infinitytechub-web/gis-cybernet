@@ -150,6 +150,33 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                 >
                   <Printer className="h-3.5 w-3.5" /> Print label
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={!item.asset_tag}
+                  onClick={async () => {
+                    try {
+                      const dataUrl = await QRCode.toDataURL(item.asset_tag!, {
+                        width: 1024,
+                        margin: 2,
+                        errorCorrectionLevel: "M",
+                        color: { dark: "#0f172a", light: "#ffffff" },
+                      });
+                      const a = document.createElement("a");
+                      a.href = dataUrl;
+                      a.download = `${item.asset_tag}.png`;
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      toast.success("QR code downloaded");
+                    } catch {
+                      toast.error("Could not generate QR code");
+                    }
+                  }}
+                >
+                  <QrCode className="h-3.5 w-3.5" /> Download QR
+                </Button>
                 {out ? (
                   <Badge variant="destructive" className="gap-1">
                     <AlertTriangle className="h-3 w-3" /> Out of stock
