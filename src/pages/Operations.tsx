@@ -132,6 +132,8 @@ const INITIAL_FORM = {
   notes: "",
   officer_in_charge: "" as string,
   contact_details: "",
+  mugshot_path: null as string | null,
+  authorized_by: null as string | null,
 };
 
 // GhanaGPSButton was inlined here; the shared GhanaGPSInput component
