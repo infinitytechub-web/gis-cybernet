@@ -240,12 +240,41 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
         {canManage && <Button onClick={() => open()} className="ml-auto gap-1"><Plus className="h-4 w-4" />Add Item</Button>}
       </div>
 
+      {view === "grid" ? (
+        filtered.length === 0 ? (
+          <Card><CardContent className="p-8 text-center text-muted-foreground">No items</CardContent></Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filtered.map((i: any) => {
+              const low = Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0;
+              const out = Number(i.qty_on_hand) <= 0;
+              return (
+                <Card key={i.id} className={`cursor-pointer hover:shadow-md transition-shadow ${out ? "border-destructive/40" : low ? "border-amber-300" : ""}`} onClick={() => setOpenItem(i)}>
+                  <div className="aspect-square bg-muted rounded-t-md overflow-hidden flex items-center justify-center">
+                    {i.photo_url ? <img src={i.photo_url} alt={i.name} className="w-full h-full object-cover" /> : <Package className="h-12 w-12 text-muted-foreground/40" />}
+                  </div>
+                  <CardContent className="p-3 space-y-1">
+                    <div className="font-medium truncate">{i.name}</div>
+                    <div className="text-[10px] font-mono text-muted-foreground">{i.asset_tag || "—"}</div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm font-bold ${out ? "text-destructive" : low ? "text-amber-700" : ""}`}>{Number(i.qty_on_hand)} {i.unit}</span>
+                      {out ? <Badge variant="destructive" className="text-[10px]">Out</Badge> :
+                       low ? <Badge className="text-[10px] bg-amber-100 text-amber-800">Low</Badge> :
+                       <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-800">OK</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )
+      ) : (
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader><TableRow>
-                <TableHead>Item</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead>
+                <TableHead>Item</TableHead><TableHead>Asset Tag</TableHead><TableHead>Category</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Min Stock {canManage && <span className="text-[10px] font-normal text-muted-foreground">(click to edit)</span>}</TableHead>
                 <TableHead>Location</TableHead><TableHead>Status</TableHead>{canManage && <TableHead></TableHead>}
@@ -257,12 +286,12 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
                   const low = Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0;
                   const out = Number(i.qty_on_hand) <= 0;
                   return (
-                    <TableRow key={i.id} className={out ? "bg-destructive/5" : low ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}>
+                    <TableRow key={i.id} className={`cursor-pointer hover:bg-muted/40 ${out ? "bg-destructive/5" : low ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`} onClick={() => setOpenItem(i)}>
                       <TableCell className="font-medium">{i.name}</TableCell>
-                      <TableCell className="font-mono text-xs">{i.sku || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{i.asset_tag || "—"}</TableCell>
                       <TableCell>{i.inventory_categories?.name || <span className="text-muted-foreground">—</span>}</TableCell>
                       <TableCell className={`text-right font-bold ${out ? "text-destructive" : low ? "text-amber-700 dark:text-amber-400" : ""}`}>{Number(i.qty_on_hand)} <span className="text-xs text-muted-foreground font-normal">{i.unit}</span></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                         {canManage ? (
                           <InlineMinStockEditor
                             value={Number(i.min_stock)}
@@ -278,7 +307,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
                          low ? <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100"><AlertTriangle className="h-3 w-3 mr-1" />Low</Badge> :
                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">OK</Badge>}
                       </TableCell>
-                      {canManage && <TableCell>
+                      {canManage && <TableCell onClick={e => e.stopPropagation()}>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => open(i)}><Pencil className="h-3.5 w-3.5" /></Button>
                           <AlertDialog>
@@ -299,6 +328,9 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
           </div>
         </CardContent>
       </Card>
+      )}
+
+      <ItemDetailDrawer item={openItem} open={!!openItem} onOpenChange={(o) => !o && setOpenItem(null)} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
