@@ -16,6 +16,7 @@ import { ClipboardCheck, AlertTriangle, Plus, CheckCircle2, MinusCircle, PlusCir
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { InventoryAlertSettings } from "./InventoryAlertSettings";
+import { InventoryAuditScheduler } from "./InventoryAuditScheduler";
 
 export function InventoryAuditReport() {
   const { user, role } = useAuth();
@@ -139,6 +140,7 @@ export function InventoryAuditReport() {
   return (
     <div className="space-y-4">
       <InventoryAlertSettings />
+      <InventoryAuditScheduler />
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Tile label="Tracked" value={stats.total} />
         <Tile label="Counted" value={stats.counted} accent="text-emerald-600" />
