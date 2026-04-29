@@ -474,6 +474,8 @@ export default function Enforcement() {
       notes: op.notes || "",
       officer_in_charge: op.officer_in_charge || "",
       contact_details: (op as any).contact_details || "",
+      mugshot_path: (op as any).mugshot_path ?? null,
+      authorized_by: (op as any).authorized_by ?? null,
     });
   }, []);
 
