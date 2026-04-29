@@ -699,31 +699,52 @@ export default function MyShiftTracker() {
                           workedMins = metrics.liveMinutes;
                         }
 
+                        const punc = entry?.punctuality;
+                        const puncRing =
+                          punc?.kind === "late" ? "ring-1 ring-red-500/70" :
+                          punc?.kind === "early" ? "ring-1 ring-amber-500/70" :
+                          punc?.kind === "outside" ? "ring-1 ring-purple-500/70" : "";
+
                         return (
                           <div
                             key={key}
+                            title={punc ? `${punc.label}` : undefined}
                             className={cn(
                               "relative h-20 rounded-md border p-1.5 text-xs flex flex-col transition-colors",
                               inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
                               today && "ring-2 ring-primary",
-                              checkedIn && !today && "ring-1 ring-emerald-500/60",
+                              !today && checkedIn && !punc && "ring-1 ring-emerald-500/60",
+                              !today && puncRing,
                             )}
                           >
                             <div className="flex items-center justify-between">
                               <span className={cn("font-semibold", today && "text-primary")}>{format(d, "d")}</span>
-                              {hasShift && (
-                                <span
-                                  className={cn(
-                                    "h-2 w-2 rounded-full",
-                                    profile?.shift_group === "A" && "bg-emerald-500",
-                                    profile?.shift_group === "B" && "bg-sky-500",
-                                    profile?.shift_group === "C" && "bg-amber-500",
-                                    profile?.shift_group === "D" && "bg-violet-500",
-                                    !profile?.shift_group && "bg-primary",
-                                  )}
-                                  aria-label="Scheduled"
-                                />
-                              )}
+                              <div className="flex items-center gap-1">
+                                {punc && punc.kind !== "ontime" && (
+                                  <AlertTriangle
+                                    className={cn(
+                                      "h-3 w-3",
+                                      punc.kind === "late" && "text-red-500",
+                                      punc.kind === "early" && "text-amber-500",
+                                      punc.kind === "outside" && "text-purple-500",
+                                    )}
+                                    aria-label={punc.label}
+                                  />
+                                )}
+                                {hasShift && (
+                                  <span
+                                    className={cn(
+                                      "h-2 w-2 rounded-full",
+                                      profile?.shift_group === "A" && "bg-emerald-500",
+                                      profile?.shift_group === "B" && "bg-sky-500",
+                                      profile?.shift_group === "C" && "bg-amber-500",
+                                      profile?.shift_group === "D" && "bg-violet-500",
+                                      !profile?.shift_group && "bg-primary",
+                                    )}
+                                    aria-label="Scheduled"
+                                  />
+                                )}
+                              </div>
                             </div>
                             {hasShift && (
                               <div className="mt-1 truncate text-[10px] text-muted-foreground">
