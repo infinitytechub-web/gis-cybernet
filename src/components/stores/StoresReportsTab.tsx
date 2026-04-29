@@ -248,14 +248,16 @@ export function StoresReportsTab() {
               </CardTitle>
               <CardDescription>Inventory worth by category and storage location.</CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Stock Valuation by Category",
-                filename: `stock-valuation-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Category", "Value (₵)"],
-                rows: valuation.byCategory.map((r) => [r.name, r.value.toFixed(2)]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Stock Valuation by Category",
+                  filename: `stock-valuation-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Category", "Value (₵)"],
+                  rows: valuation.byCategory.map((r) => [r.name, r.value.toFixed(2)]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-4">
