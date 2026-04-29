@@ -1017,12 +1017,14 @@ export type Database = {
       enforcement_operations: {
         Row: {
           arrests_count: number
+          authorized_by: string | null
           contact_details: string | null
           created_at: string
           department_id: string | null
           description: string | null
           id: string
           location: string | null
+          mugshot_path: string | null
           notes: string | null
           officer_in_charge: string | null
           operation_date: string
@@ -1036,12 +1038,14 @@ export type Database = {
         }
         Insert: {
           arrests_count?: number
+          authorized_by?: string | null
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
           id?: string
           location?: string | null
+          mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
@@ -1055,12 +1059,14 @@ export type Database = {
         }
         Update: {
           arrests_count?: number
+          authorized_by?: string | null
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
           id?: string
           location?: string | null
+          mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
@@ -1073,6 +1079,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "enforcement_operations_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enforcement_operations_department_id_fkey"
             columns: ["department_id"]
@@ -2237,12 +2250,14 @@ export type Database = {
       operations: {
         Row: {
           arrests_count: number
+          authorized_by: string | null
           contact_details: string | null
           created_at: string
           department_id: string | null
           description: string | null
           id: string
           location: string | null
+          mugshot_path: string | null
           notes: string | null
           officer_in_charge: string | null
           operation_date: string
@@ -2256,12 +2271,14 @@ export type Database = {
         }
         Insert: {
           arrests_count?: number
+          authorized_by?: string | null
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
           id?: string
           location?: string | null
+          mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
@@ -2275,12 +2292,14 @@ export type Database = {
         }
         Update: {
           arrests_count?: number
+          authorized_by?: string | null
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
           id?: string
           location?: string | null
+          mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
@@ -2293,6 +2312,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "operations_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "operations_department_id_fkey"
             columns: ["department_id"]
