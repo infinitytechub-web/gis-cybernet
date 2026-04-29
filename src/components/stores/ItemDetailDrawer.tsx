@@ -51,8 +51,115 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+type QueueEntry = { asset_tag: string; name: string; location: string | null; serial_number: string | null };
+
 export function ItemDetailDrawer({ item, onOpenChange }: Props) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [queue, setQueue] = useState<QueueEntry[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("asset_label_queue") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("asset_label_queue", JSON.stringify(queue));
+  }, [queue]);
+
+  const inQueue = !!item?.asset_tag && queue.some((q) => q.asset_tag === item.asset_tag);
+  const addToQueue = () => {
+    if (!item?.asset_tag) return;
+    if (inQueue) {
+      setQueue((q) => q.filter((x) => x.asset_tag !== item.asset_tag));
+      toast.success("Removed from print queue");
+    } else {
+      setQueue((q) => [
+        ...q,
+        {
+          asset_tag: item.asset_tag!,
+          name: item.name,
+          location: item.location,
+          serial_number: item.serial_number,
+        },
+      ]);
+      toast.success("Added to print queue");
+    }
+  };
+
+  const generateBatchPdf = async () => {
+    if (queue.length === 0) return;
+    setGenerating(true);
+    try {
+      // 60mm x 40mm labels, 2 cols x 6 rows = 12 per A4 page
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = 210;
+      const pageH = 297;
+      const labelW = 90;
+      const labelH = 45;
+      const cols = 2;
+      const rows = 6;
+      const marginX = (pageW - cols * labelW) / 2;
+      const marginY = (pageH - rows * labelH) / 2;
+
+      for (let i = 0; i < queue.length; i++) {
+        const entry = queue[i];
+        const slot = i % (cols * rows);
+        if (i > 0 && slot === 0) pdf.addPage();
+        const col = slot % cols;
+        const row = Math.floor(slot / cols);
+        const x = marginX + col * labelW;
+        const y = marginY + row * labelH;
+
+        // Border
+        pdf.setDrawColor(200);
+        pdf.rect(x, y, labelW, labelH);
+
+        // QR
+        const dataUrl = await QRCode.toDataURL(entry.asset_tag, {
+          width: 512,
+          margin: 1,
+          errorCorrectionLevel: "M",
+        });
+        const qrSize = 35;
+        pdf.addImage(dataUrl, "PNG", x + 3, y + 5, qrSize, qrSize);
+
+        // Text block
+        const tx = x + qrSize + 7;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text("GIS — CYBERNET", tx, y + 8);
+        pdf.setFontSize(9);
+        pdf.setFont("courier", "bold");
+        pdf.text(entry.asset_tag, tx, y + 14);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        const nameLines = pdf.splitTextToSize(entry.name, labelW - qrSize - 12);
+        pdf.text(nameLines.slice(0, 2), tx, y + 20);
+        if (entry.location) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(100);
+          pdf.text(`Loc: ${entry.location}`, tx, y + 32);
+          pdf.setTextColor(0);
+        }
+        if (entry.serial_number) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(100);
+          pdf.text(`SN: ${entry.serial_number}`, tx, y + 37);
+          pdf.setTextColor(0);
+        }
+      }
+
+      pdf.save(`asset-labels-${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success(`Generated PDF with ${queue.length} label(s)`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate PDF");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
