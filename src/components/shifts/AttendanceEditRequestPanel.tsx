@@ -119,22 +119,32 @@ export function AttendanceEditRequestPanel({ profileId, userId, attendances }: P
       const proposedInIso = proposedIn ? new Date(proposedIn).toISOString() : null;
       const proposedOutIso = proposedOut ? new Date(proposedOut).toISOString() : null;
 
-      const { error } = await supabase.from("attendance_edit_requests").insert({
-        attendance_id: selectedAtt.id,
-        profile_id: profileId,
-        requested_by: userId,
-        affected_date: selectedAtt.date,
-        field,
-        current_check_in: selectedAtt.check_in,
-        current_check_out: selectedAtt.check_out,
-        proposed_check_in: field === "check_out" ? null : proposedInIso,
-        proposed_check_out: field === "check_in" ? null : proposedOutIso,
-        reason: reason.trim().slice(0, 1000),
-      });
+      const { data, error } = await supabase
+        .from("attendance_edit_requests")
+        .insert({
+          attendance_id: selectedAtt.id,
+          profile_id: profileId,
+          requested_by: userId,
+          affected_date: selectedAtt.date,
+          field,
+          current_check_in: selectedAtt.check_in,
+          current_check_out: selectedAtt.check_out,
+          proposed_check_in: field === "check_out" ? null : proposedInIso,
+          proposed_check_out: field === "check_in" ? null : proposedOutIso,
+          reason: reason.trim().slice(0, 1000),
+        })
+        .select("id");
       if (error) throw error;
+      // If the BEFORE INSERT dedupe trigger merged into an existing pending
+      // request, the insert returns no rows.
+      return { merged: !data || data.length === 0 };
     },
-    onSuccess: () => {
-      toast.success("Edit request submitted for review");
+    onSuccess: ({ merged }) => {
+      toast.success(
+        merged
+          ? "Updated your existing pending request for this day"
+          : "Edit request submitted for review",
+      );
       setReason("");
       queryClient.invalidateQueries({ queryKey: ["attendance-edit-requests", profileId] });
     },

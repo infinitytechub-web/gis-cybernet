@@ -308,7 +308,7 @@ export default function MyShiftTracker() {
     },
   });
 
-  // Attendance window settings (admin-configurable)
+  // Attendance window settings (admin-configurable, global)
   const { data: windowSettings } = useQuery({
     queryKey: ["attendance-window-settings"],
     queryFn: async () => {
@@ -321,7 +321,32 @@ export default function MyShiftTracker() {
       return (data ?? DEFAULT_WINDOW) as WindowSettings;
     },
   });
-  const win = windowSettings ?? DEFAULT_WINDOW;
+  const globalWin = windowSettings ?? DEFAULT_WINDOW;
+
+  // Per-shift overrides (admin-configurable per shift type, e.g. day vs night)
+  const todayShiftId = todayEntry?.assignments[0]?.shift_id ?? null;
+  const { data: shiftOverride } = useQuery({
+    queryKey: ["attendance-window-override", todayShiftId],
+    enabled: !!todayShiftId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shift_attendance_window_overrides")
+        .select("grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window")
+        .eq("shift_id", todayShiftId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Partial<WindowSettings> | null;
+    },
+  });
+
+  // Effective window for today: per-shift override merged onto global
+  const win: WindowSettings & { source: "override" | "global" } = useMemo(() => ({
+    grace_minutes: shiftOverride?.grace_minutes ?? globalWin.grace_minutes,
+    early_checkin_minutes: shiftOverride?.early_checkin_minutes ?? globalWin.early_checkin_minutes,
+    late_checkout_minutes: shiftOverride?.late_checkout_minutes ?? globalWin.late_checkout_minutes,
+    enforce_window: shiftOverride?.enforce_window ?? globalWin.enforce_window,
+    source: shiftOverride ? "override" : "global",
+  }), [shiftOverride, globalWin]);
 
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
@@ -621,6 +646,7 @@ export default function MyShiftTracker() {
               <span className="text-xs text-muted-foreground">
                 Window: {format(todayWindow.earliestIn, "HH:mm")}–{format(todayWindow.latestOut, "HH:mm")}
                 {win.enforce_window ? ` · grace ${win.grace_minutes}m` : " · enforcement off"}
+                {win.source === "override" ? " · per-shift rule" : ""}
               </span>
             )}
           </div>
