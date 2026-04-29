@@ -420,7 +420,21 @@ export default function StaffProfile() {
               </p>
             </CardHeader>
             <CardContent>
-              {officeHistory.length === 0 ? (
+              {!canViewOfficeHistory ? (
+                <div
+                  className="rounded-md border border-destructive/30 bg-destructive/5 p-6 text-center space-y-2"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  <ShieldAlert className="h-6 w-6 text-destructive mx-auto" aria-hidden="true" />
+                  <p className="text-sm font-medium text-destructive">Permission required</p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Office history is restricted to command-tier officers (Admin, OIC, 2IC,
+                    Staff Officer, Supervisor) and the staff member themselves. Contact your
+                    supervisor if you believe you should have access.
+                  </p>
+                </div>
+              ) : officeHistory.length === 0 ? (
                 <p className="text-center py-6 text-sm text-muted-foreground">
                   No office changes recorded yet. The current office is{" "}
                   <strong>{currentOffice || "not set"}</strong>.
