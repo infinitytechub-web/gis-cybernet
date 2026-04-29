@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertCircle, Loader2, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw, Search, ShieldCheck, WifiOff, X } from "lucide-react";
 
 interface Props {
   value: string | null;          // profile.id
@@ -113,6 +113,21 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     el?.scrollIntoView({ block: "nearest" });
   }, [highlight]);
 
+  // Online/offline awareness for a distinct retry message when the network is down
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  useEffect(() => {
+    const goOnline = () => { setIsOnline(true); void refetch(); };
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, [refetch]);
+
   const commitSelection = (o: AuthProfile) => {
     const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
     onChange(o.id, label);
@@ -183,7 +198,30 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
               role="listbox"
               className="max-h-[320px] overflow-y-auto border rounded-md divide-y"
             >
-              {isError ? (
+              {!isOnline ? (
+                <div className="p-4 text-sm text-center space-y-3" role="alert" aria-live="polite">
+                  <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
+                    <WifiOff className="h-4 w-4" />
+                    <span>You appear to be offline.</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Reconnect to load OIC / 2IC officers. We'll retry automatically once you're back online.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { void refetch(); }}
+                    disabled={isFetching}
+                  >
+                    {isFetching ? (
+                      <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Retrying...</>
+                    ) : (
+                      <><RefreshCw className="h-3.5 w-3.5 mr-2" /> Try again</>
+                    )}
+                  </Button>
+                </div>
+              ) : isError ? (
                 <div className="p-4 text-sm text-center space-y-3" role="alert" aria-live="polite">
                   <div className="flex items-center justify-center gap-2 text-destructive">
                     <AlertCircle className="h-4 w-4" />
