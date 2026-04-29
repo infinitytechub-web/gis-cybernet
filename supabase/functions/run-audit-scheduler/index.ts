@@ -375,8 +375,17 @@ async function dispatchVarianceAlert(supabase: any, payload: any) {
   const text = `⚠️ Variance alert: ${payload.item_name}${locTxt} — variance ${payload.variance_qty} ${payload.item_unit} (≈ ₵${payload.variance_value})${thTxt}.`;
   const out: any = {};
 
-  if (settings?.alert_webhook_enabled && settings?.webhook_url) {
-    out.webhook = await postWebhook(settings.webhook_url, { text, payload });
+  // Per-override webhook takes precedence over the global one
+  const targetWebhook =
+    payload.override_webhook && String(payload.override_webhook).trim().length > 0
+      ? String(payload.override_webhook)
+      : settings?.alert_webhook_enabled
+        ? settings?.webhook_url
+        : null;
+
+  if (targetWebhook) {
+    out.webhook = await postWebhook(targetWebhook, { text, payload });
+    out.webhook_target = payload.override_webhook ? "override" : "global";
   }
   if (
     settings?.alert_email_enabled &&
