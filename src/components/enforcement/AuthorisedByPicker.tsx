@@ -64,16 +64,54 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     },
   });
 
-  // Server-side search against user_roles → profiles, scoped to OIC / 2IC
+  // Resolve the current user's department + top role so we can scope the officer
+  // list. Command-tier users (admin/oic/2ic/staff_officer) see every OIC/2IC
+  // across the organisation; everyone else only sees officers in their own
+  // department. Falls back to the unscoped query if no department can be
+  // determined (e.g. unauthenticated render in tests).
+  const { data: viewerScope } = useQuery({
+    queryKey: ["authorising-officers-viewer-scope"],
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth?.user?.id;
+      if (!uid) return { departmentId: null as string | null, isCommandTier: false };
+
+      const [{ data: rolesData }, { data: profileData }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+        supabase.from("profiles").select("department_id").eq("user_id", uid).maybeSingle(),
+      ]);
+
+      const roles = (rolesData ?? []).map((r: any) => r.role);
+      const isCommandTier = roles.some((r: string) =>
+        ["admin", "oic", "2ic", "staff_officer"].includes(r),
+      );
+      return {
+        departmentId: (profileData as any)?.department_id ?? null,
+        isCommandTier,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Server-side search against user_roles → profiles, scoped to OIC / 2IC and
+  // (for non-command-tier viewers) to the viewer's own department.
+  const scopeKey = viewerScope?.isCommandTier
+    ? "all"
+    : viewerScope?.departmentId ?? "none";
   const { data: officers = [], isFetching, isLoading, isError, error: queryError, refetch } = useQuery({
-    queryKey: ["authorising-officers", debounced],
+    queryKey: ["authorising-officers", debounced, scopeKey],
     enabled: open,
     queryFn: async () => {
       let query = supabase
         .from("user_roles")
-        .select("role, user_id, profiles!inner(id, first_name, last_name, ranks(abbreviation), departments(name))")
+        .select("role, user_id, profiles!inner(id, first_name, last_name, department_id, ranks(abbreviation), departments(name))")
         .in("role", ["oic", "2ic"])
         .limit(50);
+
+      // Department scoping for non-command-tier viewers
+      if (viewerScope && !viewerScope.isCommandTier && viewerScope.departmentId) {
+        query = query.eq("profiles.department_id", viewerScope.departmentId);
+      }
 
       if (debounced) {
         const term = `%${debounced}%`;
