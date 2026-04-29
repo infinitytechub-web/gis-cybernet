@@ -62,6 +62,7 @@ export function StoresReportsTab() {
   const valuation = useMemo(() => {
     const byCategory = new Map<string, number>();
     const byLocation = new Map<string, number>();
+    const byCondition = new Map<string, number>();
     let total = 0;
     items.forEach((i: any) => {
       const v = Number(i.qty_on_hand) * Number(i.unit_cost ?? 0);
@@ -70,6 +71,8 @@ export function StoresReportsTab() {
       byCategory.set(c, (byCategory.get(c) ?? 0) + v);
       const l = i.location || "Unassigned";
       byLocation.set(l, (byLocation.get(l) ?? 0) + v);
+      const cond = (i.condition || "unspecified").toString();
+      byCondition.set(cond, (byCondition.get(cond) ?? 0) + v);
     });
     return {
       total,
@@ -78,6 +81,9 @@ export function StoresReportsTab() {
         .map(([name, value]) => ({ name, value: Number(value.toFixed(2)) }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 10),
+      byCondition: Array.from(byCondition.entries())
+        .map(([name, value]) => ({ name, value: Number(value.toFixed(2)) }))
+        .sort((a, b) => b.value - a.value),
     };
   }, [items]);
 
