@@ -249,7 +249,12 @@ export function AppSidebar() {
       <SidebarContent role="navigation" aria-label={collapsed ? "Collapsed navigation menu" : "Expanded navigation menu"}>
         {renderGroup("Command & Control", commandItems)}
         {renderGroup("Personnel Management", personnelItems)}
-        {renderGroup("Workforce Operations", workforceItems)}
+        {renderGroup(
+          "Workforce Operations",
+          (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
+            ? [...workforceItems, staffApprovalsItem]
+            : workforceItems,
+        )}
         {renderGroup("Immigration Services", immigrationItems)}
         {renderGroup("Security & Enforcement", securityItems)}
         {renderGroup("Logistics", logisticsItems)}
