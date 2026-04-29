@@ -123,10 +123,10 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const open = (item?: any) => {
     if (item) {
       setEditing(item);
-      setForm({ name: item.name, sku: item.sku || "", category_id: item.category_id || "", unit: item.unit, min_stock: Number(item.min_stock), unit_cost: Number(item.unit_cost || 0), location: item.location || "", condition: item.condition || "good", notes: item.notes || "" });
+      setForm({ name: item.name, sku: item.sku || "", category_id: item.category_id || "", unit: item.unit, min_stock: Number(item.min_stock), unit_cost: Number(item.unit_cost || 0), location: item.location || "", condition: item.condition || "good", notes: item.notes || "", photo_url: item.photo_url || null, manufacturer: item.manufacturer || "", model: item.model || "", serial_number: item.serial_number || "", purchase_date: item.purchase_date || "", warranty_expires: item.warranty_expires || "" });
     } else {
       setEditing(null);
-      setForm({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "" });
+      setForm({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "", photo_url: null, manufacturer: "", model: "", serial_number: "", purchase_date: "", warranty_expires: "" });
     }
     setDialogOpen(true);
   };
