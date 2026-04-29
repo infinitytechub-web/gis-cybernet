@@ -1187,6 +1187,39 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_alert_settings: {
+        Row: {
+          created_at: string
+          id: string
+          low_stock_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+          variance_enabled: boolean
+          variance_qty_threshold: number
+          variance_value_threshold: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          low_stock_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          variance_enabled?: boolean
+          variance_qty_threshold?: number
+          variance_value_threshold?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          low_stock_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          variance_enabled?: boolean
+          variance_qty_threshold?: number
+          variance_value_threshold?: number
+        }
+        Relationships: []
+      }
       inventory_audit_counts: {
         Row: {
           counted_at: string
