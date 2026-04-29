@@ -68,7 +68,10 @@ const openDialog = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe("AuthorisedByPicker — keyboard navigation", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockState.searchResult = defaultResult;
+  });
 
   it("highlights the first option when the dialog opens", async () => {
     const user = userEvent.setup();
