@@ -1189,7 +1189,10 @@ export type Database = {
       }
       inventory_alert_settings: {
         Row: {
+          alert_email_enabled: boolean
+          alert_webhook_enabled: boolean
           created_at: string
+          email_recipients: string[]
           id: string
           low_stock_enabled: boolean
           updated_at: string
@@ -1197,9 +1200,13 @@ export type Database = {
           variance_enabled: boolean
           variance_qty_threshold: number
           variance_value_threshold: number
+          webhook_url: string | null
         }
         Insert: {
+          alert_email_enabled?: boolean
+          alert_webhook_enabled?: boolean
           created_at?: string
+          email_recipients?: string[]
           id?: string
           low_stock_enabled?: boolean
           updated_at?: string
@@ -1207,9 +1214,13 @@ export type Database = {
           variance_enabled?: boolean
           variance_qty_threshold?: number
           variance_value_threshold?: number
+          webhook_url?: string | null
         }
         Update: {
+          alert_email_enabled?: boolean
+          alert_webhook_enabled?: boolean
           created_at?: string
+          email_recipients?: string[]
           id?: string
           low_stock_enabled?: boolean
           updated_at?: string
@@ -1217,6 +1228,7 @@ export type Database = {
           variance_enabled?: boolean
           variance_qty_threshold?: number
           variance_value_threshold?: number
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -1263,6 +1275,92 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventory_audit_runs: {
+        Row: {
+          created_at: string
+          delivery_status: Json
+          id: string
+          mismatched_count: number
+          net_variance_value: number
+          report_csv_path: string | null
+          report_pdf_path: string | null
+          schedule_id: string | null
+          summary_json: Json
+          triggered_by: string | null
+          triggered_kind: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_status?: Json
+          id?: string
+          mismatched_count?: number
+          net_variance_value?: number
+          report_csv_path?: string | null
+          report_pdf_path?: string | null
+          schedule_id?: string | null
+          summary_json?: Json
+          triggered_by?: string | null
+          triggered_kind?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_status?: Json
+          id?: string
+          mismatched_count?: number
+          net_variance_value?: number
+          report_csv_path?: string | null
+          report_pdf_path?: string | null
+          schedule_id?: string | null
+          summary_json?: Json
+          triggered_by?: string | null
+          triggered_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_audit_runs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_audit_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_audit_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          frequency: string
+          id: string
+          last_report_path: string | null
+          last_run_at: string | null
+          next_run_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          frequency: string
+          id?: string
+          last_report_path?: string | null
+          last_run_at?: string | null
+          next_run_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          last_report_path?: string | null
+          last_run_at?: string | null
+          next_run_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       inventory_categories: {
         Row: {
