@@ -278,6 +278,63 @@ export function StoresReportsTab() {
         </CardContent>
       </Card>
 
+      {/* Valuation by condition */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-violet-600" /> Stock value by condition
+              </CardTitle>
+              <CardDescription>Identify how much value sits in damaged, fair, or unspecified stock.</CardDescription>
+            </div>
+            <ExportMenu
+              getData={() => ({
+                title: "Stock Valuation by Condition",
+                filename: `stock-valuation-condition-${format(new Date(), "yyyy-MM-dd")}`,
+                headers: ["Condition", "Value (₵)"],
+                rows: valuation.byCondition.map((r) => [r.name, r.value.toFixed(2)]),
+              })}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="grid md:grid-cols-2 gap-4">
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={valuation.byCondition}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v: any) => `₵${Number(v).toFixed(2)}`} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {valuation.byCondition.map((c, i) => {
+                    const color = c.name === "damaged" ? "#ef4444"
+                      : c.name === "poor" ? "#f59e0b"
+                      : c.name === "fair" ? "#eab308"
+                      : c.name === "good" ? "#10b981"
+                      : PIE_COLORS[i % PIE_COLORS.length];
+                    return <Cell key={i} fill={color} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <Table>
+            <TableHeader><TableRow><TableHead>Condition</TableHead><TableHead className="text-right">Value</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {valuation.byCondition.length === 0 ? (
+                <TableRow><TableCell colSpan={2} className="text-center text-xs text-muted-foreground py-4">No items</TableCell></TableRow>
+              ) : valuation.byCondition.map(c => (
+                <TableRow key={c.name}>
+                  <TableCell className="capitalize text-sm">{c.name}</TableCell>
+                  <TableCell className="text-right tabular-nums text-sm">₵{c.value.toFixed(2)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       {/* Reorder list */}
       <Card>
         <CardHeader className="pb-2">
