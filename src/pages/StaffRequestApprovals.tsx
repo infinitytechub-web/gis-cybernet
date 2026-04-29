@@ -11,6 +11,10 @@ import {
   ClipboardEdit,
   CalendarClock,
   RefreshCw,
+  History,
+  ChevronDown,
+  ChevronUp,
+  Ban,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -215,22 +219,52 @@ export default function StaffRequestApprovals() {
         throw new Error("A reason of at least 5 characters is required to reject");
       }
       const table = review.req.kind === "shift" ? "shift_change_requests" : "attendance_edit_requests";
-      const { error } = await supabase
+      // Concurrency safeguard: only update if still pending. If another supervisor
+      // already actioned it, the row count will be 0 and we surface a clear error.
+      const { data, error } = await supabase
         .from(table)
         .update({
           status: isReject ? "rejected" : "approved",
           review_comment: review.comment.trim() || null,
         })
-        .eq("id", review.req.id);
+        .eq("id", review.req.id)
+        .eq("status", "pending")
+        .select("id, status, reviewed_by, reviewed_at");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("This request was already reviewed by another supervisor. Refreshing…");
+      }
     },
     onSuccess: () => {
       toast.success(review.action === "approve" ? "Request approved" : "Request rejected");
       setReview({ open: false, action: "approve", req: null, comment: "" });
       queryClient.invalidateQueries({ queryKey: ["staff-approvals"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Review failed"),
+    onError: (e: any) => {
+      toast.error(e?.message ?? "Review failed");
+      queryClient.invalidateQueries({ queryKey: ["staff-approvals"] });
+    },
   });
+
+  // Open review dialog after re-reading current status to avoid double-review races.
+  const openReview = async (action: "approve" | "reject", req: AnyRequest) => {
+    const table = req.kind === "shift" ? "shift_change_requests" : "attendance_edit_requests";
+    const { data, error } = await supabase
+      .from(table)
+      .select("status")
+      .eq("id", req.id)
+      .maybeSingle();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (!data || data.status !== "pending") {
+      toast.error("This request is no longer pending — another reviewer just actioned it.");
+      queryClient.invalidateQueries({ queryKey: ["staff-approvals"] });
+      return;
+    }
+    setReview({ open: true, action, req, comment: "" });
+  };
 
   if (authLoading) {
     return (
@@ -346,6 +380,8 @@ export default function StaffRequestApprovals() {
               {shiftRows.map((r) => (
                 <RequestCard
                   key={r.id}
+                  kind="shift_change"
+                  requestId={r.id}
                   status={r.status}
                   who={staffName(r.profiles)}
                   staffId={r.profiles?.staff_id ?? null}
@@ -353,12 +389,8 @@ export default function StaffRequestApprovals() {
                   reason={r.reason}
                   reviewComment={r.review_comment}
                   createdAt={r.created_at}
-                  onApprove={() =>
-                    setReview({ open: true, action: "approve", req: { kind: "shift", ...r }, comment: "" })
-                  }
-                  onReject={() =>
-                    setReview({ open: true, action: "reject", req: { kind: "shift", ...r }, comment: "" })
-                  }
+                  onApprove={() => openReview("approve", { kind: "shift", ...r })}
+                  onReject={() => openReview("reject", { kind: "shift", ...r })}
                   details={
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <div>Type: <span className="font-medium capitalize text-foreground">{r.request_type}</span></div>
@@ -387,6 +419,8 @@ export default function StaffRequestApprovals() {
               {attRows.map((r) => (
                 <RequestCard
                   key={r.id}
+                  kind="attendance_edit"
+                  requestId={r.id}
                   status={r.status}
                   who={staffName(r.profiles)}
                   staffId={r.profiles?.staff_id ?? null}
@@ -394,12 +428,8 @@ export default function StaffRequestApprovals() {
                   reason={r.reason}
                   reviewComment={r.review_comment}
                   createdAt={r.created_at}
-                  onApprove={() =>
-                    setReview({ open: true, action: "approve", req: { kind: "attendance", ...r }, comment: "" })
-                  }
-                  onReject={() =>
-                    setReview({ open: true, action: "reject", req: { kind: "attendance", ...r }, comment: "" })
-                  }
+                  onApprove={() => openReview("approve", { kind: "attendance", ...r })}
+                  onReject={() => openReview("reject", { kind: "attendance", ...r })}
                   details={
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <div>Field: <span className="font-medium capitalize text-foreground">{r.field.replace("_","-")}</span></div>
@@ -507,7 +537,18 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
+type HistoryEntry = {
+  id: string;
+  from_status: string | null;
+  to_status: string;
+  actor_name: string | null;
+  comment: string | null;
+  created_at: string;
+};
+
 function RequestCard({
+  kind,
+  requestId,
   status,
   who,
   staffId,
@@ -519,6 +560,8 @@ function RequestCard({
   onApprove,
   onReject,
 }: {
+  kind: "shift_change" | "attendance_edit";
+  requestId: string;
   status: Status;
   who: string;
   staffId: string | null;
@@ -530,6 +573,24 @@ function RequestCard({
   onApprove: () => void;
   onReject: () => void;
 }) {
+  const [showHistory, setShowHistory] = useState(false);
+  const isPending = status === "pending";
+
+  const historyQuery = useQuery({
+    queryKey: ["request-history", kind, requestId],
+    enabled: showHistory,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_request_history")
+        .select("id, from_status, to_status, actor_name, comment, created_at")
+        .eq("request_kind", kind)
+        .eq("request_id", requestId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as HistoryEntry[];
+    },
+  });
+
   return (
     <Card>
       <CardContent className="p-4 space-y-2">
@@ -544,6 +605,7 @@ function RequestCard({
             {status === "pending" && <Clock3 className="h-3 w-3" />}
             {status === "approved" && <CheckCircle2 className="h-3 w-3" />}
             {status === "rejected" && <XCircle className="h-3 w-3" />}
+            {status === "cancelled" && <Ban className="h-3 w-3" />}
             {status}
           </Badge>
         </div>
@@ -554,16 +616,73 @@ function RequestCard({
             <span className="font-medium">Reviewer note: </span>{reviewComment}
           </div>
         )}
-        {status === "pending" && (
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <Button size="sm" variant="outline" onClick={onReject} className="gap-1.5 text-red-600 hover:text-red-700">
-              <XCircle className="h-4 w-4" />
-              Reject
-            </Button>
-            <Button size="sm" onClick={onApprove} className="gap-1.5">
-              <CheckCircle2 className="h-4 w-4" />
-              Approve
-            </Button>
+
+        <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowHistory((v) => !v)}
+            className="h-7 px-2 gap-1.5 text-xs"
+          >
+            <History className="h-3.5 w-3.5" />
+            Approval history
+            {showHistory ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </Button>
+
+          {isPending ? (
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={onReject} className="gap-1.5 text-red-600 hover:text-red-700">
+                <XCircle className="h-4 w-4" />
+                Reject
+              </Button>
+              <Button size="sm" onClick={onApprove} className="gap-1.5">
+                <CheckCircle2 className="h-4 w-4" />
+                Approve
+              </Button>
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Ban className="h-3.5 w-3.5" />
+              Already {status} — actions locked
+            </div>
+          )}
+        </div>
+
+        {showHistory && (
+          <div className="mt-2 rounded-md border bg-muted/20 p-3">
+            {historyQuery.isLoading ? (
+              <div className="text-xs text-muted-foreground">Loading history…</div>
+            ) : (historyQuery.data ?? []).length === 0 ? (
+              <div className="text-xs text-muted-foreground">No history entries yet.</div>
+            ) : (
+              <ol className="relative ml-3 border-l border-border space-y-3">
+                {(historyQuery.data ?? []).map((h) => (
+                  <li key={h.id} className="pl-4 relative">
+                    <span
+                      className={cn(
+                        "absolute -left-[7px] top-1.5 h-3 w-3 rounded-full border-2 border-background",
+                        h.to_status === "approved" && "bg-emerald-500",
+                        h.to_status === "rejected" && "bg-red-500",
+                        h.to_status === "pending" && "bg-amber-500",
+                        h.to_status === "cancelled" && "bg-muted-foreground",
+                      )}
+                    />
+                    <div className="text-xs">
+                      <span className="font-medium capitalize">
+                        {h.from_status ? `${h.from_status} → ${h.to_status}` : `Submitted (${h.to_status})`}
+                      </span>
+                      <span className="text-muted-foreground"> · {format(parseISO(h.created_at), "dd MMM yyyy, HH:mm")}</span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      by {h.actor_name || "System"}
+                    </div>
+                    {h.comment && (
+                      <div className="text-xs mt-1 italic">"{h.comment}"</div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
         )}
       </CardContent>

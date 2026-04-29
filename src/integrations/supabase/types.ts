@@ -3820,6 +3820,42 @@ export type Database = {
           },
         ]
       }
+      staff_request_history: {
+        Row: {
+          actor: string | null
+          actor_name: string | null
+          comment: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          request_id: string
+          request_kind: string
+          to_status: string
+        }
+        Insert: {
+          actor?: string | null
+          actor_name?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          request_id: string
+          request_kind: string
+          to_status: string
+        }
+        Update: {
+          actor?: string | null
+          actor_name?: string | null
+          comment?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          request_id?: string
+          request_kind?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
       system_audit_log: {
         Row: {
           action: string
