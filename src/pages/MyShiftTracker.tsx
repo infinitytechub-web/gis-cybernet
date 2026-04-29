@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   format,
   startOfMonth,
@@ -27,7 +27,11 @@ import {
   Timer,
   CalendarDays,
   Activity,
+  LogIn,
+  LogOut,
+  Filter,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,6 +39,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { cn } from "@/lib/utils";
 
 type Profile = {
@@ -237,6 +250,122 @@ export default function MyShiftTracker() {
 
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
+  // ============ Check-in / Check-out mutations ============
+  const todayKey = format(now, "yyyy-MM-dd");
+
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id) throw new Error("Profile not loaded");
+      const ts = new Date().toISOString();
+      const { error } = await supabase.from("attendances").insert({
+        profile_id: profile.id,
+        date: todayKey,
+        check_in: ts,
+        status: "present",
+      });
+      if (error) throw error;
+      return ts;
+    },
+    onSuccess: () => {
+      toast.success("Checked in");
+      queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Check-in failed"),
+  });
+
+  const checkOutMutation = useMutation({
+    mutationFn: async () => {
+      if (!todayAtt?.id) throw new Error("No active check-in");
+      const ts = new Date().toISOString();
+      const { error } = await supabase
+        .from("attendances")
+        .update({ check_out: ts })
+        .eq("id", todayAtt.id);
+      if (error) throw error;
+      return ts;
+    },
+    onSuccess: () => {
+      toast.success("Checked out");
+      queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Check-out failed"),
+  });
+
+  // ============ Export filter state ============
+  const [exportScope, setExportScope] = useState<"all" | "scheduled" | "worked" | "missed">("all");
+  const [exportStatus, setExportStatus] = useState<"any" | "present" | "late" | "absent" | "excused">("any");
+
+  const exportRows = useMemo(() => {
+    const monthDays = days.filter((d) => isSameMonth(d, cursor));
+    return monthDays
+      .map((d) => {
+        const key = format(d, "yyyy-MM-dd");
+        const entry = dateMap.get(key);
+        const assignName = entry?.assignments[0]?.shifts?.name ?? "";
+        const att = entry?.attendance;
+        const hasShift = !!entry?.assignments.length;
+        const hasIn = !!att?.check_in;
+        const completed = !!att?.check_in && !!att?.check_out;
+        const minutes =
+          completed
+            ? Math.max(0, differenceInMinutes(parseISO(att!.check_out!), parseISO(att!.check_in!)))
+            : 0;
+        return {
+          d,
+          key,
+          weekday: format(d, "EEE"),
+          week: getISOWeek(d),
+          assignName,
+          hasShift,
+          hasIn,
+          completed,
+          checkIn: att?.check_in ? format(parseISO(att.check_in), "HH:mm:ss") : "",
+          checkOut: att?.check_out ? format(parseISO(att.check_out), "HH:mm:ss") : "",
+          status: att?.status ?? "",
+          minutes,
+        };
+      })
+      .filter((r) => {
+        if (exportScope === "scheduled" && !r.hasShift) return false;
+        if (exportScope === "worked" && !r.hasIn) return false;
+        if (exportScope === "missed" && !(r.hasShift && !r.hasIn)) return false;
+        if (exportStatus !== "any" && r.status !== exportStatus) return false;
+        return true;
+      });
+  }, [days, dateMap, cursor, exportScope, exportStatus]);
+
+  const buildExportPayload = () => {
+    const fullName = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || "Staff";
+    const subtitle = [
+      `Staff: ${fullName}${profile?.staff_id ? ` (${profile.staff_id})` : ""}`,
+      `Shift Group: ${profile?.shift_group ?? "—"}`,
+      `Period: ${format(monthStart, "dd MMM yyyy")} – ${format(monthEnd, "dd MMM yyyy")}`,
+      `Scope: ${exportScope}`,
+      `Status: ${exportStatus}`,
+      `Totals: ${metrics.scheduled} scheduled · ${metrics.worked} worked · ${fmtMinutes(metrics.totalMinutes)}`,
+    ].join(" · ");
+    return {
+      title: `My Shift & Attendance — ${metrics.monthName}`,
+      filename: `my-shift-${format(cursor, "yyyy-MM")}`,
+      subtitle,
+      headers: ["Date", "Day", "Wk", "Assigned shift", "Check-in", "Check-out", "Status", "Hours"],
+      rows: exportRows.map((r) => [
+        r.key,
+        r.weekday,
+        `W${r.week}`,
+        r.assignName || "—",
+        r.checkIn || "—",
+        r.checkOut || "—",
+        r.status || "—",
+        r.minutes > 0 ? fmtMinutes(r.minutes) : "—",
+      ]),
+    };
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
@@ -338,10 +467,103 @@ export default function MyShiftTracker() {
               live={!!todayAtt?.check_in && !todayAtt?.check_out}
             />
           </div>
+
+          {/* Quick check-in / check-out */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {!todayAtt?.check_in ? (
+              <Button
+                onClick={() => checkInMutation.mutate()}
+                disabled={checkInMutation.isPending || !profile?.id}
+                className="gap-2"
+                size="sm"
+              >
+                <LogIn className="h-4 w-4" />
+                {checkInMutation.isPending ? "Checking in..." : "Check in now"}
+              </Button>
+            ) : !todayAtt?.check_out ? (
+              <Button
+                onClick={() => checkOutMutation.mutate()}
+                disabled={checkOutMutation.isPending}
+                variant="destructive"
+                className="gap-2"
+                size="sm"
+              >
+                <LogOut className="h-4 w-4" />
+                {checkOutMutation.isPending ? "Checking out..." : "Check out now"}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 text-emerald-600 text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="font-medium">Today's attendance completed</span>
+              </div>
+            )}
+            {!todayShift && !todayAtt?.check_in && (
+              <span className="text-xs text-muted-foreground">
+                No shift assigned for today — check-in still allowed if you are on duty.
+              </span>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Calendar */}
+      {/* Export filtered monthly summary */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Filter className="h-4 w-4 text-primary" />
+            Export monthly summary
+          </CardTitle>
+          <CardDescription>
+            Download your {metrics.monthName} shift &amp; attendance summary as CSV or PDF with the filters below applied.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs">Scope</Label>
+              <Select value={exportScope} onValueChange={(v) => setExportScope(v as typeof exportScope)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All days</SelectItem>
+                  <SelectItem value="scheduled">Scheduled only</SelectItem>
+                  <SelectItem value="worked">Worked (checked in)</SelectItem>
+                  <SelectItem value="missed">Missed (scheduled, not in)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Attendance status</Label>
+              <Select value={exportStatus} onValueChange={(v) => setExportStatus(v as typeof exportStatus)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any status</SelectItem>
+                  <SelectItem value="present">Present</SelectItem>
+                  <SelectItem value="late">Late</SelectItem>
+                  <SelectItem value="absent">Absent</SelectItem>
+                  <SelectItem value="excused">Excused</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Period</Label>
+              <div className="h-9 px-3 rounded-md border bg-muted/30 flex items-center text-sm font-mono">
+                {format(monthStart, "dd MMM")} – {format(monthEnd, "dd MMM yyyy")}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <Badge variant="secondary" className="font-normal">
+              {exportRows.length} record{exportRows.length === 1 ? "" : "s"} match
+            </Badge>
+            <ExportMenu
+              label="Download summary"
+              formats={["pdf", "csv"]}
+              getData={buildExportPayload}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
