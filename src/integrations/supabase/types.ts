@@ -3046,6 +3046,45 @@ export type Database = {
           },
         ]
       }
+      profile_departments: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          is_primary: boolean
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          is_primary?: boolean
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          is_primary?: boolean
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_departments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_office_history: {
         Row: {
           changed_at: string
@@ -4569,6 +4608,12 @@ export type Database = {
         }[]
       }
       unblock_ip: { Args: { _block_id: string }; Returns: undefined }
+      user_department_ids: {
+        Args: { _user_id: string }
+        Returns: {
+          department_id: string
+        }[]
+      }
       verify_otp: { Args: { _code: string }; Returns: boolean }
       verify_threshold_audit_chain: {
         Args: never
