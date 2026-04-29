@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, Loader2, ShieldCheck } from "lucide-react";
+import { Eye, Loader2, ShieldCheck, Download } from "lucide-react";
 import { format } from "date-fns";
+import { downloadCSVString } from "@/lib/download-utils";
 
 export default function SensitiveAccessLog() {
   const { isAdmin, is2ic, isOic } = useAuth();
@@ -97,6 +99,35 @@ export default function SensitiveAccessLog() {
                 <SelectItem value="view_detail">View detail</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              disabled={filtered.length === 0}
+              onClick={() => {
+                const esc = (v: any) => {
+                  const s = v === null || v === undefined ? "" : String(v);
+                  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                };
+                const headers = ["When", "User", "User ID", "Table", "Action", "Records", "Reason", "Filters"];
+                const lines = [headers.join(",")];
+                for (const r of filtered) {
+                  lines.push([
+                    format(new Date(r.created_at), "yyyy-MM-dd HH:mm:ss"),
+                    r.accessed_by_name ?? "",
+                    r.accessed_by ?? "",
+                    r.table_name,
+                    r.action,
+                    r.record_count ?? "",
+                    r.reason ?? "",
+                    r.filters ? JSON.stringify(r.filters) : "",
+                  ].map(esc).join(","));
+                }
+                downloadCSVString(lines.join("\n"), `sensitive-access-log-${format(new Date(), "yyyyMMdd-HHmm")}.csv`);
+              }}
+            >
+              <Download className="h-4 w-4 mr-1" /> Export CSV
+            </Button>
           </div>
 
           <div className="overflow-x-auto rounded-md border">
