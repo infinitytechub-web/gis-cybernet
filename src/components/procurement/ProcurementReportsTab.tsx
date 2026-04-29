@@ -210,91 +210,173 @@ export function ProcurementReportsTab() {
   }, [requisitions]);
 
   // ============ Combined export ============
-  const exportCombined = (fmt: "pdf" | "csv") => {
-    const today = format(new Date(), "yyyy-MM-dd");
-    const sections: { title: string; headers: string[]; rows: string[][] }[] = [
-      {
-        title: "Spend by Vendor (Top 10)",
-        headers: ["Vendor", "Total PO Value"],
-        rows: spendByVendor.map((r) => [r.name, fmtCurrency(r.value)]),
-      },
-      {
-        title: "Purchase Orders by Status",
-        headers: ["Status", "Count"],
-        rows: poByStatus.map((r) => [r.name, String(r.value)]),
-      },
-      {
-        title: "Requisitions by Status",
-        headers: ["Status", "Count"],
-        rows: reqByStatus.map((r) => [r.name, String(r.value)]),
-      },
-      {
-        title: "Overdue Invoices",
-        headers: ["Invoice #", "Vendor", "Amount", "Due"],
-        rows: kpis.overdue.map((i) => [
-          i.invoice_number,
-          i.procurement_vendors?.name ?? "—",
-          fmtCurrency(Number(i.amount)),
-          i.due_date ?? "",
-        ]),
-      },
-      {
-        title: "Contracts Expiring (next 30 days)",
-        headers: ["Contract #", "Title", "Vendor", "Ends"],
-        rows: kpis.expiringContracts.map((c) => [
-          c.contract_number,
-          c.title,
-          c.procurement_vendors?.name ?? "—",
-          c.end_date ?? "",
-        ]),
-      },
-    ];
+  // ============ Combined export sections (memoised) ============
+  const buildSections = () => [
+    {
+      title: "Spend by Vendor (Top 10)",
+      headers: ["Vendor", "Total PO Value"],
+      rows: spendByVendor.map((r) => [r.name, fmtCurrency(r.value)]),
+    },
+    {
+      title: "Purchase Orders by Status",
+      headers: ["Status", "Count"],
+      rows: poByStatus.map((r) => [r.name, String(r.value)]),
+    },
+    {
+      title: "Requisitions by Status",
+      headers: ["Status", "Count"],
+      rows: reqByStatus.map((r) => [r.name, String(r.value)]),
+    },
+    {
+      title: "Overdue Invoices",
+      headers: ["Invoice #", "Vendor", "Amount", "Due"],
+      rows: kpis.overdue.map((i: AnyRow) => [
+        i.invoice_number,
+        i.procurement_vendors?.name ?? "—",
+        fmtCurrency(Number(i.amount)),
+        i.due_date ?? "",
+      ]),
+    },
+    {
+      title: "Contracts Expiring (next 30 days)",
+      headers: ["Contract #", "Title", "Vendor", "Ends"],
+      rows: kpis.expiringContracts.map((c: AnyRow) => [
+        c.contract_number,
+        c.title,
+        c.procurement_vendors?.name ?? "—",
+        c.end_date ?? "",
+      ]),
+    },
+  ];
 
-    if (fmt === "csv") {
-      const lines: string[] = [];
-      lines.push(`"Procurement — Combined Report"`);
-      lines.push(`"Generated","${format(new Date(), "PPpp")}"`);
-      lines.push(`"Total PO value","${fmtCurrency(kpis.poTotal)}"`);
-      lines.push(`"Invoices total","${fmtCurrency(kpis.invTotal)}"`);
-      lines.push(`"Invoices outstanding","${fmtCurrency(kpis.invOutstanding)}"`);
-      lines.push("");
-      sections.forEach((s) => {
-        lines.push(`"# ${s.title}"`);
-        lines.push(s.headers.map((h) => `"${h}"`).join(","));
-        s.rows.forEach((r) =>
-          lines.push(r.map((c) => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")),
-        );
-        lines.push("");
-      });
-      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `procurement-combined-report-${today}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success("Combined report (CSV) downloaded");
+  // ============ Confirmation + rate limit + size guards ============
+  const [confirm, setConfirm] = useState<{
+    open: boolean;
+    fmt: "csv" | "pdf";
+    estBytes: number;
+    rowCount: number;
+    recentCount: number;
+  } | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const requestExport = (fmt: "csv" | "pdf") => {
+    const sections = buildSections();
+    const rowCount = sections.reduce((s, sec) => s + sec.rows.length, 0);
+
+    // Rough payload size estimate from raw text
+    const text =
+      `Procurement Combined Report ${format(new Date(), "PPpp")}\n` +
+      sections
+        .map(
+          (s) =>
+            `# ${s.title}\n${s.headers.join(",")}\n${s.rows.map((r) => r.join(",")).join("\n")}`,
+        )
+        .join("\n");
+    const csvBytes = new Blob([text]).size;
+    // PDF is heavier per row; rough multiplier
+    const estBytes = fmt === "pdf" ? Math.round(csvBytes * 2.5) + 8 * 1024 : csvBytes;
+
+    // Hard size cap
+    if (estBytes > SIZE_LIMIT_BYTES[fmt]) {
+      toast.error(
+        `Combined ${fmt.toUpperCase()} export would be ~${fmtBytes(estBytes)} (limit ${fmtBytes(SIZE_LIMIT_BYTES[fmt])}). Use the filtered export below to narrow the data.`,
+      );
       return;
     }
 
-    const headers = ["Col 1", "Col 2", "Col 3", "Col 4"];
-    const rows: string[][] = [];
-    sections.forEach((s) => {
-      rows.push([`▶ ${s.title}`, "", "", ""]);
-      rows.push([...s.headers, ...Array(Math.max(0, 4 - s.headers.length)).fill("")]);
-      s.rows.forEach((r) => rows.push([...r, ...Array(Math.max(0, 4 - r.length)).fill("")]));
-      rows.push(["", "", "", ""]);
-    });
-    exportReport("pdf", {
-      title: "Procurement — Combined Report",
-      subtitle: `Generated ${format(new Date(), "PPpp")} · PO total ${fmtCurrency(kpis.poTotal)} · Outstanding ${fmtCurrency(kpis.invOutstanding)}`,
-      filename: `procurement-combined-report-${today}`,
-      headers,
-      rows,
-    });
-    toast.success("Combined report (PDF) downloaded");
+    // Rate limit
+    const log = readRateLog();
+    const now = Date.now();
+    const last = log[log.length - 1];
+    if (last && now - last < RATE_MIN_GAP_MS) {
+      const wait = Math.ceil((RATE_MIN_GAP_MS - (now - last)) / 1000);
+      toast.error(`Please wait ${wait}s before exporting again.`);
+      return;
+    }
+    if (log.length >= RATE_MAX_IN_WINDOW) {
+      const oldest = log[0];
+      const minsLeft = Math.ceil((RATE_WINDOW_MS - (now - oldest)) / 60000);
+      toast.error(
+        `Export limit reached (${RATE_MAX_IN_WINDOW} per ${Math.round(RATE_WINDOW_MS / 60000)} min). Try again in ~${minsLeft} min.`,
+      );
+      return;
+    }
+
+    setConfirm({ open: true, fmt, estBytes, rowCount, recentCount: log.length });
+  };
+
+  const performExport = async () => {
+    if (!confirm) return;
+    const { fmt } = confirm;
+    setExporting(true);
+    try {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const sections = buildSections();
+
+      if (fmt === "csv") {
+        const lines: string[] = [];
+        lines.push(`"Procurement — Combined Report"`);
+        lines.push(`"Generated","${format(new Date(), "PPpp")}"`);
+        lines.push(`"Total PO value","${fmtCurrency(kpis.poTotal)}"`);
+        lines.push(`"Invoices total","${fmtCurrency(kpis.invTotal)}"`);
+        lines.push(`"Invoices outstanding","${fmtCurrency(kpis.invOutstanding)}"`);
+        lines.push("");
+        sections.forEach((s) => {
+          lines.push(`"# ${s.title}"`);
+          lines.push(s.headers.map((h) => `"${h}"`).join(","));
+          s.rows.forEach((r) =>
+            lines.push(r.map((c) => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")),
+          );
+          lines.push("");
+        });
+        const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+
+        // Final actual-size enforcement (after building)
+        if (blob.size > SIZE_LIMIT_BYTES.csv) {
+          toast.error(
+            `CSV is ${fmtBytes(blob.size)} (limit ${fmtBytes(SIZE_LIMIT_BYTES.csv)}). Export aborted.`,
+          );
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `procurement-combined-report-${today}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success(`Combined report (CSV, ${fmtBytes(blob.size)}) downloaded`);
+      } else {
+        const headers = ["Col 1", "Col 2", "Col 3", "Col 4"];
+        const rows: string[][] = [];
+        sections.forEach((s) => {
+          rows.push([`▶ ${s.title}`, "", "", ""]);
+          rows.push([...s.headers, ...Array(Math.max(0, 4 - s.headers.length)).fill("")]);
+          s.rows.forEach((r) => rows.push([...r, ...Array(Math.max(0, 4 - r.length)).fill("")]));
+          rows.push(["", "", "", ""]);
+        });
+        exportReport("pdf", {
+          title: "Procurement — Combined Report",
+          subtitle: `Generated ${format(new Date(), "PPpp")} · PO total ${fmtCurrency(kpis.poTotal)} · Outstanding ${fmtCurrency(kpis.invOutstanding)}`,
+          filename: `procurement-combined-report-${today}`,
+          headers,
+          rows,
+        });
+        toast.success("Combined report (PDF) downloaded");
+      }
+
+      // Record the successful export for rate limiting
+      const fresh = readRateLog();
+      fresh.push(Date.now());
+      writeRateLog(fresh);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Export failed");
+    } finally {
+      setExporting(false);
+      setConfirm(null);
+    }
   };
 
   return (
@@ -308,12 +390,46 @@ export function ProcurementReportsTab() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => requestExport("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => requestExport("csv")}>CSV</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       )}
+
+      <AlertDialog
+        open={!!confirm?.open}
+        onOpenChange={(o) => { if (!o && !exporting) setConfirm(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm combined export</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>
+                  You are about to download the combined Procurement report as{" "}
+                  <strong className="uppercase">{confirm?.fmt}</strong>.
+                </div>
+                <ul className="list-disc pl-5 text-muted-foreground">
+                  <li>Estimated size: <strong className="text-foreground">{confirm ? fmtBytes(confirm.estBytes) : ""}</strong> (limit {confirm ? fmtBytes(SIZE_LIMIT_BYTES[confirm.fmt]) : ""})</li>
+                  <li>Rows across all sections: <strong className="text-foreground">{confirm?.rowCount ?? 0}</strong></li>
+                  <li>Recent exports in last {Math.round(RATE_WINDOW_MS / 60000)} min: <strong className="text-foreground">{confirm?.recentCount ?? 0}/{RATE_MAX_IN_WINDOW}</strong></li>
+                </ul>
+                <div className="text-xs text-muted-foreground">
+                  Large repeat downloads are throttled to protect storage and bandwidth.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={exporting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={performExport} disabled={exporting}>
+              {exporting ? "Generating…" : "Download"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
