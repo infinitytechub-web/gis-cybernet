@@ -382,6 +382,18 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Manufacturer</Label><Input value={form.manufacturer} onChange={e => setForm(p => ({ ...p, manufacturer: e.target.value }))} /></div>
+              <div><Label>Model</Label><Input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Serial Number</Label><Input value={form.serial_number} onChange={e => setForm(p => ({ ...p, serial_number: e.target.value }))} /></div>
+              <div></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Purchase Date</Label><Input type="date" value={form.purchase_date} onChange={e => setForm(p => ({ ...p, purchase_date: e.target.value }))} /></div>
+              <div><Label>Warranty Expires</Label><Input type="date" value={form.warranty_expires} onChange={e => setForm(p => ({ ...p, warranty_expires: e.target.value }))} /></div>
+            </div>
             <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">{save.isPending ? "Saving…" : editing ? "Update" : "Create"}</Button>
           </div>
