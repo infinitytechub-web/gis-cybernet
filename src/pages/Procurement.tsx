@@ -282,6 +282,7 @@ export default function Procurement() {
         <TabsContent value="contracts"><ContractsTab contracts={contracts} vendors={vendors} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="vendors"><VendorsTab vendors={vendors} canManage={canManage} /></TabsContent>
         <TabsContent value="documents"><DocumentsTab canManage={canManage} userId={user?.id} vendors={vendors} /></TabsContent>
+        <TabsContent value="reports"><ProcurementReportsTab /></TabsContent>
       </Tabs>
     </div>
   );
