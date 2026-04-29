@@ -250,6 +250,122 @@ export default function MyShiftTracker() {
 
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
+  // ============ Check-in / Check-out mutations ============
+  const todayKey = format(now, "yyyy-MM-dd");
+
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id) throw new Error("Profile not loaded");
+      const ts = new Date().toISOString();
+      const { error } = await supabase.from("attendances").insert({
+        profile_id: profile.id,
+        date: todayKey,
+        check_in: ts,
+        status: "present",
+      });
+      if (error) throw error;
+      return ts;
+    },
+    onSuccess: () => {
+      toast.success("Checked in");
+      queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Check-in failed"),
+  });
+
+  const checkOutMutation = useMutation({
+    mutationFn: async () => {
+      if (!todayAtt?.id) throw new Error("No active check-in");
+      const ts = new Date().toISOString();
+      const { error } = await supabase
+        .from("attendances")
+        .update({ check_out: ts })
+        .eq("id", todayAtt.id);
+      if (error) throw error;
+      return ts;
+    },
+    onSuccess: () => {
+      toast.success("Checked out");
+      queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Check-out failed"),
+  });
+
+  // ============ Export filter state ============
+  const [exportScope, setExportScope] = useState<"all" | "scheduled" | "worked" | "missed">("all");
+  const [exportStatus, setExportStatus] = useState<"any" | "present" | "late" | "absent" | "excused">("any");
+
+  const exportRows = useMemo(() => {
+    const monthDays = days.filter((d) => isSameMonth(d, cursor));
+    return monthDays
+      .map((d) => {
+        const key = format(d, "yyyy-MM-dd");
+        const entry = dateMap.get(key);
+        const assignName = entry?.assignments[0]?.shifts?.name ?? "";
+        const att = entry?.attendance;
+        const hasShift = !!entry?.assignments.length;
+        const hasIn = !!att?.check_in;
+        const completed = !!att?.check_in && !!att?.check_out;
+        const minutes =
+          completed
+            ? Math.max(0, differenceInMinutes(parseISO(att!.check_out!), parseISO(att!.check_in!)))
+            : 0;
+        return {
+          d,
+          key,
+          weekday: format(d, "EEE"),
+          week: getISOWeek(d),
+          assignName,
+          hasShift,
+          hasIn,
+          completed,
+          checkIn: att?.check_in ? format(parseISO(att.check_in), "HH:mm:ss") : "",
+          checkOut: att?.check_out ? format(parseISO(att.check_out), "HH:mm:ss") : "",
+          status: att?.status ?? "",
+          minutes,
+        };
+      })
+      .filter((r) => {
+        if (exportScope === "scheduled" && !r.hasShift) return false;
+        if (exportScope === "worked" && !r.hasIn) return false;
+        if (exportScope === "missed" && !(r.hasShift && !r.hasIn)) return false;
+        if (exportStatus !== "any" && r.status !== exportStatus) return false;
+        return true;
+      });
+  }, [days, dateMap, cursor, exportScope, exportStatus]);
+
+  const buildExportPayload = () => {
+    const fullName = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || "Staff";
+    const subtitle = [
+      `Staff: ${fullName}${profile?.staff_id ? ` (${profile.staff_id})` : ""}`,
+      `Shift Group: ${profile?.shift_group ?? "—"}`,
+      `Period: ${format(monthStart, "dd MMM yyyy")} – ${format(monthEnd, "dd MMM yyyy")}`,
+      `Scope: ${exportScope}`,
+      `Status: ${exportStatus}`,
+      `Totals: ${metrics.scheduled} scheduled · ${metrics.worked} worked · ${fmtMinutes(metrics.totalMinutes)}`,
+    ].join(" · ");
+    return {
+      title: `My Shift & Attendance — ${metrics.monthName}`,
+      filename: `my-shift-${format(cursor, "yyyy-MM")}`,
+      subtitle,
+      headers: ["Date", "Day", "Wk", "Assigned shift", "Check-in", "Check-out", "Status", "Hours"],
+      rows: exportRows.map((r) => [
+        r.key,
+        r.weekday,
+        `W${r.week}`,
+        r.assignName || "—",
+        r.checkIn || "—",
+        r.checkOut || "—",
+        r.status || "—",
+        r.minutes > 0 ? fmtMinutes(r.minutes) : "—",
+      ]),
+    };
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
