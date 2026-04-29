@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { jsPDF } from "jspdf";
+import { Plus, X, FileDown, Layers } from "lucide-react";
 
 interface Item {
   id: string;
@@ -49,8 +51,115 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+type QueueEntry = { asset_tag: string; name: string; location: string | null; serial_number: string | null };
+
 export function ItemDetailDrawer({ item, onOpenChange }: Props) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [queue, setQueue] = useState<QueueEntry[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("asset_label_queue") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("asset_label_queue", JSON.stringify(queue));
+  }, [queue]);
+
+  const inQueue = !!item?.asset_tag && queue.some((q) => q.asset_tag === item.asset_tag);
+  const addToQueue = () => {
+    if (!item?.asset_tag) return;
+    if (inQueue) {
+      setQueue((q) => q.filter((x) => x.asset_tag !== item.asset_tag));
+      toast.success("Removed from print queue");
+    } else {
+      setQueue((q) => [
+        ...q,
+        {
+          asset_tag: item.asset_tag!,
+          name: item.name,
+          location: item.location,
+          serial_number: item.serial_number,
+        },
+      ]);
+      toast.success("Added to print queue");
+    }
+  };
+
+  const generateBatchPdf = async () => {
+    if (queue.length === 0) return;
+    setGenerating(true);
+    try {
+      // 60mm x 40mm labels, 2 cols x 6 rows = 12 per A4 page
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = 210;
+      const pageH = 297;
+      const labelW = 90;
+      const labelH = 45;
+      const cols = 2;
+      const rows = 6;
+      const marginX = (pageW - cols * labelW) / 2;
+      const marginY = (pageH - rows * labelH) / 2;
+
+      for (let i = 0; i < queue.length; i++) {
+        const entry = queue[i];
+        const slot = i % (cols * rows);
+        if (i > 0 && slot === 0) pdf.addPage();
+        const col = slot % cols;
+        const row = Math.floor(slot / cols);
+        const x = marginX + col * labelW;
+        const y = marginY + row * labelH;
+
+        // Border
+        pdf.setDrawColor(200);
+        pdf.rect(x, y, labelW, labelH);
+
+        // QR
+        const dataUrl = await QRCode.toDataURL(entry.asset_tag, {
+          width: 512,
+          margin: 1,
+          errorCorrectionLevel: "M",
+        });
+        const qrSize = 35;
+        pdf.addImage(dataUrl, "PNG", x + 3, y + 5, qrSize, qrSize);
+
+        // Text block
+        const tx = x + qrSize + 7;
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text("GIS — CYBERNET", tx, y + 8);
+        pdf.setFontSize(9);
+        pdf.setFont("courier", "bold");
+        pdf.text(entry.asset_tag, tx, y + 14);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        const nameLines = pdf.splitTextToSize(entry.name, labelW - qrSize - 12);
+        pdf.text(nameLines.slice(0, 2), tx, y + 20);
+        if (entry.location) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(100);
+          pdf.text(`Loc: ${entry.location}`, tx, y + 32);
+          pdf.setTextColor(0);
+        }
+        if (entry.serial_number) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(100);
+          pdf.text(`SN: ${entry.serial_number}`, tx, y + 37);
+          pdf.setTextColor(0);
+        }
+      }
+
+      pdf.save(`asset-labels-${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success(`Generated PDF with ${queue.length} label(s)`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate PDF");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -177,6 +286,16 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                 >
                   <QrCode className="h-3.5 w-3.5" /> Download QR
                 </Button>
+                <Button
+                  size="sm"
+                  variant={inQueue ? "secondary" : "outline"}
+                  className="gap-1.5"
+                  disabled={!item.asset_tag}
+                  onClick={addToQueue}
+                >
+                  {inQueue ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                  {inQueue ? "Remove from queue" : "Add to print queue"}
+                </Button>
                 {out ? (
                   <Badge variant="destructive" className="gap-1">
                     <AlertTriangle className="h-3 w-3" /> Out of stock
@@ -191,6 +310,66 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                   </Badge>
                 )}
               </div>
+
+              {/* Print queue panel */}
+              {queue.length > 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-medium">
+                      <Layers className="h-3.5 w-3.5 text-primary" />
+                      Print queue ({queue.length})
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          setQueue([]);
+                          toast.success("Queue cleared");
+                        }}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs"
+                        onClick={generateBatchPdf}
+                        disabled={generating}
+                      >
+                        {generating ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <FileDown className="h-3.5 w-3.5" />
+                        )}
+                        Generate PDF
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {queue.map((q) => (
+                      <div
+                        key={q.asset_tag}
+                        className="flex items-center justify-between gap-2 rounded bg-background border px-2 py-1 text-xs"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-[10px] text-muted-foreground">{q.asset_tag}</div>
+                          <div className="truncate">{q.name}</div>
+                        </div>
+                        <button
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() =>
+                            setQueue((qs) => qs.filter((x) => x.asset_tag !== q.asset_tag))
+                          }
+                          aria-label="Remove"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Stock card */}
               <div className="rounded-lg border p-3 grid grid-cols-3 gap-3 text-center">
