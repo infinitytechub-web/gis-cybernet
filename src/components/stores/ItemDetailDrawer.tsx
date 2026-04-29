@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { jsPDF } from "jspdf";
+import { Plus, X, FileDown, Layers } from "lucide-react";
 
 interface Item {
   id: string;
