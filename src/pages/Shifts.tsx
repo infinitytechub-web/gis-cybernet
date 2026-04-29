@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import ShiftCalendarTab from "@/components/shifts/ShiftCalendarTab";
 import NightGuardTab from "@/components/shifts/NightGuardTab";
+import ShiftWindowRulesTab from "@/components/shifts/ShiftWindowRulesTab";
 
 type ShiftPattern = Database["public"]["Enums"]["shift_pattern"];
 
