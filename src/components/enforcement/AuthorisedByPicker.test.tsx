@@ -14,12 +14,15 @@ const officers = [
   { id: "p3", first_name: "Yaw",  last_name: "Owusu",   ranks: { abbreviation: "CI"  }, departments: { name: "OPS"  } },
 ];
 
-vi.mock("@/integrations/supabase/client", () => {
-  const buildSearchResult = () => ({
-    data: officers.map((p) => ({ role: "oic", user_id: `u-${p.id}`, profiles: p })),
-    error: null,
-  });
+// Each test can override what the search query returns.
+type MockResult = { data: any[] | null; error: { message: string } | null };
+const defaultResult: MockResult = {
+  data: officers.map((p) => ({ role: "oic", user_id: `u-${p.id}`, profiles: p })),
+  error: null,
+};
+const mockState: { searchResult: MockResult } = { searchResult: defaultResult };
 
+vi.mock("@/integrations/supabase/client", () => {
   const fromImpl = (table: string) => {
     if (table === "user_roles") {
       const builder: any = {
@@ -27,8 +30,7 @@ vi.mock("@/integrations/supabase/client", () => {
         in: () => builder,
         limit: () => builder,
         or: () => builder,
-        // Awaiting the builder resolves to the result
-        then: (resolve: any) => resolve(buildSearchResult()),
+        then: (resolve: any) => resolve(mockState.searchResult),
       };
       return builder;
     }
