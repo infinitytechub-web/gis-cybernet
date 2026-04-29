@@ -16,6 +16,7 @@ import { ClipboardCheck, AlertTriangle, Plus, CheckCircle2, MinusCircle, PlusCir
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { InventoryAlertSettings } from "./InventoryAlertSettings";
+import { InventoryAuditScheduler } from "./InventoryAuditScheduler";
 
 export function InventoryAuditReport() {
   const { user, role } = useAuth();
