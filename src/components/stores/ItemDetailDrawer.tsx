@@ -18,7 +18,10 @@ import {
   History,
   Package,
   Loader2,
+  QrCode,
 } from "lucide-react";
+import QRCode from "qrcode";
+import { toast } from "sonner";
 
 interface Item {
   id: string;
