@@ -4686,6 +4686,33 @@ export type Database = {
         Args: { _bin_id: string }
         Returns: undefined
       }
+      search_approval_audit: {
+        Args: {
+          _actions?: string[]
+          _actor_roles?: string[]
+          _cursor_created?: string
+          _cursor_id?: string
+          _entity_id: string
+          _entity_type: string
+          _from?: string
+          _limit?: number
+          _to?: string
+        }
+        Returns: {
+          action: string
+          actor_first_name: string
+          actor_last_name: string
+          actor_rank_abbrev: string
+          actor_role: string
+          changed_fields: Json
+          created_at: string
+          id: string
+          new_status: string
+          notes: string
+          previous_status: string
+          request_profile_id: string
+        }[]
+      }
       search_authorising_officers: {
         Args: { _limit?: number; _search?: string }
         Returns: {
