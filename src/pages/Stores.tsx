@@ -134,7 +134,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const save = useMutation({
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error("Name required");
-      const payload = { ...form, category_id: form.category_id || null, sku: form.sku || null };
+      const payload = { ...form, category_id: form.category_id || null, sku: form.sku || null, manufacturer: form.manufacturer || null, model: form.model || null, serial_number: form.serial_number || null, purchase_date: form.purchase_date || null, warranty_expires: form.warranty_expires || null };
       if (editing) {
         const { error } = await supabase.from("inventory_items").update(payload).eq("id", editing.id);
         if (error) throw error;
