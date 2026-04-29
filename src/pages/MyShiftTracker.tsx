@@ -308,6 +308,21 @@ export default function MyShiftTracker() {
     },
   });
 
+  // Attendance window settings (admin-configurable)
+  const { data: windowSettings } = useQuery({
+    queryKey: ["attendance-window-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_window_settings")
+        .select("grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? DEFAULT_WINDOW) as WindowSettings;
+    },
+  });
+  const win = windowSettings ?? DEFAULT_WINDOW;
+
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
   // ============ Check-in / Check-out mutations ============
