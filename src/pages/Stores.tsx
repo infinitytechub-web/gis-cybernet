@@ -164,6 +164,14 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
 
   const lowStockCount = items.filter((i: any) => Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0).length;
   const outOfStockCount = items.filter((i: any) => Number(i.qty_on_hand) <= 0).length;
+  const totalValue = items.reduce((s: number, i: any) => s + Number(i.qty_on_hand || 0) * Number(i.unit_cost || 0), 0);
+  const totalItems = items.length;
+
+  const handleScan = (code: string) => {
+    const found = items.find((i: any) => i.asset_tag === code || i.id === code || i.sku === code);
+    if (found) { setOpenItem(found); toast.success(`Found: ${found.name}`); }
+    else { toast.error(`No item matched "${code}"`); }
+  };
 
   const createCat = useMutation({
     mutationFn: async () => {
