@@ -50,7 +50,21 @@ import {
 } from "@/components/ui/select";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { ShiftChangeRequestPanel } from "@/components/shifts/ShiftChangeRequestPanel";
+import { AttendanceEditRequestPanel } from "@/components/shifts/AttendanceEditRequestPanel";
 import { cn } from "@/lib/utils";
+
+type WindowSettings = {
+  grace_minutes: number;
+  early_checkin_minutes: number;
+  late_checkout_minutes: number;
+  enforce_window: boolean;
+};
+const DEFAULT_WINDOW: WindowSettings = {
+  grace_minutes: 15,
+  early_checkin_minutes: 30,
+  late_checkout_minutes: 60,
+  enforce_window: true,
+};
 
 type Profile = {
   id: string;
@@ -294,15 +308,67 @@ export default function MyShiftTracker() {
     },
   });
 
+  // Attendance window settings (admin-configurable)
+  const { data: windowSettings } = useQuery({
+    queryKey: ["attendance-window-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance_window_settings")
+        .select("grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? DEFAULT_WINDOW) as WindowSettings;
+    },
+  });
+  const win = windowSettings ?? DEFAULT_WINDOW;
+
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
   // ============ Check-in / Check-out mutations ============
   const todayKey = format(now, "yyyy-MM-dd");
 
+  // Compute today's allowed window from assigned shift + settings
+  const todayWindow = useMemo(() => {
+    if (!todayShift?.start_time || !todayShift?.end_time) return null;
+    const start = new Date(`${todayKey}T${todayShift.start_time}`);
+    let end = new Date(`${todayKey}T${todayShift.end_time}`);
+    if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+    const earliestIn = new Date(start.getTime() - win.early_checkin_minutes * 60000);
+    const latestIn = new Date(start.getTime() + (win.grace_minutes + 240) * 60000); // allow late check-in up to 4h after start
+    const latestOut = new Date(end.getTime() + win.late_checkout_minutes * 60000);
+    return { start, end, earliestIn, latestIn, latestOut };
+  }, [todayShift?.start_time, todayShift?.end_time, todayKey, win.early_checkin_minutes, win.grace_minutes, win.late_checkout_minutes]);
+
+  function validateCheckIn(at: Date): string | null {
+    if (!win.enforce_window) return null;
+    if (!todayShift) return "No shift is assigned for today. Please request an override.";
+    if (!todayWindow) return null;
+    if (at < todayWindow.earliestIn) {
+      return `Too early. Check-in opens at ${format(todayWindow.earliestIn, "HH:mm")} (${win.early_checkin_minutes} min before shift start).`;
+    }
+    if (at > todayWindow.latestIn) {
+      return `Outside check-in window. Submit a shift change/override request instead.`;
+    }
+    return null;
+  }
+
+  function validateCheckOut(at: Date): string | null {
+    if (!win.enforce_window) return null;
+    if (!todayWindow) return null;
+    if (at > todayWindow.latestOut) {
+      return `Too late to check out. The window closed at ${format(todayWindow.latestOut, "HH:mm")}. Submit a time-edit request.`;
+    }
+    return null;
+  }
+
   const checkInMutation = useMutation({
     mutationFn: async () => {
       if (!profile?.id) throw new Error("Profile not loaded");
-      const ts = new Date().toISOString();
+      const at = new Date();
+      const err = validateCheckIn(at);
+      if (err) throw new Error(err);
+      const ts = at.toISOString();
       const { error } = await supabase.from("attendances").insert({
         profile_id: profile.id,
         date: todayKey,
@@ -324,7 +390,10 @@ export default function MyShiftTracker() {
   const checkOutMutation = useMutation({
     mutationFn: async () => {
       if (!todayAtt?.id) throw new Error("No active check-in");
-      const ts = new Date().toISOString();
+      const at = new Date();
+      const err = validateCheckOut(at);
+      if (err) throw new Error(err);
+      const ts = at.toISOString();
       const { error } = await supabase
         .from("attendances")
         .update({ check_out: ts })
@@ -543,9 +612,15 @@ export default function MyShiftTracker() {
                 <span className="font-medium">Today's attendance completed</span>
               </div>
             )}
-            {!todayShift && !todayAtt?.check_in && (
+            {!todayShift && !todayAtt?.check_in && win.enforce_window && (
               <span className="text-xs text-muted-foreground">
-                No shift assigned for today — check-in still allowed if you are on duty.
+                No shift assigned for today — check-in is disabled until an override is approved.
+              </span>
+            )}
+            {todayWindow && !todayAtt?.check_out && (
+              <span className="text-xs text-muted-foreground">
+                Window: {format(todayWindow.earliestIn, "HH:mm")}–{format(todayWindow.latestOut, "HH:mm")}
+                {win.enforce_window ? ` · grace ${win.grace_minutes}m` : " · enforcement off"}
               </span>
             )}
           </div>
@@ -802,6 +877,15 @@ export default function MyShiftTracker() {
           shifts={allShifts}
           defaultDate={new Date()}
           defaultCurrentShiftId={todayEntry?.assignments[0]?.shift_id ?? null}
+        />
+      )}
+
+      {/* Attendance time-edit requests */}
+      {profile?.id && user?.id && (
+        <AttendanceEditRequestPanel
+          profileId={profile.id}
+          userId={user.id}
+          attendances={attendances}
         />
       )}
     </div>

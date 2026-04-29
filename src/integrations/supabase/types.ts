@@ -207,6 +207,74 @@ export type Database = {
           },
         ]
       }
+      attendance_edit_requests: {
+        Row: {
+          affected_date: string
+          attendance_id: string | null
+          created_at: string
+          current_check_in: string | null
+          current_check_out: string | null
+          field: string
+          id: string
+          profile_id: string
+          proposed_check_in: string | null
+          proposed_check_out: string | null
+          reason: string
+          requested_by: string
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          affected_date: string
+          attendance_id?: string | null
+          created_at?: string
+          current_check_in?: string | null
+          current_check_out?: string | null
+          field: string
+          id?: string
+          profile_id: string
+          proposed_check_in?: string | null
+          proposed_check_out?: string | null
+          reason: string
+          requested_by: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          affected_date?: string
+          attendance_id?: string | null
+          created_at?: string
+          current_check_in?: string | null
+          current_check_out?: string | null
+          field?: string
+          id?: string
+          profile_id?: string
+          proposed_check_in?: string | null
+          proposed_check_out?: string | null
+          reason?: string
+          requested_by?: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_edit_requests_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_report_recipients: {
         Row: {
           created_at: string
@@ -228,6 +296,39 @@ export type Database = {
           email?: string
           id?: string
           period?: string
+        }
+        Relationships: []
+      }
+      attendance_window_settings: {
+        Row: {
+          created_at: string
+          early_checkin_minutes: number
+          enforce_window: boolean
+          grace_minutes: number
+          id: string
+          late_checkout_minutes: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          early_checkin_minutes?: number
+          enforce_window?: boolean
+          grace_minutes?: number
+          id?: string
+          late_checkout_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          early_checkin_minutes?: number
+          enforce_window?: boolean
+          grace_minutes?: number
+          id?: string
+          late_checkout_minutes?: number
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
