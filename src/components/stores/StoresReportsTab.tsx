@@ -438,22 +438,24 @@ export function StoresReportsTab() {
                 Open issues — items currently held by staff. Overdue rows are flagged.
               </CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Open Asset Issuance",
-                filename: `issuance-open-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
-                rows: ledger.map((r: any) => [
-                  format(new Date(r.issued_at), "yyyy-MM-dd"),
-                  r.inventory_items?.name ?? "",
-                  `${Number(r.quantity)} ${r.inventory_items?.unit ?? ""}`,
-                  `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
-                  r.profiles?.staff_id ?? "",
-                  r.profiles?.departments?.name ?? "",
-                  r.expected_return_date ?? "",
-                ]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Open Asset Issuance",
+                  filename: `issuance-open-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
+                  rows: ledger.map((r: any) => [
+                    format(new Date(r.issued_at), "yyyy-MM-dd"),
+                    r.inventory_items?.name ?? "",
+                    `${Number(r.quantity)} ${r.inventory_items?.unit ?? ""}`,
+                    `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+                    r.profiles?.staff_id ?? "",
+                    r.profiles?.departments?.name ?? "",
+                    r.expected_return_date ?? "",
+                  ]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
