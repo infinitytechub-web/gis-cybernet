@@ -258,7 +258,7 @@ export function InventoryAuditScheduler() {
                   {r.mismatched_count} mismatched
                 </Badge>
                 <span>Net: ₵{Number(r.net_variance_value).toFixed(2)}</span>
-                {r.report_csv_path && (
+                {r.report_csv_path && canDownload && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -268,7 +268,7 @@ export function InventoryAuditScheduler() {
                     <FileDown className="h-3.5 w-3.5" /> CSV
                   </Button>
                 )}
-                {r.report_pdf_path && (
+                {r.report_pdf_path && canDownload && (
                   <Button
                     size="sm"
                     variant="ghost"
