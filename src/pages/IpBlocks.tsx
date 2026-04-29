@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldOff, Ban, Clock } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { ShieldOff, Ban, Clock, ScrollText } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 
 export default function IpBlocks() {
   const { isAdmin, loading } = useAuth();
