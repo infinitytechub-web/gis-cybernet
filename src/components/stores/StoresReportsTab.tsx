@@ -19,7 +19,17 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { Coins, AlertTriangle, Users, Package } from "lucide-react";
+import { Coins, AlertTriangle, Users, Package, Wrench, FileBarChart } from "lucide-react";
+import { InventoryAuditReport } from "./InventoryAuditReport";
+import { exportReport } from "@/lib/export-utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
@@ -52,6 +62,7 @@ export function StoresReportsTab() {
   const valuation = useMemo(() => {
     const byCategory = new Map<string, number>();
     const byLocation = new Map<string, number>();
+    const byCondition = new Map<string, number>();
     let total = 0;
     items.forEach((i: any) => {
       const v = Number(i.qty_on_hand) * Number(i.unit_cost ?? 0);
@@ -60,6 +71,8 @@ export function StoresReportsTab() {
       byCategory.set(c, (byCategory.get(c) ?? 0) + v);
       const l = i.location || "Unassigned";
       byLocation.set(l, (byLocation.get(l) ?? 0) + v);
+      const cond = (i.condition || "unspecified").toString();
+      byCondition.set(cond, (byCondition.get(cond) ?? 0) + v);
     });
     return {
       total,
@@ -68,6 +81,9 @@ export function StoresReportsTab() {
         .map(([name, value]) => ({ name, value: Number(value.toFixed(2)) }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 10),
+      byCondition: Array.from(byCondition.entries())
+        .map(([name, value]) => ({ name, value: Number(value.toFixed(2)) }))
+        .sort((a, b) => b.value - a.value),
     };
   }, [items]);
 
@@ -92,9 +108,100 @@ export function StoresReportsTab() {
     return ledger.filter((r: any) => r.expected_return_date && r.expected_return_date < today);
   }, [ledger]);
 
+  const exportCombined = (fmt: "pdf" | "csv") => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    const sections: { title: string; headers: string[]; rows: string[][] }[] = [
+      {
+        title: "Stock Valuation by Category",
+        headers: ["Category", "Value"],
+        rows: valuation.byCategory.map(r => [r.name, `₵${r.value.toFixed(2)}`]),
+      },
+      {
+        title: "Stock Valuation by Location",
+        headers: ["Location", "Value"],
+        rows: valuation.byLocation.map(r => [r.name, `₵${r.value.toFixed(2)}`]),
+      },
+      {
+        title: "Stock Valuation by Condition",
+        headers: ["Condition", "Value"],
+        rows: valuation.byCondition.map(r => [r.name, `₵${r.value.toFixed(2)}`]),
+      },
+      {
+        title: "Reorder List",
+        headers: ["Asset Tag", "Item", "Category", "On Hand", "Min", "Suggested PO"],
+        rows: reorder.map((r: any) => [r.asset_tag ?? "", r.name, r.inventory_categories?.name ?? "", `${r._qty} ${r.unit}`, String(r._min), `${r._suggested} ${r.unit}`]),
+      },
+      {
+        title: "Open Asset Issuance",
+        headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
+        rows: ledger.map((r: any) => [
+          format(new Date(r.issued_at), "yyyy-MM-dd"),
+          r.inventory_items?.name ?? "",
+          `${Number(r.quantity)} ${r.inventory_items?.unit ?? ""}`,
+          `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+          r.profiles?.staff_id ?? "",
+          r.profiles?.departments?.name ?? "",
+          r.expected_return_date ?? "",
+        ]),
+      },
+    ];
+
+    if (fmt === "csv") {
+      const lines: string[] = [];
+      lines.push(`"Stores & Inventory — Combined Report"`);
+      lines.push(`"Generated","${format(new Date(), "PPpp")}"`);
+      lines.push(`"Total stock value","₵${valuation.total.toFixed(2)}"`);
+      lines.push("");
+      sections.forEach(s => {
+        lines.push(`"# ${s.title}"`);
+        lines.push(s.headers.map(h => `"${h}"`).join(","));
+        s.rows.forEach(r => lines.push(r.map(c => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")));
+        lines.push("");
+      });
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `stores-combined-report-${today}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Combined report (CSV) downloaded");
+      return;
+    }
+
+    const headers = ["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7"];
+    const rows: string[][] = [];
+    sections.forEach(s => {
+      rows.push([`▶ ${s.title}`, "", "", "", "", "", ""]);
+      rows.push([...s.headers, ...Array(Math.max(0, 7 - s.headers.length)).fill("")]);
+      s.rows.forEach(r => rows.push([...r, ...Array(Math.max(0, 7 - r.length)).fill("")]));
+      rows.push(["", "", "", "", "", "", ""]);
+    });
+    exportReport("pdf", {
+      title: "Stores & Inventory — Combined Report",
+      subtitle: `Generated ${format(new Date(), "PPpp")} · Total value ₵${valuation.total.toFixed(2)}`,
+      filename: `stores-combined-report-${today}`,
+      headers,
+      rows,
+    });
+    toast.success("Combined report (PDF) downloaded");
+  };
+
   return (
     <div className="space-y-4">
-      {/* KPI tiles */}
+      <div className="flex items-center justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="gap-1.5">
+              <FileBarChart className="h-4 w-4" /> Export combined report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tile
           icon={Coins}
@@ -168,6 +275,63 @@ export function StoresReportsTab() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Valuation by condition */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Wrench className="h-4 w-4 text-violet-600" /> Stock value by condition
+              </CardTitle>
+              <CardDescription>Identify how much value sits in damaged, fair, or unspecified stock.</CardDescription>
+            </div>
+            <ExportMenu
+              getData={() => ({
+                title: "Stock Valuation by Condition",
+                filename: `stock-valuation-condition-${format(new Date(), "yyyy-MM-dd")}`,
+                headers: ["Condition", "Value (₵)"],
+                rows: valuation.byCondition.map((r) => [r.name, r.value.toFixed(2)]),
+              })}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="grid md:grid-cols-2 gap-4">
+          <div className="h-[240px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={valuation.byCondition}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(v: any) => `₵${Number(v).toFixed(2)}`} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {valuation.byCondition.map((c, i) => {
+                    const color = c.name === "damaged" ? "#ef4444"
+                      : c.name === "poor" ? "#f59e0b"
+                      : c.name === "fair" ? "#eab308"
+                      : c.name === "good" ? "#10b981"
+                      : PIE_COLORS[i % PIE_COLORS.length];
+                    return <Cell key={i} fill={color} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <Table>
+            <TableHeader><TableRow><TableHead>Condition</TableHead><TableHead className="text-right">Value</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {valuation.byCondition.length === 0 ? (
+                <TableRow><TableCell colSpan={2} className="text-center text-xs text-muted-foreground py-4">No items</TableCell></TableRow>
+              ) : valuation.byCondition.map(c => (
+                <TableRow key={c.name}>
+                  <TableCell className="capitalize text-sm">{c.name}</TableCell>
+                  <TableCell className="text-right tabular-nums text-sm">₵{c.value.toFixed(2)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
@@ -339,6 +503,9 @@ export function StoresReportsTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Inventory audit */}
+      <InventoryAuditReport />
     </div>
   );
 }

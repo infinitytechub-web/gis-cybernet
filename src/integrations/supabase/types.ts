@@ -1187,6 +1187,50 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_audit_counts: {
+        Row: {
+          counted_at: string
+          counted_by: string | null
+          created_at: string
+          id: string
+          item_id: string
+          notes: string | null
+          physical_count: number
+          system_qty: number
+          variance: number | null
+        }
+        Insert: {
+          counted_at?: string
+          counted_by?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          physical_count?: number
+          system_qty?: number
+          variance?: number | null
+        }
+        Update: {
+          counted_at?: string
+          counted_by?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          physical_count?: number
+          system_qty?: number
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_audit_counts_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_categories: {
         Row: {
           created_at: string
