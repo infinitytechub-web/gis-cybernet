@@ -43,7 +43,7 @@ export function InventoryAuditScheduler() {
     queryFn: async () => {
       const { data } = await supabase
         .from("inventory_audit_runs" as any)
-        .select("id, schedule_id, triggered_kind, mismatched_count, net_variance_value, report_csv_path, created_at")
+        .select("id, schedule_id, triggered_kind, mismatched_count, net_variance_value, report_csv_path, report_pdf_path, created_at")
         .order("created_at", { ascending: false })
         .limit(20);
       return data ?? [];
@@ -261,6 +261,16 @@ export function InventoryAuditScheduler() {
                     onClick={() => downloadReport(r.report_csv_path)}
                   >
                     <FileDown className="h-3.5 w-3.5" /> CSV
+                  </Button>
+                )}
+                {r.report_pdf_path && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`h-7 gap-1 ${r.report_csv_path ? "" : "ml-auto"}`}
+                    onClick={() => downloadReport(r.report_pdf_path)}
+                  >
+                    <FileDown className="h-3.5 w-3.5" /> PDF
                   </Button>
                 )}
               </div>
