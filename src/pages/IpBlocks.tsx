@@ -86,6 +86,7 @@ export default function IpBlocks() {
     onSuccess: () => {
       toast({ title: "Unblocked" });
       qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+      qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
     onError: (e: any) => toast({ title: "Unblock failed", description: e.message, variant: "destructive" }),
   });
