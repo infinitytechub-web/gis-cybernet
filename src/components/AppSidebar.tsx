@@ -269,9 +269,11 @@ export function AppSidebar() {
         {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "staff_officer") &&
           renderGroup(
             "Administration",
-            (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer")
-              ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
-              : adminItems,
+            (role === "admin")
+              ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem, ipBlocksItem]
+              : (role === "oic" || role === "2ic" || role === "staff_officer")
+                ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
+                : adminItems,
           )}
       </SidebarContent>
 
