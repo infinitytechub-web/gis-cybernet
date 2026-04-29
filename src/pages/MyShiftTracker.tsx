@@ -50,7 +50,21 @@ import {
 } from "@/components/ui/select";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { ShiftChangeRequestPanel } from "@/components/shifts/ShiftChangeRequestPanel";
+import { AttendanceEditRequestPanel } from "@/components/shifts/AttendanceEditRequestPanel";
 import { cn } from "@/lib/utils";
+
+type WindowSettings = {
+  grace_minutes: number;
+  early_checkin_minutes: number;
+  late_checkout_minutes: number;
+  enforce_window: boolean;
+};
+const DEFAULT_WINDOW: WindowSettings = {
+  grace_minutes: 15,
+  early_checkin_minutes: 30,
+  late_checkout_minutes: 60,
+  enforce_window: true,
+};
 
 type Profile = {
   id: string;
