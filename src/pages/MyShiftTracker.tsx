@@ -105,6 +105,34 @@ function fmtMinutes(mins: number) {
   return `${h}h ${m}m`;
 }
 
+const GRACE_MIN = 5; // tolerance window in minutes either side of scheduled start
+type Punctuality = {
+  kind: "early" | "ontime" | "late" | "outside";
+  diffMin: number;
+  label: string;
+};
+function computePunctuality(checkInIso: string, dateKey: string, shift: { start_time: string | null; end_time: string | null } | undefined | null): Punctuality | null {
+  if (!shift?.start_time || !shift?.end_time) return null;
+  const start = new Date(`${dateKey}T${shift.start_time}`);
+  // If end < start, shift crosses midnight
+  let end = new Date(`${dateKey}T${shift.end_time}`);
+  if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+  const checkIn = new Date(checkInIso);
+  const diffMs = checkIn.getTime() - start.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  // Outside window entirely (more than 4h before shift start, or after shift end)
+  if (diffMin < -240 || checkIn > end) {
+    return { kind: "outside", diffMin, label: `Outside shift window (${fmtMinutes(Math.abs(diffMin))} ${diffMin < 0 ? "before start" : "after end"})` };
+  }
+  if (diffMin < -GRACE_MIN) {
+    return { kind: "early", diffMin, label: `Early by ${fmtMinutes(Math.abs(diffMin))}` };
+  }
+  if (diffMin > GRACE_MIN) {
+    return { kind: "late", diffMin, label: `Late by ${fmtMinutes(diffMin)}` };
+  }
+  return { kind: "ontime", diffMin, label: "On time" };
+}
+
 export default function MyShiftTracker() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
