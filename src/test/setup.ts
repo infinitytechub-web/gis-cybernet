@@ -13,3 +13,11 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+
+// jsdom doesn't implement these — stub so components that scroll/observe don't crash.
+if (typeof Element !== "undefined") {
+  Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
+}
+if (typeof window !== "undefined" && !(window as any).ResizeObserver) {
+  (window as any).ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+}
