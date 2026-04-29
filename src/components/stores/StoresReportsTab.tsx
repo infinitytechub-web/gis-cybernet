@@ -194,19 +194,21 @@ export function StoresReportsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" className="gap-1.5">
-              <FileBarChart className="h-4 w-4" /> Export combined report
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {canExport && (
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" className="gap-1.5">
+                <FileBarChart className="h-4 w-4" /> Export combined report
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportCombined("pdf")}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCombined("csv")}>CSV</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Tile
