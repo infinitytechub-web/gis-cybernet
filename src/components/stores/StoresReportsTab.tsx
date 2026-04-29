@@ -31,10 +31,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
+const STORES_EXPORT_ROLES = ["admin", "oic", "2ic", "storekeeper", "procurement_officer"] as const;
+
 export function StoresReportsTab() {
+  const { role } = useAuth();
+  const canExport = STORES_EXPORT_ROLES.includes((role || "") as any);
   const { data: items = [] } = useQuery({
     queryKey: ["inventory_items", "reports"],
     queryFn: async () => {
