@@ -1187,6 +1187,39 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_alert_overrides: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          scope_type: string
+          scope_value: string
+          updated_at: string
+          variance_qty_threshold: number
+          variance_value_threshold: number
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          scope_type: string
+          scope_value: string
+          updated_at?: string
+          variance_qty_threshold?: number
+          variance_value_threshold?: number
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          scope_type?: string
+          scope_value?: string
+          updated_at?: string
+          variance_qty_threshold?: number
+          variance_value_threshold?: number
+        }
+        Relationships: []
+      }
       inventory_alert_settings: {
         Row: {
           alert_email_enabled: boolean
@@ -1334,6 +1367,7 @@ export type Database = {
           frequency: string
           id: string
           last_report_path: string | null
+          last_report_pdf_path: string | null
           last_run_at: string | null
           next_run_at: string
           updated_at: string
@@ -1345,6 +1379,7 @@ export type Database = {
           frequency: string
           id?: string
           last_report_path?: string | null
+          last_report_pdf_path?: string | null
           last_run_at?: string | null
           next_run_at?: string
           updated_at?: string
@@ -1356,6 +1391,7 @@ export type Database = {
           frequency?: string
           id?: string
           last_report_path?: string | null
+          last_report_pdf_path?: string | null
           last_run_at?: string | null
           next_run_at?: string
           updated_at?: string
