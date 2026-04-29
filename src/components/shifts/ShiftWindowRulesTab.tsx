@@ -34,6 +34,8 @@ type Override = {
   late_checkout_minutes: number | null;
   enforce_window: boolean | null;
   notes: string | null;
+  effective_from: string | null;
+  effective_to: string | null;
 };
 
 const DEFAULTS: GlobalSettings = {
