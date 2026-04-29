@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import OperationsMap from "@/components/enforcement/OperationsMap";
 import { PrintColumnDialog, ViewDetailDialog, OperationRowActions, type OpRecord } from "@/components/enforcement/OperationActions";
 import { GhanaGPSInput, canonicalizeGpsLocation, isValidGpsLocation } from "@/components/shared/GhanaGPSInput";
+import { MugshotUpload } from "@/components/enforcement/MugshotUpload";
+import { AuthorisedByPicker } from "@/components/enforcement/AuthorisedByPicker";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
