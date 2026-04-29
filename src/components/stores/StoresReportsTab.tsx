@@ -359,21 +359,23 @@ export function StoresReportsTab() {
                 Suggested order quantity = (2 × min stock) − current qty. Bring stock back to a safety buffer.
               </CardDescription>
             </div>
-            <ExportMenu
-              getData={() => ({
-                title: "Reorder List",
-                filename: `reorder-list-${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Asset Tag", "Item", "Category", "On Hand", "Min", "Suggested PO"],
-                rows: reorder.map((r: any) => [
-                  r.asset_tag ?? "",
-                  r.name,
-                  r.inventory_categories?.name ?? "",
-                  `${r._qty} ${r.unit}`,
-                  String(r._min),
-                  `${r._suggested} ${r.unit}`,
-                ]),
-              })}
-            />
+            {canExport && (
+              <ExportMenu
+                getData={() => ({
+                  title: "Reorder List",
+                  filename: `reorder-list-${format(new Date(), "yyyy-MM-dd")}`,
+                  headers: ["Asset Tag", "Item", "Category", "On Hand", "Min", "Suggested PO"],
+                  rows: reorder.map((r: any) => [
+                    r.asset_tag ?? "",
+                    r.name,
+                    r.inventory_categories?.name ?? "",
+                    `${r._qty} ${r.unit}`,
+                    String(r._min),
+                    `${r._suggested} ${r.unit}`,
+                  ]),
+                })}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-0">
