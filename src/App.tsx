@@ -27,6 +27,7 @@ const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
+const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
 const ShiftConnections = lazy(() => import("./pages/ShiftConnections"));
 const LeaveRequests = lazy(() => import("./pages/LeaveRequests"));
 const Holidays = lazy(() => import("./pages/Holidays"));
