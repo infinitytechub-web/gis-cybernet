@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Search, ShieldCheck, X } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 
 interface Props {
   value: string | null;          // profile.id
