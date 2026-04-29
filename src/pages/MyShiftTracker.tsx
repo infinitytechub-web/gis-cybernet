@@ -279,6 +279,20 @@ export default function MyShiftTracker() {
   const todayEntry = dateMap.get(format(now, "yyyy-MM-dd"));
   const todayShift = todayEntry?.assignments[0]?.shifts;
   const todayAtt = todayEntry?.attendance;
+  const todayPunctuality = todayEntry?.punctuality ?? null;
+
+  // List of all shifts for the change/override request form
+  const { data: allShifts = [] } = useQuery({
+    queryKey: ["my-shift-tracker", "all-shifts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id, name, start_time, end_time")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; start_time: string | null; end_time: string | null }[];
+    },
+  });
 
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
 
