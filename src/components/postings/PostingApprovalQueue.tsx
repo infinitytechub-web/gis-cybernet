@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 
 export function PostingApprovalQueue() {
   const { user } = useAuth();
