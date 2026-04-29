@@ -103,9 +103,15 @@ export default function StaffProfile() {
     },
   });
 
+  // Office history is sensitive — restrict the read to command-tier viewers
+  // and the profile owner. Other roles see a permission notice instead, so
+  // the API is never even queried for them (preventing accidental leaks).
+  const profileOwnerUserId = (profile as any)?.user_id as string | undefined;
+  const canViewOfficeHistory = isAdminOrSupervisor || (!!user && !!profileOwnerUserId && user.id === profileOwnerUserId);
+
   const { data: officeHistory = [] } = useQuery({
     queryKey: ["staff-office-history", id],
-    enabled: !!id,
+    enabled: !!id && canViewOfficeHistory,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("profile_office_history")
