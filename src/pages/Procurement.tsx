@@ -17,8 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Briefcase, FileText, ShoppingCart, Receipt, FileSignature, Package, Search, Upload, Download,
-  Plus, TrendingUp, AlertCircle, CheckCircle2, Clock, X, Trash2,
+  Plus, TrendingUp, AlertCircle, CheckCircle2, Clock, X, Trash2, FileBarChart,
 } from "lucide-react";
+import { ProcurementReportsTab } from "@/components/procurement/ProcurementReportsTab";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid,
   PieChart, Pie, Cell, Legend, LineChart, Line,
