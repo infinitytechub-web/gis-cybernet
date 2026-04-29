@@ -123,6 +123,19 @@ export default function StaffProfile() {
     },
   });
 
+  // Audit every attempt to view this staff member's office history (allowed
+  // or blocked). The server-side RPC re-evaluates the viewer's permission so
+  // the recorded outcome cannot be spoofed by the client. We log once per
+  // (viewer, profile) page-load to avoid duplicate rows on re-renders.
+  const auditedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!id || !user?.id) return;
+    const key = `${user.id}:${id}`;
+    if (auditedRef.current === key) return;
+    auditedRef.current = key;
+    void (supabase as any).rpc("log_office_history_access", { _profile_id: id });
+  }, [id, user?.id]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
