@@ -781,9 +781,29 @@ export default function MyShiftTracker() {
             <span className="flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
             </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-red-500" /> Late
+            </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-amber-500" /> Early
+            </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 text-purple-500" /> Outside window
+            </span>
           </div>
         </CardContent>
       </Card>
+
+      {/* Shift change / override requests */}
+      {profile?.id && user?.id && (
+        <ShiftChangeRequestPanel
+          profileId={profile.id}
+          userId={user.id}
+          shifts={allShifts}
+          defaultDate={new Date()}
+          defaultCurrentShiftId={todayEntry?.assignments[0]?.shift_id ?? null}
+        />
+      )}
     </div>
   );
 }
