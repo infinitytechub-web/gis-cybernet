@@ -311,6 +311,66 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                 )}
               </div>
 
+              {/* Print queue panel */}
+              {queue.length > 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-xs font-medium">
+                      <Layers className="h-3.5 w-3.5 text-primary" />
+                      Print queue ({queue.length})
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => {
+                          setQueue([]);
+                          toast.success("Queue cleared");
+                        }}
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-7 gap-1.5 text-xs"
+                        onClick={generateBatchPdf}
+                        disabled={generating}
+                      >
+                        {generating ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <FileDown className="h-3.5 w-3.5" />
+                        )}
+                        Generate PDF
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="max-h-32 overflow-y-auto space-y-1">
+                    {queue.map((q) => (
+                      <div
+                        key={q.asset_tag}
+                        className="flex items-center justify-between gap-2 rounded bg-background border px-2 py-1 text-xs"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-[10px] text-muted-foreground">{q.asset_tag}</div>
+                          <div className="truncate">{q.name}</div>
+                        </div>
+                        <button
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() =>
+                            setQueue((qs) => qs.filter((x) => x.asset_tag !== q.asset_tag))
+                          }
+                          aria-label="Remove"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Stock card */}
               <div className="rounded-lg border p-3 grid grid-cols-3 gap-3 text-center">
                 <div>
