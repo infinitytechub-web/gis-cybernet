@@ -219,22 +219,52 @@ export default function StaffRequestApprovals() {
         throw new Error("A reason of at least 5 characters is required to reject");
       }
       const table = review.req.kind === "shift" ? "shift_change_requests" : "attendance_edit_requests";
-      const { error } = await supabase
+      // Concurrency safeguard: only update if still pending. If another supervisor
+      // already actioned it, the row count will be 0 and we surface a clear error.
+      const { data, error } = await supabase
         .from(table)
         .update({
           status: isReject ? "rejected" : "approved",
           review_comment: review.comment.trim() || null,
         })
-        .eq("id", review.req.id);
+        .eq("id", review.req.id)
+        .eq("status", "pending")
+        .select("id, status, reviewed_by, reviewed_at");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("This request was already reviewed by another supervisor. Refreshing…");
+      }
     },
     onSuccess: () => {
       toast.success(review.action === "approve" ? "Request approved" : "Request rejected");
       setReview({ open: false, action: "approve", req: null, comment: "" });
       queryClient.invalidateQueries({ queryKey: ["staff-approvals"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Review failed"),
+    onError: (e: any) => {
+      toast.error(e?.message ?? "Review failed");
+      queryClient.invalidateQueries({ queryKey: ["staff-approvals"] });
+    },
   });
+
+  // Open review dialog after re-reading current status to avoid double-review races.
+  const openReview = async (action: "approve" | "reject", req: AnyRequest) => {
+    const table = req.kind === "shift" ? "shift_change_requests" : "attendance_edit_requests";
+    const { data, error } = await supabase
+      .from(table)
+      .select("status")
+      .eq("id", req.id)
+      .maybeSingle();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (!data || data.status !== "pending") {
+      toast.error("This request is no longer pending — another reviewer just actioned it.");
+      queryClient.invalidateQueries({ queryKey: ["staff-approvals"] });
+      return;
+    }
+    setReview({ open: true, action, req, comment: "" });
+  };
 
   if (authLoading) {
     return (
