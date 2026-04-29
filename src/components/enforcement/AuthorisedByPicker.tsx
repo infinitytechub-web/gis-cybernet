@@ -183,10 +183,35 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
               role="listbox"
               className="max-h-[320px] overflow-y-auto border rounded-md divide-y"
             >
-              {officers.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">
-                  {isFetching ? "Searching..." : "No matching OIC / 2IC found."}
+              {isError ? (
+                <div className="p-4 text-sm text-center space-y-3" role="alert" aria-live="polite">
+                  <div className="flex items-center justify-center gap-2 text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Couldn't load officers.</span>
+                  </div>
+                  {queryError instanceof Error && queryError.message && (
+                    <p className="text-xs text-muted-foreground break-words">{queryError.message}</p>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { void refetch(); }}
+                    disabled={isFetching}
+                  >
+                    {isFetching ? (
+                      <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Retrying...</>
+                    ) : (
+                      <><RefreshCw className="h-3.5 w-3.5 mr-2" /> Retry</>
+                    )}
+                  </Button>
                 </div>
+              ) : isLoading || (isFetching && officers.length === 0) ? (
+                <div className="p-6 flex items-center justify-center gap-2 text-sm text-muted-foreground" aria-live="polite">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading officers...
+                </div>
+              ) : officers.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground text-center">No matching OIC / 2IC found.</div>
               ) : officers.map((o, idx) => {
                 const label = `${o.ranks?.abbreviation ? o.ranks.abbreviation + " " : ""}${o.first_name} ${o.last_name}`;
                 const active = idx === highlight;
