@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield, Users, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
+import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 
 import gisLogo from "@/assets/gis-logo.jpeg";
 
