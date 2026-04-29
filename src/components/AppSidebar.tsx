@@ -45,6 +45,7 @@ const workforceItems = [
 
 const staffApprovalsItem = { title: "Staff Approvals", url: "/staff-approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" };
 const shiftWindowAuditItem = { title: "Shift Rules Audit", url: "/shift-window-audit", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
+const sensitiveAccessLogItem = { title: "Sensitive Access Log", url: "/sensitive-access-log", icon: ScrollText, iconColor: "text-rose-700 dark:text-rose-300" };
 
 const immigrationItems = [
   { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400", badge: "frontdesk" as const },
@@ -268,7 +269,7 @@ export function AppSidebar() {
           renderGroup(
             "Administration",
             (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer")
-              ? [...adminItems, shiftWindowAuditItem]
+              ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
               : adminItems,
           )}
       </SidebarContent>
