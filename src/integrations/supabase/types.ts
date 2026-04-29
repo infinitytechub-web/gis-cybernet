@@ -2208,6 +2208,41 @@ export type Database = {
         }
         Relationships: []
       }
+      office_history_access_log: {
+        Row: {
+          accessed_at: string
+          allowed: boolean
+          id: string
+          profile_id: string
+          reason: string
+          viewer_user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          allowed: boolean
+          id?: string
+          profile_id: string
+          reason: string
+          viewer_user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          allowed?: boolean
+          id?: string
+          profile_id?: string
+          reason?: string
+          viewer_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_history_access_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       official_applications: {
         Row: {
           applicant_name: string
@@ -4518,6 +4553,10 @@ export type Database = {
       issue_otp: {
         Args: { _purpose?: string; _ttl_minutes?: number }
         Returns: string
+      }
+      log_office_history_access: {
+        Args: { _profile_id: string }
+        Returns: boolean
       }
       log_sensitive_access: {
         Args: {

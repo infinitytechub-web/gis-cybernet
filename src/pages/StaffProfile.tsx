@@ -13,7 +13,7 @@ import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
 
@@ -122,6 +122,19 @@ export default function StaffProfile() {
       return data ?? [];
     },
   });
+
+  // Audit every attempt to view this staff member's office history (allowed
+  // or blocked). The server-side RPC re-evaluates the viewer's permission so
+  // the recorded outcome cannot be spoofed by the client. We log once per
+  // (viewer, profile) page-load to avoid duplicate rows on re-renders.
+  const auditedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!id || !user?.id) return;
+    const key = `${user.id}:${id}`;
+    if (auditedRef.current === key) return;
+    auditedRef.current = key;
+    void (supabase as any).rpc("log_office_history_access", { _profile_id: id });
+  }, [id, user?.id]);
 
   if (isLoading) {
     return (
