@@ -1231,12 +1231,14 @@ export type Database = {
           action: string
           changed_fields: string[] | null
           created_at: string
+          entry_hash: string | null
           id: string
           new_values: Json | null
           old_values: Json | null
           override_id: string | null
           performed_by: string | null
           performed_by_name: string | null
+          prev_hash: string | null
           scope_type: string | null
           scope_value: string | null
         }
@@ -1244,12 +1246,14 @@ export type Database = {
           action: string
           changed_fields?: string[] | null
           created_at?: string
+          entry_hash?: string | null
           id?: string
           new_values?: Json | null
           old_values?: Json | null
           override_id?: string | null
           performed_by?: string | null
           performed_by_name?: string | null
+          prev_hash?: string | null
           scope_type?: string | null
           scope_value?: string | null
         }
@@ -1257,12 +1261,14 @@ export type Database = {
           action?: string
           changed_fields?: string[] | null
           created_at?: string
+          entry_hash?: string | null
           id?: string
           new_values?: Json | null
           old_values?: Json | null
           override_id?: string | null
           performed_by?: string | null
           performed_by_name?: string | null
+          prev_hash?: string | null
           scope_type?: string | null
           scope_value?: string | null
         }
@@ -3928,6 +3934,15 @@ export type Database = {
         Returns: string
       }
       verify_otp: { Args: { _code: string }; Returns: boolean }
+      verify_threshold_audit_chain: {
+        Args: never
+        Returns: {
+          first_break_at: string
+          first_break_id: string
+          total: number
+          verified: number
+        }[]
+      }
     }
     Enums: {
       app_role:

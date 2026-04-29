@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { Coins, AlertTriangle, Users, Package, Wrench, FileBarChart } from "lucide-react";
 import { InventoryAuditReport } from "./InventoryAuditReport";
+import { ComplianceExportFilters } from "./ComplianceExportFilters";
 import { exportReport } from "@/lib/export-utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -503,6 +504,9 @@ export function StoresReportsTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Filtered compliance export */}
+      <ComplianceExportFilters />
 
       {/* Inventory audit */}
       <InventoryAuditReport />
