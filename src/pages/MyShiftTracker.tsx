@@ -646,6 +646,7 @@ export default function MyShiftTracker() {
               <span className="text-xs text-muted-foreground">
                 Window: {format(todayWindow.earliestIn, "HH:mm")}–{format(todayWindow.latestOut, "HH:mm")}
                 {win.enforce_window ? ` · grace ${win.grace_minutes}m` : " · enforcement off"}
+                {win.source === "override" ? " · per-shift rule" : ""}
               </span>
             )}
           </div>
