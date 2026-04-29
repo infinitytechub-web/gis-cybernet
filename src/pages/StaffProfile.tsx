@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Phone, Building2, Award, FolderLock, MapPin, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, ShieldAlert, Phone, Building2, Award, FolderLock, MapPin, Pencil, Check, X } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -103,9 +103,15 @@ export default function StaffProfile() {
     },
   });
 
+  // Office history is sensitive — restrict the read to command-tier viewers
+  // and the profile owner. Other roles see a permission notice instead, so
+  // the API is never even queried for them (preventing accidental leaks).
+  const profileOwnerUserId = (profile as any)?.user_id as string | undefined;
+  const canViewOfficeHistory = isAdminOrSupervisor || (!!user && !!profileOwnerUserId && user.id === profileOwnerUserId);
+
   const { data: officeHistory = [] } = useQuery({
     queryKey: ["staff-office-history", id],
-    enabled: !!id,
+    enabled: !!id && canViewOfficeHistory,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("profile_office_history")
@@ -274,7 +280,7 @@ export default function StaffProfile() {
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>
           <TabsTrigger value="postings" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Postings</TabsTrigger>
-          <TabsTrigger value="office-history" className="gap-1"><MapPin className="h-4 w-4" /> Office History {officeHistory.length > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{officeHistory.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="office-history" className="gap-1"><MapPin className="h-4 w-4" /> Office History {canViewOfficeHistory && officeHistory.length > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{officeHistory.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1"><FolderLock className="h-4 w-4" /> Documents</TabsTrigger>
         </TabsList>
 
@@ -414,7 +420,21 @@ export default function StaffProfile() {
               </p>
             </CardHeader>
             <CardContent>
-              {officeHistory.length === 0 ? (
+              {!canViewOfficeHistory ? (
+                <div
+                  className="rounded-md border border-destructive/30 bg-destructive/5 p-6 text-center space-y-2"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  <ShieldAlert className="h-6 w-6 text-destructive mx-auto" aria-hidden="true" />
+                  <p className="text-sm font-medium text-destructive">Permission required</p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    Office history is restricted to command-tier officers (Admin, OIC, 2IC,
+                    Staff Officer, Supervisor) and the staff member themselves. Contact your
+                    supervisor if you believe you should have access.
+                  </p>
+                </div>
+              ) : officeHistory.length === 0 ? (
                 <p className="text-center py-6 text-sm text-muted-foreground">
                   No office changes recorded yet. The current office is{" "}
                   <strong>{currentOffice || "not set"}</strong>.
