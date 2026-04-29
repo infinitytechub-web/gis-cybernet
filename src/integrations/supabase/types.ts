@@ -3705,6 +3705,69 @@ export type Database = {
           },
         ]
       }
+      request_approval_audit: {
+        Row: {
+          action: string
+          actor_profile_id: string | null
+          actor_role: string | null
+          actor_user_id: string | null
+          changed_fields: Json
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_status: string | null
+          notes: string | null
+          previous_status: string | null
+          request_profile_id: string
+        }
+        Insert: {
+          action: string
+          actor_profile_id?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          changed_fields?: Json
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          new_status?: string | null
+          notes?: string | null
+          previous_status?: string | null
+          request_profile_id: string
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          changed_fields?: Json
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          new_status?: string | null
+          notes?: string | null
+          previous_status?: string | null
+          request_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_approval_audit_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "request_approval_audit_request_profile_id_fkey"
+            columns: ["request_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_incidents: {
         Row: {
           assigned_to: string | null
