@@ -57,10 +57,56 @@ import {
   FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
 const PROC_EXPORT_ROLES = ["admin", "oic", "2ic", "procurement_officer"] as const;
+
+// ---- Combined-export rate limit & size guards (frontend) ----
+const RATE_LIMIT_KEY = "procurement_combined_export_log";
+const RATE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RATE_MAX_IN_WINDOW = 5;
+const RATE_MIN_GAP_MS = 5 * 1000; // 5 seconds between exports
+const SIZE_LIMIT_BYTES: Record<"csv" | "pdf", number> = {
+  csv: 10 * 1024 * 1024, // 10 MB
+  pdf: 15 * 1024 * 1024, // 15 MB
+};
+
+const fmtBytes = (n: number) => {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const readRateLog = (): number[] => {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(arr)) return [];
+    const cutoff = Date.now() - RATE_WINDOW_MS;
+    return arr.filter((t: unknown) => typeof t === "number" && t >= cutoff);
+  } catch {
+    return [];
+  }
+};
+
+const writeRateLog = (entries: number[]) => {
+  try {
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(entries));
+  } catch {
+    /* ignore quota */
+  }
+};
 
 const fmtCurrency = (n: number) => `₵${Number(n || 0).toLocaleString("en-GH", { maximumFractionDigits: 2 })}`;
 
