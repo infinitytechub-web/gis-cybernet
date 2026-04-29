@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { History } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { History, ShieldCheck, ShieldAlert, Loader2 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 type Entry = {
   id: string;
@@ -16,6 +19,8 @@ type Entry = {
   new_values: any;
   performed_by_name: string | null;
   created_at: string;
+  entry_hash: string | null;
+  prev_hash: string | null;
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -43,13 +48,19 @@ function format_value(v: any): string {
 }
 
 export function InventoryThresholdAuditTrail() {
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<
+    | { total: number; verified: number; first_break_id: string | null; first_break_at: string | null }
+    | null
+  >(null);
+
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["inventory_threshold_audit"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory_alert_overrides_audit" as any)
         .select(
-          "id, override_id, scope_type, scope_value, action, changed_fields, old_values, new_values, performed_by_name, created_at",
+          "id, override_id, scope_type, scope_value, action, changed_fields, old_values, new_values, performed_by_name, created_at, entry_hash, prev_hash",
         )
         .order("created_at", { ascending: false })
         .limit(50);
@@ -59,15 +70,57 @@ export function InventoryThresholdAuditTrail() {
     refetchInterval: 30_000,
   });
 
+  const runVerify = async () => {
+    setVerifying(true);
+    setVerifyResult(null);
+    try {
+      const { data, error } = await supabase.rpc("verify_threshold_audit_chain" as any);
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      setVerifyResult(row as any);
+      if (row?.first_break_id) {
+        toast.error(`Tamper detected at entry ${String(row.first_break_id).slice(0, 8)}…`);
+      } else {
+        toast.success(`Chain intact — ${row?.verified}/${row?.total} entries verified.`);
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? "Verification failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const intact = verifyResult && !verifyResult.first_break_id;
+
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <History className="h-4 w-4 text-primary" /> Threshold change audit trail
-        </CardTitle>
-        <CardDescription>
-          Tracks who created, edited or removed per-department variance thresholds and webhook routes.
-        </CardDescription>
+      <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+        <div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" /> Threshold change audit trail
+          </CardTitle>
+          <CardDescription>
+            Tamper-evident log of every per-department threshold or webhook change. Each entry is SHA-256 hashed and chained to the previous one.
+          </CardDescription>
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={runVerify} disabled={verifying}>
+            {verifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+            Verify chain
+          </Button>
+          {verifyResult && (
+            <Badge
+              variant={intact ? "secondary" : "destructive"}
+              className={intact ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : ""}
+            >
+              {intact ? (
+                <><ShieldCheck className="h-3 w-3 mr-1" />{verifyResult.verified}/{verifyResult.total} intact</>
+              ) : (
+                <><ShieldAlert className="h-3 w-3 mr-1" />break at {verifyResult.first_break_at && format(new Date(verifyResult.first_break_at), "PPp")}</>
+              )}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
