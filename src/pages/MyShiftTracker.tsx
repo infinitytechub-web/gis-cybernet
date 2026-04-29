@@ -612,9 +612,15 @@ export default function MyShiftTracker() {
                 <span className="font-medium">Today's attendance completed</span>
               </div>
             )}
-            {!todayShift && !todayAtt?.check_in && (
+            {!todayShift && !todayAtt?.check_in && win.enforce_window && (
               <span className="text-xs text-muted-foreground">
-                No shift assigned for today — check-in still allowed if you are on duty.
+                No shift assigned for today — check-in is disabled until an override is approved.
+              </span>
+            )}
+            {todayWindow && !todayAtt?.check_out && (
+              <span className="text-xs text-muted-foreground">
+                Window: {format(todayWindow.earliestIn, "HH:mm")}–{format(todayWindow.latestOut, "HH:mm")}
+                {win.enforce_window ? ` · grace ${win.grace_minutes}m` : " · enforcement off"}
               </span>
             )}
           </div>
