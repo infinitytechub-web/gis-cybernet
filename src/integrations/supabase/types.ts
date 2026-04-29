@@ -1197,6 +1197,8 @@ export type Database = {
           updated_at: string
           variance_qty_threshold: number
           variance_value_threshold: number
+          webhook_enabled: boolean
+          webhook_url: string | null
         }
         Insert: {
           created_at?: string
@@ -1207,6 +1209,8 @@ export type Database = {
           updated_at?: string
           variance_qty_threshold?: number
           variance_value_threshold?: number
+          webhook_enabled?: boolean
+          webhook_url?: string | null
         }
         Update: {
           created_at?: string
@@ -1217,6 +1221,50 @@ export type Database = {
           updated_at?: string
           variance_qty_threshold?: number
           variance_value_threshold?: number
+          webhook_enabled?: boolean
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      inventory_alert_overrides_audit: {
+        Row: {
+          action: string
+          changed_fields: string[] | null
+          created_at: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          override_id: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+          scope_type: string | null
+          scope_value: string | null
+        }
+        Insert: {
+          action: string
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          override_id?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          scope_type?: string | null
+          scope_value?: string | null
+        }
+        Update: {
+          action?: string
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          override_id?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          scope_type?: string | null
+          scope_value?: string | null
         }
         Relationships: []
       }
