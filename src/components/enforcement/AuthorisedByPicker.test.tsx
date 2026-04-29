@@ -30,6 +30,7 @@ vi.mock("@/integrations/supabase/client", () => {
         in: () => builder,
         limit: () => builder,
         or: () => builder,
+        eq: () => Promise.resolve({ data: [{ role: "admin" }], error: null }),
         then: (resolve: any) => resolve(mockState.searchResult),
       };
       return builder;
@@ -45,7 +46,14 @@ vi.mock("@/integrations/supabase/client", () => {
     return { select: () => ({ then: (r: any) => r({ data: [], error: null }) }) };
   };
 
-  return { supabase: { from: fromImpl } };
+  return {
+    supabase: {
+      from: fromImpl,
+      auth: {
+        getUser: async () => ({ data: { user: { id: "viewer-1" } }, error: null }),
+      },
+    },
+  };
 });
 
 // Import AFTER the mock is registered
