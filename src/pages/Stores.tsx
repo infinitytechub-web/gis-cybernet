@@ -134,7 +134,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const save = useMutation({
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error("Name required");
-      const payload = { ...form, category_id: form.category_id || null, sku: form.sku || null };
+      const payload = { ...form, category_id: form.category_id || null, sku: form.sku || null, manufacturer: form.manufacturer || null, model: form.model || null, serial_number: form.serial_number || null, purchase_date: form.purchase_date || null, warranty_expires: form.warranty_expires || null };
       if (editing) {
         const { error } = await supabase.from("inventory_items").update(payload).eq("id", editing.id);
         if (error) throw error;
@@ -164,6 +164,14 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
 
   const lowStockCount = items.filter((i: any) => Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0).length;
   const outOfStockCount = items.filter((i: any) => Number(i.qty_on_hand) <= 0).length;
+  const totalValue = items.reduce((s: number, i: any) => s + Number(i.qty_on_hand || 0) * Number(i.unit_cost || 0), 0);
+  const totalItems = items.length;
+
+  const handleScan = (code: string) => {
+    const found = items.find((i: any) => i.asset_tag === code || i.id === code || i.sku === code);
+    if (found) { setOpenItem(found); toast.success(`Found: ${found.name}`); }
+    else { toast.error(`No item matched "${code}"`); }
+  };
 
   const createCat = useMutation({
     mutationFn: async () => {
@@ -187,6 +195,14 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
 
   return (
     <div className="space-y-3">
+      {/* KPI Tiles */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card><CardContent className="p-3 flex items-center gap-3"><Boxes className="h-8 w-8 text-amber-600" /><div><div className="text-xs text-muted-foreground">Total Items</div><div className="text-xl font-bold">{totalItems}</div></div></CardContent></Card>
+        <Card><CardContent className="p-3 flex items-center gap-3"><Coins className="h-8 w-8 text-emerald-600" /><div><div className="text-xs text-muted-foreground">Stock Value</div><div className="text-xl font-bold">₵{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></div></CardContent></Card>
+        <Card className={lowStockCount ? "border-amber-300" : ""}><CardContent className="p-3 flex items-center gap-3"><TrendingDown className="h-8 w-8 text-amber-600" /><div><div className="text-xs text-muted-foreground">Low Stock</div><div className="text-xl font-bold text-amber-700">{lowStockCount}</div></div></CardContent></Card>
+        <Card className={outOfStockCount ? "border-destructive/40" : ""}><CardContent className="p-3 flex items-center gap-3"><AlertTriangle className="h-8 w-8 text-destructive" /><div><div className="text-xs text-muted-foreground">Out of Stock</div><div className="text-xl font-bold text-destructive">{outOfStockCount}</div></div></CardContent></Card>
+      </div>
+
       {/* Low Stock Summary Banner */}
       {(lowStockCount > 0 || outOfStockCount > 0) && (
         <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
@@ -201,7 +217,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Input placeholder="Search name or SKU…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+        <Input placeholder="Search name, SKU or asset tag…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
         <Select value={filterCat} onValueChange={setFilterCat}>
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All categories</SelectItem>{cats.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
@@ -210,21 +226,55 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All stock</SelectItem><SelectItem value="low">Low stock</SelectItem><SelectItem value="out">Out of stock</SelectItem></SelectContent>
         </Select>
+        <AssetScanner onScan={handleScan} />
+        <div className="inline-flex rounded-md border overflow-hidden">
+          <Button variant={view === "grid" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setView("grid")}><LayoutGrid className="h-4 w-4" /></Button>
+          <Button variant={view === "list" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setView("list")}><List className="h-4 w-4" /></Button>
+        </div>
         <ExportMenu getData={() => ({
           title: "Inventory Items",
           filename: `inventory-items-${format(new Date(), "yyyy-MM-dd")}`,
-          headers: ["Name", "SKU", "Category", "Unit", "Qty on hand", "Min stock", "Location", "Condition"],
-          rows: filtered.map((i: any) => [i.name, i.sku || "-", i.inventory_categories?.name || "-", i.unit, String(i.qty_on_hand), String(i.min_stock), i.location || "-", i.condition || "-"]),
+          headers: ["Name", "Asset Tag", "SKU", "Category", "Unit", "Qty on hand", "Min stock", "Location", "Condition"],
+          rows: filtered.map((i: any) => [i.name, i.asset_tag || "-", i.sku || "-", i.inventory_categories?.name || "-", i.unit, String(i.qty_on_hand), String(i.min_stock), i.location || "-", i.condition || "-"]),
         })} />
         {canManage && <Button onClick={() => open()} className="ml-auto gap-1"><Plus className="h-4 w-4" />Add Item</Button>}
       </div>
 
+      {view === "grid" ? (
+        filtered.length === 0 ? (
+          <Card><CardContent className="p-8 text-center text-muted-foreground">No items</CardContent></Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filtered.map((i: any) => {
+              const low = Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0;
+              const out = Number(i.qty_on_hand) <= 0;
+              return (
+                <Card key={i.id} className={`cursor-pointer hover:shadow-md transition-shadow ${out ? "border-destructive/40" : low ? "border-amber-300" : ""}`} onClick={() => setOpenItem(i)}>
+                  <div className="aspect-square bg-muted rounded-t-md overflow-hidden flex items-center justify-center">
+                    {i.photo_url ? <img src={i.photo_url} alt={i.name} className="w-full h-full object-cover" /> : <Package className="h-12 w-12 text-muted-foreground/40" />}
+                  </div>
+                  <CardContent className="p-3 space-y-1">
+                    <div className="font-medium truncate">{i.name}</div>
+                    <div className="text-[10px] font-mono text-muted-foreground">{i.asset_tag || "—"}</div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm font-bold ${out ? "text-destructive" : low ? "text-amber-700" : ""}`}>{Number(i.qty_on_hand)} {i.unit}</span>
+                      {out ? <Badge variant="destructive" className="text-[10px]">Out</Badge> :
+                       low ? <Badge className="text-[10px] bg-amber-100 text-amber-800">Low</Badge> :
+                       <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-800">OK</Badge>}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )
+      ) : (
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader><TableRow>
-                <TableHead>Item</TableHead><TableHead>SKU</TableHead><TableHead>Category</TableHead>
+                <TableHead>Item</TableHead><TableHead>Asset Tag</TableHead><TableHead>Category</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Min Stock {canManage && <span className="text-[10px] font-normal text-muted-foreground">(click to edit)</span>}</TableHead>
                 <TableHead>Location</TableHead><TableHead>Status</TableHead>{canManage && <TableHead></TableHead>}
@@ -236,12 +286,12 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
                   const low = Number(i.qty_on_hand) <= Number(i.min_stock) && Number(i.min_stock) > 0;
                   const out = Number(i.qty_on_hand) <= 0;
                   return (
-                    <TableRow key={i.id} className={out ? "bg-destructive/5" : low ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}>
+                    <TableRow key={i.id} className={`cursor-pointer hover:bg-muted/40 ${out ? "bg-destructive/5" : low ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}`} onClick={() => setOpenItem(i)}>
                       <TableCell className="font-medium">{i.name}</TableCell>
-                      <TableCell className="font-mono text-xs">{i.sku || "—"}</TableCell>
+                      <TableCell className="font-mono text-xs">{i.asset_tag || "—"}</TableCell>
                       <TableCell>{i.inventory_categories?.name || <span className="text-muted-foreground">—</span>}</TableCell>
                       <TableCell className={`text-right font-bold ${out ? "text-destructive" : low ? "text-amber-700 dark:text-amber-400" : ""}`}>{Number(i.qty_on_hand)} <span className="text-xs text-muted-foreground font-normal">{i.unit}</span></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                         {canManage ? (
                           <InlineMinStockEditor
                             value={Number(i.min_stock)}
@@ -257,7 +307,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
                          low ? <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100"><AlertTriangle className="h-3 w-3 mr-1" />Low</Badge> :
                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">OK</Badge>}
                       </TableCell>
-                      {canManage && <TableCell>
+                      {canManage && <TableCell onClick={e => e.stopPropagation()}>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => open(i)}><Pencil className="h-3.5 w-3.5" /></Button>
                           <AlertDialog>
@@ -278,11 +328,18 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
           </div>
         </CardContent>
       </Card>
+      )}
+
+      <ItemDetailDrawer item={openItem} onOpenChange={(o) => !o && setOpenItem(null)} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? "Edit Item" : "Add Item"}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit Item" : "Add Item"}</DialogTitle>
+            {editing?.asset_tag && <div className="text-xs font-mono text-muted-foreground">Asset Tag: {editing.asset_tag}</div>}
+          </DialogHeader>
           <div className="space-y-3">
+            <ItemPhotoUpload value={form.photo_url} onChange={(url) => setForm(p => ({ ...p, photo_url: url }))} />
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
               <div><Label>SKU</Label><Input value={form.sku} onChange={e => setForm(p => ({ ...p, sku: e.target.value }))} /></div>
@@ -324,6 +381,18 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
                   <SelectContent>{["good", "fair", "poor", "damaged"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Manufacturer</Label><Input value={form.manufacturer} onChange={e => setForm(p => ({ ...p, manufacturer: e.target.value }))} /></div>
+              <div><Label>Model</Label><Input value={form.model} onChange={e => setForm(p => ({ ...p, model: e.target.value }))} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Serial Number</Label><Input value={form.serial_number} onChange={e => setForm(p => ({ ...p, serial_number: e.target.value }))} /></div>
+              <div></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Purchase Date</Label><Input type="date" value={form.purchase_date} onChange={e => setForm(p => ({ ...p, purchase_date: e.target.value }))} /></div>
+              <div><Label>Warranty Expires</Label><Input type="date" value={form.warranty_expires} onChange={e => setForm(p => ({ ...p, warranty_expires: e.target.value }))} /></div>
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">{save.isPending ? "Saving…" : editing ? "Update" : "Create"}</Button>
