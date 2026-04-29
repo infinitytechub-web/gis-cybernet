@@ -17,10 +17,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ExportMenu } from "@/components/ui/export-menu";
-import { Package, Plus, Pencil, Trash2, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Sliders, Boxes, TrendingDown, Activity, Truck, Tag, BarChart3 } from "lucide-react";
+import { Package, Plus, Pencil, Trash2, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Sliders, Boxes, TrendingDown, Activity, Truck, Tag, BarChart3, LayoutGrid, List, FileBarChart, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { ItemDetailDrawer } from "@/components/stores/ItemDetailDrawer";
+import { AssetScanner } from "@/components/stores/AssetScanner";
+import { ItemPhotoUpload } from "@/components/stores/ItemPhotoUpload";
+import { StoresReportsTab } from "@/components/stores/StoresReportsTab";
+import { printAssetLabel } from "@/components/stores/AssetLabelPrint";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 const MOVEMENT_TYPES = [
@@ -69,6 +74,7 @@ export default function Stores() {
           <TabsTrigger value="suppliers" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><Truck className="h-4 w-4 mr-1 text-indigo-700 dark:text-indigo-400" />Suppliers</TabsTrigger>
           <TabsTrigger value="categories" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"><Tag className="h-4 w-4 mr-1 text-violet-700 dark:text-violet-400" />Categories</TabsTrigger>
           <TabsTrigger value="analytics" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Analytics</TabsTrigger>
+          <TabsTrigger value="reports" className="data-[state=active]:bg-emerald-700 data-[state=active]:text-white"><FileBarChart className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items"><ItemsTab canManage={canManage} userId={user?.id} /></TabsContent>
@@ -77,6 +83,7 @@ export default function Stores() {
         <TabsContent value="suppliers"><SuppliersTab canManage={canManage} /></TabsContent>
         <TabsContent value="categories"><CategoriesTab canManage={canManage} /></TabsContent>
         <TabsContent value="analytics"><AnalyticsTab /></TabsContent>
+        <TabsContent value="reports"><StoresReportsTab /></TabsContent>
       </Tabs>
     </div>
   );
@@ -90,7 +97,9 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const [filterStock, setFilterStock] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [form, setForm] = useState({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "" });
+  const [form, setForm] = useState<any>({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "", photo_url: null, manufacturer: "", model: "", serial_number: "", purchase_date: "", warranty_expires: "" });
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [openItem, setOpenItem] = useState<any>(null);
   const [newCatOpen, setNewCatOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
 
@@ -104,7 +113,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   });
 
   const filtered = useMemo(() => items.filter((i: any) => {
-    if (search && !`${i.name} ${i.sku || ""}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !`${i.name} ${i.sku || ""} ${i.asset_tag || ""}`.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCat !== "all" && i.category_id !== filterCat) return false;
     if (filterStock === "low" && Number(i.qty_on_hand) > Number(i.min_stock)) return false;
     if (filterStock === "out" && Number(i.qty_on_hand) > 0) return false;
@@ -114,10 +123,10 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
   const open = (item?: any) => {
     if (item) {
       setEditing(item);
-      setForm({ name: item.name, sku: item.sku || "", category_id: item.category_id || "", unit: item.unit, min_stock: Number(item.min_stock), unit_cost: Number(item.unit_cost || 0), location: item.location || "", condition: item.condition || "good", notes: item.notes || "" });
+      setForm({ name: item.name, sku: item.sku || "", category_id: item.category_id || "", unit: item.unit, min_stock: Number(item.min_stock), unit_cost: Number(item.unit_cost || 0), location: item.location || "", condition: item.condition || "good", notes: item.notes || "", photo_url: item.photo_url || null, manufacturer: item.manufacturer || "", model: item.model || "", serial_number: item.serial_number || "", purchase_date: item.purchase_date || "", warranty_expires: item.warranty_expires || "" });
     } else {
       setEditing(null);
-      setForm({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "" });
+      setForm({ name: "", sku: "", category_id: "", unit: "pcs", min_stock: 0, unit_cost: 0, location: "", condition: "good", notes: "", photo_url: null, manufacturer: "", model: "", serial_number: "", purchase_date: "", warranty_expires: "" });
     }
     setDialogOpen(true);
   };
