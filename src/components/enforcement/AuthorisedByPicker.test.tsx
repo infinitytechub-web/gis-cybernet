@@ -14,40 +14,31 @@ const officers = [
   { id: "p3", first_name: "Yaw",  last_name: "Owusu",   ranks: { abbreviation: "CI"  }, departments: { name: "OPS"  } },
 ];
 
-// Each test can override what the search query returns.
+// Each test can override what the search query returns. With server-side
+// dedup the picker now calls the `search_authorising_officers` RPC and
+// receives flat rows shaped { id, first_name, last_name, rank_abbrev,
+// department_name, role }.
 type MockResult = { data: any[] | null; error: { message: string } | null };
 const defaultResult: MockResult = {
-  data: officers.map((p) => ({ role: "oic", user_id: `u-${p.id}`, profiles: p })),
+  data: officers.map((p) => ({
+    id: p.id,
+    first_name: p.first_name,
+    last_name: p.last_name,
+    rank_abbrev: p.ranks?.abbreviation ?? null,
+    department_name: p.departments?.name ?? null,
+    role: "oic",
+  })),
   error: null,
 };
 const mockState: { searchResult: MockResult } = { searchResult: defaultResult };
 
 vi.mock("@/integrations/supabase/client", () => {
   const fromImpl = (table: string) => {
-    if (table === "user_roles") {
-      const builder: any = {
-        select: () => builder,
-        in: () => builder,
-        limit: () => builder,
-        or: () => builder,
-        eq: () => Promise.resolve({ data: [{ role: "admin" }], error: null }),
-        then: (resolve: any) => resolve(mockState.searchResult),
-      };
-      return builder;
-    }
     if (table === "profiles") {
       const builder: any = {
         select: () => builder,
         eq: () => builder,
         maybeSingle: async () => ({ data: null, error: null }),
-      };
-      return builder;
-    }
-    if (table === "profile_departments") {
-      const builder: any = {
-        select: () => builder,
-        eq: () => Promise.resolve({ data: [], error: null }),
-        in: () => Promise.resolve({ data: [], error: null }),
       };
       return builder;
     }
@@ -57,6 +48,7 @@ vi.mock("@/integrations/supabase/client", () => {
   return {
     supabase: {
       from: fromImpl,
+      rpc: (_name: string, _args?: any) => Promise.resolve(mockState.searchResult),
       auth: {
         getUser: async () => ({ data: { user: { id: "viewer-1" } }, error: null }),
       },
