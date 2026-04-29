@@ -873,6 +873,15 @@ export default function MyShiftTracker() {
           defaultCurrentShiftId={todayEntry?.assignments[0]?.shift_id ?? null}
         />
       )}
+
+      {/* Attendance time-edit requests */}
+      {profile?.id && user?.id && (
+        <AttendanceEditRequestPanel
+          profileId={profile.id}
+          userId={user.id}
+          attendances={attendances}
+        />
+      )}
     </div>
   );
 }
