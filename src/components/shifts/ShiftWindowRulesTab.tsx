@@ -113,15 +113,20 @@ export default function ShiftWindowRulesTab({ shifts }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shift_attendance_window_overrides")
-        .select("id, shift_id, grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window, notes");
+        .select("id, shift_id, grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window, notes, effective_from, effective_to")
+        .order("effective_from", { ascending: true, nullsFirst: true });
       if (error) throw error;
       return (data ?? []) as Override[];
     },
   });
 
-  const overrideByShift = useMemo(() => {
-    const m = new Map<string, Override>();
-    overrides.forEach((o) => m.set(o.shift_id, o));
+  const overridesByShift = useMemo(() => {
+    const m = new Map<string, Override[]>();
+    overrides.forEach((o) => {
+      const arr = m.get(o.shift_id) ?? [];
+      arr.push(o);
+      m.set(o.shift_id, arr);
+    });
     return m;
   }, [overrides]);
 
