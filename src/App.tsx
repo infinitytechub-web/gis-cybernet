@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { lazy, Suspense } from "react";
+import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
 
 // Eagerly loaded (lightweight pages)
 import Index from "./pages/Index";
@@ -63,6 +64,11 @@ function PageLoader() {
   );
 }
 
+function ForcedSignoutMount() {
+  useForcedSignoutWatcher();
+  return null;
+}
+
 function App() {
   return (
   <QueryClientProvider client={queryClient}>
@@ -72,6 +78,7 @@ function App() {
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+        <ForcedSignoutMount />
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />

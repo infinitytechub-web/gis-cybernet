@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldOff, Ban, Clock } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { ShieldOff, Ban, Clock, ScrollText } from "lucide-react";
+import { formatDistanceToNow, format } from "date-fns";
 
 export default function IpBlocks() {
   const { isAdmin, loading } = useAuth();
@@ -42,6 +42,21 @@ export default function IpBlocks() {
     },
   });
 
+  const { data: audit = [] } = useQuery({
+    queryKey: ["ip_block_audit"],
+    enabled: isAdmin,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ip_block_audit" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!ip.trim()) throw new Error("IP address is required");
@@ -58,6 +73,7 @@ export default function IpBlocks() {
       toast({ title: "IP blocked", description: ip });
       setIp(""); setFingerprint(""); setNotes("");
       qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+      qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
     onError: (e: any) => toast({ title: "Block failed", description: e.message, variant: "destructive" }),
   });
@@ -70,6 +86,7 @@ export default function IpBlocks() {
     onSuccess: () => {
       toast({ title: "Unblocked" });
       qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+      qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
     onError: (e: any) => toast({ title: "Unblock failed", description: e.message, variant: "destructive" }),
   });
@@ -184,6 +201,65 @@ export default function IpBlocks() {
               )}
             </TableBody>
           </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <ScrollText className="h-4 w-4 text-amber-700" />
+            Block / Unblock Audit Log
+            <Badge variant="secondary" className="ml-1">{audit.length}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div style={{ minWidth: 700 }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>When</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead>IP</TableHead>
+                  <TableHead>Fingerprint</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Expiry</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {audit.map((a: any) => (
+                  <TableRow key={a.id}>
+                    <TableCell className="text-xs whitespace-nowrap">
+                      {format(new Date(a.created_at), "dd MMM yyyy HH:mm:ss")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={a.action === "blocked" ? "destructive" : "secondary"} className="uppercase text-[10px]">
+                        {a.action}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {a.performed_by_name ?? <span className="font-mono text-muted-foreground">{(a.performed_by ?? "—").slice(0, 8)}</span>}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{a.ip_address ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs max-w-[140px] truncate" title={a.device_fingerprint || ""}>
+                      {a.device_fingerprint || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">{a.reason ?? "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      {a.blocked_until
+                        ? new Date(a.blocked_until).toLocaleString()
+                        : a.duration_minutes === 0 || a.duration_minutes === null
+                          ? <span className="text-muted-foreground">Permanent</span>
+                          : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {audit.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No audit entries yet.</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

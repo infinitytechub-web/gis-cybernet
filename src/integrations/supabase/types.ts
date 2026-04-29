@@ -1234,6 +1234,44 @@ export type Database = {
         }
         Relationships: []
       }
+      forced_signouts: {
+        Row: {
+          block_id: string | null
+          created_at: string
+          device_fingerprint: string | null
+          expires_at: string
+          id: string
+          ip_address: string | null
+          reason: string | null
+        }
+        Insert: {
+          block_id?: string | null
+          created_at?: string
+          device_fingerprint?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+        }
+        Update: {
+          block_id?: string | null
+          created_at?: string
+          device_fingerprint?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forced_signouts_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "ip_blocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       front_desk_audit_log: {
         Row: {
           action: string
@@ -1819,6 +1857,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      ip_block_audit: {
+        Row: {
+          action: string
+          block_id: string | null
+          blocked_until: string | null
+          created_at: string
+          device_fingerprint: string | null
+          duration_minutes: number | null
+          id: string
+          ip_address: string | null
+          notes: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          block_id?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          device_fingerprint?: string | null
+          duration_minutes?: number | null
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          block_id?: string | null
+          blocked_until?: string | null
+          created_at?: string
+          device_fingerprint?: string | null
+          duration_minutes?: number | null
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ip_block_audit_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "ip_blocks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ip_blocks: {
         Row: {
@@ -4388,6 +4479,10 @@ export type Database = {
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
+      }
+      should_force_signout: {
+        Args: { _fingerprint?: string; _ip: string }
+        Returns: boolean
       }
       soft_delete_record: {
         Args: {
