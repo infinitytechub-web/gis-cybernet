@@ -216,9 +216,9 @@ export default function MyShiftTracker() {
     };
   }, [profile?.id, queryClient]);
 
-  // Map date -> assignment(s) and attendance
+  // Map date -> assignment(s) and attendance + punctuality alert
   const dateMap = useMemo(() => {
-    const m = new Map<string, { assignments: Assignment[]; attendance?: Attendance }>();
+    const m = new Map<string, { assignments: Assignment[]; attendance?: Attendance; punctuality?: Punctuality | null }>();
     days.forEach((d) => {
       const key = format(d, "yyyy-MM-dd");
       const dayAssign = assignments.filter((a) => {
@@ -227,7 +227,9 @@ export default function MyShiftTracker() {
         return key >= s && key <= e;
       });
       const att = attendances.find((x) => x.date === key);
-      m.set(key, { assignments: dayAssign, attendance: att });
+      const shift = dayAssign[0]?.shifts ?? null;
+      const punctuality = att?.check_in ? computePunctuality(att.check_in, key, shift) : null;
+      m.set(key, { assignments: dayAssign, attendance: att, punctuality });
     });
     return m;
   }, [days, assignments, attendances]);
