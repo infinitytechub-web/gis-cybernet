@@ -64,129 +64,32 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     },
   });
 
-  // Resolve the current user's department(s) + top role so we can scope the
-  // officer list. Officers can now belong to MULTIPLE departments via the
-  // `profile_departments` join table — we resolve every department the viewer
-  // is attached to (primary + extras) so the picker returns officers visible
-  // to ANY of them.
-  //
-  // Command-tier users (admin/oic/2ic/staff_officer) bypass scoping entirely.
-  const { data: viewerScope } = useQuery({
-    queryKey: ["authorising-officers-viewer-scope"],
-    queryFn: async () => {
-      const { data: auth } = await supabase.auth.getUser();
-      const uid = auth?.user?.id;
-      if (!uid) return { departmentIds: [] as string[], isCommandTier: false };
-
-      const [{ data: rolesData }, { data: profileData }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", uid),
-        supabase
-          .from("profiles")
-          .select("id, department_id")
-          .eq("user_id", uid)
-          .maybeSingle(),
-      ]);
-
-      const roles = (rolesData ?? []).map((r: any) => r.role);
-      const isCommandTier = roles.some((r: string) =>
-        ["admin", "oic", "2ic", "staff_officer"].includes(r),
-      );
-
-      // Collect every department the viewer belongs to: primary
-      // (profiles.department_id) plus all rows in profile_departments.
-      const ids = new Set<string>();
-      const primaryDept = (profileData as any)?.department_id as string | null | undefined;
-      if (primaryDept) ids.add(primaryDept);
-
-      const profileId = (profileData as any)?.id as string | undefined;
-      if (profileId) {
-        const { data: extra } = await (supabase as any)
-          .from("profile_departments")
-          .select("department_id")
-          .eq("profile_id", profileId);
-        for (const row of (extra ?? []) as any[]) {
-          if (row.department_id) ids.add(row.department_id);
-        }
-      }
-
-      return { departmentIds: Array.from(ids), isCommandTier };
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Pre-resolve the set of officer profile_ids that match the viewer's
-  // department(s). We filter via the join table so officers attached to ANY
-  // of the viewer's departments are included — a single officer who serves
-  // multiple departments is returned as long as one membership matches.
-  const scopeDeptIds = viewerScope?.departmentIds ?? [];
-  const isCommandTier = !!viewerScope?.isCommandTier;
-  const scopeKey = isCommandTier ? "all" : scopeDeptIds.slice().sort().join(",") || "none";
-
-  const { data: scopedProfileIds } = useQuery({
-    queryKey: ["authorising-officers-scope-ids", scopeKey],
-    enabled: open && !isCommandTier && scopeDeptIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("profile_departments")
-        .select("profile_id")
-        .in("department_id", scopeDeptIds);
-      if (error) throw error;
-      // De-dupe so an officer in multiple matching departments isn't returned twice.
-      return Array.from(new Set(((data ?? []) as any[]).map((r) => r.profile_id as string)));
-    },
-    staleTime: 60 * 1000,
-  });
-
-  // Server-side search against user_roles → profiles, scoped to OIC / 2IC and
-  // (for non-command-tier viewers) to officers in the viewer's department(s).
+  // Officer search is delegated to the SECURITY DEFINER RPC
+  // `search_authorising_officers`. The RPC enforces:
+  //   * RBAC scoping (command tier sees all; everyone else only sees officers
+  //     attached to their own department(s) via profile_departments)
+  //   * De-duplication by profile id, even when an officer holds both `oic`
+  //     and `2ic` roles or belongs to multiple departments
+  //   * Highest-role-wins selection (oic preferred over 2ic)
+  // This means the UI receives a clean, deduped list with zero client-side
+  // post-processing — and a malicious client cannot bypass scoping.
   const { data: officers = [], isFetching, isLoading, isError, error: queryError, refetch } = useQuery({
-    queryKey: ["authorising-officers", debounced, scopeKey, (scopedProfileIds ?? []).length],
-    // Wait until the viewer's allowed officer-id set is resolved (or skipped
-    // for command-tier) before firing — prevents leaking unscoped results.
-    enabled: open && (isCommandTier || scopedProfileIds !== undefined),
+    queryKey: ["authorising-officers", debounced],
+    enabled: open,
     queryFn: async () => {
-      // Non-command viewer with an empty allowed set → return nothing rather
-      // than firing an unscoped query.
-      if (!isCommandTier && (scopedProfileIds?.length ?? 0) === 0) return [];
-
-      let query = supabase
-        .from("user_roles")
-        .select("role, user_id, profiles!inner(id, first_name, last_name, department_id, ranks(abbreviation), departments(name))")
-        .in("role", ["oic", "2ic"])
-        .limit(50);
-
-      if (!isCommandTier && scopedProfileIds && scopedProfileIds.length > 0) {
-        query = query.in("profiles.id", scopedProfileIds);
-      }
-
-      if (debounced) {
-        const term = `%${debounced}%`;
-        query = query.or(
-          `first_name.ilike.${term},last_name.ilike.${term}`,
-          { foreignTable: "profiles" },
-        );
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await (supabase as any).rpc("search_authorising_officers", {
+        _search: debounced || null,
+        _limit: 50,
+      });
       if (error) throw error;
-      // De-dupe by profile id — a single officer with both `oic` and `2ic`
-      // user_roles rows would otherwise appear twice.
-      const seen = new Set<string>();
-      const rows: AuthProfile[] = [];
-      for (const r of ((data ?? []) as any[])) {
-        const pid = r.profiles.id;
-        if (seen.has(pid)) continue;
-        seen.add(pid);
-        rows.push({
-          id: pid,
-          first_name: r.profiles.first_name,
-          last_name: r.profiles.last_name,
-          ranks: r.profiles.ranks,
-          departments: r.profiles.departments,
-          role: r.role,
-        });
-      }
-      return rows;
+      return ((data ?? []) as any[]).map((r) => ({
+        id: r.id,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        ranks: r.rank_abbrev ? { abbreviation: r.rank_abbrev } : null,
+        departments: r.department_name ? { name: r.department_name } : null,
+        role: r.role,
+      })) as AuthProfile[];
     },
   });
 
