@@ -86,6 +86,7 @@ function App() {
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals" element={<ProtectedRoute><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute><Layout><Holidays /></Layout></ProtectedRoute>} />
           <Route path="/postings" element={<ProtectedRoute><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />
