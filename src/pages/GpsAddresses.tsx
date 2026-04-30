@@ -175,6 +175,10 @@ export default function GpsAddresses() {
 
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceKey | "all">("all");
+  // Date-range filter for the GPS Hub. Empty string = no bound.
+  // Compared against `created_at` (the canonical capture time per source).
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [selected, setSelected] = useState<GpsRecord | null>(null);
   const [viewing, setViewing] = useState<GpsRecord | null>(null);
   const [deleting, setDeleting] = useState<GpsRecord | null>(null);
@@ -370,8 +374,17 @@ export default function GpsAddresses() {
         `${r.raw_location} ${r.digital_address ?? ""} ${r.context} ${r.reference}`.toLowerCase().includes(s),
       );
     }
+    if (dateFrom) {
+      const from = new Date(`${dateFrom}T00:00:00`).getTime();
+      list = list.filter((r) => new Date(r.created_at).getTime() >= from);
+    }
+    if (dateTo) {
+      // Inclusive upper bound — end of the selected day.
+      const to = new Date(`${dateTo}T23:59:59.999`).getTime();
+      list = list.filter((r) => new Date(r.created_at).getTime() <= to);
+    }
     return list;
-  }, [records, search, sourceFilter]);
+  }, [records, search, sourceFilter, dateFrom, dateTo]);
 
   // Keep the open dialog's record in sync with realtime updates so the live map
   // and coordinate readouts reflect the latest data without manual reopen.
@@ -1311,6 +1324,37 @@ export default function GpsAddresses() {
                 ))}
               </SelectContent>
             </Select>
+            {/* Date-range filter — applies to capture date (created_at). */}
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="gps-date-from" className="text-xs text-muted-foreground">From</Label>
+              <Input
+                id="gps-date-from"
+                type="date"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 w-[150px]"
+              />
+              <Label htmlFor="gps-date-to" className="text-xs text-muted-foreground">To</Label>
+              <Input
+                id="gps-date-to"
+                type="date"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 w-[150px]"
+              />
+              {(dateFrom || dateTo) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => { setDateFrom(""); setDateTo(""); }}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
 
