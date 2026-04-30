@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   format,
   startOfMonth,
@@ -11,11 +12,13 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Sparkles, Box } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Box, ShieldCheck } from "lucide-react";
 
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { cn } from "@/lib/utils";
 import { GROUP_COLORS, type ShiftGroup } from "@/lib/shift-rotation";
 import { useShiftRotationConfig } from "@/hooks/useShiftRotationConfig";
@@ -36,14 +39,25 @@ interface Props {
   staffGroup: string | null | undefined;
   /** Optional staff name for the header chip. */
   staffName?: string;
+  /** Profile id used to look up admin-approved overrides. */
+  profileId?: string | null;
+  /** Optional staff identifier for the export header. */
+  staffId?: string | null;
 }
+
+type AssignmentRow = {
+  id: string;
+  start_date: string;
+  end_date: string | null;
+  shifts: { id: string; name: string } | null;
+};
 
 /**
  * Self-view rotation calendar driven by the published Amasaman 4-day rotation.
  * Renders a 3D perspective grid where the staff member's on-duty days lift
  * forward and glow, while off-duty days recede.
  */
-export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
+export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
   const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
   const { config, groupForDate } = useShiftRotationConfig();
@@ -54,21 +68,85 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
   const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [gridStart, gridEnd]);
 
-  const onDutyDates = useMemo(() => {
-    if (!myGroup) return [] as Date[];
-    return days.filter((d) => isSameMonth(d, cursor) && groupForDate(d) === myGroup);
-  }, [days, cursor, myGroup, groupForDate]);
+  // Admin-approved overrides (rows in shift_assignments). Any assignment overlapping
+  // a calendar date overrides whatever the rotation pattern would have produced —
+  // marking that day as "on duty" with the assigned shift name shown.
+  const { data: overrides = [] } = useQuery({
+    queryKey: ["my-rotation-overrides", profileId, format(monthStart, "yyyy-MM")],
+    enabled: !!profileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shift_assignments")
+        .select("id, start_date, end_date, shifts(id, name)")
+        .eq("profile_id", profileId!)
+        .lte("start_date", format(monthEnd, "yyyy-MM-dd"))
+        .or(`end_date.is.null,end_date.gte.${format(monthStart, "yyyy-MM-dd")}`);
+      if (error) throw error;
+      return (data ?? []) as unknown as AssignmentRow[];
+    },
+  });
+
+  /** Returns the override (if any) covering the given date. */
+  const overrideFor = useMemo(() => {
+    return (d: Date): AssignmentRow | null => {
+      const key = format(d, "yyyy-MM-dd");
+      return overrides.find((a) => key >= a.start_date && key <= (a.end_date ?? "9999-12-31")) ?? null;
+    };
+  }, [overrides]);
+
+  /** A day is on duty if (a) admin override covers it OR (b) the rotation matches my group. */
+  const isOnDuty = useMemo(() => {
+    return (d: Date): boolean => {
+      if (overrideFor(d)) return true;
+      return !!myGroup && groupForDate(d) === myGroup;
+    };
+  }, [myGroup, groupForDate, overrideFor]);
+
+  const onDutyDates = useMemo(
+    () => days.filter((d) => isSameMonth(d, cursor) && isOnDuty(d)),
+    [days, cursor, isOnDuty],
+  );
 
   const nextOnDuty = useMemo(() => {
-    if (!myGroup) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 14; i++) {
       const d = new Date(today.getTime() + i * 86400000);
-      if (groupForDate(d) === myGroup) return d;
+      if (isOnDuty(d)) return d;
     }
     return null;
-  }, [myGroup, groupForDate]);
+  }, [isOnDuty]);
+
+  const overrideCount = useMemo(
+    () => onDutyDates.filter((d) => !!overrideFor(d)).length,
+    [onDutyDates, overrideFor],
+  );
+
+  const buildExportPayload = () => {
+    const fullName = staffName?.trim() || "Staff";
+    const subtitle = [
+      `Staff: ${fullName}${staffId ? ` (${staffId})` : ""}`,
+      `Group: ${myGroup ?? "—"}`,
+      `Period: ${format(monthStart, "dd MMM yyyy")} – ${format(monthEnd, "dd MMM yyyy")}`,
+      `On-duty days: ${onDutyDates.length}${overrideCount ? ` (${overrideCount} admin override${overrideCount === 1 ? "" : "s"})` : ""}`,
+    ].join(" · ");
+    return {
+      title: `My On-Duty Rotation — ${format(cursor, "MMMM yyyy")}`,
+      filename: `my-rotation-${format(cursor, "yyyy-MM")}`,
+      subtitle,
+      headers: ["Date", "Day", "Group", "Source", "Assigned shift"],
+      rows: onDutyDates.map((d) => {
+        const ov = overrideFor(d);
+        return [
+          format(d, "yyyy-MM-dd"),
+          format(d, "EEEE"),
+          ov ? "OVR" : (myGroup ?? ""),
+          ov ? "Admin override" : "Rotation",
+          ov?.shifts?.name ?? "—",
+        ];
+      }),
+    };
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -80,11 +158,12 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
               My Rotation — {format(cursor, "MMMM yyyy")}
             </CardTitle>
             <CardDescription>
-              Auto-generated from the Amasaman 2026 4-day rotation (A → B → C → D).
+              Auto-generated from the {config.pattern.join(" → ")} rotation, with admin-approved
+              shift assignments overriding any matching day.
               {myGroup ? (
                 <> Days where <strong>Group {myGroup}</strong> is on duty are lifted toward you.</>
               ) : (
-                <> No shift group is assigned to your profile yet — ask an admin to set one.</>
+                <> No shift group is assigned to your profile yet — overrides will still appear.</>
               )}
             </CardDescription>
           </div>
@@ -112,6 +191,13 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
               <Button variant="outline" size="icon" onClick={() => setCursor((c) => addMonths(c, 1))} aria-label="Next month">
                 <ChevronRight className="h-4 w-4" />
               </Button>
+              <ExportMenu
+                label="Export rotation"
+                size="sm"
+                formats={["pdf", "csv"]}
+                disabled={onDutyDates.length === 0}
+                getData={buildExportPayload}
+              />
             </div>
           </div>
         </div>
@@ -126,6 +212,12 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
               {onDutyDates.length}
               <span className="text-xs font-normal text-muted-foreground"> / {days.filter((d) => isSameMonth(d, cursor)).length}</span>
             </div>
+            {overrideCount > 0 && (
+              <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-300">
+                <ShieldCheck className="h-3 w-3" />
+                {overrideCount} admin override{overrideCount === 1 ? "" : "s"}
+              </div>
+            )}
           </div>
           <div className="rounded-md border bg-muted/30 p-2">
             <div className="text-muted-foreground">Next on-duty</div>
@@ -185,16 +277,21 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
                     const group = groupForDate(d);
                     const inMonth = isSameMonth(d, cursor);
                     const today = isToday(d);
-                    const onDuty = !!myGroup && group === myGroup;
-                    const colors = tone(group);
+                    const ov = overrideFor(d);
+                    const rotationOnDuty = !!myGroup && group === myGroup;
+                    const onDuty = !!ov || rotationOnDuty;
+                    const isOverrideOff = !!ov; // override always wins → on-duty
+                    const colors = ov ? tone(myGroup ?? group) : tone(group);
 
                     return (
                       <div
                         key={d.toISOString()}
+                        title={ov ? `Override: ${ov.shifts?.name ?? "Assigned shift"}` : undefined}
                         className={cn(
                           "relative h-20 md:h-24 rounded-lg border p-2 flex flex-col justify-between transition-all duration-200",
                           inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
                           onDuty && [colors.bg, colors.border, "border-2 shadow-lg"],
+                          isOverrideOff && "ring-2 ring-amber-500/70",
                           !onDuty && "opacity-95",
                           today && "ring-2 ring-primary ring-offset-1",
                         )}
@@ -219,16 +316,27 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
                               colors.text,
                               colors.border,
                             )}
-                            aria-label={`Group ${group}`}
+                            aria-label={ov ? "Override" : `Group ${group}`}
                           >
-                            {group}
+                            {ov ? "★" : group}
                           </span>
                         </div>
 
                         {onDuty && (
-                          <div className="flex items-center gap-1 text-[10px] font-medium">
-                            <Sparkles className={cn("h-3 w-3", colors.text)} />
-                            <span className={colors.text}>On duty</span>
+                          <div className="flex items-center gap-1 text-[10px] font-medium truncate">
+                            {ov ? (
+                              <>
+                                <ShieldCheck className="h-3 w-3 text-amber-600" />
+                                <span className="text-amber-700 dark:text-amber-300 truncate">
+                                  {ov.shifts?.name ?? "Override"}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className={cn("h-3 w-3", colors.text)} />
+                                <span className={colors.text}>On duty</span>
+                              </>
+                            )}
                           </div>
                         )}
 
@@ -247,26 +355,31 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
         </div>
 
         {/* Listing of upcoming on-duty days for accessibility / quick scan */}
-        {myGroup && onDutyDates.length > 0 && (
+        {onDutyDates.length > 0 && (
           <div className="rounded-md border bg-muted/20 p-3">
             <div className="text-xs font-medium text-muted-foreground mb-1.5">
               Your on-duty days in {format(cursor, "MMMM")}
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {onDutyDates.map((d) => (
-                <span
-                  key={d.toISOString()}
-                  className={cn(
-                    "text-xs font-mono px-2 py-0.5 rounded border",
-                    tone(myGroup).bg,
-                    tone(myGroup).text,
-                    tone(myGroup).border,
-                    isToday(d) && "ring-1 ring-primary",
-                  )}
-                >
-                  {format(d, "EEE dd")}
-                </span>
-              ))}
+              {onDutyDates.map((d) => {
+                const ov = overrideFor(d);
+                const t = tone(ov ? (myGroup ?? "A") : (myGroup ?? "A"));
+                return (
+                  <span
+                    key={d.toISOString()}
+                    className={cn(
+                      "text-xs font-mono px-2 py-0.5 rounded border inline-flex items-center gap-1",
+                      t.bg, t.text, t.border,
+                      ov && "ring-1 ring-amber-500/70",
+                      isToday(d) && "ring-1 ring-primary",
+                    )}
+                    title={ov ? `Override: ${ov.shifts?.name ?? "Assigned shift"}` : undefined}
+                  >
+                    {ov && <ShieldCheck className="h-3 w-3 text-amber-600" />}
+                    {format(d, "EEE dd")}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
