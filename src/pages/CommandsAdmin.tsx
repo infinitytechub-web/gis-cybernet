@@ -148,6 +148,31 @@ export default function CommandsAdmin() {
     );
   }, [pinnedDraft, unpinnedDraft, serverCommands]);
 
+  // Build a per-list diff for the confirmation dialog.
+  type DiffRow = { id: string; name: string; oldIdx: number | null; newIdx: number | null; delta: number | null };
+  const buildDiff = (
+    serverList: ConfidentialityCommand[],
+    draftList: ConfidentialityCommand[],
+  ): DiffRow[] => {
+    const oldIndexById = new Map(serverList.map((c, i) => [c.id, i]));
+    return draftList.map((c, newIdx) => {
+      const oldIdx = oldIndexById.has(c.id) ? oldIndexById.get(c.id)! : null;
+      const delta = oldIdx == null ? null : oldIdx - newIdx; // positive = moved up
+      return { id: c.id, name: c.name, oldIdx, newIdx, delta };
+    });
+  };
+  const pinnedDiff = useMemo(
+    () => buildDiff(serverCommands.filter((c) => c.pinned), pinnedDraft),
+    [serverCommands, pinnedDraft],
+  );
+  const unpinnedDiff = useMemo(
+    () => buildDiff(serverCommands.filter((c) => !c.pinned), unpinnedDraft),
+    [serverCommands, unpinnedDraft],
+  );
+  const movedCount =
+    pinnedDiff.filter((r) => (r.delta ?? 0) !== 0).length +
+    unpinnedDiff.filter((r) => (r.delta ?? 0) !== 0).length;
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
