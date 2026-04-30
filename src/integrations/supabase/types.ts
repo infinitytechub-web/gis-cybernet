@@ -4647,6 +4647,30 @@ export type Database = {
           },
         ]
       }
+      shift_rotation_config: {
+        Row: {
+          anchor_date: string
+          id: boolean
+          pattern: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          anchor_date?: string
+          id?: boolean
+          pattern?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          anchor_date?: string
+          id?: boolean
+          pattern?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       shift_window_override_audit: {
         Row: {
           action: string
