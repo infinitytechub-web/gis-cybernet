@@ -20,7 +20,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   Crown, Pencil, Plus, Trash2, ExternalLink, Pin, GripVertical,
-  Save, RotateCcw, ArrowDownAZ,
+  Save, RotateCcw, ArrowDownAZ, ArrowUp, ArrowDown, Minus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -158,6 +158,7 @@ export default function CommandsAdmin() {
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ConfidentialityCommand | null>(null);
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
 
   if (!isAdmin) {
     return (
