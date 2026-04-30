@@ -164,6 +164,9 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
             <CardDescription>
               Auto-generated from the {config.pattern.join(" → ")} rotation, with admin-approved
               shift assignments overriding any matching day.
+              {config.overrideScopeLabel && (
+                <> <Badge variant="outline" className="ml-1 text-[10px] border-amber-500/60 text-amber-700 dark:text-amber-300">{config.overrideScopeLabel}</Badge></>
+              )}
               {myGroup ? (
                 <> Days where <strong>Group {myGroup}</strong> is on duty are lifted toward you.</>
               ) : (
