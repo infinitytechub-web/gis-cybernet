@@ -105,6 +105,10 @@ export function AppSidebar() {
     else setOpen(false);
   };
   const { org_name, system_label } = useAppSettings();
+  const interlinkBranding = useInterlinkBranding();
+  const liveCommandVaultItems = commandVaultItems.map((it) =>
+    it.url === "/interlink" ? { ...it, title: interlinkBranding.nav } : it
+  );
   const queryClient = useQueryClient();
 
   // Realtime: invalidate sidebar badge counts on any change to application tables
