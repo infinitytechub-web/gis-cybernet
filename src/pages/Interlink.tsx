@@ -23,6 +23,8 @@ import {
   FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
+import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF } from "@/lib/interlink-export";
+import { toast } from "sonner";
 import {
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
@@ -939,26 +941,25 @@ function AuditTab() {
     return true;
   });
 
-  function exportAudit(fmt: ExportFormat) {
-    const headers = ["When", "Subject", "Scope", "Report", "Recipients", "Files", "Bytes", "Status", "Sent", "Failed"];
-    const rows = filtered.map((d: any) => [
-      format(new Date(d.created_at), "dd MMM yyyy HH:mm"),
-      d.subject,
-      d.scope,
-      d.report_kind ?? "—",
-      String(d.recipient_count),
-      String(d.attachment_count),
-      String(d.total_attachment_bytes),
-      d.status,
-      String(d.sent_count),
-      String(d.failed_count),
-    ]);
-    exportReport(fmt, {
-      title: "Interlink Audit Trail",
-      filename: `Interlink_Audit_${new Date().toISOString().split("T")[0]}`,
-      headers, rows,
-      subtitle: `${filtered.length} dispatch records`,
-    });
+  function exportAudit(fmt: "csv" | "excel" | "pdf") {
+    const rows = filtered.map((d: any) => ({
+      created_at: d.created_at,
+      subject: d.subject,
+      scope: d.scope,
+      report_kind: d.report_kind,
+      source: d.source,
+      workflow_state: d.workflow_state,
+      status: d.status,
+      recipient_count: d.recipient_count,
+      attachment_count: d.attachment_count,
+      total_attachment_bytes: d.total_attachment_bytes,
+      sent_count: d.sent_count,
+      failed_count: d.failed_count,
+    }));
+    if (fmt === "csv") exportDispatchesCSV(rows);
+    else if (fmt === "excel") exportDispatchesXLSX(rows);
+    else exportDispatchesPDF(rows);
+    toast.success(`Exported ${rows.length} record${rows.length === 1 ? "" : "s"}`);
   }
 
   return (
@@ -976,7 +977,6 @@ function AuditTab() {
           <Button size="sm" variant="outline" onClick={() => exportAudit("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
           <Button size="sm" variant="outline" onClick={() => exportAudit("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
           <Button size="sm" variant="outline" onClick={() => exportAudit("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
-          <Button size="sm" variant="outline" onClick={() => exportAudit("word")}><Download className="h-3.5 w-3.5 mr-1" />Word</Button>
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
           <Input placeholder="Search subject, recipient, file…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
