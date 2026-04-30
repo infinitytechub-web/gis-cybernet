@@ -18,8 +18,8 @@ export function InterlinkBrandingSettings() {
   const { role } = useAuth();
   const isAdmin = role === "admin";
 
-  const [title, setTitle] = useState(INTERLINK_LABELS.title);
-  const [tagline, setTagline] = useState(INTERLINK_LABELS.tagline);
+  const [title, setTitle] = useState<string>(INTERLINK_LABELS.title);
+  const [tagline, setTagline] = useState<string>(INTERLINK_LABELS.tagline);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
