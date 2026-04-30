@@ -85,10 +85,10 @@ export function ShiftRotationOverrides() {
     queryKey: ["shift-rotation-audit"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("shift_rotation_audit" as any)
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(20);
+        .from("shift_rotation_config_audit" as any)
+        .select("id, changed_at, changed_by_name, action, old_anchor_date, new_anchor_date, old_pattern, new_pattern, changed_fields")
+        .order("changed_at", { ascending: false })
+        .limit(50);
       if (error) throw error;
       return (data ?? []) as unknown as AuditLog[];
     },
