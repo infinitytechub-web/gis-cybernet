@@ -8,6 +8,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
+import { HeaderRoleSwitcher } from "@/components/HeaderRoleSwitcher";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { Clock, CalendarDays } from "lucide-react";
@@ -39,6 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {clock.toLocaleTimeString()}
               </span>
               <ThemeToggle />
+              <HeaderRoleSwitcher />
               <OnlineNowBadge />
               {isAdmin && <SystemAuditTray />}
               <NotificationBell />
