@@ -23,6 +23,7 @@ import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
   ExternalLink, Radio, Navigation as NavIcon, Sparkles, Cloud, Copy, Check, Loader2, Timer,
   MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert, Printer,
+  WifiOff, ServerCog,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +44,20 @@ import {
   buildAuditQrDataUrl,
   buildAuditVerificationUrl,
 } from "@/lib/official-stamp";
+import { Switch } from "@/components/ui/switch";
+import {
+  isOfflineModeEnabled,
+  setOfflineModeEnabled,
+  readOfflineCache,
+  writeOfflineCache,
+  clearOfflineCache,
+  OFFLINE_CACHE_MAX,
+} from "@/lib/gps-offline-cache";
+import {
+  exportGpsPointsServerSide,
+  GPS_EXPORT_MAX_ROWS,
+  type GpsExportSource,
+} from "@/lib/gps-server-export";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
