@@ -158,11 +158,12 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
               My Rotation — {format(cursor, "MMMM yyyy")}
             </CardTitle>
             <CardDescription>
-              Auto-generated from the Amasaman 2026 4-day rotation (A → B → C → D).
+              Auto-generated from the {config.pattern.join(" → ")} rotation, with admin-approved
+              shift assignments overriding any matching day.
               {myGroup ? (
                 <> Days where <strong>Group {myGroup}</strong> is on duty are lifted toward you.</>
               ) : (
-                <> No shift group is assigned to your profile yet — ask an admin to set one.</>
+                <> No shift group is assigned to your profile yet — overrides will still appear.</>
               )}
             </CardDescription>
           </div>
