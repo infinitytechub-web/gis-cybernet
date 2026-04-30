@@ -116,6 +116,20 @@ export function AppSidebar() {
     it.url === "/interlink" ? { ...it, title: interlinkBranding.nav } : it
   );
   const queryClient = useQueryClient();
+  const { data: confCommands = [] } = useConfidentialityCommands();
+
+  // Build Confidentiality submenu (admin only). Pinned commands first, then alphabetical.
+  const confidentialityItems: NavItem[] = [
+    ...confCommands.map((c) => ({
+      title: c.name,
+      url: `/command/${c.slug}`,
+      icon: c.pinned ? PinIcon : Crown,
+      iconColor: c.pinned
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]",
+    })),
+    { title: "Manage commands", url: "/commands", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400" },
+  ];
 
   // Realtime: invalidate sidebar badge counts on any change to application tables
   useEffect(() => {
@@ -278,6 +292,7 @@ export function AppSidebar() {
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}
+        {role === "admin" && renderGroup("Confidentiality", confidentialityItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
         {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") &&
           renderGroup(
