@@ -122,6 +122,7 @@ export default function CommandRoles() {
   const writeAudit = async (params: {
     targetUserId: string; targetStaffId?: string | null; targetName?: string;
     fromRole: AppRole | null; toRole: AppRole | null; action: "assign" | "remove" | "change";
+    batchId?: string | null;
   }) => {
     let changedByName: string | null = user?.email ?? null;
     if (user?.id) {
@@ -141,6 +142,7 @@ export default function CommandRoles() {
       action: params.action,
       changed_by: user?.id ?? null,
       changed_by_name: changedByName,
+      batch_id: params.batchId ?? null,
     });
   };
 
