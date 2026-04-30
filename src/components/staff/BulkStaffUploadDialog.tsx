@@ -33,6 +33,11 @@ type RunResult = {
   updatedCount: number;
   skippedCount: number;
   errorCount: number;
+  deactivateCount?: number;
+  rosterPlanned?: number;
+  rosterDates?: string[];
+  rosterErrors?: { rowIndex: number; message: string; staffId: string | null }[];
+  snapshotId?: string | null;
   commitErrors: { staffId: string; error: string }[];
   outcomes: Outcome[];
 };
