@@ -57,7 +57,7 @@ type AssignmentRow = {
  * Renders a 3D perspective grid where the staff member's on-duty days lift
  * forward and glow, while off-duty days recede.
  */
-export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
+export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
   const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
   const { config, groupForDate } = useShiftRotationConfig();
@@ -68,21 +68,85 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
   const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [gridStart, gridEnd]);
 
-  const onDutyDates = useMemo(() => {
-    if (!myGroup) return [] as Date[];
-    return days.filter((d) => isSameMonth(d, cursor) && groupForDate(d) === myGroup);
-  }, [days, cursor, myGroup, groupForDate]);
+  // Admin-approved overrides (rows in shift_assignments). Any assignment overlapping
+  // a calendar date overrides whatever the rotation pattern would have produced —
+  // marking that day as "on duty" with the assigned shift name shown.
+  const { data: overrides = [] } = useQuery({
+    queryKey: ["my-rotation-overrides", profileId, format(monthStart, "yyyy-MM")],
+    enabled: !!profileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shift_assignments")
+        .select("id, start_date, end_date, shifts(id, name)")
+        .eq("profile_id", profileId!)
+        .lte("start_date", format(monthEnd, "yyyy-MM-dd"))
+        .or(`end_date.is.null,end_date.gte.${format(monthStart, "yyyy-MM-dd")}`);
+      if (error) throw error;
+      return (data ?? []) as unknown as AssignmentRow[];
+    },
+  });
+
+  /** Returns the override (if any) covering the given date. */
+  const overrideFor = useMemo(() => {
+    return (d: Date): AssignmentRow | null => {
+      const key = format(d, "yyyy-MM-dd");
+      return overrides.find((a) => key >= a.start_date && key <= (a.end_date ?? "9999-12-31")) ?? null;
+    };
+  }, [overrides]);
+
+  /** A day is on duty if (a) admin override covers it OR (b) the rotation matches my group. */
+  const isOnDuty = useMemo(() => {
+    return (d: Date): boolean => {
+      if (overrideFor(d)) return true;
+      return !!myGroup && groupForDate(d) === myGroup;
+    };
+  }, [myGroup, groupForDate, overrideFor]);
+
+  const onDutyDates = useMemo(
+    () => days.filter((d) => isSameMonth(d, cursor) && isOnDuty(d)),
+    [days, cursor, isOnDuty],
+  );
 
   const nextOnDuty = useMemo(() => {
-    if (!myGroup) return null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 14; i++) {
       const d = new Date(today.getTime() + i * 86400000);
-      if (groupForDate(d) === myGroup) return d;
+      if (isOnDuty(d)) return d;
     }
     return null;
-  }, [myGroup, groupForDate]);
+  }, [isOnDuty]);
+
+  const overrideCount = useMemo(
+    () => onDutyDates.filter((d) => !!overrideFor(d)).length,
+    [onDutyDates, overrideFor],
+  );
+
+  const buildExportPayload = () => {
+    const fullName = staffName?.trim() || "Staff";
+    const subtitle = [
+      `Staff: ${fullName}${staffId ? ` (${staffId})` : ""}`,
+      `Group: ${myGroup ?? "—"}`,
+      `Period: ${format(monthStart, "dd MMM yyyy")} – ${format(monthEnd, "dd MMM yyyy")}`,
+      `On-duty days: ${onDutyDates.length}${overrideCount ? ` (${overrideCount} admin override${overrideCount === 1 ? "" : "s"})` : ""}`,
+    ].join(" · ");
+    return {
+      title: `My On-Duty Rotation — ${format(cursor, "MMMM yyyy")}`,
+      filename: `my-rotation-${format(cursor, "yyyy-MM")}`,
+      subtitle,
+      headers: ["Date", "Day", "Group", "Source", "Assigned shift"],
+      rows: onDutyDates.map((d) => {
+        const ov = overrideFor(d);
+        return [
+          format(d, "yyyy-MM-dd"),
+          format(d, "EEEE"),
+          ov ? "OVR" : (myGroup ?? ""),
+          ov ? "Admin override" : "Rotation",
+          ov?.shifts?.name ?? "—",
+        ];
+      }),
+    };
+  };
 
   return (
     <Card className="overflow-hidden">
