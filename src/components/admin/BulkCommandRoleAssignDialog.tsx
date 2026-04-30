@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Users, Check, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -40,15 +40,19 @@ type RowState = {
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** User IDs to pre-select when the dialog opens (e.g. from a quick search). */
+  preselectUserIds?: string[];
+  /** Optional pre-set target role. */
+  preselectRole?: AppRole;
 }
 
-export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
+export function BulkCommandRoleAssignDialog({ open, onOpenChange, preselectUserIds, preselectRole }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
 
   const [step, setStep] = useState<Step>("select");
   const [search, setSearch] = useState("");
-  const [bulkRole, setBulkRole] = useState<AppRole>("supervisor");
+  const [bulkRole, setBulkRole] = useState<AppRole>(preselectRole ?? "supervisor");
   const [picked, setPicked] = useState<Map<string, boolean>>(new Map());
   const [rows, setRows] = useState<RowState[]>([]);
   const [running, setRunning] = useState(false);
@@ -66,6 +70,17 @@ export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
     },
     enabled: open,
   });
+
+  // Apply pre-selection whenever the dialog opens with preselectUserIds.
+  useEffect(() => {
+    if (!open) return;
+    if (preselectRole) setBulkRole(preselectRole);
+    if (preselectUserIds && preselectUserIds.length) {
+      const m = new Map<string, boolean>();
+      preselectUserIds.forEach((id) => m.set(id, true));
+      setPicked(m);
+    }
+  }, [open, preselectUserIds, preselectRole]);
 
   const { data: currentRoles = new Map<string, AppRole>() } = useQuery({
     queryKey: ["bulk-cmd-current-roles"],
@@ -111,7 +126,7 @@ export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
     setStep("preview");
   };
 
-  const writeAudit = async (r: RowState) => {
+  const writeAudit = async (r: RowState, batchId: string) => {
     const name = `${r.profile.first_name ?? ""} ${r.profile.last_name ?? ""}`.trim() || r.profile.email || undefined;
     await supabase.from("command_role_audit").insert({
       target_user_id: r.profile.user_id,
@@ -122,13 +137,15 @@ export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
       action: r.fromRole ? "change" : "assign",
       changed_by: user?.id ?? null,
       changed_by_name: user?.email ?? null,
+      batch_id: batchId,
     });
   };
 
   const commitMut = useMutation({
     mutationFn: async () => {
       setRunning(true);
-      // Process sequentially so per-row status updates render predictably.
+      // One batch_id covers every row in this commit so the whole operation can be undone.
+      const batchId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         if (!r.confirmed) continue;
@@ -142,7 +159,7 @@ export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
           if (delErr) throw delErr;
           const { error: insErr } = await supabase.from("user_roles").insert({ user_id: r.profile.user_id, role: r.toRole });
           if (insErr) throw insErr;
-          await writeAudit(r);
+          await writeAudit(r, batchId);
           setRows((prev) => prev.map((x, idx) => idx === i ? { ...x, status: "ok" } : x));
         } catch (e: any) {
           setRows((prev) => prev.map((x, idx) => idx === i ? { ...x, status: "error", error: e?.message ?? "Failed" } : x));

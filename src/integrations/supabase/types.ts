@@ -444,6 +444,7 @@ export type Database = {
       command_role_audit: {
         Row: {
           action: string
+          batch_id: string | null
           changed_by: string | null
           changed_by_name: string | null
           created_at: string
@@ -457,6 +458,7 @@ export type Database = {
         }
         Insert: {
           action: string
+          batch_id?: string | null
           changed_by?: string | null
           changed_by_name?: string | null
           created_at?: string
@@ -470,6 +472,7 @@ export type Database = {
         }
         Update: {
           action?: string
+          batch_id?: string | null
           changed_by?: string | null
           changed_by_name?: string | null
           created_at?: string

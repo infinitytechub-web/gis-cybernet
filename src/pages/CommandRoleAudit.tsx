@@ -101,11 +101,73 @@ export default function CommandRoleAudit() {
     setStartDate(undefined); setEndDate(undefined); setPage(0);
   };
 
-  const exportCsv = () => {
-    if (!rows.length) return;
-    const csv = toCsv(
-      ["When", "Action", "Target", "Staff ID", "From", "To", "Changed by"],
-      rows.map((r: any) => [
+  const [exporting, setExporting] = useState(false);
+
+  // Build the same server-side filter as the page query, but without range —
+  // used by the "export all" CSV. Returns rows in the same order as the table.
+  const buildFilteredQuery = () => {
+    let q = supabase
+      .from("command_role_audit")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (roleFilter !== "all") {
+      q = q.or(`from_role.eq.${roleFilter},to_role.eq.${roleFilter}`);
+    }
+    if (actionFilter !== "all") q = q.eq("action", actionFilter);
+    if (startDate) q = q.gte("created_at", startDate.toISOString());
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      q = q.lte("created_at", end.toISOString());
+    }
+    const term = staffSearch.trim();
+    if (term) q = q.or(`target_name.ilike.%${term}%,target_staff_id.ilike.%${term}%`);
+    return q;
+  };
+
+  const exportCsv = async (mode: "page" | "all") => {
+    const exportRows: any[] = mode === "page"
+      ? rows
+      : await (async () => {
+          setExporting(true);
+          try {
+            // Page through all results in 1000-row chunks (Supabase default cap).
+            const all: any[] = [];
+            const CHUNK = 1000;
+            for (let offset = 0; ; offset += CHUNK) {
+              const { data, error } = await buildFilteredQuery().range(offset, offset + CHUNK - 1);
+              if (error) throw error;
+              if (!data || data.length === 0) break;
+              all.push(...data);
+              if (data.length < CHUNK) break;
+            }
+            return all;
+          } finally {
+            setExporting(false);
+          }
+        })();
+
+    if (!exportRows.length) return;
+
+    // Pagination / filter metadata header lines (CSV comments using "# ..." rows).
+    const meta: string[] = [
+      `# Command Role Audit export`,
+      `# Generated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`,
+      `# Mode: ${mode === "page" ? `page ${page + 1} of ${pageCount}` : "all matching rows"}`,
+      `# Rows in this file: ${exportRows.length}`,
+      `# Total matching rows (server count): ${total}`,
+      `# Page size: ${PAGE_SIZE}`,
+      `# Filter - staff: ${staffSearch.trim() || "(none)"}`,
+      `# Filter - role: ${roleFilter}`,
+      `# Filter - action: ${actionFilter}`,
+      `# Filter - from: ${startDate ? format(startDate, "yyyy-MM-dd") : "(any)"}`,
+      `# Filter - to: ${endDate ? format(endDate, "yyyy-MM-dd") : "(any)"}`,
+      ``,
+    ];
+
+    const csvBody = toCsv(
+      ["When", "Action", "Target", "Staff ID", "From", "To", "Changed by", "Batch ID"],
+      exportRows.map((r: any) => [
         r.created_at ? format(new Date(r.created_at), "yyyy-MM-dd HH:mm") : "",
         r.action ?? "",
         r.target_name ?? r.target_user_id ?? "",
@@ -113,9 +175,13 @@ export default function CommandRoleAudit() {
         r.from_role ? roleLabel(r.from_role) : "",
         r.to_role ? roleLabel(r.to_role) : "",
         r.changed_by_name ?? r.changed_by ?? "",
+        r.batch_id ?? "",
       ]),
     );
-    downloadCSVString(csv, `command-role-audit-page-${page + 1}.csv`);
+
+    const csv = meta.join("\n") + csvBody;
+    const suffix = mode === "page" ? `page-${page + 1}` : `all-${exportRows.length}rows`;
+    downloadCSVString(csv, `command-role-audit-${suffix}.csv`);
   };
 
   if (!isAdmin) {
@@ -154,8 +220,12 @@ export default function CommandRoleAudit() {
                   <XIcon className="h-3 w-3" /> Clear
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={exportCsv} disabled={!rows.length} className="gap-1 text-[11px]">
+              <Button size="sm" variant="outline" onClick={() => exportCsv("page")} disabled={!rows.length || exporting} className="gap-1 text-[11px]">
                 <Download className="h-3 w-3" /> Export page
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => exportCsv("all")} disabled={!total || exporting} className="gap-1 text-[11px]">
+                {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                Export all ({total.toLocaleString()})
               </Button>
             </div>
           </div>

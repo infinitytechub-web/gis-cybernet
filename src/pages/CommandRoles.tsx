@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon, Users, ExternalLink } from "lucide-react";
+import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon, Users, ExternalLink, Search, Undo2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BulkCommandRoleAssignDialog } from "@/components/admin/BulkCommandRoleAssignDialog";
 import { toast } from "sonner";
@@ -32,6 +32,9 @@ export default function CommandRoles() {
   const [shiftFilter, setShiftFilter] = useState<string>("all");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkPreselect, setBulkPreselect] = useState<string[] | undefined>(undefined);
+  const [quickQuery, setQuickQuery] = useState("");
+  const [undoing, setUndoing] = useState(false);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments-list-cmd"],
@@ -119,6 +122,7 @@ export default function CommandRoles() {
   const writeAudit = async (params: {
     targetUserId: string; targetStaffId?: string | null; targetName?: string;
     fromRole: AppRole | null; toRole: AppRole | null; action: "assign" | "remove" | "change";
+    batchId?: string | null;
   }) => {
     let changedByName: string | null = user?.email ?? null;
     if (user?.id) {
@@ -138,6 +142,7 @@ export default function CommandRoles() {
       action: params.action,
       changed_by: user?.id ?? null,
       changed_by_name: changedByName,
+      batch_id: params.batchId ?? null,
     });
   };
 
@@ -192,6 +197,58 @@ export default function CommandRoles() {
     onError: (e: any) => toast.error(e?.message ?? "Failed to remove"),
   });
 
+  // ---- Undo last batch ----------------------------------------------------
+  // The most recent batch is the newest non-null batch_id in the audit trail.
+  const lastBatch = useMemo(() => {
+    const withBatch = (auditEntries as any[]).filter((a) => a.batch_id);
+    if (!withBatch.length) return null;
+    const newestBatchId = withBatch[0].batch_id as string;
+    const entries = withBatch.filter((a) => a.batch_id === newestBatchId);
+    return { batchId: newestBatchId, entries, when: entries[0]?.created_at as string | null };
+  }, [auditEntries]);
+
+  const undoMut = useMutation({
+    mutationFn: async () => {
+      if (!lastBatch) throw new Error("No batch to undo");
+      setUndoing(true);
+      const newBatchId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-undo`);
+      // For each entry in the batch, restore from_role (or remove role if from_role was null).
+      for (const e of lastBatch.entries) {
+        const userId = e.target_user_id as string;
+        // Replace whatever role they have now with the previous role.
+        await supabase.from("user_roles").delete().eq("user_id", userId);
+        const restoreTo: AppRole = (e.from_role as AppRole) ?? ("staff" as AppRole);
+        const { error: insErr } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: restoreTo });
+        if (insErr) throw insErr;
+
+        const action: "assign" | "remove" | "change" =
+          !e.from_role ? "remove" : (e.to_role ? "change" : "assign");
+
+        await writeAudit({
+          targetUserId: userId,
+          targetStaffId: e.target_staff_id,
+          targetName: e.target_name ?? undefined,
+          fromRole: (e.to_role as AppRole) ?? null,
+          toRole: (e.from_role as AppRole) ?? null,
+          action,
+          batchId: newBatchId,
+        });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["command-roles-holders"] });
+      qc.invalidateQueries({ queryKey: ["command-roster"] });
+      qc.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      qc.invalidateQueries({ queryKey: ["command-role-audit"] });
+      qc.invalidateQueries({ queryKey: ["command-role-audit-page"] });
+      toast.success(`Reverted ${lastBatch?.entries.length ?? 0} change${(lastBatch?.entries.length ?? 0) === 1 ? "" : "s"} from the last batch`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to undo last batch"),
+    onSettled: () => setUndoing(false),
+  });
+
   if (!isAdmin) {
     return (
       <Alert variant="destructive" className="max-w-2xl">
@@ -219,6 +276,27 @@ export default function CommandRoles() {
 
   const deptName = (id?: string | null) => departments.find((d: any) => d.id === id)?.name ?? "—";
 
+  // Quick-search matches across all candidates (independent of dialog filters).
+  const quickMatches = useMemo(() => {
+    const q = quickQuery.trim().toLowerCase();
+    if (!q) return [] as Candidate[];
+    return candidates.filter((c) =>
+      String(c.first_name ?? "").toLowerCase().includes(q) ||
+      String(c.last_name ?? "").toLowerCase().includes(q) ||
+      String(c.email ?? "").toLowerCase().includes(q) ||
+      String(c.staff_id ?? "").toLowerCase().includes(q)
+    ).slice(0, 50);
+  }, [candidates, quickQuery]);
+
+  const openBulkWithMatches = () => {
+    if (quickMatches.length === 0) {
+      toast.error("No matching staff to pre-select");
+      return;
+    }
+    setBulkPreselect(quickMatches.map((m) => m.user_id));
+    setBulkOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -234,7 +312,24 @@ export default function CommandRoles() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant="default" className="gap-1.5" onClick={() => setBulkOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            disabled={!lastBatch || undoing}
+            onClick={() => {
+              if (!lastBatch) return;
+              const n = lastBatch.entries.length;
+              if (confirm(`Revert the most recent batch of ${n} command-role change${n === 1 ? "" : "s"}? This will be logged in the audit trail.`)) {
+                undoMut.mutate();
+              }
+            }}
+            title={lastBatch ? `Undo batch ${lastBatch.batchId.slice(0, 8)}… (${lastBatch.entries.length} entries)` : "No batch to undo"}
+          >
+            {undoing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+            Undo last batch{lastBatch ? ` (${lastBatch.entries.length})` : ""}
+          </Button>
+          <Button size="sm" variant="default" className="gap-1.5" onClick={() => { setBulkPreselect(undefined); setBulkOpen(true); }}>
             <Users className="h-3.5 w-3.5" /> Bulk assign
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
@@ -245,6 +340,57 @@ export default function CommandRoles() {
           </Button>
         </div>
       </div>
+
+      {/* Quick staff search */}
+      <Card>
+        <CardContent className="py-3 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={quickQuery}
+                onChange={(e) => setQuickQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") openBulkWithMatches(); }}
+                placeholder="Quick staff search — name, staff ID, or email…"
+                className="h-8 pl-7 pr-3 w-full rounded border bg-background text-xs"
+              />
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {quickQuery.trim()
+                ? `${quickMatches.length} match${quickMatches.length === 1 ? "" : "es"}`
+                : "Type to search; press Enter to open Bulk Assign with matches pre-selected."}
+            </span>
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1.5 ml-auto"
+              disabled={quickMatches.length === 0}
+              onClick={openBulkWithMatches}
+            >
+              <Users className="h-3.5 w-3.5" /> Bulk assign matches
+            </Button>
+            {quickQuery && (
+              <Button size="sm" variant="ghost" onClick={() => setQuickQuery("")} className="h-7 px-2 text-[11px]">
+                Clear
+              </Button>
+            )}
+          </div>
+          {quickQuery.trim() && quickMatches.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {quickMatches.slice(0, 12).map((m) => (
+                <Badge key={m.user_id} variant="secondary" className="text-[10px]">
+                  {`${m.first_name ?? ""} ${m.last_name ?? ""}`.trim() || m.email}
+                  {m.staff_id ? ` · ${m.staff_id}` : ""}
+                </Badge>
+              ))}
+              {quickMatches.length > 12 && (
+                <Badge variant="outline" className="text-[10px]">+{quickMatches.length - 12} more</Badge>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {COMMAND_TIER_ROLES.map((role) => {
@@ -521,7 +667,11 @@ export default function CommandRoles() {
         </DialogContent>
       </Dialog>
 
-      <BulkCommandRoleAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} />
+      <BulkCommandRoleAssignDialog
+        open={bulkOpen}
+        onOpenChange={(v) => { setBulkOpen(v); if (!v) setBulkPreselect(undefined); }}
+        preselectUserIds={bulkPreselect}
+      />
     </div>
   );
 }
