@@ -255,6 +255,7 @@ export default function CommandsAdmin() {
       if (failed?.error) throw failed.error;
       toast({ title: "Order saved", description: `${updates.length} commands updated.` });
       qc.invalidateQueries({ queryKey: ["confidentiality-commands"] });
+      setConfirmOrderOpen(false);
     } catch (e: any) {
       toast({ title: "Could not save order", description: e.message, variant: "destructive" });
     } finally {
