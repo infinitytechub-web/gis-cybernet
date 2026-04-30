@@ -197,6 +197,58 @@ export default function CommandRoles() {
     onError: (e: any) => toast.error(e?.message ?? "Failed to remove"),
   });
 
+  // ---- Undo last batch ----------------------------------------------------
+  // The most recent batch is the newest non-null batch_id in the audit trail.
+  const lastBatch = useMemo(() => {
+    const withBatch = (auditEntries as any[]).filter((a) => a.batch_id);
+    if (!withBatch.length) return null;
+    const newestBatchId = withBatch[0].batch_id as string;
+    const entries = withBatch.filter((a) => a.batch_id === newestBatchId);
+    return { batchId: newestBatchId, entries, when: entries[0]?.created_at as string | null };
+  }, [auditEntries]);
+
+  const undoMut = useMutation({
+    mutationFn: async () => {
+      if (!lastBatch) throw new Error("No batch to undo");
+      setUndoing(true);
+      const newBatchId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-undo`);
+      // For each entry in the batch, restore from_role (or remove role if from_role was null).
+      for (const e of lastBatch.entries) {
+        const userId = e.target_user_id as string;
+        // Replace whatever role they have now with the previous role.
+        await supabase.from("user_roles").delete().eq("user_id", userId);
+        const restoreTo: AppRole = (e.from_role as AppRole) ?? ("staff" as AppRole);
+        const { error: insErr } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: restoreTo });
+        if (insErr) throw insErr;
+
+        const action: "assign" | "remove" | "change" =
+          !e.from_role ? "remove" : (e.to_role ? "change" : "assign");
+
+        await writeAudit({
+          targetUserId: userId,
+          targetStaffId: e.target_staff_id,
+          targetName: e.target_name ?? undefined,
+          fromRole: (e.to_role as AppRole) ?? null,
+          toRole: (e.from_role as AppRole) ?? null,
+          action,
+          batchId: newBatchId,
+        });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["command-roles-holders"] });
+      qc.invalidateQueries({ queryKey: ["command-roster"] });
+      qc.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      qc.invalidateQueries({ queryKey: ["command-role-audit"] });
+      qc.invalidateQueries({ queryKey: ["command-role-audit-page"] });
+      toast.success(`Reverted ${lastBatch?.entries.length ?? 0} change${(lastBatch?.entries.length ?? 0) === 1 ? "" : "s"} from the last batch`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to undo last batch"),
+    onSettled: () => setUndoing(false),
+  });
+
   if (!isAdmin) {
     return (
       <Alert variant="destructive" className="max-w-2xl">
