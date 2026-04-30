@@ -384,6 +384,9 @@ export default function Dashboard() {
       {/* Scheduled Reports Widget */}
       <ScheduledReportsWidget />
 
+      {/* Command Roster — visible to command tier */}
+      {isAdminOrSupervisor && <CommandRosterWidget />}
+
       {/* Online Users Widget — command tier only */}
       <div id="online-now" className="scroll-mt-20">
         <OnlineNowPanel />
