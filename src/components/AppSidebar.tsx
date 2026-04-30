@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
+import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 
 const commandItems = [
