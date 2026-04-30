@@ -20,6 +20,7 @@ import { format, differenceInDays, isPast } from "date-fns";
 import { toast } from "sonner";
 import { ComplianceFileInput, FileLinkButton, type ComplianceFile } from "@/components/compliance/ComplianceFileInput";
 import { ComplianceBulkUploadDialog } from "@/components/compliance/ComplianceBulkUploadDialog";
+import { ComplianceBulkAuditDialog } from "@/components/compliance/ComplianceBulkAuditDialog";
 import { Upload } from "lucide-react";
 
 function getExpiryBadge(expiryDate: string | null) {
