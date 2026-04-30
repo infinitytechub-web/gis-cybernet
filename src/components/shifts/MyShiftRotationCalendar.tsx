@@ -17,12 +17,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  getShiftGroupForDate,
-  GROUP_COLORS,
-  SHIFT_GROUPS,
-  type ShiftGroup,
-} from "@/lib/shift-rotation";
+import { GROUP_COLORS, type ShiftGroup } from "@/lib/shift-rotation";
+import { useShiftRotationConfig } from "@/hooks/useShiftRotationConfig";
+
+// Fallback colour for letters outside A–D when admin defines a custom pattern.
+const FALLBACK_TONE = {
+  bg: "bg-muted",
+  text: "text-foreground",
+  border: "border-border",
+  solid: "bg-foreground/60",
+} as const;
+function tone(g: string) {
+  return (GROUP_COLORS as Record<string, typeof FALLBACK_TONE>)[g] ?? FALLBACK_TONE;
+}
 
 interface Props {
   /** Staff member's assigned shift group (A/B/C/D). */
@@ -38,18 +45,19 @@ interface Props {
  */
 export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
-  const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | null;
+  const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
+  const { config, groupForDate } = useShiftRotationConfig();
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sun-start, matches PDF
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
   const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [gridStart, gridEnd]);
 
   const onDutyDates = useMemo(() => {
     if (!myGroup) return [] as Date[];
-    return days.filter((d) => isSameMonth(d, cursor) && getShiftGroupForDate(d) === myGroup);
-  }, [days, cursor, myGroup]);
+    return days.filter((d) => isSameMonth(d, cursor) && groupForDate(d) === myGroup);
+  }, [days, cursor, myGroup, groupForDate]);
 
   const nextOnDuty = useMemo(() => {
     if (!myGroup) return null;
@@ -57,10 +65,10 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
     today.setHours(0, 0, 0, 0);
     for (let i = 0; i < 8; i++) {
       const d = new Date(today.getTime() + i * 86400000);
-      if (getShiftGroupForDate(d) === myGroup) return d;
+      if (groupForDate(d) === myGroup) return d;
     }
     return null;
-  }, [myGroup]);
+  }, [myGroup, groupForDate]);
 
   return (
     <Card className="overflow-hidden">
@@ -86,9 +94,9 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
                 variant="outline"
                 className={cn(
                   "text-xs px-2 py-1 border",
-                  GROUP_COLORS[myGroup].bg,
-                  GROUP_COLORS[myGroup].text,
-                  GROUP_COLORS[myGroup].border,
+                  tone(myGroup).bg,
+                  tone(myGroup).text,
+                  tone(myGroup).border,
                 )}
               >
                 {staffName ? `${staffName} · ` : ""}Group {myGroup}
@@ -128,18 +136,18 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
           <div className="rounded-md border bg-muted/30 p-2 col-span-2 md:col-span-2">
             <div className="text-muted-foreground mb-1">Rotation legend</div>
             <div className="flex flex-wrap gap-2">
-              {SHIFT_GROUPS.map((g) => (
+              {config.pattern.map((g) => (
                 <span
                   key={g}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
-                    GROUP_COLORS[g].bg,
-                    GROUP_COLORS[g].text,
-                    GROUP_COLORS[g].border,
+                    tone(g).bg,
+                    tone(g).text,
+                    tone(g).border,
                     myGroup === g && "ring-2 ring-offset-1 ring-primary",
                   )}
                 >
-                  <span className={cn("h-1.5 w-1.5 rounded-full", GROUP_COLORS[g].solid)} />
+                  <span className={cn("h-1.5 w-1.5 rounded-full", tone(g).solid)} />
                   Group {g}
                 </span>
               ))}
@@ -174,11 +182,11 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
               return (
                 <div key={wIdx} className="grid grid-cols-7 gap-1.5 mb-1.5">
                   {weekDays.map((d) => {
-                    const group = getShiftGroupForDate(d);
+                    const group = groupForDate(d);
                     const inMonth = isSameMonth(d, cursor);
                     const today = isToday(d);
                     const onDuty = !!myGroup && group === myGroup;
-                    const colors = GROUP_COLORS[group];
+                    const colors = tone(group);
 
                     return (
                       <div
@@ -250,9 +258,9 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
                   key={d.toISOString()}
                   className={cn(
                     "text-xs font-mono px-2 py-0.5 rounded border",
-                    GROUP_COLORS[myGroup].bg,
-                    GROUP_COLORS[myGroup].text,
-                    GROUP_COLORS[myGroup].border,
+                    tone(myGroup).bg,
+                    tone(myGroup).text,
+                    tone(myGroup).border,
                     isToday(d) && "ring-1 ring-primary",
                   )}
                 >
