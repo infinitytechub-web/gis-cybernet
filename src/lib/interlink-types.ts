@@ -1,3 +1,13 @@
+/** Canonical labels for the Interlink module. Update here to change everywhere. */
+export const INTERLINK_LABELS = {
+  /** Short nav label (sidebar, dashboard widget, breadcrumbs). */
+  nav: "Interlink System",
+  /** Page title shown in the page header. */
+  title: "Interlink System",
+  /** Tagline shown beneath the page title. */
+  tagline: "Command-tier dispatch hub: Intranet · Internet · Extranet",
+} as const;
+
 export type InterlinkScope = "intranet" | "internet" | "extranet" | "mixed";
 
 export type InterlinkReportKind =
