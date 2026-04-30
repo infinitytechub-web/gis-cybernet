@@ -21,12 +21,19 @@ export function useConfidentialityCommands() {
         .select("*");
       if (error) throw error;
       const rows = (data ?? []) as unknown as ConfidentialityCommand[];
-      // Pinned first (in original sort_hint/name order), then alphabetical for the rest.
+
       const pinned = rows.filter((r) => r.pinned)
         .sort((a, b) => a.sort_hint - b.sort_hint || a.name.localeCompare(b.name));
-      const rest = rows.filter((r) => !r.pinned)
-        .sort((a, b) => a.name.localeCompare(b.name));
-      return [...pinned, ...rest];
+
+      const rest = rows.filter((r) => !r.pinned);
+      // If any unpinned row has a custom sort_hint, honour the manual order;
+      // otherwise fall back to alphabetical.
+      const hasManualOrder = rest.some((r) => r.sort_hint > 0);
+      const restSorted = hasManualOrder
+        ? rest.sort((a, b) => a.sort_hint - b.sort_hint || a.name.localeCompare(b.name))
+        : rest.sort((a, b) => a.name.localeCompare(b.name));
+
+      return [...pinned, ...restSorted];
     },
   });
 }
