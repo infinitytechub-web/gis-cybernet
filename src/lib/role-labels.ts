@@ -3,7 +3,7 @@
 
 import type { AppRole } from "@/lib/types";
 
-export const ROLE_LABEL: Record<AppRole, string> = {
+export const ROLE_LABEL: Partial<Record<AppRole, string>> = {
   admin: "Admin",
   oic: "OIC",
   "2ic": "2IC",
@@ -13,9 +13,14 @@ export const ROLE_LABEL: Record<AppRole, string> = {
   supervisor: "Supervisor",
   shift_supervisor: "Shift Supervisor",
   deputy_shift_supervisor: "Deputy Shift Supervisor",
-  staff: "Staff",
+  shift_leader: "Shift Leader",
+  deputy_shift_leader: "Deputy Shift Leader",
+  deputy_supervisor: "Deputy Supervisor",
   front_desk: "Front Desk",
-  night_guard: "Night Guard",
+  storekeeper: "Storekeeper",
+  procurement_officer: "Procurement Officer",
+  special_duties: "Special Duties",
+  staff: "Staff",
 };
 
 // Roles considered command tier (mirrors AuthContext.isAdminOrSupervisor for display purposes)
