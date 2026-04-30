@@ -61,10 +61,10 @@ type AssignmentRow = {
  * Renders a 3D perspective grid where the staff member's on-duty days lift
  * forward and glow, while off-duty days recede.
  */
-export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId }: Props) {
+export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId, roles, departmentId }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
   const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
-  const { config, groupForDate } = useShiftRotationConfig();
+  const { config, groupForDate } = useShiftRotationConfig({ roles, departmentId });
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
