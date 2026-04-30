@@ -272,12 +272,13 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-primary" />
-            Bulk Staff List Upload
+            <ShieldAlert className="h-5 w-5 text-destructive" />
+            Override Staff List &amp; Guard Duty Roster
           </DialogTitle>
           <DialogDescription>
-            Upload a CSV or XLSX file to override the staff list. Existing staff (matched by <strong>staff_id</strong>) are updated;
-            new staff_ids are created. Use <strong>Preview</strong> first to see what will change.
+            Upload a staff CSV/XLSX and (optionally) a Night Guard roster file in one batch.
+            Existing staff are <strong>upserted by Staff ID</strong>; staff missing from the file can be auto-deactivated.
+            A snapshot is taken before commit so you can roll back from the <strong>Snapshots</strong> tab.
           </DialogDescription>
         </DialogHeader>
 
@@ -285,32 +286,77 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
           <TabsList>
             <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-1.5" /> Upload</TabsTrigger>
             <TabsTrigger value="audit"><History className="h-4 w-4 mr-1.5" /> Recent uploads</TabsTrigger>
+            <TabsTrigger value="snapshots"><Camera className="h-4 w-4 mr-1.5" /> Snapshots</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            {/* Staff file */}
+            <div className="rounded-lg border p-3 space-y-2 bg-muted/20">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1. Staff list (CSV/XLSX)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" size="sm" onClick={() => downloadTemplate("csv")} className="gap-1.5 h-7 text-xs">
+                    <Download className="h-3.5 w-3.5" /> CSV template
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadTemplate("xlsx")} className="gap-1.5 h-7 text-xs">
+                    <Download className="h-3.5 w-3.5" /> XLSX template
+                  </Button>
+                </div>
+              </div>
               <Input
                 type="file"
                 accept=".csv,.xlsx,.xls"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-                className="max-w-xs"
               />
-              <div className="flex items-center gap-1.5">
-                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("csv")} className="gap-1.5">
-                  <Download className="h-4 w-4" /> CSV template
+              {fileName && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} — {rows.length} staff row{rows.length === 1 ? "" : "s"}
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setFileName(null); setRows([]); setPreviewResult(null); }}><X className="h-3 w-3" /></Button>
+                </div>
+              )}
+            </div>
+
+            {/* Roster file */}
+            <div className="rounded-lg border p-3 space-y-2 bg-muted/20">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">2. Night Guard duty roster (optional)</Label>
+                <Button variant="ghost" size="sm" onClick={downloadRosterTemplate} className="gap-1.5 h-7 text-xs">
+                  <Download className="h-3.5 w-3.5" /> Roster template
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("xlsx")} className="gap-1.5">
-                  <Download className="h-4 w-4" /> XLSX template
-                </Button>
+              </div>
+              <Input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleRosterFile(f); }}
+              />
+              {rosterFileName && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> {rosterFileName} — {rosterRows.length} roster row{rosterRows.length === 1 ? "" : "s"}
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setRosterFileName(null); setRosterRows([]); setPreviewResult(null); }}><X className="h-3 w-3" /></Button>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">Same format as the Night Guard duty upload: <strong>Staff ID</strong> + <strong>Date</strong> columns. Existing assignments on the same dates will be replaced.</p>
+            </div>
+
+            {/* Override safeguards */}
+            <div className="rounded-lg border p-3 space-y-2.5">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">3. Override behaviour</Label>
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label htmlFor="deact" className="text-xs cursor-pointer">Deactivate staff missing from file</Label>
+                  <p className="text-[10px] text-muted-foreground">Any active staff not listed in the upload will be set to <code className="text-[10px]">inactive</code>.</p>
+                </div>
+                <Switch id="deact" checked={deactivateMissing} onCheckedChange={setDeactivateMissing} />
+              </div>
+              <div className="flex items-start justify-between gap-3 pt-1.5 border-t">
+                <div className="space-y-0.5">
+                  <Label htmlFor="snap" className="text-xs cursor-pointer">Take snapshot before commit (recommended)</Label>
+                  <p className="text-[10px] text-muted-foreground">Saves a restorable backup of all staff records and Night Guard assignments.</p>
+                </div>
+                <Switch id="snap" checked={takeSnapshot} onCheckedChange={setTakeSnapshot} />
               </div>
             </div>
 
-            {fileName && (
-              <div className="text-xs text-muted-foreground flex items-center gap-2">
-                <FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} — {rows.length} row{rows.length === 1 ? "" : "s"}
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={reset}><X className="h-3 w-3" /></Button>
-              </div>
-            )}
 
             {counts && counts.dryRun && !committed && (
               <Alert className="border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600">
