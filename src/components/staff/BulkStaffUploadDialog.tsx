@@ -21,6 +21,7 @@ type Outcome = {
   status: "create" | "update" | "skip" | "error";
   message?: string;
   changedFields?: string[];
+  diff?: Record<string, { from: any; to: any }>;
 };
 
 type RunResult = {
@@ -33,6 +34,8 @@ type RunResult = {
   commitErrors: { staffId: string; error: string }[];
   outcomes: Outcome[];
 };
+
+type FilterKey = "all" | "create" | "update" | "skip" | "error";
 
 const TEMPLATE_HEADERS = [
   "staff_id", "first_name", "last_name", "rank", "department",
