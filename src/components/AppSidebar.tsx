@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
+import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
