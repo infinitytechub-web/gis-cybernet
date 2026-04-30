@@ -1556,6 +1556,30 @@ export type Database = {
         }
         Relationships: []
       }
+      interlink_branding: {
+        Row: {
+          id: boolean
+          tagline: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          tagline?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          tagline?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       interlink_contacts: {
         Row: {
           command_or_unit: string | null
