@@ -354,26 +354,31 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
         </div>
 
         {/* Listing of upcoming on-duty days for accessibility / quick scan */}
-        {myGroup && onDutyDates.length > 0 && (
+        {onDutyDates.length > 0 && (
           <div className="rounded-md border bg-muted/20 p-3">
             <div className="text-xs font-medium text-muted-foreground mb-1.5">
               Your on-duty days in {format(cursor, "MMMM")}
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {onDutyDates.map((d) => (
-                <span
-                  key={d.toISOString()}
-                  className={cn(
-                    "text-xs font-mono px-2 py-0.5 rounded border",
-                    tone(myGroup).bg,
-                    tone(myGroup).text,
-                    tone(myGroup).border,
-                    isToday(d) && "ring-1 ring-primary",
-                  )}
-                >
-                  {format(d, "EEE dd")}
-                </span>
-              ))}
+              {onDutyDates.map((d) => {
+                const ov = overrideFor(d);
+                const t = tone(ov ? (myGroup ?? "A") : (myGroup ?? "A"));
+                return (
+                  <span
+                    key={d.toISOString()}
+                    className={cn(
+                      "text-xs font-mono px-2 py-0.5 rounded border inline-flex items-center gap-1",
+                      t.bg, t.text, t.border,
+                      ov && "ring-1 ring-amber-500/70",
+                      isToday(d) && "ring-1 ring-primary",
+                    )}
+                    title={ov ? `Override: ${ov.shifts?.name ?? "Assigned shift"}` : undefined}
+                  >
+                    {ov && <ShieldCheck className="h-3 w-3 text-amber-600" />}
+                    {format(d, "EEE dd")}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
