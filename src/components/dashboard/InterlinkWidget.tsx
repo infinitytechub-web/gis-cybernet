@@ -10,6 +10,7 @@ import { Network, Send, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-r
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
+import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 
 export default function InterlinkWidget() {
   const { isAdminOrSupervisor } = useAuth();
