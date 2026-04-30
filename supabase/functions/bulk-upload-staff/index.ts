@@ -428,7 +428,6 @@ Deno.serve(async (req) => {
         autoRollback.message = (e as Error).message;
       }
     }
-    }
 
     // Resolve uploader name (for audit row)
     const { data: uploaderProfile } = await admin
