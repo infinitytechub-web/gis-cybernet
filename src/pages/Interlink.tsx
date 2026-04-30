@@ -23,7 +23,7 @@ import {
   FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
-import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF } from "@/lib/interlink-export";
+import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
