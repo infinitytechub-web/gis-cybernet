@@ -321,8 +321,8 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                     toast.error("Please preview the upload first");
                     return;
                   }
-                  if (!confirm(`Commit ${previewResult.createdCount + previewResult.updatedCount} change(s)? This cannot be undone in bulk.`)) return;
-                  runMut.mutate(false);
+                  setConfirmText("");
+                  setConfirmOpen(true);
                 }}
                 disabled={!rows.length || runMut.isPending || committed}
                 className="gap-1.5"
