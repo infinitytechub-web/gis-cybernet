@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon, Users, ExternalLink } from "lucide-react";
+import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon, Users, ExternalLink, Search, Undo2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BulkCommandRoleAssignDialog } from "@/components/admin/BulkCommandRoleAssignDialog";
 import { toast } from "sonner";
