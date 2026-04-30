@@ -120,6 +120,49 @@ function SortableRow({
   );
 }
 
+/** Single row in the order-confirmation diff. */
+function DiffLine({
+  row,
+}: {
+  row: { id: string; name: string; oldIdx: number | null; newIdx: number | null; delta: number | null };
+}) {
+  const moved = (row.delta ?? 0) !== 0;
+  const movedUp = (row.delta ?? 0) > 0;
+  const isNew = row.oldIdx == null;
+  return (
+    <li
+      className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${
+        moved
+          ? movedUp
+            ? "bg-emerald-500/5 border-emerald-500/30"
+            : "bg-amber-500/5 border-amber-500/30"
+          : "bg-muted/30"
+      }`}
+    >
+      <span className="font-mono text-[10px] text-muted-foreground tabular-nums w-12 shrink-0">
+        {isNew ? "—" : `#${(row.oldIdx ?? 0) + 1}`}
+        <span className="mx-0.5">→</span>
+        #{(row.newIdx ?? 0) + 1}
+      </span>
+      {moved ? (
+        movedUp ? (
+          <ArrowUp className="h-3 w-3 text-emerald-600 shrink-0" />
+        ) : (
+          <ArrowDown className="h-3 w-3 text-amber-600 shrink-0" />
+        )
+      ) : (
+        <Minus className="h-3 w-3 text-muted-foreground shrink-0" />
+      )}
+      <span className="truncate flex-1">{row.name}</span>
+      {moved && (
+        <Badge variant="outline" className="h-4 px-1 text-[9px]">
+          {movedUp ? `+${row.delta}` : row.delta}
+        </Badge>
+      )}
+    </li>
+  );
+}
+
 export default function CommandsAdmin() {
   const { isAdmin } = useAuth();
   const { data: serverCommands = [], isLoading } = useConfidentialityCommands();
