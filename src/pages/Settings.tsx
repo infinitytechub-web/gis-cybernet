@@ -20,6 +20,7 @@ import { PresenceEventsPanel } from "@/components/settings/PresenceEventsPanel";
 import { ShiftConnectionsAuditPanel } from "@/components/settings/ShiftConnectionsAuditPanel";
 import { ShiftConnectionPermissionsMatrix } from "@/components/settings/ShiftConnectionPermissionsMatrix";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
+import { InterlinkBrandingSettings } from "@/components/interlink/InterlinkBrandingSettings";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
