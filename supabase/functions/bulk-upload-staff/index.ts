@@ -182,11 +182,15 @@ Deno.serve(async (req) => {
           if (changed.length === 0) {
             outcomes.push({ rowIndex: idx, staffId, status: "skip", message: "No changes" });
           } else {
-            outcomes.push({ rowIndex: idx, staffId, status: "update", changedFields: changed });
+            const diff: Record<string, { from: any; to: any }> = {};
+            for (const k of changed) diff[k] = { from: (existingRow as any)[k] ?? null, to: (patch as any)[k] ?? null };
+            outcomes.push({ rowIndex: idx, staffId, status: "update", changedFields: changed, diff } as any);
             toUpdate.push({ id: existingRow.id, patch, changedFields: changed, staffId });
           }
         } else {
-          outcomes.push({ rowIndex: idx, staffId, status: "create" });
+          const diff: Record<string, { from: any; to: any }> = {};
+          for (const [k, v] of Object.entries(patch)) diff[k] = { from: null, to: v };
+          outcomes.push({ rowIndex: idx, staffId, status: "create", diff } as any);
           toCreate.push({ staff_id: staffId, ...patch });
         }
       } catch (e) {
