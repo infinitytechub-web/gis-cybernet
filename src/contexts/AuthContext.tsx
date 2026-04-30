@@ -19,7 +19,28 @@ interface AuthContextValue {
   canExportInterlinkLogs: boolean;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+/**
+ * Stable fallback used as the createContext default — guarantees
+ * useAuthContext() ALWAYS returns a usable value even if a child renders
+ * before <AuthProvider> mounts (e.g. during HMR boundary remounts or
+ * lazy-route Suspense hydration). No throws → no blank screens.
+ */
+const FALLBACK_AUTH: AuthContextValue = {
+  user: null,
+  role: null,
+  loading: true,
+  signIn: async () => { throw new Error("Auth not ready"); },
+  signOut: async () => { /* no-op until provider mounts */ },
+  isAdmin: false,
+  isSupervisor: false,
+  isAdminOrSupervisor: false,
+  isIpse: false,
+  is2ic: false,
+  isOic: false,
+  canExportInterlinkLogs: false,
+};
+
+const AuthContext = createContext<AuthContextValue>(FALLBACK_AUTH);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
