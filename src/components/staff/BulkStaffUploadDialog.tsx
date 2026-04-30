@@ -65,9 +65,34 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [previewResult, setPreviewResult] = useState<RunResult | null>(null);
   const [committed, setCommitted] = useState(false);
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const reset = () => {
-    setFileName(null); setRows([]); setPreviewResult(null); setCommitted(false);
+    setFileName(null); setRows([]); setPreviewResult(null); setCommitted(false); setFilter("all");
+  };
+
+  const exportDiffCsv = () => {
+    if (!previewResult) return;
+    const header = ["row", "staff_id", "status", "field", "from", "to", "message"];
+    const lines = [header.join(",")];
+    const esc = (v: any) => {
+      const s = v === null || v === undefined ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    for (const o of previewResult.outcomes) {
+      if (o.diff && Object.keys(o.diff).length) {
+        for (const [k, v] of Object.entries(o.diff)) {
+          lines.push([o.rowIndex + 1, o.staffId ?? "", o.status, k, esc(v.from), esc(v.to), ""].map(esc).join(","));
+        }
+      } else {
+        lines.push([o.rowIndex + 1, o.staffId ?? "", o.status, "", "", "", esc(o.message ?? "")].map(esc).join(","));
+      }
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `dry-run-diff-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFile = async (file: File) => {
