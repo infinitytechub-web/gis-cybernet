@@ -36,7 +36,7 @@ export function useShiftRotationConfig() {
         .eq("id", true)
         .maybeSingle();
       if (error) throw error;
-      const row = (data ?? null) as { anchor_date: string; pattern: string[]; updated_at: string } | null;
+      const row = (data ?? null) as unknown as { anchor_date: string; pattern: string[]; updated_at: string } | null;
       if (!row?.anchor_date || !row?.pattern?.length) return FALLBACK;
       return {
         anchorDate: parseISO(row.anchor_date),
