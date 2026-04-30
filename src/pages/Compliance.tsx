@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { softDelete } from "@/lib/recycle-bin";
@@ -18,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FileText, Wrench, Award, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, Clock, Search } from "lucide-react";
 import { format, differenceInDays, isPast } from "date-fns";
 import { toast } from "sonner";
+import { ComplianceFileInput, FileLinkButton, type ComplianceFile } from "@/components/compliance/ComplianceFileInput";
 
 function getExpiryBadge(expiryDate: string | null) {
   if (!expiryDate) return <Badge variant="outline" className="text-xs">No expiry</Badge>;
@@ -28,9 +29,26 @@ function getExpiryBadge(expiryDate: string | null) {
   return <Badge className="bg-emerald-100 text-emerald-800 text-xs">Valid</Badge>;
 }
 
+const EMPTY_FILE: ComplianceFile = { file_path: null, file_name: null, file_size: null, file_type: null };
+
+// Hook: current user's own profile id (for self-service uploads)
+function useOwnProfileId() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["own-profile-id", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id").eq("user_id", user!.id).maybeSingle();
+      if (error) throw error;
+      return (data?.id as string) ?? null;
+    },
+  });
+}
+
 // ─── Documents Tab ───
 function DocumentsTab() {
   const { isAdmin } = useAuth();
+  const { data: ownProfileId } = useOwnProfileId();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -42,13 +60,15 @@ function DocumentsTab() {
   const [expiryDate, setExpiryDate] = useState("");
   const [authority, setAuthority] = useState("");
   const [notes, setNotes] = useState("");
+  const [fileMeta, setFileMeta] = useState<ComplianceFile>(EMPTY_FILE);
+  const [uploading, setUploading] = useState(false);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["staff-documents"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("staff_documents")
-        .select("*, profiles(first_name, last_name, staff_id)")
+        .select("*, profiles(first_name, last_name, staff_id, user_id)")
         .order("expiry_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
@@ -66,22 +86,51 @@ function DocumentsTab() {
 
   const docTypes = ["Passport", "National ID", "Service ID", "Visa", "Work Permit", "Driver's License", "Medical Certificate", "Other"];
 
+  const canManageRow = (row: any) =>
+    isAdmin || (ownProfileId && row.profile_id === ownProfileId);
+
   const openCreate = () => {
-    setEditing(null); setProfileId(""); setDocType(""); setDocNumber(""); setIssueDate(""); setExpiryDate(""); setAuthority(""); setNotes("");
+    setEditing(null);
+    setProfileId(isAdmin ? "" : (ownProfileId ?? ""));
+    setDocType(""); setDocNumber(""); setIssueDate(""); setExpiryDate(""); setAuthority(""); setNotes("");
+    setFileMeta(EMPTY_FILE);
     setDialogOpen(true);
   };
 
   const openEdit = (d: any) => {
     setEditing(d); setProfileId(d.profile_id); setDocType(d.document_type); setDocNumber(d.document_number || "");
     setIssueDate(d.issue_date || ""); setExpiryDate(d.expiry_date || ""); setAuthority(d.issuing_authority || ""); setNotes(d.notes || "");
+    setFileMeta({
+      file_path: d.file_path ?? null,
+      file_name: d.file_name ?? null,
+      file_size: d.file_size ?? null,
+      file_type: d.file_type ?? null,
+    });
     setDialogOpen(true);
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!profileId || !docType) throw new Error("Staff and document type required");
+      // Non-admins can only save records on their own profile
+      if (!isAdmin && profileId !== ownProfileId) throw new Error("You can only manage your own documents");
       const status = expiryDate && isPast(new Date(expiryDate)) ? "expired" : "valid";
-      const payload = { profile_id: profileId, document_type: docType, document_number: docNumber || null, issue_date: issueDate || null, expiry_date: expiryDate || null, issuing_authority: authority || null, status, notes: notes || null };
+      const { data: { user } } = await supabase.auth.getUser();
+      const payload: any = {
+        profile_id: profileId,
+        document_type: docType,
+        document_number: docNumber || null,
+        issue_date: issueDate || null,
+        expiry_date: expiryDate || null,
+        issuing_authority: authority || null,
+        status,
+        notes: notes || null,
+        file_path: fileMeta.file_path,
+        file_name: fileMeta.file_name,
+        file_size: fileMeta.file_size,
+        file_type: fileMeta.file_type,
+        uploaded_by: fileMeta.file_path ? user?.id ?? null : null,
+      };
       if (editing) {
         const { error } = await supabase.from("staff_documents").update(payload).eq("id", editing.id);
         if (error) throw error;
@@ -95,7 +144,12 @@ function DocumentsTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { await softDelete({ table: "staff_documents", id, label: "Staff document" }); },
+    mutationFn: async (row: any) => {
+      if (row.file_path) {
+        await supabase.storage.from("staff-documents").remove([row.file_path]).catch(() => {});
+      }
+      await softDelete({ table: "staff_documents", id: row.id, label: "Staff document" });
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["staff-documents"] }); toast.success("Document deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -122,12 +176,14 @@ function DocumentsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff or document type..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        {isAdmin && <Button onClick={openCreate} className="gap-1"><Plus className="h-4 w-4" /> Add Document</Button>}
+        <Button onClick={openCreate} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+          <Plus className="h-4 w-4" /> Add Document
+        </Button>
       </div>
 
       {isLoading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : (
-        <div className="rounded-lg border overflow-auto">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Staff</TableHead>
@@ -135,12 +191,13 @@ function DocumentsTab() {
                 <TableHead className="hidden sm:table-cell">Number</TableHead>
                 <TableHead>Expiry</TableHead>
                 <TableHead>Status</TableHead>
-                {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
+                <TableHead>File</TableHead>
+                <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground py-8">No documents found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No documents found</TableCell></TableRow>
               ) : filtered.map((d: any) => (
                 <TableRow key={d.id}>
                   <TableCell><div className="font-medium text-sm">{d.profiles?.last_name}, {d.profiles?.first_name}</div><div className="text-xs text-muted-foreground">{d.profiles?.staff_id}</div></TableCell>
@@ -148,20 +205,21 @@ function DocumentsTab() {
                   <TableCell className="hidden sm:table-cell text-xs">{d.document_number || "—"}</TableCell>
                   <TableCell className="text-xs">{d.expiry_date ? format(new Date(d.expiry_date), "dd MMM yyyy") : "N/A"}</TableCell>
                   <TableCell>{getExpiryBadge(d.expiry_date)}</TableCell>
-                  {isAdmin && (
-                    <TableCell>
+                  <TableCell><FileLinkButton filePath={d.file_path} fileName={d.file_name} /></TableCell>
+                  <TableCell>
+                    {canManageRow(d) ? (
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(d)}><Pencil className="h-3.5 w-3.5" /></Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
                           <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Delete document?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this document record.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(d.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                            <AlertDialogHeader><AlertDialogTitle>Delete document?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this document record{d.file_path ? " and the attached file" : ""}.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(d)}>Delete</AlertDialogAction></AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </TableCell>
-                  )}
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -175,7 +233,17 @@ function DocumentsTab() {
           <div className="space-y-3">
             <div>
               <Label>Staff Member</Label>
-              <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
+              {isAdmin ? (
+                <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
+              ) : (
+                <Input
+                  value={(() => {
+                    const p: any = (profiles as any[]).find((x) => x.id === profileId);
+                    return p ? `${p.last_name}, ${p.first_name} (${p.staff_id})` : "Yourself";
+                  })()}
+                  disabled
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Document Type</Label>
@@ -192,7 +260,15 @@ function DocumentsTab() {
             </div>
             <div><Label>Issuing Authority</Label><Input value={authority} onChange={(e) => setAuthority(e.target.value)} placeholder="e.g. Ghana Immigration Service" /></div>
             <div><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !profileId || !docType} className="w-full">{saveMutation.isPending ? "Saving..." : editing ? "Update" : "Add Document"}</Button>
+            <ComplianceFileInput
+              profileId={profileId}
+              subfolder="documents"
+              value={fileMeta}
+              onChange={setFileMeta}
+              uploading={uploading}
+              setUploading={setUploading}
+            />
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || uploading || !profileId || !docType} className="w-full">{saveMutation.isPending ? "Saving..." : editing ? "Update" : "Add Document"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -300,8 +376,8 @@ function EquipmentTab() {
       </div>
 
       {isLoading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : (
-        <div className="rounded-lg border overflow-auto">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Staff</TableHead>
@@ -378,6 +454,7 @@ function EquipmentTab() {
 // ─── Certifications Tab ───
 function CertificationsTab() {
   const { isAdmin } = useAuth();
+  const { data: ownProfileId } = useOwnProfileId();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -389,13 +466,15 @@ function CertificationsTab() {
   const [expiryDate, setExpiryDate] = useState("");
   const [certNumber, setCertNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [fileMeta, setFileMeta] = useState<ComplianceFile>(EMPTY_FILE);
+  const [uploading, setUploading] = useState(false);
 
   const { data: certifications = [], isLoading } = useQuery({
     queryKey: ["certifications"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("certifications")
-        .select("*, profiles(first_name, last_name, staff_id)")
+        .select("*, profiles(first_name, last_name, staff_id, user_id)")
         .order("expiry_date", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data;
@@ -411,22 +490,50 @@ function CertificationsTab() {
     },
   });
 
+  const canManageRow = (row: any) =>
+    isAdmin || (ownProfileId && row.profile_id === ownProfileId);
+
   const openCreate = () => {
-    setEditing(null); setProfileId(""); setCertName(""); setIssuingBody(""); setDateObtained(""); setExpiryDate(""); setCertNumber(""); setNotes("");
+    setEditing(null);
+    setProfileId(isAdmin ? "" : (ownProfileId ?? ""));
+    setCertName(""); setIssuingBody(""); setDateObtained(""); setExpiryDate(""); setCertNumber(""); setNotes("");
+    setFileMeta(EMPTY_FILE);
     setDialogOpen(true);
   };
 
   const openEdit = (c: any) => {
     setEditing(c); setProfileId(c.profile_id); setCertName(c.certification_name); setIssuingBody(c.issuing_body || "");
     setDateObtained(c.date_obtained || ""); setExpiryDate(c.expiry_date || ""); setCertNumber(c.certificate_number || ""); setNotes(c.notes || "");
+    setFileMeta({
+      file_path: (c as any).file_path ?? null,
+      file_name: (c as any).file_name ?? null,
+      file_size: (c as any).file_size ?? null,
+      file_type: (c as any).file_type ?? null,
+    });
     setDialogOpen(true);
   };
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!profileId || !certName) throw new Error("Staff and certification name required");
+      if (!isAdmin && profileId !== ownProfileId) throw new Error("You can only manage your own certifications");
       const status = expiryDate && isPast(new Date(expiryDate)) ? "expired" : "valid";
-      const payload = { profile_id: profileId, certification_name: certName, issuing_body: issuingBody || null, date_obtained: dateObtained || null, expiry_date: expiryDate || null, certificate_number: certNumber || null, status, notes: notes || null };
+      const { data: { user } } = await supabase.auth.getUser();
+      const payload: any = {
+        profile_id: profileId,
+        certification_name: certName,
+        issuing_body: issuingBody || null,
+        date_obtained: dateObtained || null,
+        expiry_date: expiryDate || null,
+        certificate_number: certNumber || null,
+        status,
+        notes: notes || null,
+        file_path: fileMeta.file_path,
+        file_name: fileMeta.file_name,
+        file_size: fileMeta.file_size,
+        file_type: fileMeta.file_type,
+        uploaded_by: fileMeta.file_path ? user?.id ?? null : null,
+      };
       if (editing) {
         const { error } = await supabase.from("certifications").update(payload).eq("id", editing.id);
         if (error) throw error;
@@ -440,7 +547,12 @@ function CertificationsTab() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { await softDelete({ table: "certifications", id, label: "Certification" }); },
+    mutationFn: async (row: any) => {
+      if (row.file_path) {
+        await supabase.storage.from("staff-documents").remove([row.file_path]).catch(() => {});
+      }
+      await softDelete({ table: "certifications", id: row.id, label: "Certification" });
+    },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["certifications"] }); toast.success("Certification deleted"); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -467,12 +579,14 @@ function CertificationsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff or certification..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        {isAdmin && <Button onClick={openCreate} className="gap-1"><Plus className="h-4 w-4" /> Add Certification</Button>}
+        <Button onClick={openCreate} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+          <Plus className="h-4 w-4" /> Add Certification
+        </Button>
       </div>
 
       {isLoading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : (
-        <div className="rounded-lg border overflow-auto">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Staff</TableHead>
@@ -480,12 +594,13 @@ function CertificationsTab() {
                 <TableHead className="hidden sm:table-cell">Issuing Body</TableHead>
                 <TableHead>Expiry</TableHead>
                 <TableHead>Status</TableHead>
-                {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
+                <TableHead>File</TableHead>
+                <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground py-8">No certifications found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No certifications found</TableCell></TableRow>
               ) : filtered.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell><div className="font-medium text-sm">{c.profiles?.last_name}, {c.profiles?.first_name}</div><div className="text-xs text-muted-foreground">{c.profiles?.staff_id}</div></TableCell>
@@ -493,20 +608,21 @@ function CertificationsTab() {
                   <TableCell className="hidden sm:table-cell text-xs">{c.issuing_body || "—"}</TableCell>
                   <TableCell className="text-xs">{c.expiry_date ? format(new Date(c.expiry_date), "dd MMM yyyy") : "N/A"}</TableCell>
                   <TableCell>{getExpiryBadge(c.expiry_date)}</TableCell>
-                  {isAdmin && (
-                    <TableCell>
+                  <TableCell><FileLinkButton filePath={(c as any).file_path} fileName={(c as any).file_name} /></TableCell>
+                  <TableCell>
+                    {canManageRow(c) ? (
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
                           <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Delete certification?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this certification record.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(c.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                            <AlertDialogHeader><AlertDialogTitle>Delete certification?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this certification record{(c as any).file_path ? " and the attached file" : ""}.</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(c)}>Delete</AlertDialogAction></AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
                       </div>
-                    </TableCell>
-                  )}
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -519,7 +635,17 @@ function CertificationsTab() {
           <DialogHeader><DialogTitle>{editing ? "Edit Certification" : "Add Certification"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Staff Member</Label>
-              <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
+              {isAdmin ? (
+                <StaffCombobox staff={profiles as any} value={profileId} onValueChange={setProfileId} />
+              ) : (
+                <Input
+                  value={(() => {
+                    const p: any = (profiles as any[]).find((x) => x.id === profileId);
+                    return p ? `${p.last_name}, ${p.first_name} (${p.staff_id})` : "Yourself";
+                  })()}
+                  disabled
+                />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Certification Name</Label><Input value={certName} onChange={(e) => setCertName(e.target.value)} placeholder="e.g. First Aid" /></div>
@@ -531,7 +657,15 @@ function CertificationsTab() {
               <div><Label>Expiry Date</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} /></div>
             </div>
             <div><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !profileId || !certName} className="w-full">{saveMutation.isPending ? "Saving..." : editing ? "Update" : "Add Certification"}</Button>
+            <ComplianceFileInput
+              profileId={profileId}
+              subfolder="certifications"
+              value={fileMeta}
+              onChange={setFileMeta}
+              uploading={uploading}
+              setUploading={setUploading}
+            />
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || uploading || !profileId || !certName} className="w-full">{saveMutation.isPending ? "Saving..." : editing ? "Update" : "Add Certification"}</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -544,6 +678,9 @@ export default function Compliance() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">Compliance Management</h1>
+      <p className="text-sm text-muted-foreground">
+        Every staff member can upload and manage their own documents and certifications. Admins can manage all records.
+      </p>
       <Tabs defaultValue="documents">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="documents" className="gap-1"><FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Documents</TabsTrigger>

@@ -383,12 +383,17 @@ export type Database = {
           created_at: string
           date_obtained: string | null
           expiry_date: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
           id: string
           issuing_body: string | null
           notes: string | null
           profile_id: string
           status: string
           updated_at: string
+          uploaded_by: string | null
         }
         Insert: {
           certificate_number?: string | null
@@ -396,12 +401,17 @@ export type Database = {
           created_at?: string
           date_obtained?: string | null
           expiry_date?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           issuing_body?: string | null
           notes?: string | null
           profile_id: string
           status?: string
           updated_at?: string
+          uploaded_by?: string | null
         }
         Update: {
           certificate_number?: string | null
@@ -409,12 +419,17 @@ export type Database = {
           created_at?: string
           date_obtained?: string | null
           expiry_date?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           issuing_body?: string | null
           notes?: string | null
           profile_id?: string
           status?: string
           updated_at?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
