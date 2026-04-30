@@ -205,52 +205,98 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               </div>
             )}
 
+            {counts && counts.dryRun && !committed && (
+              <Alert className="border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600">
+                <Eye className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+                <AlertTitle className="text-amber-900 dark:text-amber-200 font-semibold">
+                  DRY-RUN MODE — No changes have been written
+                </AlertTitle>
+                <AlertDescription className="text-amber-900/80 dark:text-amber-200/80">
+                  Review the planned upserts below. Click <strong>Commit upload</strong> to apply, or upload a corrected file.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {counts && (
               <Alert variant={counts.errorCount > 0 ? "destructive" : "default"}>
                 {counts.errorCount > 0 ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                 <AlertTitle>
-                  {counts.dryRun ? "Preview" : committed ? "Committed" : "Result"} — {counts.totalRows} row{counts.totalRows === 1 ? "" : "s"}
+                  {counts.dryRun ? "Preview summary" : committed ? "Committed" : "Result"} — {counts.totalRows} row{counts.totalRows === 1 ? "" : "s"}
                 </AlertTitle>
                 <AlertDescription>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">{counts.createdCount} create</Badge>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">{counts.updatedCount} update</Badge>
-                    <Badge variant="outline">{counts.skippedCount} skip</Badge>
-                    {counts.errorCount > 0 && <Badge variant="destructive">{counts.errorCount} error</Badge>}
+                    {([
+                      { k: "all" as FilterKey, label: `${counts.totalRows} all`, cls: "" },
+                      { k: "create" as FilterKey, label: `${counts.createdCount} insert`, cls: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" },
+                      { k: "update" as FilterKey, label: `${counts.updatedCount} update`, cls: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300" },
+                      { k: "skip" as FilterKey, label: `${counts.skippedCount} no-change`, cls: "bg-muted text-muted-foreground" },
+                      { k: "error" as FilterKey, label: `${counts.errorCount} error`, cls: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" },
+                    ]).map((b) => (
+                      <button key={b.k} type="button" onClick={() => setFilter(b.k)}>
+                        <Badge variant={filter === b.k ? "default" : "outline"} className={`cursor-pointer ${filter === b.k ? "" : b.cls}`}>{b.label}</Badge>
+                      </button>
+                    ))}
+                    <Button size="sm" variant="ghost" onClick={exportDiffCsv} className="ml-auto h-6 gap-1 text-xs">
+                      <Download className="h-3 w-3" /> Export diff CSV
+                    </Button>
                   </div>
                 </AlertDescription>
               </Alert>
             )}
 
             {previewResult && (
-              <ScrollArea className="h-[280px] rounded border">
+              <ScrollArea className="h-[300px] rounded border">
                 <div className="overflow-x-auto">
-                <Table>
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Staff ID</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Details</TableHead>
+                      <TableHead className="w-24">Status</TableHead>
+                      <TableHead>Field</TableHead>
+                      <TableHead>From → To / Details</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {previewResult.outcomes.map((o) => (
-                      <TableRow key={o.rowIndex}>
-                        <TableCell className="text-xs text-muted-foreground">{o.rowIndex + 1}</TableCell>
-                        <TableCell className="text-xs font-mono">{o.staffId ?? "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            o.status === "create" ? "default" :
-                            o.status === "update" ? "secondary" :
-                            o.status === "error" ? "destructive" : "outline"
-                          } className="text-[10px] capitalize">{o.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {o.message ?? (o.changedFields?.length ? `Changed: ${o.changedFields.join(", ")}` : "—")}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {previewResult.outcomes
+                      .filter((o) => filter === "all" || o.status === filter)
+                      .map((o) => {
+                        const diffEntries = o.diff ? Object.entries(o.diff) : [];
+                        if (!diffEntries.length) {
+                          return (
+                            <TableRow key={o.rowIndex}>
+                              <TableCell className="text-xs text-muted-foreground">{o.rowIndex + 1}</TableCell>
+                              <TableCell className="text-xs font-mono">{o.staffId ?? "—"}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  o.status === "error" ? "destructive" : "outline"
+                                } className="text-[10px] capitalize">{o.status === "skip" ? "no-change" : o.status}</Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{o.message ?? "—"}</TableCell>
+                            </TableRow>
+                          );
+                        }
+                        return diffEntries.map(([k, v], i) => (
+                          <TableRow key={`${o.rowIndex}-${k}`}>
+                            <TableCell className="text-xs text-muted-foreground">{i === 0 ? o.rowIndex + 1 : ""}</TableCell>
+                            <TableCell className="text-xs font-mono">{i === 0 ? (o.staffId ?? "—") : ""}</TableCell>
+                            <TableCell>
+                              {i === 0 && (
+                                <Badge variant={o.status === "create" ? "default" : "secondary"} className={`text-[10px] capitalize ${o.status === "create" ? "bg-emerald-600 hover:bg-emerald-600" : "bg-blue-600 text-white hover:bg-blue-600"}`}>
+                                  {o.status === "create" ? "insert" : "update"}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-xs font-medium">{k}</TableCell>
+                            <TableCell className="text-xs">
+                              <span className="text-muted-foreground line-through">{v.from === null || v.from === "" ? "∅" : String(v.from)}</span>
+                              <span className="mx-1.5 text-muted-foreground">→</span>
+                              <span className="text-emerald-700 dark:text-emerald-400 font-medium">{v.to === null || v.to === "" ? "∅" : String(v.to)}</span>
+                            </TableCell>
+                          </TableRow>
+                        ));
+                      })}
                   </TableBody>
                 </Table>
                 </div>
