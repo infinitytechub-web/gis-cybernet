@@ -20,10 +20,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 type Outcome = {
   rowIndex: number;
   staffId: string | null;
-  status: "create" | "update" | "skip" | "error";
+  status: "create" | "update" | "skip" | "error" | "deactivate";
   message?: string;
   changedFields?: string[];
   diff?: Record<string, { from: any; to: any }>;
+  fullName?: string;
+  department?: string;
 };
 
 type RunResult = {
