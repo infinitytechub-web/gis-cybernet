@@ -27,7 +27,7 @@ export function useInterlinkBranding() {
   // Realtime — push updates to all open browsers immediately
   useEffect(() => {
     const ch = supabase
-      .channel("interlink-branding")
+      .channel(`interlink-branding-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "interlink_branding" },
