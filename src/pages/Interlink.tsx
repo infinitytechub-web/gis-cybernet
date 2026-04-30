@@ -28,6 +28,7 @@ import {
   INTERLINK_LABELS,
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
+import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 import { SchedulesTab } from "@/components/interlink/SchedulesTab";
 import { AttachmentRulesTab } from "@/components/interlink/AttachmentRulesTab";
 import { ApprovalsTab } from "@/components/interlink/ApprovalsTab";
@@ -58,6 +59,7 @@ const MAX_FILES = 5;
 
 export default function Interlink() {
   const { isAdminOrSupervisor, user } = useAuth();
+  const branding = useInterlinkBranding();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const tab = searchParams.get("tab") ?? "compose";
@@ -93,11 +95,11 @@ export default function Interlink() {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              {INTERLINK_LABELS.title}
+              {branding.title}
               <Sparkles className="h-4 w-4 opacity-80" />
             </h1>
             <p className="text-sm text-white/90">
-              {INTERLINK_LABELS.tagline}
+              {branding.tagline}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">

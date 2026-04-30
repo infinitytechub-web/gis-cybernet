@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
+import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
@@ -104,6 +105,10 @@ export function AppSidebar() {
     else setOpen(false);
   };
   const { org_name, system_label } = useAppSettings();
+  const interlinkBranding = useInterlinkBranding();
+  const liveCommandVaultItems = commandVaultItems.map((it) =>
+    it.url === "/interlink" ? { ...it, title: interlinkBranding.nav } : it
+  );
   const queryClient = useQueryClient();
 
   // Realtime: invalidate sidebar badge counts on any change to application tables
@@ -266,7 +271,7 @@ export function AppSidebar() {
         {renderGroup("Finance & Procurement", financeItems)}
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
-        {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", commandVaultItems)}
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
         {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "staff_officer") &&
           renderGroup(
