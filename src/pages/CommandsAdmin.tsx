@@ -20,7 +20,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   Crown, Pencil, Plus, Trash2, ExternalLink, Pin, GripVertical,
-  Save, RotateCcw, ArrowDownAZ,
+  Save, RotateCcw, ArrowDownAZ, ArrowUp, ArrowDown, Minus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -120,6 +120,49 @@ function SortableRow({
   );
 }
 
+/** Single row in the order-confirmation diff. */
+function DiffLine({
+  row,
+}: {
+  row: { id: string; name: string; oldIdx: number | null; newIdx: number | null; delta: number | null };
+}) {
+  const moved = (row.delta ?? 0) !== 0;
+  const movedUp = (row.delta ?? 0) > 0;
+  const isNew = row.oldIdx == null;
+  return (
+    <li
+      className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs ${
+        moved
+          ? movedUp
+            ? "bg-emerald-500/5 border-emerald-500/30"
+            : "bg-amber-500/5 border-amber-500/30"
+          : "bg-muted/30"
+      }`}
+    >
+      <span className="font-mono text-[10px] text-muted-foreground tabular-nums w-12 shrink-0">
+        {isNew ? "—" : `#${(row.oldIdx ?? 0) + 1}`}
+        <span className="mx-0.5">→</span>
+        #{(row.newIdx ?? 0) + 1}
+      </span>
+      {moved ? (
+        movedUp ? (
+          <ArrowUp className="h-3 w-3 text-emerald-600 shrink-0" />
+        ) : (
+          <ArrowDown className="h-3 w-3 text-amber-600 shrink-0" />
+        )
+      ) : (
+        <Minus className="h-3 w-3 text-muted-foreground shrink-0" />
+      )}
+      <span className="truncate flex-1">{row.name}</span>
+      {moved && (
+        <Badge variant="outline" className="h-4 px-1 text-[9px]">
+          {movedUp ? `+${row.delta}` : row.delta}
+        </Badge>
+      )}
+    </li>
+  );
+}
+
 export default function CommandsAdmin() {
   const { isAdmin } = useAuth();
   const { data: serverCommands = [], isLoading } = useConfidentialityCommands();
@@ -148,6 +191,31 @@ export default function CommandsAdmin() {
     );
   }, [pinnedDraft, unpinnedDraft, serverCommands]);
 
+  // Build a per-list diff for the confirmation dialog.
+  type DiffRow = { id: string; name: string; oldIdx: number | null; newIdx: number | null; delta: number | null };
+  const buildDiff = (
+    serverList: ConfidentialityCommand[],
+    draftList: ConfidentialityCommand[],
+  ): DiffRow[] => {
+    const oldIndexById = new Map(serverList.map((c, i) => [c.id, i]));
+    return draftList.map((c, newIdx) => {
+      const oldIdx = oldIndexById.has(c.id) ? oldIndexById.get(c.id)! : null;
+      const delta = oldIdx == null ? null : oldIdx - newIdx; // positive = moved up
+      return { id: c.id, name: c.name, oldIdx, newIdx, delta };
+    });
+  };
+  const pinnedDiff = useMemo(
+    () => buildDiff(serverCommands.filter((c) => c.pinned), pinnedDraft),
+    [serverCommands, pinnedDraft],
+  );
+  const unpinnedDiff = useMemo(
+    () => buildDiff(serverCommands.filter((c) => !c.pinned), unpinnedDraft),
+    [serverCommands, unpinnedDraft],
+  );
+  const movedCount =
+    pinnedDiff.filter((r) => (r.delta ?? 0) !== 0).length +
+    unpinnedDiff.filter((r) => (r.delta ?? 0) !== 0).length;
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -158,6 +226,7 @@ export default function CommandsAdmin() {
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ConfidentialityCommand | null>(null);
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
 
   if (!isAdmin) {
     return (
@@ -229,6 +298,7 @@ export default function CommandsAdmin() {
       if (failed?.error) throw failed.error;
       toast({ title: "Order saved", description: `${updates.length} commands updated.` });
       qc.invalidateQueries({ queryKey: ["confidentiality-commands"] });
+      setConfirmOrderOpen(false);
     } catch (e: any) {
       toast({ title: "Could not save order", description: e.message, variant: "destructive" });
     } finally {
@@ -303,8 +373,8 @@ export default function CommandsAdmin() {
               <Button variant="ghost" size="sm" onClick={resetOrder} disabled={savingOrder}>
                 <RotateCcw className="h-4 w-4 mr-1" /> Reset
               </Button>
-              <Button size="sm" onClick={persistOrder} disabled={savingOrder}>
-                <Save className="h-4 w-4 mr-1" /> {savingOrder ? "Saving…" : "Save order"}
+              <Button size="sm" onClick={() => setConfirmOrderOpen(true)} disabled={savingOrder}>
+                <Save className="h-4 w-4 mr-1" /> Save order
               </Button>
             </>
           )}
@@ -437,6 +507,75 @@ export default function CommandsAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Confirm order dialog */}
+      <Dialog open={confirmOrderOpen} onOpenChange={(o) => !savingOrder && setConfirmOrderOpen(o)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Confirm new command order</DialogTitle>
+            <DialogDescription>
+              {movedCount === 0
+                ? "No items have changed position."
+                : `${movedCount} command${movedCount === 1 ? "" : "s"} will move. Review the changes below before saving.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2 max-h-[55vh] overflow-y-auto pr-1">
+            {/* Pinned column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Pin className="h-3.5 w-3.5 text-amber-600" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Pinned ({pinnedDiff.length})
+                </span>
+              </div>
+              {pinnedDiff.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic">No pinned items.</div>
+              ) : (
+                <ol className="space-y-1">
+                  {pinnedDiff.map((row) => (
+                    <DiffLine key={row.id} row={row} />
+                  ))}
+                </ol>
+              )}
+            </div>
+
+            {/* Unpinned column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="h-3.5 w-3.5 text-[hsl(220,80%,40%)]" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  All other commands ({unpinnedDiff.length})
+                </span>
+              </div>
+              {unpinnedDiff.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic">No items.</div>
+              ) : (
+                <ol className="space-y-1">
+                  {unpinnedDiff.map((row) => (
+                    <DiffLine key={row.id} row={row} />
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-t pt-3">
+            <span className="flex items-center gap-1"><ArrowUp className="h-3 w-3 text-emerald-600" /> moved up</span>
+            <span className="flex items-center gap-1"><ArrowDown className="h-3 w-3 text-amber-600" /> moved down</span>
+            <span className="flex items-center gap-1"><Minus className="h-3 w-3" /> unchanged</span>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOrderOpen(false)} disabled={savingOrder}>
+              Cancel
+            </Button>
+            <Button onClick={persistOrder} disabled={savingOrder || movedCount === 0}>
+              <Save className="h-4 w-4 mr-1" /> {savingOrder ? "Saving…" : "Confirm & save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
