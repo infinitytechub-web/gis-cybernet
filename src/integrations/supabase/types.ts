@@ -441,6 +441,48 @@ export type Database = {
           },
         ]
       }
+      command_role_audit: {
+        Row: {
+          action: string
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          from_role: Database["public"]["Enums"]["app_role"] | null
+          id: string
+          notes: string | null
+          target_name: string | null
+          target_staff_id: string | null
+          target_user_id: string
+          to_role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          from_role?: Database["public"]["Enums"]["app_role"] | null
+          id?: string
+          notes?: string | null
+          target_name?: string | null
+          target_staff_id?: string | null
+          target_user_id: string
+          to_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          from_role?: Database["public"]["Enums"]["app_role"] | null
+          id?: string
+          notes?: string | null
+          target_name?: string | null
+          target_staff_id?: string | null
+          target_user_id?: string
+          to_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: []
+      }
       command_vault_files: {
         Row: {
           category: string
