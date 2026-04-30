@@ -11,6 +11,8 @@ const ALLOWED_ROLES = [
   "admin",
   "oic",
   "2ic",
+  "head_of_administration",
+  "chief_staff_officer",
   "staff_officer",
   "supervisor",
   "deputy_supervisor",
