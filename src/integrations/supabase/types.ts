@@ -1733,6 +1733,68 @@ export type Database = {
         }
         Relationships: []
       }
+      interlink_notification_log: {
+        Row: {
+          attempt_count: number
+          channel: string
+          created_at: string
+          dispatch_id: string
+          error_message: string | null
+          event: string
+          id: string
+          last_attempt_at: string
+          metadata: Json
+          resent_at: string | null
+          resent_by: string | null
+          status: string
+          target_email: string | null
+          target_user_id: string | null
+          workflow_state: string | null
+        }
+        Insert: {
+          attempt_count?: number
+          channel: string
+          created_at?: string
+          dispatch_id: string
+          error_message?: string | null
+          event: string
+          id?: string
+          last_attempt_at?: string
+          metadata?: Json
+          resent_at?: string | null
+          resent_by?: string | null
+          status?: string
+          target_email?: string | null
+          target_user_id?: string | null
+          workflow_state?: string | null
+        }
+        Update: {
+          attempt_count?: number
+          channel?: string
+          created_at?: string
+          dispatch_id?: string
+          error_message?: string | null
+          event?: string
+          id?: string
+          last_attempt_at?: string
+          metadata?: Json
+          resent_at?: string | null
+          resent_by?: string | null
+          status?: string
+          target_email?: string | null
+          target_user_id?: string | null
+          workflow_state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interlink_notification_log_dispatch_id_fkey"
+            columns: ["dispatch_id"]
+            isOneToOne: false
+            referencedRelation: "interlink_dispatches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interlink_schedules: {
         Row: {
           approver_id: string | null
@@ -4992,6 +5054,10 @@ export type Database = {
         Returns: string
       }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      can_export_interlink_logs: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       can_shift_connection_action: {
         Args: { _action: string }
         Returns: boolean
