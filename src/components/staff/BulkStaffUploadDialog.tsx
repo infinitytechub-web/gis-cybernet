@@ -470,12 +470,13 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               <Button
                 variant="outline"
                 onClick={() => runMut.mutate(true)}
-                disabled={!rows.length || runMut.isPending}
+                disabled={(!rows.length && !rosterRows.length) || runMut.isPending}
                 className="gap-1.5"
               >
                 <Eye className="h-4 w-4" /> Preview
               </Button>
               <Button
+                variant="destructive"
                 onClick={() => {
                   if (!previewResult) {
                     toast.error("Please preview the upload first");
@@ -484,10 +485,10 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                   setConfirmText("");
                   setConfirmOpen(true);
                 }}
-                disabled={!rows.length || runMut.isPending || committed}
+                disabled={(!rows.length && !rosterRows.length) || runMut.isPending || committed}
                 className="gap-1.5"
               >
-                <Save className="h-4 w-4" /> {runMut.isPending ? "Working…" : committed ? "Committed" : "Commit upload"}
+                <ShieldAlert className="h-4 w-4" /> {runMut.isPending ? "Working…" : committed ? "Override applied" : "Apply override"}
               </Button>
             </DialogFooter>
           </TabsContent>
