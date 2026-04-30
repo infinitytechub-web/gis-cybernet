@@ -21,7 +21,7 @@ type Holder = { user_id: string; first_name?: string | null; last_name?: string 
 type Candidate = Holder & { department_id?: string | null; office?: string | null; shift_group?: string | null; user_id: string };
 
 export default function CommandRoles() {
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
   const [assignRole, setAssignRole] = useState<AppRole | null>(null);
   const [search, setSearch] = useState("");
@@ -117,7 +117,15 @@ export default function CommandRoles() {
     targetUserId: string; targetStaffId?: string | null; targetName?: string;
     fromRole: AppRole | null; toRole: AppRole | null; action: "assign" | "remove" | "change";
   }) => {
-    const changedByName = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() : null;
+    let changedByName: string | null = user?.email ?? null;
+    if (user?.id) {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (me) changedByName = `${me.first_name ?? ""} ${me.last_name ?? ""}`.trim() || changedByName;
+    }
     await supabase.from("command_role_audit").insert({
       target_user_id: params.targetUserId,
       target_staff_id: params.targetStaffId ?? null,
@@ -125,7 +133,7 @@ export default function CommandRoles() {
       from_role: params.fromRole as any,
       to_role: params.toRole as any,
       action: params.action,
-      changed_by: profile?.user_id ?? null,
+      changed_by: user?.id ?? null,
       changed_by_name: changedByName,
     });
   };
@@ -361,7 +369,7 @@ export default function CommandRoles() {
                   <li className="p-4 text-center text-xs text-muted-foreground italic">No matching staff</li>
                 )}
                 {filteredCandidates.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-2 p-2 hover:bg-muted/40">
+                  <li key={c.user_id} className="flex items-center justify-between gap-2 p-2 hover:bg-muted/40">
                     <div className="min-w-0">
                       <div className="text-xs font-medium truncate">
                         {`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || c.email}
