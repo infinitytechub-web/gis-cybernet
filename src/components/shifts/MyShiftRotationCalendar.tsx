@@ -17,12 +17,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import {
-  getShiftGroupForDate,
-  GROUP_COLORS,
-  SHIFT_GROUPS,
-  type ShiftGroup,
-} from "@/lib/shift-rotation";
+import { GROUP_COLORS, type ShiftGroup } from "@/lib/shift-rotation";
+import { useShiftRotationConfig } from "@/hooks/useShiftRotationConfig";
+
+// Fallback colour for letters outside A–D when admin defines a custom pattern.
+const FALLBACK_TONE = {
+  bg: "bg-muted",
+  text: "text-foreground",
+  border: "border-border",
+  solid: "bg-foreground/60",
+} as const;
+function tone(g: string) {
+  return (GROUP_COLORS as Record<string, typeof FALLBACK_TONE>)[g] ?? FALLBACK_TONE;
+}
 
 interface Props {
   /** Staff member's assigned shift group (A/B/C/D). */
