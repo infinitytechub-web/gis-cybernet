@@ -32,7 +32,7 @@ const roleLabels: Record<string, string> = {
 
 type Access = "full" | "dept" | "own" | "view" | "none";
 
-const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
+const baseFeatures: { name: string; access: Record<string, Access> }[] = [
   {
     name: "Dashboard",
     access: { admin: "full", oic: "full", "2ic": "full", supervisor: "full", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "full", deputy_shift_supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "full", staff: "full" },
@@ -109,9 +109,11 @@ const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
     name: "Settings / User Roles",
     access: { admin: "full", oic: "full", "2ic": "view", supervisor: "none", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
   },
-].map((feature) => ({
+];
+
+// Head of Administration & Chief Staff Officer share full command-tier access (mirrors 2IC).
+const defaultFeatures: { name: string; access: Record<string, Access> }[] = baseFeatures.map((feature) => ({
   ...feature,
-  // Head of Administration & Chief Staff Officer share full command-tier access (mirrors 2IC).
   access: {
     ...feature.access,
     head_of_administration: feature.access["2ic"],
