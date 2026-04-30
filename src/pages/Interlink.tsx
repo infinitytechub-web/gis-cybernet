@@ -28,6 +28,7 @@ import {
   INTERLINK_LABELS,
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
+import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 import { SchedulesTab } from "@/components/interlink/SchedulesTab";
 import { AttachmentRulesTab } from "@/components/interlink/AttachmentRulesTab";
 import { ApprovalsTab } from "@/components/interlink/ApprovalsTab";
