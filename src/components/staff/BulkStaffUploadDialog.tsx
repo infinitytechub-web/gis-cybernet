@@ -203,6 +203,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     },
     onSuccess: (res, dryRun) => {
       setPreviewResult(res);
+      setDeactAcknowledged(false);
       if (!dryRun) {
         setCommitted(true);
         qc.invalidateQueries({ queryKey: ["directory-staff"] });
