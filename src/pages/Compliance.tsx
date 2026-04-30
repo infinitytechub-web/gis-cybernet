@@ -64,6 +64,7 @@ function DocumentsTab() {
   const [notes, setNotes] = useState("");
   const [fileMeta, setFileMeta] = useState<ComplianceFile>(EMPTY_FILE);
   const [uploading, setUploading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["staff-documents"],
@@ -178,10 +179,22 @@ function DocumentsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff or document type..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+          <Upload className="h-4 w-4" /> Bulk upload
+        </Button>
         <Button onClick={openCreate} className="gap-1" disabled={!isAdmin && !ownProfileId}>
           <Plus className="h-4 w-4" /> Add Document
         </Button>
       </div>
+
+      <ComplianceBulkUploadDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        kind="documents"
+        isAdmin={isAdmin}
+        ownProfileId={ownProfileId ?? null}
+        profiles={profiles as any}
+      />
 
       {isLoading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : (
         <div className="rounded-lg border overflow-x-auto">
