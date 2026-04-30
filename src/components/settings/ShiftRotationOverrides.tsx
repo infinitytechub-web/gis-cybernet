@@ -37,13 +37,14 @@ interface OverrideRow {
 
 interface AuditLog {
   id: string;
+  changed_at: string;
+  changed_by_name: string | null;
   action: string;
-  entity_type: string;
-  entity_id: string;
-  old_values: any;
-  new_values: any;
-  created_at: string;
-  user_email: string;
+  old_anchor_date: string | null;
+  new_anchor_date: string | null;
+  old_pattern: string[] | null;
+  new_pattern: string[] | null;
+  changed_fields: string[];
 }
 
 function parsePattern(input: string): { ok: true; pattern: string[] } | { ok: false; error: string } {
