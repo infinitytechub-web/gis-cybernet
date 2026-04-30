@@ -530,6 +530,55 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               </Table>
             </ScrollArea>
           </TabsContent>
+
+          <TabsContent value="snapshots">
+            <ScrollArea className="h-[360px] rounded border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">When</TableHead>
+                    <TableHead className="text-xs">Taken by</TableHead>
+                    <TableHead className="text-xs">Note</TableHead>
+                    <TableHead className="text-xs text-right">Staff</TableHead>
+                    <TableHead className="text-xs text-right">Roster</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {snapshots.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No snapshots yet.</TableCell></TableRow>
+                  )}
+                  {snapshots.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{format(parseISO(s.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-xs">{s.taken_by_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs truncate max-w-[220px]">{s.note ?? s.file_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-right tabular-nums">{s.profiles_count}</TableCell>
+                      <TableCell className="text-xs text-right tabular-nums">{s.night_guard_count}</TableCell>
+                      <TableCell className="text-xs">
+                        {s.restored_at
+                          ? <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700">restored {format(parseISO(s.restored_at), "dd MMM HH:mm")}</Badge>
+                          : <Badge variant="outline" className="text-[10px]">available</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm" variant="ghost" className="h-7 gap-1 text-xs"
+                          disabled={restoreMut.isPending}
+                          onClick={() => {
+                            if (!confirm(`Restore this snapshot?\n\nThis will replace ALL Night Guard assignments and reset staff fields to the snapshot values. Cannot be undone except by another snapshot.`)) return;
+                            restoreMut.mutate(s.id);
+                          }}
+                        >
+                          <RotateCcw className="h-3 w-3" /> Restore
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </TabsContent>
         </Tabs>
       </DialogContent>
 
