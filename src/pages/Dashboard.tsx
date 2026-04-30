@@ -25,6 +25,7 @@ import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
 import GenderStatisticsWidget from "@/components/dashboard/GenderStatisticsWidget";
 import LowStockWidget from "@/components/dashboard/LowStockWidget";
 import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget";
+import InterlinkWidget from "@/components/dashboard/InterlinkWidget";
 import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget";
 import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
 
@@ -375,6 +376,9 @@ export default function Dashboard() {
 
       {/* Approved IPSE Reports — separated from standard reports */}
       <ApprovedReportsWidget variant="ipse" />
+
+      {/* Interlink System — command tier only */}
+      <InterlinkWidget />
 
       {/* Scheduled Reports Widget */}
       <ScheduledReportsWidget />

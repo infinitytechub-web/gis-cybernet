@@ -1449,6 +1449,135 @@ export type Database = {
         }
         Relationships: []
       }
+      interlink_contacts: {
+        Row: {
+          command_or_unit: string | null
+          created_at: string
+          created_by: string
+          display_name: string
+          email: string
+          id: string
+          notes: string | null
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          command_or_unit?: string | null
+          created_at?: string
+          created_by: string
+          display_name: string
+          email: string
+          id?: string
+          notes?: string | null
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          command_or_unit?: string | null
+          created_at?: string
+          created_by?: string
+          display_name?: string
+          email?: string
+          id?: string
+          notes?: string | null
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      interlink_dispatches: {
+        Row: {
+          attachment_count: number
+          attachment_names: string[]
+          created_at: string
+          error_message: string | null
+          failed_count: number
+          id: string
+          message: string | null
+          performed_by: string
+          recipient_count: number
+          recipient_emails: string[]
+          report_kind: string | null
+          results: Json
+          scope: string
+          sent_count: number
+          status: string
+          subject: string
+          total_attachment_bytes: number
+        }
+        Insert: {
+          attachment_count?: number
+          attachment_names?: string[]
+          created_at?: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          message?: string | null
+          performed_by: string
+          recipient_count?: number
+          recipient_emails?: string[]
+          report_kind?: string | null
+          results?: Json
+          scope: string
+          sent_count?: number
+          status?: string
+          subject: string
+          total_attachment_bytes?: number
+        }
+        Update: {
+          attachment_count?: number
+          attachment_names?: string[]
+          created_at?: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          message?: string | null
+          performed_by?: string
+          recipient_count?: number
+          recipient_emails?: string[]
+          report_kind?: string | null
+          results?: Json
+          scope?: string
+          sent_count?: number
+          status?: string
+          subject?: string
+          total_attachment_bytes?: number
+        }
+        Relationships: []
+      }
+      interlink_lists: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          member_emails: string[]
+          name: string
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          member_emails?: string[]
+          name: string
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          member_emails?: string[]
+          name?: string
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_alert_overrides: {
         Row: {
           created_at: string
