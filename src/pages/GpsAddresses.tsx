@@ -937,6 +937,8 @@ export default function GpsAddresses() {
     const filterParts: string[] = [];
     if (sourceFilter !== "all") filterParts.push(`Source: ${SOURCE_META[sourceFilter as SourceKey].label}`);
     if (search.trim()) filterParts.push(`Search: "${search.trim()}"`);
+    if (dateFrom) filterParts.push(`From: ${dateFrom}`);
+    if (dateTo) filterParts.push(`To: ${dateTo}`);
     const subtitle = `Command Vault · ${filtered.length} of ${records.length} GPS records${filterParts.length ? ` · ${filterParts.join(" · ")}` : ""}`;
     return {
       title: "GPS Address Register",
@@ -946,6 +948,55 @@ export default function GpsAddresses() {
       subtitle,
     };
   };
+
+  // ===== Server-side paginated export =====
+  // Streams the full filtered set from `get_gps_points` (ignoring the 500/source
+  // client cache) using keyset pagination, then exports to CSV/PDF. Honours
+  // the source + date filters from the toolbar. Inventory points are NOT
+  // exported here — the RPC only covers Operations / Enforcement / Cyber.
+  const runServerExport = async (fmt: "csv" | "pdf") => {
+    if (!allowed) return;
+    setServerExportBusy(fmt);
+    setServerExportProgress(0);
+    try {
+      const sources: GpsExportSource[] | undefined =
+        sourceFilter === "operations" ||
+        sourceFilter === "enforcement_operations" ||
+        sourceFilter === "cyber_incidents"
+          ? [sourceFilter]
+          : undefined;
+      // Inventory is excluded from the server feed — warn if it's the active filter.
+      if (sourceFilter === "inventory_items") {
+        toast({
+          title: "Server export not available for Inventory",
+          description: "Inventory GPS points are not part of the secured GPS feed. Use the standard export instead.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const fromIso = dateFrom ? new Date(`${dateFrom}T00:00:00`).toISOString() : null;
+      const toIso = dateTo ? new Date(`${dateTo}T23:59:59.999`).toISOString() : null;
+      const { rowCount, capped } = await exportGpsPointsServerSide(
+        fmt,
+        { sources, from: fromIso, to: toIso },
+        ({ fetched }) => setServerExportProgress(fetched),
+      );
+      toast({
+        title: `Server export ready · ${fmt.toUpperCase()}`,
+        description: `${rowCount.toLocaleString()} GPS points exported${capped ? ` (capped at ${GPS_EXPORT_MAX_ROWS.toLocaleString()})` : ""}.`,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Server export failed",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setServerExportBusy(null);
+      setServerExportProgress(0);
+    }
+  };
+
 
   // ===== Cloud export (S3-style storage + time-limited signed URL) =====
   const [cloudOpen, setCloudOpen] = useState(false);
