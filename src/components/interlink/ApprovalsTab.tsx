@@ -18,7 +18,7 @@ import { exportApprovalsCSV, exportApprovalsXLSX, exportApprovalsPDF, type Appro
 type StateFilter = "draft" | "review" | "approved" | "rejected";
 
 export function ApprovalsTab() {
-  const { user, isAdminOrSupervisor } = useAuth();
+  const { user, isAdminOrSupervisor, canExportInterlinkLogs } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<StateFilter>("draft");
   const [selected, setSelected] = useState<any | null>(null);
@@ -164,9 +164,17 @@ export function ApprovalsTab() {
         <h3 className="font-semibold">Approval workflow</h3>
         <Badge variant="outline" className="text-[10px]">Immutable audit log</Badge>
         <div className="ml-auto flex flex-wrap gap-1.5">
-          <Button size="sm" variant="outline" onClick={() => exportLog("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
-          <Button size="sm" variant="outline" onClick={() => exportLog("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
-          <Button size="sm" variant="outline" onClick={() => exportLog("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+          {canExportInterlinkLogs ? (
+            <>
+              <Button size="sm" variant="outline" onClick={() => exportLog("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
+              <Button size="sm" variant="outline" onClick={() => exportLog("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
+              <Button size="sm" variant="outline" onClick={() => exportLog("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+            </>
+          ) : (
+            <Badge variant="outline" className="text-[10px] text-muted-foreground" title="Exporting approval logs is restricted to Admin and OIC.">
+              Export: Admin/OIC only
+            </Badge>
+          )}
         </div>
       </div>
 
