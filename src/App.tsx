@@ -45,6 +45,7 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Enforcement = lazy(() => import("./pages/Enforcement"));
 const Operations = lazy(() => import("./pages/Operations"));
 const Settings = lazy(() => import("./pages/Settings"));
+const CommandRoles = lazy(() => import("./pages/CommandRoles"));
 const Stores = lazy(() => import("./pages/Stores"));
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
 const Procurement = lazy(() => import("./pages/Procurement"));
