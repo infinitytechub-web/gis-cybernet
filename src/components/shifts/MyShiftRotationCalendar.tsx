@@ -94,9 +94,9 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
                 variant="outline"
                 className={cn(
                   "text-xs px-2 py-1 border",
-                  GROUP_COLORS[myGroup].bg,
-                  GROUP_COLORS[myGroup].text,
-                  GROUP_COLORS[myGroup].border,
+                  tone(myGroup).bg,
+                  tone(myGroup).text,
+                  tone(myGroup).border,
                 )}
               >
                 {staffName ? `${staffName} · ` : ""}Group {myGroup}
@@ -136,18 +136,18 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
           <div className="rounded-md border bg-muted/30 p-2 col-span-2 md:col-span-2">
             <div className="text-muted-foreground mb-1">Rotation legend</div>
             <div className="flex flex-wrap gap-2">
-              {SHIFT_GROUPS.map((g) => (
+              {config.pattern.map((g) => (
                 <span
                   key={g}
                   className={cn(
                     "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
-                    GROUP_COLORS[g].bg,
-                    GROUP_COLORS[g].text,
-                    GROUP_COLORS[g].border,
+                    tone(g).bg,
+                    tone(g).text,
+                    tone(g).border,
                     myGroup === g && "ring-2 ring-offset-1 ring-primary",
                   )}
                 >
-                  <span className={cn("h-1.5 w-1.5 rounded-full", GROUP_COLORS[g].solid)} />
+                  <span className={cn("h-1.5 w-1.5 rounded-full", tone(g).solid)} />
                   Group {g}
                 </span>
               ))}
@@ -182,11 +182,11 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
               return (
                 <div key={wIdx} className="grid grid-cols-7 gap-1.5 mb-1.5">
                   {weekDays.map((d) => {
-                    const group = getShiftGroupForDate(d);
+                    const group = groupForDate(d);
                     const inMonth = isSameMonth(d, cursor);
                     const today = isToday(d);
                     const onDuty = !!myGroup && group === myGroup;
-                    const colors = GROUP_COLORS[group];
+                    const colors = tone(group);
 
                     return (
                       <div
