@@ -1,7 +1,8 @@
-// Bulk Staff List Upload — admin/oic/2ic only.
-// Accepts a JSON array of staff rows, resolves rank/department by name (case-insensitive),
-// and upserts profiles by staff_id. Supports dry-run preview before commit.
-// Writes a row to staff_bulk_upload_audit summarising the operation.
+// Bulk Staff List + Night Guard Roster Upload — admin/oic/2ic/chief_staff_officer only.
+// Modes:
+//   - Staff rows: upserts profiles by staff_id, optionally deactivates staff missing from file.
+//   - Roster rows: replaces Night Guard shift_assignments for the dates covered by the upload.
+//   - Optional snapshot of profiles + night_guard assignments before commit (for rollback).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -15,9 +16,16 @@ type InputRow = Record<string, string | number | null | undefined>;
 interface RowOutcome {
   rowIndex: number;
   staffId: string | null;
-  status: "create" | "update" | "skip" | "error";
+  status: "create" | "update" | "skip" | "error" | "deactivate";
   message?: string;
   changedFields?: string[];
+}
+
+interface RosterRow {
+  staff_id?: string;
+  staffId?: string;
+  date?: string;
+  Date?: string;
 }
 
 const ALLOWED_GENDERS = new Set(["male", "female", "m", "f"]);
@@ -47,6 +55,16 @@ function normaliseGender(v: string | null): string | null {
   return null;
 }
 
+function normaliseDate(v: any): string | null {
+  if (v === null || v === undefined || v === "") return null;
+  const s = String(v).trim();
+  // YYYY-MM-DD already
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -56,7 +74,7 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
-    // ── Auth: must be admin / oic / 2ic ────────────────────────────────
+    // ── Auth: must be admin / oic / 2ic / chief_staff_officer ────────
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -72,7 +90,7 @@ Deno.serve(async (req) => {
     }
     const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id);
     const roleSet = new Set((roles ?? []).map((r: any) => r.role));
-    if (!(roleSet.has("admin") || roleSet.has("oic") || roleSet.has("2ic"))) {
+    if (!(roleSet.has("admin") || roleSet.has("oic") || roleSet.has("2ic") || roleSet.has("chief_staff_officer"))) {
       return new Response(JSON.stringify({ error: "Forbidden — command tier only" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,24 +99,35 @@ Deno.serve(async (req) => {
     // ── Body ──────────────────────────────────────────────────────────
     const body = await req.json().catch(() => ({}));
     const rows = (body.rows ?? []) as InputRow[];
+    const rosterRows = (body.rosterRows ?? []) as RosterRow[];
     const fileName = (body.fileName ?? null) as string | null;
+    const rosterFileName = (body.rosterFileName ?? null) as string | null;
     const dryRun = !!body.dryRun;
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return new Response(JSON.stringify({ error: "rows[] is required and cannot be empty" }), {
+    const deactivateMissing = !!body.deactivateMissing;
+    const takeSnapshot = !!body.snapshot;
+
+    if ((!Array.isArray(rows) || rows.length === 0) && (!Array.isArray(rosterRows) || rosterRows.length === 0)) {
+      return new Response(JSON.stringify({ error: "Provide at least one of: staff rows or roster rows" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (rows.length > 5000) {
-      return new Response(JSON.stringify({ error: "Limit is 5,000 rows per upload" }), {
+      return new Response(JSON.stringify({ error: "Limit is 5,000 staff rows per upload" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (rosterRows.length > 10000) {
+      return new Response(JSON.stringify({ error: "Limit is 10,000 roster rows per upload" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // ── Reference data ────────────────────────────────────────────────
-    const [{ data: deps }, { data: rks }, { data: existing }] = await Promise.all([
+    const [{ data: deps }, { data: rks }, { data: existing }, { data: shiftsList }] = await Promise.all([
       admin.from("departments").select("id, name"),
       admin.from("ranks").select("id, name, abbreviation"),
       admin.from("profiles").select("id, staff_id, first_name, last_name, rank_id, department_id, phone, gender, status, unit, shift_group, ghana_card_number, email, blood_group, intake, training_designation, staff_category, office, weapon_trained, weapon_training_date"),
+      admin.from("shifts").select("id, name"),
     ]);
     const deptByName = new Map<string, string>();
     for (const d of (deps ?? [])) deptByName.set(d.name.toLowerCase(), d.id);
@@ -110,10 +139,13 @@ Deno.serve(async (req) => {
     const existingByStaffId = new Map<string, any>();
     for (const p of (existing ?? [])) existingByStaffId.set(p.staff_id.toLowerCase(), p);
 
-    // ── Process rows ──────────────────────────────────────────────────
+    const nightGuardShift = (shiftsList ?? []).find((s: any) => (s.name ?? "").toLowerCase().includes("night guard"));
+
+    // ── Process staff rows ────────────────────────────────────────────
     const outcomes: RowOutcome[] = [];
     const toCreate: any[] = [];
     const toUpdate: { id: string; patch: any; changedFields: string[]; staffId: string }[] = [];
+    const seenStaffIds = new Set<string>();
 
     rows.forEach((row, idx) => {
       try {
@@ -122,6 +154,7 @@ Deno.serve(async (req) => {
         const lastName = pickKey(row, "last_name", "lastname", "surname");
         if (!staffId) { outcomes.push({ rowIndex: idx, staffId: null, status: "error", message: "Missing staff_id" }); return; }
         if (!firstName || !lastName) { outcomes.push({ rowIndex: idx, staffId, status: "error", message: "Missing first_name / last_name" }); return; }
+        seenStaffIds.add(staffId.toLowerCase());
 
         const rankRaw = pickKey(row, "rank", "rank_name", "rank_abbrev", "rank_abbreviation");
         const deptRaw = pickKey(row, "department", "department_name", "dept");
@@ -198,15 +231,105 @@ Deno.serve(async (req) => {
       }
     });
 
+    // ── Deactivate-missing planning ───────────────────────────────────
+    const toDeactivate: { id: string; staffId: string; from: string }[] = [];
+    if (deactivateMissing && rows.length > 0) {
+      for (const p of (existing ?? [])) {
+        if (p.status === "inactive") continue;
+        if (!seenStaffIds.has(p.staff_id.toLowerCase())) {
+          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status });
+          outcomes.push({
+            rowIndex: -1,
+            staffId: p.staff_id,
+            status: "deactivate",
+            message: `Will be set to inactive (not in upload)`,
+          } as any);
+        }
+      }
+    }
+
+    // ── Roster planning ───────────────────────────────────────────────
+    const rosterPlan: { profile_id: string; shift_id: string; start_date: string; end_date: string }[] = [];
+    const rosterErrors: { rowIndex: number; message: string; staffId: string | null }[] = [];
+    const rosterDates = new Set<string>();
+    let rosterUnchanged = 0;
+    if (rosterRows.length > 0) {
+      if (!nightGuardShift) {
+        rosterErrors.push({ rowIndex: -1, message: "No 'Night Guard' shift defined in shifts table", staffId: null });
+      } else {
+        // Build profile lookup
+        const profileByStaff = new Map<string, string>();
+        for (const p of (existing ?? [])) profileByStaff.set(p.staff_id.toLowerCase(), p.id);
+        // Also include freshly created staff (we'll resolve their IDs after insert)
+        const pendingByStaffId = new Map<string, true>();
+        for (const c of toCreate) pendingByStaffId.set(c.staff_id.toLowerCase(), true);
+
+        rosterRows.forEach((r, idx) => {
+          const sid = (r.staff_id ?? r.staffId ?? (r as any)["Staff ID"] ?? "")?.toString().trim();
+          const dateRaw = r.date ?? r.Date ?? (r as any)["date"] ?? (r as any)["Date"];
+          const date = normaliseDate(dateRaw);
+          if (!sid) { rosterErrors.push({ rowIndex: idx, message: "Missing Staff ID", staffId: null }); return; }
+          if (!date) { rosterErrors.push({ rowIndex: idx, message: "Missing/invalid Date", staffId: sid }); return; }
+          const pid = profileByStaff.get(sid.toLowerCase());
+          if (!pid && !pendingByStaffId.has(sid.toLowerCase())) {
+            rosterErrors.push({ rowIndex: idx, message: "Staff not found (and not in staff upload)", staffId: sid });
+            return;
+          }
+          if (pid) {
+            rosterPlan.push({ profile_id: pid, shift_id: nightGuardShift.id, start_date: date, end_date: date });
+            rosterDates.add(date);
+          } else {
+            // mark for post-create resolution
+            rosterPlan.push({ profile_id: `__pending__:${sid.toLowerCase()}`, shift_id: nightGuardShift.id, start_date: date, end_date: date });
+            rosterDates.add(date);
+          }
+        });
+      }
+    }
+
     const createdCount = outcomes.filter((o) => o.status === "create").length;
     const updatedCount = outcomes.filter((o) => o.status === "update").length;
     const skippedCount = outcomes.filter((o) => o.status === "skip").length;
     const errorCount = outcomes.filter((o) => o.status === "error").length;
+    const deactivateCount = toDeactivate.length;
 
-    // ── Commit (unless dry-run) ────────────────────────────────────────
+    // ── Snapshot + Commit ─────────────────────────────────────────────
     const commitErrors: { staffId: string; error: string }[] = [];
+    let snapshotId: string | null = null;
+
     if (!dryRun) {
-      // Inserts in batches of 200
+      // 1. Snapshot first (immutable rollback point)
+      if (takeSnapshot) {
+        const ngShiftIds = (shiftsList ?? []).filter((s: any) => (s.name ?? "").toLowerCase().includes("night guard")).map((s: any) => s.id);
+        const { data: ngAssignments } = ngShiftIds.length
+          ? await admin.from("shift_assignments").select("id, profile_id, shift_id, start_date, end_date, created_at").in("shift_id", ngShiftIds)
+          : { data: [] };
+        const { data: uploaderProfile } = await admin
+          .from("profiles").select("first_name, last_name")
+          .eq("user_id", user.id).maybeSingle();
+        const uploaderName = uploaderProfile
+          ? `${uploaderProfile.first_name ?? ""} ${uploaderProfile.last_name ?? ""}`.trim() || null
+          : null;
+
+        const { data: snap, error: snapErr } = await admin.from("staff_bulk_upload_snapshots").insert({
+          taken_by: user.id,
+          taken_by_name: uploaderName,
+          file_name: fileName,
+          note: `Pre-upload snapshot (${rows.length} staff rows, ${rosterRows.length} roster rows${deactivateMissing ? ", deactivate-missing" : ""})`,
+          profiles_data: existing ?? [],
+          night_guard_data: ngAssignments ?? [],
+          profiles_count: (existing ?? []).length,
+          night_guard_count: (ngAssignments ?? []).length,
+        }).select("id").single();
+        if (snapErr) {
+          return new Response(JSON.stringify({ error: `Snapshot failed: ${snapErr.message}` }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        snapshotId = snap.id;
+      }
+
+      // 2. Inserts in batches of 200
       for (let i = 0; i < toCreate.length; i += 200) {
         const batch = toCreate.slice(i, i + 200);
         const { error } = await admin.from("profiles").insert(batch);
@@ -214,19 +337,67 @@ Deno.serve(async (req) => {
           for (const r of batch) commitErrors.push({ staffId: r.staff_id, error: error.message });
         }
       }
-      // Updates one at a time (different patches). Service role bypasses RLS triggers? No — triggers still run.
-      // restrict_profile_updates trigger checks auth.uid() role; service role calls run as no-auth so has_role(NULL) is false.
-      // We therefore use SQL via rpc not available — workaround: temporarily SET LOCAL role admin? Cannot. Instead, the
-      // restrict_profile_updates trigger will block department/rank/status changes done by service role with no auth.uid().
-      // We mitigate by performing updates with the caller's JWT-scoped client so trigger sees has_role(caller, 'admin') etc.
-      // (Allowed for admin/oic/2ic for department; rank/status admin-only — caller already validated above.)
+
+      // 3. Updates via caller's JWT (so restrict_profile_updates trigger sees correct role)
       for (const u of toUpdate) {
         const { error } = await userClient.from("profiles").update(u.patch).eq("id", u.id);
         if (error) commitErrors.push({ staffId: u.staffId, error: error.message });
       }
+
+      // 4. Deactivate missing
+      for (const d of toDeactivate) {
+        const { error } = await userClient.from("profiles").update({ status: "inactive" }).eq("id", d.id);
+        if (error) commitErrors.push({ staffId: d.staffId, error: `deactivate: ${error.message}` });
+      }
+
+      // 5. Roster replace
+      if (rosterPlan.length > 0 && nightGuardShift && rosterDates.size > 0) {
+        const dates = Array.from(rosterDates).sort();
+        // Wipe night-guard assignments for the dates covered
+        const { error: delErr } = await admin
+          .from("shift_assignments")
+          .delete()
+          .eq("shift_id", nightGuardShift.id)
+          .in("start_date", dates);
+        if (delErr) {
+          commitErrors.push({ staffId: "(roster)", error: `wipe: ${delErr.message}` });
+        }
+
+        // Resolve any __pending__ profile_ids by re-querying newly created profiles
+        let resolvedPlan = rosterPlan;
+        const pendingIds = rosterPlan.filter((r) => r.profile_id.startsWith("__pending__:"));
+        if (pendingIds.length > 0) {
+          const sids = Array.from(new Set(pendingIds.map((r) => r.profile_id.split(":")[1])));
+          const { data: justCreated } = await admin
+            .from("profiles").select("id, staff_id").in("staff_id", sids);
+          const byStaff = new Map<string, string>();
+          for (const p of (justCreated ?? [])) byStaff.set(p.staff_id.toLowerCase(), p.id);
+          resolvedPlan = rosterPlan.map((r) => {
+            if (!r.profile_id.startsWith("__pending__:")) return r;
+            const sid = r.profile_id.split(":")[1];
+            const pid = byStaff.get(sid);
+            return pid ? { ...r, profile_id: pid } : r;
+          }).filter((r) => !r.profile_id.startsWith("__pending__:"));
+        }
+
+        // Dedup (same profile + date)
+        const seen = new Set<string>();
+        const finalRows = resolvedPlan.filter((r) => {
+          const k = `${r.profile_id}|${r.start_date}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+
+        for (let i = 0; i < finalRows.length; i += 500) {
+          const batch = finalRows.slice(i, i + 500);
+          const { error } = await admin.from("shift_assignments").insert(batch);
+          if (error) commitErrors.push({ staffId: "(roster)", error: `insert: ${error.message}` });
+        }
+      }
     }
 
-    // Resolve uploader name
+    // Resolve uploader name (for audit row)
     const { data: uploaderProfile } = await admin
       .from("profiles").select("first_name, last_name")
       .eq("user_id", user.id).maybeSingle();
@@ -234,27 +405,36 @@ Deno.serve(async (req) => {
       ? `${uploaderProfile.first_name ?? ""} ${uploaderProfile.last_name ?? ""}`.trim() || null
       : null;
 
-    // Audit row (always written, including dry-run for visibility)
     await admin.from("staff_bulk_upload_audit").insert({
       uploaded_by: user.id,
       uploaded_by_name: uploaderName,
       file_name: fileName,
-      total_rows: rows.length,
-      created_count: dryRun ? createdCount : createdCount - commitErrors.filter((e) => toCreate.find((c) => c.staff_id === e.staffId)).length,
-      updated_count: dryRun ? updatedCount : updatedCount - commitErrors.filter((e) => toUpdate.find((u) => u.staffId === e.staffId)).length,
+      total_rows: rows.length + rosterRows.length,
+      created_count: createdCount,
+      updated_count: updatedCount,
       skipped_count: skippedCount,
-      error_count: errorCount + commitErrors.length,
+      error_count: errorCount + commitErrors.length + rosterErrors.length,
       dry_run: dryRun,
       errors: [
         ...outcomes.filter((o) => o.status === "error").map((o) => ({ rowIndex: o.rowIndex, staffId: o.staffId, message: o.message })),
         ...commitErrors,
+        ...rosterErrors.map((e) => ({ rowIndex: e.rowIndex, staffId: e.staffId, message: `roster: ${e.message}` })),
       ],
-      summary: { fileName, dryRun, totals: { create: createdCount, update: updatedCount, skip: skippedCount, error: errorCount } },
+      summary: {
+        fileName, rosterFileName, dryRun,
+        deactivateMissing, snapshot: takeSnapshot, snapshotId,
+        totals: { create: createdCount, update: updatedCount, skip: skippedCount, error: errorCount, deactivate: deactivateCount, rosterRows: rosterPlan.length, rosterDates: rosterDates.size },
+      },
     });
 
     return new Response(JSON.stringify({
-      dryRun, totalRows: rows.length,
+      dryRun, totalRows: rows.length + rosterRows.length,
       createdCount, updatedCount, skippedCount, errorCount,
+      deactivateCount,
+      rosterPlanned: rosterPlan.length,
+      rosterDates: Array.from(rosterDates).sort(),
+      rosterErrors,
+      snapshotId,
       commitErrors,
       outcomes,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
