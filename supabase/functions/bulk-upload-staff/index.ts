@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
     const rosterPlan: { profile_id: string; shift_id: string; start_date: string; end_date: string }[] = [];
     const rosterErrors: { rowIndex: number; message: string; staffId: string | null }[] = [];
     const rosterDates = new Set<string>();
-    let rosterUnchanged = 0;
+    const _rosterUnchanged = 0;
     if (rosterRows.length > 0) {
       if (!nightGuardShift) {
         rosterErrors.push({ rowIndex: -1, message: "No 'Night Guard' shift defined in shifts table", staffId: null });
