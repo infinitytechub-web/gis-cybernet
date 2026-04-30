@@ -69,30 +69,30 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
       toast.error("Max 25 files per batch");
       return;
     }
-    const validated: Row[] = [];
-    for (const f of files) {
-      const res = await validateComplianceFile(f);
-      if (res.ok) {
-        validated.push({
-          id: crypto.randomUUID(),
-          file: res.file,
-          cleanName: res.cleanName,
-          ext: res.ext,
-          size: f.size,
-          status: "pending",
-        });
-      } else {
-        validated.push({
+    const validated: Row[] = await Promise.all(
+      files.map(async (f) => {
+        const res = await validateComplianceFile(f);
+        if (res.ok) {
+          return {
+            id: crypto.randomUUID(),
+            file: res.file,
+            cleanName: res.cleanName,
+            ext: res.ext,
+            size: f.size,
+            status: "pending" as const,
+          };
+        }
+        return {
           id: crypto.randomUUID(),
           file: f,
           cleanName: f.name,
           ext: "",
           size: f.size,
-          status: "error",
+          status: "error" as const,
           message: res.reason,
-        });
-      }
-    }
+        };
+      }),
+    );
     setRows((prev) => [...prev, ...validated]);
   }
 
