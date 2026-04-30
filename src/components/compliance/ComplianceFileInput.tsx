@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Paperclip, Loader2, X, Download } from "lucide-react";
 import { toast } from "sonner";
+import { validateComplianceFile } from "@/lib/compliance-file-validator";
 
 const BUCKET = "staff-documents";
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB
-const ALLOWED = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 export interface ComplianceFile {
   file_path: string | null;
@@ -30,25 +29,22 @@ export function ComplianceFileInput({ profileId, subfolder, value, onChange, upl
 
   async function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    if (inputRef.current) inputRef.current.value = "";
     if (!file) return;
     if (!profileId) {
       toast.error("Select staff member first");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      toast.error("File must be 10MB or smaller");
-      return;
-    }
-    if (!ALLOWED.includes(file.type)) {
-      toast.error("Only PDF, JPG, PNG, or WEBP allowed");
+    const check = await validateComplianceFile(file);
+    if (check.ok !== true) {
+      toast.error(check.reason);
       return;
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "bin";
-      const path = `${profileId}/${subfolder}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-        contentType: file.type,
+      const path = `${profileId}/${subfolder}/${Date.now()}-${crypto.randomUUID()}.${check.ext}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, check.file, {
+        contentType: check.detectedMime,
         upsert: false,
       });
       if (error) throw error;
