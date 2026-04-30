@@ -431,22 +431,16 @@ export default function GpsAddresses() {
     );
   }, [liveRecords, offlineMode]);
 
-  const records = useMemo<GpsRecord[]>(() => {
-    if (liveRecords.length > 0) {
-      if (hydratedFromCache) setHydratedFromCache(false);
-      if (cacheMeta) setCacheMeta(null);
-      return liveRecords;
-    }
-    // Fall back to cache when: offline mode is on AND (browser offline OR query errored).
-    if (!offlineMode) return liveRecords;
-    if (isOnline && !recordsError) return liveRecords;
+  // Compute the active record set + whether it came from the offline cache.
+  // Side-effects (state setters) are pushed to a follow-up useEffect so we
+  // never call setState during render.
+  const recordsResult = useMemo<{ rows: GpsRecord[]; fromCache: false } | { rows: GpsRecord[]; fromCache: true; cachedAt: string; count: number }>(() => {
+    if (liveRecords.length > 0) return { rows: liveRecords, fromCache: false };
+    if (!offlineMode) return { rows: liveRecords, fromCache: false };
+    if (isOnline && !recordsError) return { rows: liveRecords, fromCache: false };
     const cache = readOfflineCache();
-    if (!cache || cache.points.length === 0) return liveRecords;
-    if (!hydratedFromCache) setHydratedFromCache(true);
-    if (!cacheMeta || cacheMeta.cached_at !== cache.cached_at) {
-      setCacheMeta({ cached_at: cache.cached_at, count: cache.count });
-    }
-    return cache.points.map((p) => ({
+    if (!cache || cache.points.length === 0) return { rows: liveRecords, fromCache: false };
+    const rows: GpsRecord[] = cache.points.map((p) => ({
       id: p.id,
       source: p.source as SourceKey,
       raw_location: p.raw_location,
@@ -458,8 +452,22 @@ export default function GpsAddresses() {
       created_at: p.created_at,
       status: p.status,
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return { rows, fromCache: true, cachedAt: cache.cached_at, count: cache.count };
   }, [liveRecords, offlineMode, isOnline, recordsError]);
+
+  const records = recordsResult.rows;
+
+  useEffect(() => {
+    if (recordsResult.fromCache) {
+      if (!hydratedFromCache) setHydratedFromCache(true);
+      if (!cacheMeta || cacheMeta.cached_at !== recordsResult.cachedAt) {
+        setCacheMeta({ cached_at: recordsResult.cachedAt, count: recordsResult.count });
+      }
+    } else {
+      if (hydratedFromCache) setHydratedFromCache(false);
+      if (cacheMeta) setCacheMeta(null);
+    }
+  }, [recordsResult, hydratedFromCache, cacheMeta]);
 
   const filtered = useMemo(() => {
     let list = records;
