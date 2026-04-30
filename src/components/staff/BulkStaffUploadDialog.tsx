@@ -295,14 +295,21 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     return previewResult;
   }, [previewResult]);
 
+  type DeactStaff = { staffId: string; fullName: string; rank: string; designation: string; office: string };
   const deactivationsByDept = useMemo(() => {
-    if (!previewResult) return [] as { department: string; staff: { staffId: string; fullName: string }[] }[];
-    const map = new Map<string, { staffId: string; fullName: string }[]>();
+    if (!previewResult) return [] as { department: string; staff: DeactStaff[] }[];
+    const map = new Map<string, DeactStaff[]>();
     for (const o of previewResult.outcomes) {
       if (o.status !== "deactivate") continue;
       const dept = o.department ?? "—";
       if (!map.has(dept)) map.set(dept, []);
-      map.get(dept)!.push({ staffId: o.staffId ?? "—", fullName: o.fullName ?? "—" });
+      map.get(dept)!.push({
+        staffId: o.staffId ?? "—",
+        fullName: o.fullName ?? "—",
+        rank: o.rank ?? "—",
+        designation: o.designation ?? "—",
+        office: o.office ?? "—",
+      });
     }
     return Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
