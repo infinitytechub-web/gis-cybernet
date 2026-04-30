@@ -464,6 +464,75 @@ export default function CommandsAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Confirm order dialog */}
+      <Dialog open={confirmOrderOpen} onOpenChange={(o) => !savingOrder && setConfirmOrderOpen(o)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Confirm new command order</DialogTitle>
+            <DialogDescription>
+              {movedCount === 0
+                ? "No items have changed position."
+                : `${movedCount} command${movedCount === 1 ? "" : "s"} will move. Review the changes below before saving.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 md:grid-cols-2 max-h-[55vh] overflow-y-auto pr-1">
+            {/* Pinned column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Pin className="h-3.5 w-3.5 text-amber-600" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Pinned ({pinnedDiff.length})
+                </span>
+              </div>
+              {pinnedDiff.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic">No pinned items.</div>
+              ) : (
+                <ol className="space-y-1">
+                  {pinnedDiff.map((row) => (
+                    <DiffLine key={row.id} row={row} />
+                  ))}
+                </ol>
+              )}
+            </div>
+
+            {/* Unpinned column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="h-3.5 w-3.5 text-[hsl(220,80%,40%)]" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  All other commands ({unpinnedDiff.length})
+                </span>
+              </div>
+              {unpinnedDiff.length === 0 ? (
+                <div className="text-xs text-muted-foreground italic">No items.</div>
+              ) : (
+                <ol className="space-y-1">
+                  {unpinnedDiff.map((row) => (
+                    <DiffLine key={row.id} row={row} />
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground border-t pt-3">
+            <span className="flex items-center gap-1"><ArrowUp className="h-3 w-3 text-emerald-600" /> moved up</span>
+            <span className="flex items-center gap-1"><ArrowDown className="h-3 w-3 text-amber-600" /> moved down</span>
+            <span className="flex items-center gap-1"><Minus className="h-3 w-3" /> unchanged</span>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOrderOpen(false)} disabled={savingOrder}>
+              Cancel
+            </Button>
+            <Button onClick={persistOrder} disabled={savingOrder || movedCount === 0}>
+              <Save className="h-4 w-4 mr-1" /> {savingOrder ? "Saving…" : "Confirm & save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
