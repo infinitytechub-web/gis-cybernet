@@ -23,7 +23,7 @@ import {
   FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
-import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF } from "@/lib/interlink-export";
+import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
@@ -945,7 +945,7 @@ function AuditTab() {
     return true;
   });
 
-  function exportAudit(fmt: "csv" | "excel" | "pdf") {
+  function exportAudit(fmt: "csv" | "excel" | "pdf" | "json") {
     const rows = filtered.map((d: any) => ({
       created_at: d.created_at,
       subject: d.subject,
@@ -962,6 +962,7 @@ function AuditTab() {
     }));
     if (fmt === "csv") exportDispatchesCSV(rows);
     else if (fmt === "excel") exportDispatchesXLSX(rows);
+    else if (fmt === "json") exportDispatchesJSON(rows);
     else exportDispatchesPDF(rows);
     toast.success(`Exported ${rows.length} record${rows.length === 1 ? "" : "s"}`);
   }
@@ -983,6 +984,7 @@ function AuditTab() {
               <Button size="sm" variant="outline" onClick={() => exportAudit("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
               <Button size="sm" variant="outline" onClick={() => exportAudit("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
               <Button size="sm" variant="outline" onClick={() => exportAudit("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+              <Button size="sm" variant="outline" onClick={() => exportAudit("json")}><Download className="h-3.5 w-3.5 mr-1" />JSON</Button>
             </>
           ) : (
             <Badge variant="outline" className="text-[10px] text-muted-foreground self-center" title="Exporting dispatch logs is restricted to Admin and OIC.">

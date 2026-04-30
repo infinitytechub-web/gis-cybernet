@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShieldCheck, CheckCircle2, XCircle, Eye, ClipboardList, Loader2, Send, Download } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { exportApprovalsCSV, exportApprovalsXLSX, exportApprovalsPDF, type ApprovalExportRow } from "@/lib/interlink-export";
+import { exportApprovalsCSV, exportApprovalsXLSX, exportApprovalsPDF, exportApprovalsJSON, type ApprovalExportRow } from "@/lib/interlink-export";
 
 type StateFilter = "draft" | "review" | "approved" | "rejected";
 
@@ -112,7 +112,7 @@ export function ApprovalsTab() {
     draft: dispatches.filter((d: any) => d.workflow_state === "draft").length,
   }), [dispatches]);
 
-  async function exportLog(fmt: "csv" | "excel" | "pdf") {
+  async function exportLog(fmt: "csv" | "excel" | "pdf" | "json") {
     // Pull last 1000 actions joined with their dispatch subjects + performer name.
     const { data, error } = await supabase
       .from("interlink_approval_actions")
@@ -149,6 +149,7 @@ export function ApprovalsTab() {
 
     if (fmt === "csv") exportApprovalsCSV(rows);
     else if (fmt === "excel") exportApprovalsXLSX(rows);
+    else if (fmt === "json") exportApprovalsJSON(rows);
     else exportApprovalsPDF(rows);
     toast.success(`Exported ${rows.length} approval action${rows.length === 1 ? "" : "s"}`);
   }
@@ -169,6 +170,7 @@ export function ApprovalsTab() {
               <Button size="sm" variant="outline" onClick={() => exportLog("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
               <Button size="sm" variant="outline" onClick={() => exportLog("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
               <Button size="sm" variant="outline" onClick={() => exportLog("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+              <Button size="sm" variant="outline" onClick={() => exportLog("json")}><Download className="h-3.5 w-3.5 mr-1" />JSON</Button>
             </>
           ) : (
             <Badge variant="outline" className="text-[10px] text-muted-foreground" title="Exporting approval logs is restricted to Admin and OIC.">
