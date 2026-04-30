@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF } from "@/lib/interlink-export";
-import { toast } from "sonner";
 import {
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
