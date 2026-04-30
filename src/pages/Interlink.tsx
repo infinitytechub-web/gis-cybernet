@@ -907,7 +907,20 @@ function RecipientsTab({ userId }: { userId: string }) {
             <CardDescription>Reusable recipient groups</CardDescription>
           </div>
           <Dialog open={listDlg} onOpenChange={setListDlg}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New list</Button></DialogTrigger>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={seedListsFromContacts}
+                disabled={contacts.length === 0}
+                className="gap-1"
+                title="Generate one distribution list per scope from the contact directory"
+              >
+                <Sparkles className="h-4 w-4" />
+                Seed from contacts
+              </Button>
+              <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New list</Button></DialogTrigger>
+            </div>
             <DialogContent>
               <DialogHeader><DialogTitle>Create distribution list</DialogTitle></DialogHeader>
               <div className="space-y-3">
