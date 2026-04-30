@@ -84,6 +84,18 @@ export function exportDispatchesXLSX(rows: DispatchExportRow[]) {
   return { count: rows.length };
 }
 
+export function exportDispatchesJSON(rows: DispatchExportRow[]) {
+  const payload = {
+    exported_at: new Date().toISOString(),
+    record_count: rows.length,
+    type: "interlink_dispatches",
+    rows,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  downloadBlob(blob, `interlink_dispatches_${ts()}.json`);
+  return { count: rows.length };
+}
+
 export function exportDispatchesPDF(rows: DispatchExportRow[]) {
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   doc.setFontSize(14);
@@ -179,5 +191,18 @@ export function exportApprovalsPDF(rows: ApprovalExportRow[]) {
     },
   });
   doc.save(`interlink_approvals_${ts()}.pdf`);
+  return { count: rows.length };
+}
+
+export function exportApprovalsJSON(rows: ApprovalExportRow[]) {
+  const payload = {
+    exported_at: new Date().toISOString(),
+    record_count: rows.length,
+    type: "interlink_approval_actions",
+    notice: "Immutable hash-chained log — entry_hash truncated for display in CSV/PDF; JSON contains full hash.",
+    rows,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  downloadBlob(blob, `interlink_approvals_${ts()}.json`);
   return { count: rows.length };
 }
