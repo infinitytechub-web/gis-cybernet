@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.window", "esnext"],
+    "strict": true,
+    "noImplicitAny": true,
+    "allowJs": false
+  },
+  "lint": {
+    "include": ["index.ts"],
+    "rules": {
+      "tags": ["recommended"],
+      "exclude": ["no-explicit-any"]
+    }
+  },
+  "fmt": {
+    "include": ["index.ts"]
+  }
+}
