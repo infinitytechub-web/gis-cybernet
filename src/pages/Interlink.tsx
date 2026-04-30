@@ -748,6 +748,56 @@ function RecipientsTab({ userId }: { userId: string }) {
     },
   });
 
+  // ── Test Email
+  const [testDlg, setTestDlg] = useState<null | { id: string; name: string; emails: string[] }>(null);
+  const [testRecipient, setTestRecipient] = useState("");
+  const [testSelected, setTestSelected] = useState<Set<string>>(new Set());
+  const [testSending, setTestSending] = useState(false);
+
+  function openTestDlg(list: { id: string; name: string; member_emails: string[] }) {
+    const emails = (list.member_emails ?? []).filter(Boolean);
+    setTestDlg({ id: list.id, name: list.name, emails });
+    setTestSelected(new Set(emails.slice(0, 1)));
+    setTestRecipient("");
+  }
+
+  async function sendTestEmail() {
+    if (!testDlg) return;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const recipients = Array.from(testSelected);
+    const adhoc = testRecipient.trim().toLowerCase();
+    if (adhoc && emailRe.test(adhoc)) recipients.push(adhoc);
+    const dedup = Array.from(new Set(recipients.map((e) => e.toLowerCase())));
+    if (dedup.length === 0) return toast.error("Pick at least one recipient or enter an email");
+    if (dedup.length > 10) return toast.error("Test sends are capped at 10 recipients");
+
+    setTestSending(true);
+    try {
+      // Tiny 1x1 transparent PNG so the function's attachment requirement is satisfied
+      const TINY_PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+      const { data, error } = await supabase.functions.invoke("send-record-email", {
+        body: {
+          recipients: dedup,
+          bulk: true,
+          subject: `[TEST] Distribution list verification — ${testDlg.name}`,
+          message: `This is an automated test message sent from the Interlink System to verify delivery for the distribution list "${testDlg.name}".\n\nIf you received this email, delivery to your address is working.\n\n— GIS Cybernet`,
+          attachment_base64: TINY_PNG,
+          attachment_filename: "interlink-test.png",
+          record_kind: "interlink_test",
+        },
+      });
+      if (error) throw error;
+      const sent = (data as any)?.results?.filter?.((r: any) => r.status === "sent" || r.status === "queued").length ?? dedup.length;
+      const failed = (data as any)?.results?.filter?.((r: any) => r.status === "failed").length ?? 0;
+      toast.success(`Test email — ${sent} delivered${failed ? `, ${failed} failed` : ""}`);
+      setTestDlg(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Test send failed");
+    } finally {
+      setTestSending(false);
+    }
+  }
+
   async function saveContact() {
     if (!newContact.display_name || !newContact.email) return toast.error("Name and email required");
     const { error } = await supabase.from("interlink_contacts").insert({ ...newContact, created_by: userId });
