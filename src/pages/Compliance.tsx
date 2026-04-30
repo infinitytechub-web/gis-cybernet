@@ -19,6 +19,8 @@ import { FileText, Wrench, Award, Plus, Pencil, Trash2, AlertTriangle, CheckCirc
 import { format, differenceInDays, isPast } from "date-fns";
 import { toast } from "sonner";
 import { ComplianceFileInput, FileLinkButton, type ComplianceFile } from "@/components/compliance/ComplianceFileInput";
+import { ComplianceBulkUploadDialog } from "@/components/compliance/ComplianceBulkUploadDialog";
+import { Upload } from "lucide-react";
 
 function getExpiryBadge(expiryDate: string | null) {
   if (!expiryDate) return <Badge variant="outline" className="text-xs">No expiry</Badge>;
