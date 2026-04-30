@@ -40,15 +40,19 @@ type RowState = {
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** User IDs to pre-select when the dialog opens (e.g. from a quick search). */
+  preselectUserIds?: string[];
+  /** Optional pre-set target role. */
+  preselectRole?: AppRole;
 }
 
-export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
+export function BulkCommandRoleAssignDialog({ open, onOpenChange, preselectUserIds, preselectRole }: Props) {
   const { user } = useAuth();
   const qc = useQueryClient();
 
   const [step, setStep] = useState<Step>("select");
   const [search, setSearch] = useState("");
-  const [bulkRole, setBulkRole] = useState<AppRole>("supervisor");
+  const [bulkRole, setBulkRole] = useState<AppRole>(preselectRole ?? "supervisor");
   const [picked, setPicked] = useState<Map<string, boolean>>(new Map());
   const [rows, setRows] = useState<RowState[]>([]);
   const [running, setRunning] = useState(false);
@@ -66,6 +70,17 @@ export function BulkCommandRoleAssignDialog({ open, onOpenChange }: Props) {
     },
     enabled: open,
   });
+
+  // Apply pre-selection whenever the dialog opens with preselectUserIds.
+  useEffect(() => {
+    if (!open) return;
+    if (preselectRole) setBulkRole(preselectRole);
+    if (preselectUserIds && preselectUserIds.length) {
+      const m = new Map<string, boolean>();
+      preselectUserIds.forEach((id) => m.set(id, true));
+      setPicked(m);
+    }
+  }, [open, preselectUserIds, preselectRole]);
 
   const { data: currentRoles = new Map<string, AppRole>() } = useQuery({
     queryKey: ["bulk-cmd-current-roles"],
