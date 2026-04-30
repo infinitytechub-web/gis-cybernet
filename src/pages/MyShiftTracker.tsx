@@ -163,7 +163,7 @@ export default function MyShiftTracker() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, user_id, first_name, last_name, staff_id, shift_group")
+        .select("id, user_id, first_name, last_name, staff_id, shift_group, department_id")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
