@@ -905,6 +905,7 @@ function RecipientsTab({ userId }: { userId: string }) {
 
 function AuditTab() {
   const queryClient = useQueryClient();
+  const { canExportInterlinkLogs } = useAuth();
   const [search, setSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -977,9 +978,17 @@ function AuditTab() {
           <Button size="sm" variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["interlink-audit"] })}>
             <RefreshCw className="h-3.5 w-3.5 mr-1" />Refresh
           </Button>
-          <Button size="sm" variant="outline" onClick={() => exportAudit("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
-          <Button size="sm" variant="outline" onClick={() => exportAudit("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
-          <Button size="sm" variant="outline" onClick={() => exportAudit("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+          {canExportInterlinkLogs ? (
+            <>
+              <Button size="sm" variant="outline" onClick={() => exportAudit("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
+              <Button size="sm" variant="outline" onClick={() => exportAudit("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
+              <Button size="sm" variant="outline" onClick={() => exportAudit("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+            </>
+          ) : (
+            <Badge variant="outline" className="text-[10px] text-muted-foreground self-center" title="Exporting dispatch logs is restricted to Admin and OIC.">
+              Export: Admin/OIC only
+            </Badge>
+          )}
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
           <Input placeholder="Search subject, recipient, file…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
