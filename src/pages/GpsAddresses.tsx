@@ -1434,7 +1434,28 @@ export default function GpsAddresses() {
               <CardTitle className="text-lg">All GPS Addresses</CardTitle>
               <CardDescription>Click any address to open coordinates and live map view.</CardDescription>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              {/* Offline mode toggle — sticky across reloads. */}
+              <div className="flex items-center gap-2 rounded-md border px-2 py-1.5 bg-muted/30">
+                <WifiOff className={`h-3.5 w-3.5 ${offlineMode ? "text-primary" : "text-muted-foreground"}`} />
+                <Label htmlFor="gps-offline-mode" className="text-xs cursor-pointer select-none">
+                  Offline mode
+                </Label>
+                <Switch
+                  id="gps-offline-mode"
+                  checked={offlineMode}
+                  onCheckedChange={(v) => {
+                    setOfflineMode(v);
+                    if (!v) {
+                      clearOfflineCache();
+                      setHydratedFromCache(false);
+                      setCacheMeta(null);
+                    }
+                  }}
+                  aria-label="Toggle offline cache"
+                />
+              </div>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1445,6 +1466,42 @@ export default function GpsAddresses() {
                 <Cloud className="h-4 w-4" />
                 Cloud export
               </Button>
+
+              {/* Server-side paginated export — streams the full filtered set. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={!!serverExportBusy || !allowed}
+                  >
+                    {serverExportBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ServerCog className="h-4 w-4" />
+                    )}
+                    {serverExportBusy
+                      ? `Exporting… ${serverExportProgress.toLocaleString()}`
+                      : "Server export"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Server-side paginated export</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={!!serverExportBusy} onClick={() => runServerExport("csv")}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" /> Download as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!!serverExportBusy} onClick={() => runServerExport("pdf")}>
+                    <FileText className="h-4 w-4 mr-2" /> Download as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] font-normal text-muted-foreground">
+                    Honours source &amp; date filters · capped at {GPS_EXPORT_MAX_ROWS.toLocaleString()} rows
+                  </DropdownMenuLabel>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <ExportMenu
                 getData={buildExport}
                 label="Export GPS addresses"
@@ -1452,6 +1509,22 @@ export default function GpsAddresses() {
               />
             </div>
           </div>
+
+          {/* Offline / cache status banner. */}
+          {(hydratedFromCache || (offlineMode && !isOnline)) && (
+            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200 flex items-center gap-2">
+              <WifiOff className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                {hydratedFromCache
+                  ? `Showing ${cacheMeta?.count ?? 0} cached GPS points`
+                  : `Offline — live updates paused`}
+                {cacheMeta?.cached_at && (
+                  <> · cached {formatDistanceToNow(new Date(cacheMeta.cached_at), { addSuffix: true })}</>
+                )}
+                . Map remains available for fast viewing; data will refresh once the connection is restored.
+              </span>
+            </div>
+          )}
           <div className="flex gap-2 items-center flex-wrap mt-3">
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
