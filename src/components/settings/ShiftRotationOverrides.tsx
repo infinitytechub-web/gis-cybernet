@@ -48,7 +48,7 @@ interface AuditLog {
 }
 
 function parsePattern(input: string): { ok: true; pattern: string[] } | { ok: false; error: string } {
-  const parts = input.split(/[,\\s]+/).map((p) => p.trim().toUpperCase()).filter(Boolean);
+  const parts = input.split(/[,\s]+/).map((p) => p.trim().toUpperCase()).filter(Boolean);
   if (!parts.length) return { ok: false, error: "Pattern cannot be empty." };
   if (parts.length > 12) return { ok: false, error: "Pattern is limited to 12 entries." };
   for (const p of parts) {
