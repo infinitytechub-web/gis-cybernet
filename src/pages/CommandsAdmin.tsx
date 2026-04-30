@@ -329,8 +329,8 @@ export default function CommandsAdmin() {
               <Button variant="ghost" size="sm" onClick={resetOrder} disabled={savingOrder}>
                 <RotateCcw className="h-4 w-4 mr-1" /> Reset
               </Button>
-              <Button size="sm" onClick={persistOrder} disabled={savingOrder}>
-                <Save className="h-4 w-4 mr-1" /> {savingOrder ? "Saving…" : "Save order"}
+              <Button size="sm" onClick={() => setConfirmOrderOpen(true)} disabled={savingOrder}>
+                <Save className="h-4 w-4 mr-1" /> Save order
               </Button>
             </>
           )}
