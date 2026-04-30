@@ -151,7 +151,7 @@ function computePunctuality(checkInIso: string, dateKey: string, shift: { start_
 }
 
 export default function MyShiftTracker() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const now = useNow(1000);
   const [cursor, setCursor] = useState<Date>(() => new Date());
