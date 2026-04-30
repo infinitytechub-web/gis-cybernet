@@ -615,9 +615,21 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                     <span className="font-semibold text-destructive tabular-nums">{previewResult.errorCount}</span>
                   </div>
                 )}
+                {(previewResult.deactivateCount ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-orange-700 dark:text-orange-400">Will be deactivated (missing from file)</span>
+                    <span className="font-semibold text-orange-700 dark:text-orange-400 tabular-nums">{previewResult.deactivateCount}</span>
+                  </div>
+                )}
+                {(previewResult.rosterPlanned ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-purple-700 dark:text-purple-400">Night Guard roster rows ({previewResult.rosterDates?.length ?? 0} day(s) replaced)</span>
+                    <span className="font-semibold text-purple-700 dark:text-purple-400 tabular-nums">{previewResult.rosterPlanned}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm pt-1.5 border-t">
-                  <span className="font-medium">Total writes</span>
-                  <span className="font-bold tabular-nums">{previewResult.createdCount + previewResult.updatedCount}</span>
+                  <span className="font-medium">Snapshot before commit</span>
+                  <span className="font-bold tabular-nums">{takeSnapshot ? "yes" : "NO — irreversible"}</span>
                 </div>
               </div>
 
