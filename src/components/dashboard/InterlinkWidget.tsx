@@ -14,6 +14,7 @@ import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 
 export default function InterlinkWidget() {
   const { isAdminOrSupervisor } = useAuth();
+  const branding = useInterlinkBranding();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
