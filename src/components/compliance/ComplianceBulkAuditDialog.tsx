@@ -33,24 +33,28 @@ export function ComplianceBulkAuditDialog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("compliance_upload_audit")
-        .select(`
-          id, batch_id, performed_by, target_profile_id, kind,
-          file_name, file_size, file_type, outcome, error_message, created_at,
-          performer:profiles!compliance_upload_audit_performed_by_fkey(first_name, last_name, staff_id),
-          target:profiles!compliance_upload_audit_target_profile_id_fkey(first_name, last_name, staff_id)
-        `)
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(200);
-      if (error) {
-        // Fallback if no FK relation hint resolves: load without relations
-        const { data: plain } = await supabase
-          .from("compliance_upload_audit")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(200);
-        return (plain ?? []) as unknown as AuditRow[];
-      }
-      return (data ?? []) as unknown as AuditRow[];
+      if (error) throw error;
+      const base = (data ?? []) as unknown as AuditRow[];
+      const userIds = Array.from(new Set(base.map((r) => r.performed_by)));
+      const profileIds = Array.from(new Set(base.map((r) => r.target_profile_id)));
+      const [performersRes, targetsRes] = await Promise.all([
+        userIds.length
+          ? supabase.from("profiles").select("user_id, first_name, last_name, staff_id").in("user_id", userIds)
+          : Promise.resolve({ data: [] as any[] }),
+        profileIds.length
+          ? supabase.from("profiles").select("id, first_name, last_name, staff_id").in("id", profileIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const performerMap = new Map((performersRes.data ?? []).map((p: any) => [p.user_id, p]));
+      const targetMap = new Map((targetsRes.data ?? []).map((p: any) => [p.id, p]));
+      return base.map((r) => ({
+        ...r,
+        performer: performerMap.get(r.performed_by) ?? null,
+        target: targetMap.get(r.target_profile_id) ?? null,
+      }));
     },
   });
 
