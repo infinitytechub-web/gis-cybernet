@@ -36,7 +36,7 @@ export function ComplianceFileInput({ profileId, subfolder, value, onChange, upl
       return;
     }
     const check = await validateComplianceFile(file);
-    if (!check.ok) {
+    if (check.ok !== true) {
       toast.error(check.reason);
       return;
     }
