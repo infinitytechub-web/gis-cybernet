@@ -82,15 +82,21 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [rosterFileName, setRosterFileName] = useState<string | null>(null);
+  const [rosterRows, setRosterRows] = useState<{ staff_id: string; date: string }[]>([]);
+  const [deactivateMissing, setDeactivateMissing] = useState(true);
+  const [takeSnapshot, setTakeSnapshot] = useState(true);
   const [previewResult, setPreviewResult] = useState<RunResult | null>(null);
   const [committed, setCommitted] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
-  const CONFIRM_KEYWORD = "COMMIT";
+  const CONFIRM_KEYWORD = "OVERRIDE";
 
   const reset = () => {
-    setFileName(null); setRows([]); setPreviewResult(null); setCommitted(false); setFilter("all");
+    setFileName(null); setRows([]);
+    setRosterFileName(null); setRosterRows([]);
+    setPreviewResult(null); setCommitted(false); setFilter("all");
   };
 
   const exportDiffCsv = () => {
