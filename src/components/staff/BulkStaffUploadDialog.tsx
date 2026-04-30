@@ -757,14 +757,30 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                       {group.staff.length} staff
                     </Badge>
                   </div>
-                  <ul className="divide-y">
-                    {group.staff.map((s) => (
-                      <li key={s.staffId} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                        <span className="font-mono text-muted-foreground">{s.staffId}</span>
-                        <span className="font-medium">{s.fullName}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[640px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Staff ID</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Name</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Rank</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Designation</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Office</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.staff.map((s) => (
+                          <TableRow key={s.staffId}>
+                            <TableCell className="font-mono text-xs text-muted-foreground py-1.5">{s.staffId}</TableCell>
+                            <TableCell className="text-xs font-medium py-1.5">{s.fullName}</TableCell>
+                            <TableCell className="text-xs py-1.5">{s.rank}</TableCell>
+                            <TableCell className="text-xs py-1.5">{s.designation}</TableCell>
+                            <TableCell className="text-xs py-1.5">{s.office}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               ))}
             </div>
