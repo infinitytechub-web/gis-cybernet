@@ -234,14 +234,19 @@ Deno.serve(async (req) => {
     // ── Deactivate-missing planning ───────────────────────────────────
     const deptNameById = new Map<string, string>();
     for (const d of (deps ?? [])) deptNameById.set(d.id, d.name);
-    const toDeactivate: { id: string; staffId: string; from: string; fullName: string; department: string }[] = [];
+    const rankNameById = new Map<string, string>();
+    for (const r of (rks ?? [])) rankNameById.set(r.id, r.abbreviation || r.name);
+    const toDeactivate: { id: string; staffId: string; from: string; fullName: string; department: string; rank: string; designation: string; office: string }[] = [];
     if (deactivateMissing && rows.length > 0) {
       for (const p of (existing ?? [])) {
         if (p.status === "inactive") continue;
         if (!seenStaffIds.has(p.staff_id.toLowerCase())) {
           const deptName = p.department_id ? (deptNameById.get(p.department_id) ?? "—") : "—";
           const fullName = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—";
-          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status, fullName, department: deptName });
+          const rankName = p.rank_id ? (rankNameById.get(p.rank_id) ?? "—") : "—";
+          const designation = (p as any).training_designation || "—";
+          const office = (p as any).office || "—";
+          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status, fullName, department: deptName, rank: rankName, designation, office });
           outcomes.push({
             rowIndex: -1,
             staffId: p.staff_id,
@@ -249,6 +254,9 @@ Deno.serve(async (req) => {
             message: `Will be set to inactive (not in upload)`,
             fullName,
             department: deptName,
+            rank: rankName,
+            designation,
+            office,
           } as any);
         }
       }
@@ -403,6 +411,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 6. Auto-rollback: if commit failed AND we have a snapshot, restore it
+    const autoRollback: { attempted: boolean; succeeded: boolean; message?: string; profilesRestored?: number; nightGuardRestored?: number } = { attempted: false, succeeded: false };
+    if (!dryRun && commitErrors.length > 0 && snapshotId) {
+      autoRollback.attempted = true;
+      try {
+        const { data: rb, error: rbErr } = await admin.rpc("restore_staff_bulk_snapshot", { p_snapshot_id: snapshotId });
+        if (rbErr) {
+          autoRollback.message = rbErr.message;
+        } else {
+          autoRollback.succeeded = true;
+          autoRollback.profilesRestored = (rb as any)?.profiles_restored ?? 0;
+          autoRollback.nightGuardRestored = (rb as any)?.night_guard_restored ?? 0;
+        }
+      } catch (e) {
+        autoRollback.message = (e as Error).message;
+      }
+    }
+    }
+
     // Resolve uploader name (for audit row)
     const { data: uploaderProfile } = await admin
       .from("profiles").select("first_name, last_name")
@@ -430,6 +457,7 @@ Deno.serve(async (req) => {
         fileName, rosterFileName, dryRun,
         deactivateMissing, snapshot: takeSnapshot, snapshotId,
         totals: { create: createdCount, update: updatedCount, skip: skippedCount, error: errorCount, deactivate: deactivateCount, rosterRows: rosterPlan.length, rosterDates: rosterDates.size },
+        autoRollback,
       },
     });
 
@@ -442,6 +470,7 @@ Deno.serve(async (req) => {
       rosterErrors,
       snapshotId,
       commitErrors,
+      autoRollback,
       outcomes,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {

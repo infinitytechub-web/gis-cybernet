@@ -26,6 +26,17 @@ type Outcome = {
   diff?: Record<string, { from: any; to: any }>;
   fullName?: string;
   department?: string;
+  rank?: string;
+  designation?: string;
+  office?: string;
+};
+
+type AutoRollback = {
+  attempted: boolean;
+  succeeded: boolean;
+  message?: string;
+  profilesRestored?: number;
+  nightGuardRestored?: number;
 };
 
 type RunResult = {
@@ -41,6 +52,7 @@ type RunResult = {
   rosterErrors?: { rowIndex: number; message: string; staffId: string | null }[];
   snapshotId?: string | null;
   commitErrors: { staffId: string; error: string }[];
+  autoRollback?: AutoRollback;
   outcomes: Outcome[];
 };
 
@@ -205,13 +217,30 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
       setPreviewResult(res);
       setDeactAcknowledged(false);
       if (!dryRun) {
-        setCommitted(true);
+        const rb = res.autoRollback;
+        if (rb?.attempted) {
+          // Commit failed and rollback was triggered
+          setCommitted(false);
+          if (rb.succeeded) {
+            toast.error(
+              `Commit failed — automatically rolled back to snapshot. Restored ${rb.profilesRestored ?? 0} staff records and ${rb.nightGuardRestored ?? 0} roster rows. Errors: ${res.commitErrors.length}.`,
+              { duration: 10000 }
+            );
+          } else {
+            toast.error(
+              `Commit failed AND auto-rollback failed: ${rb.message ?? "unknown"}. Restore manually from the Snapshots tab.`,
+              { duration: 15000 }
+            );
+          }
+        } else {
+          setCommitted(true);
+          toast.success(`Override applied — ${res.createdCount} created · ${res.updatedCount} updated · ${res.deactivateCount ?? 0} deactivated · ${res.rosterPlanned ?? 0} roster rows`);
+        }
         qc.invalidateQueries({ queryKey: ["directory-staff"] });
         qc.invalidateQueries({ queryKey: ["bulk-staff-audit"] });
         qc.invalidateQueries({ queryKey: ["bulk-staff-snapshots"] });
         qc.invalidateQueries({ queryKey: ["night-guard-assignments"] });
         qc.invalidateQueries({ queryKey: ["shift-assignments"] });
-        toast.success(`Override applied — ${res.createdCount} created · ${res.updatedCount} updated · ${res.deactivateCount ?? 0} deactivated · ${res.rosterPlanned ?? 0} roster rows`);
       } else {
         toast.message(`Preview: ${res.createdCount} create · ${res.updatedCount} update · ${res.deactivateCount ?? 0} deactivate · ${res.rosterPlanned ?? 0} roster · ${res.errorCount} error`);
       }
@@ -266,14 +295,21 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     return previewResult;
   }, [previewResult]);
 
+  type DeactStaff = { staffId: string; fullName: string; rank: string; designation: string; office: string };
   const deactivationsByDept = useMemo(() => {
-    if (!previewResult) return [] as { department: string; staff: { staffId: string; fullName: string }[] }[];
-    const map = new Map<string, { staffId: string; fullName: string }[]>();
+    if (!previewResult) return [] as { department: string; staff: DeactStaff[] }[];
+    const map = new Map<string, DeactStaff[]>();
     for (const o of previewResult.outcomes) {
       if (o.status !== "deactivate") continue;
       const dept = o.department ?? "—";
       if (!map.has(dept)) map.set(dept, []);
-      map.get(dept)!.push({ staffId: o.staffId ?? "—", fullName: o.fullName ?? "—" });
+      map.get(dept)!.push({
+        staffId: o.staffId ?? "—",
+        fullName: o.fullName ?? "—",
+        rank: o.rank ?? "—",
+        designation: o.designation ?? "—",
+        office: o.office ?? "—",
+      });
     }
     return Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
@@ -721,14 +757,30 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                       {group.staff.length} staff
                     </Badge>
                   </div>
-                  <ul className="divide-y">
-                    {group.staff.map((s) => (
-                      <li key={s.staffId} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                        <span className="font-mono text-muted-foreground">{s.staffId}</span>
-                        <span className="font-medium">{s.fullName}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[640px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Staff ID</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Name</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Rank</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Designation</TableHead>
+                          <TableHead className="text-[10px] uppercase tracking-wide h-8">Office</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.staff.map((s) => (
+                          <TableRow key={s.staffId}>
+                            <TableCell className="font-mono text-xs text-muted-foreground py-1.5">{s.staffId}</TableCell>
+                            <TableCell className="text-xs font-medium py-1.5">{s.fullName}</TableCell>
+                            <TableCell className="text-xs py-1.5">{s.rank}</TableCell>
+                            <TableCell className="text-xs py-1.5">{s.designation}</TableCell>
+                            <TableCell className="text-xs py-1.5">{s.office}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
               ))}
             </div>
