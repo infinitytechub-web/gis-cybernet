@@ -23,6 +23,7 @@ import {
   MapPin, Search, Lock, Activity, Globe2, Crosshair, Package, Shield,
   ExternalLink, Radio, Navigation as NavIcon, Sparkles, Cloud, Copy, Check, Loader2, Timer,
   MoreHorizontal, Eye, Pencil, Trash2, Satellite, ShieldAlert, Printer,
+  WifiOff, ServerCog,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +44,20 @@ import {
   buildAuditQrDataUrl,
   buildAuditVerificationUrl,
 } from "@/lib/official-stamp";
+import { Switch } from "@/components/ui/switch";
+import {
+  isOfflineModeEnabled,
+  setOfflineModeEnabled,
+  readOfflineCache,
+  writeOfflineCache,
+  clearOfflineCache,
+  OFFLINE_CACHE_MAX,
+} from "@/lib/gps-offline-cache";
+import {
+  exportGpsPointsServerSide,
+  GPS_EXPORT_MAX_ROWS,
+  type GpsExportSource,
+} from "@/lib/gps-server-export";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
@@ -184,6 +199,34 @@ export default function GpsAddresses() {
   const [deleting, setDeleting] = useState<GpsRecord | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
+  // ===== Offline mode =====
+  // Persists the most recent points to localStorage so the map keeps working
+  // when the connection drops. Toggle is sticky across reloads. The hydrated
+  // flag flips on when we render rows from the cache instead of the network.
+  const [offlineMode, setOfflineMode] = useState<boolean>(() => isOfflineModeEnabled());
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  const [hydratedFromCache, setHydratedFromCache] = useState(false);
+  const [cacheMeta, setCacheMeta] = useState<{ cached_at: string; count: number } | null>(null);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  useEffect(() => { setOfflineModeEnabled(offlineMode); }, [offlineMode]);
+
+  // ===== Server-side paginated export =====
+  const [serverExportBusy, setServerExportBusy] = useState<null | "csv" | "pdf">(null);
+  const [serverExportProgress, setServerExportProgress] = useState<number>(0);
+
   // ===== Online-tracking authorization gate =====
   // Live online map tiles (OpenStreetMap / Carto) are only loaded after the
   // operator confirms an explicit cyber-intel tracking authorization. The
@@ -291,7 +334,7 @@ export default function GpsAddresses() {
     return () => { supabase.removeChannel(channel); };
   }, [allowed, qc]);
 
-  const { data: records = [], isLoading } = useQuery({
+  const { data: liveRecords = [], isLoading, isError: recordsError } = useQuery({
     queryKey: ["gps-addresses"],
     enabled: allowed,
     refetchInterval: 60_000,
@@ -364,6 +407,67 @@ export default function GpsAddresses() {
       return out;
     },
   });
+
+  // ===== Offline cache integration =====
+  // When the live query returns rows, persist a slim copy. When the user is
+  // offline (or the live query failed) and offline mode is enabled, hydrate
+  // from localStorage so the map and table remain usable.
+  useEffect(() => {
+    if (!offlineMode) return;
+    if (liveRecords.length === 0) return;
+    writeOfflineCache(
+      liveRecords.slice(0, OFFLINE_CACHE_MAX).map((r) => ({
+        source: r.source,
+        id: r.id,
+        raw_location: r.raw_location,
+        digital_address: r.digital_address,
+        lat: r.lat,
+        lng: r.lng,
+        context: r.context,
+        reference: r.reference,
+        status: r.status ?? null,
+        created_at: r.created_at,
+      })),
+    );
+  }, [liveRecords, offlineMode]);
+
+  // Compute the active record set + whether it came from the offline cache.
+  // Side-effects (state setters) are pushed to a follow-up useEffect so we
+  // never call setState during render.
+  const recordsResult = useMemo<{ rows: GpsRecord[]; fromCache: false } | { rows: GpsRecord[]; fromCache: true; cachedAt: string; count: number }>(() => {
+    if (liveRecords.length > 0) return { rows: liveRecords, fromCache: false };
+    if (!offlineMode) return { rows: liveRecords, fromCache: false };
+    if (isOnline && !recordsError) return { rows: liveRecords, fromCache: false };
+    const cache = readOfflineCache();
+    if (!cache || cache.points.length === 0) return { rows: liveRecords, fromCache: false };
+    const rows: GpsRecord[] = cache.points.map((p) => ({
+      id: p.id,
+      source: p.source as SourceKey,
+      raw_location: p.raw_location,
+      digital_address: p.digital_address,
+      lat: p.lat,
+      lng: p.lng,
+      context: p.context,
+      reference: p.reference,
+      created_at: p.created_at,
+      status: p.status,
+    }));
+    return { rows, fromCache: true, cachedAt: cache.cached_at, count: cache.count };
+  }, [liveRecords, offlineMode, isOnline, recordsError]);
+
+  const records = recordsResult.rows;
+
+  useEffect(() => {
+    if (recordsResult.fromCache) {
+      if (!hydratedFromCache) setHydratedFromCache(true);
+      if (!cacheMeta || cacheMeta.cached_at !== recordsResult.cachedAt) {
+        setCacheMeta({ cached_at: recordsResult.cachedAt, count: recordsResult.count });
+      }
+    } else {
+      if (hydratedFromCache) setHydratedFromCache(false);
+      if (cacheMeta) setCacheMeta(null);
+    }
+  }, [recordsResult, hydratedFromCache, cacheMeta]);
 
   const filtered = useMemo(() => {
     let list = records;
@@ -841,6 +945,8 @@ export default function GpsAddresses() {
     const filterParts: string[] = [];
     if (sourceFilter !== "all") filterParts.push(`Source: ${SOURCE_META[sourceFilter as SourceKey].label}`);
     if (search.trim()) filterParts.push(`Search: "${search.trim()}"`);
+    if (dateFrom) filterParts.push(`From: ${dateFrom}`);
+    if (dateTo) filterParts.push(`To: ${dateTo}`);
     const subtitle = `Command Vault · ${filtered.length} of ${records.length} GPS records${filterParts.length ? ` · ${filterParts.join(" · ")}` : ""}`;
     return {
       title: "GPS Address Register",
@@ -850,6 +956,55 @@ export default function GpsAddresses() {
       subtitle,
     };
   };
+
+  // ===== Server-side paginated export =====
+  // Streams the full filtered set from `get_gps_points` (ignoring the 500/source
+  // client cache) using keyset pagination, then exports to CSV/PDF. Honours
+  // the source + date filters from the toolbar. Inventory points are NOT
+  // exported here — the RPC only covers Operations / Enforcement / Cyber.
+  const runServerExport = async (fmt: "csv" | "pdf") => {
+    if (!allowed) return;
+    setServerExportBusy(fmt);
+    setServerExportProgress(0);
+    try {
+      const sources: GpsExportSource[] | undefined =
+        sourceFilter === "operations" ||
+        sourceFilter === "enforcement_operations" ||
+        sourceFilter === "cyber_incidents"
+          ? [sourceFilter]
+          : undefined;
+      // Inventory is excluded from the server feed — warn if it's the active filter.
+      if (sourceFilter === "inventory_items") {
+        toast({
+          title: "Server export not available for Inventory",
+          description: "Inventory GPS points are not part of the secured GPS feed. Use the standard export instead.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const fromIso = dateFrom ? new Date(`${dateFrom}T00:00:00`).toISOString() : null;
+      const toIso = dateTo ? new Date(`${dateTo}T23:59:59.999`).toISOString() : null;
+      const { rowCount, capped } = await exportGpsPointsServerSide(
+        fmt,
+        { sources, from: fromIso, to: toIso },
+        ({ fetched }) => setServerExportProgress(fetched),
+      );
+      toast({
+        title: `Server export ready · ${fmt.toUpperCase()}`,
+        description: `${rowCount.toLocaleString()} GPS points exported${capped ? ` (capped at ${GPS_EXPORT_MAX_ROWS.toLocaleString()})` : ""}.`,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Server export failed",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setServerExportBusy(null);
+      setServerExportProgress(0);
+    }
+  };
+
 
   // ===== Cloud export (S3-style storage + time-limited signed URL) =====
   const [cloudOpen, setCloudOpen] = useState(false);
@@ -1287,7 +1442,28 @@ export default function GpsAddresses() {
               <CardTitle className="text-lg">All GPS Addresses</CardTitle>
               <CardDescription>Click any address to open coordinates and live map view.</CardDescription>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              {/* Offline mode toggle — sticky across reloads. */}
+              <div className="flex items-center gap-2 rounded-md border px-2 py-1.5 bg-muted/30">
+                <WifiOff className={`h-3.5 w-3.5 ${offlineMode ? "text-primary" : "text-muted-foreground"}`} />
+                <Label htmlFor="gps-offline-mode" className="text-xs cursor-pointer select-none">
+                  Offline mode
+                </Label>
+                <Switch
+                  id="gps-offline-mode"
+                  checked={offlineMode}
+                  onCheckedChange={(v) => {
+                    setOfflineMode(v);
+                    if (!v) {
+                      clearOfflineCache();
+                      setHydratedFromCache(false);
+                      setCacheMeta(null);
+                    }
+                  }}
+                  aria-label="Toggle offline cache"
+                />
+              </div>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1298,6 +1474,42 @@ export default function GpsAddresses() {
                 <Cloud className="h-4 w-4" />
                 Cloud export
               </Button>
+
+              {/* Server-side paginated export — streams the full filtered set. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={!!serverExportBusy || !allowed}
+                  >
+                    {serverExportBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ServerCog className="h-4 w-4" />
+                    )}
+                    {serverExportBusy
+                      ? `Exporting… ${serverExportProgress.toLocaleString()}`
+                      : "Server export"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Server-side paginated export</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={!!serverExportBusy} onClick={() => runServerExport("csv")}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" /> Download as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={!!serverExportBusy} onClick={() => runServerExport("pdf")}>
+                    <FileText className="h-4 w-4 mr-2" /> Download as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-[10px] font-normal text-muted-foreground">
+                    Honours source &amp; date filters · capped at {GPS_EXPORT_MAX_ROWS.toLocaleString()} rows
+                  </DropdownMenuLabel>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <ExportMenu
                 getData={buildExport}
                 label="Export GPS addresses"
@@ -1305,6 +1517,22 @@ export default function GpsAddresses() {
               />
             </div>
           </div>
+
+          {/* Offline / cache status banner. */}
+          {(hydratedFromCache || (offlineMode && !isOnline)) && (
+            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200 flex items-center gap-2">
+              <WifiOff className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                {hydratedFromCache
+                  ? `Showing ${cacheMeta?.count ?? 0} cached GPS points`
+                  : `Offline — live updates paused`}
+                {cacheMeta?.cached_at && (
+                  <> · cached {formatDistanceToNow(new Date(cacheMeta.cached_at), { addSuffix: true })}</>
+                )}
+                . Map remains available for fast viewing; data will refresh once the connection is restored.
+              </span>
+            </div>
+          )}
           <div className="flex gap-2 items-center flex-wrap mt-3">
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
