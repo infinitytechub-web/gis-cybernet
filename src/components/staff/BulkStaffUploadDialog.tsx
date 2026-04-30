@@ -505,6 +505,10 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                     return;
                   }
                   setConfirmText("");
+                  if (deactivateMissing && (previewResult.deactivateCount ?? 0) > 0 && !deactAcknowledged) {
+                    setDeactConfirmOpen(true);
+                    return;
+                  }
                   setConfirmOpen(true);
                 }}
                 disabled={(!rows.length && !rosterRows.length) || runMut.isPending || committed}
