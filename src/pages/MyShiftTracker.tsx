@@ -51,6 +51,7 @@ import {
 import { ExportMenu } from "@/components/ui/export-menu";
 import { ShiftChangeRequestPanel } from "@/components/shifts/ShiftChangeRequestPanel";
 import { AttendanceEditRequestPanel } from "@/components/shifts/AttendanceEditRequestPanel";
+import { MyShiftRotationCalendar } from "@/components/shifts/MyShiftRotationCalendar";
 import { cn } from "@/lib/utils";
 
 type WindowSettings = {
@@ -678,6 +679,13 @@ export default function MyShiftTracker() {
           )}
         </CardContent>
       </Card>
+
+      {/* Automated 4-day rotation self-view (3D perspective) */}
+      <MyShiftRotationCalendar
+        staffGroup={profile?.shift_group ?? null}
+        staffName={`${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || undefined}
+      />
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">

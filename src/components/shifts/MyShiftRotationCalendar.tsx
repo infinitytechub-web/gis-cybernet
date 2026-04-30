@@ -1,0 +1,268 @@
+import { useMemo, useState } from "react";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isToday,
+  addMonths,
+  subMonths,
+} from "date-fns";
+import { ChevronLeft, ChevronRight, Sparkles, Box } from "lucide-react";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  getShiftGroupForDate,
+  GROUP_COLORS,
+  SHIFT_GROUPS,
+  type ShiftGroup,
+} from "@/lib/shift-rotation";
+
+interface Props {
+  /** Staff member's assigned shift group (A/B/C/D). */
+  staffGroup: string | null | undefined;
+  /** Optional staff name for the header chip. */
+  staffName?: string;
+}
+
+/**
+ * Self-view rotation calendar driven by the published Amasaman 4-day rotation.
+ * Renders a 3D perspective grid where the staff member's on-duty days lift
+ * forward and glow, while off-duty days recede.
+ */
+export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
+  const [cursor, setCursor] = useState<Date>(() => new Date());
+  const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | null;
+
+  const monthStart = startOfMonth(cursor);
+  const monthEnd = endOfMonth(cursor);
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sun-start, matches PDF
+  const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [gridStart, gridEnd]);
+
+  const onDutyDates = useMemo(() => {
+    if (!myGroup) return [] as Date[];
+    return days.filter((d) => isSameMonth(d, cursor) && getShiftGroupForDate(d) === myGroup);
+  }, [days, cursor, myGroup]);
+
+  const nextOnDuty = useMemo(() => {
+    if (!myGroup) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 8; i++) {
+      const d = new Date(today.getTime() + i * 86400000);
+      if (getShiftGroupForDate(d) === myGroup) return d;
+    }
+    return null;
+  }, [myGroup]);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Box className="h-4 w-4 text-primary" />
+              My Rotation — {format(cursor, "MMMM yyyy")}
+            </CardTitle>
+            <CardDescription>
+              Auto-generated from the Amasaman 2026 4-day rotation (A → B → C → D).
+              {myGroup ? (
+                <> Days where <strong>Group {myGroup}</strong> is on duty are lifted toward you.</>
+              ) : (
+                <> No shift group is assigned to your profile yet — ask an admin to set one.</>
+              )}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {myGroup && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-xs px-2 py-1 border",
+                  GROUP_COLORS[myGroup].bg,
+                  GROUP_COLORS[myGroup].text,
+                  GROUP_COLORS[myGroup].border,
+                )}
+              >
+                {staffName ? `${staffName} · ` : ""}Group {myGroup}
+              </Badge>
+            )}
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" onClick={() => setCursor((c) => subMonths(c, 1))} aria-label="Previous month">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
+                Today
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setCursor((c) => addMonths(c, 1))} aria-label="Next month">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Summary strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+          <div className="rounded-md border bg-muted/30 p-2">
+            <div className="text-muted-foreground">On-duty days this month</div>
+            <div className="text-lg font-semibold tabular-nums">
+              {onDutyDates.length}
+              <span className="text-xs font-normal text-muted-foreground"> / {days.filter((d) => isSameMonth(d, cursor)).length}</span>
+            </div>
+          </div>
+          <div className="rounded-md border bg-muted/30 p-2">
+            <div className="text-muted-foreground">Next on-duty</div>
+            <div className="text-lg font-semibold">
+              {nextOnDuty ? format(nextOnDuty, "EEE, dd MMM") : "—"}
+            </div>
+          </div>
+          <div className="rounded-md border bg-muted/30 p-2 col-span-2 md:col-span-2">
+            <div className="text-muted-foreground mb-1">Rotation legend</div>
+            <div className="flex flex-wrap gap-2">
+              {SHIFT_GROUPS.map((g) => (
+                <span
+                  key={g}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
+                    GROUP_COLORS[g].bg,
+                    GROUP_COLORS[g].text,
+                    GROUP_COLORS[g].border,
+                    myGroup === g && "ring-2 ring-offset-1 ring-primary",
+                  )}
+                >
+                  <span className={cn("h-1.5 w-1.5 rounded-full", GROUP_COLORS[g].solid)} />
+                  Group {g}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 3D perspective grid */}
+        <div
+          className="rounded-lg border bg-gradient-to-b from-muted/40 to-background p-3 md:p-4 overflow-x-auto"
+          style={{ perspective: "1100px" }}
+        >
+          <div
+            className="min-w-[700px] mx-auto"
+            style={{
+              transform: "rotateX(14deg)",
+              transformStyle: "preserve-3d",
+              transformOrigin: "center top",
+            }}
+          >
+            {/* Weekday header */}
+            <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="text-[11px] font-medium text-muted-foreground text-center py-1">
+                  {d}
+                </div>
+              ))}
+            </div>
+
+            {Array.from({ length: days.length / 7 }).map((_, wIdx) => {
+              const weekDays = days.slice(wIdx * 7, wIdx * 7 + 7);
+              return (
+                <div key={wIdx} className="grid grid-cols-7 gap-1.5 mb-1.5">
+                  {weekDays.map((d) => {
+                    const group = getShiftGroupForDate(d);
+                    const inMonth = isSameMonth(d, cursor);
+                    const today = isToday(d);
+                    const onDuty = !!myGroup && group === myGroup;
+                    const colors = GROUP_COLORS[group];
+
+                    return (
+                      <div
+                        key={d.toISOString()}
+                        className={cn(
+                          "relative h-20 md:h-24 rounded-lg border p-2 flex flex-col justify-between transition-all duration-200",
+                          inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
+                          onDuty && [colors.bg, colors.border, "border-2 shadow-lg"],
+                          !onDuty && "opacity-95",
+                          today && "ring-2 ring-primary ring-offset-1",
+                        )}
+                        style={{
+                          transform: onDuty
+                            ? "translateZ(28px) translateY(-2px)"
+                            : "translateZ(0px)",
+                          boxShadow: onDuty
+                            ? "0 18px 28px -16px hsl(var(--primary) / 0.45), 0 6px 12px -8px rgb(0 0 0 / 0.25)"
+                            : "0 1px 2px rgb(0 0 0 / 0.04)",
+                          transformStyle: "preserve-3d",
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={cn("text-sm font-semibold tabular-nums", today && "text-primary")}>
+                            {format(d, "d")}
+                          </span>
+                          <span
+                            className={cn(
+                              "inline-flex items-center justify-center text-[10px] font-bold rounded-full h-5 w-5 border",
+                              colors.bg,
+                              colors.text,
+                              colors.border,
+                            )}
+                            aria-label={`Group ${group}`}
+                          >
+                            {group}
+                          </span>
+                        </div>
+
+                        {onDuty && (
+                          <div className="flex items-center gap-1 text-[10px] font-medium">
+                            <Sparkles className={cn("h-3 w-3", colors.text)} />
+                            <span className={colors.text}>On duty</span>
+                          </div>
+                        )}
+
+                        {today && (
+                          <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 shadow">
+                            TODAY
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Listing of upcoming on-duty days for accessibility / quick scan */}
+        {myGroup && onDutyDates.length > 0 && (
+          <div className="rounded-md border bg-muted/20 p-3">
+            <div className="text-xs font-medium text-muted-foreground mb-1.5">
+              Your on-duty days in {format(cursor, "MMMM")}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {onDutyDates.map((d) => (
+                <span
+                  key={d.toISOString()}
+                  className={cn(
+                    "text-xs font-mono px-2 py-0.5 rounded border",
+                    GROUP_COLORS[myGroup].bg,
+                    GROUP_COLORS[myGroup].text,
+                    GROUP_COLORS[myGroup].border,
+                    isToday(d) && "ring-1 ring-primary",
+                  )}
+                >
+                  {format(d, "EEE dd")}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
