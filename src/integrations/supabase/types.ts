@@ -4821,6 +4821,54 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_bulk_upload_audit: {
+        Row: {
+          created_count: number
+          dry_run: boolean
+          error_count: number
+          errors: Json
+          file_name: string | null
+          id: string
+          skipped_count: number
+          summary: Json
+          total_rows: number
+          updated_count: number
+          uploaded_at: string
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          created_count?: number
+          dry_run?: boolean
+          error_count?: number
+          errors?: Json
+          file_name?: string | null
+          id?: string
+          skipped_count?: number
+          summary?: Json
+          total_rows?: number
+          updated_count?: number
+          uploaded_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          created_count?: number
+          dry_run?: boolean
+          error_count?: number
+          errors?: Json
+          file_name?: string | null
+          id?: string
+          skipped_count?: number
+          summary?: Json
+          total_rows?: number
+          updated_count?: number
+          uploaded_at?: string
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: []
+      }
       staff_documents: {
         Row: {
           created_at: string
