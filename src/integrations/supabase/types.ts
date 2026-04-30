@@ -595,6 +595,42 @@ export type Database = {
           },
         ]
       }
+      confidentiality_commands: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          pinned: boolean
+          slug: string
+          sort_hint: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          pinned?: boolean
+          slug: string
+          sort_hint?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          pinned?: boolean
+          slug?: string
+          sort_hint?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cyber_incidents: {
         Row: {
           affected_systems: string | null

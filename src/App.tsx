@@ -57,6 +57,8 @@ const CommandVault = lazy(() => import("./pages/CommandVault"));
 const RecycleBin = lazy(() => import("./pages/RecycleBin"));
 const GpsAddresses = lazy(() => import("./pages/GpsAddresses"));
 const Interlink = lazy(() => import("./pages/Interlink"));
+const CommandsAdmin = lazy(() => import("./pages/CommandsAdmin"));
+const CommandWorkspace = lazy(() => import("./pages/CommandWorkspace"));
 
 const queryClient = new QueryClient();
 
@@ -131,6 +133,8 @@ function App() {
          <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />
           <Route path="/recycle-bin" element={<ProtectedRoute><Layout><RecycleBin /></Layout></ProtectedRoute>} />
           <Route path="/interlink" element={<ProtectedRoute><Layout><Interlink /></Layout></ProtectedRoute>} />
+          <Route path="/commands" element={<ProtectedRoute><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/command/:slug" element={<ProtectedRoute><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
