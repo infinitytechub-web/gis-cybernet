@@ -53,6 +53,7 @@ const Ipse = lazy(() => import("./pages/Ipse"));
 const CommandVault = lazy(() => import("./pages/CommandVault"));
 const RecycleBin = lazy(() => import("./pages/RecycleBin"));
 const GpsAddresses = lazy(() => import("./pages/GpsAddresses"));
+const Interlink = lazy(() => import("./pages/Interlink"));
 
 const queryClient = new QueryClient();
 
@@ -123,6 +124,7 @@ function App() {
          <Route path="/gps-addresses" element={<Navigate to="/command-vault/gps" replace />} />
          <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />
           <Route path="/recycle-bin" element={<ProtectedRoute><Layout><RecycleBin /></Layout></ProtectedRoute>} />
+          <Route path="/interlink" element={<ProtectedRoute><Layout><Interlink /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
