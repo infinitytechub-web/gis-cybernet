@@ -684,6 +684,8 @@ export default function MyShiftTracker() {
       <MyShiftRotationCalendar
         staffGroup={profile?.shift_group ?? null}
         staffName={`${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || undefined}
+        profileId={profile?.id ?? null}
+        staffId={profile?.staff_id ?? null}
       />
 
       <Card>
