@@ -96,7 +96,7 @@ export default function Interlink() {
               <Sparkles className="h-4 w-4 opacity-80" />
             </h1>
             <p className="text-sm text-white/90">
-              Command-tier dispatch hub — Intranet · Internet · Extranet · Departments · Other commands
+              Command-tier dispatch hub: Intranet · Internet · Extranet
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">
