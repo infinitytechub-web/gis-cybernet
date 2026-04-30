@@ -117,10 +117,16 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
     const { data: { user } } = await supabase.auth.getUser();
     const batchId = crypto.randomUUID();
     const queue = rows.filter((r) => r.status === "pending");
-    const auditEntries: any[] = [];
     let done = 0;
     let okCount = 0;
     let failCount = 0;
+
+    // Write each audit row immediately (instead of batching at the end) so the
+    // realtime subscription on the audit dialog reflects per-file outcomes live.
+    async function writeAudit(entry: Record<string, unknown>) {
+      const { error } = await supabase.from("compliance_upload_audit").insert(entry as any);
+      if (error) console.warn("compliance audit insert failed", error);
+    }
 
     for (const row of queue) {
       setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "uploading" } : r)));
@@ -169,7 +175,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
         }
 
         okCount++;
-        auditEntries.push({
+        await writeAudit({
           batch_id: batchId,
           performed_by: user?.id,
           target_profile_id: profileId,
@@ -189,7 +195,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
         if (storedPath) {
           await supabase.storage.from(BUCKET).remove([storedPath]).catch(() => {});
         }
-        auditEntries.push({
+        await writeAudit({
           batch_id: batchId,
           performed_by: user?.id,
           target_profile_id: profileId,
@@ -208,19 +214,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
       setProgress(Math.round((done / queue.length) * 100));
     }
 
-    if (auditEntries.length > 0) {
-      // Batch insert in chunks of 50 to honour project conventions
-      for (let i = 0; i < auditEntries.length; i += 50) {
-        await supabase
-          .from("compliance_upload_audit")
-          .insert(auditEntries.slice(i, i + 50))
-          .then(({ error }) => {
-            if (error) console.warn("compliance audit insert failed", error);
-          });
-      }
-      qc.invalidateQueries({ queryKey: ["compliance-upload-audit"] });
-    }
-
+    qc.invalidateQueries({ queryKey: ["compliance-upload-audit"] });
     qc.invalidateQueries({ queryKey: [kind === "documents" ? "staff-documents" : "certifications"] });
     setRunning(false);
     if (failCount === 0) {
@@ -336,7 +330,23 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             </div>
           )}
 
-          {running && <Progress value={progress} className="h-2" />}
+          {(running || completed > 0 || errored > 0) && (
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">
+                  {running ? "Uploading…" : "Last batch"}
+                </span>
+                <span className="tabular-nums text-muted-foreground">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+              <div className="flex flex-wrap gap-3 text-xs">
+                <span className="text-muted-foreground">{pending} pending</span>
+                <span className="text-emerald-700 font-medium">{completed} uploaded</span>
+                {errored > 0 && <span className="text-destructive font-medium">{errored} failed</span>}
+                <span className="ml-auto text-muted-foreground">Audit log updates instantly</span>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-2 pt-1">
             <div className="text-xs text-muted-foreground">
