@@ -261,7 +261,7 @@ export function AppSidebar() {
         {renderGroup("Personnel Management", personnelItems)}
         {renderGroup(
           "Workforce Operations",
-          (role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
+          (role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
             ? [...workforceItems, staffApprovalsItem]
             : workforceItems,
         )}
@@ -270,15 +270,15 @@ export function AppSidebar() {
         {renderGroup("Logistics", logisticsItems)}
         {renderGroup("Finance & Procurement", financeItems)}
 
-        {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
-        {(role === "admin" || role === "oic" || role === "2ic" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
-        {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "staff_officer") &&
+        {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") &&
           renderGroup(
             "Administration",
             (role === "admin")
               ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem, ipBlocksItem]
-              : (role === "oic" || role === "2ic" || role === "staff_officer")
+              : (role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer")
                 ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
                 : adminItems,
           )}
