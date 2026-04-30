@@ -30,6 +30,7 @@ import {
 import { SchedulesTab } from "@/components/interlink/SchedulesTab";
 import { AttachmentRulesTab } from "@/components/interlink/AttachmentRulesTab";
 import { ApprovalsTab } from "@/components/interlink/ApprovalsTab";
+import { EmailStatusPanel } from "@/components/interlink/EmailStatusPanel";
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -122,7 +123,10 @@ export default function Interlink() {
         <TabsContent value="schedules" className="mt-4"><SchedulesTab userId={user?.id ?? ""} /></TabsContent>
         <TabsContent value="rules" className="mt-4"><AttachmentRulesTab userId={user?.id ?? ""} /></TabsContent>
         <TabsContent value="recipients" className="mt-4"><RecipientsTab userId={user?.id ?? ""} /></TabsContent>
-        <TabsContent value="audit" className="mt-4"><AuditTab /></TabsContent>
+        <TabsContent value="audit" className="mt-4 space-y-4">
+          <EmailStatusPanel />
+          <AuditTab />
+        </TabsContent>
         <TabsContent value="analytics" className="mt-4"><AnalyticsTab /></TabsContent>
       </Tabs>
     </div>
