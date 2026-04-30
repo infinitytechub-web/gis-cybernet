@@ -407,8 +407,27 @@ Deno.serve(async (req) => {
           const batch = finalRows.slice(i, i + 500);
           const { error } = await admin.from("shift_assignments").insert(batch);
           if (error) commitErrors.push({ staffId: "(roster)", error: `insert: ${error.message}` });
+      }
+
+      // 6. Auto-rollback: if any commit error occurred AND we have a snapshot, restore it
+      // This restores active/inactive status for all profiles plus night-guard assignments.
+      var autoRollback: { attempted: boolean; succeeded: boolean; message?: string; profilesRestored?: number; nightGuardRestored?: number } = { attempted: false, succeeded: false };
+      if (commitErrors.length > 0 && snapshotId) {
+        autoRollback.attempted = true;
+        try {
+          const { data: rb, error: rbErr } = await admin.rpc("restore_staff_bulk_snapshot", { p_snapshot_id: snapshotId });
+          if (rbErr) {
+            autoRollback.message = rbErr.message;
+          } else {
+            autoRollback.succeeded = true;
+            autoRollback.profilesRestored = (rb as any)?.profiles_restored ?? 0;
+            autoRollback.nightGuardRestored = (rb as any)?.night_guard_restored ?? 0;
+          }
+        } catch (e) {
+          autoRollback.message = (e as Error).message;
         }
       }
+    }
     }
 
     // Resolve uploader name (for audit row)
