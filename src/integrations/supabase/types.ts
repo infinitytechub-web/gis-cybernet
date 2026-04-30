@@ -1449,6 +1449,113 @@ export type Database = {
         }
         Relationships: []
       }
+      interlink_approval_actions: {
+        Row: {
+          action: string
+          comment: string | null
+          created_at: string
+          dispatch_id: string
+          entry_hash: string | null
+          from_state: string | null
+          id: string
+          performed_by: string
+          performer_role: string | null
+          prev_hash: string | null
+          to_state: string | null
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          created_at?: string
+          dispatch_id: string
+          entry_hash?: string | null
+          from_state?: string | null
+          id?: string
+          performed_by: string
+          performer_role?: string | null
+          prev_hash?: string | null
+          to_state?: string | null
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          created_at?: string
+          dispatch_id?: string
+          entry_hash?: string | null
+          from_state?: string | null
+          id?: string
+          performed_by?: string
+          performer_role?: string | null
+          prev_hash?: string | null
+          to_state?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interlink_approval_actions_dispatch_id_fkey"
+            columns: ["dispatch_id"]
+            isOneToOne: false
+            referencedRelation: "interlink_dispatches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interlink_attachment_rules: {
+        Row: {
+          allowed_file_types: string[]
+          cover_page_body: string | null
+          cover_page_enabled: boolean
+          cover_page_title: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          exclude_categories: string[]
+          filename_template: string
+          id: string
+          include_categories: string[]
+          is_active: boolean
+          max_files: number
+          max_total_mb: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_file_types?: string[]
+          cover_page_body?: string | null
+          cover_page_enabled?: boolean
+          cover_page_title?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          exclude_categories?: string[]
+          filename_template?: string
+          id?: string
+          include_categories?: string[]
+          is_active?: boolean
+          max_files?: number
+          max_total_mb?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_file_types?: string[]
+          cover_page_body?: string | null
+          cover_page_enabled?: boolean
+          cover_page_title?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          exclude_categories?: string[]
+          filename_template?: string
+          id?: string
+          include_categories?: string[]
+          is_active?: boolean
+          max_files?: number
+          max_total_mb?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interlink_contacts: {
         Row: {
           command_or_unit: string | null
@@ -1487,8 +1594,12 @@ export type Database = {
       }
       interlink_dispatches: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approver_id: string | null
           attachment_count: number
           attachment_names: string[]
+          attachment_rule_id: string | null
           created_at: string
           error_message: string | null
           failed_count: number
@@ -1497,17 +1608,28 @@ export type Database = {
           performed_by: string
           recipient_count: number
           recipient_emails: string[]
+          rejected_reason: string | null
           report_kind: string | null
           results: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_id: string | null
+          schedule_id: string | null
           scope: string
           sent_count: number
+          source: string
           status: string
           subject: string
           total_attachment_bytes: number
+          workflow_state: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_id?: string | null
           attachment_count?: number
           attachment_names?: string[]
+          attachment_rule_id?: string | null
           created_at?: string
           error_message?: string | null
           failed_count?: number
@@ -1516,17 +1638,28 @@ export type Database = {
           performed_by: string
           recipient_count?: number
           recipient_emails?: string[]
+          rejected_reason?: string | null
           report_kind?: string | null
           results?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_id?: string | null
+          schedule_id?: string | null
           scope: string
           sent_count?: number
+          source?: string
           status?: string
           subject: string
           total_attachment_bytes?: number
+          workflow_state?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approver_id?: string | null
           attachment_count?: number
           attachment_names?: string[]
+          attachment_rule_id?: string | null
           created_at?: string
           error_message?: string | null
           failed_count?: number
@@ -1535,15 +1668,37 @@ export type Database = {
           performed_by?: string
           recipient_count?: number
           recipient_emails?: string[]
+          rejected_reason?: string | null
           report_kind?: string | null
           results?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_id?: string | null
+          schedule_id?: string | null
           scope?: string
           sent_count?: number
+          source?: string
           status?: string
           subject?: string
           total_attachment_bytes?: number
+          workflow_state?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "interlink_dispatches_attachment_rule_id_fkey"
+            columns: ["attachment_rule_id"]
+            isOneToOne: false
+            referencedRelation: "interlink_attachment_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interlink_dispatches_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "interlink_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interlink_lists: {
         Row: {
@@ -1577,6 +1732,98 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      interlink_schedules: {
+        Row: {
+          approver_id: string | null
+          attachment_rule_id: string | null
+          created_at: string
+          created_by: string
+          day_of_month: number | null
+          day_of_week: number | null
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          message_template: string | null
+          name: string
+          next_run_at: string | null
+          recipient_adhoc_emails: string[]
+          recipient_contact_ids: string[]
+          recipient_dept_ids: string[]
+          recipient_list_ids: string[]
+          report_kind: string
+          requires_per_run_approval: boolean
+          reviewer_id: string | null
+          run_time: string
+          scope: string
+          subject_template: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id?: string | null
+          attachment_rule_id?: string | null
+          created_at?: string
+          created_by: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          description?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          message_template?: string | null
+          name: string
+          next_run_at?: string | null
+          recipient_adhoc_emails?: string[]
+          recipient_contact_ids?: string[]
+          recipient_dept_ids?: string[]
+          recipient_list_ids?: string[]
+          report_kind: string
+          requires_per_run_approval?: boolean
+          reviewer_id?: string | null
+          run_time?: string
+          scope: string
+          subject_template: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string | null
+          attachment_rule_id?: string | null
+          created_at?: string
+          created_by?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          message_template?: string | null
+          name?: string
+          next_run_at?: string | null
+          recipient_adhoc_emails?: string[]
+          recipient_contact_ids?: string[]
+          recipient_dept_ids?: string[]
+          recipient_list_ids?: string[]
+          report_kind?: string
+          requires_per_run_approval?: boolean
+          reviewer_id?: string | null
+          run_time?: string
+          scope?: string
+          subject_template?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interlink_schedules_attachment_rule_id_fkey"
+            columns: ["attachment_rule_id"]
+            isOneToOne: false
+            referencedRelation: "interlink_attachment_rules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_alert_overrides: {
         Row: {
@@ -4754,6 +5001,16 @@ export type Database = {
         Args: { _staff_id: string }
         Returns: undefined
       }
+      compute_interlink_next_run: {
+        Args: {
+          _day_of_month: number
+          _day_of_week: number
+          _frequency: string
+          _from?: string
+          _run_time: string
+        }
+        Returns: string
+      }
       empty_recycle_bin: { Args: never; Returns: Json }
       expire_ip_blocks: { Args: never; Returns: number }
       generate_asset_tag: { Args: never; Returns: string }
@@ -4970,6 +5227,15 @@ export type Database = {
         Args: { _user_id: string }
         Returns: {
           department_id: string
+        }[]
+      }
+      verify_interlink_approval_chain: {
+        Args: never
+        Returns: {
+          first_break_at: string
+          first_break_id: string
+          total: number
+          verified: number
         }[]
       }
       verify_otp: { Args: { _code: string }; Returns: boolean }
