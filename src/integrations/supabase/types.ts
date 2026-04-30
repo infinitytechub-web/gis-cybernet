@@ -4568,6 +4568,23 @@ export type Database = {
         }[]
       }
       get_email_by_staff_id: { Args: { _staff_id: string }; Returns: string }
+      get_gps_points: {
+        Args: {
+          _from?: string
+          _limit?: number
+          _sources?: string[]
+          _to?: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          label: string
+          location: string
+          reference: string
+          source: string
+          status: string
+        }[]
+      }
       get_misd_department_id: { Args: never; Returns: string }
       get_profile_protected_fields: {
         Args: { _user_id: string }
@@ -4596,6 +4613,7 @@ export type Database = {
         Args: { _topic: string }
         Returns: boolean
       }
+      is_gps_hub_authorized: { Args: { _user_id: string }; Returns: boolean }
       is_ip_blocked: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean

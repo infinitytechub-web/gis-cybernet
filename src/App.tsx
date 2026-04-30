@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "next-themes";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -118,7 +118,10 @@ function App() {
           <Route path="/misd" element={<ProtectedRoute><Layout><Misd /></Layout></ProtectedRoute>} />
           <Route path="/ipse" element={<ProtectedRoute><Layout><Ipse /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
-          <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
+         <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
+         {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
+         <Route path="/gps-addresses" element={<Navigate to="/command-vault/gps" replace />} />
+         <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />
           <Route path="/recycle-bin" element={<ProtectedRoute><Layout><RecycleBin /></Layout></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
