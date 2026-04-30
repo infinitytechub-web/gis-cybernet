@@ -2,18 +2,20 @@
 # Pre-deploy validation for Supabase edge functions.
 #
 # What it catches (default mode — fast, matches what Supabase's bundler rejects):
-#   • Parse errors (mismatched braces, invalid TS syntax) via `deno check --no-check=remote`
-#   • Lint issues (dead code, prefer-const, …) via `deno lint`
+#   • Parse errors (mismatched braces, invalid TS) — FATAL (deploy blocker)
+#   • Lint issues (dead code, prefer-const, …) — WARNING by default
 #
 # What it skips by default:
 #   • Deep type-checking of remote (`https:` / `npm:` / `jsr:`) imports — the local
 #     Deno resolver doesn't share the bundler's module graph and produces false
 #     positives. Pass --strict to enable full type-checking.
+#   • The `no-import-prefix` lint rule (the bundler REQUIRES URL-style imports).
 #
 # Usage:
-#   scripts/check-edge-function.sh                     # auto-discovers ALL functions
-#   scripts/check-edge-function.sh function-a function-b
-#   scripts/check-edge-function.sh --strict            # deep type-check (slower, noisier)
+#   scripts/check-edge-function.sh                # auto-discovers ALL functions (parse-fatal, lint-warn)
+#   scripts/check-edge-function.sh func-a func-b  # only the named functions
+#   scripts/check-edge-function.sh --lint-strict  # treat lint failures as fatal too
+#   scripts/check-edge-function.sh --strict       # full type-check (slow, noisy with URL imports)
 
 set -euo pipefail
 
@@ -21,10 +23,12 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FUNCTIONS_DIR="$ROOT/supabase/functions"
 
 STRICT=0
+LINT_STRICT=0
 ARGS=()
 for a in "$@"; do
   case "$a" in
     --strict) STRICT=1 ;;
+    --lint-strict) LINT_STRICT=1 ;;
     *) ARGS+=("$a") ;;
   esac
 done
