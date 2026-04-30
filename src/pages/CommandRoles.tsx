@@ -32,6 +32,9 @@ export default function CommandRoles() {
   const [shiftFilter, setShiftFilter] = useState<string>("all");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkPreselect, setBulkPreselect] = useState<string[] | undefined>(undefined);
+  const [quickQuery, setQuickQuery] = useState("");
+  const [undoing, setUndoing] = useState(false);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments-list-cmd"],
