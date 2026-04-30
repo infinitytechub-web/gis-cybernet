@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, FolderLock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
+import { BulkStaffUploadDialog } from "@/components/staff/BulkStaffUploadDialog";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 const PAGE_SIZE = 24;
