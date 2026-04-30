@@ -45,18 +45,19 @@ interface Props {
  */
 export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
-  const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | null;
+  const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
+  const { config, groupForDate } = useShiftRotationConfig();
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sun-start, matches PDF
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
   const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [gridStart, gridEnd]);
 
   const onDutyDates = useMemo(() => {
     if (!myGroup) return [] as Date[];
-    return days.filter((d) => isSameMonth(d, cursor) && getShiftGroupForDate(d) === myGroup);
-  }, [days, cursor, myGroup]);
+    return days.filter((d) => isSameMonth(d, cursor) && groupForDate(d) === myGroup);
+  }, [days, cursor, myGroup, groupForDate]);
 
   const nextOnDuty = useMemo(() => {
     if (!myGroup) return null;
@@ -64,10 +65,10 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
     today.setHours(0, 0, 0, 0);
     for (let i = 0; i < 8; i++) {
       const d = new Date(today.getTime() + i * 86400000);
-      if (getShiftGroupForDate(d) === myGroup) return d;
+      if (groupForDate(d) === myGroup) return d;
     }
     return null;
-  }, [myGroup]);
+  }, [myGroup, groupForDate]);
 
   return (
     <Card className="overflow-hidden">
