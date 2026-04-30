@@ -127,9 +127,12 @@ export default function StaffDirectory() {
           )}
           <h1 className="text-2xl font-bold text-secondary">Staff Directory</h1>
         </div>
-        <Badge variant="outline" className="gap-1">
-          <Users className="h-3 w-3" /> {filtered.length} staff
-        </Badge>
+        <div className="flex items-center gap-2">
+          {canBulkUpload && <BulkStaffUploadDialog />}
+          <Badge variant="outline" className="gap-1">
+            <Users className="h-3 w-3" /> {filtered.length} staff
+          </Badge>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
