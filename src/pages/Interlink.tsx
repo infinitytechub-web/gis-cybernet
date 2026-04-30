@@ -59,6 +59,7 @@ const MAX_FILES = 5;
 
 export default function Interlink() {
   const { isAdminOrSupervisor, user } = useAuth();
+  const branding = useInterlinkBranding();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const tab = searchParams.get("tab") ?? "compose";
