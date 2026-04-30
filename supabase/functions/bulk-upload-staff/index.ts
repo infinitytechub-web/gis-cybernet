@@ -234,14 +234,19 @@ Deno.serve(async (req) => {
     // ── Deactivate-missing planning ───────────────────────────────────
     const deptNameById = new Map<string, string>();
     for (const d of (deps ?? [])) deptNameById.set(d.id, d.name);
-    const toDeactivate: { id: string; staffId: string; from: string; fullName: string; department: string }[] = [];
+    const rankNameById = new Map<string, string>();
+    for (const r of (rks ?? [])) rankNameById.set(r.id, r.abbreviation || r.name);
+    const toDeactivate: { id: string; staffId: string; from: string; fullName: string; department: string; rank: string; designation: string; office: string }[] = [];
     if (deactivateMissing && rows.length > 0) {
       for (const p of (existing ?? [])) {
         if (p.status === "inactive") continue;
         if (!seenStaffIds.has(p.staff_id.toLowerCase())) {
           const deptName = p.department_id ? (deptNameById.get(p.department_id) ?? "—") : "—";
           const fullName = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—";
-          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status, fullName, department: deptName });
+          const rankName = p.rank_id ? (rankNameById.get(p.rank_id) ?? "—") : "—";
+          const designation = (p as any).training_designation || "—";
+          const office = (p as any).office || "—";
+          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status, fullName, department: deptName, rank: rankName, designation, office });
           outcomes.push({
             rowIndex: -1,
             staffId: p.staff_id,
@@ -249,6 +254,9 @@ Deno.serve(async (req) => {
             message: `Will be set to inactive (not in upload)`,
             fullName,
             department: deptName,
+            rank: rankName,
+            designation,
+            office,
           } as any);
         }
       }
