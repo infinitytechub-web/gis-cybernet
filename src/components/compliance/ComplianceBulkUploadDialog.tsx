@@ -330,7 +330,23 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             </div>
           )}
 
-          {running && <Progress value={progress} className="h-2" />}
+          {(running || completed > 0 || errored > 0) && (
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium">
+                  {running ? "Uploading…" : "Last batch"}
+                </span>
+                <span className="tabular-nums text-muted-foreground">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+              <div className="flex flex-wrap gap-3 text-xs">
+                <span className="text-muted-foreground">{pending} pending</span>
+                <span className="text-emerald-700 font-medium">{completed} uploaded</span>
+                {errored > 0 && <span className="text-destructive font-medium">{errored} failed</span>}
+                <span className="ml-auto text-muted-foreground">Audit log updates instantly</span>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between gap-2 pt-1">
             <div className="text-xs text-muted-foreground">
