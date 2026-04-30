@@ -662,7 +662,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               }}
               className="gap-1.5"
             >
-              <Save className="h-4 w-4" /> {runMut.isPending ? "Committing…" : "Commit upload"}
+              <ShieldAlert className="h-4 w-4" /> {runMut.isPending ? "Applying…" : "Apply override"}
             </Button>
           </DialogFooter>
         </DialogContent>
