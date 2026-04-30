@@ -93,6 +93,8 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [deactConfirmOpen, setDeactConfirmOpen] = useState(false);
+  const [deactAcknowledged, setDeactAcknowledged] = useState(false);
   const CONFIRM_KEYWORD = "OVERRIDE";
 
   const reset = () => {
