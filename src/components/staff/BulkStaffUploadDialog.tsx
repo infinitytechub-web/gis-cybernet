@@ -264,6 +264,23 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     return previewResult;
   }, [previewResult]);
 
+  const deactivationsByDept = useMemo(() => {
+    if (!previewResult) return [] as { department: string; staff: { staffId: string; fullName: string }[] }[];
+    const map = new Map<string, { staffId: string; fullName: string }[]>();
+    for (const o of previewResult.outcomes) {
+      if (o.status !== "deactivate") continue;
+      const dept = o.department ?? "—";
+      if (!map.has(dept)) map.set(dept, []);
+      map.get(dept)!.push({ staffId: o.staffId ?? "—", fullName: o.fullName ?? "—" });
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([department, staff]) => ({
+        department,
+        staff: staff.sort((a, b) => a.staffId.localeCompare(b.staffId)),
+      }));
+  }, [previewResult]);
+
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
       <DialogTrigger asChild>
