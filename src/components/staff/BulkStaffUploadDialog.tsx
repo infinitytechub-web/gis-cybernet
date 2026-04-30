@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, X, Eye, Save, History, Download } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, X, Eye, History, Download, ShieldAlert, RotateCcw, Camera } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +33,11 @@ type RunResult = {
   updatedCount: number;
   skippedCount: number;
   errorCount: number;
+  deactivateCount?: number;
+  rosterPlanned?: number;
+  rosterDates?: string[];
+  rosterErrors?: { rowIndex: number; message: string; staffId: string | null }[];
+  snapshotId?: string | null;
   commitErrors: { staffId: string; error: string }[];
   outcomes: Outcome[];
 };
@@ -75,15 +82,21 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [rosterFileName, setRosterFileName] = useState<string | null>(null);
+  const [rosterRows, setRosterRows] = useState<{ staff_id: string; date: string }[]>([]);
+  const [deactivateMissing, setDeactivateMissing] = useState(true);
+  const [takeSnapshot, setTakeSnapshot] = useState(true);
   const [previewResult, setPreviewResult] = useState<RunResult | null>(null);
   const [committed, setCommitted] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
-  const CONFIRM_KEYWORD = "COMMIT";
+  const CONFIRM_KEYWORD = "OVERRIDE";
 
   const reset = () => {
-    setFileName(null); setRows([]); setPreviewResult(null); setCommitted(false); setFilter("all");
+    setFileName(null); setRows([]);
+    setRosterFileName(null); setRosterRows([]);
+    setPreviewResult(null); setCommitted(false); setFilter("all");
   };
 
   const exportDiffCsv = () => {
@@ -133,10 +146,52 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     }
   };
 
+  const handleRosterFile = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", raw: false });
+      const parsed: { staff_id: string; date: string }[] = [];
+      for (const r of json) {
+        const sid = String(r["Staff ID"] ?? r["staff_id"] ?? r["staffId"] ?? "").trim();
+        const dateRaw = r["Date"] ?? r["date"] ?? "";
+        let dateStr = "";
+        if (typeof dateRaw === "number") {
+          const d = XLSX.SSF.parse_date_code(dateRaw);
+          dateStr = `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
+        } else if (String(dateRaw).trim()) {
+          const pd = new Date(String(dateRaw));
+          if (!isNaN(pd.getTime())) dateStr = format(pd, "yyyy-MM-dd");
+        }
+        if (sid) parsed.push({ staff_id: sid, date: dateStr });
+      }
+      if (parsed.length === 0) { toast.error("Roster file has no valid rows (need Staff ID + Date)"); return; }
+      if (parsed.length > 10000) { toast.error("Maximum 10,000 roster rows"); return; }
+      setRosterFileName(file.name);
+      setRosterRows(parsed);
+      setPreviewResult(null);
+      setCommitted(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to parse roster file");
+    }
+  };
+
+  const downloadRosterTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Staff ID", "Date"],
+      ["GIS-2026-0001", format(new Date(), "yyyy-MM-dd")],
+      ["GIS-2026-0002", format(new Date(), "yyyy-MM-dd")],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Night Guard Roster");
+    XLSX.writeFile(wb, "night-guard-roster-template.xlsx");
+  };
+
   const runMut = useMutation({
     mutationFn: async (dryRun: boolean) => {
       const { data, error } = await supabase.functions.invoke("bulk-upload-staff", {
-        body: { rows, fileName, dryRun },
+        body: { rows, rosterRows, fileName, rosterFileName, dryRun, deactivateMissing, snapshot: takeSnapshot && !dryRun },
       });
       if (error) throw error;
       return data as RunResult;
@@ -147,12 +202,31 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
         setCommitted(true);
         qc.invalidateQueries({ queryKey: ["directory-staff"] });
         qc.invalidateQueries({ queryKey: ["bulk-staff-audit"] });
-        toast.success(`Uploaded — ${res.createdCount} created, ${res.updatedCount} updated, ${res.errorCount} errors`);
+        qc.invalidateQueries({ queryKey: ["bulk-staff-snapshots"] });
+        qc.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+        qc.invalidateQueries({ queryKey: ["shift-assignments"] });
+        toast.success(`Override applied — ${res.createdCount} created · ${res.updatedCount} updated · ${res.deactivateCount ?? 0} deactivated · ${res.rosterPlanned ?? 0} roster rows`);
       } else {
-        toast.message(`Preview: ${res.createdCount} create · ${res.updatedCount} update · ${res.skippedCount} skip · ${res.errorCount} error`);
+        toast.message(`Preview: ${res.createdCount} create · ${res.updatedCount} update · ${res.deactivateCount ?? 0} deactivate · ${res.rosterPlanned ?? 0} roster · ${res.errorCount} error`);
       }
     },
     onError: (e: any) => toast.error(e?.message ?? "Upload failed"),
+  });
+
+  const restoreMut = useMutation({
+    mutationFn: async (snapshotId: string) => {
+      const { data, error } = await supabase.rpc("restore_staff_bulk_snapshot" as any, { p_snapshot_id: snapshotId });
+      if (error) throw error;
+      return data as { profiles_restored: number; night_guard_restored: number };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["directory-staff"] });
+      qc.invalidateQueries({ queryKey: ["bulk-staff-snapshots"] });
+      qc.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+      qc.invalidateQueries({ queryKey: ["shift-assignments"] });
+      toast.success(`Restored ${res.profiles_restored} staff records and ${res.night_guard_restored} roster rows`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Restore failed"),
   });
 
   const { data: auditLog = [] } = useQuery({
@@ -163,6 +237,19 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
         .from("staff_bulk_upload_audit" as any)
         .select("id, uploaded_at, uploaded_by_name, file_name, total_rows, created_count, updated_count, skipped_count, error_count, dry_run")
         .order("uploaded_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: snapshots = [] } = useQuery({
+    queryKey: ["bulk-staff-snapshots"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_bulk_upload_snapshots" as any)
+        .select("id, created_at, taken_by_name, file_name, note, profiles_count, night_guard_count, restored_at")
+        .order("created_at", { ascending: false }).limit(20);
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -185,12 +272,13 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-primary" />
-            Bulk Staff List Upload
+            <ShieldAlert className="h-5 w-5 text-destructive" />
+            Override Staff List &amp; Guard Duty Roster
           </DialogTitle>
           <DialogDescription>
-            Upload a CSV or XLSX file to override the staff list. Existing staff (matched by <strong>staff_id</strong>) are updated;
-            new staff_ids are created. Use <strong>Preview</strong> first to see what will change.
+            Upload a staff CSV/XLSX and (optionally) a Night Guard roster file in one batch.
+            Existing staff are <strong>upserted by Staff ID</strong>; staff missing from the file can be auto-deactivated.
+            A snapshot is taken before commit so you can roll back from the <strong>Snapshots</strong> tab.
           </DialogDescription>
         </DialogHeader>
 
@@ -198,32 +286,77 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
           <TabsList>
             <TabsTrigger value="upload"><Upload className="h-4 w-4 mr-1.5" /> Upload</TabsTrigger>
             <TabsTrigger value="audit"><History className="h-4 w-4 mr-1.5" /> Recent uploads</TabsTrigger>
+            <TabsTrigger value="snapshots"><Camera className="h-4 w-4 mr-1.5" /> Snapshots</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            {/* Staff file */}
+            <div className="rounded-lg border p-3 space-y-2 bg-muted/20">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1. Staff list (CSV/XLSX)</Label>
+                <div className="flex items-center gap-1.5">
+                  <Button variant="ghost" size="sm" onClick={() => downloadTemplate("csv")} className="gap-1.5 h-7 text-xs">
+                    <Download className="h-3.5 w-3.5" /> CSV template
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => downloadTemplate("xlsx")} className="gap-1.5 h-7 text-xs">
+                    <Download className="h-3.5 w-3.5" /> XLSX template
+                  </Button>
+                </div>
+              </div>
               <Input
                 type="file"
                 accept=".csv,.xlsx,.xls"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-                className="max-w-xs"
               />
-              <div className="flex items-center gap-1.5">
-                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("csv")} className="gap-1.5">
-                  <Download className="h-4 w-4" /> CSV template
+              {fileName && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} — {rows.length} staff row{rows.length === 1 ? "" : "s"}
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setFileName(null); setRows([]); setPreviewResult(null); }}><X className="h-3 w-3" /></Button>
+                </div>
+              )}
+            </div>
+
+            {/* Roster file */}
+            <div className="rounded-lg border p-3 space-y-2 bg-muted/20">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">2. Night Guard duty roster (optional)</Label>
+                <Button variant="ghost" size="sm" onClick={downloadRosterTemplate} className="gap-1.5 h-7 text-xs">
+                  <Download className="h-3.5 w-3.5" /> Roster template
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("xlsx")} className="gap-1.5">
-                  <Download className="h-4 w-4" /> XLSX template
-                </Button>
+              </div>
+              <Input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleRosterFile(f); }}
+              />
+              {rosterFileName && (
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> {rosterFileName} — {rosterRows.length} roster row{rosterRows.length === 1 ? "" : "s"}
+                  <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setRosterFileName(null); setRosterRows([]); setPreviewResult(null); }}><X className="h-3 w-3" /></Button>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground">Same format as the Night Guard duty upload: <strong>Staff ID</strong> + <strong>Date</strong> columns. Existing assignments on the same dates will be replaced.</p>
+            </div>
+
+            {/* Override safeguards */}
+            <div className="rounded-lg border p-3 space-y-2.5">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">3. Override behaviour</Label>
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label htmlFor="deact" className="text-xs cursor-pointer">Deactivate staff missing from file</Label>
+                  <p className="text-[10px] text-muted-foreground">Any active staff not listed in the upload will be set to <code className="text-[10px]">inactive</code>.</p>
+                </div>
+                <Switch id="deact" checked={deactivateMissing} onCheckedChange={setDeactivateMissing} />
+              </div>
+              <div className="flex items-start justify-between gap-3 pt-1.5 border-t">
+                <div className="space-y-0.5">
+                  <Label htmlFor="snap" className="text-xs cursor-pointer">Take snapshot before commit (recommended)</Label>
+                  <p className="text-[10px] text-muted-foreground">Saves a restorable backup of all staff records and Night Guard assignments.</p>
+                </div>
+                <Switch id="snap" checked={takeSnapshot} onCheckedChange={setTakeSnapshot} />
               </div>
             </div>
 
-            {fileName && (
-              <div className="text-xs text-muted-foreground flex items-center gap-2">
-                <FileSpreadsheet className="h-3.5 w-3.5" /> {fileName} — {rows.length} row{rows.length === 1 ? "" : "s"}
-                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={reset}><X className="h-3 w-3" /></Button>
-              </div>
-            )}
 
             {counts && counts.dryRun && !committed && (
               <Alert className="border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600">
@@ -256,6 +389,16 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                         <Badge variant={filter === b.k ? "default" : "outline"} className={`cursor-pointer ${filter === b.k ? "" : b.cls}`}>{b.label}</Badge>
                       </button>
                     ))}
+                    {(counts.deactivateCount ?? 0) > 0 && (
+                      <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+                        {counts.deactivateCount} will deactivate
+                      </Badge>
+                    )}
+                    {(counts.rosterPlanned ?? 0) > 0 && (
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
+                        {counts.rosterPlanned} roster · {counts.rosterDates?.length ?? 0} day(s)
+                      </Badge>
+                    )}
                     <Button size="sm" variant="ghost" onClick={exportDiffCsv} className="ml-auto h-6 gap-1 text-xs">
                       <Download className="h-3 w-3" /> Export diff CSV
                     </Button>
@@ -327,12 +470,13 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               <Button
                 variant="outline"
                 onClick={() => runMut.mutate(true)}
-                disabled={!rows.length || runMut.isPending}
+                disabled={(!rows.length && !rosterRows.length) || runMut.isPending}
                 className="gap-1.5"
               >
                 <Eye className="h-4 w-4" /> Preview
               </Button>
               <Button
+                variant="destructive"
                 onClick={() => {
                   if (!previewResult) {
                     toast.error("Please preview the upload first");
@@ -341,10 +485,10 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                   setConfirmText("");
                   setConfirmOpen(true);
                 }}
-                disabled={!rows.length || runMut.isPending || committed}
+                disabled={(!rows.length && !rosterRows.length) || runMut.isPending || committed}
                 className="gap-1.5"
               >
-                <Save className="h-4 w-4" /> {runMut.isPending ? "Working…" : committed ? "Committed" : "Commit upload"}
+                <ShieldAlert className="h-4 w-4" /> {runMut.isPending ? "Working…" : committed ? "Override applied" : "Apply override"}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -386,6 +530,55 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               </Table>
             </ScrollArea>
           </TabsContent>
+
+          <TabsContent value="snapshots">
+            <ScrollArea className="h-[360px] rounded border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">When</TableHead>
+                    <TableHead className="text-xs">Taken by</TableHead>
+                    <TableHead className="text-xs">Note</TableHead>
+                    <TableHead className="text-xs text-right">Staff</TableHead>
+                    <TableHead className="text-xs text-right">Roster</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {snapshots.length === 0 && (
+                    <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No snapshots yet.</TableCell></TableRow>
+                  )}
+                  {snapshots.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{format(parseISO(s.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-xs">{s.taken_by_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs truncate max-w-[220px]">{s.note ?? s.file_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-right tabular-nums">{s.profiles_count}</TableCell>
+                      <TableCell className="text-xs text-right tabular-nums">{s.night_guard_count}</TableCell>
+                      <TableCell className="text-xs">
+                        {s.restored_at
+                          ? <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700">restored {format(parseISO(s.restored_at), "dd MMM HH:mm")}</Badge>
+                          : <Badge variant="outline" className="text-[10px]">available</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm" variant="ghost" className="h-7 gap-1 text-xs"
+                          disabled={restoreMut.isPending}
+                          onClick={() => {
+                            if (!confirm(`Restore this snapshot?\n\nThis will replace ALL Night Guard assignments and reset staff fields to the snapshot values. Cannot be undone except by another snapshot.`)) return;
+                            restoreMut.mutate(s.id);
+                          }}
+                        >
+                          <RotateCcw className="h-3 w-3" /> Restore
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </TabsContent>
         </Tabs>
       </DialogContent>
 
@@ -393,11 +586,11 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
       <Dialog open={confirmOpen} onOpenChange={(v) => { if (!runMut.isPending) setConfirmOpen(v); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" /> Confirm bulk commit
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" /> Confirm override
             </DialogTitle>
             <DialogDescription>
-              You are about to apply the following changes to the staff database. This action will write to live data and cannot be undone in bulk.
+              You are about to override the staff database{rosterRows.length ? " and replace Night Guard duty rosters" : ""}. This writes to live data{takeSnapshot ? " (a snapshot will be taken first for rollback)" : " WITHOUT a backup"}.
             </DialogDescription>
           </DialogHeader>
 
@@ -422,9 +615,21 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                     <span className="font-semibold text-destructive tabular-nums">{previewResult.errorCount}</span>
                   </div>
                 )}
+                {(previewResult.deactivateCount ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-orange-700 dark:text-orange-400">Will be deactivated (missing from file)</span>
+                    <span className="font-semibold text-orange-700 dark:text-orange-400 tabular-nums">{previewResult.deactivateCount}</span>
+                  </div>
+                )}
+                {(previewResult.rosterPlanned ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-purple-700 dark:text-purple-400">Night Guard roster rows ({previewResult.rosterDates?.length ?? 0} day(s) replaced)</span>
+                    <span className="font-semibold text-purple-700 dark:text-purple-400 tabular-nums">{previewResult.rosterPlanned}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm pt-1.5 border-t">
-                  <span className="font-medium">Total writes</span>
-                  <span className="font-bold tabular-nums">{previewResult.createdCount + previewResult.updatedCount}</span>
+                  <span className="font-medium">Snapshot before commit</span>
+                  <span className="font-bold tabular-nums">{takeSnapshot ? "yes" : "NO — irreversible"}</span>
                 </div>
               </div>
 
@@ -457,7 +662,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
               }}
               className="gap-1.5"
             >
-              <Save className="h-4 w-4" /> {runMut.isPending ? "Committing…" : "Commit upload"}
+              <ShieldAlert className="h-4 w-4" /> {runMut.isPending ? "Applying…" : "Apply override"}
             </Button>
           </DialogFooter>
         </DialogContent>
