@@ -199,6 +199,34 @@ export default function GpsAddresses() {
   const [deleting, setDeleting] = useState<GpsRecord | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
+  // ===== Offline mode =====
+  // Persists the most recent points to localStorage so the map keeps working
+  // when the connection drops. Toggle is sticky across reloads. The hydrated
+  // flag flips on when we render rows from the cache instead of the network.
+  const [offlineMode, setOfflineMode] = useState<boolean>(() => isOfflineModeEnabled());
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  const [hydratedFromCache, setHydratedFromCache] = useState(false);
+  const [cacheMeta, setCacheMeta] = useState<{ cached_at: string; count: number } | null>(null);
+
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  useEffect(() => { setOfflineModeEnabled(offlineMode); }, [offlineMode]);
+
+  // ===== Server-side paginated export =====
+  const [serverExportBusy, setServerExportBusy] = useState<null | "csv" | "pdf">(null);
+  const [serverExportProgress, setServerExportProgress] = useState<number>(0);
+
   // ===== Online-tracking authorization gate =====
   // Live online map tiles (OpenStreetMap / Carto) are only loaded after the
   // operator confirms an explicit cyber-intel tracking authorization. The
