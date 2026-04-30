@@ -371,6 +371,80 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
           </TabsContent>
         </Tabs>
       </DialogContent>
+
+      {/* Confirmation step — type CONFIRM_KEYWORD to enable commit */}
+      <Dialog open={confirmOpen} onOpenChange={(v) => { if (!runMut.isPending) setConfirmOpen(v); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" /> Confirm bulk commit
+            </DialogTitle>
+            <DialogDescription>
+              You are about to apply the following changes to the staff database. This action will write to live data and cannot be undone in bulk.
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewResult && (
+            <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Inserts (new staff)</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{previewResult.createdCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Updates (modified)</span>
+                  <span className="font-semibold text-blue-700 dark:text-blue-400 tabular-nums">{previewResult.updatedCount}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">No-change (skipped)</span>
+                  <span className="font-semibold tabular-nums">{previewResult.skippedCount}</span>
+                </div>
+                {previewResult.errorCount > 0 && (
+                  <div className="flex items-center justify-between text-sm pt-1.5 border-t">
+                    <span className="text-destructive">Errors (will be skipped)</span>
+                    <span className="font-semibold text-destructive tabular-nums">{previewResult.errorCount}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-sm pt-1.5 border-t">
+                  <span className="font-medium">Total writes</span>
+                  <span className="font-bold tabular-nums">{previewResult.createdCount + previewResult.updatedCount}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium">
+                  Type <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-destructive">{CONFIRM_KEYWORD}</span> to enable the commit button:
+                </label>
+                <Input
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder={CONFIRM_KEYWORD}
+                  autoComplete="off"
+                  autoFocus
+                  className="font-mono"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={runMut.isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={confirmText.trim() !== CONFIRM_KEYWORD || runMut.isPending}
+              onClick={() => {
+                setConfirmOpen(false);
+                runMut.mutate(false);
+              }}
+              className="gap-1.5"
+            >
+              <Save className="h-4 w-4" /> {runMut.isPending ? "Committing…" : "Commit upload"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
