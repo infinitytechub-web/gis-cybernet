@@ -122,6 +122,7 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
+        <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
       </Tabs>
     </div>
   );
