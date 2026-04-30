@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
-# Pre-deploy syntax + type + lint check for Supabase edge functions.
-# Mirrors what the Supabase bundler does (Deno-based), so syntax errors like
-# mismatched braces are caught locally before a deploy attempt.
+# Pre-deploy validation for Supabase edge functions.
+#
+# What it catches (default mode — fast, matches what Supabase's bundler rejects):
+#   • Parse errors (mismatched braces, invalid TS syntax) via `deno check --no-check=remote`
+#   • Lint issues (dead code, prefer-const, …) via `deno lint`
+#
+# What it skips by default:
+#   • Deep type-checking of remote (`https:` / `npm:` / `jsr:`) imports — the local
+#     Deno resolver doesn't share the bundler's module graph and produces false
+#     positives. Pass --strict to enable full type-checking.
 #
 # Usage:
 #   scripts/check-edge-function.sh                     # auto-discovers ALL functions
-#                                                       # (every supabase/functions/*/index.ts)
-#   scripts/check-edge-function.sh function-a function-b  # checks only the given ones
-#
-# Exits non-zero on any failure so it can gate CI / pre-commit.
+#   scripts/check-edge-function.sh function-a function-b
+#   scripts/check-edge-function.sh --strict            # deep type-check (slower, noisier)
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FUNCTIONS_DIR="$ROOT/supabase/functions"
+
+STRICT=0
+ARGS=()
+for a in "$@"; do
+  case "$a" in
+    --strict) STRICT=1 ;;
+    *) ARGS+=("$a") ;;
+  esac
+done
 
 if ! command -v deno >/dev/null 2>&1; then
   echo "✖ deno CLI not found in PATH. Install Deno: https://deno.land" >&2
@@ -27,16 +41,13 @@ fi
 
 # ── Resolve target list ──────────────────────────────────────────────
 TARGETS=()
-if [ "$#" -gt 0 ]; then
-  TARGETS=("$@")
+if [ "${#ARGS[@]}" -gt 0 ]; then
+  TARGETS=("${ARGS[@]}")
 else
-  # Auto-discover: every immediate subdirectory containing an index.ts
-  # Sorted, null-terminated for safety against funky names.
   while IFS= read -r -d '' entry; do
     fn="$(basename "$(dirname "$entry")")"
-    # Skip Supabase internal/shared folders (prefix with _ by convention)
     case "$fn" in
-      _*) continue ;;
+      _*) continue ;;  # skip _shared, _internal, …
     esac
     TARGETS+=("$fn")
   done < <(find "$FUNCTIONS_DIR" -mindepth 2 -maxdepth 2 -name 'index.ts' -print0 | sort -z)
@@ -47,7 +58,9 @@ if [ "${#TARGETS[@]}" -eq 0 ]; then
   exit 0
 fi
 
-echo "▶ Validating ${#TARGETS[@]} edge function(s): ${TARGETS[*]}"
+MODE="fast"; [ "$STRICT" -eq 1 ] && MODE="strict (full type-check)"
+echo "▶ Validating ${#TARGETS[@]} edge function(s) [mode: $MODE]"
+echo "  ${TARGETS[*]}"
 
 PASS=()
 FAILED=()
@@ -63,18 +76,29 @@ for fn in "${TARGETS[@]}"; do
   fi
 
   echo ""
-  echo "▶ Checking edge function: $fn"
-
+  echo "▶ $fn"
   ok=1
-  echo "  • Parse + type-check (deno check)"
-  if ! deno check --no-lock --quiet "$ENTRY"; then
-    echo "  ✖ deno check failed for $fn" >&2
-    ok=0
+
+  # 1. Parse / syntax check (always runs — this is what catches the bundler errors)
+  if [ "$STRICT" -eq 1 ]; then
+    echo "  • deno check (strict, full graph)"
+    if ! deno check --no-lock --quiet "$ENTRY"; then
+      echo "  ✖ deno check failed for $fn" >&2
+      ok=0
+    fi
+  else
+    echo "  • deno check (local only — skips remote types)"
+    if ! deno check --no-lock --no-check=remote --quiet "$ENTRY"; then
+      echo "  ✖ deno check failed for $fn" >&2
+      ok=0
+    fi
   fi
 
+  # 2. Lint
   if [ "$ok" -eq 1 ]; then
-    echo "  • Lint (deno lint)"
-    if ! deno lint --quiet "$ENTRY"; then
+    echo "  • deno lint"
+    # no-import-prefix is required by the Supabase bundler — disable it project-wide.
+    if ! deno lint --quiet --rules-exclude=no-import-prefix "$ENTRY"; then
       echo "  ✖ deno lint failed for $fn" >&2
       ok=0
     fi
