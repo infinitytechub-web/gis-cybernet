@@ -101,6 +101,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     setFileName(null); setRows([]);
     setRosterFileName(null); setRosterRows([]);
     setPreviewResult(null); setCommitted(false); setFilter("all");
+    setDeactAcknowledged(false);
   };
 
   const exportDiffCsv = () => {
