@@ -190,6 +190,13 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
               <Button variant="outline" size="icon" onClick={() => setCursor((c) => addMonths(c, 1))} aria-label="Next month">
                 <ChevronRight className="h-4 w-4" />
               </Button>
+              <ExportMenu
+                label="Export rotation"
+                size="sm"
+                formats={["pdf", "csv"]}
+                disabled={onDutyDates.length === 0}
+                getData={buildExportPayload}
+              />
             </div>
           </div>
         </div>
@@ -204,6 +211,12 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
               {onDutyDates.length}
               <span className="text-xs font-normal text-muted-foreground"> / {days.filter((d) => isSameMonth(d, cursor)).length}</span>
             </div>
+            {overrideCount > 0 && (
+              <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-300">
+                <ShieldCheck className="h-3 w-3" />
+                {overrideCount} admin override{overrideCount === 1 ? "" : "s"}
+              </div>
+            )}
           </div>
           <div className="rounded-md border bg-muted/30 p-2">
             <div className="text-muted-foreground">Next on-duty</div>
@@ -263,16 +276,21 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
                     const group = groupForDate(d);
                     const inMonth = isSameMonth(d, cursor);
                     const today = isToday(d);
-                    const onDuty = !!myGroup && group === myGroup;
-                    const colors = tone(group);
+                    const ov = overrideFor(d);
+                    const rotationOnDuty = !!myGroup && group === myGroup;
+                    const onDuty = !!ov || rotationOnDuty;
+                    const isOverrideOff = !!ov; // override always wins → on-duty
+                    const colors = ov ? tone(myGroup ?? group) : tone(group);
 
                     return (
                       <div
                         key={d.toISOString()}
+                        title={ov ? `Override: ${ov.shifts?.name ?? "Assigned shift"}` : undefined}
                         className={cn(
                           "relative h-20 md:h-24 rounded-lg border p-2 flex flex-col justify-between transition-all duration-200",
                           inMonth ? "bg-card" : "bg-muted/30 text-muted-foreground",
                           onDuty && [colors.bg, colors.border, "border-2 shadow-lg"],
+                          isOverrideOff && "ring-2 ring-amber-500/70",
                           !onDuty && "opacity-95",
                           today && "ring-2 ring-primary ring-offset-1",
                         )}
@@ -297,16 +315,27 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
                               colors.text,
                               colors.border,
                             )}
-                            aria-label={`Group ${group}`}
+                            aria-label={ov ? "Override" : `Group ${group}`}
                           >
-                            {group}
+                            {ov ? "★" : group}
                           </span>
                         </div>
 
                         {onDuty && (
-                          <div className="flex items-center gap-1 text-[10px] font-medium">
-                            <Sparkles className={cn("h-3 w-3", colors.text)} />
-                            <span className={colors.text}>On duty</span>
+                          <div className="flex items-center gap-1 text-[10px] font-medium truncate">
+                            {ov ? (
+                              <>
+                                <ShieldCheck className="h-3 w-3 text-amber-600" />
+                                <span className="text-amber-700 dark:text-amber-300 truncate">
+                                  {ov.shifts?.name ?? "Override"}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className={cn("h-3 w-3", colors.text)} />
+                                <span className={colors.text}>On duty</span>
+                              </>
+                            )}
                           </div>
                         )}
 
