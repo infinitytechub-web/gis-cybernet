@@ -22,6 +22,7 @@ import { ShiftConnectionPermissionsMatrix } from "@/components/settings/ShiftCon
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { InterlinkBrandingSettings } from "@/components/interlink/InterlinkBrandingSettings";
 import { ShiftRotationSettings } from "@/components/settings/ShiftRotationSettings";
+import { ShiftRotationOverrides } from "@/components/settings/ShiftRotationOverrides";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
