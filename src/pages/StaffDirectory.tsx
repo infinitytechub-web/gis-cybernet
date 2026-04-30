@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, FolderLock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
+import { BulkStaffUploadDialog } from "@/components/staff/BulkStaffUploadDialog";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 const PAGE_SIZE = 24;
@@ -33,6 +35,8 @@ const statusColor = (s: string) => {
 
 export default function StaffDirectory() {
   const navigate = useNavigate();
+  const { isAdmin, isOic, is2ic } = useAuth();
+  const canBulkUpload = isAdmin || isOic || is2ic;
   const [searchParams] = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";
   const [search, setSearch] = useState("");
@@ -123,9 +127,12 @@ export default function StaffDirectory() {
           )}
           <h1 className="text-2xl font-bold text-secondary">Staff Directory</h1>
         </div>
-        <Badge variant="outline" className="gap-1">
-          <Users className="h-3 w-3" /> {filtered.length} staff
-        </Badge>
+        <div className="flex items-center gap-2">
+          {canBulkUpload && <BulkStaffUploadDialog />}
+          <Badge variant="outline" className="gap-1">
+            <Users className="h-3 w-3" /> {filtered.length} staff
+          </Badge>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
