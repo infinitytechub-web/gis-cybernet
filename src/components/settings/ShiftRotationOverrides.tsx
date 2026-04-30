@@ -279,17 +279,29 @@ export function ShiftRotationOverrides() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Action</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead className="text-xs">When</TableHead>
+                <TableHead className="text-xs">Who</TableHead>
+                <TableHead className="text-xs">Action</TableHead>
+                <TableHead className="text-xs">Old → New</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
+              {auditLogs.length === 0 && (
+                <TableRow><TableCell colSpan={4} className="text-xs text-muted-foreground text-center py-4">No changes recorded yet.</TableCell></TableRow>
+              )}
               {auditLogs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="text-xs font-medium">{log.action}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{log.user_email}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{format(parseISO(log.created_at), "dd MMM HH:mm")}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(parseISO(log.changed_at), "dd MMM yyyy HH:mm")}</TableCell>
+                  <TableCell className="text-xs">{log.changed_by_name ?? "—"}</TableCell>
+                  <TableCell className="text-xs"><Badge variant="outline" className="text-[10px]">{log.action}</Badge></TableCell>
+                  <TableCell className="text-xs space-y-0.5">
+                    {log.changed_fields.includes("anchor_date") && (
+                      <div><span className="text-muted-foreground">anchor:</span> <span className="line-through text-destructive/70 font-mono">{log.old_anchor_date ?? "—"}</span> → <span className="font-mono text-emerald-700 dark:text-emerald-400">{log.new_anchor_date ?? "—"}</span></div>
+                    )}
+                    {log.changed_fields.includes("pattern") && (
+                      <div><span className="text-muted-foreground">pattern:</span> <span className="line-through text-destructive/70 font-mono">{(log.old_pattern ?? []).join(",") || "—"}</span> → <span className="font-mono text-emerald-700 dark:text-emerald-400">{(log.new_pattern ?? []).join(",") || "—"}</span></div>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
