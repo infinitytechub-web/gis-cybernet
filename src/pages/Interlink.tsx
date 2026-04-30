@@ -25,6 +25,7 @@ import {
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
+  INTERLINK_LABELS,
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
 import { SchedulesTab } from "@/components/interlink/SchedulesTab";
