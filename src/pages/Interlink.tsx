@@ -95,11 +95,11 @@ export default function Interlink() {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              {INTERLINK_LABELS.title}
+              {branding.title}
               <Sparkles className="h-4 w-4 opacity-80" />
             </h1>
             <p className="text-sm text-white/90">
-              {INTERLINK_LABELS.tagline}
+              {branding.tagline}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">
