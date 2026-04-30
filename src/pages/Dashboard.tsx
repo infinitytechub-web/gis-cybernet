@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import OnlineNowPanel from "@/components/dashboard/OnlineNowPanel";
+import CommandRosterWidget from "@/components/dashboard/CommandRosterWidget";
 import { useNavigate } from "react-router-dom";
 import { format, subDays, startOfWeek, addDays } from "date-fns";
 import {
@@ -382,6 +383,9 @@ export default function Dashboard() {
 
       {/* Scheduled Reports Widget */}
       <ScheduledReportsWidget />
+
+      {/* Command Roster — visible to command tier */}
+      {isAdminOrSupervisor && <CommandRosterWidget />}
 
       {/* Online Users Widget — command tier only */}
       <div id="online-now" className="scroll-mt-20">

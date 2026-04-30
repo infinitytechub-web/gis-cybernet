@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
+import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 
 const commandItems = [
@@ -286,9 +287,21 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4">
         {!collapsed && (
-          <div className="flex items-center gap-2 mb-2 text-xs text-sidebar-foreground/60">
-            <Shield className="h-3 w-3" />
-            <span className="capitalize">{role ?? "staff"}</span>
+          <div className="mb-2">
+            <div className="flex items-center gap-2 text-xs text-sidebar-foreground/60">
+              <Shield className="h-3 w-3" />
+              <span>Signed in as</span>
+            </div>
+            <Badge
+              variant="outline"
+              className={`mt-1 text-[10px] font-medium ${
+                COMMAND_TIER_ROLES.includes(role as any)
+                  ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  : ""
+              }`}
+            >
+              {roleLabel(role)}
+            </Badge>
           </div>
         )}
         {!collapsed && <ChangePasswordDialog />}
