@@ -1004,7 +1004,21 @@ function RecipientsTab({ userId }: { userId: string }) {
                     <TableCell><div className="font-medium">{l.name}</div>{l.description && <div className="text-[11px] text-muted-foreground">{l.description}</div>}</TableCell>
                     <TableCell><Badge variant="outline" className={SCOPE_META[l.scope as keyof typeof SCOPE_META]?.tone}>{l.scope}</Badge></TableCell>
                     <TableCell><Badge variant="outline">{(l.member_emails ?? []).length}</Badge></TableCell>
-                    <TableCell><Button size="icon" variant="ghost" onClick={() => deleteList(l.id)} className="h-7 w-7"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openTestDlg(l)}
+                        disabled={(l.member_emails ?? []).length === 0}
+                        className="h-7 gap-1 text-xs"
+                        title="Send a test email to verify delivery"
+                      >
+                        <MailCheck className="h-3.5 w-3.5 text-emerald-600" /> Test
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => deleteList(l.id)} className="h-7 w-7">
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -1012,7 +1026,172 @@ function RecipientsTab({ userId }: { userId: string }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* List audit trail */}
+      <div className="lg:col-span-2">
+        <InterlinkListAuditPanel />
+      </div>
+
+      {/* Test email dialog */}
+      <Dialog open={!!testDlg} onOpenChange={(v) => !v && setTestDlg(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MailCheck className="h-5 w-5 text-emerald-600" />
+              Send test email — {testDlg?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Pick which addresses to test. A small placeholder attachment is sent so you can verify provider delivery
+              without disturbing the full list.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Recipients in this list</Label>
+              <ScrollArea className="h-[180px] rounded border p-2 mt-1">
+                <div className="space-y-1.5">
+                  {(testDlg?.emails ?? []).length === 0 && (
+                    <p className="text-xs text-muted-foreground italic">List has no members.</p>
+                  )}
+                  {(testDlg?.emails ?? []).map((e) => (
+                    <label key={e} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/40 px-1.5 py-1 rounded">
+                      <Checkbox
+                        checked={testSelected.has(e)}
+                        onCheckedChange={(v) => {
+                          const next = new Set(testSelected);
+                          if (v) next.add(e); else next.delete(e);
+                          setTestSelected(next);
+                        }}
+                      />
+                      <span className="font-mono">{e}</span>
+                    </label>
+                  ))}
+                </div>
+              </ScrollArea>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {testSelected.size} of {testDlg?.emails.length ?? 0} selected · max 10 per test
+              </p>
+            </div>
+            <div>
+              <Label className="text-xs">Or send to a one-off address</Label>
+              <Input
+                type="email"
+                value={testRecipient}
+                onChange={(e) => setTestRecipient(e.target.value)}
+                placeholder="verify@example.com"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTestDlg(null)} disabled={testSending}>Cancel</Button>
+            <Button onClick={sendTestEmail} disabled={testSending} className="gap-1.5">
+              {testSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Send test
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// List audit panel — who created / updated / deleted distribution lists
+function InterlinkListAuditPanel() {
+  const { data: rows = [], isLoading, refetch } = useQuery({
+    queryKey: ["interlink-lists-audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("interlink_lists_audit" as any)
+        .select("id, list_id, list_name, action, actor_name, diff, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  function fmtVal(v: any): string {
+    if (v === null || v === undefined) return "∅";
+    if (Array.isArray(v)) return `[${v.length}] ${v.slice(0, 3).join(", ")}${v.length > 3 ? "…" : ""}`;
+    return String(v);
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <History className="h-4 w-4 text-amber-600" /> Distribution List Audit Trail
+          </CardTitle>
+          <CardDescription>Who created, updated, or deleted lists — with diffs</CardDescription>
+        </div>
+        <Button size="sm" variant="ghost" onClick={() => refetch()} className="gap-1.5">
+          <RefreshCw className="h-3.5 w-3.5" /> Refresh
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[320px] rounded border">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">When</TableHead>
+                  <TableHead className="text-xs">By</TableHead>
+                  <TableHead className="text-xs">List</TableHead>
+                  <TableHead className="text-xs">Action</TableHead>
+                  <TableHead className="text-xs">Changes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading && (
+                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-xs text-muted-foreground">Loading…</TableCell></TableRow>
+                )}
+                {!isLoading && rows.length === 0 && (
+                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-xs text-muted-foreground italic">No list changes recorded yet.</TableCell></TableRow>
+                )}
+                {rows.map((r) => {
+                  const entries = r.diff ? Object.entries(r.diff as Record<string, { from: any; to: any }>) : [];
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(r.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-xs">{r.actor_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs font-medium">{r.list_name ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            r.action === "create" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            : r.action === "delete" ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                            : "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                          }
+                        >
+                          {r.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {entries.length === 0 ? <span className="text-muted-foreground">—</span> : (
+                          <div className="space-y-0.5">
+                            {entries.map(([k, v]) => (
+                              <div key={k} className="leading-tight">
+                                <span className="font-medium">{k}:</span>{" "}
+                                <span className="text-muted-foreground line-through">{fmtVal(v.from)}</span>
+                                <span className="mx-1 text-muted-foreground">→</span>
+                                <span className="text-emerald-700 dark:text-emerald-400 font-medium">{fmtVal(v.to)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }
 
