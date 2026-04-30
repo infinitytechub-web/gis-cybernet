@@ -43,6 +43,10 @@ interface Props {
   profileId?: string | null;
   /** Optional staff identifier for the export header. */
   staffId?: string | null;
+  /** Viewer's role(s) — used to apply per-role rotation overrides. */
+  roles?: string[] | null;
+  /** Viewer's department id — used to apply per-department rotation overrides. */
+  departmentId?: string | null;
 }
 
 type AssignmentRow = {
