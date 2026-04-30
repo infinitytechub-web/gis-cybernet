@@ -258,9 +258,9 @@ export function MyShiftRotationCalendar({ staffGroup, staffName }: Props) {
                   key={d.toISOString()}
                   className={cn(
                     "text-xs font-mono px-2 py-0.5 rounded border",
-                    GROUP_COLORS[myGroup].bg,
-                    GROUP_COLORS[myGroup].text,
-                    GROUP_COLORS[myGroup].border,
+                    tone(myGroup).bg,
+                    tone(myGroup).text,
+                    tone(myGroup).border,
                     isToday(d) && "ring-1 ring-primary",
                   )}
                 >
