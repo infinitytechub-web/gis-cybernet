@@ -40,6 +40,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {clock.toLocaleTimeString()}
               </span>
               <ThemeToggle />
+              <HeaderRoleSwitcher />
               <OnlineNowBadge />
               {isAdmin && <SystemAuditTray />}
               <NotificationBell />
