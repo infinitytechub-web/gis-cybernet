@@ -15,6 +15,8 @@ interface AuthContextValue {
   isIpse: boolean;
   is2ic: boolean;
   isOic: boolean;
+  /** Tightest tier — only Admin + OIC may export Interlink dispatch & approval logs. */
+  canExportInterlinkLogs: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -101,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isIpse: role === "ipse_supervisor" || role === "ipse_deputy_supervisor",
     is2ic: role === "2ic",
     isOic: role === "oic",
+    canExportInterlinkLogs: role === "admin" || role === "oic",
   }), [user, role, loading, signIn, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
