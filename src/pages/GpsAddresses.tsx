@@ -334,7 +334,7 @@ export default function GpsAddresses() {
     return () => { supabase.removeChannel(channel); };
   }, [allowed, qc]);
 
-  const { data: records = [], isLoading } = useQuery({
+  const { data: liveRecords = [], isLoading, isError: recordsError } = useQuery({
     queryKey: ["gps-addresses"],
     enabled: allowed,
     refetchInterval: 60_000,
@@ -407,6 +407,59 @@ export default function GpsAddresses() {
       return out;
     },
   });
+
+  // ===== Offline cache integration =====
+  // When the live query returns rows, persist a slim copy. When the user is
+  // offline (or the live query failed) and offline mode is enabled, hydrate
+  // from localStorage so the map and table remain usable.
+  useEffect(() => {
+    if (!offlineMode) return;
+    if (liveRecords.length === 0) return;
+    writeOfflineCache(
+      liveRecords.slice(0, OFFLINE_CACHE_MAX).map((r) => ({
+        source: r.source,
+        id: r.id,
+        raw_location: r.raw_location,
+        digital_address: r.digital_address,
+        lat: r.lat,
+        lng: r.lng,
+        context: r.context,
+        reference: r.reference,
+        status: r.status ?? null,
+        created_at: r.created_at,
+      })),
+    );
+  }, [liveRecords, offlineMode]);
+
+  const records = useMemo<GpsRecord[]>(() => {
+    if (liveRecords.length > 0) {
+      if (hydratedFromCache) setHydratedFromCache(false);
+      if (cacheMeta) setCacheMeta(null);
+      return liveRecords;
+    }
+    // Fall back to cache when: offline mode is on AND (browser offline OR query errored).
+    if (!offlineMode) return liveRecords;
+    if (isOnline && !recordsError) return liveRecords;
+    const cache = readOfflineCache();
+    if (!cache || cache.points.length === 0) return liveRecords;
+    if (!hydratedFromCache) setHydratedFromCache(true);
+    if (!cacheMeta || cacheMeta.cached_at !== cache.cached_at) {
+      setCacheMeta({ cached_at: cache.cached_at, count: cache.count });
+    }
+    return cache.points.map((p) => ({
+      id: p.id,
+      source: p.source as SourceKey,
+      raw_location: p.raw_location,
+      digital_address: p.digital_address,
+      lat: p.lat,
+      lng: p.lng,
+      context: p.context,
+      reference: p.reference,
+      created_at: p.created_at,
+      status: p.status,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRecords, offlineMode, isOnline, recordsError]);
 
   const filtered = useMemo(() => {
     let list = records;
