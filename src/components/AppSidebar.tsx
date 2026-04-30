@@ -22,6 +22,8 @@ import gisLogo from "@/assets/gis-logo.jpeg";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
 import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
+import { useConfidentialityCommands } from "@/hooks/useConfidentialityCommands";
+import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
