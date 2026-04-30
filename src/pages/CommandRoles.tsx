@@ -232,9 +232,17 @@ export default function CommandRoles() {
             </p>
           </div>
         </div>
-        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
-          <History className="h-3.5 w-3.5" /> Audit trail ({auditEntries.length})
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="default" className="gap-1.5" onClick={() => setBulkOpen(true)}>
+            <Users className="h-3.5 w-3.5" /> Bulk assign
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
+            <History className="h-3.5 w-3.5" /> Recent ({auditEntries.length})
+          </Button>
+          <Button asChild size="sm" variant="outline" className="gap-1.5">
+            <Link to="/command-role-audit"><ExternalLink className="h-3.5 w-3.5" /> Full audit log</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
