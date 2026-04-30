@@ -99,7 +99,7 @@ export function ShiftRotationOverrides() {
       .channel("shift-rotation-overrides-admin")
       .on("postgres_changes", { event: "*", schema: "public", table: "shift_rotation_overrides" },
         () => qc.invalidateQueries({ queryKey: ["shift-rotation-overrides"] }))
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "shift_rotation_audit" },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "shift_rotation_config_audit" },
         () => qc.invalidateQueries({ queryKey: ["shift-rotation-audit"] }))
       .subscribe();
     return () => { supabase.removeChannel(ch); };
