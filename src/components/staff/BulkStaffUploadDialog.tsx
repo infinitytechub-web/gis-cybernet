@@ -217,13 +217,30 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
       setPreviewResult(res);
       setDeactAcknowledged(false);
       if (!dryRun) {
-        setCommitted(true);
+        const rb = res.autoRollback;
+        if (rb?.attempted) {
+          // Commit failed and rollback was triggered
+          setCommitted(false);
+          if (rb.succeeded) {
+            toast.error(
+              `Commit failed — automatically rolled back to snapshot. Restored ${rb.profilesRestored ?? 0} staff records and ${rb.nightGuardRestored ?? 0} roster rows. Errors: ${res.commitErrors.length}.`,
+              { duration: 10000 }
+            );
+          } else {
+            toast.error(
+              `Commit failed AND auto-rollback failed: ${rb.message ?? "unknown"}. Restore manually from the Snapshots tab.`,
+              { duration: 15000 }
+            );
+          }
+        } else {
+          setCommitted(true);
+          toast.success(`Override applied — ${res.createdCount} created · ${res.updatedCount} updated · ${res.deactivateCount ?? 0} deactivated · ${res.rosterPlanned ?? 0} roster rows`);
+        }
         qc.invalidateQueries({ queryKey: ["directory-staff"] });
         qc.invalidateQueries({ queryKey: ["bulk-staff-audit"] });
         qc.invalidateQueries({ queryKey: ["bulk-staff-snapshots"] });
         qc.invalidateQueries({ queryKey: ["night-guard-assignments"] });
         qc.invalidateQueries({ queryKey: ["shift-assignments"] });
-        toast.success(`Override applied — ${res.createdCount} created · ${res.updatedCount} updated · ${res.deactivateCount ?? 0} deactivated · ${res.rosterPlanned ?? 0} roster rows`);
       } else {
         toast.message(`Preview: ${res.createdCount} create · ${res.updatedCount} update · ${res.deactivateCount ?? 0} deactivate · ${res.rosterPlanned ?? 0} roster · ${res.errorCount} error`);
       }
