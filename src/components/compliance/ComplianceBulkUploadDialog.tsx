@@ -115,15 +115,20 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
     setRunning(true);
     setProgress(0);
     const { data: { user } } = await supabase.auth.getUser();
+    const batchId = crypto.randomUUID();
     const queue = rows.filter((r) => r.status === "pending");
+    const auditEntries: any[] = [];
     let done = 0;
     let okCount = 0;
     let failCount = 0;
 
     for (const row of queue) {
       setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "uploading" } : r)));
+      let recordId: string | null = null;
+      let storedPath: string | null = null;
       try {
         const path = `${profileId}/${kind}/${Date.now()}-${crypto.randomUUID()}.${row.ext}`;
+        storedPath = path;
         const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, row.file, {
           contentType: row.file.type || undefined,
           upsert: false,
@@ -140,35 +145,80 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
         };
 
         if (kind === "documents") {
-          const { error } = await supabase.from("staff_documents").insert({
+          const { data, error } = await supabase.from("staff_documents").insert({
             profile_id: profileId,
             document_type: docType,
             issuing_authority: issuingBody || null,
             expiry_date: expiryDate || null,
             status,
             ...fileMeta,
-          });
+          }).select("id").single();
           if (error) throw error;
+          recordId = data?.id ?? null;
         } else {
-          const { error } = await supabase.from("certifications").insert({
+          const { data, error } = await supabase.from("certifications").insert({
             profile_id: profileId,
             certification_name: certName,
             issuing_body: issuingBody || null,
             expiry_date: expiryDate || null,
             status,
             ...fileMeta,
-          });
+          }).select("id").single();
           if (error) throw error;
+          recordId = data?.id ?? null;
         }
 
         okCount++;
+        auditEntries.push({
+          batch_id: batchId,
+          performed_by: user?.id,
+          target_profile_id: profileId,
+          kind,
+          file_name: row.cleanName,
+          file_size: row.size,
+          file_type: row.file.type || null,
+          outcome: "uploaded",
+          record_id: recordId,
+          file_path: storedPath,
+        });
         setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "done" } : r)));
       } catch (e: any) {
         failCount++;
-        setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "error", message: e.message || "Upload failed" } : r)));
+        const message = e?.message || "Upload failed";
+        // best-effort cleanup of orphaned object if DB insert failed after upload
+        if (storedPath) {
+          await supabase.storage.from(BUCKET).remove([storedPath]).catch(() => {});
+        }
+        auditEntries.push({
+          batch_id: batchId,
+          performed_by: user?.id,
+          target_profile_id: profileId,
+          kind,
+          file_name: row.cleanName,
+          file_size: row.size,
+          file_type: row.file.type || null,
+          outcome: "failed",
+          error_message: message.slice(0, 500),
+          record_id: null,
+          file_path: null,
+        });
+        setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "error", message } : r)));
       }
       done++;
       setProgress(Math.round((done / queue.length) * 100));
+    }
+
+    if (auditEntries.length > 0) {
+      // Batch insert in chunks of 50 to honour project conventions
+      for (let i = 0; i < auditEntries.length; i += 50) {
+        await supabase
+          .from("compliance_upload_audit")
+          .insert(auditEntries.slice(i, i + 50))
+          .then(({ error }) => {
+            if (error) console.warn("compliance audit insert failed", error);
+          });
+      }
+      qc.invalidateQueries({ queryKey: ["compliance-upload-audit"] });
     }
 
     qc.invalidateQueries({ queryKey: [kind === "documents" ? "staff-documents" : "certifications"] });
