@@ -1757,6 +1757,45 @@ export type Database = {
         }
         Relationships: []
       }
+      interlink_lists_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          after_row: Json | null
+          before_row: Json | null
+          created_at: string
+          diff: Json
+          id: string
+          list_id: string
+          list_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          after_row?: Json | null
+          before_row?: Json | null
+          created_at?: string
+          diff?: Json
+          id?: string
+          list_id: string
+          list_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          after_row?: Json | null
+          before_row?: Json | null
+          created_at?: string
+          diff?: Json
+          id?: string
+          list_id?: string
+          list_name?: string | null
+        }
+        Relationships: []
+      }
       interlink_notification_log: {
         Row: {
           attempt_count: number

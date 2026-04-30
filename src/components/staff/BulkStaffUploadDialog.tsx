@@ -44,16 +44,28 @@ const TEMPLATE_HEADERS = [
   "training_designation", "staff_category", "office",
 ];
 
-function downloadTemplateCsv() {
-  const sample = [
-    TEMPLATE_HEADERS.join(","),
-    "GIS-2026-0001,Jane,Doe,Officer,CYBER & MISD,0244000000,female,active,Alpha,A,GHA-1234567-8,jane.doe@gis.local,O+,12,HUHUNYA,Cadet,HQ",
-  ].join("\n");
-  const blob = new Blob([sample], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = "staff-list-template.csv"; a.click();
-  URL.revokeObjectURL(url);
+const TEMPLATE_SAMPLE_ROWS: string[][] = [
+  ["GIS-2026-0001","Jane","Doe","Officer","CYBER & MISD","0244000000","female","active","Alpha","A","GHA-1234567-8","jane.doe@gis.local","O+","12","HUHUNYA","Cadet","HQ"],
+  ["GIS-2026-0002","Kwame","Mensah","Inspector","Operations","0201112233","male","active","Bravo","B","GHA-2345678-9","kwame.mensah@gis.local","A+","11","ASSIN FOSO","Regular","HQ"],
+  ["GIS-2026-0003","Akosua","Owusu","Sergeant","Administration","0277223344","female","active","Charlie","C","GHA-3456789-0","akosua.owusu@gis.local","B+","10","HUHUNYA","Regular","HQ"],
+];
+
+function downloadTemplate(format: "csv" | "xlsx") {
+  if (format === "csv") {
+    const lines = [TEMPLATE_HEADERS.join(","), ...TEMPLATE_SAMPLE_ROWS.map((r) => r.map((v) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v).join(","))];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "staff-list-template.csv"; a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+  // xlsx
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, ...TEMPLATE_SAMPLE_ROWS]);
+  ws["!cols"] = TEMPLATE_HEADERS.map((h) => ({ wch: Math.max(12, h.length + 2) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Staff");
+  XLSX.writeFile(wb, "staff-list-template.xlsx");
 }
 
 interface Props { trigger?: React.ReactNode }
@@ -196,9 +208,14 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
                 className="max-w-xs"
               />
-              <Button variant="ghost" size="sm" onClick={downloadTemplateCsv} className="gap-1.5">
-                <Download className="h-4 w-4" /> Download template
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("csv")} className="gap-1.5">
+                  <Download className="h-4 w-4" /> CSV template
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("xlsx")} className="gap-1.5">
+                  <Download className="h-4 w-4" /> XLSX template
+                </Button>
+              </div>
             </div>
 
             {fileName && (
