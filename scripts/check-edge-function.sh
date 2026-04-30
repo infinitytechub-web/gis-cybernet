@@ -87,22 +87,22 @@ for fn in "${TARGETS[@]}"; do
       ok=0
     fi
   else
-    # `deno fmt --check` runs the SWC parser without type-checking — fast and
-    # catches the same syntax errors the Supabase bundler rejects (mismatched
-    # braces, invalid TS, etc.) without needing remote-module resolution.
-    echo "  • parse check (deno fmt --check)"
-    if ! deno fmt --check --quiet "$ENTRY" >/dev/null 2>&1; then
-      # fmt --check fails on either parse error OR formatting drift.
-      # Re-run without --check to distinguish: if it can format the file, the
-      # parse is OK and we just have whitespace drift (not a deploy blocker).
-      if deno fmt --quiet "$ENTRY" >/dev/null 2>&1; then
-        : # parse OK; ignore formatting drift
-      else
-        echo "  ✖ parse failed for $fn" >&2
-        deno fmt --check "$ENTRY" 2>&1 | head -20 >&2 || true
-        ok=0
-      fi
+    # Parser-only: copy to a temp file and run `deno fmt --check`. The SWC
+    # parser is the same one the Supabase bundler uses, so mismatched braces
+    # and invalid TS are caught without needing remote-module resolution.
+    # We use a temp copy so formatting drift in the source file is harmless;
+    # a failure here = real parse error.
+    TMP_DIR="$(mktemp -d)"
+    TMP_FILE="$TMP_DIR/$fn.ts"
+    cp "$ENTRY" "$TMP_FILE"
+    echo "  • parse check (deno fmt parser)"
+    # First normalise formatting in the temp copy. If THAT fails, it's a parse error.
+    if ! deno fmt --quiet "$TMP_FILE" 2>/tmp/edge-parse-err; then
+      echo "  ✖ parse failed for $fn" >&2
+      head -20 /tmp/edge-parse-err >&2 || true
+      ok=0
     fi
+    rm -rf "$TMP_DIR"
   fi
 
   # 2. Lint
