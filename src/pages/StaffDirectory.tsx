@@ -35,6 +35,8 @@ const statusColor = (s: string) => {
 
 export default function StaffDirectory() {
   const navigate = useNavigate();
+  const { isAdmin, isOic, is2ic } = useAuth();
+  const canBulkUpload = isAdmin || isOic || is2ic;
   const [searchParams] = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";
   const [search, setSearch] = useState("");
