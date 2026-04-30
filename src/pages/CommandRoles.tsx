@@ -667,7 +667,11 @@ export default function CommandRoles() {
         </DialogContent>
       </Dialog>
 
-      <BulkCommandRoleAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} />
+      <BulkCommandRoleAssignDialog
+        open={bulkOpen}
+        onOpenChange={(v) => { setBulkOpen(v); if (!v) setBulkPreselect(undefined); }}
+        preselectUserIds={bulkPreselect}
+      />
     </div>
   );
 }
