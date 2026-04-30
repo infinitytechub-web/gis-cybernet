@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   format,
   startOfMonth,
@@ -11,11 +12,13 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Sparkles, Box } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, Box, ShieldCheck } from "lucide-react";
 
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { cn } from "@/lib/utils";
 import { GROUP_COLORS, type ShiftGroup } from "@/lib/shift-rotation";
 import { useShiftRotationConfig } from "@/hooks/useShiftRotationConfig";
@@ -36,7 +39,18 @@ interface Props {
   staffGroup: string | null | undefined;
   /** Optional staff name for the header chip. */
   staffName?: string;
+  /** Profile id used to look up admin-approved overrides. */
+  profileId?: string | null;
+  /** Optional staff identifier for the export header. */
+  staffId?: string | null;
 }
+
+type AssignmentRow = {
+  id: string;
+  start_date: string;
+  end_date: string | null;
+  shifts: { id: string; name: string } | null;
+};
 
 /**
  * Self-view rotation calendar driven by the published Amasaman 4-day rotation.
