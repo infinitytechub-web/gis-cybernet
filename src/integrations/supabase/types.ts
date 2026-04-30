@@ -4989,6 +4989,51 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_bulk_upload_snapshots: {
+        Row: {
+          created_at: string
+          file_name: string | null
+          id: string
+          night_guard_count: number
+          night_guard_data: Json
+          note: string | null
+          profiles_count: number
+          profiles_data: Json
+          restored_at: string | null
+          restored_by: string | null
+          taken_by: string | null
+          taken_by_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          night_guard_count?: number
+          night_guard_data?: Json
+          note?: string | null
+          profiles_count?: number
+          profiles_data?: Json
+          restored_at?: string | null
+          restored_by?: string | null
+          taken_by?: string | null
+          taken_by_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          night_guard_count?: number
+          night_guard_data?: Json
+          note?: string | null
+          profiles_count?: number
+          profiles_data?: Json
+          restored_at?: string | null
+          restored_by?: string | null
+          taken_by?: string | null
+          taken_by_name?: string | null
+        }
+        Relationships: []
+      }
       staff_documents: {
         Row: {
           created_at: string
@@ -5523,6 +5568,10 @@ export type Database = {
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
+      }
+      restore_staff_bulk_snapshot: {
+        Args: { p_snapshot_id: string }
+        Returns: Json
       }
       search_approval_audit: {
         Args: {
