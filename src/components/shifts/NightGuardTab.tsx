@@ -7,11 +7,12 @@ import { NightGuardDutySummary } from "./NightGuardDutySummary";
 import { TodayRosterCard } from "./TodayRosterCard";
 import NightGuardDutyUpload from "./NightGuardDutyUpload";
 import { ManualAssignDialog } from "./ManualAssignDialog";
+import BulkStaffUploadDialog from "@/components/staff/BulkStaffUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Shield, ChevronLeft, ChevronRight, Users, Trash2 } from "lucide-react";
+import { Shield, ChevronLeft, ChevronRight, Users, Trash2, UserPlus } from "lucide-react";
 import { format, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -113,6 +114,18 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
             <div className="flex gap-2 flex-wrap">
               {isAdmin && (
                 <>
+                  <BulkStaffUploadDialog
+                    trigger={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] font-semibold"
+                        title="Bulk-upload Night Guard staff list (CSV/XLSX). Set department = 'Night Guard' in the file to register guards."
+                      >
+                        <UserPlus className="h-4 w-4" /> Upload Staff List
+                      </Button>
+                    }
+                  />
                   <NightGuardDutyUpload nightGuardStaff={nightGuardStaff} shifts={shifts} />
                   <ManualAssignDialog nightGuardStaff={allStaff.length > 0 ? allStaff : nightGuardStaff} shifts={shifts} />
                 </>
