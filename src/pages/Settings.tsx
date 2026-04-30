@@ -22,6 +22,7 @@ import { ShiftConnectionPermissionsMatrix } from "@/components/settings/ShiftCon
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { InterlinkBrandingSettings } from "@/components/interlink/InterlinkBrandingSettings";
 import { ShiftRotationSettings } from "@/components/settings/ShiftRotationSettings";
+import { ShiftRotationOverrides } from "@/components/settings/ShiftRotationOverrides";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -125,7 +126,10 @@ export default function Settings() {
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
-        <TabsContent value="rotation"><ShiftRotationSettings /></TabsContent>
+        <TabsContent value="rotation" className="space-y-4">
+          <ShiftRotationSettings />
+          <ShiftRotationOverrides />
+        </TabsContent>
       </Tabs>
     </div>
   );

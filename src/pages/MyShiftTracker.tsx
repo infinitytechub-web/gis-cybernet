@@ -151,7 +151,7 @@ function computePunctuality(checkInIso: string, dateKey: string, shift: { start_
 }
 
 export default function MyShiftTracker() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const now = useNow(1000);
   const [cursor, setCursor] = useState<Date>(() => new Date());
@@ -163,7 +163,7 @@ export default function MyShiftTracker() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, user_id, first_name, last_name, staff_id, shift_group")
+        .select("id, user_id, first_name, last_name, staff_id, shift_group, department_id")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
@@ -686,6 +686,8 @@ export default function MyShiftTracker() {
         staffName={`${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || undefined}
         profileId={profile?.id ?? null}
         staffId={profile?.staff_id ?? null}
+        roles={role ? [role] : null}
+        departmentId={(profile as any)?.department_id ?? null}
       />
 
       <Card>

@@ -4671,6 +4671,87 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_rotation_config_audit: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          changed_by_name: string | null
+          changed_fields: string[]
+          id: string
+          new_anchor_date: string | null
+          new_pattern: string[] | null
+          old_anchor_date: string | null
+          old_pattern: string[] | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          changed_fields?: string[]
+          id?: string
+          new_anchor_date?: string | null
+          new_pattern?: string[] | null
+          old_anchor_date?: string | null
+          old_pattern?: string[] | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          changed_fields?: string[]
+          id?: string
+          new_anchor_date?: string | null
+          new_pattern?: string[] | null
+          old_anchor_date?: string | null
+          old_pattern?: string[] | null
+        }
+        Relationships: []
+      }
+      shift_rotation_overrides: {
+        Row: {
+          anchor_date: string
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          notes: string | null
+          pattern: string[]
+          scope_type: string
+          scope_value: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          anchor_date: string
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          pattern: string[]
+          scope_type: string
+          scope_value: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          anchor_date?: string
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          notes?: string | null
+          pattern?: string[]
+          scope_type?: string
+          scope_value?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       shift_window_override_audit: {
         Row: {
           action: string

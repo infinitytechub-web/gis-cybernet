@@ -43,6 +43,10 @@ interface Props {
   profileId?: string | null;
   /** Optional staff identifier for the export header. */
   staffId?: string | null;
+  /** Viewer's role(s) — used to apply per-role rotation overrides. */
+  roles?: string[] | null;
+  /** Viewer's department id — used to apply per-department rotation overrides. */
+  departmentId?: string | null;
 }
 
 type AssignmentRow = {
@@ -57,10 +61,10 @@ type AssignmentRow = {
  * Renders a 3D perspective grid where the staff member's on-duty days lift
  * forward and glow, while off-duty days recede.
  */
-export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId }: Props) {
+export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId, roles, departmentId }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
   const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
-  const { config, groupForDate } = useShiftRotationConfig();
+  const { config, groupForDate } = useShiftRotationConfig({ roles, departmentId });
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
@@ -160,6 +164,9 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
             <CardDescription>
               Auto-generated from the {config.pattern.join(" → ")} rotation, with admin-approved
               shift assignments overriding any matching day.
+              {config.overrideScopeLabel && (
+                <> <Badge variant="outline" className="ml-1 text-[10px] border-amber-500/60 text-amber-700 dark:text-amber-300">{config.overrideScopeLabel}</Badge></>
+              )}
               {myGroup ? (
                 <> Days where <strong>Group {myGroup}</strong> is on duty are lifted toward you.</>
               ) : (
