@@ -389,6 +389,16 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                         <Badge variant={filter === b.k ? "default" : "outline"} className={`cursor-pointer ${filter === b.k ? "" : b.cls}`}>{b.label}</Badge>
                       </button>
                     ))}
+                    {(counts.deactivateCount ?? 0) > 0 && (
+                      <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+                        {counts.deactivateCount} will deactivate
+                      </Badge>
+                    )}
+                    {(counts.rosterPlanned ?? 0) > 0 && (
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
+                        {counts.rosterPlanned} roster · {counts.rosterDates?.length ?? 0} day(s)
+                      </Badge>
+                    )}
                     <Button size="sm" variant="ghost" onClick={exportDiffCsv} className="ml-auto h-6 gap-1 text-xs">
                       <Download className="h-3 w-3" /> Export diff CSV
                     </Button>
