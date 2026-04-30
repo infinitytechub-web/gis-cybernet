@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon } from "lucide-react";
+import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon, Users, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BulkCommandRoleAssignDialog } from "@/components/admin/BulkCommandRoleAssignDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -29,6 +31,7 @@ export default function CommandRoles() {
   const [officeFilter, setOfficeFilter] = useState<string>("all");
   const [shiftFilter, setShiftFilter] = useState<string>("all");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments-list-cmd"],
@@ -230,9 +233,17 @@ export default function CommandRoles() {
             </p>
           </div>
         </div>
-        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
-          <History className="h-3.5 w-3.5" /> Audit trail ({auditEntries.length})
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="default" className="gap-1.5" onClick={() => setBulkOpen(true)}>
+            <Users className="h-3.5 w-3.5" /> Bulk assign
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
+            <History className="h-3.5 w-3.5" /> Recent ({auditEntries.length})
+          </Button>
+          <Button asChild size="sm" variant="outline" className="gap-1.5">
+            <Link to="/command-role-audit"><ExternalLink className="h-3.5 w-3.5" /> Full audit log</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -509,6 +520,8 @@ export default function CommandRoles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkCommandRoleAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} />
     </div>
   );
 }
