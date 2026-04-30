@@ -276,6 +276,27 @@ export default function CommandRoles() {
 
   const deptName = (id?: string | null) => departments.find((d: any) => d.id === id)?.name ?? "—";
 
+  // Quick-search matches across all candidates (independent of dialog filters).
+  const quickMatches = useMemo(() => {
+    const q = quickQuery.trim().toLowerCase();
+    if (!q) return [] as Candidate[];
+    return candidates.filter((c) =>
+      String(c.first_name ?? "").toLowerCase().includes(q) ||
+      String(c.last_name ?? "").toLowerCase().includes(q) ||
+      String(c.email ?? "").toLowerCase().includes(q) ||
+      String(c.staff_id ?? "").toLowerCase().includes(q)
+    ).slice(0, 50);
+  }, [candidates, quickQuery]);
+
+  const openBulkWithMatches = () => {
+    if (quickMatches.length === 0) {
+      toast.error("No matching staff to pre-select");
+      return;
+    }
+    setBulkPreselect(quickMatches.map((m) => m.user_id));
+    setBulkOpen(true);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -291,7 +312,24 @@ export default function CommandRoles() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" variant="default" className="gap-1.5" onClick={() => setBulkOpen(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            disabled={!lastBatch || undoing}
+            onClick={() => {
+              if (!lastBatch) return;
+              const n = lastBatch.entries.length;
+              if (confirm(`Revert the most recent batch of ${n} command-role change${n === 1 ? "" : "s"}? This will be logged in the audit trail.`)) {
+                undoMut.mutate();
+              }
+            }}
+            title={lastBatch ? `Undo batch ${lastBatch.batchId.slice(0, 8)}… (${lastBatch.entries.length} entries)` : "No batch to undo"}
+          >
+            {undoing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+            Undo last batch{lastBatch ? ` (${lastBatch.entries.length})` : ""}
+          </Button>
+          <Button size="sm" variant="default" className="gap-1.5" onClick={() => { setBulkPreselect(undefined); setBulkOpen(true); }}>
             <Users className="h-3.5 w-3.5" /> Bulk assign
           </Button>
           <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
@@ -302,6 +340,57 @@ export default function CommandRoles() {
           </Button>
         </div>
       </div>
+
+      {/* Quick staff search */}
+      <Card>
+        <CardContent className="py-3 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={quickQuery}
+                onChange={(e) => setQuickQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") openBulkWithMatches(); }}
+                placeholder="Quick staff search — name, staff ID, or email…"
+                className="h-8 pl-7 pr-3 w-full rounded border bg-background text-xs"
+              />
+            </div>
+            <span className="text-[11px] text-muted-foreground">
+              {quickQuery.trim()
+                ? `${quickMatches.length} match${quickMatches.length === 1 ? "" : "es"}`
+                : "Type to search; press Enter to open Bulk Assign with matches pre-selected."}
+            </span>
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1.5 ml-auto"
+              disabled={quickMatches.length === 0}
+              onClick={openBulkWithMatches}
+            >
+              <Users className="h-3.5 w-3.5" /> Bulk assign matches
+            </Button>
+            {quickQuery && (
+              <Button size="sm" variant="ghost" onClick={() => setQuickQuery("")} className="h-7 px-2 text-[11px]">
+                Clear
+              </Button>
+            )}
+          </div>
+          {quickQuery.trim() && quickMatches.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {quickMatches.slice(0, 12).map((m) => (
+                <Badge key={m.user_id} variant="secondary" className="text-[10px]">
+                  {`${m.first_name ?? ""} ${m.last_name ?? ""}`.trim() || m.email}
+                  {m.staff_id ? ` · ${m.staff_id}` : ""}
+                </Badge>
+              ))}
+              {quickMatches.length > 12 && (
+                <Badge variant="outline" className="text-[10px]">+{quickMatches.length - 12} more</Badge>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {COMMAND_TIER_ROLES.map((role) => {
