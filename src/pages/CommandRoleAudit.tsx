@@ -17,7 +17,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
-import { downloadCsv } from "@/lib/download-utils";
+import { downloadCSVString } from "@/lib/download-utils";
+
+function toCsv(headers: string[], rows: (string | number | null | undefined)[][]) {
+  const escape = (v: any) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [headers.map(escape).join(","), ...rows.map((r) => r.map(escape).join(","))].join("\n");
+}
 
 const PAGE_SIZE = 25;
 
@@ -95,8 +103,7 @@ export default function CommandRoleAudit() {
 
   const exportCsv = () => {
     if (!rows.length) return;
-    downloadCsv(
-      `command-role-audit-page-${page + 1}.csv`,
+    const csv = toCsv(
       ["When", "Action", "Target", "Staff ID", "From", "To", "Changed by"],
       rows.map((r: any) => [
         r.created_at ? format(new Date(r.created_at), "yyyy-MM-dd HH:mm") : "",
@@ -108,6 +115,7 @@ export default function CommandRoleAudit() {
         r.changed_by_name ?? r.changed_by ?? "",
       ]),
     );
+    downloadCSVString(csv, `command-role-audit-page-${page + 1}.csv`);
   };
 
   if (!isAdmin) {
