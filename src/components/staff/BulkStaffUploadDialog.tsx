@@ -208,9 +208,14 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
                 className="max-w-xs"
               />
-              <Button variant="ghost" size="sm" onClick={downloadTemplateCsv} className="gap-1.5">
-                <Download className="h-4 w-4" /> Download template
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("csv")} className="gap-1.5">
+                  <Download className="h-4 w-4" /> CSV template
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => downloadTemplate("xlsx")} className="gap-1.5">
+                  <Download className="h-4 w-4" /> XLSX template
+                </Button>
+              </div>
             </div>
 
             {fileName && (
