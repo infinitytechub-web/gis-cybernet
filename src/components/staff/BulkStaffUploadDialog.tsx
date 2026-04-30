@@ -586,11 +586,11 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
       <Dialog open={confirmOpen} onOpenChange={(v) => { if (!runMut.isPending) setConfirmOpen(v); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" /> Confirm bulk commit
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" /> Confirm override
             </DialogTitle>
             <DialogDescription>
-              You are about to apply the following changes to the staff database. This action will write to live data and cannot be undone in bulk.
+              You are about to override the staff database{rosterRows.length ? " and replace Night Guard duty rosters" : ""}. This writes to live data{takeSnapshot ? " (a snapshot will be taken first for rollback)" : " WITHOUT a backup"}.
             </DialogDescription>
           </DialogHeader>
 
