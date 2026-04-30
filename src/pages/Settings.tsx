@@ -126,7 +126,10 @@ export default function Settings() {
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
-        <TabsContent value="rotation"><ShiftRotationSettings /></TabsContent>
+        <TabsContent value="rotation" className="space-y-4">
+          <ShiftRotationSettings />
+          <ShiftRotationOverrides />
+        </TabsContent>
       </Tabs>
     </div>
   );
