@@ -520,6 +520,8 @@ export default function CommandRoles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BulkCommandRoleAssignDialog open={bulkOpen} onOpenChange={setBulkOpen} />
     </div>
   );
 }
