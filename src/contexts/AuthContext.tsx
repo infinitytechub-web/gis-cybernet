@@ -114,11 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     isAdmin: role === "admin",
     isSupervisor: role === "supervisor",
-    // Command tier: admin, OIC, 2IC, Staff Officer, and Supervisor share elevated reporting/oversight access
+    // Command tier: admin, OIC, 2IC, Head of Administration, Chief Staff Officer,
+    // Staff Officer, and Supervisor share elevated reporting/oversight access.
     isAdminOrSupervisor:
       role === "admin" ||
       role === "oic" ||
       role === "2ic" ||
+      role === "head_of_administration" ||
+      role === "chief_staff_officer" ||
       role === "staff_officer" ||
       role === "supervisor",
     isIpse: role === "ipse_supervisor" || role === "ipse_deputy_supervisor",

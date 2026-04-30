@@ -5514,6 +5514,8 @@ export type Database = {
         | "staff_officer"
         | "ipse_supervisor"
         | "ipse_deputy_supervisor"
+        | "head_of_administration"
+        | "chief_staff_officer"
       attendance_status: "present" | "late" | "absent" | "excused"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
@@ -5669,6 +5671,8 @@ export const Constants = {
         "staff_officer",
         "ipse_supervisor",
         "ipse_deputy_supervisor",
+        "head_of_administration",
+        "chief_staff_officer",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
       leave_status: ["pending", "approved", "rejected"],

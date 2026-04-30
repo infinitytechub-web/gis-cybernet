@@ -7,6 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
+import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { Clock, CalendarDays } from "lucide-react";
@@ -38,6 +39,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {clock.toLocaleTimeString()}
               </span>
               <ThemeToggle />
+              <OnlineNowBadge />
               {isAdmin && <SystemAuditTray />}
               <NotificationBell />
               <HeaderProfileDropdown />

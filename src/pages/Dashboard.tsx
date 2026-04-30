@@ -384,7 +384,9 @@ export default function Dashboard() {
       <ScheduledReportsWidget />
 
       {/* Online Users Widget — command tier only */}
-      <OnlineNowPanel />
+      <div id="online-now" className="scroll-mt-20">
+        <OnlineNowPanel />
+      </div>
 
       {/* Gender Statistics */}
       <GenderStatisticsWidget />

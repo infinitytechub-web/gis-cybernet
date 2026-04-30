@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 
-const roles = ["admin", "oic", "2ic", "supervisor", "ipse_supervisor", "ipse_deputy_supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
+const roles = ["admin", "oic", "2ic", "head_of_administration", "chief_staff_officer", "supervisor", "ipse_supervisor", "ipse_deputy_supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
 const roleLabels: Record<string, string> = {
   admin: "Admin",
   oic: "Command OIC",
   "2ic": "2IC",
+  head_of_administration: "Head of Administration",
+  chief_staff_officer: "Chief Staff Officer",
   supervisor: "Supervisor",
   ipse_supervisor: "IPSE Supervisor",
   ipse_deputy_supervisor: "IPSE Dep. Supervisor",
@@ -30,7 +32,7 @@ const roleLabels: Record<string, string> = {
 
 type Access = "full" | "dept" | "own" | "view" | "none";
 
-const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
+const baseFeatures: { name: string; access: Record<string, Access> }[] = [
   {
     name: "Dashboard",
     access: { admin: "full", oic: "full", "2ic": "full", supervisor: "full", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "full", deputy_shift_supervisor: "full", shift_leader: "full", deputy_supervisor: "full", deputy_shift_leader: "full", special_duties: "full", deputy: "full", front_desk: "full", staff: "full" },
@@ -108,6 +110,16 @@ const defaultFeatures: { name: string; access: Record<string, Access> }[] = [
     access: { admin: "full", oic: "full", "2ic": "view", supervisor: "none", ipse_supervisor: "full", ipse_deputy_supervisor: "full", shift_supervisor: "none", deputy_shift_supervisor: "none", shift_leader: "none", deputy_supervisor: "none", deputy_shift_leader: "none", special_duties: "none", deputy: "none", front_desk: "none", staff: "none" },
   },
 ];
+
+// Head of Administration & Chief Staff Officer share full command-tier access (mirrors 2IC).
+const defaultFeatures: { name: string; access: Record<string, Access> }[] = baseFeatures.map((feature) => ({
+  ...feature,
+  access: {
+    ...feature.access,
+    head_of_administration: feature.access["2ic"],
+    chief_staff_officer: feature.access["2ic"],
+  },
+}));
 
 const accessOptions: Access[] = ["full", "dept", "own", "view", "none"];
 
