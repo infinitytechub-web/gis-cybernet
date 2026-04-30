@@ -146,10 +146,52 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     }
   };
 
+  const handleRosterFile = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", raw: false });
+      const parsed: { staff_id: string; date: string }[] = [];
+      for (const r of json) {
+        const sid = String(r["Staff ID"] ?? r["staff_id"] ?? r["staffId"] ?? "").trim();
+        const dateRaw = r["Date"] ?? r["date"] ?? "";
+        let dateStr = "";
+        if (typeof dateRaw === "number") {
+          const d = XLSX.SSF.parse_date_code(dateRaw);
+          dateStr = `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
+        } else if (String(dateRaw).trim()) {
+          const pd = new Date(String(dateRaw));
+          if (!isNaN(pd.getTime())) dateStr = format(pd, "yyyy-MM-dd");
+        }
+        if (sid) parsed.push({ staff_id: sid, date: dateStr });
+      }
+      if (parsed.length === 0) { toast.error("Roster file has no valid rows (need Staff ID + Date)"); return; }
+      if (parsed.length > 10000) { toast.error("Maximum 10,000 roster rows"); return; }
+      setRosterFileName(file.name);
+      setRosterRows(parsed);
+      setPreviewResult(null);
+      setCommitted(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to parse roster file");
+    }
+  };
+
+  const downloadRosterTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Staff ID", "Date"],
+      ["GIS-2026-0001", format(new Date(), "yyyy-MM-dd")],
+      ["GIS-2026-0002", format(new Date(), "yyyy-MM-dd")],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Night Guard Roster");
+    XLSX.writeFile(wb, "night-guard-roster-template.xlsx");
+  };
+
   const runMut = useMutation({
     mutationFn: async (dryRun: boolean) => {
       const { data, error } = await supabase.functions.invoke("bulk-upload-staff", {
-        body: { rows, fileName, dryRun },
+        body: { rows, rosterRows, fileName, rosterFileName, dryRun, deactivateMissing, snapshot: takeSnapshot && !dryRun },
       });
       if (error) throw error;
       return data as RunResult;
@@ -160,12 +202,31 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
         setCommitted(true);
         qc.invalidateQueries({ queryKey: ["directory-staff"] });
         qc.invalidateQueries({ queryKey: ["bulk-staff-audit"] });
-        toast.success(`Uploaded — ${res.createdCount} created, ${res.updatedCount} updated, ${res.errorCount} errors`);
+        qc.invalidateQueries({ queryKey: ["bulk-staff-snapshots"] });
+        qc.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+        qc.invalidateQueries({ queryKey: ["shift-assignments"] });
+        toast.success(`Override applied — ${res.createdCount} created · ${res.updatedCount} updated · ${res.deactivateCount ?? 0} deactivated · ${res.rosterPlanned ?? 0} roster rows`);
       } else {
-        toast.message(`Preview: ${res.createdCount} create · ${res.updatedCount} update · ${res.skippedCount} skip · ${res.errorCount} error`);
+        toast.message(`Preview: ${res.createdCount} create · ${res.updatedCount} update · ${res.deactivateCount ?? 0} deactivate · ${res.rosterPlanned ?? 0} roster · ${res.errorCount} error`);
       }
     },
     onError: (e: any) => toast.error(e?.message ?? "Upload failed"),
+  });
+
+  const restoreMut = useMutation({
+    mutationFn: async (snapshotId: string) => {
+      const { data, error } = await supabase.rpc("restore_staff_bulk_snapshot" as any, { p_snapshot_id: snapshotId });
+      if (error) throw error;
+      return data as { profiles_restored: number; night_guard_restored: number };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["directory-staff"] });
+      qc.invalidateQueries({ queryKey: ["bulk-staff-snapshots"] });
+      qc.invalidateQueries({ queryKey: ["night-guard-assignments"] });
+      qc.invalidateQueries({ queryKey: ["shift-assignments"] });
+      toast.success(`Restored ${res.profiles_restored} staff records and ${res.night_guard_restored} roster rows`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Restore failed"),
   });
 
   const { data: auditLog = [] } = useQuery({
