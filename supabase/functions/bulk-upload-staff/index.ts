@@ -28,7 +28,7 @@ interface RosterRow {
   Date?: string;
 }
 
-const ALLOWED_GENDERS = new Set(["male", "female", "m", "f"]);
+const _ALLOWED_GENDERS = new Set(["male", "female", "m", "f"]);
 const ALLOWED_STATUS = new Set(["active", "inactive", "study_leave", "retired", "suspended"]);
 const ALLOWED_BLOOD = new Set(["A+","A-","B+","B-","AB+","AB-","O+","O-"]);
 
