@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "check:edge": "bash scripts/check-edge-function.sh",
     "check:edge:all": "bash scripts/check-edge-function.sh",
+    "check:edge:strict": "bash scripts/check-edge-function.sh --lint-strict",
     "check:edge:bulk-upload-staff": "bash scripts/check-edge-function.sh bulk-upload-staff"
   },
   "dependencies": {
