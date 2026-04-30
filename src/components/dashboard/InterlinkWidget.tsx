@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Network, Send, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { INTERLINK_LABELS } from "@/lib/interlink-types";
 
 export default function InterlinkWidget() {
   const { isAdminOrSupervisor } = useAuth();
