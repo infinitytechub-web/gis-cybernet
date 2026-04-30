@@ -112,16 +112,62 @@ export function ApprovalsTab() {
     draft: dispatches.filter((d: any) => d.workflow_state === "draft").length,
   }), [dispatches]);
 
+  async function exportLog(fmt: "csv" | "excel" | "pdf") {
+    // Pull last 1000 actions joined with their dispatch subjects + performer name.
+    const { data, error } = await supabase
+      .from("interlink_approval_actions")
+      .select("created_at, dispatch_id, action, performer_role, from_state, to_state, comment, entry_hash, performed_by, interlink_dispatches(subject)")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (error) { toast.error(error.message); return; }
+
+    // Look up performer names in batch
+    const ids = Array.from(new Set((data ?? []).map((r: any) => r.performed_by).filter(Boolean)));
+    let nameMap = new Map<string, string>();
+    if (ids.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name")
+        .in("user_id", ids);
+      (profs ?? []).forEach((p: any) =>
+        nameMap.set(p.user_id, `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || p.user_id),
+      );
+    }
+
+    const rows: ApprovalExportRow[] = (data ?? []).map((r: any) => ({
+      created_at: r.created_at,
+      dispatch_id: r.dispatch_id,
+      dispatch_subject: r.interlink_dispatches?.subject ?? null,
+      action: r.action,
+      performer_label: nameMap.get(r.performed_by) ?? r.performed_by ?? "—",
+      performer_role: r.performer_role,
+      from_state: r.from_state,
+      to_state: r.to_state,
+      comment: r.comment,
+      entry_hash: r.entry_hash,
+    }));
+
+    if (fmt === "csv") exportApprovalsCSV(rows);
+    else if (fmt === "excel") exportApprovalsXLSX(rows);
+    else exportApprovalsPDF(rows);
+    toast.success(`Exported ${rows.length} approval action${rows.length === 1 ? "" : "s"}`);
+  }
+
   if (!isAdminOrSupervisor) {
     return <p className="text-sm text-muted-foreground p-4">Approvals are restricted to the command tier.</p>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-emerald-600" />
         <h3 className="font-semibold">Approval workflow</h3>
-        <Badge variant="outline" className="ml-auto text-[10px]">Immutable audit log</Badge>
+        <Badge variant="outline" className="text-[10px]">Immutable audit log</Badge>
+        <div className="ml-auto flex flex-wrap gap-1.5">
+          <Button size="sm" variant="outline" onClick={() => exportLog("csv")}><Download className="h-3.5 w-3.5 mr-1" />CSV</Button>
+          <Button size="sm" variant="outline" onClick={() => exportLog("excel")}><Download className="h-3.5 w-3.5 mr-1" />Excel</Button>
+          <Button size="sm" variant="outline" onClick={() => exportLog("pdf")}><Download className="h-3.5 w-3.5 mr-1" />PDF</Button>
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as StateFilter)}>
