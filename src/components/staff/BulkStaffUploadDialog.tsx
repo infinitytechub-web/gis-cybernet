@@ -26,6 +26,17 @@ type Outcome = {
   diff?: Record<string, { from: any; to: any }>;
   fullName?: string;
   department?: string;
+  rank?: string;
+  designation?: string;
+  office?: string;
+};
+
+type AutoRollback = {
+  attempted: boolean;
+  succeeded: boolean;
+  message?: string;
+  profilesRestored?: number;
+  nightGuardRestored?: number;
 };
 
 type RunResult = {
@@ -41,6 +52,7 @@ type RunResult = {
   rosterErrors?: { rowIndex: number; message: string; staffId: string | null }[];
   snapshotId?: string | null;
   commitErrors: { staffId: string; error: string }[];
+  autoRollback?: AutoRollback;
   outcomes: Outcome[];
 };
 
