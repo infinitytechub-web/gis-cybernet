@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, ShieldCheck, UserCog, Loader2, Search } from "lucide-react";
+import { Crown, ShieldCheck, UserCog, Loader2, Search, History, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,17 +13,31 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 
 type Holder = { user_id: string; first_name?: string | null; last_name?: string | null; email?: string | null; staff_id?: string | null };
-type Candidate = Holder;
+type Candidate = Holder & { department_id?: string | null; office?: string | null; shift_group?: string | null; user_id: string };
 
 export default function CommandRoles() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const qc = useQueryClient();
   const [assignRole, setAssignRole] = useState<AppRole | null>(null);
   const [search, setSearch] = useState("");
+  const [deptFilter, setDeptFilter] = useState<string>("all");
+  const [officeFilter, setOfficeFilter] = useState<string>("all");
+  const [shiftFilter, setShiftFilter] = useState<string>("all");
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments-list-cmd"],
+    queryFn: async () => {
+      const { data } = await supabase.from("departments").select("id, name").order("name");
+      return data ?? [];
+    },
+    enabled: isAdmin,
+  });
 
   const { data: holdersByRole = {} } = useQuery({
     queryKey: ["command-roles-holders"],
@@ -34,12 +49,12 @@ export default function CommandRoles() {
       if (error) throw error;
       const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
       const { data: profiles } = ids.length
-        ? await supabase.from("profiles").select("id, first_name, last_name, email, staff_id").in("id", ids)
+        ? await supabase.from("profiles").select("id, first_name, last_name, email, staff_id, user_id").in("user_id", ids)
         : { data: [] as any[] };
-      const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+      const byUserId = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
       const map: Partial<Record<AppRole, Holder[]>> = {};
       for (const r of roles ?? []) {
-        const p: any = byId.get(r.user_id) ?? {};
+        const p: any = byUserId.get(r.user_id) ?? {};
         const arr = map[r.role as AppRole] ?? [];
         arr.push({ user_id: r.user_id, first_name: p.first_name, last_name: p.last_name, email: p.email, staff_id: p.staff_id });
         map[r.role as AppRole] = arr;
@@ -54,26 +69,87 @@ export default function CommandRoles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, email, staff_id, user_id")
+        .select("id, first_name, last_name, email, staff_id, user_id, department_id, office, shift_group")
         .not("user_id", "is", null)
         .order("last_name");
       if (error) throw error;
-      return (data ?? []).filter((p: any) => p.user_id) as any[];
+      return (data ?? []).filter((p: any) => p.user_id) as Candidate[];
     },
     enabled: isAdmin,
   });
 
+  const { data: auditEntries = [] } = useQuery({
+    queryKey: ["command-role-audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("command_role_audit")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: isAdmin,
+  });
+
+  const officeOptions = useMemo(() => {
+    const set = new Set<string>();
+    candidates.forEach((c) => c.office && set.add(c.office));
+    return Array.from(set).sort();
+  }, [candidates]);
+
+  const shiftOptions = useMemo(() => {
+    const set = new Set<string>();
+    candidates.forEach((c) => c.shift_group && set.add(c.shift_group));
+    return Array.from(set).sort();
+  }, [candidates]);
+
+  // Lookup current role for a user (for audit before-change capture)
+  const userIdToRole = useMemo(() => {
+    const m = new Map<string, AppRole>();
+    (Object.entries(holdersByRole) as [AppRole, Holder[]][]).forEach(([role, hs]) => {
+      hs.forEach((h) => m.set(h.user_id, role));
+    });
+    return m;
+  }, [holdersByRole]);
+
+  const writeAudit = async (params: {
+    targetUserId: string; targetStaffId?: string | null; targetName?: string;
+    fromRole: AppRole | null; toRole: AppRole | null; action: "assign" | "remove" | "change";
+  }) => {
+    const changedByName = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() : null;
+    await supabase.from("command_role_audit").insert({
+      target_user_id: params.targetUserId,
+      target_staff_id: params.targetStaffId ?? null,
+      target_name: params.targetName ?? null,
+      from_role: params.fromRole as any,
+      to_role: params.toRole as any,
+      action: params.action,
+      changed_by: profile?.user_id ?? null,
+      changed_by_name: changedByName,
+    });
+  };
+
   const assignMut = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
-      // Replace the user's role row with the new command-tier role
+    mutationFn: async ({ userId, role, candidate }: { userId: string; role: AppRole; candidate: Candidate }) => {
+      const previous = userIdToRole.get(userId) ?? null;
       await supabase.from("user_roles").delete().eq("user_id", userId);
       const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
       if (error) throw error;
+      await writeAudit({
+        targetUserId: userId,
+        targetStaffId: candidate.staff_id,
+        targetName: `${candidate.first_name ?? ""} ${candidate.last_name ?? ""}`.trim() || candidate.email || undefined,
+        fromRole: previous,
+        toRole: role,
+        action: previous ? "change" : "assign",
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["command-roles-holders"] });
       qc.invalidateQueries({ queryKey: ["command-roster"] });
       qc.invalidateQueries({ queryKey: ["admin-user-roles"] });
+      qc.invalidateQueries({ queryKey: ["command-role-audit"] });
       toast.success("Role assigned");
       setAssignRole(null);
       setSearch("");
@@ -82,14 +158,24 @@ export default function CommandRoles() {
   });
 
   const removeMut = useMutation({
-    mutationFn: async ({ userId }: { userId: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+      const holder = (holdersByRole[role] ?? []).find((h) => h.user_id === userId);
       await supabase.from("user_roles").delete().eq("user_id", userId);
       const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "staff" as AppRole });
       if (error) throw error;
+      await writeAudit({
+        targetUserId: userId,
+        targetStaffId: holder?.staff_id,
+        targetName: holder ? `${holder.first_name ?? ""} ${holder.last_name ?? ""}`.trim() || holder.email || undefined : undefined,
+        fromRole: role,
+        toRole: "staff",
+        action: "remove",
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["command-roles-holders"] });
       qc.invalidateQueries({ queryKey: ["command-roster"] });
+      qc.invalidateQueries({ queryKey: ["command-role-audit"] });
       toast.success("Role removed (demoted to Staff)");
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed to remove"),
@@ -106,7 +192,10 @@ export default function CommandRoles() {
 
   const newRoles = new Set<AppRole>(["head_of_administration", "chief_staff_officer"]);
 
-  const filteredCandidates = candidates.filter((c: Candidate) => {
+  const filteredCandidates = candidates.filter((c) => {
+    if (deptFilter !== "all" && c.department_id !== deptFilter) return false;
+    if (officeFilter !== "all" && c.office !== officeFilter) return false;
+    if (shiftFilter !== "all" && c.shift_group !== shiftFilter) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -117,18 +206,25 @@ export default function CommandRoles() {
     );
   });
 
+  const deptName = (id?: string | null) => departments.find((d: any) => d.id === id)?.name ?? "—";
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-          <Crown className="h-5 w-5 text-amber-600" />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
+            <Crown className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">Command-Tier Roles</h1>
+            <p className="text-xs text-muted-foreground">
+              Assign or change the holder of each command-tier role. Every change is recorded in the audit trail.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold">Command-Tier Roles</h1>
-          <p className="text-xs text-muted-foreground">
-            Assign or change the holder of each command-tier role. Changes apply immediately.
-          </p>
-        </div>
+        <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
+          <History className="h-3.5 w-3.5" /> Audit trail ({auditEntries.length})
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -173,7 +269,7 @@ export default function CommandRoles() {
                           className="h-6 text-[10px] text-destructive hover:text-destructive"
                           onClick={() => {
                             if (confirm(`Remove ${ROLE_LABEL[role]} from this user? They will be demoted to Staff.`)) {
-                              removeMut.mutate({ userId: h.user_id });
+                              removeMut.mutate({ userId: h.user_id, role });
                             }
                           }}
                         >
@@ -187,7 +283,7 @@ export default function CommandRoles() {
                   size="sm"
                   variant="outline"
                   className="w-full gap-1.5"
-                  onClick={() => { setAssignRole(role); setSearch(""); }}
+                  onClick={() => { setAssignRole(role); setSearch(""); setDeptFilter("all"); setOfficeFilter("all"); setShiftFilter("all"); }}
                 >
                   <UserCog className="h-3.5 w-3.5" />
                   Assign / change holder
@@ -198,12 +294,13 @@ export default function CommandRoles() {
         })}
       </div>
 
+      {/* Assign dialog with filters */}
       <Dialog open={!!assignRole} onOpenChange={(v) => !v && setAssignRole(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Assign — {assignRole ? (ROLE_LABEL[assignRole] ?? roleLabel(assignRole)) : ""}</DialogTitle>
             <DialogDescription>
-              Pick the staff member to receive this role. Their previous role will be replaced.
+              Filter by department, office, or shift group, then pick the staff member to receive this role.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -217,23 +314,69 @@ export default function CommandRoles() {
                 autoFocus
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1 mb-1"><Filter className="h-3 w-3" /> Department</label>
+                <Select value={deptFilter} onValueChange={setDeptFilter}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All departments</SelectItem>
+                    {departments.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1 mb-1"><Filter className="h-3 w-3" /> Office</label>
+                <Select value={officeFilter} onValueChange={setOfficeFilter}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All offices</SelectItem>
+                    {officeOptions.map((o) => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1 mb-1"><Filter className="h-3 w-3" /> Shift group</label>
+                <Select value={shiftFilter} onValueChange={setShiftFilter}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All shifts</SelectItem>
+                    {shiftOptions.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              Showing {filteredCandidates.length} of {candidates.length} staff
+            </div>
             <ScrollArea className="h-[320px] rounded border">
               <ul className="divide-y">
                 {filteredCandidates.length === 0 && (
                   <li className="p-4 text-center text-xs text-muted-foreground italic">No matching staff</li>
                 )}
-                {filteredCandidates.map((c: any) => (
+                {filteredCandidates.map((c) => (
                   <li key={c.id} className="flex items-center justify-between gap-2 p-2 hover:bg-muted/40">
                     <div className="min-w-0">
                       <div className="text-xs font-medium truncate">
                         {`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || c.email}
                       </div>
-                      <div className="text-[10px] text-muted-foreground truncate">{c.staff_id ?? c.email}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        {c.staff_id ?? c.email}
+                        {c.department_id ? ` • ${deptName(c.department_id)}` : ""}
+                        {c.office ? ` • ${c.office}` : ""}
+                        {c.shift_group ? ` • Shift ${c.shift_group}` : ""}
+                      </div>
                     </div>
                     <Button
                       size="sm"
                       disabled={assignMut.isPending}
-                      onClick={() => assignRole && assignMut.mutate({ userId: c.user_id, role: assignRole })}
+                      onClick={() => assignRole && assignMut.mutate({ userId: c.user_id, role: assignRole, candidate: c })}
                     >
                       {assignMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Assign"}
                     </Button>
@@ -244,6 +387,56 @@ export default function CommandRoles() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignRole(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Audit history dialog */}
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Command-tier role audit trail</DialogTitle>
+            <DialogDescription>Latest 200 changes. Records are immutable.</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[440px] rounded border">
+            <ul className="divide-y">
+              {auditEntries.length === 0 && (
+                <li className="p-6 text-center text-xs italic text-muted-foreground">No role changes yet.</li>
+              )}
+              {auditEntries.map((a: any) => (
+                <li key={a.id} className="p-3 text-xs space-y-1">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        className={
+                          a.action === "assign" ? "bg-emerald-600" :
+                          a.action === "remove" ? "bg-destructive" :
+                          "bg-amber-600"
+                        }
+                      >
+                        {a.action.toUpperCase()}
+                      </Badge>
+                      <span className="font-medium">{a.target_name ?? a.target_user_id}</span>
+                      {a.target_staff_id && <span className="text-[10px] text-muted-foreground">({a.target_staff_id})</span>}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {a.created_at ? format(new Date(a.created_at), "dd MMM yyyy HH:mm") : ""}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {a.from_role ? <Badge variant="outline" className="mr-1">{roleLabel(a.from_role)}</Badge> : <span className="italic">none</span>}
+                    <span className="mx-1">→</span>
+                    {a.to_role ? <Badge variant="outline">{roleLabel(a.to_role)}</Badge> : <span className="italic">none</span>}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    By {a.changed_by_name ?? a.changed_by ?? "system"}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
