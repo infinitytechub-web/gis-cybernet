@@ -46,6 +46,7 @@ const Enforcement = lazy(() => import("./pages/Enforcement"));
 const Operations = lazy(() => import("./pages/Operations"));
 const Settings = lazy(() => import("./pages/Settings"));
 const CommandRoles = lazy(() => import("./pages/CommandRoles"));
+const AdminAccessMatrix = lazy(() => import("./pages/AdminAccessMatrix"));
 const Stores = lazy(() => import("./pages/Stores"));
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
 const Procurement = lazy(() => import("./pages/Procurement"));
@@ -115,6 +116,7 @@ function App() {
           <Route path="/operations" element={<ProtectedRoute><Layout><Operations /></Layout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
           <Route path="/command-roles" element={<ProtectedRoute><Layout><CommandRoles /></Layout></ProtectedRoute>} />
+          <Route path="/admin-access-matrix" element={<ProtectedRoute><Layout><AdminAccessMatrix /></Layout></ProtectedRoute>} />
           <Route path="/stores" element={<ProtectedRoute><Layout><Stores /></Layout></ProtectedRoute>} />
           <Route path="/holding" element={<ProtectedRoute><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
           <Route path="/procurement" element={<ProtectedRoute><Layout><Procurement /></Layout></ProtectedRoute>} />
