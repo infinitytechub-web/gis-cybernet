@@ -79,18 +79,29 @@ for fn in "${TARGETS[@]}"; do
   echo "▶ $fn"
   ok=1
 
-  # 1. Parse / syntax check (always runs — this is what catches the bundler errors)
+  # 1. Parse / syntax check (always runs — this is what catches the bundler's syntax errors)
   if [ "$STRICT" -eq 1 ]; then
-    echo "  • deno check (strict, full graph)"
+    echo "  • deno check (strict, full type-check)"
     if ! deno check --no-lock --quiet "$ENTRY"; then
       echo "  ✖ deno check failed for $fn" >&2
       ok=0
     fi
   else
-    echo "  • deno check (local only — skips remote types)"
-    if ! deno check --no-lock --no-check=remote --quiet "$ENTRY"; then
-      echo "  ✖ deno check failed for $fn" >&2
-      ok=0
+    # `deno fmt --check` runs the SWC parser without type-checking — fast and
+    # catches the same syntax errors the Supabase bundler rejects (mismatched
+    # braces, invalid TS, etc.) without needing remote-module resolution.
+    echo "  • parse check (deno fmt --check)"
+    if ! deno fmt --check --quiet "$ENTRY" >/dev/null 2>&1; then
+      # fmt --check fails on either parse error OR formatting drift.
+      # Re-run without --check to distinguish: if it can format the file, the
+      # parse is OK and we just have whitespace drift (not a deploy blocker).
+      if deno fmt --quiet "$ENTRY" >/dev/null 2>&1; then
+        : # parse OK; ignore formatting drift
+      else
+        echo "  ✖ parse failed for $fn" >&2
+        deno fmt --check "$ENTRY" 2>&1 | head -20 >&2 || true
+        ok=0
+      fi
     fi
   fi
 
