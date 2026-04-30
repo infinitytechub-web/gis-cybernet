@@ -232,17 +232,23 @@ Deno.serve(async (req) => {
     });
 
     // ── Deactivate-missing planning ───────────────────────────────────
-    const toDeactivate: { id: string; staffId: string; from: string }[] = [];
+    const deptNameById = new Map<string, string>();
+    for (const d of (deps ?? [])) deptNameById.set(d.id, d.name);
+    const toDeactivate: { id: string; staffId: string; from: string; fullName: string; department: string }[] = [];
     if (deactivateMissing && rows.length > 0) {
       for (const p of (existing ?? [])) {
         if (p.status === "inactive") continue;
         if (!seenStaffIds.has(p.staff_id.toLowerCase())) {
-          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status });
+          const deptName = p.department_id ? (deptNameById.get(p.department_id) ?? "—") : "—";
+          const fullName = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "—";
+          toDeactivate.push({ id: p.id, staffId: p.staff_id, from: p.status, fullName, department: deptName });
           outcomes.push({
             rowIndex: -1,
             staffId: p.staff_id,
             status: "deactivate",
             message: `Will be set to inactive (not in upload)`,
+            fullName,
+            department: deptName,
           } as any);
         }
       }
