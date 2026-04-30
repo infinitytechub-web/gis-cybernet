@@ -36,6 +36,8 @@ const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Admin",
   oic: "OIC",
   "2ic": "2IC",
+  head_of_administration: "Head of Administration",
+  chief_staff_officer: "Chief Staff Officer",
   staff_officer: "Staff Officer",
   supervisor: "Supervisor",
   ipse_supervisor: "IPSE Supervisor",
@@ -55,7 +57,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
   staff: "Staff",
 };
 const ROLE_ORDER: AppRole[] = [
-  "admin","oic","2ic","staff_officer","supervisor",
+  "admin","oic","2ic","head_of_administration","chief_staff_officer","staff_officer","supervisor",
   "ipse_supervisor","ipse_deputy_supervisor",
   "shift_supervisor","deputy_shift_supervisor","shift_leader","deputy_shift_leader","deputy_supervisor",
   "special_duties","deputy",
