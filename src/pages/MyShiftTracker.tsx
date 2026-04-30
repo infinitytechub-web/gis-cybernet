@@ -686,6 +686,8 @@ export default function MyShiftTracker() {
         staffName={`${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || undefined}
         profileId={profile?.id ?? null}
         staffId={profile?.staff_id ?? null}
+        roles={role ? [role] : null}
+        departmentId={(profile as any)?.department_id ?? null}
       />
 
       <Card>
