@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
@@ -21,6 +21,7 @@ import { ShiftConnectionsAuditPanel } from "@/components/settings/ShiftConnectio
 import { ShiftConnectionPermissionsMatrix } from "@/components/settings/ShiftConnectionPermissionsMatrix";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { InterlinkBrandingSettings } from "@/components/interlink/InterlinkBrandingSettings";
+import { ShiftRotationSettings } from "@/components/settings/ShiftRotationSettings";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -96,6 +97,7 @@ export default function Settings() {
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
           <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
           <TabsTrigger value="interlink-brand" className="gap-1.5"><Network className="h-4 w-4 text-indigo-500" /> Interlink Branding</TabsTrigger>
+          <TabsTrigger value="rotation" className="gap-1.5"><Layers className="h-4 w-4 text-primary" /> Shift Rotation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
@@ -123,6 +125,7 @@ export default function Settings() {
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
+        <TabsContent value="rotation"><ShiftRotationSettings /></TabsContent>
       </Tabs>
     </div>
   );
