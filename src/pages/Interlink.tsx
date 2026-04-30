@@ -20,12 +20,15 @@ import { format } from "date-fns";
 import {
   Network, Send, Users, ScrollText, BarChart3, Plus, Trash2, FileText, AlertTriangle,
   CheckCircle2, Mail, Building2, Globe, Lock, Globe2, Loader2, Download, RefreshCw,
-  FileSpreadsheet, FileType, Sparkles
+  FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import {
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
+import { SchedulesTab } from "@/components/interlink/SchedulesTab";
+import { AttachmentRulesTab } from "@/components/interlink/AttachmentRulesTab";
+import { ApprovalsTab } from "@/components/interlink/ApprovalsTab";
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -103,14 +106,20 @@ export default function Interlink() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setSearchParams({ tab: v })}>
-        <TabsList className="grid grid-cols-4 w-full md:w-auto">
+        <TabsList className="flex flex-wrap h-auto w-full md:w-auto">
           <TabsTrigger value="compose" className="gap-1.5"><Send className="h-4 w-4" />Compose</TabsTrigger>
+          <TabsTrigger value="approvals" className="gap-1.5"><ShieldCheck className="h-4 w-4" />Approvals</TabsTrigger>
+          <TabsTrigger value="schedules" className="gap-1.5"><CalendarClock className="h-4 w-4" />Schedules</TabsTrigger>
+          <TabsTrigger value="rules" className="gap-1.5"><FileCog className="h-4 w-4" />Rules</TabsTrigger>
           <TabsTrigger value="recipients" className="gap-1.5"><Users className="h-4 w-4" />Recipients</TabsTrigger>
           <TabsTrigger value="audit" className="gap-1.5"><ScrollText className="h-4 w-4" />Audit Trail</TabsTrigger>
           <TabsTrigger value="analytics" className="gap-1.5"><BarChart3 className="h-4 w-4" />Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="compose" className="mt-4"><ComposeTab userId={user?.id ?? ""} /></TabsContent>
+        <TabsContent value="approvals" className="mt-4"><ApprovalsTab /></TabsContent>
+        <TabsContent value="schedules" className="mt-4"><SchedulesTab userId={user?.id ?? ""} /></TabsContent>
+        <TabsContent value="rules" className="mt-4"><AttachmentRulesTab userId={user?.id ?? ""} /></TabsContent>
         <TabsContent value="recipients" className="mt-4"><RecipientsTab userId={user?.id ?? ""} /></TabsContent>
         <TabsContent value="audit" className="mt-4"><AuditTab /></TabsContent>
         <TabsContent value="analytics" className="mt-4"><AnalyticsTab /></TabsContent>
