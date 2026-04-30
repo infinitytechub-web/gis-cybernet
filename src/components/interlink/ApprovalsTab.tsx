@@ -10,9 +10,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, CheckCircle2, XCircle, Eye, ClipboardList, Loader2, Send } from "lucide-react";
+import { ShieldCheck, CheckCircle2, XCircle, Eye, ClipboardList, Loader2, Send, Download } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { exportApprovalsCSV, exportApprovalsXLSX, exportApprovalsPDF, type ApprovalExportRow } from "@/lib/interlink-export";
 
 type StateFilter = "draft" | "review" | "approved" | "rejected";
 
