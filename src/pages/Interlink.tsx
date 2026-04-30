@@ -25,6 +25,7 @@ import {
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
+  INTERLINK_LABELS,
   REPORT_KIND_LABELS, SCOPE_META, type InterlinkReportKind, type InterlinkScope,
 } from "@/lib/interlink-types";
 import { SchedulesTab } from "@/components/interlink/SchedulesTab";
@@ -92,11 +93,11 @@ export default function Interlink() {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              Interlink System
+              {INTERLINK_LABELS.title}
               <Sparkles className="h-4 w-4 opacity-80" />
             </h1>
             <p className="text-sm text-white/90">
-              Command-tier dispatch hub: Intranet · Internet · Extranet
+              {INTERLINK_LABELS.tagline}
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">

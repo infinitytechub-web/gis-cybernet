@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import gisLogo from "@/assets/gis-logo.jpeg";
+import { INTERLINK_LABELS } from "@/lib/interlink-types";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
@@ -83,7 +84,7 @@ const integrationsItems = [
 const commandVaultItems = [
   { title: "Command Vault", url: "/command-vault", icon: FolderLock, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
   { title: "GPS Hub", url: "/command-vault/gps", icon: Globe2, iconColor: "text-[hsl(180,70%,40%)] dark:text-[hsl(180,70%,65%)]" },
-  { title: "Interlink System", url: "/interlink", icon: Network, iconColor: "text-indigo-600 dark:text-indigo-400" },
+  { title: INTERLINK_LABELS.nav, url: "/interlink", icon: Network, iconColor: "text-indigo-600 dark:text-indigo-400" },
 ];
 
 const recycleBinItems = [

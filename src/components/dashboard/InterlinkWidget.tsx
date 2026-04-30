@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Network, Send, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { INTERLINK_LABELS } from "@/lib/interlink-types";
 
 export default function InterlinkWidget() {
   const { isAdminOrSupervisor } = useAuth();
@@ -55,7 +56,7 @@ export default function InterlinkWidget() {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Network className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          Interlink System
+          {INTERLINK_LABELS.nav}
           <Badge variant="outline" className="ml-2 text-[10px] bg-gradient-to-r from-indigo-500 to-violet-500 text-white border-0">
             Command tier
           </Badge>
