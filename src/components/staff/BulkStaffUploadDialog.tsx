@@ -694,6 +694,85 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Second confirmation — list staff that will be deactivated */}
+      <Dialog open={deactConfirmOpen} onOpenChange={(v) => { if (!runMut.isPending) setDeactConfirmOpen(v); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+              <ShieldAlert className="h-5 w-5" /> Confirm staff deactivations
+            </DialogTitle>
+            <DialogDescription>
+              The following <strong>{previewResult?.deactivateCount ?? 0}</strong> staff are not present in your upload and will be set to <code className="text-[10px]">inactive</code>.
+              Review by department before continuing to the final override confirmation.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="h-[340px] rounded border bg-muted/20">
+            <div className="p-3 space-y-3">
+              {deactivationsByDept.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-6">No staff will be deactivated.</p>
+              )}
+              {deactivationsByDept.map((group) => (
+                <div key={group.department} className="rounded-md border bg-background">
+                  <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/40">
+                    <span className="text-xs font-semibold uppercase tracking-wide">{group.department}</span>
+                    <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
+                      {group.staff.length} staff
+                    </Badge>
+                  </div>
+                  <ul className="divide-y">
+                    {group.staff.map((s) => (
+                      <li key={s.staffId} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                        <span className="font-mono text-muted-foreground">{s.staffId}</span>
+                        <span className="font-medium">{s.fullName}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <Alert className="border-orange-300 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-700">
+            <AlertCircle className="h-4 w-4 text-orange-700 dark:text-orange-400" />
+            <AlertDescription className="text-xs text-orange-900 dark:text-orange-200">
+              Deactivated staff retain all historical records and can be reactivated later, but will lose access until restored.
+            </AlertDescription>
+          </Alert>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeactConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeactivateMissing(false);
+                setDeactConfirmOpen(false);
+                setDeactAcknowledged(true);
+                setConfirmText("");
+                setConfirmOpen(true);
+                toast.message("Deactivation disabled — staff missing from file will be left untouched");
+              }}
+            >
+              Skip deactivation
+            </Button>
+            <Button
+              variant="destructive"
+              className="gap-1.5"
+              onClick={() => {
+                setDeactAcknowledged(true);
+                setDeactConfirmOpen(false);
+                setConfirmText("");
+                setConfirmOpen(true);
+              }}
+            >
+              <ShieldAlert className="h-4 w-4" /> Acknowledge &amp; continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
