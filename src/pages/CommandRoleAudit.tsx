@@ -220,8 +220,12 @@ export default function CommandRoleAudit() {
                   <XIcon className="h-3 w-3" /> Clear
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={exportCsv} disabled={!rows.length} className="gap-1 text-[11px]">
+              <Button size="sm" variant="outline" onClick={() => exportCsv("page")} disabled={!rows.length || exporting} className="gap-1 text-[11px]">
                 <Download className="h-3 w-3" /> Export page
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => exportCsv("all")} disabled={!total || exporting} className="gap-1 text-[11px]">
+                {exporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                Export all ({total.toLocaleString()})
               </Button>
             </div>
           </div>
