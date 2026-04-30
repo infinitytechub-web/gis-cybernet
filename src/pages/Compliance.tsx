@@ -705,10 +705,15 @@ function CertificationsTab() {
 export default function Compliance() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-secondary">Compliance Management</h1>
-      <p className="text-sm text-muted-foreground">
-        Every staff member can upload and manage their own documents and certifications. Admins can manage all records.
-      </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-secondary">Compliance Management</h1>
+          <p className="text-sm text-muted-foreground">
+            Every staff member can upload and manage their own documents and certifications. Admins can manage all records.
+          </p>
+        </div>
+        <ComplianceBulkAuditDialog />
+      </div>
       <Tabs defaultValue="documents">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="documents" className="gap-1"><FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Documents</TabsTrigger>
