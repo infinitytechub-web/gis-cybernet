@@ -95,6 +95,7 @@ export default function Settings() {
           <TabsTrigger value="recycle" className="gap-1.5"><Trash2 className="h-4 w-4 text-destructive" /> Recycle Bin</TabsTrigger>
           <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
           <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
+          <TabsTrigger value="interlink-brand" className="gap-1.5"><Network className="h-4 w-4 text-indigo-500" /> Interlink Branding</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
