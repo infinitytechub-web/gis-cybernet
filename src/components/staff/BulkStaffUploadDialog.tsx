@@ -242,6 +242,19 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     },
   });
 
+  const { data: snapshots = [] } = useQuery({
+    queryKey: ["bulk-staff-snapshots"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_bulk_upload_snapshots" as any)
+        .select("id, created_at, taken_by_name, file_name, note, profiles_count, night_guard_count, restored_at")
+        .order("created_at", { ascending: false }).limit(20);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const counts = useMemo(() => {
     if (!previewResult) return null;
     return previewResult;
