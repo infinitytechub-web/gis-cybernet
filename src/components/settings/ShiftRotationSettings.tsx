@@ -67,11 +67,11 @@ export function ShiftRotationSettings() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!parsed.ok) throw new Error(parsed.error);
+      if (!parsed.ok) throw new Error((parsed as { ok: false; error: string }).error);
       if (!anchor) throw new Error("Anchor date is required.");
       const { error } = await supabase
         .from("shift_rotation_config" as any)
-        .update({ anchor_date: anchor, pattern: parsed.pattern })
+        .update({ anchor_date: anchor, pattern: (parsed as { ok: true; pattern: string[] }).pattern })
         .eq("id", true);
       if (error) throw error;
     },
@@ -131,10 +131,10 @@ export function ShiftRotationSettings() {
               className="font-mono uppercase"
             />
             {!parsed.ok ? (
-              <p className="text-xs text-destructive">{parsed.error}</p>
+              <p className="text-xs text-destructive">{(parsed as { ok: false; error: string }).error}</p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                {parsed.pattern.length} groups · cycles every {parsed.pattern.length} day{parsed.pattern.length === 1 ? "" : "s"}.
+                {(parsed as { ok: true; pattern: string[] }).pattern.length} groups · cycles every {(parsed as { ok: true; pattern: string[] }).pattern.length} day{(parsed as { ok: true; pattern: string[] }).pattern.length === 1 ? "" : "s"}.
               </p>
             )}
           </div>
