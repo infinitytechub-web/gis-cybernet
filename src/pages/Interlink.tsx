@@ -245,7 +245,7 @@ function ComposeTab({ userId }: { userId: string }) {
     adhocEmails
       .split(/[,;\n]/)
       .map((s) => s.trim().toLowerCase())
-      .filter((s) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(s))
+      .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
       .forEach((e) => set.add(e));
     return Array.from(set);
   }, [departments, contacts, lists, selectedDeptIds, selectedContactIds, selectedListIds, adhocEmails]);
