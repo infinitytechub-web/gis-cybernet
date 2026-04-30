@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, ShieldCheck, UserCog, Loader2, Search, History, Filter } from "lucide-react";
+import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -9,11 +9,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 
@@ -312,16 +312,7 @@ export default function CommandRoles() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name, email, or staff ID…"
-                className="pl-8"
-                autoFocus
-              />
-            </div>
+            {/* Filter row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1 mb-1"><Filter className="h-3 w-3" /> Department</label>
@@ -336,7 +327,7 @@ export default function CommandRoles() {
                 </Select>
               </div>
               <div>
-                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1 mb-1"><Filter className="h-3 w-3" /> Office</label>
+                <label className="text-[10px] uppercase text-muted-foreground flex items-center gap-1 mb-1"><Filter className="h-3 w-3" /> Office shift</label>
                 <Select value={officeFilter} onValueChange={setOfficeFilter}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -360,38 +351,108 @@ export default function CommandRoles() {
                 </Select>
               </div>
             </div>
-            <div className="text-[10px] text-muted-foreground">
-              Showing {filteredCandidates.length} of {candidates.length} staff
-            </div>
-            <ScrollArea className="h-[320px] rounded border">
-              <ul className="divide-y">
-                {filteredCandidates.length === 0 && (
-                  <li className="p-4 text-center text-xs text-muted-foreground italic">No matching staff</li>
+
+            {/* Active filter chips */}
+            {(deptFilter !== "all" || officeFilter !== "all" || shiftFilter !== "all") && (
+              <div className="flex flex-wrap gap-1.5">
+                {deptFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1 text-[10px]">
+                    Dept: {deptName(deptFilter)}
+                    <button onClick={() => setDeptFilter("all")} className="ml-1 hover:text-destructive" aria-label="Clear department filter">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </Badge>
                 )}
-                {filteredCandidates.map((c) => (
-                  <li key={c.user_id} className="flex items-center justify-between gap-2 p-2 hover:bg-muted/40">
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium truncate">
-                        {`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || c.email}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate">
-                        {c.staff_id ?? c.email}
-                        {c.department_id ? ` • ${deptName(c.department_id)}` : ""}
-                        {c.office ? ` • ${c.office}` : ""}
-                        {c.shift_group ? ` • Shift ${c.shift_group}` : ""}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      disabled={assignMut.isPending}
-                      onClick={() => assignRole && assignMut.mutate({ userId: c.user_id, role: assignRole, candidate: c })}
-                    >
-                      {assignMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Assign"}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </ScrollArea>
+                {officeFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1 text-[10px]">
+                    Office: {officeFilter}
+                    <button onClick={() => setOfficeFilter("all")} className="ml-1 hover:text-destructive" aria-label="Clear office filter">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {shiftFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1 text-[10px]">
+                    Shift: {shiftFilter}
+                    <button onClick={() => setShiftFilter("all")} className="ml-1 hover:text-destructive" aria-label="Clear shift filter">
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 text-[10px] px-1.5"
+                  onClick={() => { setDeptFilter("all"); setOfficeFilter("all"); setShiftFilter("all"); }}
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
+
+            {/* Autocomplete combobox */}
+            <Command
+              className="rounded border"
+              shouldFilter={true}
+              filter={(value, search) => {
+                // value is the synthetic search-blob we put on each CommandItem
+                if (!search.trim()) return 1;
+                const s = search.toLowerCase();
+                return value.toLowerCase().includes(s) ? 1 : 0;
+              }}
+            >
+              <CommandInput
+                placeholder="Type a name, partial staff ID, or email…"
+                value={search}
+                onValueChange={setSearch}
+                autoFocus
+              />
+              <div className="px-3 pt-1 text-[10px] text-muted-foreground">
+                Showing {filteredCandidates.length} of {candidates.length} staff
+                {assignMut.isPending && <span className="ml-2 inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> assigning…</span>}
+              </div>
+              <CommandList className="max-h-[320px]">
+                <CommandEmpty>No staff match these filters.</CommandEmpty>
+                <CommandGroup heading="Staff">
+                  {filteredCandidates.map((c) => {
+                    const fullName = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim();
+                    const blob = [
+                      fullName,
+                      c.staff_id ?? "",
+                      c.email ?? "",
+                      deptName(c.department_id),
+                      c.office ?? "",
+                      c.shift_group ?? "",
+                    ].filter(Boolean).join(" • ");
+                    return (
+                      <CommandItem
+                        key={c.user_id}
+                        value={blob}
+                        onSelect={() => assignRole && assignMut.mutate({ userId: c.user_id, role: assignRole, candidate: c })}
+                        disabled={assignMut.isPending}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-xs font-medium truncate">
+                              {fullName || c.email || "—"}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground truncate">
+                              {c.staff_id ?? c.email}
+                              {c.department_id ? ` • ${deptName(c.department_id)}` : ""}
+                              {c.office ? ` • ${c.office}` : ""}
+                              {c.shift_group ? ` • Shift ${c.shift_group}` : ""}
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] shrink-0">Assign</Badge>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignRole(null)}>Close</Button>
