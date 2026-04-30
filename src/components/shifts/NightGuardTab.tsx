@@ -7,7 +7,7 @@ import { NightGuardDutySummary } from "./NightGuardDutySummary";
 import { TodayRosterCard } from "./TodayRosterCard";
 import NightGuardDutyUpload from "./NightGuardDutyUpload";
 import { ManualAssignDialog } from "./ManualAssignDialog";
-import BulkStaffUploadDialog from "@/components/staff/BulkStaffUploadDialog";
+import { BulkStaffUploadDialog } from "@/components/staff/BulkStaffUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
