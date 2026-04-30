@@ -760,20 +760,70 @@ function RecipientsTab({ userId }: { userId: string }) {
   }
 
   async function saveList() {
-    if (!newList.name) return toast.error("List name required");
-    const member_emails = newList.member_emails
-      .split(/[,;\n]/)
-      .map((s) => s.trim().toLowerCase())
-      .filter((s) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(s));
-    if (member_emails.length === 0) return toast.error("Add at least one valid email");
+    if (!newList.name.trim()) return toast.error("List name required");
+    // Normalize + validate. Accept comma, semicolon, or newline separators.
+    // NOTE: this regex is a single-escaped string-in-source — using \\s/\\. here would
+    // require a literal backslash in the email, which is impossible (regression fix).
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const raw = newList.member_emails.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+    const valid: string[] = [];
+    const invalid: string[] = [];
+    for (const candidate of raw) {
+      const lc = candidate.toLowerCase();
+      if (emailRe.test(lc) && !valid.includes(lc)) valid.push(lc);
+      else if (!emailRe.test(lc)) invalid.push(candidate);
+    }
+    if (valid.length === 0) {
+      return toast.error(
+        invalid.length > 0
+          ? `No valid emails (rejected: ${invalid.slice(0, 3).join(", ")}${invalid.length > 3 ? "…" : ""})`
+          : "Add at least one valid email",
+      );
+    }
     const { error } = await supabase.from("interlink_lists").insert({
-      name: newList.name, description: newList.description, scope: newList.scope,
-      member_emails, created_by: userId,
+      name: newList.name.trim(),
+      description: newList.description.trim() || null,
+      scope: newList.scope,
+      member_emails: valid,
+      created_by: userId,
     });
     if (error) return toast.error(error.message);
-    toast.success("List saved");
+    toast.success(
+      invalid.length > 0
+        ? `List saved with ${valid.length} emails (skipped ${invalid.length} invalid)`
+        : `List saved with ${valid.length} emails`,
+    );
     setListDlg(false);
     setNewList({ name: "", description: "", scope: "extranet", member_emails: "" });
+    queryClient.invalidateQueries({ queryKey: ["interlink-lists-mgmt"] });
+    queryClient.invalidateQueries({ queryKey: ["interlink-lists"] });
+  }
+
+  // One-click "seed" lists generated from the existing contact directory grouped by scope.
+  async function seedListsFromContacts() {
+    if (!contacts.length) return toast.error("No contacts to seed from. Add contacts first.");
+    const groups: Record<string, string[]> = { intranet: [], internet: [], extranet: [] };
+    for (const c of contacts as any[]) {
+      const lc = String(c.email ?? "").trim().toLowerCase();
+      if (!lc) continue;
+      const scope = (c.scope as string) ?? "extranet";
+      if (!groups[scope]) continue;
+      if (!groups[scope].includes(lc)) groups[scope].push(lc);
+    }
+    const today = format(new Date(), "yyyy-MM-dd");
+    const rows = (Object.entries(groups) as Array<[Exclude<InterlinkScope, "mixed">, string[]]>)
+      .filter(([, emails]) => emails.length > 0)
+      .map(([scope, emails]) => ({
+        name: `All ${scope} contacts (${today})`,
+        description: `Auto-seeded from contact directory on ${today}`,
+        scope,
+        member_emails: emails,
+        created_by: userId,
+      }));
+    if (rows.length === 0) return toast.error("No contact emails to seed");
+    const { error } = await supabase.from("interlink_lists").insert(rows);
+    if (error) return toast.error(error.message);
+    toast.success(`Seeded ${rows.length} list${rows.length === 1 ? "" : "s"} from contacts`);
     queryClient.invalidateQueries({ queryKey: ["interlink-lists-mgmt"] });
     queryClient.invalidateQueries({ queryKey: ["interlink-lists"] });
   }
