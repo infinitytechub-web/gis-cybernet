@@ -70,16 +70,16 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
       return;
     }
     const validated: Row[] = await Promise.all(
-      files.map(async (f) => {
+      files.map(async (f): Promise<Row> => {
         const res = await validateComplianceFile(f);
-        if (res.ok) {
+        if (res.ok === true) {
           return {
             id: crypto.randomUUID(),
             file: res.file,
             cleanName: res.cleanName,
             ext: res.ext,
             size: f.size,
-            status: "pending" as const,
+            status: "pending",
           };
         }
         return {
@@ -88,7 +88,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
           cleanName: f.name,
           ext: "",
           size: f.size,
-          status: "error" as const,
+          status: "error",
           message: res.reason,
         };
       }),
