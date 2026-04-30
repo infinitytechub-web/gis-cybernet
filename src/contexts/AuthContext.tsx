@@ -130,32 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Safe default — returned when called outside AuthProvider (e.g. during HMR
- * boundary remounts or in stories). Never throws, so the app never blanks.
- */
-const FALLBACK_AUTH: AuthContextValue = {
-  user: null,
-  role: null,
-  loading: true,
-  signIn: async () => { throw new Error("Auth not ready"); },
-  signOut: async () => { /* no-op */ },
-  isAdmin: false,
-  isSupervisor: false,
-  isAdminOrSupervisor: false,
-  isIpse: false,
-  is2ic: false,
-  isOic: false,
-  canExportInterlinkLogs: false,
-};
-
 export function useAuthContext() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    if (typeof console !== "undefined") {
-      console.warn("useAuthContext called outside <AuthProvider> — returning fallback");
-    }
-    return FALLBACK_AUTH;
-  }
-  return ctx;
+  // Context default is FALLBACK_AUTH, so this can never be null and never throws.
+  return useContext(AuthContext);
 }
