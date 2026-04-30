@@ -457,6 +457,7 @@ Deno.serve(async (req) => {
         fileName, rosterFileName, dryRun,
         deactivateMissing, snapshot: takeSnapshot, snapshotId,
         totals: { create: createdCount, update: updatedCount, skip: skippedCount, error: errorCount, deactivate: deactivateCount, rosterRows: rosterPlan.length, rosterDates: rosterDates.size },
+        autoRollback,
       },
     });
 
@@ -469,6 +470,7 @@ Deno.serve(async (req) => {
       rosterErrors,
       snapshotId,
       commitErrors,
+      autoRollback,
       outcomes,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
