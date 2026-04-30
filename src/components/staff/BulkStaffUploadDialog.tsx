@@ -66,6 +66,9 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
   const [previewResult, setPreviewResult] = useState<RunResult | null>(null);
   const [committed, setCommitted] = useState(false);
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const CONFIRM_KEYWORD = "COMMIT";
 
   const reset = () => {
     setFileName(null); setRows([]); setPreviewResult(null); setCommitted(false); setFilter("all");
