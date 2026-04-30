@@ -494,6 +494,62 @@ export type Database = {
           },
         ]
       }
+      compliance_upload_audit: {
+        Row: {
+          batch_id: string
+          created_at: string
+          error_message: string | null
+          file_name: string
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          kind: string
+          outcome: string
+          performed_by: string
+          record_id: string | null
+          target_profile_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          error_message?: string | null
+          file_name: string
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          kind: string
+          outcome: string
+          performed_by: string
+          record_id?: string | null
+          target_profile_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          error_message?: string | null
+          file_name?: string
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          kind?: string
+          outcome?: string
+          performed_by?: string
+          record_id?: string | null
+          target_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_upload_audit_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cyber_incidents: {
         Row: {
           affected_systems: string | null
