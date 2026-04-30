@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, X, Eye, Save, History, Download } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, X, Eye, Save, History, Download, ShieldAlert, RotateCcw, Camera } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
