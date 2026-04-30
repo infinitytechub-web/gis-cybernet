@@ -9,6 +9,7 @@ import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { HeaderRoleSwitcher } from "@/components/HeaderRoleSwitcher";
+import { HeaderCommandSwitcher } from "@/components/HeaderCommandSwitcher";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { Clock, CalendarDays } from "lucide-react";
@@ -41,6 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
               <ThemeToggle />
               <HeaderRoleSwitcher />
+              <HeaderCommandSwitcher />
               <OnlineNowBadge />
               {isAdmin && <SystemAuditTray />}
               <NotificationBell />

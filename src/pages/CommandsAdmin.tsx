@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,10 +17,21 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Crown, Pencil, Plus, Trash2, ExternalLink, Pin } from "lucide-react";
+import {
+  Crown, Pencil, Plus, Trash2, ExternalLink, Pin, GripVertical,
+  Save, RotateCcw, ArrowDownAZ,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 function slugify(s: string) {
   return s
@@ -38,18 +49,111 @@ type FormState = {
   slug: string;
   description: string;
   pinned: boolean;
-  sort_hint: number;
 };
 
-const empty: FormState = { name: "", slug: "", description: "", pinned: false, sort_hint: 0 };
+const empty: FormState = { name: "", slug: "", description: "", pinned: false };
+
+/** A single sortable row in either the Pinned or Alphabetical list. */
+function SortableRow({
+  cmd, onEdit, onDelete, onOpen,
+}: {
+  cmd: ConfidentialityCommand;
+  onEdit: (c: ConfidentialityCommand) => void;
+  onDelete: (c: ConfidentialityCommand) => void;
+  onOpen: (c: ConfidentialityCommand) => void;
+}) {
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging,
+  } = useSortable({ id: cmd.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 rounded-md border bg-card px-2 py-2 ${
+        isDragging ? "ring-2 ring-primary shadow-lg" : "hover:bg-muted/40"
+      }`}
+    >
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground touch-none"
+        aria-label={`Drag ${cmd.name}`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
+      {cmd.pinned ? (
+        <Pin className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+      ) : (
+        <Crown className="h-3.5 w-3.5 text-[hsl(220,80%,40%)] shrink-0" />
+      )}
+
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium truncate">{cmd.name}</div>
+        <div className="text-[11px] text-muted-foreground truncate">
+          <code>{cmd.slug}</code>
+          {cmd.description ? <span className="ml-2">· {cmd.description}</span> : null}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-0.5 shrink-0">
+        <Button variant="ghost" size="sm" onClick={() => onOpen(cmd)} title="Open workspace">
+          <ExternalLink className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onEdit(cmd)} title="Edit">
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => onDelete(cmd)} title="Delete">
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function CommandsAdmin() {
   const { isAdmin } = useAuth();
-  const { data: commands = [], isLoading } = useConfidentialityCommands();
+  const { data: serverCommands = [], isLoading } = useConfidentialityCommands();
   const qc = useQueryClient();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Local working copy for drag-and-drop preview before saving.
+  const [pinnedDraft, setPinnedDraft] = useState<ConfidentialityCommand[]>([]);
+  const [unpinnedDraft, setUnpinnedDraft] = useState<ConfidentialityCommand[]>([]);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  // Sync draft with server on data change (only when not actively reordering).
+  useEffect(() => {
+    setPinnedDraft(serverCommands.filter((c) => c.pinned));
+    setUnpinnedDraft(serverCommands.filter((c) => !c.pinned));
+  }, [serverCommands]);
+
+  // Detect dirty state by comparing current draft order with server order.
+  const isDirty = useMemo(() => {
+    const serverPinned = serverCommands.filter((c) => c.pinned).map((c) => c.id).join(",");
+    const serverUn = serverCommands.filter((c) => !c.pinned).map((c) => c.id).join(",");
+    return (
+      pinnedDraft.map((c) => c.id).join(",") !== serverPinned ||
+      unpinnedDraft.map((c) => c.id).join(",") !== serverUn
+    );
+  }, [pinnedDraft, unpinnedDraft, serverCommands]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  // Editor state
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(empty);
   const [saving, setSaving] = useState(false);
@@ -72,9 +176,64 @@ export default function CommandsAdmin() {
   const openEdit = (c: ConfidentialityCommand) => {
     setForm({
       id: c.id, name: c.name, slug: c.slug,
-      description: c.description ?? "", pinned: c.pinned, sort_hint: c.sort_hint,
+      description: c.description ?? "", pinned: c.pinned,
     });
     setOpen(true);
+  };
+
+  const handleDragEnd = (list: "pinned" | "unpinned") => (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    if (list === "pinned") {
+      setPinnedDraft((items) => {
+        const oldIdx = items.findIndex((i) => i.id === active.id);
+        const newIdx = items.findIndex((i) => i.id === over.id);
+        if (oldIdx < 0 || newIdx < 0) return items;
+        return arrayMove(items, oldIdx, newIdx);
+      });
+    } else {
+      setUnpinnedDraft((items) => {
+        const oldIdx = items.findIndex((i) => i.id === active.id);
+        const newIdx = items.findIndex((i) => i.id === over.id);
+        if (oldIdx < 0 || newIdx < 0) return items;
+        return arrayMove(items, oldIdx, newIdx);
+      });
+    }
+  };
+
+  const resetOrder = () => {
+    setPinnedDraft(serverCommands.filter((c) => c.pinned));
+    setUnpinnedDraft(serverCommands.filter((c) => !c.pinned));
+  };
+
+  const sortAlphabetically = () => {
+    setUnpinnedDraft((items) => [...items].sort((a, b) => a.name.localeCompare(b.name)));
+  };
+
+  const persistOrder = async () => {
+    setSavingOrder(true);
+    try {
+      // sort_hint = (index + 1) * 10 within each group, so subsequent moves leave room.
+      const updates = [
+        ...pinnedDraft.map((c, i) => ({ id: c.id, sort_hint: (i + 1) * 10 })),
+        ...unpinnedDraft.map((c, i) => ({ id: c.id, sort_hint: (i + 1) * 10 })),
+      ];
+      // Run in parallel batches.
+      const results = await Promise.all(
+        updates.map((u) =>
+          supabase.from("confidentiality_commands" as any)
+            .update({ sort_hint: u.sort_hint }).eq("id", u.id),
+        ),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
+      toast({ title: "Order saved", description: `${updates.length} commands updated.` });
+      qc.invalidateQueries({ queryKey: ["confidentiality-commands"] });
+    } catch (e: any) {
+      toast({ title: "Could not save order", description: e.message, variant: "destructive" });
+    } finally {
+      setSavingOrder(false);
+    }
   };
 
   const save = async () => {
@@ -87,14 +246,14 @@ export default function CommandsAdmin() {
       if (form.id) {
         const { error } = await supabase
           .from("confidentiality_commands" as any)
-          .update({ name, slug, description: form.description || null, pinned: form.pinned, sort_hint: form.sort_hint })
+          .update({ name, slug, description: form.description || null, pinned: form.pinned })
           .eq("id", form.id);
         if (error) throw error;
         toast({ title: "Command updated" });
       } else {
         const { error } = await supabase
           .from("confidentiality_commands" as any)
-          .insert({ name, slug, description: form.description || null, pinned: form.pinned, sort_hint: form.sort_hint });
+          .insert({ name, slug, description: form.description || null, pinned: form.pinned });
         if (error) throw error;
         toast({ title: "Command created" });
       }
@@ -132,71 +291,93 @@ export default function CommandsAdmin() {
             Commands
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage the list of commands shown under <span className="font-medium">Confidentiality</span>.
-            Each command opens the operational dashboard scoped to that command's name.
+            Drag to reorder. Pinned commands always appear first; the rest follow in the order shown.
           </p>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4 mr-2" /> New command
-        </Button>
+        <div className="flex items-center gap-2">
+          {isDirty && (
+            <>
+              <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-700">
+                Unsaved order
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={resetOrder} disabled={savingOrder}>
+                <RotateCcw className="h-4 w-4 mr-1" /> Reset
+              </Button>
+              <Button size="sm" onClick={persistOrder} disabled={savingOrder}>
+                <Save className="h-4 w-4 mr-1" /> {savingOrder ? "Saving…" : "Save order"}
+              </Button>
+            </>
+          )}
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4 mr-2" /> New command
+          </Button>
+        </div>
       </div>
 
+      {/* Pinned list */}
       <Card>
-        <CardHeader>
-          <CardTitle>All commands</CardTitle>
-          <CardDescription>
-            Pinned commands always appear first; the rest are listed alphabetically.
-          </CardDescription>
+        <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Pin className="h-4 w-4 text-amber-600" /> Pinned
+            </CardTitle>
+            <CardDescription>Always shown first in the menu.</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table className="min-w-[700px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Order</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Loading…</TableCell></TableRow>
-                ) : commands.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No commands yet.</TableCell></TableRow>
-                ) : commands.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {c.pinned && <Pin className="h-3.5 w-3.5 text-amber-600" />}
-                        <span className="font-medium">{c.name}</span>
-                      </div>
-                      {c.description && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{c.description}</div>
-                      )}
-                    </TableCell>
-                    <TableCell><code className="text-xs">{c.slug}</code></TableCell>
-                    <TableCell>
-                      {c.pinned ? <Badge variant="secondary">Pinned</Badge> : <span className="text-xs text-muted-foreground">A–Z</span>}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => navigate(`/command/${c.slug}`)}>
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(c)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground py-4">Loading…</div>
+          ) : pinnedDraft.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-4">No pinned commands.</div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd("pinned")}>
+              <SortableContext items={pinnedDraft.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {pinnedDraft.map((c) => (
+                    <SortableRow
+                      key={c.id} cmd={c}
+                      onEdit={openEdit} onDelete={setDeleteTarget}
+                      onOpen={(x) => navigate(`/command/${x.slug}`)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Unpinned / alphabetical list */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+          <div>
+            <CardTitle className="text-base">All other commands</CardTitle>
+            <CardDescription>Drag to reorder, or reset to alphabetical.</CardDescription>
           </div>
+          <Button variant="outline" size="sm" onClick={sortAlphabetically}>
+            <ArrowDownAZ className="h-4 w-4 mr-1" /> Sort A–Z
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground py-4">Loading…</div>
+          ) : unpinnedDraft.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-4">No commands yet.</div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd("unpinned")}>
+              <SortableContext items={unpinnedDraft.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {unpinnedDraft.map((c) => (
+                    <SortableRow
+                      key={c.id} cmd={c}
+                      onEdit={openEdit} onDelete={setDeleteTarget}
+                      onOpen={(x) => navigate(`/command/${x.slug}`)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
         </CardContent>
       </Card>
 
@@ -206,7 +387,7 @@ export default function CommandsAdmin() {
           <DialogHeader>
             <DialogTitle>{form.id ? "Edit command" : "New command"}</DialogTitle>
             <DialogDescription>
-              The slug is used in the URL (e.g. <code>/command/your-slug</code>). Leave it blank to auto-generate.
+              The slug is used in the URL (e.g. <code>/command/your-slug</code>). Leave blank to auto-generate.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -228,18 +409,11 @@ export default function CommandsAdmin() {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="cmd-pinned">Pin to top</Label>
-                <p className="text-xs text-muted-foreground">Pinned commands appear before alphabetical entries.</p>
+                <p className="text-xs text-muted-foreground">Pinned commands appear before the rest.</p>
               </div>
               <Switch id="cmd-pinned" checked={form.pinned}
                 onCheckedChange={(v) => setForm({ ...form, pinned: v })} />
             </div>
-            {form.pinned && (
-              <div>
-                <Label htmlFor="cmd-order">Pinned order</Label>
-                <Input id="cmd-order" type="number" value={form.sort_hint}
-                  onChange={(e) => setForm({ ...form, sort_hint: Number(e.target.value) || 0 })} />
-              </div>
-            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
