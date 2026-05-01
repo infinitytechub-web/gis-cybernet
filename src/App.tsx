@@ -64,6 +64,7 @@ const CommandWorkspace = lazy(() => import("./pages/CommandWorkspace"));
 const DutyRosterImport = lazy(() => import("./pages/DutyRosterImport"));
 const GuardSchedule = lazy(() => import("./pages/GuardSchedule"));
 const PendingStaffApprovals = lazy(() => import("./pages/PendingStaffApprovals"));
+const StaffAccountApprovals = lazy(() => import("./pages/StaffAccountApprovals"));
 
 const queryClient = new QueryClient();
 
