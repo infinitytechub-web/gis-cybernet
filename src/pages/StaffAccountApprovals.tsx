@@ -154,8 +154,8 @@ export default function StaffAccountApprovals() {
                   <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No accounts in this view.</TableCell></TableRow>
                 ) : filtered.map((p) => {
                   const name = `${p.last_name ?? ""} ${p.first_name ?? ""}`.trim() || "—";
-                  const isPending = p.login_enabled === false && (p.status ?? "active") !== "disabled";
-                  const isDisabled = p.status === "disabled";
+                  const isPending = p.login_enabled === false && !p.account_locked;
+                  const isDisabled = p.account_locked === true;
                   return (
                     <TableRow key={p.id}>
                       <TableCell className="font-mono text-xs">{p.staff_id ?? "—"}</TableCell>
