@@ -235,6 +235,10 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
+    if (hasDuplicates) {
+      toast.error("Resolve duplicate Staff IDs in your source file before importing.");
+      return;
+    }
     setImporting(true);
     setProgress(0);
     let success = 0;
