@@ -343,54 +343,75 @@ function BackupAuditPanel() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>When</TableHead>
+                <TableHead>When (exact)</TableHead>
                 <TableHead>Actor</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Result</TableHead>
                 <TableHead>Tables</TableHead>
                 <TableHead className="text-right">Rows</TableHead>
                 <TableHead className="text-right">Size</TableHead>
                 <TableHead>IP</TableHead>
+                <TableHead className="text-right">Logs</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
               )}
               {!isLoading && (data ?? []).length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">No backup activity yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No backup activity yet.</TableCell></TableRow>
               )}
-              {(data ?? []).map((row: any) => (
-                <TableRow key={row.id}>
-                  <TableCell className="text-xs whitespace-nowrap">
-                    {format(new Date(row.created_at), "dd MMM yyyy HH:mm:ss")}
-                  </TableCell>
-                  <TableCell className="text-xs">{row.actor_email ?? (row.user_id ? row.user_id.slice(0, 8) : "system")}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={
-                        row.status === "success"
-                          ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
-                          : row.status === "partial"
-                          ? "border-amber-500/40 text-amber-700 dark:text-amber-300"
-                          : row.status === "cleanup"
-                          ? "border-sky-500/40 text-sky-700 dark:text-sky-300"
-                          : "border-destructive/40 text-destructive"
-                      }
-                    >
-                      {row.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-xs max-w-[260px] truncate" title={(row.tables_exported ?? []).join(", ")}>
-                    {(row.tables_exported ?? []).length}/{(row.tables_requested ?? []).length}
-                  </TableCell>
-                  <TableCell className="text-right text-xs tabular-nums">{row.total_rows?.toLocaleString() ?? 0}</TableCell>
-                  <TableCell className="text-right text-xs tabular-nums">
-                    {row.byte_size ? `${(row.byte_size / 1024).toFixed(1)} KB` : "—"}
-                  </TableCell>
-                  <TableCell className="text-xs font-mono">{row.ip_address ?? "—"}</TableCell>
-                </TableRow>
-              ))}
+              {(data ?? []).map((row: any) => {
+                const resultLabel = row.status === "denied" || row.status === "rejected"
+                  ? "denied"
+                  : row.status === "success" || row.status === "partial"
+                  ? "allowed"
+                  : row.status === "cleanup"
+                  ? "system"
+                  : "error";
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell className="text-xs font-mono whitespace-nowrap" title={row.created_at}>
+                      {format(new Date(row.created_at), "dd MMM yyyy HH:mm:ss.SSS")}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div>{row.actor_email ?? (row.user_id ? row.user_id.slice(0, 8) : "system")}</div>
+                      {row.user_id && <div className="text-[10px] text-muted-foreground font-mono">{row.user_id.slice(0, 12)}…</div>}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        resultLabel === "allowed" ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+                        : resultLabel === "denied" ? "border-destructive/40 text-destructive"
+                        : resultLabel === "system" ? "border-sky-500/40 text-sky-700 dark:text-sky-300"
+                        : "border-amber-500/40 text-amber-700 dark:text-amber-300"
+                      }>
+                        {resultLabel} · {row.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs max-w-[260px] truncate" title={(row.tables_exported ?? []).join(", ")}>
+                      {(row.tables_exported ?? []).length}/{(row.tables_requested ?? []).length}
+                    </TableCell>
+                    <TableCell className="text-right text-xs tabular-nums">{row.total_rows?.toLocaleString() ?? 0}</TableCell>
+                    <TableCell className="text-right text-xs tabular-nums">{row.byte_size ? `${(row.byte_size / 1024).toFixed(1)} KB` : "—"}</TableCell>
+                    <TableCell className="text-xs font-mono">{row.ip_address ?? "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="sm" variant="ghost" title="Download JSON" onClick={() => {
+                          const blob = new Blob([JSON.stringify(row, null, 2)], { type: "application/json" });
+                          downloadBlob(blob, `backup-audit-${row.id}.json`);
+                        }}>
+                          <FileJson className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" title="Download text log" onClick={() => {
+                          const blob = new Blob([buildAuditTextLog(row)], { type: "text/plain" });
+                          downloadBlob(blob, `backup-audit-${row.id}.txt`);
+                        }}>
+                          <FileText className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
