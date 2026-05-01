@@ -155,27 +155,80 @@ Deno.serve(async (req) => {
   const payload = JSON.stringify(snapshot, null, 2);
   const byteSize = new TextEncoder().encode(payload).length;
 
-  // Audit (best-effort; do not fail the response if audit write fails)
   const status = errors.length === 0 ? "success" : "partial";
-  const { error: auditErr } = await admin.from("system_backup_audit").insert({
-    user_id: user.id,
-    actor_email: user.email,
-    tables_requested: requested,
-    tables_exported: exported,
-    row_counts: rowCounts,
-    total_rows: totalRows,
-    byte_size: byteSize,
-    status,
-    error_message: errors.length ? errors.join(" | ") : null,
-    ip_address: ip,
-    user_agent: userAgent,
-  });
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const fileName = `cybernet-backup-${stamp}.json`;
+  const storagePath = `auto/${stamp.slice(0, 10)}/${fileName}`;
+
+  // Audit (best-effort; do not fail the response if audit write fails)
+  const { data: auditRow, error: auditErr } = await admin
+    .from("system_backup_audit")
+    .insert({
+      user_id: user.id,
+      actor_email: user.email,
+      tables_requested: requested,
+      tables_exported: exported,
+      row_counts: rowCounts,
+      total_rows: totalRows,
+      byte_size: byteSize,
+      status,
+      error_message: errors.length ? errors.join(" | ") : null,
+      ip_address: ip,
+      user_agent: userAgent,
+    })
+    .select("id")
+    .single();
   if (auditErr) {
     console.error("Failed to write backup audit:", auditErr.message);
   }
 
-  // Enforce retention immediately after a successful audit write.
-  // Cleanup runs server-side as SECURITY DEFINER and records its own audit row.
+  // Archive snapshot to private storage so admins can browse/restore later
+  let snapshotId: string | null = null;
+  try {
+    const { error: upErr } = await admin.storage
+      .from("system-backups")
+      .upload(storagePath, payload, {
+        contentType: "application/json",
+        upsert: false,
+      });
+    if (upErr) {
+      console.error("Snapshot upload failed:", upErr.message);
+    } else {
+      const { data: snapRow, error: snapErr } = await admin
+        .from("system_backup_snapshots")
+        .insert({
+          audit_id: auditRow?.id ?? null,
+          storage_path: storagePath,
+          file_name: fileName,
+          byte_size: byteSize,
+          tables_included: exported,
+          row_counts: rowCounts,
+          total_rows: totalRows,
+          source: "auto",
+          created_by: user.id,
+          actor_email: user.email,
+        } as any)
+        .select("id")
+        .single();
+      if (snapErr) console.error("Snapshot index failed:", snapErr.message);
+      else snapshotId = snapRow?.id ?? null;
+    }
+  } catch (e) {
+    console.error("Snapshot archive threw:", (e as Error).message);
+  }
+
+  // Notify admins about this backup event (in-app)
+  try {
+    await admin.rpc("notify_admins", {
+      _title: status === "success" ? "Backup completed" : "Backup completed with warnings",
+      _message: `${user.email ?? "Admin"} exported ${exported.length} table(s), ${totalRows} row(s).`,
+      _type: "general",
+    });
+  } catch (e) {
+    console.error("notify_admins failed:", (e as Error).message);
+  }
+
+  // Enforce retention (writes its own cleanup audit + admin notification)
   try {
     const { error: pruneErr } = await admin.rpc("prune_system_backup_audit");
     if (pruneErr) console.error("Prune failed:", pruneErr.message);
@@ -191,6 +244,8 @@ Deno.serve(async (req) => {
       "X-Backup-Status": status,
       "X-Backup-Tables": exported.join(","),
       "X-Backup-Rows": String(totalRows),
+      "X-Backup-Snapshot-Id": snapshotId ?? "",
+      "X-Backup-Audit-Id": auditRow?.id ?? "",
     },
   });
 });

@@ -5213,6 +5213,65 @@ export type Database = {
         }
         Relationships: []
       }
+      system_backup_restore_audit: {
+        Row: {
+          actor_email: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          rows_written: Json
+          snapshot_id: string | null
+          source_label: string | null
+          status: string
+          tables_requested: string[]
+          tables_restored: string[]
+          total_rows_written: number
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          actor_email?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          rows_written?: Json
+          snapshot_id?: string | null
+          source_label?: string | null
+          status?: string
+          tables_requested: string[]
+          tables_restored?: string[]
+          total_rows_written?: number
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          actor_email?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          rows_written?: Json
+          snapshot_id?: string | null
+          source_label?: string | null
+          status?: string
+          tables_requested?: string[]
+          tables_restored?: string[]
+          total_rows_written?: number
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_backup_restore_audit_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "system_backup_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_backup_settings: {
         Row: {
           cleanup_enabled: boolean
@@ -5242,6 +5301,62 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      system_backup_snapshots: {
+        Row: {
+          actor_email: string | null
+          audit_id: string | null
+          byte_size: number
+          created_at: string
+          created_by: string | null
+          file_name: string
+          id: string
+          notes: string | null
+          row_counts: Json
+          source: string
+          storage_path: string
+          tables_included: string[]
+          total_rows: number
+        }
+        Insert: {
+          actor_email?: string | null
+          audit_id?: string | null
+          byte_size?: number
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          id?: string
+          notes?: string | null
+          row_counts?: Json
+          source?: string
+          storage_path: string
+          tables_included?: string[]
+          total_rows?: number
+        }
+        Update: {
+          actor_email?: string | null
+          audit_id?: string | null
+          byte_size?: number
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          id?: string
+          notes?: string | null
+          row_counts?: Json
+          source?: string
+          storage_path?: string
+          tables_included?: string[]
+          total_rows?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_backup_snapshots_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "system_backup_audit"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -5591,6 +5706,15 @@ export type Database = {
           _table_name: string
         }
         Returns: undefined
+      }
+      notify_admins: {
+        Args: {
+          _message: string
+          _reference_id?: string
+          _title: string
+          _type?: string
+        }
+        Returns: number
       }
       notify_roles: {
         Args: {
