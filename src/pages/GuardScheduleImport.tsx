@@ -829,7 +829,25 @@ export default function GuardScheduleImport() {
             Selecting more than one shift duplicates personnel into each chosen shift.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Defined time periods reference */}
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <div className="text-xs font-semibold mb-2">Defined guard-duty time periods</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {SHIFTS.map((s) => (
+                <div key={s} className="rounded-md border bg-background p-2 text-center">
+                  <div className="text-xs font-bold">Shift {s}</div>
+                  <div className="text-[11px] text-muted-foreground">{SHIFT_PERIOD_INFO[s].label}</div>
+                  <div className="text-[11px] font-mono mt-0.5">
+                    {SHIFT_PERIOD_INFO[s].start === "—"
+                      ? "Reserve"
+                      : `${SHIFT_PERIOD_INFO[s].start}–${SHIFT_PERIOD_INFO[s].end}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {([["DAY", dayShifts, setDayShifts], ["NIGHT", nightShifts, setNightShifts]] as const).map(([label, set, setSet]) => (
               <div key={label} className="rounded-lg border p-3 space-y-2">
@@ -842,17 +860,18 @@ export default function GuardScheduleImport() {
                         key={s}
                         type="button"
                         onClick={() => toggleShift(set, setSet, s)}
-                        className={`px-3 py-1 rounded-md border text-sm transition-colors ${
+                        className={`px-3 py-1 rounded-md border text-xs transition-colors ${
                           active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"
                         }`}
+                        title={`${SHIFT_PERIOD_INFO[s].label} ${SHIFT_PERIOD_INFO[s].start}–${SHIFT_PERIOD_INFO[s].end}`}
                       >
-                        Shift {s}
+                        Shift {s} · {SHIFT_PERIOD_INFO[s].label}
                       </button>
                     );
                   })}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Selected: {set.length ? set.map((s) => `Shift ${s}`).join(", ") : <span className="text-destructive">None — entries will be skipped</span>}
+                  Selected: {set.length ? set.map((s) => `Shift ${s} (${SHIFT_PERIOD_INFO[s].label})`).join(", ") : <span className="text-destructive">None — entries will be skipped</span>}
                 </div>
               </div>
             ))}
