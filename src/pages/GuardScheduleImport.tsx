@@ -451,10 +451,16 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
       errors.push({ level: "error", field: "rank", message: "Missing rank", row: r, index: i });
     } else if (rankCanon && allowedRanks.length && !allowedRanks.includes(rankCanon.toUpperCase())) {
       unknownRanks.add(rankCanon);
+      const aliasKeys = Object.keys(tpl.rankAliases ?? {});
+      const suggestion = nearestMatch(rankCanon, [...allowedRanks, ...aliasKeys]);
       errors.push({
         level: "error",
         field: "rank",
-        message: `Preset mismatch: rank "${r.rank}" (canonical: ${rankCanon}) is not in allowed ranks`,
+        kind: "preset_rank",
+        got: r.rank || rankCanon,
+        expected: allowedRanks.join(" | "),
+        suggestion,
+        message: `Preset mismatch: rank "${r.rank}" (canonical: ${rankCanon}) is not in allowed ranks${suggestion ? ` — did you mean "${suggestion}"?` : ""}`,
         row: r,
         index: i,
       });
@@ -463,12 +469,15 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
     // Serial
     const snStr = String(r.serial_no ?? "");
     if (tpl.requireSerial !== false && !r.serial_no) {
-      errors.push({ level: "error", field: "serial", message: "Missing serial number", row: r, index: i });
+      errors.push({ level: "error", field: "serial", kind: "missing", message: "Missing serial number", row: r, index: i });
     } else if (r.serial_no) {
       if (serialRe && !serialRe.test(snStr)) {
         errors.push({
           level: "error",
           field: "serial",
+          kind: "serial_format",
+          got: snStr,
+          expected: `format ${tpl.serialFormat}`,
           message: `Serial "${snStr}" does not match format ${tpl.serialFormat}`,
           row: r,
           index: i,
@@ -481,6 +490,9 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
         errors.push({
           level: "error",
           field: "serial",
+          kind: "serial_range",
+          got: String(r.serial_no),
+          expected: `range [${min}, ${max}]`,
           message: `Preset mismatch: serial ${r.serial_no} is outside allowed range [${min}, ${max}]`,
           row: r,
           index: i,
@@ -492,10 +504,16 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
     const groupCanon = canonicalize(r.group, tpl.groupAliases);
     if (allowedGroups.length && groupCanon && !allowedGroups.includes(groupCanon.toUpperCase())) {
       unknownGroups.add(groupCanon);
+      const aliasKeys = Object.keys(tpl.groupAliases ?? {});
+      const suggestion = nearestMatch(groupCanon, [...allowedGroups, ...aliasKeys]);
       errors.push({
         level: "error",
         field: "group",
-        message: `Preset mismatch: group "${r.group}" (canonical: ${groupCanon}) is not in allowed groups`,
+        kind: "preset_group",
+        got: r.group || groupCanon,
+        expected: allowedGroups.join(" | "),
+        suggestion,
+        message: `Preset mismatch: group "${r.group}" (canonical: ${groupCanon}) is not in allowed groups${suggestion ? ` — did you mean "${suggestion}"?` : ""}`,
         row: r,
         index: i,
       });
