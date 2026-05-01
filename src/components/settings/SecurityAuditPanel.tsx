@@ -57,23 +57,55 @@ export function SecurityAuditPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const handleExport = async (format: "csv" | "json") => {
+  const buildHeaderMeta = (data: any[]) => {
+    const exportedAt = new Date().toISOString();
+    const head = data.length ? data.reduce((a, b) => (b.seq > a.seq ? b : a)) : null;
+    return {
+      exported_at: exportedAt,
+      row_count: data.length,
+      head_seq: head?.seq ?? null,
+      head_hash: head?.row_hash ?? null,
+      head_created_at: head?.created_at ?? null,
+    };
+  };
+
+  const runExport = async (format: "csv" | "json", scope: "range" | "all") => {
     try {
-      const data = await exportSecurityAudit(new Date(from), new Date(to + "T23:59:59"));
+      const data = scope === "all"
+        ? await exportSecurityAudit()
+        : await exportSecurityAudit(new Date(from), new Date(to + "T23:59:59"));
+      const arr = (data as any[]) ?? [];
+      const meta = buildHeaderMeta(arr);
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const baseName = scope === "all" ? `security-audit-all_${stamp}` : `security-audit-${from}_${to}`;
+
       if (format === "json") {
-        downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `security-audit-${from}_${to}.json`);
+        const payload = { header: meta, rows: arr };
+        downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), `${baseName}.json`);
       } else {
         const headers = ["seq", "created_at", "category", "action", "severity", "actor_label", "subject", "ip_address", "row_hash", "prev_hash"];
-        const csv = [headers.join(",")].concat(
-          (data as any[]).map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))
+        const metaLines = [
+          `# Security Audit Log Export`,
+          `# Exported At: ${meta.exported_at}`,
+          `# Row Count: ${meta.row_count}`,
+          `# Head Seq: ${meta.head_seq ?? ""}`,
+          `# Head Hash: ${meta.head_hash ?? ""}`,
+          `# Head Created At: ${meta.head_created_at ?? ""}`,
+          ``,
+        ];
+        const csv = metaLines.concat([headers.join(",")]).concat(
+          arr.map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))
         ).join("\n");
-        downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `security-audit-${from}_${to}.csv`);
+        downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `${baseName}.csv`);
       }
-      toast.success(`Exported ${(data as any[]).length} rows`);
+      toast.success(`Exported ${arr.length} rows`);
     } catch (e: any) {
       toast.error(e.message);
     }
   };
+
+  const handleExport = (format: "csv" | "json") => runExport(format, "range");
+  const handleExportAll = () => runExport("csv", "all");
 
   const handleVerify = async () => {
     try {
