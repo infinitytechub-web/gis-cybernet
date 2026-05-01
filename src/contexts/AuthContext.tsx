@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { AppRole } from "@/lib/types";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
 interface AuthContextValue {
   user: User | null;
