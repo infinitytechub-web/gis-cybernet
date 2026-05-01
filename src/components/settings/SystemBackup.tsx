@@ -356,7 +356,7 @@ function BackupAuditPanel() {
                   <TableCell className="text-xs whitespace-nowrap">
                     {format(new Date(row.created_at), "dd MMM yyyy HH:mm:ss")}
                   </TableCell>
-                  <TableCell className="text-xs">{row.actor_email ?? row.user_id.slice(0, 8)}</TableCell>
+                  <TableCell className="text-xs">{row.actor_email ?? (row.user_id ? row.user_id.slice(0, 8) : "system")}</TableCell>
                   <TableCell>
                     <Badge
                       variant="outline"
