@@ -61,6 +61,7 @@ const GpsAddresses = lazy(() => import("./pages/GpsAddresses"));
 const Interlink = lazy(() => import("./pages/Interlink"));
 const CommandsAdmin = lazy(() => import("./pages/CommandsAdmin"));
 const CommandWorkspace = lazy(() => import("./pages/CommandWorkspace"));
+const DutyRosterImport = lazy(() => import("./pages/DutyRosterImport"));
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,7 @@ function App() {
           <Route path="/roles" element={<ProtectedRoute><Layout><Roles /></Layout></ProtectedRoute>} />
           <Route path="/shifts" element={<ProtectedRoute><Layout><Shifts /></Layout></ProtectedRoute>} />
           <Route path="/roster" element={<ProtectedRoute><Layout><DutyRoster /></Layout></ProtectedRoute>} />
+          <Route path="/roster/import" element={<ProtectedRoute><Layout><DutyRosterImport /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,6 +77,7 @@ const financeItems = [
 
 const adminItems = [
   { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
+  { title: "Roster Import", url: "/roster/import", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300" },
   { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
   { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Command Role Audit", url: "/command-role-audit", icon: History, iconColor: "text-primary" },
