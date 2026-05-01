@@ -459,6 +459,13 @@ export default function GuardScheduleImport() {
     return acc;
   }, [assignments]);
 
+  // Validation against the active mapping template
+  const validation = useMemo(
+    () => (parsed ? validateRows(parsed.rows, template) : null),
+    [parsed, template]
+  );
+  const blockedByErrors = (validation?.errors.length ?? 0) > 0;
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
@@ -466,6 +473,60 @@ export default function GuardScheduleImport() {
   const reset = () => {
     setFile(null); setParsed(null); setName(""); setNotes("");
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleTemplateFile = async (f: File) => {
+    try {
+      if (!/\.json$/i.test(f.name)) {
+        toast.error("Mapping template must be a .json file");
+        return;
+      }
+      if (f.size > 256 * 1024) {
+        toast.error("Mapping template too large (max 256 KB)");
+        return;
+      }
+      const text = await f.text();
+      const raw = JSON.parse(text);
+      const parsedTpl = MappingTemplateSchema.safeParse(raw);
+      if (!parsedTpl.success) {
+        const issues = parsedTpl.error.issues.slice(0, 3).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`);
+        toast.error(`Invalid template — ${issues.join("; ")}`);
+        return;
+      }
+      // Validate the regex up front so we fail fast
+      if (parsedTpl.data.serialFormat) {
+        try { new RegExp(parsedTpl.data.serialFormat); }
+        catch { toast.error("serialFormat is not a valid regular expression"); return; }
+      }
+      setTemplate({ ...DEFAULT_TEMPLATE, ...parsedTpl.data });
+      setTemplateFile(f.name);
+      toast.success(`Mapping template loaded: ${parsedTpl.data.name ?? f.name}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to read template");
+    } finally {
+      if (templateFileRef.current) templateFileRef.current.value = "";
+    }
+  };
+
+  const resetTemplate = () => {
+    setTemplate(DEFAULT_TEMPLATE);
+    setTemplateFile("Built-in default");
+    toast.success("Reverted to default mapping template");
+  };
+
+  const downloadTemplateSample = () => {
+    const sample: MappingTemplate = {
+      ...DEFAULT_TEMPLATE,
+      name: "Sample roster mapping",
+      allowedRanks: ["DCO", "ACI", "CI", "AI", "AII", "AIII", "INSP", "ASP", "SGT", "CPL", "L/CPL"],
+      allowedGroups: ["GROUP A", "GROUP B", "GROUP C", "GROUP D"],
+      groupAliases: { "GRP A": "GROUP A", "GRP B": "GROUP B" },
+    };
+    const blob = new Blob([JSON.stringify(sample, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "roster-mapping-template.sample.json"; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFile = async (f: File) => {
