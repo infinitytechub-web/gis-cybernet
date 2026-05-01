@@ -360,13 +360,55 @@ function canonicalize(value: string, aliases?: Record<string, string>) {
   return up;
 }
 
+export type RowIssueKind =
+  | "preset_rank"
+  | "preset_group"
+  | "serial_range"
+  | "serial_format"
+  | "missing"
+  | "other";
+
 export type RowIssue = {
   level: "error" | "warning";
   field: "rank" | "serial" | "name" | "group" | "date" | "period";
   message: string;
   row: RawRow;
   index: number;
+  kind?: RowIssueKind;
+  got?: string;
+  expected?: string;
+  suggestion?: string;
 };
+
+// Tiny Levenshtein for nearest-rank suggestion
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+function nearestMatch(value: string, candidates: string[]): string | undefined {
+  if (!value || candidates.length === 0) return undefined;
+  const v = value.toUpperCase();
+  let best: { c: string; d: number } | null = null;
+  for (const c of candidates) {
+    const d = levenshtein(v, c.toUpperCase());
+    if (!best || d < best.d) best = { c, d };
+  }
+  if (!best) return undefined;
+  // Only suggest if reasonably close (≤ 40% of length, min 1)
+  const threshold = Math.max(1, Math.ceil(Math.max(v.length, best.c.length) * 0.4));
+  return best.d <= threshold ? best.c : undefined;
+}
 
 export type ValidationResult = {
   errors: RowIssue[];
