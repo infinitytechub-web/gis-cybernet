@@ -13,8 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck } from "lucide-react";
+import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   exportScheduleXlsx,
   exportScheduleCsv,
@@ -237,6 +238,177 @@ function dedupeAssignments(rows: Assignment[], mode: DedupeMode): DedupeResult {
   return { kept, duplicates, removed };
 }
 
+// ----- Roster mapping template -----
+// Users can upload a JSON file describing how raw PDF text maps to canonical fields.
+// All sections are optional; missing sections fall back to defaults.
+const MappingTemplateSchema = z.object({
+  version: z.union([z.string(), z.number()]).optional(),
+  name: z.string().max(120).optional(),
+  // Free-text rank → canonical rank string
+  rankAliases: z.record(z.string().max(40), z.string().max(40)).optional(),
+  // Allowed canonical ranks. Anything outside is flagged as "unknown rank".
+  // Empty/omitted = no rank whitelist (warnings only on empty rank).
+  allowedRanks: z.array(z.string().max(40)).max(200).optional(),
+  // Allowed group labels. Anything outside is flagged.
+  allowedGroups: z.array(z.string().max(60)).max(200).optional(),
+  // Group label → canonical group string
+  groupAliases: z.record(z.string().max(60), z.string().max(60)).optional(),
+  // Regex string for valid serial numbers (matched as text). Default: 1-3 digits.
+  serialFormat: z.string().max(80).optional(),
+  // Min and max acceptable serial number values.
+  serialMin: z.number().int().min(0).max(99999).optional(),
+  serialMax: z.number().int().min(0).max(99999).optional(),
+  // Required fields per personnel row
+  requireRank: z.boolean().optional(),
+  requireSerial: z.boolean().optional(),
+  requireName: z.boolean().optional(),
+});
+export type MappingTemplate = z.infer<typeof MappingTemplateSchema>;
+
+const DEFAULT_TEMPLATE: MappingTemplate = {
+  version: 1,
+  name: "Default GIS roster mapping",
+  rankAliases: {
+    "DCO": "DCO", "ACI": "ACI", "CI": "CI", "AI": "AI", "AII": "AII", "AIII": "AIII",
+    "SGT": "SGT", "CPL": "CPL", "L/CPL": "L/CPL", "LCPL": "L/CPL",
+    "INSP": "INSP", "CINSP": "CINSP", "ASP": "ASP",
+  },
+  allowedRanks: [],
+  allowedGroups: [],
+  groupAliases: {},
+  serialFormat: "^\\d{1,3}$",
+  serialMin: 1,
+  serialMax: 999,
+  requireRank: true,
+  requireSerial: true,
+  requireName: true,
+};
+
+function canonicalize(value: string, aliases?: Record<string, string>) {
+  if (!value) return value;
+  const up = value.toUpperCase().trim();
+  if (aliases && aliases[up]) return aliases[up];
+  // Try case-insensitive lookup
+  if (aliases) {
+    const hit = Object.keys(aliases).find((k) => k.toUpperCase() === up);
+    if (hit) return aliases[hit];
+  }
+  return up;
+}
+
+export type RowIssue = {
+  level: "error" | "warning";
+  field: "rank" | "serial" | "name" | "group" | "date" | "period";
+  message: string;
+  row: RawRow;
+  index: number;
+};
+
+export type ValidationResult = {
+  errors: RowIssue[];
+  warnings: RowIssue[];
+  unknownGroups: string[];
+  unknownRanks: string[];
+  serialOutOfRange: number;
+};
+
+function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
+  const errors: RowIssue[] = [];
+  const warnings: RowIssue[] = [];
+  const unknownGroups = new Set<string>();
+  const unknownRanks = new Set<string>();
+  let serialOutOfRange = 0;
+
+  let serialRe: RegExp | null = null;
+  try {
+    if (tpl.serialFormat) serialRe = new RegExp(tpl.serialFormat);
+  } catch {
+    // Invalid regex — surface once via a synthetic warning below
+  }
+
+  const allowedRanks = (tpl.allowedRanks ?? []).map((r) => r.toUpperCase());
+  const allowedGroups = (tpl.allowedGroups ?? []).map((g) => g.toUpperCase());
+
+  rows.forEach((r, i) => {
+    // Name
+    if (tpl.requireName !== false) {
+      if (!r.name || r.name.trim().length < 2) {
+        errors.push({ level: "error", field: "name", message: "Missing or too-short name", row: r, index: i });
+      } else if (/[0-9]/.test(r.name)) {
+        warnings.push({ level: "warning", field: "name", message: `Name contains digits: "${r.name}"`, row: r, index: i });
+      }
+    }
+
+    // Rank
+    const rankCanon = canonicalize(r.rank, tpl.rankAliases);
+    if (tpl.requireRank !== false && !rankCanon) {
+      errors.push({ level: "error", field: "rank", message: "Missing rank", row: r, index: i });
+    } else if (rankCanon && allowedRanks.length && !allowedRanks.includes(rankCanon.toUpperCase())) {
+      unknownRanks.add(rankCanon);
+      warnings.push({
+        level: "warning",
+        field: "rank",
+        message: `Unknown rank "${r.rank}" (canonical: ${rankCanon})`,
+        row: r,
+        index: i,
+      });
+    }
+
+    // Serial
+    const snStr = String(r.serial_no ?? "");
+    if (tpl.requireSerial !== false && !r.serial_no) {
+      errors.push({ level: "error", field: "serial", message: "Missing serial number", row: r, index: i });
+    } else if (r.serial_no) {
+      if (serialRe && !serialRe.test(snStr)) {
+        errors.push({
+          level: "error",
+          field: "serial",
+          message: `Serial "${snStr}" does not match format ${tpl.serialFormat}`,
+          row: r,
+          index: i,
+        });
+      }
+      const min = tpl.serialMin ?? 0;
+      const max = tpl.serialMax ?? 99999;
+      if (r.serial_no < min || r.serial_no > max) {
+        serialOutOfRange++;
+        warnings.push({
+          level: "warning",
+          field: "serial",
+          message: `Serial ${r.serial_no} out of range [${min}, ${max}]`,
+          row: r,
+          index: i,
+        });
+      }
+    }
+
+    // Group
+    const groupCanon = canonicalize(r.group, tpl.groupAliases);
+    if (allowedGroups.length && groupCanon && !allowedGroups.includes(groupCanon.toUpperCase())) {
+      unknownGroups.add(groupCanon);
+      warnings.push({
+        level: "warning",
+        field: "group",
+        message: `Unknown group "${r.group}" (canonical: ${groupCanon})`,
+        row: r,
+        index: i,
+      });
+    }
+
+    // Date / period sanity (period & date should already be set by parser)
+    if (!r.date) errors.push({ level: "error", field: "date", message: "Missing date", row: r, index: i });
+    if (!r.period) errors.push({ level: "error", field: "period", message: "Missing DAY/NIGHT period", row: r, index: i });
+  });
+
+  return {
+    errors,
+    warnings,
+    unknownGroups: Array.from(unknownGroups).sort(),
+    unknownRanks: Array.from(unknownRanks).sort(),
+    serialOutOfRange,
+  };
+}
+
 // ----- Page -----
 export default function GuardScheduleImport() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
@@ -251,8 +423,11 @@ export default function GuardScheduleImport() {
   const [dayShifts, setDayShifts] = useState<Shift[]>(DEFAULT_MAPPING.day);
   const [nightShifts, setNightShifts] = useState<Shift[]>(DEFAULT_MAPPING.night);
   const [dedupeMode, setDedupeMode] = useState<DedupeMode>("off");
+  const [template, setTemplate] = useState<MappingTemplate>(DEFAULT_TEMPLATE);
+  const [templateFile, setTemplateFile] = useState<string>("Built-in default");
   const [parsing, setParsing] = useState(false);
   const [committing, setCommitting] = useState(false);
+  const templateFileRef = useRef<HTMLInputElement>(null);
 
   const recent = useQuery({
     queryKey: ["guard-schedules-recent"],
@@ -284,6 +459,13 @@ export default function GuardScheduleImport() {
     return acc;
   }, [assignments]);
 
+  // Validation against the active mapping template
+  const validation = useMemo(
+    () => (parsed ? validateRows(parsed.rows, template) : null),
+    [parsed, template]
+  );
+  const blockedByErrors = (validation?.errors.length ?? 0) > 0;
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
@@ -291,6 +473,60 @@ export default function GuardScheduleImport() {
   const reset = () => {
     setFile(null); setParsed(null); setName(""); setNotes("");
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleTemplateFile = async (f: File) => {
+    try {
+      if (!/\.json$/i.test(f.name)) {
+        toast.error("Mapping template must be a .json file");
+        return;
+      }
+      if (f.size > 256 * 1024) {
+        toast.error("Mapping template too large (max 256 KB)");
+        return;
+      }
+      const text = await f.text();
+      const raw = JSON.parse(text);
+      const parsedTpl = MappingTemplateSchema.safeParse(raw);
+      if (!parsedTpl.success) {
+        const issues = parsedTpl.error.issues.slice(0, 3).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`);
+        toast.error(`Invalid template — ${issues.join("; ")}`);
+        return;
+      }
+      // Validate the regex up front so we fail fast
+      if (parsedTpl.data.serialFormat) {
+        try { new RegExp(parsedTpl.data.serialFormat); }
+        catch { toast.error("serialFormat is not a valid regular expression"); return; }
+      }
+      setTemplate({ ...DEFAULT_TEMPLATE, ...parsedTpl.data });
+      setTemplateFile(f.name);
+      toast.success(`Mapping template loaded: ${parsedTpl.data.name ?? f.name}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to read template");
+    } finally {
+      if (templateFileRef.current) templateFileRef.current.value = "";
+    }
+  };
+
+  const resetTemplate = () => {
+    setTemplate(DEFAULT_TEMPLATE);
+    setTemplateFile("Built-in default");
+    toast.success("Reverted to default mapping template");
+  };
+
+  const downloadTemplateSample = () => {
+    const sample: MappingTemplate = {
+      ...DEFAULT_TEMPLATE,
+      name: "Sample roster mapping",
+      allowedRanks: ["DCO", "ACI", "CI", "AI", "AII", "AIII", "INSP", "ASP", "SGT", "CPL", "L/CPL"],
+      allowedGroups: ["GROUP A", "GROUP B", "GROUP C", "GROUP D"],
+      groupAliases: { "GRP A": "GROUP A", "GRP B": "GROUP B" },
+    };
+    const blob = new Blob([JSON.stringify(sample, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "roster-mapping-template.sample.json"; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFile = async (f: File) => {
@@ -320,17 +556,28 @@ export default function GuardScheduleImport() {
     status: "draft",
   };
 
+  const guardValidation = (action: string): boolean => {
+    if (blockedByErrors) {
+      toast.error(`${action} blocked: ${validation!.errors.length} validation error(s) — fix or adjust mapping template`);
+      return false;
+    }
+    return true;
+  };
+
   const handleExportXlsx = () => {
     if (!assignments.length) return;
+    if (!guardValidation("Export")) return;
     exportScheduleXlsx(headerForExport, assignments);
   };
   const handleExportCsv = () => {
     if (!assignments.length) return;
+    if (!guardValidation("Export")) return;
     exportScheduleCsv(headerForExport, assignments);
   };
 
   const handleCommit = async () => {
     if (!parsed || !assignments.length || !file) return;
+    if (!guardValidation("Commit")) return;
     if (!parsed.startDate || !parsed.endDate) {
       toast.error("Could not determine date range from PDF");
       return;
@@ -436,7 +683,57 @@ export default function GuardScheduleImport() {
 
       <Card>
         <CardHeader>
-          <CardTitle>2. Period mapping</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileJson className="h-5 w-5 text-primary" /> 2. Roster mapping template
+          </CardTitle>
+          <CardDescription>
+            Upload a JSON template that defines rank aliases, allowed groups, and serial-number format. This keeps imports
+            consistent across PDFs. The template is applied immediately and used for validation below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => templateFileRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-1" /> Upload template (.json)
+            </Button>
+            <Button variant="outline" size="sm" onClick={downloadTemplateSample}>
+              <FileDown className="h-4 w-4 mr-1" /> Download sample
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetTemplate}>
+              <XCircle className="h-4 w-4 mr-1" /> Reset to default
+            </Button>
+            <input
+              ref={templateFileRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleTemplateFile(f); }}
+            />
+          </div>
+          <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+            <div><strong>Active template:</strong> {template.name ?? "(unnamed)"} <span className="text-muted-foreground">— source: {templateFile}</span></div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">Rank aliases: {Object.keys(template.rankAliases ?? {}).length}</Badge>
+              <Badge variant="outline">Allowed ranks: {(template.allowedRanks ?? []).length || "any"}</Badge>
+              <Badge variant="outline">Allowed groups: {(template.allowedGroups ?? []).length || "any"}</Badge>
+              <Badge variant="outline">Group aliases: {Object.keys(template.groupAliases ?? {}).length}</Badge>
+              <Badge variant="outline">Serial format: <code className="ml-1">{template.serialFormat ?? "—"}</code></Badge>
+              <Badge variant="outline">Serial range: {template.serialMin ?? 0}–{template.serialMax ?? "∞"}</Badge>
+            </div>
+            <div className="text-muted-foreground">
+              Required fields: {[
+                template.requireRank !== false && "rank",
+                template.requireSerial !== false && "serial",
+                template.requireName !== false && "name",
+              ].filter(Boolean).join(", ") || "none"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>3. Period mapping</CardTitle>
           <CardDescription>
             Pick which shift letters each period generates. By default <strong>DAY → A & B</strong> and <strong>NIGHT → C</strong>.
             Selecting more than one shift duplicates personnel into each chosen shift.
@@ -476,7 +773,7 @@ export default function GuardScheduleImport() {
       {parsed && (
         <Card>
           <CardHeader>
-            <CardTitle>3. Duplicate handling</CardTitle>
+            <CardTitle>4. Duplicate handling</CardTitle>
             <CardDescription>
               Choose whether duplicate names should be collapsed for export and database commit. The full raw list is always
               preserved below for monitoring.
@@ -536,11 +833,97 @@ export default function GuardScheduleImport() {
         </Card>
       )}
 
+      {parsed && validation && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className={`h-5 w-5 ${blockedByErrors ? "text-destructive" : "text-emerald-600"}`} />
+              5. Validation
+            </CardTitle>
+            <CardDescription>
+              {blockedByErrors
+                ? `${validation.errors.length} error(s) must be resolved before exporting or saving. ${validation.warnings.length} warning(s).`
+                : validation.warnings.length > 0
+                ? `No errors — ${validation.warnings.length} warning(s) you may want to review.`
+                : "All rows passed validation against the active mapping template."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant={blockedByErrors ? "destructive" : "outline"}>
+                Errors: <strong className="ml-1">{validation.errors.length}</strong>
+              </Badge>
+              <Badge variant={validation.warnings.length > 0 ? "secondary" : "outline"}>
+                Warnings: <strong className="ml-1">{validation.warnings.length}</strong>
+              </Badge>
+              <Badge variant="outline">Unknown ranks: <strong className="ml-1">{validation.unknownRanks.length}</strong></Badge>
+              <Badge variant="outline">Unknown groups: <strong className="ml-1">{validation.unknownGroups.length}</strong></Badge>
+              <Badge variant="outline">Serial out-of-range: <strong className="ml-1">{validation.serialOutOfRange}</strong></Badge>
+            </div>
+
+            {(validation.unknownGroups.length > 0 || validation.unknownRanks.length > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                {validation.unknownGroups.length > 0 && (
+                  <div className="rounded-md border bg-amber-50 p-2">
+                    <div className="font-medium text-amber-800 mb-1">Unknown groups</div>
+                    <div className="font-mono text-[11px] break-words">{validation.unknownGroups.join(", ")}</div>
+                  </div>
+                )}
+                {validation.unknownRanks.length > 0 && (
+                  <div className="rounded-md border bg-amber-50 p-2">
+                    <div className="font-medium text-amber-800 mb-1">Unknown ranks</div>
+                    <div className="font-mono text-[11px] break-words">{validation.unknownRanks.join(", ")}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(validation.errors.length > 0 || validation.warnings.length > 0) && (
+              <details className="text-xs rounded-md border p-2 max-h-64 overflow-auto" open={blockedByErrors}>
+                <summary className="cursor-pointer font-medium">
+                  View row-level issues (first 100)
+                </summary>
+                <Table className="min-w-[700px] mt-2">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Level</TableHead>
+                      <TableHead className="w-20">Field</TableHead>
+                      <TableHead className="w-24">Date</TableHead>
+                      <TableHead className="w-20">Group</TableHead>
+                      <TableHead>Row</TableHead>
+                      <TableHead>Issue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...validation.errors, ...validation.warnings].slice(0, 100).map((iss, i) => (
+                      <TableRow key={`${iss.level}-${iss.index}-${i}`}>
+                        <TableCell>
+                          <Badge variant={iss.level === "error" ? "destructive" : "secondary"} className="text-[10px]">
+                            {iss.level}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[11px] font-mono">{iss.field}</TableCell>
+                        <TableCell className="text-[11px] font-mono">{iss.row.date || "—"}</TableCell>
+                        <TableCell className="text-[11px]">{iss.row.group || "—"}</TableCell>
+                        <TableCell className="text-[11px]">
+                          {iss.row.serial_no ? `${iss.row.serial_no}.` : ""} {iss.row.rank} {iss.row.name}
+                        </TableCell>
+                        <TableCell className="text-[11px]">{iss.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </details>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {parsed && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-emerald-600" /> 4. Preview
+              <Eye className="h-5 w-5 text-emerald-600" /> 6. Preview
             </CardTitle>
             <CardDescription>
               {assignments.length === 0
@@ -615,16 +998,21 @@ export default function GuardScheduleImport() {
             )}
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={handleExportXlsx} disabled={!assignments.length}>
+              {blockedByErrors && (
+                <span className="text-xs text-destructive mr-auto flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Resolve {validation!.errors.length} error(s) to enable export & save
+                </span>
+              )}
+              <Button variant="outline" onClick={handleExportXlsx} disabled={!assignments.length || blockedByErrors}>
                 <Download className="h-4 w-4 mr-1" /> Export XLSX
               </Button>
-              <Button variant="outline" onClick={handleExportCsv} disabled={!assignments.length}>
+              <Button variant="outline" onClick={handleExportCsv} disabled={!assignments.length || blockedByErrors}>
                 <Download className="h-4 w-4 mr-1" /> Export CSV
               </Button>
               <Button variant="outline" onClick={reset} disabled={committing}>
                 <XCircle className="h-4 w-4 mr-1" /> Discard
               </Button>
-              <Button onClick={handleCommit} disabled={committing || !assignments.length}>
+              <Button onClick={handleCommit} disabled={committing || !assignments.length || blockedByErrors}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> {committing ? "Saving…" : `Save schedule (${assignments.length})`}
               </Button>
             </div>
