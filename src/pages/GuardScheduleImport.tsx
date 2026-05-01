@@ -423,8 +423,11 @@ export default function GuardScheduleImport() {
   const [dayShifts, setDayShifts] = useState<Shift[]>(DEFAULT_MAPPING.day);
   const [nightShifts, setNightShifts] = useState<Shift[]>(DEFAULT_MAPPING.night);
   const [dedupeMode, setDedupeMode] = useState<DedupeMode>("off");
+  const [template, setTemplate] = useState<MappingTemplate>(DEFAULT_TEMPLATE);
+  const [templateFile, setTemplateFile] = useState<string>("Built-in default");
   const [parsing, setParsing] = useState(false);
   const [committing, setCommitting] = useState(false);
+  const templateFileRef = useRef<HTMLInputElement>(null);
 
   const recent = useQuery({
     queryKey: ["guard-schedules-recent"],
