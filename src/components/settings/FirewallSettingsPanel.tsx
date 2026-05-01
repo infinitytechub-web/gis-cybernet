@@ -76,7 +76,7 @@ function OverviewTab() {
   const save = useMutation({
     mutationFn: async (patch: Record<string, unknown>) => {
       if (!s?.id) throw new Error("Settings row missing");
-      const { error } = await supabase.from("firewall_settings").update(patch).eq("id", s.id);
+      const { error } = await supabase.from("firewall_settings").update(patch as any).eq("id", s.id);
       if (error) throw error;
     },
     onSuccess: () => { toast.success("Firewall settings saved"); qc.invalidateQueries({ queryKey: ["firewall-settings"] }); },
