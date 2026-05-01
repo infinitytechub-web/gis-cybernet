@@ -833,11 +833,97 @@ export default function GuardScheduleImport() {
         </Card>
       )}
 
+      {parsed && validation && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className={`h-5 w-5 ${blockedByErrors ? "text-destructive" : "text-emerald-600"}`} />
+              5. Validation
+            </CardTitle>
+            <CardDescription>
+              {blockedByErrors
+                ? `${validation.errors.length} error(s) must be resolved before exporting or saving. ${validation.warnings.length} warning(s).`
+                : validation.warnings.length > 0
+                ? `No errors — ${validation.warnings.length} warning(s) you may want to review.`
+                : "All rows passed validation against the active mapping template."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant={blockedByErrors ? "destructive" : "outline"}>
+                Errors: <strong className="ml-1">{validation.errors.length}</strong>
+              </Badge>
+              <Badge variant={validation.warnings.length > 0 ? "secondary" : "outline"}>
+                Warnings: <strong className="ml-1">{validation.warnings.length}</strong>
+              </Badge>
+              <Badge variant="outline">Unknown ranks: <strong className="ml-1">{validation.unknownRanks.length}</strong></Badge>
+              <Badge variant="outline">Unknown groups: <strong className="ml-1">{validation.unknownGroups.length}</strong></Badge>
+              <Badge variant="outline">Serial out-of-range: <strong className="ml-1">{validation.serialOutOfRange}</strong></Badge>
+            </div>
+
+            {(validation.unknownGroups.length > 0 || validation.unknownRanks.length > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                {validation.unknownGroups.length > 0 && (
+                  <div className="rounded-md border bg-amber-50 p-2">
+                    <div className="font-medium text-amber-800 mb-1">Unknown groups</div>
+                    <div className="font-mono text-[11px] break-words">{validation.unknownGroups.join(", ")}</div>
+                  </div>
+                )}
+                {validation.unknownRanks.length > 0 && (
+                  <div className="rounded-md border bg-amber-50 p-2">
+                    <div className="font-medium text-amber-800 mb-1">Unknown ranks</div>
+                    <div className="font-mono text-[11px] break-words">{validation.unknownRanks.join(", ")}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(validation.errors.length > 0 || validation.warnings.length > 0) && (
+              <details className="text-xs rounded-md border p-2 max-h-64 overflow-auto" open={blockedByErrors}>
+                <summary className="cursor-pointer font-medium">
+                  View row-level issues (first 100)
+                </summary>
+                <Table className="min-w-[700px] mt-2">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Level</TableHead>
+                      <TableHead className="w-20">Field</TableHead>
+                      <TableHead className="w-24">Date</TableHead>
+                      <TableHead className="w-20">Group</TableHead>
+                      <TableHead>Row</TableHead>
+                      <TableHead>Issue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...validation.errors, ...validation.warnings].slice(0, 100).map((iss, i) => (
+                      <TableRow key={`${iss.level}-${iss.index}-${i}`}>
+                        <TableCell>
+                          <Badge variant={iss.level === "error" ? "destructive" : "secondary"} className="text-[10px]">
+                            {iss.level}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[11px] font-mono">{iss.field}</TableCell>
+                        <TableCell className="text-[11px] font-mono">{iss.row.date || "—"}</TableCell>
+                        <TableCell className="text-[11px]">{iss.row.group || "—"}</TableCell>
+                        <TableCell className="text-[11px]">
+                          {iss.row.serial_no ? `${iss.row.serial_no}.` : ""} {iss.row.rank} {iss.row.name}
+                        </TableCell>
+                        <TableCell className="text-[11px]">{iss.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </details>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {parsed && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-emerald-600" /> 4. Preview
+              <Eye className="h-5 w-5 text-emerald-600" /> 6. Preview
             </CardTitle>
             <CardDescription>
               {assignments.length === 0
