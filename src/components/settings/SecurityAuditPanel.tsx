@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldCheck, Download, FileJson, FileSpreadsheet, Anchor, RefreshCw, FileDown } from "lucide-react";
+import { ShieldCheck, Download, FileJson, FileSpreadsheet, Anchor, RefreshCw, FileDown, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { exportSecurityAudit, verifySecurityAuditChain, createSecurityAuditAnchor } from "@/lib/security-audit";
 import { downloadBlob } from "@/lib/download-utils";
+import { AuditImportVerifyDialog } from "./AuditImportVerifyDialog";
 
 const sevColor: Record<string, string> = {
   info: "bg-muted text-muted-foreground",
