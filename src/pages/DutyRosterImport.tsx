@@ -214,8 +214,18 @@ export default function DutyRosterImport() {
         .eq("id", imp.id);
       if (e3) throw e3;
 
-      toast.success(`Saved ${entries.length} roster rows`);
+      // Auto-match staff by name; create pending stubs for unmatched
+      const { data: matchRes, error: e4 } = await supabase.rpc("auto_match_roster_entries", { _import_id: imp.id });
+      if (e4) {
+        toast.warning(`Saved ${entries.length} rows, but auto-match failed: ${e4.message}`);
+      } else {
+        const r: any = matchRes ?? {};
+        toast.success(
+          `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${r.pending ?? 0} pending approval`
+        );
+      }
       qc.invalidateQueries({ queryKey: ["duty-roster-imports"] });
+      qc.invalidateQueries({ queryKey: ["pending-staff-matches"] });
       reset();
     } catch (e: any) {
       toast.error(e?.message ?? "Commit failed");
