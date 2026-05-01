@@ -96,6 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchRole]);
 
+  // Auto sign-out after 5 minutes of inactivity (only when authenticated).
+  useIdleTimeout({ enabled: !!user });
+
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
