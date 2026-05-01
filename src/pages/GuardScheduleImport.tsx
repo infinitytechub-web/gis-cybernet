@@ -190,6 +190,53 @@ function applyMapping(rows: RawRow[], mapping: Mapping): Assignment[] {
   return out;
 }
 
+// ----- Dedupe -----
+// "off"        → keep every row (monitoring view shows raw 1:1)
+// "exact"      → collapse only true exact duplicates (same date+shift+sn+name)
+// "by-name"    → collapse to one row per (date, shift, name) ignoring S/N variations
+export type DedupeMode = "off" | "exact" | "by-name";
+
+function normName(s: string) {
+  return s.toUpperCase().replace(/\s+/g, " ").trim();
+}
+
+export type DedupeResult = {
+  kept: Assignment[];
+  duplicates: { key: string; sample: Assignment; count: number; serials: number[] }[];
+  removed: number;
+};
+
+function dedupeAssignments(rows: Assignment[], mode: DedupeMode): DedupeResult {
+  if (mode === "off") return { kept: rows, duplicates: [], removed: 0 };
+  const groups = new Map<string, Assignment[]>();
+  for (const r of rows) {
+    const key =
+      mode === "exact"
+        ? `${r.duty_date}|${r.shift}|${r.serial_no ?? ""}|${normName(r.name_text)}`
+        : `${r.duty_date}|${r.shift}|${normName(r.name_text)}`;
+    const arr = groups.get(key) ?? [];
+    arr.push(r);
+    groups.set(key, arr);
+  }
+  const kept: Assignment[] = [];
+  const duplicates: DedupeResult["duplicates"] = [];
+  let removed = 0;
+  for (const [key, arr] of groups) {
+    kept.push(arr[0]);
+    if (arr.length > 1) {
+      removed += arr.length - 1;
+      duplicates.push({
+        key,
+        sample: arr[0],
+        count: arr.length,
+        serials: Array.from(new Set(arr.map((a) => a.serial_no ?? 0))).sort((a, b) => a - b),
+      });
+    }
+  }
+  duplicates.sort((a, b) => b.count - a.count);
+  return { kept, duplicates, removed };
+}
+
 // ----- Page -----
 export default function GuardScheduleImport() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
@@ -203,6 +250,7 @@ export default function GuardScheduleImport() {
   const [fallbackYear, setFallbackYear] = useState<number>(new Date().getFullYear());
   const [dayShifts, setDayShifts] = useState<Shift[]>(DEFAULT_MAPPING.day);
   const [nightShifts, setNightShifts] = useState<Shift[]>(DEFAULT_MAPPING.night);
+  const [dedupeMode, setDedupeMode] = useState<DedupeMode>("off");
   const [parsing, setParsing] = useState(false);
   const [committing, setCommitting] = useState(false);
 
@@ -220,10 +268,15 @@ export default function GuardScheduleImport() {
     enabled: !!user && isAdminOrSupervisor,
   });
 
-  const assignments = useMemo(
+  // Raw assignments after period mapping (kept intact for monitoring)
+  const assignmentsRaw = useMemo(
     () => (parsed ? applyMapping(parsed.rows, { day: dayShifts, night: nightShifts }) : []),
     [parsed, dayShifts, nightShifts]
   );
+
+  // Deduped result — used for export + commit
+  const dedupe = useMemo(() => dedupeAssignments(assignmentsRaw, dedupeMode), [assignmentsRaw, dedupeMode]);
+  const assignments = dedupe.kept;
 
   const counts = useMemo(() => {
     const acc: Record<Shift, number> = { A: 0, B: 0, C: 0, D: 0 };
@@ -423,13 +476,76 @@ export default function GuardScheduleImport() {
       {parsed && (
         <Card>
           <CardHeader>
+            <CardTitle>3. Duplicate handling</CardTitle>
+            <CardDescription>
+              Choose whether duplicate names should be collapsed for export and database commit. The full raw list is always
+              preserved below for monitoring.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              {([
+                ["off", "Keep all (monitoring)", `${assignmentsRaw.length} rows`],
+                ["exact", "Collapse exact duplicates", "same date+shift+S/N+name"],
+                ["by-name", "Collapse by name", "same date+shift+name (any S/N)"],
+              ] as const).map(([mode, label, hint]) => {
+                const active = dedupeMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setDedupeMode(mode)}
+                    className={`text-left rounded-lg border p-3 transition-colors ${
+                      active ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-background hover:bg-muted"
+                    }`}
+                  >
+                    <div className="text-sm font-medium">{label}</div>
+                    <div className="text-xs text-muted-foreground">{hint}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline">Raw: <strong className="ml-1">{assignmentsRaw.length}</strong></Badge>
+              <Badge variant="outline">Kept: <strong className="ml-1">{assignments.length}</strong></Badge>
+              <Badge variant={dedupe.removed > 0 ? "default" : "outline"}>
+                Collapsed: <strong className="ml-1">{dedupe.removed}</strong>
+              </Badge>
+              <Badge variant={dedupe.duplicates.length > 0 ? "destructive" : "outline"} className="gap-1">
+                <AlertTriangle className="h-3 w-3" /> Duplicate groups: {dedupe.duplicates.length}
+              </Badge>
+            </div>
+            {dedupe.duplicates.length > 0 && (
+              <details className="text-xs rounded-md border bg-amber-50 p-2 max-h-48 overflow-auto">
+                <summary className="cursor-pointer font-medium text-amber-800">
+                  View duplicate groups (monitoring) — first 50
+                </summary>
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  {dedupe.duplicates.slice(0, 50).map((d) => (
+                    <li key={d.key}>
+                      <span className="font-mono">{d.sample.duty_date} · Shift {d.sample.shift}</span> ·{" "}
+                      <strong>{d.sample.name_text}</strong> ({d.sample.rank_text}) — {d.count}× ·
+                      S/N: {d.serials.join(", ")}
+                    </li>
+                  ))}
+                  {dedupe.duplicates.length > 50 && <li>…and {dedupe.duplicates.length - 50} more</li>}
+                </ul>
+              </details>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {parsed && (
+        <Card>
+          <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-emerald-600" /> 3. Preview
+              <Eye className="h-5 w-5 text-emerald-600" /> 4. Preview
             </CardTitle>
             <CardDescription>
               {assignments.length === 0
                 ? "No assignments — check the period mapping above."
-                : `Date range ${parsed.startDate ?? "?"} → ${parsed.endDate ?? "?"} · ${parsed.rows.length} source rows · ${assignments.length} assignments after mapping.`}
+                : `Date range ${parsed.startDate ?? "?"} → ${parsed.endDate ?? "?"} · ${parsed.rows.length} source rows · ${assignmentsRaw.length} after mapping · ${assignments.length} after dedupe (${dedupeMode}).`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -440,6 +556,9 @@ export default function GuardScheduleImport() {
                 </Badge>
               ))}
               <Badge className="text-xs">Total: {assignments.length}</Badge>
+              {dedupe.removed > 0 && (
+                <Badge variant="secondary" className="text-xs">−{dedupe.removed} collapsed</Badge>
+              )}
               {parsed.warnings.length > 0 && (
                 <Badge variant="destructive" className="text-xs gap-1">
                   <AlertTriangle className="h-3 w-3" /> {parsed.warnings.length} warning{parsed.warnings.length === 1 ? "" : "s"}
