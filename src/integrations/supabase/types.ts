@@ -5179,7 +5179,7 @@ export type Database = {
           tables_requested: string[]
           total_rows: number
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           actor_email?: string | null
@@ -5194,7 +5194,7 @@ export type Database = {
           tables_requested: string[]
           total_rows?: number
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           actor_email?: string | null
@@ -5209,7 +5209,37 @@ export type Database = {
           tables_requested?: string[]
           total_rows?: number
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_backup_settings: {
+        Row: {
+          cleanup_enabled: boolean
+          id: string
+          retention_count: number
+          retention_days: number | null
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cleanup_enabled?: boolean
+          id?: string
+          retention_count?: number
+          retention_days?: number | null
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cleanup_enabled?: boolean
+          id?: string
+          retention_count?: number
+          retention_days?: number | null
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -5572,6 +5602,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      prune_system_backup_audit: { Args: never; Returns: Json }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
       purge_old_presence_events: {
         Args: { _retention_days?: number }
