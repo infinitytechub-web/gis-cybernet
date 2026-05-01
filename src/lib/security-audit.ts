@@ -27,11 +27,10 @@ export async function logSecurityEvent(opts: {
   }
 }
 
-export async function exportSecurityAudit(from: Date, to: Date) {
-  const { data, error } = await supabase.rpc("export_security_audit", {
-    _from: from.toISOString(),
-    _to: to.toISOString(),
-  });
+export async function exportSecurityAudit(from?: Date, to?: Date) {
+  const _from = (from ?? new Date("1970-01-01")).toISOString();
+  const _to = (to ?? new Date()).toISOString();
+  const { data, error } = await supabase.rpc("export_security_audit", { _from, _to });
   if (error) throw error;
   return data ?? [];
 }
