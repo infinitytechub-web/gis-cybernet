@@ -44,6 +44,14 @@ type ParseResult = {
 
 const SHIFTS: Shift[] = ["A", "B", "C", "D"];
 
+// Defined time periods for guard-duty shifts (synced with /pages/GuardSchedule.tsx).
+export const SHIFT_PERIOD_INFO: Record<Shift, { label: string; start: string; end: string }> = {
+  A: { label: "Morning", start: "06:00", end: "14:00" },
+  B: { label: "Afternoon", start: "14:00", end: "22:00" },
+  C: { label: "Night", start: "22:00", end: "06:00" },
+  D: { label: "Reserve", start: "—", end: "—" },
+};
+
 // ----- PDF text extraction -----
 async function extractPdfText(file: File): Promise<string[]> {
   // Lazy import; configure worker via CDN to avoid Vite worker setup.
