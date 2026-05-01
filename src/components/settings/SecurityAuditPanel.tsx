@@ -227,6 +227,7 @@ export function SecurityAuditPanel() {
           </div>
         </CardContent>
       </Card>
+      <AuditImportVerifyDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
