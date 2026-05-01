@@ -111,6 +111,46 @@ export default function StaffAccountApprovals() {
     });
   }, [profiles.data, search, tab, rankFilter, deptFilter]);
 
+  // Pool scoped to current tab + search (ignores rank/dept filters) — used to compute live option counts
+  const scopedPool = useMemo(() => {
+    const list = profiles.data ?? [];
+    const q = search.trim().toLowerCase();
+    return list.filter((p) => {
+      const tabOk =
+        tab === "pending" ? p.login_enabled === false && !p.account_locked
+        : tab === "active" ? p.login_enabled === true && !p.account_locked
+        : p.account_locked === true;
+      if (!tabOk) return false;
+      if (!q) return true;
+      const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.toLowerCase();
+      return name.includes(q) || (p.staff_id ?? "").toLowerCase().includes(q) || (p.unit ?? "").toLowerCase().includes(q);
+    });
+  }, [profiles.data, tab, search]);
+
+  const rankCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    let none = 0;
+    for (const p of scopedPool) {
+      if (deptFilter === "__none__") { if (p.department_id) continue; }
+      else if (deptFilter !== "all" && p.department_id !== deptFilter) continue;
+      if (p.rank_id) m.set(p.rank_id, (m.get(p.rank_id) ?? 0) + 1);
+      else none++;
+    }
+    return { byId: m, none, total: scopedPool.length };
+  }, [scopedPool, deptFilter]);
+
+  const deptCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    let none = 0;
+    for (const p of scopedPool) {
+      if (rankFilter === "__none__") { if (p.rank_id) continue; }
+      else if (rankFilter !== "all" && p.rank_id !== rankFilter) continue;
+      if (p.department_id) m.set(p.department_id, (m.get(p.department_id) ?? 0) + 1);
+      else none++;
+    }
+    return { byId: m, none, total: scopedPool.length };
+  }, [scopedPool, rankFilter]);
+
   // Reset selection when filters change
   useEffect(() => { setSelected(new Set()); }, [tab, search, rankFilter, deptFilter]);
 
@@ -186,19 +226,35 @@ export default function StaffAccountApprovals() {
               />
             </div>
             <Select value={rankFilter} onValueChange={setRankFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Rank" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Rank" /></SelectTrigger>
               <SelectContent className="max-h-72">
-                <SelectItem value="all">All ranks</SelectItem>
-                <SelectItem value="__none__">— No rank set —</SelectItem>
-                {rankList.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                <SelectItem value="all"><CountedOption label="All ranks" count={rankCounts.total} /></SelectItem>
+                {rankCounts.none > 0 && (
+                  <SelectItem value="__none__"><CountedOption label="— No rank set —" count={rankCounts.none} /></SelectItem>
+                )}
+                {rankList
+                  .filter((r) => (rankCounts.byId.get(r.id) ?? 0) > 0 || rankFilter === r.id)
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      <CountedOption label={r.name ?? "—"} count={rankCounts.byId.get(r.id) ?? 0} />
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             <Select value={deptFilter} onValueChange={setDeptFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Department" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[220px]"><SelectValue placeholder="Department" /></SelectTrigger>
               <SelectContent className="max-h-72">
-                <SelectItem value="all">All departments</SelectItem>
-                <SelectItem value="__none__">— No department set —</SelectItem>
-                {deptList.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                <SelectItem value="all"><CountedOption label="All departments" count={deptCounts.total} /></SelectItem>
+                {deptCounts.none > 0 && (
+                  <SelectItem value="__none__"><CountedOption label="— No department set —" count={deptCounts.none} /></SelectItem>
+                )}
+                {deptList
+                  .filter((d) => (deptCounts.byId.get(d.id) ?? 0) > 0 || deptFilter === d.id)
+                  .map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      <CountedOption label={d.name ?? "—"} count={deptCounts.byId.get(d.id) ?? 0} />
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             {(rankFilter !== "all" || deptFilter !== "all") && (
@@ -344,6 +400,15 @@ export default function StaffAccountApprovals() {
         <AuditDialog row={auditFor} onClose={() => setAuditFor(null)} />
       )}
     </div>
+  );
+}
+
+function CountedOption({ label, count }: { label: string; count: number }) {
+  return (
+    <span className="flex items-center justify-between gap-3 w-full">
+      <span className="truncate">{label}</span>
+      <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
+    </span>
   );
 }
 
