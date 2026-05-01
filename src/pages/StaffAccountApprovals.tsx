@@ -226,19 +226,35 @@ export default function StaffAccountApprovals() {
               />
             </div>
             <Select value={rankFilter} onValueChange={setRankFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Rank" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Rank" /></SelectTrigger>
               <SelectContent className="max-h-72">
-                <SelectItem value="all">All ranks</SelectItem>
-                <SelectItem value="__none__">— No rank set —</SelectItem>
-                {rankList.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                <SelectItem value="all"><CountedOption label="All ranks" count={rankCounts.total} /></SelectItem>
+                {rankCounts.none > 0 && (
+                  <SelectItem value="__none__"><CountedOption label="— No rank set —" count={rankCounts.none} /></SelectItem>
+                )}
+                {rankList
+                  .filter((r) => (rankCounts.byId.get(r.id) ?? 0) > 0 || rankFilter === r.id)
+                  .map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      <CountedOption label={r.name ?? "—"} count={rankCounts.byId.get(r.id) ?? 0} />
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             <Select value={deptFilter} onValueChange={setDeptFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Department" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[220px]"><SelectValue placeholder="Department" /></SelectTrigger>
               <SelectContent className="max-h-72">
-                <SelectItem value="all">All departments</SelectItem>
-                <SelectItem value="__none__">— No department set —</SelectItem>
-                {deptList.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                <SelectItem value="all"><CountedOption label="All departments" count={deptCounts.total} /></SelectItem>
+                {deptCounts.none > 0 && (
+                  <SelectItem value="__none__"><CountedOption label="— No department set —" count={deptCounts.none} /></SelectItem>
+                )}
+                {deptList
+                  .filter((d) => (deptCounts.byId.get(d.id) ?? 0) > 0 || deptFilter === d.id)
+                  .map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      <CountedOption label={d.name ?? "—"} count={deptCounts.byId.get(d.id) ?? 0} />
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             {(rankFilter !== "all" || deptFilter !== "all") && (
