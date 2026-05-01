@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldCheck, Download, FileJson, FileSpreadsheet, Anchor, RefreshCw, FileDown } from "lucide-react";
+import { ShieldCheck, Download, FileJson, FileSpreadsheet, Anchor, RefreshCw, FileDown, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { exportSecurityAudit, verifySecurityAuditChain, createSecurityAuditAnchor } from "@/lib/security-audit";
 import { downloadBlob } from "@/lib/download-utils";
+import { AuditImportVerifyDialog } from "./AuditImportVerifyDialog";
 
 const sevColor: Record<string, string> = {
   info: "bg-muted text-muted-foreground",
@@ -26,6 +27,7 @@ export function SecurityAuditPanel() {
   const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
   const [from, setFrom] = useState(lastWeek);
   const [to, setTo] = useState(today);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["security-audit", "preview"],
@@ -156,6 +158,9 @@ export function SecurityAuditPanel() {
             <Button variant="outline" onClick={handleAnchor} className="gap-2">
               <Anchor className="h-4 w-4" /> Create anchor
             </Button>
+            <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2">
+              <Upload className="h-4 w-4" /> Import & verify
+            </Button>
             <Button onClick={() => handleExportAll("csv")} className="gap-2 ml-auto">
               <FileDown className="h-4 w-4" /> Export all (CSV)
             </Button>
@@ -222,6 +227,7 @@ export function SecurityAuditPanel() {
           </div>
         </CardContent>
       </Card>
+      <AuditImportVerifyDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
