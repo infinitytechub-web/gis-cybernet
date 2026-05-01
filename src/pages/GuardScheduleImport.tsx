@@ -476,13 +476,76 @@ export default function GuardScheduleImport() {
       {parsed && (
         <Card>
           <CardHeader>
+            <CardTitle>3. Duplicate handling</CardTitle>
+            <CardDescription>
+              Choose whether duplicate names should be collapsed for export and database commit. The full raw list is always
+              preserved below for monitoring.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              {([
+                ["off", "Keep all (monitoring)", `${assignmentsRaw.length} rows`],
+                ["exact", "Collapse exact duplicates", "same date+shift+S/N+name"],
+                ["by-name", "Collapse by name", "same date+shift+name (any S/N)"],
+              ] as const).map(([mode, label, hint]) => {
+                const active = dedupeMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setDedupeMode(mode)}
+                    className={`text-left rounded-lg border p-3 transition-colors ${
+                      active ? "bg-primary/10 border-primary ring-1 ring-primary" : "bg-background hover:bg-muted"
+                    }`}
+                  >
+                    <div className="text-sm font-medium">{label}</div>
+                    <div className="text-xs text-muted-foreground">{hint}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="outline">Raw: <strong className="ml-1">{assignmentsRaw.length}</strong></Badge>
+              <Badge variant="outline">Kept: <strong className="ml-1">{assignments.length}</strong></Badge>
+              <Badge variant={dedupe.removed > 0 ? "default" : "outline"}>
+                Collapsed: <strong className="ml-1">{dedupe.removed}</strong>
+              </Badge>
+              <Badge variant={dedupe.duplicates.length > 0 ? "destructive" : "outline"} className="gap-1">
+                <AlertTriangle className="h-3 w-3" /> Duplicate groups: {dedupe.duplicates.length}
+              </Badge>
+            </div>
+            {dedupe.duplicates.length > 0 && (
+              <details className="text-xs rounded-md border bg-amber-50 p-2 max-h-48 overflow-auto">
+                <summary className="cursor-pointer font-medium text-amber-800">
+                  View duplicate groups (monitoring) — first 50
+                </summary>
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  {dedupe.duplicates.slice(0, 50).map((d) => (
+                    <li key={d.key}>
+                      <span className="font-mono">{d.sample.duty_date} · Shift {d.sample.shift}</span> ·{" "}
+                      <strong>{d.sample.name_text}</strong> ({d.sample.rank_text}) — {d.count}× ·
+                      S/N: {d.serials.join(", ")}
+                    </li>
+                  ))}
+                  {dedupe.duplicates.length > 50 && <li>…and {dedupe.duplicates.length - 50} more</li>}
+                </ul>
+              </details>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {parsed && (
+        <Card>
+          <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-emerald-600" /> 3. Preview
+              <Eye className="h-5 w-5 text-emerald-600" /> 4. Preview
             </CardTitle>
             <CardDescription>
               {assignments.length === 0
                 ? "No assignments — check the period mapping above."
-                : `Date range ${parsed.startDate ?? "?"} → ${parsed.endDate ?? "?"} · ${parsed.rows.length} source rows · ${assignments.length} assignments after mapping.`}
+                : `Date range ${parsed.startDate ?? "?"} → ${parsed.endDate ?? "?"} · ${parsed.rows.length} source rows · ${assignmentsRaw.length} after mapping · ${assignments.length} after dedupe (${dedupeMode}).`}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -493,6 +556,9 @@ export default function GuardScheduleImport() {
                 </Badge>
               ))}
               <Badge className="text-xs">Total: {assignments.length}</Badge>
+              {dedupe.removed > 0 && (
+                <Badge variant="secondary" className="text-xs">−{dedupe.removed} collapsed</Badge>
+              )}
               {parsed.warnings.length > 0 && (
                 <Badge variant="destructive" className="text-xs gap-1">
                   <AlertTriangle className="h-3 w-3" /> {parsed.warnings.length} warning{parsed.warnings.length === 1 ? "" : "s"}
