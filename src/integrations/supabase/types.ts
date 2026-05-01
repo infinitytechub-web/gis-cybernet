@@ -1605,6 +1605,263 @@ export type Database = {
         }
         Relationships: []
       }
+      firewall_events: {
+        Row: {
+          action: Database["public"]["Enums"]["firewall_action"]
+          created_at: string
+          details: Json
+          id: string
+          ip_address: string | null
+          layer: Database["public"]["Enums"]["firewall_event_layer"]
+          matched_rule_id: string | null
+          matched_threat_id: string | null
+          subject: string
+          user_agent: string | null
+          user_id: string | null
+          user_label: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["firewall_action"]
+          created_at?: string
+          details?: Json
+          id?: string
+          ip_address?: string | null
+          layer: Database["public"]["Enums"]["firewall_event_layer"]
+          matched_rule_id?: string | null
+          matched_threat_id?: string | null
+          subject: string
+          user_agent?: string | null
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["firewall_action"]
+          created_at?: string
+          details?: Json
+          id?: string
+          ip_address?: string | null
+          layer?: Database["public"]["Enums"]["firewall_event_layer"]
+          matched_rule_id?: string | null
+          matched_threat_id?: string | null
+          subject?: string
+          user_agent?: string | null
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firewall_events_matched_rule_id_fkey"
+            columns: ["matched_rule_id"]
+            isOneToOne: false
+            referencedRelation: "firewall_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "firewall_events_matched_threat_id_fkey"
+            columns: ["matched_threat_id"]
+            isOneToOne: false
+            referencedRelation: "firewall_threat_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      firewall_quarantine: {
+        Row: {
+          created_at: string
+          id: string
+          layer: Database["public"]["Enums"]["firewall_event_layer"]
+          payload: Json
+          reason: string
+          reported_by: string | null
+          reported_label: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_label: string | null
+          status: Database["public"]["Enums"]["firewall_quarantine_status"]
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          layer: Database["public"]["Enums"]["firewall_event_layer"]
+          payload?: Json
+          reason: string
+          reported_by?: string | null
+          reported_label?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_label?: string | null
+          status?: Database["public"]["Enums"]["firewall_quarantine_status"]
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          layer?: Database["public"]["Enums"]["firewall_event_layer"]
+          payload?: Json
+          reason?: string
+          reported_by?: string | null
+          reported_label?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_label?: string | null
+          status?: Database["public"]["Enums"]["firewall_quarantine_status"]
+          subject?: string
+        }
+        Relationships: []
+      }
+      firewall_rules: {
+        Row: {
+          action: Database["public"]["Enums"]["firewall_action"]
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean
+          kind: Database["public"]["Enums"]["firewall_rule_kind"]
+          pattern: string
+          updated_at: string
+        }
+        Insert: {
+          action?: Database["public"]["Enums"]["firewall_action"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          kind: Database["public"]["Enums"]["firewall_rule_kind"]
+          pattern: string
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["firewall_action"]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          kind?: Database["public"]["Enums"]["firewall_rule_kind"]
+          pattern?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      firewall_settings: {
+        Row: {
+          created_at: string
+          default_action: Database["public"]["Enums"]["firewall_action"]
+          feed_refresh_enabled: boolean
+          id: string
+          is_enabled: boolean
+          link_warn_external: boolean
+          max_upload_mb: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_action?: Database["public"]["Enums"]["firewall_action"]
+          feed_refresh_enabled?: boolean
+          id?: string
+          is_enabled?: boolean
+          link_warn_external?: boolean
+          max_upload_mb?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_action?: Database["public"]["Enums"]["firewall_action"]
+          feed_refresh_enabled?: boolean
+          id?: string
+          is_enabled?: boolean
+          link_warn_external?: boolean
+          max_upload_mb?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      firewall_threat_entries: {
+        Row: {
+          created_at: string
+          feed_id: string
+          id: string
+          kind: Database["public"]["Enums"]["firewall_rule_kind"]
+          metadata: Json
+          severity: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          feed_id: string
+          id?: string
+          kind: Database["public"]["Enums"]["firewall_rule_kind"]
+          metadata?: Json
+          severity?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          feed_id?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["firewall_rule_kind"]
+          metadata?: Json
+          severity?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firewall_threat_entries_feed_id_fkey"
+            columns: ["feed_id"]
+            isOneToOne: false
+            referencedRelation: "firewall_threat_feeds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      firewall_threat_feeds: {
+        Row: {
+          cadence: string
+          created_at: string
+          display_name: string
+          id: string
+          is_enabled: boolean
+          last_entry_count: number
+          last_refreshed_at: string | null
+          last_status: string | null
+          slug: string
+          source_url: string
+          updated_at: string
+        }
+        Insert: {
+          cadence?: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_enabled?: boolean
+          last_entry_count?: number
+          last_refreshed_at?: string | null
+          last_status?: string | null
+          slug: string
+          source_url: string
+          updated_at?: string
+        }
+        Update: {
+          cadence?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_enabled?: boolean
+          last_entry_count?: number
+          last_refreshed_at?: string | null
+          last_status?: string | null
+          slug?: string
+          source_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       forced_signouts: {
         Row: {
           block_id: string | null
@@ -5817,6 +6074,30 @@ export type Database = {
         Returns: number
       }
       expire_ip_blocks: { Args: never; Returns: number }
+      firewall_block_quarantine: {
+        Args: { _id: string; _reason: string }
+        Returns: undefined
+      }
+      firewall_evaluate_file: {
+        Args: { _filename: string; _mime: string; _size_bytes: number }
+        Returns: Json
+      }
+      firewall_evaluate_url: { Args: { _url: string }; Returns: Json }
+      firewall_record_event: {
+        Args: {
+          _action: Database["public"]["Enums"]["firewall_action"]
+          _details?: Json
+          _layer: Database["public"]["Enums"]["firewall_event_layer"]
+          _matched_rule_id?: string
+          _matched_threat_id?: string
+          _subject: string
+        }
+        Returns: string
+      }
+      firewall_release_quarantine: {
+        Args: { _id: string; _reason: string }
+        Returns: undefined
+      }
       generate_asset_tag: { Args: never; Returns: string }
       get_effective_attendance_window: {
         Args: { _shift_id: string }
@@ -6109,6 +6390,20 @@ export type Database = {
         | "head_of_administration"
         | "chief_staff_officer"
       attendance_status: "present" | "late" | "absent" | "excused"
+      firewall_action: "allow" | "warn" | "quarantine" | "block"
+      firewall_event_layer: "file" | "url" | "auth" | "waf"
+      firewall_quarantine_status: "pending" | "released" | "blocked" | "expired"
+      firewall_rule_kind:
+        | "file_extension"
+        | "file_mime"
+        | "file_hash"
+        | "url_domain"
+        | "url_keyword"
+        | "url_full"
+        | "ip_address"
+        | "ip_cidr"
+        | "asn"
+        | "waf_pattern"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
       presence_event_type: "heartbeat" | "prune"
@@ -6267,6 +6562,21 @@ export const Constants = {
         "chief_staff_officer",
       ],
       attendance_status: ["present", "late", "absent", "excused"],
+      firewall_action: ["allow", "warn", "quarantine", "block"],
+      firewall_event_layer: ["file", "url", "auth", "waf"],
+      firewall_quarantine_status: ["pending", "released", "blocked", "expired"],
+      firewall_rule_kind: [
+        "file_extension",
+        "file_mime",
+        "file_hash",
+        "url_domain",
+        "url_keyword",
+        "url_full",
+        "ip_address",
+        "ip_cidr",
+        "asn",
+        "waf_pattern",
+      ],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
       presence_event_type: ["heartbeat", "prune"],

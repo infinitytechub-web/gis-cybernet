@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
@@ -26,6 +26,7 @@ import { ShiftRotationOverrides } from "@/components/settings/ShiftRotationOverr
 import { SystemBackup } from "@/components/settings/SystemBackup";
 import { EmailDeliveryTest } from "@/components/settings/EmailDeliveryTest";
 import { LockedAccountsPanel } from "@/components/settings/LockedAccountsPanel";
+import { FirewallSettingsPanel } from "@/components/settings/FirewallSettingsPanel";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -109,6 +110,7 @@ export default function Settings() {
           <TabsTrigger value="rotation" className="gap-1.5"><Layers className="h-4 w-4 text-primary" /> Shift Rotation</TabsTrigger>
           <TabsTrigger value="backup" className="gap-1.5"><DatabaseBackup className="h-4 w-4 text-primary" /> System Backup</TabsTrigger>
           <TabsTrigger value="email-test" className="gap-1.5"><MailCheck className="h-4 w-4 text-primary" /> Email Test</TabsTrigger>
+          <TabsTrigger value="firewall" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600" /> Firewall</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
@@ -143,6 +145,7 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="backup"><SystemBackup /></TabsContent>
         <TabsContent value="email-test"><EmailDeliveryTest /></TabsContent>
+        <TabsContent value="firewall"><FirewallSettingsPanel /></TabsContent>
       </Tabs>
     </div>
   );
