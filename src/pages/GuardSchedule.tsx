@@ -27,10 +27,20 @@ import {
 } from "@/lib/guard-schedule-export";
 
 const SHIFTS = ["A", "B", "C", "D"] as const;
+
+// Defined time periods for each guard-duty shift. These are the canonical
+// tour-of-duty windows used across the system (import, schedule, exports).
+export const SHIFT_PERIODS: Record<"A" | "B" | "C" | "D", { label: string; start: string; end: string; tone: string }> = {
+  A: { label: "Morning", start: "06:00", end: "14:00", tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
+  B: { label: "Afternoon", start: "14:00", end: "22:00", tone: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/40" },
+  C: { label: "Night", start: "22:00", end: "06:00", tone: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/40" },
+  D: { label: "Reserve", start: "—", end: "—", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40" },
+};
+
 const SHIFT_LABEL: Record<string, string> = {
-  A: "A · 06:00–14:00",
-  B: "B · 14:00–22:00",
-  C: "C · 22:00–06:00",
+  A: `A · Morning ${SHIFT_PERIODS.A.start}–${SHIFT_PERIODS.A.end}`,
+  B: `B · Afternoon ${SHIFT_PERIODS.B.start}–${SHIFT_PERIODS.B.end}`,
+  C: `C · Night ${SHIFT_PERIODS.C.start}–${SHIFT_PERIODS.C.end}`,
   D: "D · Reserve",
 };
 
@@ -45,7 +55,8 @@ function eachDate(start: string, end: string): string[] {
 }
 
 export default function GuardSchedule() {
-  const { user, isAdminOrSupervisor, loading } = useAuthContext();
+  const { user, isAdminOrSupervisor, isIpse, loading } = useAuthContext();
+  const canSchedule = isAdminOrSupervisor || isIpse;
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -61,7 +72,7 @@ export default function GuardSchedule() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user && isAdminOrSupervisor,
+    enabled: !!user && canSchedule,
   });
 
   // Latest committed roster (for auto-fill)
@@ -78,7 +89,7 @@ export default function GuardSchedule() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user && isAdminOrSupervisor,
+    enabled: !!user && canSchedule,
   });
 
   // Active schedule + assignments
@@ -115,7 +126,7 @@ export default function GuardSchedule() {
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
+  if (!canSchedule) return <Navigate to="/dashboard" replace />;
 
   const scheduleHeader = active.data?.schedule
     ? {
@@ -140,6 +151,30 @@ export default function GuardSchedule() {
     });
     return map;
   }, [active.data]);
+
+  // Resolve per-shift times for the active schedule. Falls back to canonical periods.
+  const shiftTimes = useMemo<Record<"A"|"B"|"C"|"D", { start: string; end: string }>>(() => {
+    const fallback = {
+      A: { start: SHIFT_PERIODS.A.start, end: SHIFT_PERIODS.A.end },
+      B: { start: SHIFT_PERIODS.B.start, end: SHIFT_PERIODS.B.end },
+      C: { start: SHIFT_PERIODS.C.start, end: SHIFT_PERIODS.C.end },
+      D: { start: "—", end: "—" },
+    };
+    const raw = active.data?.schedule?.notes;
+    if (!raw) return fallback;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.shift_times) return { ...fallback, ...parsed.shift_times };
+    } catch { /* notes is plain text — keep defaults */ }
+    return fallback;
+  }, [active.data]);
+
+  const shiftLabelFor = (s: "A"|"B"|"C"|"D") => {
+    const t = shiftTimes[s];
+    const periodName = SHIFT_PERIODS[s].label;
+    if (!t.start || t.start === "—") return `${s} · ${periodName}`;
+    return `${s} · ${periodName} ${t.start}–${t.end}`;
+  };
 
   const handlePublishToggle = async () => {
     if (!active.data?.schedule) return;
@@ -278,7 +313,7 @@ export default function GuardSchedule() {
                       return (
                         <Card key={s} className="border">
                           <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-sm">{SHIFT_LABEL[s]}</CardTitle>
+                            <CardTitle className="text-sm">{shiftLabelFor(s)}</CardTitle>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-[10px]">{items.length} on duty</Badge>
                               <AddPersonPopover scheduleId={activeId!} date={d} shift={s} />
@@ -350,6 +385,14 @@ function CreateScheduleDialog({
   const [autoFill, setAutoFill] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  // Per-shift time allocations — defaults come from the canonical SHIFT_PERIODS.
+  const [times, setTimes] = useState<Record<"A" | "B" | "C" | "D", { start: string; end: string }>>({
+    A: { start: SHIFT_PERIODS.A.start, end: SHIFT_PERIODS.A.end },
+    B: { start: SHIFT_PERIODS.B.start, end: SHIFT_PERIODS.B.end },
+    C: { start: SHIFT_PERIODS.C.start, end: SHIFT_PERIODS.C.end },
+    D: { start: "", end: "" },
+  });
+
   const submit = async () => {
     if (!name.trim() || !start || !end) return toast.error("Name and date range required");
     if (end < start) return toast.error("End date must be on/after start date");
@@ -357,6 +400,9 @@ function CreateScheduleDialog({
     try {
       const startStr = start.toISOString().slice(0, 10);
       const endStr = end.toISOString().slice(0, 10);
+
+      // Persist time allocations inside `notes` as a tagged JSON block.
+      const notesPayload = JSON.stringify({ shift_times: times });
 
       const { data: sched, error: e1 } = await supabase
         .from("guard_schedules")
@@ -367,6 +413,7 @@ function CreateScheduleDialog({
           source_import_id: autoFill ? latestImportId : null,
           status: "draft",
           created_by: user!.id,
+          notes: notesPayload,
         })
         .select("id")
         .single();
@@ -445,6 +492,40 @@ function CreateScheduleDialog({
         <div className="grid grid-cols-2 gap-3">
           <DateField label="Start date" value={start} onChange={setStart} />
           <DateField label="End date" value={end} onChange={setEnd} />
+        </div>
+
+        {/* Per-shift time allocations */}
+        <div className="rounded-lg border p-3 space-y-2 bg-muted/40">
+          <div className="text-xs font-semibold flex items-center gap-1">
+            <CalendarIcon className="h-3.5 w-3.5 text-primary" /> Shift time allocations
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Defaults match the canonical guard-duty periods. Adjust if this schedule needs custom hours
+            (e.g. extended cover, exercise day).
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {(["A", "B", "C", "D"] as const).map((s) => (
+              <div key={s} className="rounded-md border p-2 bg-background">
+                <div className={cn("text-[11px] font-semibold mb-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded border", SHIFT_PERIODS[s].tone)}>
+                  Shift {s} · {SHIFT_PERIODS[s].label}
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <Input
+                    type="time"
+                    value={times[s].start}
+                    onChange={(e) => setTimes((prev) => ({ ...prev, [s]: { ...prev[s], start: e.target.value } }))}
+                    className="h-7 text-xs"
+                  />
+                  <Input
+                    type="time"
+                    value={times[s].end}
+                    onChange={(e) => setTimes((prev) => ({ ...prev, [s]: { ...prev[s], end: e.target.value } }))}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1" checked={autoFill && !!latestImportId} disabled={!latestImportId} onChange={(e) => setAutoFill(e.target.checked)} />

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown } from "lucide-react";
+import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -43,6 +43,14 @@ type ParseResult = {
 };
 
 const SHIFTS: Shift[] = ["A", "B", "C", "D"];
+
+// Defined time periods for guard-duty shifts (synced with /pages/GuardSchedule.tsx).
+export const SHIFT_PERIOD_INFO: Record<Shift, { label: string; start: string; end: string }> = {
+  A: { label: "Morning", start: "06:00", end: "14:00" },
+  B: { label: "Afternoon", start: "14:00", end: "22:00" },
+  C: { label: "Night", start: "22:00", end: "06:00" },
+  D: { label: "Reserve", start: "—", end: "—" },
+};
 
 // ----- PDF text extraction -----
 async function extractPdfText(file: File): Promise<string[]> {
@@ -284,6 +292,62 @@ const DEFAULT_TEMPLATE: MappingTemplate = {
   requireName: true,
 };
 
+// ----- Quick-select presets for common PDF formats -----
+// Each preset is a full MappingTemplate that the user can load with one click.
+export type TemplatePreset = { id: string; label: string; description: string; template: MappingTemplate };
+
+export const TEMPLATE_PRESETS: TemplatePreset[] = [
+  {
+    id: "may-2026",
+    label: "May 2026 roster",
+    description: "Amasaman May 2026 published PDF — DAY/NIGHT, ranks DCO–L/CPL, S/N 1–999.",
+    template: {
+      ...DEFAULT_TEMPLATE,
+      name: "May 2026 (Amasaman)",
+      allowedRanks: ["DCO", "ACI", "CI", "AI", "AII", "AIII", "INSP", "CINSP", "ASP", "SGT", "CPL", "L/CPL"],
+      allowedGroups: ["GROUP A", "GROUP B", "GROUP C", "GROUP D"],
+      groupAliases: { "GRP A": "GROUP A", "GRP B": "GROUP B", "GRP C": "GROUP C", "GRP D": "GROUP D" },
+      serialFormat: "^\\d{1,3}$",
+      serialMin: 1,
+      serialMax: 999,
+    },
+  },
+  {
+    id: "asc-standard",
+    label: "Standard ASC roster",
+    description: "Generic ASC layout — wider rank set, S/N 1–9999, no group whitelist.",
+    template: {
+      ...DEFAULT_TEMPLATE,
+      name: "Standard ASC",
+      allowedRanks: [
+        "DCO", "ACI", "CI", "AI", "AII", "AIII", "INSP", "CINSP", "ASP",
+        "DSP", "SUPT", "CHIEF SUPT", "ACP", "DCP", "CP", "DCG", "CG",
+        "SGT", "CPL", "L/CPL", "PC",
+      ],
+      allowedGroups: [],
+      groupAliases: {},
+      serialFormat: "^\\d{1,4}$",
+      serialMin: 1,
+      serialMax: 9999,
+    },
+  },
+  {
+    id: "night-guard",
+    label: "Night Guard only",
+    description: "Strict night-only template — only NIGHT periods, junior ranks.",
+    template: {
+      ...DEFAULT_TEMPLATE,
+      name: "Night Guard",
+      allowedRanks: ["AI", "AII", "AIII", "L/CPL", "CPL", "SGT"],
+      allowedGroups: ["GROUP C", "GROUP D"],
+      groupAliases: { "GRP C": "GROUP C", "GRP D": "GROUP D" },
+      serialFormat: "^\\d{1,3}$",
+      serialMin: 1,
+      serialMax: 200,
+    },
+  },
+];
+
 function canonicalize(value: string, aliases?: Record<string, string>) {
   if (!value) return value;
   const up = value.toUpperCase().trim();
@@ -411,7 +475,8 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
 
 // ----- Page -----
 export default function GuardScheduleImport() {
-  const { user, isAdminOrSupervisor, loading } = useAuthContext();
+  const { user, isAdminOrSupervisor, isIpse, loading } = useAuthContext();
+  const canSchedule = isAdminOrSupervisor || isIpse;
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -512,6 +577,12 @@ export default function GuardScheduleImport() {
     setTemplate(DEFAULT_TEMPLATE);
     setTemplateFile("Built-in default");
     toast.success("Reverted to default mapping template");
+  };
+
+  const loadPreset = (preset: TemplatePreset) => {
+    setTemplate(preset.template);
+    setTemplateFile(`Preset: ${preset.label}`);
+    toast.success(`Loaded preset: ${preset.label}`);
   };
 
   const downloadTemplateSample = () => {
@@ -692,6 +763,33 @@ export default function GuardScheduleImport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Quick-select presets */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+            <div className="text-xs font-semibold text-primary flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5" /> Quick-select presets
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATE_PRESETS.map((p) => {
+                const active = template.name === p.template.name;
+                return (
+                  <Button
+                    key={p.id}
+                    type="button"
+                    variant={active ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => loadPreset(p)}
+                    title={p.description}
+                  >
+                    {p.label}
+                  </Button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              One-click load for common PDF formats. You can still upload a custom JSON template below.
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => templateFileRef.current?.click()}>
               <Upload className="h-4 w-4 mr-1" /> Upload template (.json)
@@ -739,7 +837,25 @@ export default function GuardScheduleImport() {
             Selecting more than one shift duplicates personnel into each chosen shift.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Defined time periods reference */}
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <div className="text-xs font-semibold mb-2">Defined guard-duty time periods</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {SHIFTS.map((s) => (
+                <div key={s} className="rounded-md border bg-background p-2 text-center">
+                  <div className="text-xs font-bold">Shift {s}</div>
+                  <div className="text-[11px] text-muted-foreground">{SHIFT_PERIOD_INFO[s].label}</div>
+                  <div className="text-[11px] font-mono mt-0.5">
+                    {SHIFT_PERIOD_INFO[s].start === "—"
+                      ? "Reserve"
+                      : `${SHIFT_PERIOD_INFO[s].start}–${SHIFT_PERIOD_INFO[s].end}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {([["DAY", dayShifts, setDayShifts], ["NIGHT", nightShifts, setNightShifts]] as const).map(([label, set, setSet]) => (
               <div key={label} className="rounded-lg border p-3 space-y-2">
@@ -752,17 +868,18 @@ export default function GuardScheduleImport() {
                         key={s}
                         type="button"
                         onClick={() => toggleShift(set, setSet, s)}
-                        className={`px-3 py-1 rounded-md border text-sm transition-colors ${
+                        className={`px-3 py-1 rounded-md border text-xs transition-colors ${
                           active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"
                         }`}
+                        title={`${SHIFT_PERIOD_INFO[s].label} ${SHIFT_PERIOD_INFO[s].start}–${SHIFT_PERIOD_INFO[s].end}`}
                       >
-                        Shift {s}
+                        Shift {s} · {SHIFT_PERIOD_INFO[s].label}
                       </button>
                     );
                   })}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Selected: {set.length ? set.map((s) => `Shift ${s}`).join(", ") : <span className="text-destructive">None — entries will be skipped</span>}
+                  Selected: {set.length ? set.map((s) => `Shift ${s} (${SHIFT_PERIOD_INFO[s].label})`).join(", ") : <span className="text-destructive">None — entries will be skipped</span>}
                 </div>
               </div>
             ))}

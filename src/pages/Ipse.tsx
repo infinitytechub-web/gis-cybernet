@@ -19,8 +19,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
-import NightGuardTab from "@/components/shifts/NightGuardTab";
-import { startOfWeek } from "date-fns";
 
 const SEVERITY_BADGE: Record<string, string> = {
   low: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
@@ -42,7 +40,6 @@ export default function Ipse() {
   const { user, isAdmin, isIpse, is2ic, isOic } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState("dashboard");
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [decision, setDecision] = useState<{ report: any; action: "forward_2ic" | "forward_oic" | "approve" | "reject" } | null>(null);
   const [comment, setComment] = useState("");
   const [severity, setSeverity] = useState<string>("");
@@ -111,30 +108,6 @@ export default function Ipse() {
     },
   });
   const ipseUserIdSet = useMemo(() => new Set(ipseUserIds), [ipseUserIds]);
-
-  // Night Guard data
-  const { data: shifts = [] } = useQuery({
-    queryKey: ["shifts"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("shifts").select("*").order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: nightGuardDept } = useQuery({
-    queryKey: ["night-guard-dept"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("departments").select("id, name").ilike("name", "%night guard%").maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const nightGuardStaff = useMemo(
-    () => (profiles as any[]).filter((p) => p.departments?.name && nightGuardDept && (p as any).department_id === nightGuardDept.id),
-    [profiles, nightGuardDept]
-  );
 
   // Analytics
   const analytics = useMemo(() => {
@@ -312,7 +285,6 @@ export default function Ipse() {
           <TabsTrigger value="triage" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
           <TabsTrigger value="sanctions" className="gap-1.5 data-[state=active]:bg-rose-700 data-[state=active]:text-white"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
           <TabsTrigger value="drilldown" className="gap-1.5 data-[state=active]:bg-sky-700 data-[state=active]:text-white"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
-          <TabsTrigger value="nightguard" className="gap-1.5 data-[state=active]:bg-indigo-700 data-[state=active]:text-white"><Users className="h-4 w-4" /> Night Guard</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD */}
@@ -585,10 +557,6 @@ export default function Ipse() {
           </Card>
         </TabsContent>
 
-        {/* NIGHT GUARD */}
-        <TabsContent value="nightguard">
-          <NightGuardTab nightGuardStaff={nightGuardStaff} allStaff={profiles} shifts={shifts} weekStart={weekStart} setWeekStart={setWeekStart} isAdmin={isAdmin} />
-        </TabsContent>
       </Tabs>
 
       {/* Decision dialog */}
