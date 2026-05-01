@@ -360,13 +360,55 @@ function canonicalize(value: string, aliases?: Record<string, string>) {
   return up;
 }
 
+export type RowIssueKind =
+  | "preset_rank"
+  | "preset_group"
+  | "serial_range"
+  | "serial_format"
+  | "missing"
+  | "other";
+
 export type RowIssue = {
   level: "error" | "warning";
   field: "rank" | "serial" | "name" | "group" | "date" | "period";
   message: string;
   row: RawRow;
   index: number;
+  kind?: RowIssueKind;
+  got?: string;
+  expected?: string;
+  suggestion?: string;
 };
+
+// Tiny Levenshtein for nearest-rank suggestion
+function levenshtein(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+    }
+  }
+  return dp[m][n];
+}
+
+function nearestMatch(value: string, candidates: string[]): string | undefined {
+  if (!value || candidates.length === 0) return undefined;
+  const v = value.toUpperCase();
+  let best: { c: string; d: number } | null = null;
+  for (const c of candidates) {
+    const d = levenshtein(v, c.toUpperCase());
+    if (!best || d < best.d) best = { c, d };
+  }
+  if (!best) return undefined;
+  // Only suggest if reasonably close (≤ 40% of length, min 1)
+  const threshold = Math.max(1, Math.ceil(Math.max(v.length, best.c.length) * 0.4));
+  return best.d <= threshold ? best.c : undefined;
+}
 
 export type ValidationResult = {
   errors: RowIssue[];
@@ -409,10 +451,16 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
       errors.push({ level: "error", field: "rank", message: "Missing rank", row: r, index: i });
     } else if (rankCanon && allowedRanks.length && !allowedRanks.includes(rankCanon.toUpperCase())) {
       unknownRanks.add(rankCanon);
+      const aliasKeys = Object.keys(tpl.rankAliases ?? {});
+      const suggestion = nearestMatch(rankCanon, [...allowedRanks, ...aliasKeys]);
       errors.push({
         level: "error",
         field: "rank",
-        message: `Preset mismatch: rank "${r.rank}" (canonical: ${rankCanon}) is not in allowed ranks`,
+        kind: "preset_rank",
+        got: r.rank || rankCanon,
+        expected: allowedRanks.join(" | "),
+        suggestion,
+        message: `Preset mismatch: rank "${r.rank}" (canonical: ${rankCanon}) is not in allowed ranks${suggestion ? ` — did you mean "${suggestion}"?` : ""}`,
         row: r,
         index: i,
       });
@@ -421,12 +469,15 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
     // Serial
     const snStr = String(r.serial_no ?? "");
     if (tpl.requireSerial !== false && !r.serial_no) {
-      errors.push({ level: "error", field: "serial", message: "Missing serial number", row: r, index: i });
+      errors.push({ level: "error", field: "serial", kind: "missing", message: "Missing serial number", row: r, index: i });
     } else if (r.serial_no) {
       if (serialRe && !serialRe.test(snStr)) {
         errors.push({
           level: "error",
           field: "serial",
+          kind: "serial_format",
+          got: snStr,
+          expected: `format ${tpl.serialFormat}`,
           message: `Serial "${snStr}" does not match format ${tpl.serialFormat}`,
           row: r,
           index: i,
@@ -439,6 +490,9 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
         errors.push({
           level: "error",
           field: "serial",
+          kind: "serial_range",
+          got: String(r.serial_no),
+          expected: `range [${min}, ${max}]`,
           message: `Preset mismatch: serial ${r.serial_no} is outside allowed range [${min}, ${max}]`,
           row: r,
           index: i,
@@ -450,10 +504,16 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
     const groupCanon = canonicalize(r.group, tpl.groupAliases);
     if (allowedGroups.length && groupCanon && !allowedGroups.includes(groupCanon.toUpperCase())) {
       unknownGroups.add(groupCanon);
+      const aliasKeys = Object.keys(tpl.groupAliases ?? {});
+      const suggestion = nearestMatch(groupCanon, [...allowedGroups, ...aliasKeys]);
       errors.push({
         level: "error",
         field: "group",
-        message: `Preset mismatch: group "${r.group}" (canonical: ${groupCanon}) is not in allowed groups`,
+        kind: "preset_group",
+        got: r.group || groupCanon,
+        expected: allowedGroups.join(" | "),
+        suggestion,
+        message: `Preset mismatch: group "${r.group}" (canonical: ${groupCanon}) is not in allowed groups${suggestion ? ` — did you mean "${suggestion}"?` : ""}`,
         row: r,
         index: i,
       });
@@ -994,6 +1054,100 @@ export default function GuardScheduleImport() {
                 )}
               </div>
             )}
+
+            {(() => {
+              const diffIssues = validation.errors.filter(
+                (e) => e.kind === "preset_rank" || e.kind === "preset_group" || e.kind === "serial_range" || e.kind === "serial_format",
+              );
+              if (diffIssues.length === 0) return null;
+              const counts = {
+                rank: diffIssues.filter((d) => d.kind === "preset_rank").length,
+                group: diffIssues.filter((d) => d.kind === "preset_group").length,
+                serialRange: diffIssues.filter((d) => d.kind === "serial_range").length,
+                serialFormat: diffIssues.filter((d) => d.kind === "serial_format").length,
+              };
+              const copyCsv = () => {
+                const header = ["Row", "Name", "Serial", "Field", "Got", "Expected", "Suggestion"];
+                const lines = [header.join(",")].concat(
+                  diffIssues.map((d) => [
+                    d.index + 1,
+                    `"${(d.row.name ?? "").replace(/"/g, '""')}"`,
+                    d.row.serial_no ?? "",
+                    d.field,
+                    `"${(d.got ?? "").replace(/"/g, '""')}"`,
+                    `"${(d.expected ?? "").replace(/"/g, '""')}"`,
+                    `"${(d.suggestion ?? "").replace(/"/g, '""')}"`,
+                  ].join(",")),
+                );
+                const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "preset-mismatch-diff.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`Exported ${diffIssues.length} mismatch row(s)`);
+              };
+              return (
+                <details className="text-xs rounded-md border border-destructive/40 bg-destructive/5 p-2 max-h-[420px] overflow-auto" open>
+                  <summary className="cursor-pointer font-medium flex items-center gap-2 flex-wrap">
+                    <ShieldCheck className="h-3.5 w-3.5 text-destructive" />
+                    Preset Mismatch Diff ({diffIssues.length} row{diffIssues.length === 1 ? "" : "s"})
+                    <Badge variant="outline" className="text-[10px]">Ranks: {counts.rank}</Badge>
+                    <Badge variant="outline" className="text-[10px]">Groups: {counts.group}</Badge>
+                    <Badge variant="outline" className="text-[10px]">Serial range: {counts.serialRange}</Badge>
+                    <Badge variant="outline" className="text-[10px]">Serial format: {counts.serialFormat}</Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto h-6 text-[11px] gap-1"
+                      onClick={(e) => { e.preventDefault(); copyCsv(); }}
+                    >
+                      <Download className="h-3 w-3" /> CSV
+                    </Button>
+                  </summary>
+                  <Table className="min-w-[700px] mt-2">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead className="w-40">Name</TableHead>
+                        <TableHead className="w-20">Serial</TableHead>
+                        <TableHead className="w-20">Field</TableHead>
+                        <TableHead>Got</TableHead>
+                        <TableHead>Expected</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {diffIssues.slice(0, 200).map((d, i) => (
+                        <TableRow key={`diff-${d.index}-${d.field}-${i}`}>
+                          <TableCell className="text-[11px] font-mono">{d.index + 1}</TableCell>
+                          <TableCell className="text-[11px]">{d.row.name || "—"}</TableCell>
+                          <TableCell className="text-[11px] font-mono">{d.row.serial_no ?? "—"}</TableCell>
+                          <TableCell className="text-[11px]">
+                            <Badge variant="destructive" className="text-[10px]">{d.field}</Badge>
+                          </TableCell>
+                          <TableCell className="text-[11px]">
+                            <span className="font-mono line-through text-destructive">{d.got || "—"}</span>
+                            {d.suggestion && (
+                              <span className="ml-2 font-mono text-emerald-600">→ {d.suggestion}?</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-[11px] font-mono text-emerald-700 break-words max-w-[320px]">
+                            {d.expected || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {diffIssues.length > 200 && (
+                    <p className="text-[10px] text-muted-foreground p-1 text-center">
+                      Showing first 200 of {diffIssues.length} mismatches — export CSV for the full list.
+                    </p>
+                  )}
+                </details>
+              );
+            })()}
 
             {(validation.errors.length > 0 || validation.warnings.length > 0) && (
               <details className="text-xs rounded-md border p-2 max-h-64 overflow-auto" open={blockedByErrors}>
