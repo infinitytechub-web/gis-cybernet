@@ -409,10 +409,10 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
       errors.push({ level: "error", field: "rank", message: "Missing rank", row: r, index: i });
     } else if (rankCanon && allowedRanks.length && !allowedRanks.includes(rankCanon.toUpperCase())) {
       unknownRanks.add(rankCanon);
-      warnings.push({
-        level: "warning",
+      errors.push({
+        level: "error",
         field: "rank",
-        message: `Unknown rank "${r.rank}" (canonical: ${rankCanon})`,
+        message: `Preset mismatch: rank "${r.rank}" (canonical: ${rankCanon}) is not in allowed ranks`,
         row: r,
         index: i,
       });
@@ -436,10 +436,10 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
       const max = tpl.serialMax ?? 99999;
       if (r.serial_no < min || r.serial_no > max) {
         serialOutOfRange++;
-        warnings.push({
-          level: "warning",
+        errors.push({
+          level: "error",
           field: "serial",
-          message: `Serial ${r.serial_no} out of range [${min}, ${max}]`,
+          message: `Preset mismatch: serial ${r.serial_no} is outside allowed range [${min}, ${max}]`,
           row: r,
           index: i,
         });
@@ -450,10 +450,10 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
     const groupCanon = canonicalize(r.group, tpl.groupAliases);
     if (allowedGroups.length && groupCanon && !allowedGroups.includes(groupCanon.toUpperCase())) {
       unknownGroups.add(groupCanon);
-      warnings.push({
-        level: "warning",
+      errors.push({
+        level: "error",
         field: "group",
-        message: `Unknown group "${r.group}" (canonical: ${groupCanon})`,
+        message: `Preset mismatch: group "${r.group}" (canonical: ${groupCanon}) is not in allowed groups`,
         row: r,
         index: i,
       });
@@ -629,7 +629,7 @@ export default function GuardScheduleImport() {
 
   const guardValidation = (action: string): boolean => {
     if (blockedByErrors) {
-      toast.error(`${action} blocked: ${validation!.errors.length} validation error(s) — fix or adjust mapping template`);
+      toast.error(`${action} blocked: ${validation!.errors.length} validation error(s), including preset rank/group/serial mismatches`);
       return false;
     }
     return true;

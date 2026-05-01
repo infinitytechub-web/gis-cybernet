@@ -17,6 +17,8 @@ interface ParsedRow {
   staff_id: string;
   first_name: string;
   last_name: string;
+  full_name?: string;
+  serial_no?: string;
   gender?: string;
   phone?: string;
   unit?: string;
@@ -38,6 +40,13 @@ const COLUMN_MAP: Record<string, keyof ParsedRow> = {
   "staff_id": "staff_id",
   "staffid": "staff_id",
   "id": "staff_id",
+  "s/n": "serial_no",
+  "sn": "serial_no",
+  "serial": "serial_no",
+  "serial no": "serial_no",
+  "serial number": "serial_no",
+  "name": "full_name",
+  "full name": "full_name",
   "first name": "first_name",
   "first_name": "first_name",
   "firstname": "first_name",
@@ -71,6 +80,31 @@ const VALID_STATUSES: StaffStatus[] = ["active", "inactive", "study_leave", "tra
 
 function normalizeHeader(h: string): string {
   return h.trim().toLowerCase().replace(/[^a-z0-9_ ]/g, "");
+}
+
+function splitFullName(value: string) {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  if (!cleaned) return { first_name: "", last_name: "" };
+  if (cleaned.includes(",")) {
+    const [last, ...rest] = cleaned.split(",");
+    return {
+      first_name: rest.join(" ").trim(),
+      last_name: last.trim(),
+    };
+  }
+  const parts = cleaned.split(" ");
+  if (parts.length === 1) return { first_name: parts[0], last_name: "" };
+  return {
+    first_name: parts.slice(0, -1).join(" ").trim(),
+    last_name: parts[parts.length - 1].trim(),
+  };
+}
+
+function inferStaffId(row: Partial<ParsedRow>, rowIndex: number) {
+  if (row.staff_id) return row.staff_id;
+  const serial = String(row.serial_no ?? "").replace(/\D/g, "");
+  if (serial) return `IMP-${serial.padStart(4, "0")}`;
+  return `IMP-${String(rowIndex + 1).padStart(4, "0")}`;
 }
 
 export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) {
@@ -121,13 +155,22 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
         headers.forEach((h) => {
           const key = normalizeHeader(h);
           if (COLUMN_MAP[key]) mapping[h] = COLUMN_MAP[key];
+          else if (h.trim() === "#") mapping[h] = "serial_no";
         });
 
-        const parsed: ParsedRow[] = raw.map((row) => {
+        const parsed: ParsedRow[] = raw.map((row, rowIndex) => {
           const p: Partial<ParsedRow> = {};
           Object.entries(mapping).forEach(([orig, field]) => {
             (p as any)[field] = String(row[orig] ?? "").trim();
           });
+
+          if ((!p.first_name || !p.last_name) && p.full_name) {
+            const split = splitFullName(p.full_name);
+            p.first_name = p.first_name || split.first_name;
+            p.last_name = p.last_name || split.last_name;
+          }
+
+          p.staff_id = inferStaffId(p, rowIndex);
 
           const errors: string[] = [];
           if (!p.staff_id) errors.push("Missing Staff ID");
@@ -246,7 +289,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             >
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
               <p className="font-medium">Click to upload Excel or CSV file</p>
-              <p className="text-sm text-muted-foreground mt-1">Supports .xlsx, .xls, .csv formats</p>
+              <p className="text-sm text-muted-foreground mt-1">Supports .xlsx, .xls, .csv formats, including roster-style Name/S/N files</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
             <Button variant="outline" onClick={downloadTemplate} className="w-full gap-2">
@@ -254,7 +297,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             </Button>
             <div className="text-xs text-muted-foreground space-y-1">
               <p className="font-medium">Expected columns:</p>
-              <p>Staff ID, First Name, Last Name, Gender, Phone, Unit, Shift Group, Rank (abbreviation), Department (name), Office, Status</p>
+              <p>Staff ID, First Name, Last Name, or a single Name column. Roster-style S/N/# columns are also accepted for generated import IDs.</p>
             </div>
           </div>
         ) : result ? (
