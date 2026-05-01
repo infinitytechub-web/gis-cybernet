@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_unlock_audit: {
+        Row: {
+          created_at: string
+          id: string
+          previous_state: Json
+          reason: string
+          target_full_name: string | null
+          target_profile_id: string
+          target_staff_id: string | null
+          unlocked_by: string | null
+          unlocked_by_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          previous_state?: Json
+          reason: string
+          target_full_name?: string | null
+          target_profile_id: string
+          target_staff_id?: string | null
+          unlocked_by?: string | null
+          unlocked_by_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          previous_state?: Json
+          reason?: string
+          target_full_name?: string | null
+          target_profile_id?: string
+          target_staff_id?: string | null
+          unlocked_by?: string | null
+          unlocked_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_unlock_audit_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           content: string
@@ -65,6 +109,7 @@ export type Database = {
         Row: {
           allow_self_registration: boolean
           auto_logout_minutes: number
+          auto_logout_warning_seconds: number
           created_at: string
           enforce_password_change: boolean
           id: string
@@ -76,6 +121,7 @@ export type Database = {
         Insert: {
           allow_self_registration?: boolean
           auto_logout_minutes?: number
+          auto_logout_warning_seconds?: number
           created_at?: string
           enforce_password_change?: boolean
           id?: string
@@ -87,6 +133,7 @@ export type Database = {
         Update: {
           allow_self_registration?: boolean
           auto_logout_minutes?: number
+          auto_logout_warning_seconds?: number
           created_at?: string
           enforce_password_change?: boolean
           id?: string
@@ -5721,6 +5768,10 @@ export type Database = {
       admin_reset_failed_attempts: {
         Args: { _staff_id: string }
         Returns: undefined
+      }
+      admin_unlock_account: {
+        Args: { _profile_id: string; _reason: string }
+        Returns: Json
       }
       block_ip: {
         Args: {
