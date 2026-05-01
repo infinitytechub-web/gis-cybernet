@@ -1,7 +1,7 @@
 // src/pages/DutyRosterImport.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -130,7 +130,7 @@ async function readFileAsAoA(file: File): Promise<any[][]> {
 }
 
 export default function DutyRosterImport() {
-  const { user, isAdminOrSupervisor, loading } = useAuth();
+  const { user, isAdminOrSupervisor, loading } = useAuthContext();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
