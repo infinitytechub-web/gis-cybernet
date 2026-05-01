@@ -90,14 +90,14 @@ export default function Login() {
         const r = result as { attempts?: number; locked?: boolean; remaining?: number } | null;
         if (r?.locked) {
           toast({
-            title: "Account Temporarily Locked",
-            description: "Too many failed attempts. Please wait 60 seconds or contact an administrator.",
+            title: "Account Locked",
+            description: "Account locked after 3 failed attempts. Contact an administrator to unlock.",
             variant: "destructive",
           });
         } else {
           toast({
             title: "Login Failed",
-            description: `Invalid Staff ID or password. ${r?.remaining ?? 0} attempts remaining.`,
+            description: `Invalid Staff ID or password. ${r?.remaining ?? 0} attempt${(r?.remaining ?? 0) === 1 ? "" : "s"} remaining before lockout.`,
             variant: "destructive",
           });
         }
