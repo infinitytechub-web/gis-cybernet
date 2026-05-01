@@ -110,6 +110,7 @@ export default function Settings() {
           <TabsTrigger value="rotation" className="gap-1.5"><Layers className="h-4 w-4 text-primary" /> Shift Rotation</TabsTrigger>
           <TabsTrigger value="backup" className="gap-1.5"><DatabaseBackup className="h-4 w-4 text-primary" /> System Backup</TabsTrigger>
           <TabsTrigger value="email-test" className="gap-1.5"><MailCheck className="h-4 w-4 text-primary" /> Email Test</TabsTrigger>
+          <TabsTrigger value="firewall" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600" /> Firewall</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
