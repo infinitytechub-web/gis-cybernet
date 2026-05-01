@@ -16,6 +16,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import ForcePasswordChange from "./pages/ForcePasswordChange";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from "./pages/Unsubscribe";
 
 // Lazy-loaded pages (contain heavy deps: recharts, jspdf, xlsx)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -135,6 +136,7 @@ function App() {
           <Route path="/interlink" element={<ProtectedRoute><Layout><Interlink /></Layout></ProtectedRoute>} />
           <Route path="/commands" element={<ProtectedRoute><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/command/:slug" element={<ProtectedRoute><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
