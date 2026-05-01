@@ -158,6 +158,9 @@ export function SecurityAuditPanel() {
             <Button variant="outline" onClick={handleAnchor} className="gap-2">
               <Anchor className="h-4 w-4" /> Create anchor
             </Button>
+            <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2">
+              <Upload className="h-4 w-4" /> Import & verify
+            </Button>
             <Button onClick={() => handleExportAll("csv")} className="gap-2 ml-auto">
               <FileDown className="h-4 w-4" /> Export all (CSV)
             </Button>
