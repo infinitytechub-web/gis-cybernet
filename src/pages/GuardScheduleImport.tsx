@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown } from "lucide-react";
+import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
