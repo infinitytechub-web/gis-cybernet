@@ -403,6 +403,15 @@ export default function StaffAccountApprovals() {
   );
 }
 
+function CountedOption({ label, count }: { label: string; count: number }) {
+  return (
+    <span className="flex items-center justify-between gap-3 w-full">
+      <span className="truncate">{label}</span>
+      <span className="text-[10px] text-muted-foreground tabular-nums">{count}</span>
+    </span>
+  );
+}
+
 function actionVerb(mode: ActionMode) {
   return mode === "approve" ? "approved_account" : mode === "disable" ? "disabled_account" : "reenabled_account";
 }
