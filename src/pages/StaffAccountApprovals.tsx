@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { ShieldCheck, CheckCircle2, Ban, History, Search, RefreshCw } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Ban, History, Search, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -66,7 +66,7 @@ function useLookups() {
 }
 
 export default function StaffAccountApprovals() {
-  const { user, isAdminOrSupervisor, loading } = useAuthContext();
+  const { user, isAdmin, isAdminOrSupervisor, loading } = useAuthContext();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("pending");
@@ -77,6 +77,7 @@ export default function StaffAccountApprovals() {
   const [actionTarget, setActionTarget] = useState<{ row: ProfileRow; mode: ActionMode } | null>(null);
   const [bulkMode, setBulkMode] = useState<ActionMode | null>(null);
   const [auditFor, setAuditFor] = useState<ProfileRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProfileRow | null>(null);
 
   const profiles = useQuery({
     queryKey: ["staff-account-approvals"],
@@ -364,6 +365,17 @@ export default function StaffAccountApprovals() {
                           <Button size="sm" variant="ghost" onClick={() => setAuditFor(p)} title="View audit log">
                             <History className="h-3.5 w-3.5" />
                           </Button>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDeleteTarget(p)}
+                              title="Delete account permanently"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -398,6 +410,17 @@ export default function StaffAccountApprovals() {
 
       {auditFor && (
         <AuditDialog row={auditFor} onClose={() => setAuditFor(null)} />
+      )}
+
+      {deleteTarget && (
+        <DeleteDialog
+          row={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDone={() => {
+            setDeleteTarget(null);
+            qc.invalidateQueries({ queryKey: ["staff-account-approvals"] });
+          }}
+        />
       )}
     </div>
   );
@@ -706,6 +729,93 @@ function AuditDialog({ row, onClose }: { row: ProfileRow; onClose: () => void })
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteDialog({ row, onClose, onDone }: { row: ProfileRow; onClose: () => void; onDone: () => void }) {
+  const [reason, setReason] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const name = `${row.last_name ?? ""} ${row.first_name ?? ""}`.trim() || "—";
+  const expectedConfirm = (row.staff_id ?? "DELETE").toUpperCase();
+
+  const submit = async () => {
+    if (reason.trim().length < 4) {
+      toast.error("Please provide a reason (min 4 characters)");
+      return;
+    }
+    if (confirmText.trim().toUpperCase() !== expectedConfirm) {
+      toast.error(`Type ${expectedConfirm} to confirm`);
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-staff-account", {
+        body: { profile_id: row.id, reason: reason.trim() },
+      });
+      if (error) throw error;
+      const payload = data as { ok?: boolean; warning?: string; error?: string } | null;
+      if (payload?.error) throw new Error(payload.error);
+      if (payload?.warning) toast.warning(payload.warning);
+      else toast.success(`${name} deleted`);
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete account");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" /> Delete account
+          </DialogTitle>
+          <DialogDescription>
+            This permanently removes <strong>{name}</strong> ({row.staff_id ?? "no staff ID"}) and their login.
+            This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+            Linked records (audit history, postings, leave requests) may be retained or detached depending on
+            database configuration. The deletion itself is logged.
+          </div>
+          <div>
+            <Label className="text-xs">Reason (required)</Label>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Duplicate profile created in error"
+              rows={3}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">
+              Type <span className="font-mono">{expectedConfirm}</span> to confirm
+            </Label>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={expectedConfirm}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button
+            variant="destructive"
+            onClick={submit}
+            disabled={busy || confirmText.trim().toUpperCase() !== expectedConfirm || reason.trim().length < 4}
+          >
+            {busy ? "Deleting…" : "Delete permanently"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
