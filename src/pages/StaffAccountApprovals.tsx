@@ -411,6 +411,17 @@ export default function StaffAccountApprovals() {
       {auditFor && (
         <AuditDialog row={auditFor} onClose={() => setAuditFor(null)} />
       )}
+
+      {deleteTarget && (
+        <DeleteDialog
+          row={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDone={() => {
+            setDeleteTarget(null);
+            qc.invalidateQueries({ queryKey: ["staff-account-approvals"] });
+          }}
+        />
+      )}
     </div>
   );
 }
