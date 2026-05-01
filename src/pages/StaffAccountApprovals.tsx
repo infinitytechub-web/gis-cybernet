@@ -111,6 +111,46 @@ export default function StaffAccountApprovals() {
     });
   }, [profiles.data, search, tab, rankFilter, deptFilter]);
 
+  // Pool scoped to current tab + search (ignores rank/dept filters) — used to compute live option counts
+  const scopedPool = useMemo(() => {
+    const list = profiles.data ?? [];
+    const q = search.trim().toLowerCase();
+    return list.filter((p) => {
+      const tabOk =
+        tab === "pending" ? p.login_enabled === false && !p.account_locked
+        : tab === "active" ? p.login_enabled === true && !p.account_locked
+        : p.account_locked === true;
+      if (!tabOk) return false;
+      if (!q) return true;
+      const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.toLowerCase();
+      return name.includes(q) || (p.staff_id ?? "").toLowerCase().includes(q) || (p.unit ?? "").toLowerCase().includes(q);
+    });
+  }, [profiles.data, tab, search]);
+
+  const rankCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    let none = 0;
+    for (const p of scopedPool) {
+      if (deptFilter === "__none__") { if (p.department_id) continue; }
+      else if (deptFilter !== "all" && p.department_id !== deptFilter) continue;
+      if (p.rank_id) m.set(p.rank_id, (m.get(p.rank_id) ?? 0) + 1);
+      else none++;
+    }
+    return { byId: m, none, total: scopedPool.length };
+  }, [scopedPool, deptFilter]);
+
+  const deptCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    let none = 0;
+    for (const p of scopedPool) {
+      if (rankFilter === "__none__") { if (p.rank_id) continue; }
+      else if (rankFilter !== "all" && p.rank_id !== rankFilter) continue;
+      if (p.department_id) m.set(p.department_id, (m.get(p.department_id) ?? 0) + 1);
+      else none++;
+    }
+    return { byId: m, none, total: scopedPool.length };
+  }, [scopedPool, rankFilter]);
+
   // Reset selection when filters change
   useEffect(() => { setSelected(new Set()); }, [tab, search, rankFilter, deptFilter]);
 
