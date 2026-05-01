@@ -174,6 +174,15 @@ Deno.serve(async (req) => {
     console.error("Failed to write backup audit:", auditErr.message);
   }
 
+  // Enforce retention immediately after a successful audit write.
+  // Cleanup runs server-side as SECURITY DEFINER and records its own audit row.
+  try {
+    const { error: pruneErr } = await admin.rpc("prune_system_backup_audit");
+    if (pruneErr) console.error("Prune failed:", pruneErr.message);
+  } catch (e) {
+    console.error("Prune threw:", (e as Error).message);
+  }
+
   return new Response(payload, {
     status: 200,
     headers: {
