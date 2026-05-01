@@ -196,6 +196,29 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
           };
         });
 
+        // Duplicate-staff-ID detection — flag every row sharing an id (case-insensitive)
+        const idCounts = new Map<string, number[]>();
+        parsed.forEach((r, i) => {
+          const key = (r.staff_id || "").trim().toUpperCase();
+          if (!key) return;
+          const list = idCounts.get(key) ?? [];
+          list.push(i);
+          idCounts.set(key, list);
+        });
+        let dupGroups = 0;
+        idCounts.forEach((indexes, key) => {
+          if (indexes.length < 2) return;
+          dupGroups++;
+          const rowNumbers = indexes.map((i) => i + 1).join(", ");
+          indexes.forEach((i) => {
+            const dupMsg = `Duplicate Staff ID "${key}" (also rows ${rowNumbers})`;
+            parsed[i].error = parsed[i].error ? `${parsed[i].error}; ${dupMsg}` : dupMsg;
+          });
+        });
+        if (dupGroups > 0) {
+          toast.error(`Import blocked: ${dupGroups} duplicate Staff ID${dupGroups === 1 ? "" : "s"} detected. Resolve in source file and re-upload.`);
+        }
+
         setRows(parsed);
       } catch {
         toast.error("Failed to parse file. Please upload a valid Excel or CSV file.");
