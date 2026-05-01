@@ -230,6 +230,8 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
   const validRows = rows.filter((r) => !r.error);
   const errorRows = rows.filter((r) => r.error);
+  const duplicateRows = rows.filter((r) => r.error?.includes("Duplicate Staff ID"));
+  const hasDuplicates = duplicateRows.length > 0;
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
