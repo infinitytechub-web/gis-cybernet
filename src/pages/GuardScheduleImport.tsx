@@ -1055,6 +1055,100 @@ export default function GuardScheduleImport() {
               </div>
             )}
 
+            {(() => {
+              const diffIssues = validation.errors.filter(
+                (e) => e.kind === "preset_rank" || e.kind === "preset_group" || e.kind === "serial_range" || e.kind === "serial_format",
+              );
+              if (diffIssues.length === 0) return null;
+              const counts = {
+                rank: diffIssues.filter((d) => d.kind === "preset_rank").length,
+                group: diffIssues.filter((d) => d.kind === "preset_group").length,
+                serialRange: diffIssues.filter((d) => d.kind === "serial_range").length,
+                serialFormat: diffIssues.filter((d) => d.kind === "serial_format").length,
+              };
+              const copyCsv = () => {
+                const header = ["Row", "Name", "Serial", "Field", "Got", "Expected", "Suggestion"];
+                const lines = [header.join(",")].concat(
+                  diffIssues.map((d) => [
+                    d.index + 1,
+                    `"${(d.row.name ?? "").replace(/"/g, '""')}"`,
+                    d.row.serial_no ?? "",
+                    d.field,
+                    `"${(d.got ?? "").replace(/"/g, '""')}"`,
+                    `"${(d.expected ?? "").replace(/"/g, '""')}"`,
+                    `"${(d.suggestion ?? "").replace(/"/g, '""')}"`,
+                  ].join(",")),
+                );
+                const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "preset-mismatch-diff.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`Exported ${diffIssues.length} mismatch row(s)`);
+              };
+              return (
+                <details className="text-xs rounded-md border border-destructive/40 bg-destructive/5 p-2 max-h-[420px] overflow-auto" open>
+                  <summary className="cursor-pointer font-medium flex items-center gap-2 flex-wrap">
+                    <ShieldCheck className="h-3.5 w-3.5 text-destructive" />
+                    Preset Mismatch Diff ({diffIssues.length} row{diffIssues.length === 1 ? "" : "s"})
+                    <Badge variant="outline" className="text-[10px]">Ranks: {counts.rank}</Badge>
+                    <Badge variant="outline" className="text-[10px]">Groups: {counts.group}</Badge>
+                    <Badge variant="outline" className="text-[10px]">Serial range: {counts.serialRange}</Badge>
+                    <Badge variant="outline" className="text-[10px]">Serial format: {counts.serialFormat}</Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto h-6 text-[11px] gap-1"
+                      onClick={(e) => { e.preventDefault(); copyCsv(); }}
+                    >
+                      <Download className="h-3 w-3" /> CSV
+                    </Button>
+                  </summary>
+                  <Table className="min-w-[700px] mt-2">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        <TableHead className="w-40">Name</TableHead>
+                        <TableHead className="w-20">Serial</TableHead>
+                        <TableHead className="w-20">Field</TableHead>
+                        <TableHead>Got</TableHead>
+                        <TableHead>Expected</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {diffIssues.slice(0, 200).map((d, i) => (
+                        <TableRow key={`diff-${d.index}-${d.field}-${i}`}>
+                          <TableCell className="text-[11px] font-mono">{d.index + 1}</TableCell>
+                          <TableCell className="text-[11px]">{d.row.name || "—"}</TableCell>
+                          <TableCell className="text-[11px] font-mono">{d.row.serial_no ?? "—"}</TableCell>
+                          <TableCell className="text-[11px]">
+                            <Badge variant="destructive" className="text-[10px]">{d.field}</Badge>
+                          </TableCell>
+                          <TableCell className="text-[11px]">
+                            <span className="font-mono line-through text-destructive">{d.got || "—"}</span>
+                            {d.suggestion && (
+                              <span className="ml-2 font-mono text-emerald-600">→ {d.suggestion}?</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-[11px] font-mono text-emerald-700 break-words max-w-[320px]">
+                            {d.expected || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {diffIssues.length > 200 && (
+                    <p className="text-[10px] text-muted-foreground p-1 text-center">
+                      Showing first 200 of {diffIssues.length} mismatches — export CSV for the full list.
+                    </p>
+                  )}
+                </details>
+              );
+            })()}
+
             {(validation.errors.length > 0 || validation.warnings.length > 0) && (
               <details className="text-xs rounded-md border p-2 max-h-64 overflow-auto" open={blockedByErrors}>
                 <summary className="cursor-pointer font-medium">
