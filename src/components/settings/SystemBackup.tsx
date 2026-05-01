@@ -398,3 +398,272 @@ function BackupAuditPanel() {
     </Card>
   );
 }
+
+const RESTORABLE_TABLES = [
+  "profiles", "user_roles", "departments", "ranks", "shifts",
+  "shift_assignments", "attendances", "leave_requests",
+  "postings_transfers", "holidays", "announcements", "app_settings",
+];
+
+function BackupSnapshotsPanel() {
+  const queryClient = useQueryClient();
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [activeSnapshot, setActiveSnapshot] = useState<any | null>(null);
+  const [uploadPayload, setUploadPayload] = useState<any | null>(null);
+  const [uploadName, setUploadName] = useState<string>("");
+  const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
+  const [restoring, setRestoring] = useState(false);
+
+  const { data: snapshots = [], isLoading } = useQuery({
+    queryKey: ["system-backup-snapshots"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("system_backup_snapshots")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+    refetchInterval: 30_000,
+  });
+
+  const openRestoreFromSnapshot = (snap: any) => {
+    setActiveSnapshot(snap);
+    setUploadPayload(null);
+    setUploadName("");
+    const tables = (snap.tables_included ?? []) as string[];
+    setSelectedTables(new Set(tables.filter((t) => RESTORABLE_TABLES.includes(t))));
+    setRestoreOpen(true);
+  };
+
+  const handleUpload = async (file: File) => {
+    try {
+      const text = await file.text();
+      const json = JSON.parse(text);
+      const meta = json?._meta;
+      const tables: string[] = Array.isArray(meta?.tables) ? meta.tables : Object.keys(json).filter((k) => k !== "_meta");
+      setUploadPayload(json);
+      setUploadName(file.name);
+      setActiveSnapshot(null);
+      setSelectedTables(new Set(tables.filter((t) => RESTORABLE_TABLES.includes(t))));
+      setRestoreOpen(true);
+    } catch (e: any) {
+      toast.error(`Invalid backup file: ${e.message}`);
+    }
+  };
+
+  const downloadSnapshot = async (snap: any) => {
+    const { data, error } = await supabase.storage
+      .from("system-backups")
+      .download(snap.storage_path);
+    if (error || !data) {
+      toast.error(`Download failed: ${error?.message}`);
+      return;
+    }
+    downloadBlob(data, snap.file_name);
+  };
+
+  const runRestore = async () => {
+    if (selectedTables.size === 0) {
+      toast.error("Select at least one table to restore.");
+      return;
+    }
+    setRestoring(true);
+    try {
+      const body: Record<string, unknown> = { tables: Array.from(selectedTables) };
+      if (activeSnapshot) body.snapshot_id = activeSnapshot.id;
+      else if (uploadPayload) {
+        body.snapshot_payload = uploadPayload;
+        body.source_label = `upload:${uploadName}`;
+      } else {
+        toast.error("No source selected.");
+        setRestoring(false);
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke("system-backup-restore", { body });
+      if (error) throw error;
+      const total = data?.total ?? 0;
+      const restored = data?.restored?.length ?? 0;
+      if (data?.status === "success") toast.success(`Restored ${restored} table(s), ${total} row(s).`);
+      else if (data?.status === "partial") toast.warning(`Partial restore: ${restored} table(s), ${total} row(s).`);
+      else toast.error(`Restore failed: ${data?.errors?.join("; ") ?? "unknown"}`);
+      setRestoreOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["system-backup-restore-audit"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Restore failed");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Archive className="h-5 w-5 text-primary" /> Snapshot Library &amp; Safe Restore
+        </CardTitle>
+        <CardDescription>
+          Every backup is automatically archived to private storage. Choose a snapshot below to
+          restore selected tables (upsert by primary key — existing rows are merged, nothing is
+          deleted), or upload a previously downloaded backup file.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-2 cursor-pointer rounded-md border px-3 py-2 text-sm hover:bg-accent/30">
+            <Upload className="h-4 w-4" />
+            Upload backup file…
+            <input
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleUpload(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <span className="text-xs text-muted-foreground ml-auto">{snapshots.length} archived snapshot(s)</span>
+        </div>
+
+        <div className="rounded-lg border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Created</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>File</TableHead>
+                <TableHead>Tables</TableHead>
+                <TableHead className="text-right">Rows</TableHead>
+                <TableHead className="text-right">Size</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+              )}
+              {!isLoading && snapshots.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">No snapshots archived yet. Run a backup to create one.</TableCell></TableRow>
+              )}
+              {snapshots.map((snap: any) => (
+                <TableRow key={snap.id}>
+                  <TableCell className="text-xs whitespace-nowrap">{format(new Date(snap.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                  <TableCell><Badge variant="outline" className="text-[10px]">{snap.source}</Badge></TableCell>
+                  <TableCell className="text-xs font-mono truncate max-w-[220px]" title={snap.file_name}>{snap.file_name}</TableCell>
+                  <TableCell className="text-xs">{(snap.tables_included ?? []).length}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">{snap.total_rows?.toLocaleString() ?? 0}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums">{((snap.byte_size ?? 0) / 1024).toFixed(1)} KB</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => downloadSnapshot(snap)} title="Download">
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => openRestoreFromSnapshot(snap)} title="Restore">
+                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restore
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+
+      <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><RotateCcw className="h-4 w-4 text-primary" /> Restore from backup</DialogTitle>
+            <DialogDescription>
+              Source: <span className="font-mono">{activeSnapshot ? activeSnapshot.file_name : uploadName || "(uploaded file)"}</span>
+              <br />
+              Restore performs an <strong>upsert by primary key</strong>. Existing rows are merged
+              with backup values; rows added since the backup are <strong>not</strong> deleted.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+            {RESTORABLE_TABLES.map((t) => {
+              const inSnapshot = activeSnapshot
+                ? (activeSnapshot.tables_included ?? []).includes(t)
+                : uploadPayload && Object.prototype.hasOwnProperty.call(uploadPayload, t);
+              return (
+                <label key={t} className={`flex items-center gap-2 rounded-md border p-2 text-sm ${inSnapshot ? "" : "opacity-50"}`}>
+                  <Checkbox
+                    checked={selectedTables.has(t)}
+                    disabled={!inSnapshot}
+                    onCheckedChange={() => {
+                      const next = new Set(selectedTables);
+                      next.has(t) ? next.delete(t) : next.add(t);
+                      setSelectedTables(next);
+                    }}
+                  />
+                  <span className="flex-1 font-mono">{t}</span>
+                  {!inSnapshot && <span className="text-[10px] text-muted-foreground">not in backup</span>}
+                </label>
+              );
+            })}
+          </div>
+
+          <Alert>
+            <AlertDescription className="text-xs">
+              Selected: <strong>{selectedTables.size}</strong> table(s). This action is recorded in the restore audit log.
+            </AlertDescription>
+          </Alert>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRestoreOpen(false)} disabled={restoring}>Cancel</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button disabled={restoring || selectedTables.size === 0}>
+                  {restoring && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Confirm Restore
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Restore {selectedTables.size} table(s)?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Existing rows with matching primary keys will be overwritten with values from
+                    the backup. Rows that exist now but were not in the backup remain untouched.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={runRestore}>Yes, restore</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+function buildAuditTextLog(row: any): string {
+  const lines = [
+    `=== System Backup Audit Entry ===`,
+    `id:           ${row.id}`,
+    `created_at:   ${row.created_at}`,
+    `actor_email:  ${row.actor_email ?? "(system)"}`,
+    `user_id:      ${row.user_id ?? "(system)"}`,
+    `status:       ${row.status}`,
+    `ip_address:   ${row.ip_address ?? "—"}`,
+    `user_agent:   ${row.user_agent ?? "—"}`,
+    `total_rows:   ${row.total_rows ?? 0}`,
+    `byte_size:    ${row.byte_size ?? 0}`,
+    `tables_requested: ${(row.tables_requested ?? []).join(", ") || "—"}`,
+    `tables_exported:  ${(row.tables_exported ?? []).join(", ") || "—"}`,
+    `row_counts:`,
+    JSON.stringify(row.row_counts ?? {}, null, 2),
+    `error_message:`,
+    row.error_message ?? "(none)",
+    ``,
+    `Server log reference: Lovable Cloud → Functions → system-backup → search "${row.id}"`,
+  ];
+  return lines.join("\n");
+}
