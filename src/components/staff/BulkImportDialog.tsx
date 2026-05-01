@@ -402,8 +402,8 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={reset} disabled={importing}>Reset</Button>
-              <Button onClick={handleImport} disabled={importing || validRows.length === 0} className="gap-2">
-                {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importing...</> : `Import ${validRows.length} Staff`}
+              <Button onClick={handleImport} disabled={importing || validRows.length === 0 || hasDuplicates} className="gap-2">
+                {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importing...</> : hasDuplicates ? "Resolve duplicates to import" : `Import ${validRows.length} Staff`}
               </Button>
             </div>
           </div>
