@@ -250,6 +250,7 @@ export default function GuardScheduleImport() {
   const [fallbackYear, setFallbackYear] = useState<number>(new Date().getFullYear());
   const [dayShifts, setDayShifts] = useState<Shift[]>(DEFAULT_MAPPING.day);
   const [nightShifts, setNightShifts] = useState<Shift[]>(DEFAULT_MAPPING.night);
+  const [dedupeMode, setDedupeMode] = useState<DedupeMode>("off");
   const [parsing, setParsing] = useState(false);
   const [committing, setCommitting] = useState(false);
 
@@ -267,10 +268,15 @@ export default function GuardScheduleImport() {
     enabled: !!user && isAdminOrSupervisor,
   });
 
-  const assignments = useMemo(
+  // Raw assignments after period mapping (kept intact for monitoring)
+  const assignmentsRaw = useMemo(
     () => (parsed ? applyMapping(parsed.rows, { day: dayShifts, night: nightShifts }) : []),
     [parsed, dayShifts, nightShifts]
   );
+
+  // Deduped result — used for export + commit
+  const dedupe = useMemo(() => dedupeAssignments(assignmentsRaw, dedupeMode), [assignmentsRaw, dedupeMode]);
+  const assignments = dedupe.kept;
 
   const counts = useMemo(() => {
     const acc: Record<Shift, number> = { A: 0, B: 0, C: 0, D: 0 };
