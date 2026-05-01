@@ -236,12 +236,12 @@ function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: "
     }
     setBusy(true);
     try {
-      const update: Partial<ProfileRow> =
+      const update: { login_enabled: boolean; account_locked?: boolean } =
         mode === "approve"
-          ? { login_enabled: true }
+          ? { login_enabled: true, account_locked: false }
           : mode === "disable"
-          ? { login_enabled: false, status: "disabled" as ProfileRow["status"] }
-          : { login_enabled: true, status: "active" as ProfileRow["status"] };
+          ? { login_enabled: false, account_locked: true }
+          : { login_enabled: true, account_locked: false };
       const { error } = await supabase.from("profiles").update(update).eq("id", row.id);
       if (error) throw error;
       await logAdminAudit(
@@ -250,7 +250,7 @@ function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: "
         {
           staff_id: row.staff_id,
           name: `${row.last_name ?? ""} ${row.first_name ?? ""}`.trim(),
-          previous: { login_enabled: row.login_enabled, status: row.status },
+          previous: { login_enabled: row.login_enabled, account_locked: row.account_locked },
           next: update,
           reason: reason.trim() || null,
         },
