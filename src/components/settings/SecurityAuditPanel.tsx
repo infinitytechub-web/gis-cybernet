@@ -61,13 +61,13 @@ export function SecurityAuditPanel() {
     try {
       const data = await exportSecurityAudit(new Date(from), new Date(to + "T23:59:59"));
       if (format === "json") {
-        downloadBlob(JSON.stringify(data, null, 2), `security-audit-${from}_${to}.json`, "application/json");
+        downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), `security-audit-${from}_${to}.json`);
       } else {
         const headers = ["seq", "created_at", "category", "action", "severity", "actor_label", "subject", "ip_address", "row_hash", "prev_hash"];
         const csv = [headers.join(",")].concat(
           (data as any[]).map(r => headers.map(h => JSON.stringify(r[h] ?? "")).join(","))
         ).join("\n");
-        downloadBlob(csv, `security-audit-${from}_${to}.csv`, "text/csv");
+        downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `security-audit-${from}_${to}.csv`);
       }
       toast.success(`Exported ${(data as any[]).length} rows`);
     } catch (e: any) {
