@@ -27,10 +27,20 @@ import {
 } from "@/lib/guard-schedule-export";
 
 const SHIFTS = ["A", "B", "C", "D"] as const;
+
+// Defined time periods for each guard-duty shift. These are the canonical
+// tour-of-duty windows used across the system (import, schedule, exports).
+export const SHIFT_PERIODS: Record<"A" | "B" | "C" | "D", { label: string; start: string; end: string; tone: string }> = {
+  A: { label: "Morning", start: "06:00", end: "14:00", tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40" },
+  B: { label: "Afternoon", start: "14:00", end: "22:00", tone: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/40" },
+  C: { label: "Night", start: "22:00", end: "06:00", tone: "bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/40" },
+  D: { label: "Reserve", start: "—", end: "—", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40" },
+};
+
 const SHIFT_LABEL: Record<string, string> = {
-  A: "A · 06:00–14:00",
-  B: "B · 14:00–22:00",
-  C: "C · 22:00–06:00",
+  A: `A · Morning ${SHIFT_PERIODS.A.start}–${SHIFT_PERIODS.A.end}`,
+  B: `B · Afternoon ${SHIFT_PERIODS.B.start}–${SHIFT_PERIODS.B.end}`,
+  C: `C · Night ${SHIFT_PERIODS.C.start}–${SHIFT_PERIODS.C.end}`,
   D: "D · Reserve",
 };
 
@@ -45,7 +55,8 @@ function eachDate(start: string, end: string): string[] {
 }
 
 export default function GuardSchedule() {
-  const { user, isAdminOrSupervisor, loading } = useAuthContext();
+  const { user, isAdminOrSupervisor, isIpse, loading } = useAuthContext();
+  const canSchedule = isAdminOrSupervisor || isIpse;
   const qc = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
