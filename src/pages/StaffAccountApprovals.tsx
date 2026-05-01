@@ -734,3 +734,90 @@ function AuditDialog({ row, onClose }: { row: ProfileRow; onClose: () => void })
     </Dialog>
   );
 }
+
+function DeleteDialog({ row, onClose, onDone }: { row: ProfileRow; onClose: () => void; onDone: () => void }) {
+  const [reason, setReason] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const name = `${row.last_name ?? ""} ${row.first_name ?? ""}`.trim() || "—";
+  const expectedConfirm = (row.staff_id ?? "DELETE").toUpperCase();
+
+  const submit = async () => {
+    if (reason.trim().length < 4) {
+      toast.error("Please provide a reason (min 4 characters)");
+      return;
+    }
+    if (confirmText.trim().toUpperCase() !== expectedConfirm) {
+      toast.error(`Type ${expectedConfirm} to confirm`);
+      return;
+    }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-staff-account", {
+        body: { profile_id: row.id, reason: reason.trim() },
+      });
+      if (error) throw error;
+      const payload = data as { ok?: boolean; warning?: string; error?: string } | null;
+      if (payload?.error) throw new Error(payload.error);
+      if (payload?.warning) toast.warning(payload.warning);
+      else toast.success(`${name} deleted`);
+      onDone();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete account");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" /> Delete account
+          </DialogTitle>
+          <DialogDescription>
+            This permanently removes <strong>{name}</strong> ({row.staff_id ?? "no staff ID"}) and their login.
+            This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+            Linked records (audit history, postings, leave requests) may be retained or detached depending on
+            database configuration. The deletion itself is logged.
+          </div>
+          <div>
+            <Label className="text-xs">Reason (required)</Label>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Duplicate profile created in error"
+              rows={3}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">
+              Type <span className="font-mono">{expectedConfirm}</span> to confirm
+            </Label>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={expectedConfirm}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button
+            variant="destructive"
+            onClick={submit}
+            disabled={busy || confirmText.trim().toUpperCase() !== expectedConfirm || reason.trim().length < 4}
+          >
+            {busy ? "Deleting…" : "Delete permanently"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
