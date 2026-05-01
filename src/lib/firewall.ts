@@ -92,7 +92,7 @@ export async function scanFile(file: File): Promise<FirewallVerdict> {
   if (error) {
     return { action: "block", reason: `Firewall error: ${error.message}` };
   }
-  const verdict = (data ?? {}) as FirewallVerdict;
+  const verdict = (data ?? {}) as unknown as FirewallVerdict;
   const result: FirewallVerdict = {
     action: verdict.action ?? "allow",
     reason: verdict.reason ?? "ok",
@@ -118,7 +118,7 @@ export async function scanUrl(url: string): Promise<FirewallVerdict> {
   if (error) {
     return { action: "block", reason: `Firewall error: ${error.message}` };
   }
-  return (data ?? ALLOW) as FirewallVerdict;
+  return (data ?? ALLOW) as unknown as FirewallVerdict;
 }
 
 /* ─────────────── WAF: detect common attack patterns in user-supplied strings ─────────────── */
