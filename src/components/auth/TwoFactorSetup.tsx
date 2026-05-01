@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Shield, Smartphone, Mail, Check, X, QrCode } from "lucide-react";
 import { toast } from "sonner";
+import MfaBackupCodes from "@/components/auth/MfaBackupCodes";
+import MfaRecoveryRequest from "@/components/auth/MfaRecoveryRequest";
 
 export default function TwoFactorSetup() {
   const { user } = useAuth();
@@ -93,6 +95,7 @@ export default function TwoFactorSetup() {
   };
 
   return (
+    <div className="space-y-4">
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
@@ -179,7 +182,12 @@ export default function TwoFactorSetup() {
         <p className="text-xs text-muted-foreground">
           Two-factor authentication adds an extra layer of security. After entering your password, you'll need to provide a second verification code.
         </p>
+        <div className="flex justify-end">
+          <MfaRecoveryRequest />
+        </div>
       </CardContent>
     </Card>
+    <MfaBackupCodes />
+    </div>
   );
 }

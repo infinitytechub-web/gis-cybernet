@@ -27,6 +27,10 @@ import { SystemBackup } from "@/components/settings/SystemBackup";
 import { EmailDeliveryTest } from "@/components/settings/EmailDeliveryTest";
 import { LockedAccountsPanel } from "@/components/settings/LockedAccountsPanel";
 import { FirewallSettingsPanel } from "@/components/settings/FirewallSettingsPanel";
+import { FirewallAlertSettings } from "@/components/settings/FirewallAlertSettings";
+import { SecurityAuditPanel } from "@/components/settings/SecurityAuditPanel";
+import { HrmExportDlpPanel } from "@/components/settings/HrmExportDlpPanel";
+import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -111,6 +115,10 @@ export default function Settings() {
           <TabsTrigger value="backup" className="gap-1.5"><DatabaseBackup className="h-4 w-4 text-primary" /> System Backup</TabsTrigger>
           <TabsTrigger value="email-test" className="gap-1.5"><MailCheck className="h-4 w-4 text-primary" /> Email Test</TabsTrigger>
           <TabsTrigger value="firewall" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600" /> Firewall</TabsTrigger>
+          <TabsTrigger value="firewall-alerts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-amber-600" /> Firewall Alerts</TabsTrigger>
+          <TabsTrigger value="security-audit" className="gap-1.5"><History className="h-4 w-4 text-emerald-600" /> Security Audit</TabsTrigger>
+          <TabsTrigger value="hrm-dlp" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-700" /> HRM Export DLP</TabsTrigger>
+          <TabsTrigger value="mfa-recovery" className="gap-1.5"><KeyRound className="h-4 w-4 text-amber-600" /> MFA Recovery</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
@@ -146,6 +154,10 @@ export default function Settings() {
         <TabsContent value="backup"><SystemBackup /></TabsContent>
         <TabsContent value="email-test"><EmailDeliveryTest /></TabsContent>
         <TabsContent value="firewall"><FirewallSettingsPanel /></TabsContent>
+        <TabsContent value="firewall-alerts"><FirewallAlertSettings /></TabsContent>
+        <TabsContent value="security-audit"><SecurityAuditPanel /></TabsContent>
+        <TabsContent value="hrm-dlp"><HrmExportDlpPanel /></TabsContent>
+        <TabsContent value="mfa-recovery"><MfaRecoveryPanel /></TabsContent>
       </Tabs>
     </div>
   );
