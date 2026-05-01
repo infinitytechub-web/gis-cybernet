@@ -30,6 +30,7 @@ type ProfileRow = {
   unit: string | null;
   login_enabled: boolean | null;
   status: string | null;
+  account_locked: boolean | null;
   created_at: string;
   ranks?: { name: string | null } | null;
   departments?: { name: string | null } | null;
