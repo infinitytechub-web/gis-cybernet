@@ -557,10 +557,6 @@ export default function Ipse() {
           </Card>
         </TabsContent>
 
-        {/* NIGHT GUARD */}
-        <TabsContent value="nightguard">
-          <NightGuardTab nightGuardStaff={nightGuardStaff} allStaff={profiles} shifts={shifts} weekStart={weekStart} setWeekStart={setWeekStart} isAdmin={isAdmin} />
-        </TabsContent>
       </Tabs>
 
       {/* Decision dialog */}
