@@ -348,6 +348,11 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
               </p>
               <div className="flex gap-2">
                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">{validRows.length} valid</Badge>
+                {hasDuplicates && (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+                    {duplicateRows.length} duplicate Staff ID{duplicateRows.length === 1 ? "" : "s"}
+                  </Badge>
+                )}
                 {errorRows.length > 0 && <Badge variant="secondary" className="bg-red-100 text-red-800">{errorRows.length} errors</Badge>}
               </div>
             </div>
