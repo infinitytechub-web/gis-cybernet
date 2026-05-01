@@ -1,0 +1,131 @@
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { MailCheck, Send, Loader2, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+
+type Status =
+  | { kind: "idle" }
+  | { kind: "sending" }
+  | { kind: "sent"; messageId?: string; recipient: string; at: string }
+  | { kind: "error"; message: string };
+
+export function EmailDeliveryTest() {
+  const { user } = useAuth();
+  const [recipient, setRecipient] = useState("");
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim());
+
+  const send = async () => {
+    if (!isValidEmail) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    setStatus({ kind: "sending" });
+    const sentAt = new Date().toISOString();
+    const { data, error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "test-email",
+        recipientEmail: recipient.trim(),
+        idempotencyKey: `admin-test-${user?.id ?? "anon"}-${Date.now()}`,
+        templateData: {
+          sentBy: user?.email ?? "Administrator",
+          sentAt,
+          note: note.trim() || undefined,
+        },
+      },
+    });
+    if (error) {
+      setStatus({ kind: "error", message: error.message || "Send failed." });
+      toast.error(error.message || "Failed to send test email.");
+      return;
+    }
+    const messageId = (data as any)?.messageId || (data as any)?.message_id;
+    setStatus({ kind: "sent", messageId, recipient: recipient.trim(), at: sentAt });
+    toast.success("Test email queued for delivery.");
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MailCheck className="h-5 w-5 text-primary" /> Email Delivery Test
+        </CardTitle>
+        <CardDescription>
+          Send a one-off test email from <span className="font-mono">notify.gis-cybernet.com</span> to verify
+          the sending pipeline. The status of the request appears below.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="test-recipient">Recipient email</Label>
+          <Input
+            id="test-recipient"
+            type="email"
+            placeholder="name@example.com"
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            disabled={status.kind === "sending"}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="test-note">Optional note</Label>
+          <Textarea
+            id="test-note"
+            placeholder="Included in the email body for context."
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            disabled={status.kind === "sending"}
+          />
+        </div>
+        <Button onClick={send} disabled={!isValidEmail || status.kind === "sending"}>
+          {status.kind === "sending" ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>
+          ) : (
+            <><Send className="h-4 w-4 mr-2" /> Send Test Email</>
+          )}
+        </Button>
+
+        <div className="rounded-lg border p-3 bg-muted/30">
+          <div className="text-xs font-medium text-muted-foreground mb-1">Status</div>
+          {status.kind === "idle" && (
+            <div className="text-sm text-muted-foreground">No test sent yet.</div>
+          )}
+          {status.kind === "sending" && (
+            <div className="text-sm flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Queueing email…</div>
+          )}
+          {status.kind === "sent" && (
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/20">Queued</Badge>
+                <span className="text-muted-foreground">→ {status.recipient}</span>
+              </div>
+              <div className="text-xs text-muted-foreground">Submitted at: {new Date(status.at).toLocaleString()}</div>
+              {status.messageId && (
+                <div className="text-xs font-mono text-muted-foreground break-all">message_id: {status.messageId}</div>
+              )}
+              <div className="text-xs text-muted-foreground">
+                Delivery completes via the email queue within ~5–15 seconds. If DNS verification is still pending for{" "}
+                <span className="font-mono">notify.gis-cybernet.com</span>, the message stays queued until the domain is active.
+              </div>
+            </div>
+          )}
+          {status.kind === "error" && (
+            <div className="text-sm text-destructive flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> <span>{status.message}</span>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
