@@ -27,6 +27,7 @@ export function SecurityAuditPanel() {
   const lastWeek = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
   const [from, setFrom] = useState(lastWeek);
   const [to, setTo] = useState(today);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["security-audit", "preview"],
