@@ -5165,6 +5165,54 @@ export type Database = {
         }
         Relationships: []
       }
+      system_backup_audit: {
+        Row: {
+          actor_email: string | null
+          byte_size: number
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          row_counts: Json
+          status: string
+          tables_exported: string[]
+          tables_requested: string[]
+          total_rows: number
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_email?: string | null
+          byte_size?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          row_counts?: Json
+          status?: string
+          tables_exported?: string[]
+          tables_requested: string[]
+          total_rows?: number
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_email?: string | null
+          byte_size?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          row_counts?: Json
+          status?: string
+          tables_exported?: string[]
+          tables_requested?: string[]
+          total_rows?: number
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
