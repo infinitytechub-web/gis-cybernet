@@ -2120,6 +2120,116 @@ export type Database = {
         }
         Relationships: []
       }
+      guard_schedule_assignments: {
+        Row: {
+          created_at: string
+          duty_date: string
+          id: string
+          name_text: string
+          notes: string | null
+          position_label: string | null
+          profile_id: string | null
+          rank_text: string | null
+          schedule_id: string
+          serial_no: number | null
+          shift: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          duty_date: string
+          id?: string
+          name_text: string
+          notes?: string | null
+          position_label?: string | null
+          profile_id?: string | null
+          rank_text?: string | null
+          schedule_id: string
+          serial_no?: number | null
+          shift: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          duty_date?: string
+          id?: string
+          name_text?: string
+          notes?: string | null
+          position_label?: string | null
+          profile_id?: string | null
+          rank_text?: string | null
+          schedule_id?: string
+          serial_no?: number | null
+          shift?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_schedule_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_schedule_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "guard_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guard_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          name: string
+          notes: string | null
+          published_at: string | null
+          source_import_id: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          name: string
+          notes?: string | null
+          published_at?: string | null
+          source_import_id?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          published_at?: string | null
+          source_import_id?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_schedules_source_import_id_fkey"
+            columns: ["source_import_id"]
+            isOneToOne: false
+            referencedRelation: "duty_roster_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
@@ -3893,6 +4003,92 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pending_staff_matches: {
+        Row: {
+          created_at: string
+          created_profile_id: string | null
+          entry_id: string | null
+          gender: string | null
+          id: string
+          import_id: string | null
+          matched_profile_id: string | null
+          name_text: string
+          rank_text: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          serial_no: number
+          shift: string
+          status: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_profile_id?: string | null
+          entry_id?: string | null
+          gender?: string | null
+          id?: string
+          import_id?: string | null
+          matched_profile_id?: string | null
+          name_text: string
+          rank_text: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          serial_no: number
+          shift: string
+          status?: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_profile_id?: string | null
+          entry_id?: string | null
+          gender?: string | null
+          id?: string
+          import_id?: string | null
+          matched_profile_id?: string | null
+          name_text?: string
+          rank_text?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          serial_no?: number
+          shift?: string
+          status?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_staff_matches_created_profile_id_fkey"
+            columns: ["created_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_staff_matches_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "duty_roster_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_staff_matches_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "duty_roster_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_staff_matches_matched_profile_id_fkey"
+            columns: ["matched_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_sync_history: {
         Row: {
@@ -6475,6 +6671,7 @@ export type Database = {
         Args: { _profile_id: string; _reason: string }
         Returns: Json
       }
+      auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
       block_ip: {
         Args: {
           _duration_minutes?: number
