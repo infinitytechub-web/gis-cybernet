@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAudit } from "@/lib/admin-audit";
@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -46,12 +48,31 @@ type AuditRow = {
   created_at: string;
 };
 
+type Tab = "pending" | "active" | "disabled";
+type ActionMode = "approve" | "disable" | "enable";
+
+const KEEP = "__keep__";
+
+function useLookups() {
+  const ranks = useQuery({
+    queryKey: ["ranks-lookup"],
+    queryFn: async () => (await supabase.from("ranks").select("id, name").order("name")).data ?? [],
+  });
+  const depts = useQuery({
+    queryKey: ["departments-lookup"],
+    queryFn: async () => (await supabase.from("departments").select("id, name").order("name")).data ?? [],
+  });
+  return { ranks: ranks.data ?? [], depts: depts.data ?? [] };
+}
+
 export default function StaffAccountApprovals() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"pending" | "active" | "disabled">("pending");
-  const [actionTarget, setActionTarget] = useState<{ row: ProfileRow; mode: "approve" | "disable" | "enable" } | null>(null);
+  const [tab, setTab] = useState<Tab>("pending");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [actionTarget, setActionTarget] = useState<{ row: ProfileRow; mode: ActionMode } | null>(null);
+  const [bulkMode, setBulkMode] = useState<ActionMode | null>(null);
   const [auditFor, setAuditFor] = useState<ProfileRow | null>(null);
 
   const profiles = useQuery({
@@ -83,6 +104,9 @@ export default function StaffAccountApprovals() {
     });
   }, [profiles.data, search, tab]);
 
+  // Reset selection when tab/search changes
+  useEffect(() => { setSelected(new Set()); }, [tab, search]);
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
@@ -91,6 +115,28 @@ export default function StaffAccountApprovals() {
     pending: (profiles.data ?? []).filter((p) => p.login_enabled === false && !p.account_locked).length,
     active: (profiles.data ?? []).filter((p) => p.login_enabled === true && !p.account_locked).length,
     disabled: (profiles.data ?? []).filter((p) => p.account_locked === true).length,
+  };
+
+  const selectedRows = filtered.filter((p) => selected.has(p.id));
+  const allOnPageSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id));
+  const someOnPageSelected = filtered.some((p) => selected.has(p.id));
+
+  const togglePage = (checked: boolean) => {
+    const next = new Set(selected);
+    if (checked) filtered.forEach((p) => next.add(p.id));
+    else filtered.forEach((p) => next.delete(p.id));
+    setSelected(next);
+  };
+  const toggleOne = (id: string, checked: boolean) => {
+    const next = new Set(selected);
+    if (checked) next.add(id); else next.delete(id);
+    setSelected(next);
+  };
+
+  const onBulkDone = () => {
+    setBulkMode(null);
+    setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["staff-account-approvals"] });
   };
 
   return (
@@ -112,11 +158,11 @@ export default function StaffAccountApprovals() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Account directory</CardTitle>
-          <CardDescription>Filter by status and search by name, staff ID, or unit.</CardDescription>
+          <CardDescription>Filter by status and search by name, staff ID, or unit. Select rows to perform bulk actions.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="w-full sm:w-auto">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="w-full sm:w-auto">
               <TabsList>
                 <TabsTrigger value="pending">Pending ({counts.pending})</TabsTrigger>
                 <TabsTrigger value="active">Active ({counts.active})</TabsTrigger>
@@ -134,10 +180,40 @@ export default function StaffAccountApprovals() {
             </div>
           </div>
 
+          {selected.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+              <span className="text-xs font-medium">{selected.size} selected</span>
+              <div className="flex-1" />
+              {tab === "pending" && (
+                <Button size="sm" variant="default" onClick={() => setBulkMode("approve")}>
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Bulk approve
+                </Button>
+              )}
+              {tab === "active" && (
+                <Button size="sm" variant="destructive" onClick={() => setBulkMode("disable")}>
+                  <Ban className="h-3.5 w-3.5 mr-1" /> Bulk disable
+                </Button>
+              )}
+              {tab === "disabled" && (
+                <Button size="sm" variant="outline" onClick={() => setBulkMode("enable")}>
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Bulk re-enable
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+            </div>
+          )}
+
           <div className="rounded-lg border overflow-x-auto">
             <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allOnPageSelected ? true : someOnPageSelected ? "indeterminate" : false}
+                      onCheckedChange={(c) => togglePage(c === true)}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <TableHead>Staff ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Rank</TableHead>
@@ -149,15 +225,22 @@ export default function StaffAccountApprovals() {
               </TableHeader>
               <TableBody>
                 {profiles.isLoading ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No accounts in this view.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-6 text-muted-foreground">No accounts in this view.</TableCell></TableRow>
                 ) : filtered.map((p) => {
                   const name = `${p.last_name ?? ""} ${p.first_name ?? ""}`.trim() || "—";
                   const isPending = p.login_enabled === false && !p.account_locked;
                   const isDisabled = p.account_locked === true;
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} data-state={selected.has(p.id) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selected.has(p.id)}
+                          onCheckedChange={(c) => toggleOne(p.id, c === true)}
+                          aria-label={`Select ${name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{p.staff_id ?? "—"}</TableCell>
                       <TableCell className="text-xs font-medium">{name}</TableCell>
                       <TableCell className="text-xs">{p.ranks?.name ?? "—"}</TableCell>
@@ -214,6 +297,15 @@ export default function StaffAccountApprovals() {
         />
       )}
 
+      {bulkMode && (
+        <BulkDialog
+          rows={selectedRows}
+          mode={bulkMode}
+          onClose={() => setBulkMode(null)}
+          onDone={onBulkDone}
+        />
+      )}
+
       {auditFor && (
         <AuditDialog row={auditFor} onClose={() => setAuditFor(null)} />
       )}
@@ -221,13 +313,60 @@ export default function StaffAccountApprovals() {
   );
 }
 
-function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: "approve" | "disable" | "enable"; onClose: () => void; onDone: () => void }) {
+function actionVerb(mode: ActionMode) {
+  return mode === "approve" ? "approved_account" : mode === "disable" ? "disabled_account" : "reenabled_account";
+}
+
+function actionTitle(mode: ActionMode) {
+  return mode === "approve" ? "Approve account" : mode === "disable" ? "Disable account" : "Re-enable account";
+}
+
+async function applyAction(
+  row: ProfileRow,
+  mode: ActionMode,
+  reason: string,
+  overrides: { rank_id?: string | null; department_id?: string | null } = {},
+) {
+  const update: { login_enabled: boolean; account_locked: boolean; rank_id?: string; department_id?: string } =
+    mode === "approve"
+      ? { login_enabled: true, account_locked: false }
+      : mode === "disable"
+      ? { login_enabled: false, account_locked: true }
+      : { login_enabled: true, account_locked: false };
+  if (mode === "approve") {
+    if (overrides.rank_id) update.rank_id = overrides.rank_id;
+    if (overrides.department_id) update.department_id = overrides.department_id;
+  }
+  const { error } = await supabase.from("profiles").update(update).eq("id", row.id);
+  if (error) throw error;
+  await logAdminAudit(
+    "staff_account",
+    actionVerb(mode),
+    {
+      staff_id: row.staff_id,
+      name: `${row.last_name ?? ""} ${row.first_name ?? ""}`.trim(),
+      previous: {
+        login_enabled: row.login_enabled,
+        account_locked: row.account_locked,
+        rank_id: row.rank_id,
+        department_id: row.department_id,
+      },
+      next: update,
+      reason: reason.trim() || null,
+    },
+    row.id,
+  );
+}
+
+function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: ActionMode; onClose: () => void; onDone: () => void }) {
   const [reason, setReason] = useState("");
+  const [rankId, setRankId] = useState<string>(KEEP);
+  const [deptId, setDeptId] = useState<string>(KEEP);
   const [busy, setBusy] = useState(false);
+  const { ranks, depts } = useLookups();
 
   const requiresReason = mode === "disable";
-  const title = mode === "approve" ? "Approve account" : mode === "disable" ? "Disable account" : "Re-enable account";
-  const verb = mode === "approve" ? "approved_account" : mode === "disable" ? "disabled_account" : "reenabled_account";
+  const title = actionTitle(mode);
 
   const submit = async () => {
     if (requiresReason && reason.trim().length < 4) {
@@ -236,31 +375,14 @@ function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: "
     }
     setBusy(true);
     try {
-      const update: { login_enabled: boolean; account_locked?: boolean } =
-        mode === "approve"
-          ? { login_enabled: true, account_locked: false }
-          : mode === "disable"
-          ? { login_enabled: false, account_locked: true }
-          : { login_enabled: true, account_locked: false };
-      const { error } = await supabase.from("profiles").update(update).eq("id", row.id);
-      if (error) throw error;
-      await logAdminAudit(
-        "staff_account",
-        verb,
-        {
-          staff_id: row.staff_id,
-          name: `${row.last_name ?? ""} ${row.first_name ?? ""}`.trim(),
-          previous: { login_enabled: row.login_enabled, account_locked: row.account_locked },
-          next: update,
-          reason: reason.trim() || null,
-        },
-        row.id,
-      );
+      await applyAction(row, mode, reason, {
+        rank_id: rankId !== KEEP ? rankId : null,
+        department_id: deptId !== KEEP ? deptId : null,
+      });
       toast.success(mode === "approve" ? "Account approved" : mode === "disable" ? "Account disabled" : "Account re-enabled");
       onDone();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to update account";
-      toast.error(msg);
+      toast.error(e instanceof Error ? e.message : "Failed to update account");
     } finally {
       setBusy(false);
     }
@@ -276,6 +398,30 @@ function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: "
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          {mode === "approve" && (
+            <>
+              <div>
+                <Label className="text-xs">Rank / Designation</Label>
+                <Select value={rankId} onValueChange={setRankId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value={KEEP}>Keep current ({row.ranks?.name ?? "none"})</SelectItem>
+                    {ranks.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Department</Label>
+                <Select value={deptId} onValueChange={setDeptId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value={KEEP}>Keep current ({row.departments?.name ?? "none"})</SelectItem>
+                    {depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
           <div>
             <Label className="text-xs">Reason {requiresReason ? "(required)" : "(optional)"}</Label>
             <Textarea
@@ -288,12 +434,120 @@ function ActionDialog({ row, mode, onClose, onDone }: { row: ProfileRow; mode: "
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button
-            onClick={submit}
-            disabled={busy}
-            variant={mode === "disable" ? "destructive" : "default"}
-          >
+          <Button onClick={submit} disabled={busy} variant={mode === "disable" ? "destructive" : "default"}>
             {busy ? "Saving…" : title}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function BulkDialog({ rows, mode, onClose, onDone }: { rows: ProfileRow[]; mode: ActionMode; onClose: () => void; onDone: () => void }) {
+  const [reason, setReason] = useState("");
+  const [rankId, setRankId] = useState<string>(KEEP);
+  const [deptId, setDeptId] = useState<string>(KEEP);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; failed: number }>({ done: 0, failed: 0 });
+  const { ranks, depts } = useLookups();
+
+  const requiresReason = mode === "disable";
+  const title =
+    mode === "approve" ? `Bulk approve ${rows.length} account${rows.length === 1 ? "" : "s"}`
+    : mode === "disable" ? `Bulk disable ${rows.length} account${rows.length === 1 ? "" : "s"}`
+    : `Bulk re-enable ${rows.length} account${rows.length === 1 ? "" : "s"}`;
+
+  const submit = async () => {
+    if (rows.length === 0) { onClose(); return; }
+    if (requiresReason && reason.trim().length < 4) {
+      toast.error("Please provide a reason (min 4 characters)");
+      return;
+    }
+    setBusy(true);
+    setProgress({ done: 0, failed: 0 });
+    let done = 0, failed = 0;
+    for (const r of rows) {
+      try {
+        await applyAction(r, mode, reason, {
+          rank_id: rankId !== KEEP ? rankId : null,
+          department_id: deptId !== KEEP ? deptId : null,
+        });
+        done++;
+      } catch {
+        failed++;
+      }
+      setProgress({ done, failed });
+    }
+    setBusy(false);
+    if (failed === 0) toast.success(`${done} account${done === 1 ? "" : "s"} updated`);
+    else toast.warning(`${done} updated · ${failed} failed`);
+    onDone();
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            One audit reason will be recorded against every selected account.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="rounded-md border bg-muted/30 px-3 py-2 max-h-32 overflow-y-auto text-xs space-y-0.5">
+            {rows.slice(0, 50).map((r) => (
+              <div key={r.id} className="font-mono">
+                {r.staff_id ?? "—"} · {`${r.last_name ?? ""} ${r.first_name ?? ""}`.trim() || "—"}
+              </div>
+            ))}
+            {rows.length > 50 && <div className="text-muted-foreground">…and {rows.length - 50} more</div>}
+          </div>
+
+          {mode === "approve" && (
+            <>
+              <div>
+                <Label className="text-xs">Apply rank to all (optional)</Label>
+                <Select value={rankId} onValueChange={setRankId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value={KEEP}>Keep each account's current rank</SelectItem>
+                    {ranks.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Apply department to all (optional)</Label>
+                <Select value={deptId} onValueChange={setDeptId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    <SelectItem value={KEEP}>Keep each account's current department</SelectItem>
+                    {depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          <div>
+            <Label className="text-xs">Reason {requiresReason ? "(required)" : "(optional)"}</Label>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={mode === "disable" ? "e.g. End of contract — batch off-boarding" : "Shared notes for the audit log"}
+              rows={3}
+            />
+          </div>
+
+          {busy && (
+            <div className="text-xs text-muted-foreground">
+              Processing… {progress.done}/{rows.length} {progress.failed > 0 ? `· ${progress.failed} failed` : ""}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button onClick={submit} disabled={busy || rows.length === 0} variant={mode === "disable" ? "destructive" : "default"}>
+            {busy ? "Saving…" : "Confirm"}
           </Button>
         </DialogFooter>
       </DialogContent>
