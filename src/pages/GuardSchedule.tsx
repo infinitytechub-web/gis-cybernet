@@ -152,6 +152,30 @@ export default function GuardSchedule() {
     return map;
   }, [active.data]);
 
+  // Resolve per-shift times for the active schedule. Falls back to canonical periods.
+  const shiftTimes = useMemo<Record<"A"|"B"|"C"|"D", { start: string; end: string }>>(() => {
+    const fallback = {
+      A: { start: SHIFT_PERIODS.A.start, end: SHIFT_PERIODS.A.end },
+      B: { start: SHIFT_PERIODS.B.start, end: SHIFT_PERIODS.B.end },
+      C: { start: SHIFT_PERIODS.C.start, end: SHIFT_PERIODS.C.end },
+      D: { start: "—", end: "—" },
+    };
+    const raw = active.data?.schedule?.notes;
+    if (!raw) return fallback;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.shift_times) return { ...fallback, ...parsed.shift_times };
+    } catch { /* notes is plain text — keep defaults */ }
+    return fallback;
+  }, [active.data]);
+
+  const shiftLabelFor = (s: "A"|"B"|"C"|"D") => {
+    const t = shiftTimes[s];
+    const periodName = SHIFT_PERIODS[s].label;
+    if (!t.start || t.start === "—") return `${s} · ${periodName}`;
+    return `${s} · ${periodName} ${t.start}–${t.end}`;
+  };
+
   const handlePublishToggle = async () => {
     if (!active.data?.schedule) return;
     const next = active.data.schedule.status === "published" ? "draft" : "published";
@@ -289,7 +313,7 @@ export default function GuardSchedule() {
                       return (
                         <Card key={s} className="border">
                           <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-sm">{SHIFT_LABEL[s]}</CardTitle>
+                            <CardTitle className="text-sm">{shiftLabelFor(s)}</CardTitle>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-[10px]">{items.length} on duty</Badge>
                               <AddPersonPopover scheduleId={activeId!} date={d} shift={s} />
