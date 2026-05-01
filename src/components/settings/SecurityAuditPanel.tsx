@@ -105,7 +105,7 @@ export function SecurityAuditPanel() {
   };
 
   const handleExport = (format: "csv" | "json") => runExport(format, "range");
-  const handleExportAll = () => runExport("csv", "all");
+  const handleExportAll = (format: "csv" | "json" = "csv") => runExport(format, "all");
 
   const handleVerify = async () => {
     try {
@@ -156,8 +156,11 @@ export function SecurityAuditPanel() {
             <Button variant="outline" onClick={handleAnchor} className="gap-2">
               <Anchor className="h-4 w-4" /> Create anchor
             </Button>
-            <Button onClick={handleExportAll} className="gap-2 ml-auto">
+            <Button onClick={() => handleExportAll("csv")} className="gap-2 ml-auto">
               <FileDown className="h-4 w-4" /> Export all (CSV)
+            </Button>
+            <Button onClick={() => handleExportAll("json")} className="gap-2">
+              <FileJson className="h-4 w-4" /> Export all (JSON)
             </Button>
           </div>
 
