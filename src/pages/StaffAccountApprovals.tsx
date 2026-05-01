@@ -101,8 +101,10 @@ export default function StaffAccountApprovals() {
       return p.account_locked === true;
     });
     return byTab.filter((p) => {
-      if (rankFilter === "__none__" ? p.rank_id : rankFilter !== "all" && p.rank_id !== rankFilter) return false;
-      if (deptFilter === "__none__" ? p.department_id : deptFilter !== "all" && p.department_id !== deptFilter) return false;
+      if (rankFilter === "__none__") { if (p.rank_id) return false; }
+      else if (rankFilter !== "all" && p.rank_id !== rankFilter) return false;
+      if (deptFilter === "__none__") { if (p.department_id) return false; }
+      else if (deptFilter !== "all" && p.department_id !== deptFilter) return false;
       if (!q) return true;
       const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.toLowerCase();
       return name.includes(q) || (p.staff_id ?? "").toLowerCase().includes(q) || (p.unit ?? "").toLowerCase().includes(q);
