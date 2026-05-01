@@ -289,7 +289,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             >
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
               <p className="font-medium">Click to upload Excel or CSV file</p>
-              <p className="text-sm text-muted-foreground mt-1">Supports .xlsx, .xls, .csv formats</p>
+              <p className="text-sm text-muted-foreground mt-1">Supports .xlsx, .xls, .csv formats, including roster-style Name/S/N files</p>
             </div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
             <Button variant="outline" onClick={downloadTemplate} className="w-full gap-2">
@@ -297,7 +297,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             </Button>
             <div className="text-xs text-muted-foreground space-y-1">
               <p className="font-medium">Expected columns:</p>
-              <p>Staff ID, First Name, Last Name, Gender, Phone, Unit, Shift Group, Rank (abbreviation), Department (name), Office, Status</p>
+              <p>Staff ID, First Name, Last Name, or a single Name column. Roster-style S/N/# columns are also accepted for generated import IDs.</p>
             </div>
           </div>
         ) : result ? (
