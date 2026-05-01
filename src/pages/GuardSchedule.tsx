@@ -361,6 +361,14 @@ function CreateScheduleDialog({
   const [autoFill, setAutoFill] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  // Per-shift time allocations — defaults come from the canonical SHIFT_PERIODS.
+  const [times, setTimes] = useState<Record<"A" | "B" | "C" | "D", { start: string; end: string }>>({
+    A: { start: SHIFT_PERIODS.A.start, end: SHIFT_PERIODS.A.end },
+    B: { start: SHIFT_PERIODS.B.start, end: SHIFT_PERIODS.B.end },
+    C: { start: SHIFT_PERIODS.C.start, end: SHIFT_PERIODS.C.end },
+    D: { start: "", end: "" },
+  });
+
   const submit = async () => {
     if (!name.trim() || !start || !end) return toast.error("Name and date range required");
     if (end < start) return toast.error("End date must be on/after start date");
@@ -368,6 +376,9 @@ function CreateScheduleDialog({
     try {
       const startStr = start.toISOString().slice(0, 10);
       const endStr = end.toISOString().slice(0, 10);
+
+      // Persist time allocations inside `notes` as a tagged JSON block.
+      const notesPayload = JSON.stringify({ shift_times: times });
 
       const { data: sched, error: e1 } = await supabase
         .from("guard_schedules")
@@ -378,6 +389,7 @@ function CreateScheduleDialog({
           source_import_id: autoFill ? latestImportId : null,
           status: "draft",
           created_by: user!.id,
+          notes: notesPayload,
         })
         .select("id")
         .single();
