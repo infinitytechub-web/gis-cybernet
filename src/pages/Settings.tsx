@@ -26,6 +26,7 @@ import { ShiftRotationOverrides } from "@/components/settings/ShiftRotationOverr
 import { SystemBackup } from "@/components/settings/SystemBackup";
 import { EmailDeliveryTest } from "@/components/settings/EmailDeliveryTest";
 import { LockedAccountsPanel } from "@/components/settings/LockedAccountsPanel";
+import { FirewallSettingsPanel } from "@/components/settings/FirewallSettingsPanel";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
