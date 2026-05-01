@@ -79,6 +79,7 @@ const financeItems = [
 const adminItems = [
   { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
   { title: "Roster Import", url: "/roster/import", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300" },
+  { title: "Guard PDF Import", url: "/guard-schedule/import", icon: FileSpreadsheet, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Pending Staff Approvals", url: "/staff-approvals/pending", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Account Approvals", url: "/staff-approvals/accounts", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
