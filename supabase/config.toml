@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.handle-email-suppression]
 verify_jwt = false
+
+[functions.email-domain-recheck]
+verify_jwt = false

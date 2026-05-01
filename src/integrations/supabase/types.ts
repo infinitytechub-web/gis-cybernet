@@ -1166,6 +1166,39 @@ export type Database = {
           },
         ]
       }
+      email_domain_status: {
+        Row: {
+          became_active_at: string | null
+          created_at: string
+          domain: string
+          last_checked_at: string
+          last_error: string | null
+          notified_active: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          became_active_at?: string | null
+          created_at?: string
+          domain: string
+          last_checked_at?: string
+          last_error?: string | null
+          notified_active?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          became_active_at?: string | null
+          created_at?: string
+          domain?: string
+          last_checked_at?: string
+          last_error?: string | null
+          notified_active?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string

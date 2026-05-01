@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { MailCheck, Send, Loader2, AlertTriangle } from "lucide-react";
+import { MailCheck, Send, Loader2, AlertTriangle, RefreshCw, ShieldCheck, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -16,11 +16,51 @@ type Status =
   | { kind: "sent"; messageId?: string; recipient: string; at: string }
   | { kind: "error"; message: string };
 
+interface DomainState {
+  status: string;
+  last_checked_at: string;
+  became_active_at: string | null;
+}
+
 export function EmailDeliveryTest() {
   const { user } = useAuth();
   const [recipient, setRecipient] = useState("");
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [domain, setDomain] = useState<DomainState | null>(null);
+  const [rechecking, setRechecking] = useState(false);
+
+  const loadDomain = async () => {
+    const { data } = await supabase
+      .from("email_domain_status" as any)
+      .select("status, last_checked_at, became_active_at")
+      .eq("domain", "notify.gis-cybernet.com")
+      .maybeSingle();
+    if (data) setDomain(data as any);
+  };
+
+  useEffect(() => {
+    loadDomain();
+    const ch = supabase
+      .channel("email_domain_status")
+      .on("postgres_changes", { event: "*", schema: "public", table: "email_domain_status" }, loadDomain)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  const recheckNow = async () => {
+    setRechecking(true);
+    const { data, error } = await supabase.functions.invoke("email-domain-recheck", { body: {} });
+    setRechecking(false);
+    if (error) { toast.error(error.message); return; }
+    const cur = (data as any)?.current_status;
+    if ((data as any)?.transitioned_to_active) {
+      toast.success("Domain is now Active — email sending enabled.");
+    } else {
+      toast.info(`Domain status: ${cur ?? "unknown"}`);
+    }
+    loadDomain();
+  };
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim());
 
@@ -65,6 +105,37 @@ export function EmailDeliveryTest() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="rounded-lg border p-3 bg-muted/30 flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className={`h-4 w-4 ${domain?.status === "active" ? "text-emerald-600" : "text-amber-600"}`} />
+            <span className="font-medium">Sender domain:</span>
+            <span className="font-mono">notify.gis-cybernet.com</span>
+            <Badge
+              variant="outline"
+              className={
+                domain?.status === "active"
+                  ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                  : "bg-amber-500/15 text-amber-700 border-amber-500/30"
+              }
+            >
+              {domain?.status ?? "unknown"}
+            </Badge>
+            {domain?.last_checked_at && (
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" /> {new Date(domain.last_checked_at).toLocaleString()}
+              </span>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={recheckNow} disabled={rechecking}>
+            {rechecking ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Recheck now
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          DNS is rechecked automatically every 15 minutes. Admins receive an in-app notification the moment{" "}
+          <span className="font-mono">notify.gis-cybernet.com</span> becomes <strong>Active</strong>, and email sending
+          enables automatically.
+        </p>
         <div className="space-y-2">
           <Label htmlFor="test-recipient">Recipient email</Label>
           <Input
