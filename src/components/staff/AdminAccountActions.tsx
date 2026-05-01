@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Unlock, KeyRound, MoreVertical, Copy, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { UnlockAccountDialog } from "@/components/staff/UnlockAccountDialog";
 
 interface AdminAccountActionsProps {
   profileId: string;
@@ -27,25 +28,21 @@ export function AdminAccountActions({ profileId, staffId, fullName, accountLocke
   const [resetting, setResetting] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const [result, setResult] = useState<ResetResult | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const handleUnlock = async () => {
+  // For accounts that aren't actually locked, this just clears server-side
+  // failed-attempt counters — no audit/reason needed.
+  const handleResetFailedAttempts = async () => {
     setUnlocking(true);
     try {
-      // Clear server-side failed attempts
       const { error: rpcErr } = await supabase.rpc("admin_reset_failed_attempts", { _staff_id: staffId });
       if (rpcErr) throw rpcErr;
-      // Clear manual lock flag
-      const { error: updErr } = await supabase
-        .from("profiles")
-        .update({ account_locked: false })
-        .eq("id", profileId);
-      if (updErr) throw updErr;
-      toast.success(`Account unlocked for ${fullName}`);
+      toast.success(`Failed attempts cleared for ${fullName}`);
       queryClient.invalidateQueries({ queryKey: ["staff"] });
     } catch (e: any) {
-      toast.error(e.message ?? "Failed to unlock account");
+      toast.error(e.message ?? "Failed to clear attempts");
     } finally {
       setUnlocking(false);
     }
@@ -109,12 +106,12 @@ export function AdminAccountActions({ profileId, staffId, fullName, accountLocke
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
           {accountLocked ? (
-            <DropdownMenuItem onClick={handleUnlock} disabled={unlocking} className="gap-2">
+            <DropdownMenuItem onClick={() => setUnlockOpen(true)} disabled={unlocking} className="gap-2">
               <Unlock className="h-4 w-4 text-emerald-600" />
-              Unlock account
+              Unlock account…
             </DropdownMenuItem>
           ) : (
-            <DropdownMenuItem onClick={handleUnlock} disabled={unlocking} className="gap-2">
+            <DropdownMenuItem onClick={handleResetFailedAttempts} disabled={unlocking} className="gap-2">
               <Unlock className="h-4 w-4 text-emerald-600" />
               Reset failed attempts
             </DropdownMenuItem>
