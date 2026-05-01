@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { AppRole } from "@/lib/types";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
 interface AuthContextValue {
   user: User | null;
@@ -94,6 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [fetchRole]);
+
+  // Auto sign-out after 5 minutes of inactivity (only when authenticated).
+  useIdleTimeout({ enabled: !!user });
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
