@@ -59,7 +59,7 @@ export default function StaffAccountApprovals() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, staff_id, first_name, last_name, rank_id, department_id, shift_group, unit, login_enabled, status, created_at, ranks(name), departments(name)")
+        .select("id, staff_id, first_name, last_name, rank_id, department_id, shift_group, unit, login_enabled, status, account_locked, created_at, ranks(name), departments(name)")
         .order("created_at", { ascending: false })
         .limit(1000);
       if (error) throw error;
@@ -72,9 +72,9 @@ export default function StaffAccountApprovals() {
     const list = profiles.data ?? [];
     const q = search.trim().toLowerCase();
     const byTab = list.filter((p) => {
-      if (tab === "pending") return p.login_enabled === false && (p.status ?? "active") !== "disabled";
-      if (tab === "active") return p.login_enabled === true && (p.status ?? "active") !== "disabled";
-      return p.status === "disabled";
+      if (tab === "pending") return p.login_enabled === false && !p.account_locked;
+      if (tab === "active") return p.login_enabled === true && !p.account_locked;
+      return p.account_locked === true;
     });
     if (!q) return byTab;
     return byTab.filter((p) => {
@@ -88,9 +88,9 @@ export default function StaffAccountApprovals() {
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
 
   const counts = {
-    pending: (profiles.data ?? []).filter((p) => p.login_enabled === false && (p.status ?? "active") !== "disabled").length,
-    active: (profiles.data ?? []).filter((p) => p.login_enabled === true && (p.status ?? "active") !== "disabled").length,
-    disabled: (profiles.data ?? []).filter((p) => p.status === "disabled").length,
+    pending: (profiles.data ?? []).filter((p) => p.login_enabled === false && !p.account_locked).length,
+    active: (profiles.data ?? []).filter((p) => p.login_enabled === true && !p.account_locked).length,
+    disabled: (profiles.data ?? []).filter((p) => p.account_locked === true).length,
   };
 
   return (
