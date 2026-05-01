@@ -37,7 +37,7 @@ export default function Login() {
       if (locked === true) {
         toast({
           title: "Account Locked",
-          description: "Too many failed attempts. Please wait 60 seconds or contact an administrator.",
+          description: "This account is locked. Please contact an administrator to unlock it.",
           variant: "destructive",
         });
         setIsLoading(false);
