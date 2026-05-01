@@ -10,6 +10,7 @@ import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { HeaderRoleSwitcher } from "@/components/HeaderRoleSwitcher";
 import { HeaderCommandSwitcher } from "@/components/HeaderCommandSwitcher";
+import { HeaderOverflowMenu } from "@/components/HeaderOverflowMenu";
 import { useAppSettings } from "@/hooks/useAppSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { Clock, CalendarDays } from "lucide-react";
@@ -41,12 +42,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {clock.toLocaleTimeString()}
               </span>
               <ThemeToggle />
-              <HeaderRoleSwitcher />
-              <HeaderCommandSwitcher />
-              <OnlineNowBadge />
-              {isAdmin && <SystemAuditTray />}
+              {/* Primary tiles always visible */}
               <NotificationBell />
               <HeaderProfileDropdown />
+              {/* Overflow tile — collapses 3+ secondary icons into a dropdown grid
+                  whenever the bar would otherwise show more than five tiles. */}
+              <HeaderOverflowMenu label="More tools">
+                <HeaderRoleSwitcher />
+                <HeaderCommandSwitcher />
+                <OnlineNowBadge />
+                {isAdmin && <SystemAuditTray />}
+              </HeaderOverflowMenu>
             </div>
             {/* Compact date & clock row for mobile */}
             <div className="sm:hidden flex items-center justify-center gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
