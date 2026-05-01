@@ -47,7 +47,6 @@ const SHIFTS: Shift[] = ["A", "B", "C", "D"];
 async function extractPdfText(file: File): Promise<string[]> {
   // Lazy import; configure worker via CDN to avoid Vite worker setup.
   const pdfjs: any = await import("pdfjs-dist");
-  // @ts-expect-error - workerSrc is on GlobalWorkerOptions
   pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
