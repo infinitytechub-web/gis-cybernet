@@ -187,6 +187,15 @@ export function AdminAccountActions({ profileId, staffId, fullName, accountLocke
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UnlockAccountDialog
+        open={unlockOpen}
+        onOpenChange={setUnlockOpen}
+        profileId={profileId}
+        staffId={staffId}
+        fullName={fullName}
+        onUnlocked={() => queryClient.invalidateQueries({ queryKey: ["staff"] })}
+      />
     </>
   );
 }
