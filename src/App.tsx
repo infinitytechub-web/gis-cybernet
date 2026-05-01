@@ -62,6 +62,8 @@ const Interlink = lazy(() => import("./pages/Interlink"));
 const CommandsAdmin = lazy(() => import("./pages/CommandsAdmin"));
 const CommandWorkspace = lazy(() => import("./pages/CommandWorkspace"));
 const DutyRosterImport = lazy(() => import("./pages/DutyRosterImport"));
+const GuardSchedule = lazy(() => import("./pages/GuardSchedule"));
+const PendingStaffApprovals = lazy(() => import("./pages/PendingStaffApprovals"));
 
 const queryClient = new QueryClient();
 
@@ -103,6 +105,8 @@ function App() {
           <Route path="/shifts" element={<ProtectedRoute><Layout><Shifts /></Layout></ProtectedRoute>} />
           <Route path="/roster" element={<ProtectedRoute><Layout><DutyRoster /></Layout></ProtectedRoute>} />
           <Route path="/roster/import" element={<ProtectedRoute><Layout><DutyRosterImport /></Layout></ProtectedRoute>} />
+          <Route path="/guard-schedule" element={<ProtectedRoute><Layout><GuardSchedule /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals/pending" element={<ProtectedRoute><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
