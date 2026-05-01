@@ -70,7 +70,10 @@ export default function StaffAccountApprovals() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("pending");
+  const [rankFilter, setRankFilter] = useState<string>("all");
+  const [deptFilter, setDeptFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { ranks: rankList, depts: deptList } = useLookups();
   const [actionTarget, setActionTarget] = useState<{ row: ProfileRow; mode: ActionMode } | null>(null);
   const [bulkMode, setBulkMode] = useState<ActionMode | null>(null);
   const [auditFor, setAuditFor] = useState<ProfileRow | null>(null);
