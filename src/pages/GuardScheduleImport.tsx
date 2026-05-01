@@ -284,6 +284,62 @@ const DEFAULT_TEMPLATE: MappingTemplate = {
   requireName: true,
 };
 
+// ----- Quick-select presets for common PDF formats -----
+// Each preset is a full MappingTemplate that the user can load with one click.
+export type TemplatePreset = { id: string; label: string; description: string; template: MappingTemplate };
+
+export const TEMPLATE_PRESETS: TemplatePreset[] = [
+  {
+    id: "may-2026",
+    label: "May 2026 roster",
+    description: "Amasaman May 2026 published PDF — DAY/NIGHT, ranks DCO–L/CPL, S/N 1–999.",
+    template: {
+      ...DEFAULT_TEMPLATE,
+      name: "May 2026 (Amasaman)",
+      allowedRanks: ["DCO", "ACI", "CI", "AI", "AII", "AIII", "INSP", "CINSP", "ASP", "SGT", "CPL", "L/CPL"],
+      allowedGroups: ["GROUP A", "GROUP B", "GROUP C", "GROUP D"],
+      groupAliases: { "GRP A": "GROUP A", "GRP B": "GROUP B", "GRP C": "GROUP C", "GRP D": "GROUP D" },
+      serialFormat: "^\\d{1,3}$",
+      serialMin: 1,
+      serialMax: 999,
+    },
+  },
+  {
+    id: "asc-standard",
+    label: "Standard ASC roster",
+    description: "Generic ASC layout — wider rank set, S/N 1–9999, no group whitelist.",
+    template: {
+      ...DEFAULT_TEMPLATE,
+      name: "Standard ASC",
+      allowedRanks: [
+        "DCO", "ACI", "CI", "AI", "AII", "AIII", "INSP", "CINSP", "ASP",
+        "DSP", "SUPT", "CHIEF SUPT", "ACP", "DCP", "CP", "DCG", "CG",
+        "SGT", "CPL", "L/CPL", "PC",
+      ],
+      allowedGroups: [],
+      groupAliases: {},
+      serialFormat: "^\\d{1,4}$",
+      serialMin: 1,
+      serialMax: 9999,
+    },
+  },
+  {
+    id: "night-guard",
+    label: "Night Guard only",
+    description: "Strict night-only template — only NIGHT periods, junior ranks.",
+    template: {
+      ...DEFAULT_TEMPLATE,
+      name: "Night Guard",
+      allowedRanks: ["AI", "AII", "AIII", "L/CPL", "CPL", "SGT"],
+      allowedGroups: ["GROUP C", "GROUP D"],
+      groupAliases: { "GRP C": "GROUP C", "GRP D": "GROUP D" },
+      serialFormat: "^\\d{1,3}$",
+      serialMin: 1,
+      serialMax: 200,
+    },
+  },
+];
+
 function canonicalize(value: string, aliases?: Record<string, string>) {
   if (!value) return value;
   const up = value.toUpperCase().trim();
