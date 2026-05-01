@@ -113,6 +113,7 @@ export type Database = {
           created_at: string
           enforce_password_change: boolean
           id: string
+          mfa_required_roles: string[]
           min_password_length: number
           org_name: string
           system_label: string
@@ -125,6 +126,7 @@ export type Database = {
           created_at?: string
           enforce_password_change?: boolean
           id?: string
+          mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
           system_label?: string
@@ -137,6 +139,7 @@ export type Database = {
           created_at?: string
           enforce_password_change?: boolean
           id?: string
+          mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
           system_label?: string
@@ -422,6 +425,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      audit_retention_settings: {
+        Row: {
+          account_unlock_days: number
+          firewall_event_days: number
+          id: string
+          security_audit_days: number
+          updated_at: string
+        }
+        Insert: {
+          account_unlock_days?: number
+          firewall_event_days?: number
+          id?: string
+          security_audit_days?: number
+          updated_at?: string
+        }
+        Update: {
+          account_unlock_days?: number
+          firewall_event_days?: number
+          id?: string
+          security_audit_days?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       certifications: {
         Row: {
@@ -1605,6 +1632,36 @@ export type Database = {
         }
         Relationships: []
       }
+      firewall_alert_settings: {
+        Row: {
+          alert_on_block: boolean
+          alert_on_quarantine: boolean
+          email_alerts: boolean
+          id: string
+          repeat_offender_threshold: number
+          repeat_offender_window_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          alert_on_block?: boolean
+          alert_on_quarantine?: boolean
+          email_alerts?: boolean
+          id?: string
+          repeat_offender_threshold?: number
+          repeat_offender_window_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_on_block?: boolean
+          alert_on_quarantine?: boolean
+          email_alerts?: boolean
+          id?: string
+          repeat_offender_threshold?: number
+          repeat_offender_window_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       firewall_events: {
         Row: {
           action: Database["public"]["Enums"]["firewall_action"]
@@ -1712,6 +1769,56 @@ export type Database = {
           subject?: string
         }
         Relationships: []
+      }
+      firewall_quarantine_review_requests: {
+        Row: {
+          created_at: string
+          evidence_note: string
+          id: string
+          quarantine_id: string
+          requested_by: string
+          requested_label: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_label: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          evidence_note: string
+          id?: string
+          quarantine_id: string
+          requested_by: string
+          requested_label?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_label?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          evidence_note?: string
+          id?: string
+          quarantine_id?: string
+          requested_by?: string
+          requested_label?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_label?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "firewall_quarantine_review_requests_quarantine_id_fkey"
+            columns: ["quarantine_id"]
+            isOneToOne: false
+            referencedRelation: "firewall_quarantine"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       firewall_rules: {
         Row: {
@@ -1951,6 +2058,72 @@ export type Database = {
           id?: string
           name?: string
           recurring?: boolean
+        }
+        Relationships: []
+      }
+      hrm_export_audit: {
+        Row: {
+          created_at: string
+          details: Json
+          export_kind: string
+          exported_by: string
+          exported_label: string | null
+          format: string
+          id: string
+          row_count: number
+          subject: string | null
+          watermarked: boolean
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          export_kind: string
+          exported_by: string
+          exported_label?: string | null
+          format: string
+          id?: string
+          row_count?: number
+          subject?: string | null
+          watermarked?: boolean
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          export_kind?: string
+          exported_by?: string
+          exported_label?: string | null
+          format?: string
+          id?: string
+          row_count?: number
+          subject?: string | null
+          watermarked?: boolean
+        }
+        Relationships: []
+      }
+      hrm_export_settings: {
+        Row: {
+          block_non_command: boolean
+          classification_label: string
+          id: string
+          updated_at: string
+          watermark_csv: boolean
+          watermark_pdf: boolean
+        }
+        Insert: {
+          block_non_command?: boolean
+          classification_label?: string
+          id?: string
+          updated_at?: string
+          watermark_csv?: boolean
+          watermark_pdf?: boolean
+        }
+        Update: {
+          block_non_command?: boolean
+          classification_label?: string
+          id?: string
+          updated_at?: string
+          watermark_csv?: boolean
+          watermark_pdf?: boolean
         }
         Relationships: []
       }
@@ -3177,6 +3350,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mfa_backup_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mfa_recovery_requests: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_label: string | null
+          staff_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_label?: string | null
+          staff_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_label?: string | null
+          staff_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       misd_unit_assignments: {
         Row: {
@@ -4845,6 +5081,132 @@ export type Database = {
           },
         ]
       }
+      secure_file_uploads: {
+        Row: {
+          bucket: string
+          created_at: string
+          filename: string
+          id: string
+          mime_type: string | null
+          scan_action: string
+          scan_reason: string | null
+          sha256: string | null
+          size_bytes: number
+          sniffed_mime: string | null
+          storage_path: string
+          uploaded_by: string
+          uploaded_label: string | null
+        }
+        Insert: {
+          bucket?: string
+          created_at?: string
+          filename: string
+          id?: string
+          mime_type?: string | null
+          scan_action: string
+          scan_reason?: string | null
+          sha256?: string | null
+          size_bytes: number
+          sniffed_mime?: string | null
+          storage_path: string
+          uploaded_by: string
+          uploaded_label?: string | null
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          filename?: string
+          id?: string
+          mime_type?: string | null
+          scan_action?: string
+          scan_reason?: string | null
+          sha256?: string | null
+          size_bytes?: number
+          sniffed_mime?: string | null
+          storage_path?: string
+          uploaded_by?: string
+          uploaded_label?: string | null
+        }
+        Relationships: []
+      }
+      security_audit_anchors: {
+        Row: {
+          anchor_date: string
+          created_at: string
+          head_hash: string
+          head_seq: number
+          id: string
+          row_count: number
+        }
+        Insert: {
+          anchor_date: string
+          created_at?: string
+          head_hash: string
+          head_seq: number
+          id?: string
+          row_count: number
+        }
+        Update: {
+          anchor_date?: string
+          created_at?: string
+          head_hash?: string
+          head_seq?: number
+          id?: string
+          row_count?: number
+        }
+        Relationships: []
+      }
+      security_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          category: string
+          created_at: string
+          details: Json
+          id: string
+          ip_address: string | null
+          prev_hash: string | null
+          row_hash: string
+          seq: number
+          severity: string
+          subject: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          category: string
+          created_at?: string
+          details?: Json
+          id?: string
+          ip_address?: string | null
+          prev_hash?: string | null
+          row_hash: string
+          seq?: number
+          severity?: string
+          subject?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          category?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          ip_address?: string | null
+          prev_hash?: string | null
+          row_hash?: string
+          seq?: number
+          severity?: string
+          subject?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       security_incidents: {
         Row: {
           assigned_to: string | null
@@ -6041,6 +6403,7 @@ export type Database = {
         Returns: string
       }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      can_export_hrm: { Args: { _kind: string }; Returns: boolean }
       can_export_interlink_logs: {
         Args: { _user_id: string }
         Returns: boolean
@@ -6074,6 +6437,23 @@ export type Database = {
         Returns: number
       }
       expire_ip_blocks: { Args: never; Returns: number }
+      export_security_audit: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          action: string
+          actor_label: string
+          category: string
+          created_at: string
+          details: Json
+          id: string
+          ip_address: string
+          prev_hash: string
+          row_hash: string
+          seq: number
+          severity: string
+          subject: string
+        }[]
+      }
       firewall_block_quarantine: {
         Args: { _id: string; _reason: string }
         Returns: undefined
@@ -6177,9 +6557,32 @@ export type Database = {
         Args: { _purpose?: string; _ttl_minutes?: number }
         Returns: string
       }
+      log_hrm_export: {
+        Args: {
+          _details?: Json
+          _format: string
+          _kind: string
+          _row_count: number
+          _subject: string
+          _watermarked: boolean
+        }
+        Returns: string
+      }
       log_office_history_access: {
         Args: { _profile_id: string }
         Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          _action: string
+          _category: string
+          _details?: Json
+          _ip?: string
+          _severity?: string
+          _subject?: string
+          _ua?: string
+        }
+        Returns: string
       }
       log_sensitive_access: {
         Args: {
@@ -6190,6 +6593,13 @@ export type Database = {
           _table_name: string
         }
         Returns: undefined
+      }
+      mfa_consume_backup_code: { Args: { _code: string }; Returns: boolean }
+      mfa_generate_backup_codes: {
+        Args: never
+        Returns: {
+          code: string
+        }[]
       }
       move_to_dlq: {
         Args: {
@@ -6315,6 +6725,7 @@ export type Database = {
           role: string
         }[]
       }
+      security_audit_create_anchor: { Args: never; Returns: string }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
@@ -6355,6 +6766,15 @@ export type Database = {
         }[]
       }
       verify_otp: { Args: { _code: string }; Returns: boolean }
+      verify_security_audit_chain: {
+        Args: never
+        Returns: {
+          actual_prev: string
+          broken_id: string
+          broken_seq: number
+          expected_prev: string
+        }[]
+      }
       verify_threshold_audit_chain: {
         Args: never
         Returns: {
