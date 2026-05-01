@@ -66,7 +66,7 @@ function useLookups() {
 }
 
 export default function StaffAccountApprovals() {
-  const { user, isAdminOrSupervisor, loading } = useAuthContext();
+  const { user, isAdmin, isAdminOrSupervisor, loading } = useAuthContext();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("pending");
