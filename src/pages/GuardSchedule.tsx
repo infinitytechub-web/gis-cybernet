@@ -469,6 +469,40 @@ function CreateScheduleDialog({
           <DateField label="Start date" value={start} onChange={setStart} />
           <DateField label="End date" value={end} onChange={setEnd} />
         </div>
+
+        {/* Per-shift time allocations */}
+        <div className="rounded-lg border p-3 space-y-2 bg-muted/40">
+          <div className="text-xs font-semibold flex items-center gap-1">
+            <CalendarIcon className="h-3.5 w-3.5 text-primary" /> Shift time allocations
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Defaults match the canonical guard-duty periods. Adjust if this schedule needs custom hours
+            (e.g. extended cover, exercise day).
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {(["A", "B", "C", "D"] as const).map((s) => (
+              <div key={s} className="rounded-md border p-2 bg-background">
+                <div className={cn("text-[11px] font-semibold mb-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded border", SHIFT_PERIODS[s].tone)}>
+                  Shift {s} · {SHIFT_PERIODS[s].label}
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <Input
+                    type="time"
+                    value={times[s].start}
+                    onChange={(e) => setTimes((prev) => ({ ...prev, [s]: { ...prev[s], start: e.target.value } }))}
+                    className="h-7 text-xs"
+                  />
+                  <Input
+                    type="time"
+                    value={times[s].end}
+                    onChange={(e) => setTimes((prev) => ({ ...prev, [s]: { ...prev[s], end: e.target.value } }))}
+                    className="h-7 text-xs"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1" checked={autoFill && !!latestImportId} disabled={!latestImportId} onChange={(e) => setAutoFill(e.target.checked)} />
           <span>
