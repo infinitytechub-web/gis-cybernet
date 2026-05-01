@@ -381,7 +381,6 @@ function CreateScheduleDialog({
         if (e2) throw e2;
 
         // Resolve profile_ids by name (best-effort)
-        const names = Array.from(new Set((entries ?? []).map((e) => e.name)));
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, first_name, last_name");
@@ -424,7 +423,6 @@ function CreateScheduleDialog({
       } else {
         toast.success("Empty schedule created");
       }
-      void names;
       onCreated(sched.id);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
