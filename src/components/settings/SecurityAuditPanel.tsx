@@ -156,6 +156,9 @@ export function SecurityAuditPanel() {
             <Button variant="outline" onClick={handleAnchor} className="gap-2">
               <Anchor className="h-4 w-4" /> Create anchor
             </Button>
+            <Button onClick={handleExportAll} className="gap-2 ml-auto">
+              <FileDown className="h-4 w-4" /> Export all (CSV)
+            </Button>
           </div>
 
           {retention && (
