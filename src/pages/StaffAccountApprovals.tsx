@@ -100,15 +100,17 @@ export default function StaffAccountApprovals() {
       if (tab === "active") return p.login_enabled === true && !p.account_locked;
       return p.account_locked === true;
     });
-    if (!q) return byTab;
     return byTab.filter((p) => {
+      if (rankFilter === "__none__" ? p.rank_id : rankFilter !== "all" && p.rank_id !== rankFilter) return false;
+      if (deptFilter === "__none__" ? p.department_id : deptFilter !== "all" && p.department_id !== deptFilter) return false;
+      if (!q) return true;
       const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.toLowerCase();
       return name.includes(q) || (p.staff_id ?? "").toLowerCase().includes(q) || (p.unit ?? "").toLowerCase().includes(q);
     });
-  }, [profiles.data, search, tab]);
+  }, [profiles.data, search, tab, rankFilter, deptFilter]);
 
-  // Reset selection when tab/search changes
-  useEffect(() => { setSelected(new Set()); }, [tab, search]);
+  // Reset selection when filters change
+  useEffect(() => { setSelected(new Set()); }, [tab, search, rankFilter, deptFilter]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
