@@ -70,7 +70,10 @@ export default function StaffAccountApprovals() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("pending");
+  const [rankFilter, setRankFilter] = useState<string>("all");
+  const [deptFilter, setDeptFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { ranks: rankList, depts: deptList } = useLookups();
   const [actionTarget, setActionTarget] = useState<{ row: ProfileRow; mode: ActionMode } | null>(null);
   const [bulkMode, setBulkMode] = useState<ActionMode | null>(null);
   const [auditFor, setAuditFor] = useState<ProfileRow | null>(null);
@@ -97,15 +100,19 @@ export default function StaffAccountApprovals() {
       if (tab === "active") return p.login_enabled === true && !p.account_locked;
       return p.account_locked === true;
     });
-    if (!q) return byTab;
     return byTab.filter((p) => {
+      if (rankFilter === "__none__") { if (p.rank_id) return false; }
+      else if (rankFilter !== "all" && p.rank_id !== rankFilter) return false;
+      if (deptFilter === "__none__") { if (p.department_id) return false; }
+      else if (deptFilter !== "all" && p.department_id !== deptFilter) return false;
+      if (!q) return true;
       const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.toLowerCase();
       return name.includes(q) || (p.staff_id ?? "").toLowerCase().includes(q) || (p.unit ?? "").toLowerCase().includes(q);
     });
-  }, [profiles.data, search, tab]);
+  }, [profiles.data, search, tab, rankFilter, deptFilter]);
 
-  // Reset selection when tab/search changes
-  useEffect(() => { setSelected(new Set()); }, [tab, search]);
+  // Reset selection when filters change
+  useEffect(() => { setSelected(new Set()); }, [tab, search, rankFilter, deptFilter]);
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
@@ -161,7 +168,7 @@ export default function StaffAccountApprovals() {
           <CardDescription>Filter by status and search by name, staff ID, or unit. Select rows to perform bulk actions.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:flex-wrap">
             <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="w-full sm:w-auto">
               <TabsList>
                 <TabsTrigger value="pending">Pending ({counts.pending})</TabsTrigger>
@@ -169,7 +176,7 @@ export default function StaffAccountApprovals() {
                 <TabsTrigger value="disabled">Disabled ({counts.disabled})</TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 min-w-[180px] max-w-md">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search name, staff ID, unit…"
@@ -178,7 +185,34 @@ export default function StaffAccountApprovals() {
                 className="pl-8"
               />
             </div>
+            <Select value={rankFilter} onValueChange={setRankFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Rank" /></SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="all">All ranks</SelectItem>
+                <SelectItem value="__none__">— No rank set —</SelectItem>
+                {rankList.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Department" /></SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="all">All departments</SelectItem>
+                <SelectItem value="__none__">— No department set —</SelectItem>
+                {deptList.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {(rankFilter !== "all" || deptFilter !== "all") && (
+              <Button variant="ghost" size="sm" onClick={() => { setRankFilter("all"); setDeptFilter("all"); }}>
+                Clear filters
+              </Button>
+            )}
           </div>
+
+          {(rankFilter !== "all" || deptFilter !== "all" || search) && (
+            <div className="text-xs text-muted-foreground">
+              Showing {filtered.length} of {counts[tab]} {tab} account{counts[tab] === 1 ? "" : "s"}
+            </div>
+          )}
 
           {selected.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
