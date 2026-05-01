@@ -773,7 +773,7 @@ export default function GuardScheduleImport() {
       {parsed && (
         <Card>
           <CardHeader>
-            <CardTitle>3. Duplicate handling</CardTitle>
+            <CardTitle>4. Duplicate handling</CardTitle>
             <CardDescription>
               Choose whether duplicate names should be collapsed for export and database commit. The full raw list is always
               preserved below for monitoring.
