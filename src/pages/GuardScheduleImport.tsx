@@ -683,7 +683,57 @@ export default function GuardScheduleImport() {
 
       <Card>
         <CardHeader>
-          <CardTitle>2. Period mapping</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileJson className="h-5 w-5 text-primary" /> 2. Roster mapping template
+          </CardTitle>
+          <CardDescription>
+            Upload a JSON template that defines rank aliases, allowed groups, and serial-number format. This keeps imports
+            consistent across PDFs. The template is applied immediately and used for validation below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => templateFileRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-1" /> Upload template (.json)
+            </Button>
+            <Button variant="outline" size="sm" onClick={downloadTemplateSample}>
+              <FileDown className="h-4 w-4 mr-1" /> Download sample
+            </Button>
+            <Button variant="ghost" size="sm" onClick={resetTemplate}>
+              <XCircle className="h-4 w-4 mr-1" /> Reset to default
+            </Button>
+            <input
+              ref={templateFileRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleTemplateFile(f); }}
+            />
+          </div>
+          <div className="rounded-lg border bg-muted/40 p-3 text-xs space-y-1">
+            <div><strong>Active template:</strong> {template.name ?? "(unnamed)"} <span className="text-muted-foreground">— source: {templateFile}</span></div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">Rank aliases: {Object.keys(template.rankAliases ?? {}).length}</Badge>
+              <Badge variant="outline">Allowed ranks: {(template.allowedRanks ?? []).length || "any"}</Badge>
+              <Badge variant="outline">Allowed groups: {(template.allowedGroups ?? []).length || "any"}</Badge>
+              <Badge variant="outline">Group aliases: {Object.keys(template.groupAliases ?? {}).length}</Badge>
+              <Badge variant="outline">Serial format: <code className="ml-1">{template.serialFormat ?? "—"}</code></Badge>
+              <Badge variant="outline">Serial range: {template.serialMin ?? 0}–{template.serialMax ?? "∞"}</Badge>
+            </div>
+            <div className="text-muted-foreground">
+              Required fields: {[
+                template.requireRank !== false && "rank",
+                template.requireSerial !== false && "serial",
+                template.requireName !== false && "name",
+              ].filter(Boolean).join(", ") || "none"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>3. Period mapping</CardTitle>
           <CardDescription>
             Pick which shift letters each period generates. By default <strong>DAY → A & B</strong> and <strong>NIGHT → C</strong>.
             Selecting more than one shift duplicates personnel into each chosen shift.
