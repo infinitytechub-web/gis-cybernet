@@ -100,11 +100,11 @@ function splitFullName(value: string) {
   };
 }
 
-function inferStaffId(row: Partial<ParsedRow>) {
+function inferStaffId(row: Partial<ParsedRow>, rowIndex: number) {
   if (row.staff_id) return row.staff_id;
   const serial = String(row.serial_no ?? "").replace(/\D/g, "");
-  if (!serial) return "";
-  return `IMP-${serial.padStart(4, "0")}`;
+  if (serial) return `IMP-${serial.padStart(4, "0")}`;
+  return `IMP-${String(rowIndex + 1).padStart(4, "0")}`;
 }
 
 export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) {
@@ -155,9 +155,10 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
         headers.forEach((h) => {
           const key = normalizeHeader(h);
           if (COLUMN_MAP[key]) mapping[h] = COLUMN_MAP[key];
+          else if (h.trim() === "#") mapping[h] = "serial_no";
         });
 
-        const parsed: ParsedRow[] = raw.map((row) => {
+        const parsed: ParsedRow[] = raw.map((row, rowIndex) => {
           const p: Partial<ParsedRow> = {};
           Object.entries(mapping).forEach(([orig, field]) => {
             (p as any)[field] = String(row[orig] ?? "").trim();
@@ -169,7 +170,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             p.last_name = p.last_name || split.last_name;
           }
 
-          p.staff_id = inferStaffId(p);
+          p.staff_id = inferStaffId(p, rowIndex);
 
           const errors: string[] = [];
           if (!p.staff_id) errors.push("Missing Staff ID");
