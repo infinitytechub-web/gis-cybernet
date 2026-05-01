@@ -147,6 +147,7 @@ export function SystemBackup() {
       </Card>
 
       <BackupRetentionSettings />
+      <BackupSnapshotsPanel />
       <BackupAuditPanel />
     </div>
   );
