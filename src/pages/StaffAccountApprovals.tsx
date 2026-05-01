@@ -77,6 +77,7 @@ export default function StaffAccountApprovals() {
   const [actionTarget, setActionTarget] = useState<{ row: ProfileRow; mode: ActionMode } | null>(null);
   const [bulkMode, setBulkMode] = useState<ActionMode | null>(null);
   const [auditFor, setAuditFor] = useState<ProfileRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProfileRow | null>(null);
 
   const profiles = useQuery({
     queryKey: ["staff-account-approvals"],
