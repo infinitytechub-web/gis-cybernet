@@ -190,6 +190,53 @@ function applyMapping(rows: RawRow[], mapping: Mapping): Assignment[] {
   return out;
 }
 
+// ----- Dedupe -----
+// "off"        → keep every row (monitoring view shows raw 1:1)
+// "exact"      → collapse only true exact duplicates (same date+shift+sn+name)
+// "by-name"    → collapse to one row per (date, shift, name) ignoring S/N variations
+export type DedupeMode = "off" | "exact" | "by-name";
+
+function normName(s: string) {
+  return s.toUpperCase().replace(/\s+/g, " ").trim();
+}
+
+export type DedupeResult = {
+  kept: Assignment[];
+  duplicates: { key: string; sample: Assignment; count: number; serials: number[] }[];
+  removed: number;
+};
+
+function dedupeAssignments(rows: Assignment[], mode: DedupeMode): DedupeResult {
+  if (mode === "off") return { kept: rows, duplicates: [], removed: 0 };
+  const groups = new Map<string, Assignment[]>();
+  for (const r of rows) {
+    const key =
+      mode === "exact"
+        ? `${r.duty_date}|${r.shift}|${r.serial_no ?? ""}|${normName(r.name_text)}`
+        : `${r.duty_date}|${r.shift}|${normName(r.name_text)}`;
+    const arr = groups.get(key) ?? [];
+    arr.push(r);
+    groups.set(key, arr);
+  }
+  const kept: Assignment[] = [];
+  const duplicates: DedupeResult["duplicates"] = [];
+  let removed = 0;
+  for (const [key, arr] of groups) {
+    kept.push(arr[0]);
+    if (arr.length > 1) {
+      removed += arr.length - 1;
+      duplicates.push({
+        key,
+        sample: arr[0],
+        count: arr.length,
+        serials: Array.from(new Set(arr.map((a) => a.serial_no ?? 0))).sort((a, b) => a - b),
+      });
+    }
+  }
+  duplicates.sort((a, b) => b.count - a.count);
+  return { kept, duplicates, removed };
+}
+
 // ----- Page -----
 export default function GuardScheduleImport() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
