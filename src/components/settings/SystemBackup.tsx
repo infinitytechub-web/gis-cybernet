@@ -365,6 +365,8 @@ function BackupAuditPanel() {
                           ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
                           : row.status === "partial"
                           ? "border-amber-500/40 text-amber-700 dark:text-amber-300"
+                          : row.status === "cleanup"
+                          ? "border-sky-500/40 text-sky-700 dark:text-sky-300"
                           : "border-destructive/40 text-destructive"
                       }
                     >
