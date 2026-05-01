@@ -1240,6 +1240,89 @@ export type Database = {
           },
         ]
       }
+      duty_roster_entries: {
+        Row: {
+          created_at: string
+          gender: string | null
+          id: string
+          import_id: string
+          name: string
+          rank: string
+          serial_no: number
+          shift: string
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          gender?: string | null
+          id?: string
+          import_id: string
+          name: string
+          rank: string
+          serial_no: number
+          shift: string
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          gender?: string | null
+          id?: string
+          import_id?: string
+          name?: string
+          rank?: string
+          serial_no?: number
+          shift?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "duty_roster_entries_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "duty_roster_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      duty_roster_imports: {
+        Row: {
+          committed_at: string | null
+          created_at: string
+          effective_date: string
+          id: string
+          notes: string | null
+          row_count: number
+          source_filename: string
+          status: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          committed_at?: string | null
+          created_at?: string
+          effective_date: string
+          id?: string
+          notes?: string | null
+          row_count?: number
+          source_filename: string
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          committed_at?: string | null
+          created_at?: string
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          row_count?: number
+          source_filename?: string
+          status?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       email_domain_status: {
         Row: {
           became_active_at: string | null
@@ -6543,6 +6626,7 @@ export type Database = {
       is_ipse_tier: { Args: { _user_id: string }; Returns: boolean }
       is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
       is_recyclable_table: { Args: { _table: string }; Returns: boolean }
+      is_roster_manager: { Args: { _uid: string }; Returns: boolean }
       is_sensitive_realtime_topic: {
         Args: { _topic: string }
         Returns: boolean
