@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { MailCheck, Send, Loader2, AlertTriangle } from "lucide-react";
+import { MailCheck, Send, Loader2, AlertTriangle, RefreshCw, ShieldCheck, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -16,11 +16,51 @@ type Status =
   | { kind: "sent"; messageId?: string; recipient: string; at: string }
   | { kind: "error"; message: string };
 
+interface DomainState {
+  status: string;
+  last_checked_at: string;
+  became_active_at: string | null;
+}
+
 export function EmailDeliveryTest() {
   const { user } = useAuth();
   const [recipient, setRecipient] = useState("");
   const [note, setNote] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [domain, setDomain] = useState<DomainState | null>(null);
+  const [rechecking, setRechecking] = useState(false);
+
+  const loadDomain = async () => {
+    const { data } = await supabase
+      .from("email_domain_status" as any)
+      .select("status, last_checked_at, became_active_at")
+      .eq("domain", "notify.gis-cybernet.com")
+      .maybeSingle();
+    if (data) setDomain(data as any);
+  };
+
+  useEffect(() => {
+    loadDomain();
+    const ch = supabase
+      .channel("email_domain_status")
+      .on("postgres_changes", { event: "*", schema: "public", table: "email_domain_status" }, loadDomain)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
+
+  const recheckNow = async () => {
+    setRechecking(true);
+    const { data, error } = await supabase.functions.invoke("email-domain-recheck", { body: {} });
+    setRechecking(false);
+    if (error) { toast.error(error.message); return; }
+    const cur = (data as any)?.current_status;
+    if ((data as any)?.transitioned_to_active) {
+      toast.success("Domain is now Active — email sending enabled.");
+    } else {
+      toast.info(`Domain status: ${cur ?? "unknown"}`);
+    }
+    loadDomain();
+  };
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim());
 
