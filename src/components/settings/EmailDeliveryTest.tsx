@@ -105,6 +105,37 @@ export function EmailDeliveryTest() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="rounded-lg border p-3 bg-muted/30 flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldCheck className={`h-4 w-4 ${domain?.status === "active" ? "text-emerald-600" : "text-amber-600"}`} />
+            <span className="font-medium">Sender domain:</span>
+            <span className="font-mono">notify.gis-cybernet.com</span>
+            <Badge
+              variant="outline"
+              className={
+                domain?.status === "active"
+                  ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
+                  : "bg-amber-500/15 text-amber-700 border-amber-500/30"
+              }
+            >
+              {domain?.status ?? "unknown"}
+            </Badge>
+            {domain?.last_checked_at && (
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                <Clock className="h-3 w-3" /> {new Date(domain.last_checked_at).toLocaleString()}
+              </span>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={recheckNow} disabled={rechecking}>
+            {rechecking ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Recheck now
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          DNS is rechecked automatically every 15 minutes. Admins receive an in-app notification the moment{" "}
+          <span className="font-mono">notify.gis-cybernet.com</span> becomes <strong>Active</strong>, and email sending
+          enables automatically.
+        </p>
         <div className="space-y-2">
           <Label htmlFor="test-recipient">Recipient email</Label>
           <Input
