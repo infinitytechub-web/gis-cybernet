@@ -571,6 +571,12 @@ export default function GuardScheduleImport() {
     toast.success("Reverted to default mapping template");
   };
 
+  const loadPreset = (preset: TemplatePreset) => {
+    setTemplate(preset.template);
+    setTemplateFile(`Preset: ${preset.label}`);
+    toast.success(`Loaded preset: ${preset.label}`);
+  };
+
   const downloadTemplateSample = () => {
     const sample: MappingTemplate = {
       ...DEFAULT_TEMPLATE,
