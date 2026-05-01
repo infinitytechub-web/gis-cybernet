@@ -145,6 +145,7 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="backup"><SystemBackup /></TabsContent>
         <TabsContent value="email-test"><EmailDeliveryTest /></TabsContent>
+        <TabsContent value="firewall"><FirewallSettingsPanel /></TabsContent>
       </Tabs>
     </div>
   );
