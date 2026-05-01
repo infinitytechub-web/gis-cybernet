@@ -755,6 +755,33 @@ export default function GuardScheduleImport() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Quick-select presets */}
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+            <div className="text-xs font-semibold text-primary flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5" /> Quick-select presets
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATE_PRESETS.map((p) => {
+                const active = template.name === p.template.name;
+                return (
+                  <Button
+                    key={p.id}
+                    type="button"
+                    variant={active ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => loadPreset(p)}
+                    title={p.description}
+                  >
+                    {p.label}
+                  </Button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              One-click load for common PDF formats. You can still upload a custom JSON template below.
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => templateFileRef.current?.click()}>
               <Upload className="h-4 w-4 mr-1" /> Upload template (.json)
