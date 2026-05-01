@@ -146,8 +146,162 @@ export function SystemBackup() {
         </CardContent>
       </Card>
 
+      <BackupRetentionSettings />
       <BackupAuditPanel />
     </div>
+  );
+}
+
+function BackupRetentionSettings() {
+  const queryClient = useQueryClient();
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["system-backup-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("system_backup_settings")
+        .select("*")
+        .eq("singleton", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const [retentionCount, setRetentionCount] = useState<number>(50);
+  const [retentionDays, setRetentionDays] = useState<string>("");
+  const [cleanupEnabled, setCleanupEnabled] = useState<boolean>(true);
+  const [saving, setSaving] = useState(false);
+  const [pruning, setPruning] = useState(false);
+
+  useEffect(() => {
+    if (settings) {
+      setRetentionCount(settings.retention_count ?? 50);
+      setRetentionDays(settings.retention_days ? String(settings.retention_days) : "");
+      setCleanupEnabled(settings.cleanup_enabled ?? true);
+    }
+  }, [settings]);
+
+  const save = async () => {
+    if (!settings) return;
+    if (retentionCount < 1 || retentionCount > 1000) {
+      toast.error("Retention count must be between 1 and 1000.");
+      return;
+    }
+    const days = retentionDays.trim() === "" ? null : Number(retentionDays);
+    if (days !== null && (Number.isNaN(days) || days < 1 || days > 3650)) {
+      toast.error("Retention days must be between 1 and 3650 (or empty).");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("system_backup_settings")
+      .update({
+        retention_count: retentionCount,
+        retention_days: days,
+        cleanup_enabled: cleanupEnabled,
+      })
+      .eq("singleton", true);
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Retention settings saved.");
+    queryClient.invalidateQueries({ queryKey: ["system-backup-settings"] });
+  };
+
+  const runCleanup = async () => {
+    setPruning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("system-backup-cleanup", {
+        body: {},
+      });
+      if (error) throw error;
+      const deleted = data?.result?.deleted ?? 0;
+      toast.success(deleted > 0 ? `Pruned ${deleted} old audit row(s).` : "Nothing to prune.");
+      queryClient.invalidateQueries({ queryKey: ["system-backup-audit"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Cleanup failed");
+    } finally {
+      setPruning(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings2 className="h-5 w-5 text-primary" /> Backup Retention
+        </CardTitle>
+        <CardDescription>
+          Control how many backup audit entries to keep. Cleanup runs automatically after every
+          export, and can be triggered manually below. Cleanup events are themselves recorded in
+          the audit log.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="ret-count">Keep last N exports</Label>
+                <Input
+                  id="ret-count"
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={retentionCount}
+                  onChange={(e) => setRetentionCount(Number(e.target.value))}
+                />
+                <p className="text-[11px] text-muted-foreground">1–1000. Default: 50.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ret-days">Also delete after (days)</Label>
+                <Input
+                  id="ret-days"
+                  type="number"
+                  min={1}
+                  max={3650}
+                  placeholder="Optional"
+                  value={retentionDays}
+                  onChange={(e) => setRetentionDays(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">Leave blank to disable age-based pruning.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ret-enabled">Cleanup enabled</Label>
+                <div className="flex items-center gap-2 h-10">
+                  <Switch id="ret-enabled" checked={cleanupEnabled} onCheckedChange={setCleanupEnabled} />
+                  <span className="text-xs text-muted-foreground">
+                    {cleanupEnabled ? "Active" : "Paused"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <Alert>
+              <AlertDescription className="text-xs">
+                Denied and rejected attempts are <strong>never pruned</strong> — they are kept
+                permanently as a security signal.
+              </AlertDescription>
+            </Alert>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={save} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Save Settings
+              </Button>
+              <Button variant="outline" onClick={runCleanup} disabled={pruning}>
+                {pruning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Run Cleanup Now
+              </Button>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
