@@ -1,58 +1,63 @@
+## Goal
 
+On the Guard Schedule Import page, add a "Preset Mismatch Diff" panel that shows, per row, exactly which value failed preset validation (rank / group / serial range / serial format) alongside the expected preset values — so the user can audit and fix issues before exporting or committing.
 
-## Fix: Profile UPDATE Policy Missing WITH CHECK Constraint
+## What the user will see
 
-### Problem
-The current `Users can update own profile` RLS policy on the `profiles` table has:
-- **USING**: `user_id = auth.uid()` (correct — only lets users update their own row)
-- **WITH CHECK**: `user_id = auth.uid()` (exists but doesn't prevent changing `user_id` to another value mid-update)
+A new collapsible card in Step 5 (Validation), shown only when the active preset has `allowedRanks`, `allowedGroups`, `serialFormat`, or `serialMin/Max` configured AND there is at least one preset-mismatch error.
 
-Actually, the current WITH CHECK `(user_id = auth.uid())` already ensures the **resulting** row must have `user_id = auth.uid()`. However, the scanner flags this because a user could theoretically set `user_id` to their own ID on a different profile row — but the USING clause prevents that.
-
-The real risk is more subtle: a user could set `user_id = NULL`, which would pass neither check. But to be thorough and satisfy the scanner, we should tighten the policy to explicitly prevent `user_id` modification.
-
-### Solution
-Drop and recreate the UPDATE policy with a WITH CHECK that explicitly ensures `user_id` cannot be changed:
-
-```sql
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-
-CREATE POLICY "Users can update own profile"
-ON public.profiles
-FOR UPDATE
-TO authenticated
-USING (user_id = auth.uid())
-WITH CHECK (user_id = auth.uid());
+```text
+Preset Mismatch Diff (12 rows)            [Filter: All | Rank | Group | Serial]
+-----------------------------------------------------------------------------
+Row  Name              Field   Got                Expected                  
+3    DOE J             rank    "SARGE" -> SGT?    one of: DCO, ACI, CI, ...
+7    KAY M             group   "GRP A"            one of: GROUP A..D
+11   SMITH P           serial  41234              range [10000, 39999]
+14   AYI K             serial  "ABC12"            format ^[0-9]{4,5}$
 ```
 
-This is actually what's already there. The better fix is to add a database trigger that prevents `user_id` from being modified on UPDATE:
+- Field column color-codes the diff (red strike-through on Got, green on Expected).
+- Header chips toggle filters by mismatch field.
+- Footer shows counts: `Ranks: 4 · Groups: 1 · Serial range: 5 · Serial format: 2`.
+- "Copy diff as CSV" button (Row, Name, Serial, Field, Got, Expected) for offline review.
+- Card is gated behind the existing `blockedByErrors` flow — purely informational, doesn't change gating logic.
 
-```sql
-CREATE OR REPLACE FUNCTION public.prevent_user_id_change()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  IF OLD.user_id IS DISTINCT FROM NEW.user_id THEN
-    RAISE EXCEPTION 'Changing user_id on profiles is not allowed';
-  END IF;
-  RETURN NEW;
-END;
-$$;
+## Implementation
 
-CREATE TRIGGER prevent_profile_user_id_change
-BEFORE UPDATE ON public.profiles
-FOR EACH ROW
-EXECUTE FUNCTION public.prevent_user_id_change();
-```
+### 1. Extend `RowIssue` with diff metadata
+In `src/pages/GuardScheduleImport.tsx`:
 
-### Steps
-1. **Create migration** — Add the `prevent_user_id_change()` trigger function and attach it to the `profiles` table
-2. **Mark finding resolved** — Dismiss the security scanner finding
+- Add optional `got?: string` and `expected?: string` fields to `RowIssue`.
+- Add `kind?: "preset_rank" | "preset_group" | "serial_range" | "serial_format"` so we can filter without parsing messages.
 
-### Technical Details
-- The trigger runs BEFORE UPDATE, blocking any attempt to change `user_id` regardless of who makes the request (even admins via service role would be blocked from accidental changes)
-- Combined with the existing RLS WITH CHECK, this provides defense-in-depth against profile hijacking
+### 2. Populate diff fields inside `validateRows`
+For the four existing preset-mismatch branches (lines 410, 426, 437, 451), set:
 
+- `kind`, `got` (raw value), `expected` (e.g. `"GROUP A | GROUP B | GROUP C | GROUP D"` or `"range [min, max]"` or the regex source).
+- For rank: also include nearest alias suggestion using a simple Levenshtein over `Object.keys(tpl.rankAliases ?? {})` ∪ `allowedRanks` to power the `-> SGT?` hint.
+
+### 3. New `PresetDiffPanel` component (inline in same file)
+- Props: `issues: RowIssue[]`, `template: MappingTemplate`.
+- Filters issues to those with a `kind` starting with `preset_` or `serial_`.
+- Local state for active filter chip (`all | rank | group | serial`).
+- Renders shadcn `Card` + `Table` (Row #, Name, Serial, Field, Got, Expected) with max-height ~400px and `overflow-y-auto`.
+- "Copy as CSV" uses `src/lib/download-utils.ts` patterns; trigger downloads `preset-mismatch-diff.csv`.
+
+### 4. Wire into Step 5 validation card
+- Render `<PresetDiffPanel>` directly under the existing issue summary, only when `validation && diffIssues.length > 0`.
+- No changes to `guardValidation` / export / commit gating — diff view is read-only.
+
+### 5. Minor copy update
+Adjust the existing toast/summary text to mention "See Preset Mismatch Diff for per-row details" when preset errors exist.
+
+## Files touched
+
+- `src/pages/GuardScheduleImport.tsx` — type extension, `validateRows` enrichment, new `PresetDiffPanel` component, render in Step 5.
+
+No DB, edge function, route, or sidebar changes. No other files affected.
+
+## Out of scope
+
+- Auto-fix / inline edit of mismatched rows (could be a follow-up).
+- Persisting diff snapshots to the database.
+- Changes to Bulk Staff Import (separate flow).
