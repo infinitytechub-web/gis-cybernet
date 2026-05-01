@@ -32,6 +32,7 @@ const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
 const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
 const SensitiveAccessLog = lazy(() => import("./pages/SensitiveAccessLog"));
+const QuarantineInbox = lazy(() => import("./pages/QuarantineInbox"));
 const IpBlocks = lazy(() => import("./pages/IpBlocks"));
 const ShiftConnections = lazy(() => import("./pages/ShiftConnections"));
 const LeaveRequests = lazy(() => import("./pages/LeaveRequests"));
