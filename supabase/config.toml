@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.email-domain-recheck]
 verify_jwt = false
+
+[functions.refresh-threat-feeds]
+verify_jwt = false
