@@ -365,6 +365,17 @@ export default function StaffAccountApprovals() {
                           <Button size="sm" variant="ghost" onClick={() => setAuditFor(p)} title="View audit log">
                             <History className="h-3.5 w-3.5" />
                           </Button>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDeleteTarget(p)}
+                              title="Delete account permanently"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
