@@ -4,6 +4,9 @@ import type { User } from "@supabase/supabase-js";
 import type { AppRole } from "@/lib/types";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
+const DEFAULT_IDLE_MINUTES = 5;
+const DEFAULT_WARN_SECONDS = 30;
+
 interface AuthContextValue {
   user: User | null;
   role: AppRole | null;
@@ -47,6 +50,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [idleMinutes, setIdleMinutes] = useState<number>(DEFAULT_IDLE_MINUTES);
+  const [warnSeconds, setWarnSeconds] = useState<number>(DEFAULT_WARN_SECONDS);
+
+  // Load idle-timeout settings (and refresh whenever the singleton row changes).
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("auto_logout_minutes, auto_logout_warning_seconds")
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      setIdleMinutes(Math.max(1, Number(data.auto_logout_minutes) || DEFAULT_IDLE_MINUTES));
+      setWarnSeconds(Math.max(5, Number((data as any).auto_logout_warning_seconds) || DEFAULT_WARN_SECONDS));
+    };
+    load();
+    const channel = supabase
+      .channel("app-settings-idle")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "app_settings" }, load)
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const fetchRole = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -96,8 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchRole]);
 
-  // Auto sign-out after 5 minutes of inactivity (only when authenticated).
-  useIdleTimeout({ enabled: !!user });
+  // Auto sign-out after the configured idle period (only when authenticated).
+  useIdleTimeout({ enabled: !!user, idleMinutes, warnSeconds });
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
