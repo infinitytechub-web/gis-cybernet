@@ -105,7 +105,7 @@ export function SecurityAuditPanel() {
   };
 
   const handleExport = (format: "csv" | "json") => runExport(format, "range");
-  const handleExportAll = () => runExport("csv", "all");
+  const handleExportAll = (format: "csv" | "json" = "csv") => runExport(format, "all");
 
   const handleVerify = async () => {
     try {
