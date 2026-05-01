@@ -998,16 +998,21 @@ export default function GuardScheduleImport() {
             )}
 
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={handleExportXlsx} disabled={!assignments.length}>
+              {blockedByErrors && (
+                <span className="text-xs text-destructive mr-auto flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Resolve {validation!.errors.length} error(s) to enable export & save
+                </span>
+              )}
+              <Button variant="outline" onClick={handleExportXlsx} disabled={!assignments.length || blockedByErrors}>
                 <Download className="h-4 w-4 mr-1" /> Export XLSX
               </Button>
-              <Button variant="outline" onClick={handleExportCsv} disabled={!assignments.length}>
+              <Button variant="outline" onClick={handleExportCsv} disabled={!assignments.length || blockedByErrors}>
                 <Download className="h-4 w-4 mr-1" /> Export CSV
               </Button>
               <Button variant="outline" onClick={reset} disabled={committing}>
                 <XCircle className="h-4 w-4 mr-1" /> Discard
               </Button>
-              <Button onClick={handleCommit} disabled={committing || !assignments.length}>
+              <Button onClick={handleCommit} disabled={committing || !assignments.length || blockedByErrors}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> {committing ? "Saving…" : `Save schedule (${assignments.length})`}
               </Button>
             </div>
