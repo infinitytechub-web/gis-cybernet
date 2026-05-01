@@ -411,7 +411,8 @@ function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
 
 // ----- Page -----
 export default function GuardScheduleImport() {
-  const { user, isAdminOrSupervisor, loading } = useAuthContext();
+  const { user, isAdminOrSupervisor, isIpse, loading } = useAuthContext();
+  const canSchedule = isAdminOrSupervisor || isIpse;
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
