@@ -72,7 +72,7 @@ export default function GuardSchedule() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user && isAdminOrSupervisor,
+    enabled: !!user && canSchedule,
   });
 
   // Latest committed roster (for auto-fill)
@@ -89,7 +89,7 @@ export default function GuardSchedule() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user && isAdminOrSupervisor,
+    enabled: !!user && canSchedule,
   });
 
   // Active schedule + assignments
@@ -126,7 +126,7 @@ export default function GuardSchedule() {
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
+  if (!canSchedule) return <Navigate to="/dashboard" replace />;
 
   const scheduleHeader = active.data?.schedule
     ? {
