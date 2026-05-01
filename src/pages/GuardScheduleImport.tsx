@@ -556,17 +556,28 @@ export default function GuardScheduleImport() {
     status: "draft",
   };
 
+  const guardValidation = (action: string): boolean => {
+    if (blockedByErrors) {
+      toast.error(`${action} blocked: ${validation!.errors.length} validation error(s) — fix or adjust mapping template`);
+      return false;
+    }
+    return true;
+  };
+
   const handleExportXlsx = () => {
     if (!assignments.length) return;
+    if (!guardValidation("Export")) return;
     exportScheduleXlsx(headerForExport, assignments);
   };
   const handleExportCsv = () => {
     if (!assignments.length) return;
+    if (!guardValidation("Export")) return;
     exportScheduleCsv(headerForExport, assignments);
   };
 
   const handleCommit = async () => {
     if (!parsed || !assignments.length || !file) return;
+    if (!guardValidation("Commit")) return;
     if (!parsed.startDate || !parsed.endDate) {
       toast.error("Could not determine date range from PDF");
       return;
