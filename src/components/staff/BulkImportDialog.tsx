@@ -196,6 +196,29 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
           };
         });
 
+        // Duplicate-staff-ID detection — flag every row sharing an id (case-insensitive)
+        const idCounts = new Map<string, number[]>();
+        parsed.forEach((r, i) => {
+          const key = (r.staff_id || "").trim().toUpperCase();
+          if (!key) return;
+          const list = idCounts.get(key) ?? [];
+          list.push(i);
+          idCounts.set(key, list);
+        });
+        let dupGroups = 0;
+        idCounts.forEach((indexes, key) => {
+          if (indexes.length < 2) return;
+          dupGroups++;
+          const rowNumbers = indexes.map((i) => i + 1).join(", ");
+          indexes.forEach((i) => {
+            const dupMsg = `Duplicate Staff ID "${key}" (also rows ${rowNumbers})`;
+            parsed[i].error = parsed[i].error ? `${parsed[i].error}; ${dupMsg}` : dupMsg;
+          });
+        });
+        if (dupGroups > 0) {
+          toast.error(`Import blocked: ${dupGroups} duplicate Staff ID${dupGroups === 1 ? "" : "s"} detected. Resolve in source file and re-upload.`);
+        }
+
         setRows(parsed);
       } catch {
         toast.error("Failed to parse file. Please upload a valid Excel or CSV file.");
@@ -207,9 +230,15 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
   const validRows = rows.filter((r) => !r.error);
   const errorRows = rows.filter((r) => r.error);
+  const duplicateRows = rows.filter((r) => r.error?.includes("Duplicate Staff ID"));
+  const hasDuplicates = duplicateRows.length > 0;
 
   const handleImport = async () => {
     if (validRows.length === 0) return;
+    if (hasDuplicates) {
+      toast.error("Resolve duplicate Staff IDs in your source file before importing.");
+      return;
+    }
     setImporting(true);
     setProgress(0);
     let success = 0;
@@ -319,6 +348,11 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
               </p>
               <div className="flex gap-2">
                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">{validRows.length} valid</Badge>
+                {hasDuplicates && (
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-900">
+                    {duplicateRows.length} duplicate Staff ID{duplicateRows.length === 1 ? "" : "s"}
+                  </Badge>
+                )}
                 {errorRows.length > 0 && <Badge variant="secondary" className="bg-red-100 text-red-800">{errorRows.length} errors</Badge>}
               </div>
             </div>
@@ -368,8 +402,8 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={reset} disabled={importing}>Reset</Button>
-              <Button onClick={handleImport} disabled={importing || validRows.length === 0} className="gap-2">
-                {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importing...</> : `Import ${validRows.length} Staff`}
+              <Button onClick={handleImport} disabled={importing || validRows.length === 0 || hasDuplicates} className="gap-2">
+                {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importing...</> : hasDuplicates ? "Resolve duplicates to import" : `Import ${validRows.length} Staff`}
               </Button>
             </div>
           </div>
