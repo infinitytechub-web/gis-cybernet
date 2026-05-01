@@ -16,6 +16,7 @@ interface AppSettingsRow {
   org_name: string;
   system_label: string;
   auto_logout_minutes: number;
+  auto_logout_warning_seconds: number;
   enforce_password_change: boolean;
   min_password_length: number;
   allow_self_registration: boolean;
@@ -39,7 +40,8 @@ export function AppSettings() {
 
   const [orgName, setOrgName] = useState("");
   const [systemLabel, setSystemLabel] = useState("");
-  const [autoLogout, setAutoLogout] = useState(30);
+  const [autoLogout, setAutoLogout] = useState(5);
+  const [autoLogoutWarn, setAutoLogoutWarn] = useState(30);
   const [enforcePasswordChange, setEnforcePasswordChange] = useState(true);
   const [minPasswordLength, setMinPasswordLength] = useState(8);
   const [allowSelfRegistration, setAllowSelfRegistration] = useState(false);
@@ -49,6 +51,7 @@ export function AppSettings() {
       setOrgName(settings.org_name);
       setSystemLabel(settings.system_label);
       setAutoLogout(settings.auto_logout_minutes);
+      setAutoLogoutWarn(settings.auto_logout_warning_seconds ?? 30);
       setEnforcePasswordChange(settings.enforce_password_change);
       setMinPasswordLength(settings.min_password_length);
       setAllowSelfRegistration(settings.allow_self_registration);
@@ -58,12 +61,22 @@ export function AppSettings() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!settings?.id) throw new Error("No settings row found");
+      if (autoLogout < 1 || autoLogout > 480) {
+        throw new Error("Auto-logout must be between 1 and 480 minutes.");
+      }
+      if (autoLogoutWarn < 5 || autoLogoutWarn > 300) {
+        throw new Error("Warning lead time must be between 5 and 300 seconds.");
+      }
+      if (autoLogoutWarn >= autoLogout * 60) {
+        throw new Error("Warning lead time must be shorter than the inactivity window.");
+      }
       const { error } = await supabase
         .from("app_settings")
         .update({
           org_name: orgName,
           system_label: systemLabel,
           auto_logout_minutes: autoLogout,
+          auto_logout_warning_seconds: autoLogoutWarn,
           enforce_password_change: enforcePasswordChange,
           min_password_length: minPasswordLength,
           allow_self_registration: allowSelfRegistration,
@@ -149,14 +162,19 @@ export function AppSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4 text-chart-4" /> Session</CardTitle>
-          <CardDescription>Session timeout and activity settings.</CardDescription>
+          <CardDescription>Auto-logout after inactivity. Default: 5 minutes with a 30-second warning.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="auto-logout">Auto-Logout After (minutes)</Label>
-              <Input id="auto-logout" type="number" min={5} max={480} value={autoLogout} onChange={(e) => setAutoLogout(Number(e.target.value))} />
+              <Input id="auto-logout" type="number" min={1} max={480} value={autoLogout} onChange={(e) => setAutoLogout(Number(e.target.value))} />
               <p className="text-xs text-muted-foreground">Users will be signed out after this period of inactivity.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="auto-logout-warn">Warning Before Logout (seconds)</Label>
+              <Input id="auto-logout-warn" type="number" min={5} max={300} value={autoLogoutWarn} onChange={(e) => setAutoLogoutWarn(Number(e.target.value))} />
+              <p className="text-xs text-muted-foreground">A toast appears this many seconds before the session ends.</p>
             </div>
           </div>
         </CardContent>
