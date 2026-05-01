@@ -238,6 +238,177 @@ function dedupeAssignments(rows: Assignment[], mode: DedupeMode): DedupeResult {
   return { kept, duplicates, removed };
 }
 
+// ----- Roster mapping template -----
+// Users can upload a JSON file describing how raw PDF text maps to canonical fields.
+// All sections are optional; missing sections fall back to defaults.
+const MappingTemplateSchema = z.object({
+  version: z.union([z.string(), z.number()]).optional(),
+  name: z.string().max(120).optional(),
+  // Free-text rank → canonical rank string
+  rankAliases: z.record(z.string().max(40), z.string().max(40)).optional(),
+  // Allowed canonical ranks. Anything outside is flagged as "unknown rank".
+  // Empty/omitted = no rank whitelist (warnings only on empty rank).
+  allowedRanks: z.array(z.string().max(40)).max(200).optional(),
+  // Allowed group labels. Anything outside is flagged.
+  allowedGroups: z.array(z.string().max(60)).max(200).optional(),
+  // Group label → canonical group string
+  groupAliases: z.record(z.string().max(60), z.string().max(60)).optional(),
+  // Regex string for valid serial numbers (matched as text). Default: 1-3 digits.
+  serialFormat: z.string().max(80).optional(),
+  // Min and max acceptable serial number values.
+  serialMin: z.number().int().min(0).max(99999).optional(),
+  serialMax: z.number().int().min(0).max(99999).optional(),
+  // Required fields per personnel row
+  requireRank: z.boolean().optional(),
+  requireSerial: z.boolean().optional(),
+  requireName: z.boolean().optional(),
+});
+export type MappingTemplate = z.infer<typeof MappingTemplateSchema>;
+
+const DEFAULT_TEMPLATE: MappingTemplate = {
+  version: 1,
+  name: "Default GIS roster mapping",
+  rankAliases: {
+    "DCO": "DCO", "ACI": "ACI", "CI": "CI", "AI": "AI", "AII": "AII", "AIII": "AIII",
+    "SGT": "SGT", "CPL": "CPL", "L/CPL": "L/CPL", "LCPL": "L/CPL",
+    "INSP": "INSP", "CINSP": "CINSP", "ASP": "ASP",
+  },
+  allowedRanks: [],
+  allowedGroups: [],
+  groupAliases: {},
+  serialFormat: "^\\d{1,3}$",
+  serialMin: 1,
+  serialMax: 999,
+  requireRank: true,
+  requireSerial: true,
+  requireName: true,
+};
+
+function canonicalize(value: string, aliases?: Record<string, string>) {
+  if (!value) return value;
+  const up = value.toUpperCase().trim();
+  if (aliases && aliases[up]) return aliases[up];
+  // Try case-insensitive lookup
+  if (aliases) {
+    const hit = Object.keys(aliases).find((k) => k.toUpperCase() === up);
+    if (hit) return aliases[hit];
+  }
+  return up;
+}
+
+export type RowIssue = {
+  level: "error" | "warning";
+  field: "rank" | "serial" | "name" | "group" | "date" | "period";
+  message: string;
+  row: RawRow;
+  index: number;
+};
+
+export type ValidationResult = {
+  errors: RowIssue[];
+  warnings: RowIssue[];
+  unknownGroups: string[];
+  unknownRanks: string[];
+  serialOutOfRange: number;
+};
+
+function validateRows(rows: RawRow[], tpl: MappingTemplate): ValidationResult {
+  const errors: RowIssue[] = [];
+  const warnings: RowIssue[] = [];
+  const unknownGroups = new Set<string>();
+  const unknownRanks = new Set<string>();
+  let serialOutOfRange = 0;
+
+  let serialRe: RegExp | null = null;
+  try {
+    if (tpl.serialFormat) serialRe = new RegExp(tpl.serialFormat);
+  } catch {
+    // Invalid regex — surface once via a synthetic warning below
+  }
+
+  const allowedRanks = (tpl.allowedRanks ?? []).map((r) => r.toUpperCase());
+  const allowedGroups = (tpl.allowedGroups ?? []).map((g) => g.toUpperCase());
+
+  rows.forEach((r, i) => {
+    // Name
+    if (tpl.requireName !== false) {
+      if (!r.name || r.name.trim().length < 2) {
+        errors.push({ level: "error", field: "name", message: "Missing or too-short name", row: r, index: i });
+      } else if (/[0-9]/.test(r.name)) {
+        warnings.push({ level: "warning", field: "name", message: `Name contains digits: "${r.name}"`, row: r, index: i });
+      }
+    }
+
+    // Rank
+    const rankCanon = canonicalize(r.rank, tpl.rankAliases);
+    if (tpl.requireRank !== false && !rankCanon) {
+      errors.push({ level: "error", field: "rank", message: "Missing rank", row: r, index: i });
+    } else if (rankCanon && allowedRanks.length && !allowedRanks.includes(rankCanon.toUpperCase())) {
+      unknownRanks.add(rankCanon);
+      warnings.push({
+        level: "warning",
+        field: "rank",
+        message: `Unknown rank "${r.rank}" (canonical: ${rankCanon})`,
+        row: r,
+        index: i,
+      });
+    }
+
+    // Serial
+    const snStr = String(r.serial_no ?? "");
+    if (tpl.requireSerial !== false && !r.serial_no) {
+      errors.push({ level: "error", field: "serial", message: "Missing serial number", row: r, index: i });
+    } else if (r.serial_no) {
+      if (serialRe && !serialRe.test(snStr)) {
+        errors.push({
+          level: "error",
+          field: "serial",
+          message: `Serial "${snStr}" does not match format ${tpl.serialFormat}`,
+          row: r,
+          index: i,
+        });
+      }
+      const min = tpl.serialMin ?? 0;
+      const max = tpl.serialMax ?? 99999;
+      if (r.serial_no < min || r.serial_no > max) {
+        serialOutOfRange++;
+        warnings.push({
+          level: "warning",
+          field: "serial",
+          message: `Serial ${r.serial_no} out of range [${min}, ${max}]`,
+          row: r,
+          index: i,
+        });
+      }
+    }
+
+    // Group
+    const groupCanon = canonicalize(r.group, tpl.groupAliases);
+    if (allowedGroups.length && groupCanon && !allowedGroups.includes(groupCanon.toUpperCase())) {
+      unknownGroups.add(groupCanon);
+      warnings.push({
+        level: "warning",
+        field: "group",
+        message: `Unknown group "${r.group}" (canonical: ${groupCanon})`,
+        row: r,
+        index: i,
+      });
+    }
+
+    // Date / period sanity (period & date should already be set by parser)
+    if (!r.date) errors.push({ level: "error", field: "date", message: "Missing date", row: r, index: i });
+    if (!r.period) errors.push({ level: "error", field: "period", message: "Missing DAY/NIGHT period", row: r, index: i });
+  });
+
+  return {
+    errors,
+    warnings,
+    unknownGroups: Array.from(unknownGroups).sort(),
+    unknownRanks: Array.from(unknownRanks).sort(),
+    serialOutOfRange,
+  };
+}
+
 // ----- Page -----
 export default function GuardScheduleImport() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
