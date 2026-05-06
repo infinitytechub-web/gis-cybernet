@@ -1,0 +1,36 @@
+name: Edge Function Performance Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/attendance-compliance-report/**'
+      - '.github/workflows/edge-function-perf.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/attendance-compliance-report/**'
+      - '.github/workflows/edge-function-perf.yml'
+  workflow_dispatch:
+
+jobs:
+  encoding-perf:
+    name: Attendance compliance encoding budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Run encoding regression + latency budget tests
+        # Fails the build if base64 encoding exceeds the latency budget
+        # defined in encoding_test.ts (ENCODE_LATENCY_BUDGET_MS).
+        run: |
+          deno test \
+            --allow-net \
+            --allow-env \
+            --no-check \
+            supabase/functions/attendance-compliance-report/encoding_test.ts
