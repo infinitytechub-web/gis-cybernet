@@ -6,7 +6,7 @@ import { HeaderProfileDropdown } from "@/components/HeaderProfileDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
-import { SystemAuditTray } from "@/components/SystemAuditTray";
+
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { HeaderRoleSwitcher } from "@/components/HeaderRoleSwitcher";
 import { HeaderCommandSwitcher } from "@/components/HeaderCommandSwitcher";
@@ -18,7 +18,7 @@ import { format } from "date-fns";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { org_name, system_label } = useAppSettings();
-  const { isAdmin } = useAuth();
+  useAuth();
   const [clock, setClock] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
@@ -51,7 +51,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <HeaderRoleSwitcher />
                 <HeaderCommandSwitcher />
                 <OnlineNowBadge />
-                {isAdmin && <SystemAuditTray />}
+                
               </HeaderOverflowMenu>
             </div>
             {/* Compact date & clock row for mobile */}

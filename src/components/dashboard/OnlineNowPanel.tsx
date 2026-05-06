@@ -85,13 +85,19 @@ export default function OnlineNowPanel() {
                         )}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
-                        <span className="truncate">{u.staffId}</span>
+                        <span className="truncate font-medium">{u.staffId}</span>
                         {u.rank && (
                           <>
                             <span>·</span>
                             <span className="truncate">{u.rank}</span>
                           </>
                         )}
+                      </div>
+                      <div
+                        className="text-[9px] font-mono text-muted-foreground/80 truncate"
+                        title={`User ID: ${u.userId}`}
+                      >
+                        UID: {u.userId.slice(0, 8)}…{u.userId.slice(-4)}
                       </div>
                       {u.department && (
                         <div className="text-[10px] text-muted-foreground truncate">{u.department}</div>
