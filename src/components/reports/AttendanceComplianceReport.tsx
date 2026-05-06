@@ -577,30 +577,85 @@ export default function AttendanceComplianceReport() {
         </Alert>
       )}
 
-      <Card>
+      <Card ref={breakdownRef as any} id="per-staff-breakdown">
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2">
-          <CardTitle className="text-sm">Per-staff breakdown</CardTitle>
-          <ExportMenu
-            label="Export"
-            size="sm"
-            variant="outline"
-            getData={buildExport}
-            onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
-              format: fmt, period, from: fromIso, to: toIso,
-              filters: { departmentId, shiftGroup, office },
-              row_count: rows.length,
-              location: "table",
-            })}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              onClick={() => setBreakdownCollapsed((v) => !v)}
+              title={breakdownCollapsed ? "Expand" : "Minimize"}
+              aria-label={breakdownCollapsed ? "Expand per-staff breakdown" : "Minimize per-staff breakdown"}
+            >
+              {breakdownCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </Button>
+            <CardTitle className="text-sm">
+              Per-staff breakdown
+              <span className="ml-2 text-xs text-muted-foreground font-normal">
+                ({displayRows.length}{excludedRowIds.size > 0 ? ` shown · ${excludedRowIds.size} excluded` : ""})
+              </span>
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            {excludedRowIds.size > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => setExcludedRowIds(new Set())}
+              >
+                Restore {excludedRowIds.size}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 w-7 p-0"
+              title="Scroll to top"
+              aria-label="Scroll to top of page"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              <ArrowUp className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 w-7 p-0"
+              title="Scroll to bottom"
+              aria-label="Scroll to bottom of page"
+              onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" })}
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+            </Button>
+            <ExportMenu
+              label="Export"
+              size="sm"
+              variant="outline"
+              getData={buildExport}
+              onExported={(fmt) => logAdminAudit("attendance_compliance_report", "exported", {
+                format: fmt, period, from: fromIso, to: toIso,
+                filters: { departmentId, shiftGroup, office },
+                row_count: displayRows.length,
+                excluded: excludedRowIds.size,
+                edited_rows: Object.keys(overrides).length,
+                location: "table",
+              })}
+            />
+          </div>
         </CardHeader>
+        {!breakdownCollapsed && (
         <CardContent>
-          {rows.length === 0 ? (
-            <div className="text-center py-6 text-sm text-muted-foreground">No staff match the selected filters.</div>
+          {displayRows.length === 0 ? (
+            <div className="text-center py-6 text-sm text-muted-foreground">
+              {rows.length === 0 ? "No staff match the selected filters." : "All rows excluded — restore them to see the breakdown."}
+            </div>
           ) : (
             <div className="rounded-lg border overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {canImport && <TableHead className="w-[90px]">Actions</TableHead>}
                     <TableHead>Staff</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Office</TableHead>
@@ -614,29 +669,45 @@ export default function AttendanceComplianceReport() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r) => (
+                  {displayRows.map((r) => {
+                    const edited = !!overrides[r.id];
+                    return (
                     <TableRow
                       key={r.id}
-                      className={`cursor-pointer hover:bg-muted/40 ${r.missing > 0 ? "bg-amber-50/60" : ""}`}
-                      onClick={() => {
-                        setDetailStaff(r);
-                        logAdminAudit(
-                          "attendance_compliance_staff_detail",
-                          "opened",
-                          {
-                            staff_id: r.staff_id, name: r.name,
-                            department: r.department, office: r.office, shift: r.shift,
-                            period, from: fromIso, to: toIso,
-                            missing: r.missing, compliance_pct: Number(r.rate.toFixed(1)),
-                          },
-                          r.id,
-                        );
-                      }}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
+                      className={`hover:bg-muted/40 ${r.missing > 0 ? "bg-amber-50/60" : ""} ${edited ? "ring-1 ring-inset ring-primary/30" : ""}`}
+                    >
+                      {canImport && (
+                        <TableCell className="w-[90px]" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              title="Edit counts"
+                              aria-label={`Edit counts for ${r.name}`}
+                              onClick={() => {
+                                setEditingRow(r);
+                                setEditDraft({ present: r.present, absent: r.absent, late: r.late, leave: r.leave });
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              title="Remove row from this report"
+                              aria-label={`Remove ${r.name} from this report`}
+                              onClick={() => setPendingDelete(r)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => {
                           setDetailStaff(r);
                           logAdminAudit(
                             "attendance_compliance_staff_detail",
@@ -646,17 +717,16 @@ export default function AttendanceComplianceReport() {
                               department: r.department, office: r.office, shift: r.shift,
                               period, from: fromIso, to: toIso,
                               missing: r.missing, compliance_pct: Number(r.rate.toFixed(1)),
-                              via: "keyboard",
                             },
                             r.id,
                           );
-                        }
-                      }}
-                      aria-label={`View attendance breakdown for ${r.name}`}
-                    >
-                      <TableCell>
+                        }}
+                      >
                         <div className="font-medium text-sm flex items-center gap-1.5">
                           {r.name}
+                          {edited && (
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-primary/10 text-primary border-primary/30">edited</Badge>
+                          )}
                           {r.missing > 0 && (
                             <FileWarning
                               className="h-3.5 w-3.5 text-amber-600"
@@ -690,13 +760,108 @@ export default function AttendanceComplianceReport() {
                         <Badge variant="outline" className={rateBadge(r.rate)}>{r.rate.toFixed(1)}%</Badge>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
           )}
         </CardContent>
+        )}
       </Card>
+
+      {/* Edit row dialog */}
+      <Dialog open={!!editingRow} onOpenChange={(o) => { if (!o) { setEditingRow(null); setEditDraft(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit counts — {editingRow?.name}</DialogTitle>
+            <DialogDescription>
+              Adjust counts for this report only. Edits don't change attendance records.
+            </DialogDescription>
+          </DialogHeader>
+          {editDraft && (
+            <div className="grid grid-cols-2 gap-3 py-2">
+              {(["present", "absent", "late", "leave"] as const).map((k) => (
+                <div key={k}>
+                  <Label className="text-xs capitalize">{k}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={editDraft[k]}
+                    onChange={(e) => setEditDraft({ ...editDraft, [k]: Math.max(0, Number(e.target.value) || 0) })}
+                    className="h-9"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => { setEditingRow(null); setEditDraft(null); }}>Cancel</Button>
+            {editingRow && overrides[editingRow.id] && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOverrides((prev) => {
+                    const next = { ...prev };
+                    delete next[editingRow.id];
+                    return next;
+                  });
+                  setEditingRow(null); setEditDraft(null);
+                  toast.success("Reverted to original counts");
+                }}
+              >
+                Revert
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                if (editingRow && editDraft) {
+                  setOverrides((prev) => ({ ...prev, [editingRow.id]: editDraft }));
+                  logAdminAudit("attendance_compliance_report", "row_edited", {
+                    staff_id: editingRow.staff_id, name: editingRow.name,
+                    period, from: fromIso, to: toIso,
+                    new: editDraft,
+                  }, editingRow.id);
+                  setEditingRow(null); setEditDraft(null);
+                  toast.success("Row counts updated for this report");
+                }
+              }}
+            >
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {pendingDelete?.name} from report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The row will be excluded from the on-screen view and any subsequent export. This does not delete attendance records — restore later from the header button.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDelete) {
+                  setExcludedRowIds((prev) => new Set(prev).add(pendingDelete.id));
+                  logAdminAudit("attendance_compliance_report", "row_excluded", {
+                    staff_id: pendingDelete.staff_id, name: pendingDelete.name,
+                    period, from: fromIso, to: toIso,
+                  }, pendingDelete.id);
+                  setPendingDelete(null);
+                  toast.success("Row removed from this report");
+                }
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <StaffDetailDialog
         staff={detailStaff}
