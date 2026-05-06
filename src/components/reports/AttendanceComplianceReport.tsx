@@ -245,6 +245,18 @@ export default function AttendanceComplianceReport() {
     return { staff: rows.length, expected, present, absent, late, overallRate, missing, incompleteStaff };
   }, [rows]);
 
+  const displayRows = useMemo(() => {
+    return rows
+      .filter((r) => !excludedRowIds.has(r.id))
+      .map((r) => {
+        const o = overrides[r.id];
+        if (!o) return r;
+        const expected = r.expected;
+        const rate = expected > 0 ? (o.present / expected) * 100 : 0;
+        return { ...r, present: o.present, absent: o.absent, late: o.late, leave: o.leave, rate };
+      });
+  }, [rows, excludedRowIds, overrides]);
+
   const [detailStaff, setDetailStaff] = useState<typeof rows[number] | null>(null);
 
 
