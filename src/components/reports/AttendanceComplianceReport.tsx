@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +58,13 @@ export default function AttendanceComplianceReport() {
   const [office, setOffice] = useState<string>(ALL);
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [breakdownCollapsed, setBreakdownCollapsed] = useState(false);
+  const [excludedRowIds, setExcludedRowIds] = useState<Set<string>>(new Set());
+  const [editingRow, setEditingRow] = useState<any | null>(null);
+  const [editDraft, setEditDraft] = useState<{ present: number; absent: number; late: number; leave: number } | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, { present: number; absent: number; late: number; leave: number }>>({});
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+  const breakdownRef = useRef<HTMLDivElement>(null);
 
   const { from, to } = useMemo(() => periodRange(period, parseISO(refDate)), [period, refDate]);
   const fromIso = format(from, "yyyy-MM-dd");
