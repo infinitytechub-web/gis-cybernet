@@ -263,7 +263,7 @@ export default function AttendanceComplianceReport() {
   const periodLabel = `${format(from, "dd MMM yyyy")} – ${format(to, "dd MMM yyyy")}`;
 
   const buildExport = () => {
-    if (rows.length === 0) return null;
+    if (displayRows.length === 0) return null;
     const departmentName = departmentId === ALL
       ? "All departments"
       : (departments as any[]).find((d) => d.id === departmentId)?.name ?? "—";
@@ -273,13 +273,13 @@ export default function AttendanceComplianceReport() {
       title: `Attendance Compliance — ${period === "weekly" ? "Weekly" : "Monthly"}`,
       filename: `attendance_compliance_${period}_${fromIso}_to_${toIso}`,
       headers: ["Staff ID", "Name", "Department", "Office", "Shift", "Working Days", "Present", "Absent", "Late", "Leave", "Missing Logs", "Compliance %", "Log Completeness %"],
-      rows: rows.map((r) => [
+      rows: displayRows.map((r) => [
         r.staff_id, r.name, r.department, r.office, r.shift,
         String(r.expected), String(r.present), String(r.absent),
         String(r.late), String(r.leave), String(r.missing),
         `${r.rate.toFixed(1)}%`, `${r.completeness.toFixed(1)}%`,
       ]),
-      subtitle: `Period: ${periodLabel} | Staff: ${totals.staff} | Overall: ${totals.overallRate.toFixed(1)}% | Missing logs: ${totals.missing} across ${totals.incompleteStaff} staff`,
+      subtitle: `Period: ${periodLabel} | Staff: ${displayRows.length} | Overall: ${totals.overallRate.toFixed(1)}% | Missing logs: ${totals.missing} across ${totals.incompleteStaff} staff${excludedRowIds.size > 0 ? ` | Excluded rows: ${excludedRowIds.size}` : ""}`,
       meta: [
         { label: "Report period", value: `${period === "weekly" ? "Weekly" : "Monthly"} — ${periodLabel}` },
         { label: "Working days", value: `${workingDays.length}` },
