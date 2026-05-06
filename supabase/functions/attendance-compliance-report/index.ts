@@ -186,7 +186,16 @@ Deno.serve(async (req) => {
     });
 
     const pdfBytes = doc.output("arraybuffer");
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+    const pdfBytesU8 = new Uint8Array(pdfBytes);
+    let binary = "";
+    const CHUNK = 8192;
+    for (let i = 0; i < pdfBytesU8.length; i += CHUNK) {
+      binary += String.fromCharCode.apply(
+        null,
+        Array.from(pdfBytesU8.subarray(i, Math.min(i + CHUNK, pdfBytesU8.length))),
+      );
+    }
+    const pdfBase64 = btoa(binary);
     const filename = `attendance_compliance_${body.period}_${fromIso}_to_${toIso}.pdf`;
 
     // Send via Resend
