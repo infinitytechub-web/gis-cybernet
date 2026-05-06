@@ -29,6 +29,8 @@ import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget"
 import InterlinkWidget from "@/components/dashboard/InterlinkWidget";
 import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget";
 import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
+import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
+import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -319,6 +321,12 @@ export default function Dashboard() {
 
       {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
       {isAdmin && <SecurityThreatsWidget />}
+
+      {/* System Health Check — admin only, auto-scans every 60s */}
+      {isAdmin && <SystemHealthCheckWidget />}
+
+      {/* System Audit Trail — admin only, inline on dashboard */}
+      {isAdmin && <SystemAuditPanel />}
 
       {/* System Health Widget */}
       {systemHealth && (
