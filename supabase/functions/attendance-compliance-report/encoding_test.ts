@@ -76,3 +76,28 @@ Deno.test("large attendance-style PDF encodes cleanly via chunked encoder", () =
   const head = atob(b64.slice(0, 8));
   assertEquals(head.slice(0, 4), "%PDF");
 });
+
+// Performance budget: chunked base64 encoding of a 5MB+ buffer must stay
+// well under the edge-runtime CPU window. 1500 ms is generous (typical run
+// is <300ms) but catches regressions like switching to per-byte encoders.
+const ENCODE_LATENCY_BUDGET_MS = 1500;
+
+Deno.test("chunked base64 encoding of 5MB+ buffer stays under latency budget", () => {
+  const SIZE = 6 * 1024 * 1024; // 6 MB — exceeds the 5MB threshold
+  const big = new Uint8Array(SIZE);
+  for (let i = 0; i < SIZE; i++) big[i] = (i * 31) & 0xff;
+
+  // Warm-up to exclude JIT compilation from the measurement
+  encodeBase64Chunked(big.subarray(0, 64 * 1024));
+
+  const start = performance.now();
+  const b64 = encodeBase64Chunked(big);
+  const elapsed = performance.now() - start;
+
+  console.log(`encoded ${SIZE} bytes → ${b64.length} chars in ${elapsed.toFixed(1)}ms`);
+  assertEquals(b64.length % 4, 0);
+  assert(
+    elapsed < ENCODE_LATENCY_BUDGET_MS,
+    `chunked base64 took ${elapsed.toFixed(1)}ms, exceeds ${ENCODE_LATENCY_BUDGET_MS}ms budget`,
+  );
+});
