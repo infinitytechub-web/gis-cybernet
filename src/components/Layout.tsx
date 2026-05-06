@@ -18,7 +18,7 @@ import { format } from "date-fns";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { org_name, system_label } = useAppSettings();
-  const { isAdmin } = useAuth();
+  useAuth();
   const [clock, setClock] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
