@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 
 const EDITABLE_FIELDS = [
-  "first_name", "last_name", "gender", "date_of_birth", "phone", "email", "ghana_card_number",
+  "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
   "blood_group", "office", "training_designation", "staff_category", "photo_url",
 ] as const;
 
