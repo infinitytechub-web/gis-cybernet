@@ -54,8 +54,9 @@ export default function HealthLab() {
 
   // Audit log dialog
   const [auditOpen, setAuditOpen] = useState(false);
-
-  // Records
+  const [auditFilters, setAuditFilters] = useState({ from: "", to: "", performed_by: "", item: "", action: "" });
+  const [auditPage, setAuditPage] = useState(1);
+  const AUDIT_PAGE_SIZE = 25;
   const [recordOpen, setRecordOpen] = useState(false);
   const [recordForm, setRecordForm] = useState({ staff_profile_id: "", chief_complaint: "", diagnosis: "", treatment: "", notes: "" });
 
