@@ -72,6 +72,7 @@ export default function Staff() {
   const [staffCategory, setStaffCategory] = useState<string>("");
   const [office, setOffice] = useState<string>("");
   const [dateOfBirth, setDateOfBirth] = useState<string>("");
+  const [maritalStatus, setMaritalStatus] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
