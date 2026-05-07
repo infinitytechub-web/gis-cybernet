@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 import { downloadCSVString } from "@/lib/download-utils";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 function toCsv(headers: string[], rows: (string | number | null | undefined)[][]) {
   const escape = (v: any) => {
@@ -195,17 +196,11 @@ export default function CommandRoleAudit() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-          <History className="h-5 w-5 text-primary" />
-        </div>
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold">Command Role Audit Log</h1>
-          <p className="text-xs text-muted-foreground">
-            Immutable record of every command-tier role assignment, change, or removal.
-          </p>
-        </div>
-      </div>
+      <SecurityHero
+        icon={History}
+        title="Command Role Audit Log"
+        subtitle="Immutable record of every command-tier role assignment, change, or removal."
+      />
 
       <Card>
         <CardHeader className="pb-2">

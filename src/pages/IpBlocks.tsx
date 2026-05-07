@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ShieldOff, Ban, Clock, ScrollText } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 export default function IpBlocks() {
   const { isAdmin, loading } = useAuth();
@@ -99,10 +100,7 @@ export default function IpBlocks() {
 
   return (
     <div className="container py-6 space-y-6">
-      <div className="flex items-center gap-2">
-        <Ban className="h-6 w-6 text-destructive" />
-        <h1 className="text-2xl font-bold">IP & Device Blocks</h1>
-      </div>
+      <SecurityHero icon={Ban} title="IP & Device Blocks" subtitle="Block, unblock and review IP/device access controls." />
 
       <Card>
         <CardHeader>

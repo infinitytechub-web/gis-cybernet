@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 type Holder = { user_id: string; first_name?: string | null; last_name?: string | null; email?: string | null; staff_id?: string | null };
 type Candidate = Holder & { department_id?: string | null; office?: string | null; shift_group?: string | null; user_id: string };
@@ -299,47 +300,41 @@ export default function CommandRoles() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-            <Crown className="h-5 w-5 text-amber-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold">Command-Tier Roles</h1>
-            <p className="text-xs text-muted-foreground">
-              Assign or change the holder of each command-tier role. Every change is recorded in the audit trail.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5"
-            disabled={!lastBatch || undoing}
-            onClick={() => {
-              if (!lastBatch) return;
-              const n = lastBatch.entries.length;
-              if (confirm(`Revert the most recent batch of ${n} command-role change${n === 1 ? "" : "s"}? This will be logged in the audit trail.`)) {
-                undoMut.mutate();
-              }
-            }}
-            title={lastBatch ? `Undo batch ${lastBatch.batchId.slice(0, 8)}… (${lastBatch.entries.length} entries)` : "No batch to undo"}
-          >
-            {undoing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
-            Undo last batch{lastBatch ? ` (${lastBatch.entries.length})` : ""}
-          </Button>
-          <Button size="sm" variant="default" className="gap-1.5" onClick={() => { setBulkPreselect(undefined); setBulkOpen(true); }}>
-            <Users className="h-3.5 w-3.5" /> Bulk assign
-          </Button>
-          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setHistoryOpen(true)}>
-            <History className="h-3.5 w-3.5" /> Recent ({auditEntries.length})
-          </Button>
-          <Button asChild size="sm" variant="outline" className="gap-1.5">
-            <Link to="/command-role-audit"><ExternalLink className="h-3.5 w-3.5" /> Full audit log</Link>
-          </Button>
-        </div>
-      </div>
+      <SecurityHero
+        icon={Crown}
+        title="Command-Tier Roles"
+        subtitle="Assign or change the holder of each command-tier role. Every change is recorded in the audit trail."
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white"
+              disabled={!lastBatch || undoing}
+              onClick={() => {
+                if (!lastBatch) return;
+                const n = lastBatch.entries.length;
+                if (confirm(`Revert the most recent batch of ${n} command-role change${n === 1 ? "" : "s"}? This will be logged in the audit trail.`)) {
+                  undoMut.mutate();
+                }
+              }}
+              title={lastBatch ? `Undo batch ${lastBatch.batchId.slice(0, 8)}… (${lastBatch.entries.length} entries)` : "No batch to undo"}
+            >
+              {undoing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
+              Undo last batch{lastBatch ? ` (${lastBatch.entries.length})` : ""}
+            </Button>
+            <Button size="sm" variant="default" className="gap-1.5 bg-white text-[hsl(195_85%_24%)] hover:bg-white/90" onClick={() => { setBulkPreselect(undefined); setBulkOpen(true); }}>
+              <Users className="h-3.5 w-3.5" /> Bulk assign
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white" onClick={() => setHistoryOpen(true)}>
+              <History className="h-3.5 w-3.5" /> Recent ({auditEntries.length})
+            </Button>
+            <Button asChild size="sm" variant="outline" className="gap-1.5 bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white">
+              <Link to="/command-role-audit"><ExternalLink className="h-3.5 w-3.5" /> Full audit log</Link>
+            </Button>
+          </>
+        }
+      />
 
       {/* Quick staff search */}
       <Card>

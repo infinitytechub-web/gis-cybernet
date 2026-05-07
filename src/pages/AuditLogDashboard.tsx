@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollText, Filter, Download, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 const ACTIONS = ["all", "INSERT", "UPDATE", "DELETE"];
 
@@ -112,10 +113,7 @@ export default function AuditLogDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <ScrollText className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-secondary">Audit Log Dashboard</h1>
-      </div>
+      <SecurityHero icon={ScrollText} title="Audit Log Dashboard" subtitle="Search, filter and export the system audit trail." />
 
       <Card>
         <CardHeader>

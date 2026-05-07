@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 async function sha256Hex(data: ArrayBuffer): Promise<string> {
   const d = await crypto.subtle.digest("SHA-256", data);
@@ -111,15 +112,11 @@ export default function VerifyExport() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <ShieldCheck className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Verify Signed Export</h1>
-          <p className="text-sm text-muted-foreground">
-            Confirms a route-history CSV/PDF hasn't been altered and was signed by this server.
-          </p>
-        </div>
-      </div>
+      <SecurityHero
+        icon={ShieldCheck}
+        title="Verify Signed Export"
+        subtitle="Confirms a route-history CSV/PDF hasn't been altered and was signed by this server."
+      />
 
       <Card>
         <CardHeader>

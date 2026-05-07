@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 import { toast } from "sonner";
+import { SecurityHero, securityButtonClass, securityButtonSolidClass } from "@/components/security/SecurityHero";
 
 interface RouteRow {
   id: string;
@@ -229,13 +230,11 @@ export default function RouteHistory() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <MapIcon className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Route Tracking History</h1>
-          <p className="text-sm text-muted-foreground">Your saved routes and map access audit, with date-range export.</p>
-        </div>
-      </div>
+      <SecurityHero
+        icon={MapIcon}
+        title="Route Tracking History"
+        subtitle="Your saved routes and map access audit, with date-range export."
+      />
 
       <Card>
         <CardHeader>
@@ -254,14 +253,14 @@ export default function RouteHistory() {
             <label className="text-xs text-muted-foreground">To</label>
             <DateBtn value={to} onChange={setTo} label="To date" />
           </div>
-          <Button variant="outline" onClick={load} disabled={loading}>
+          <Button variant="outline" onClick={load} disabled={loading} className={securityButtonClass}>
             {loading ? "Loading..." : "Refresh"}
           </Button>
           <div className="ml-auto flex gap-2">
-            <Button onClick={exportCsv} disabled={loading || (routes.length + audit.length === 0)}>
+            <Button onClick={exportCsv} disabled={loading || (routes.length + audit.length === 0)} className={securityButtonSolidClass}>
               <Download className="mr-2 h-4 w-4" /> CSV
             </Button>
-            <Button onClick={exportPdf} variant="secondary" disabled={loading || (routes.length + audit.length === 0)}>
+            <Button onClick={exportPdf} variant="outline" disabled={loading || (routes.length + audit.length === 0)} className={securityButtonClass}>
               <FileText className="mr-2 h-4 w-4" /> PDF
             </Button>
           </div>
