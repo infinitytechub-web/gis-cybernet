@@ -428,18 +428,20 @@ export default function HealthLab() {
   };
 
   const openApptCreate = () => {
-    setApptEdit(null);
-    setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "" });
+    setApptEdit(null); setApptConflict(null);
+    setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     setApptOpen(true);
   };
   const openApptEdit = (a: any) => {
-    setApptEdit(a);
+    setApptEdit(a); setApptConflict(null);
     setApptForm({
       staff_profile_id: a.staff_profile_id,
       service_id: a.service_id ?? "",
       scheduled_at: format(new Date(a.scheduled_at), "yyyy-MM-dd'T'HH:mm"),
       status: a.status,
       notes: a.notes ?? "",
+      authorized_by: a.authorized_by ?? "",
+      authorized_role: a.authorized_role ?? "",
     });
     setApptOpen(true);
   };
