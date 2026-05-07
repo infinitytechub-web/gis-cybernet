@@ -97,6 +97,7 @@ export default function ExcuseDutyForm() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-excuse-forms"] });
       toast.success("Excuse Duty Form submitted — reviewers have been notified.");
+      setConfirmation({ period: `${form.start_date} to ${form.end_date}`, submittedAt: new Date() });
       setForm({ ...form, reason: "", diagnosis: "", doctor_name: "", facility: "" });
     },
     onError: (e: any) => toast.error(e.message),
