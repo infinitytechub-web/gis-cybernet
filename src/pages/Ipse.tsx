@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const SEVERITY_BADGE: Record<string, string> = {
   low: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
@@ -296,19 +297,12 @@ export default function Ipse() {
 
   return (
     <div className="space-y-4">
-      {/* Hero header with gradient */}
-      <div className="relative overflow-hidden rounded-xl border border-[hsl(82,40%,30%)]/20 bg-gradient-to-r from-[hsl(82,40%,30%)] via-[hsl(82,35%,38%)] to-[hsl(195,55%,35%)] p-5 shadow-md">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]" />
-        <div className="relative flex items-center gap-3 flex-wrap">
-          <div className="rounded-lg bg-white/15 backdrop-blur p-2.5 ring-1 ring-white/20">
-            <Shield className="h-7 w-7 text-white" />
-          </div>
-          <div className="text-white">
-            <h1 className="text-2xl font-bold tracking-tight">IPSE</h1>
-            <p className="text-xs text-white/80">Immigration Professional Standards & Ethics</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={Shield}
+        title="IPSE"
+        subtitle="Immigration Professional Standards & Ethics"
+        gradientClassName="border-[hsl(82,40%,30%)]/20 bg-gradient-to-r from-[hsl(82,40%,30%)] via-[hsl(82,35%,38%)] to-[hsl(195,55%,35%)]"
+      />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap h-auto bg-muted/60 p-1">

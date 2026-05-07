@@ -16,6 +16,7 @@ import { Award, Star, Trophy, Send, Save, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const CRITERIA: { key: string; label: string; hint: string }[] = [
   { key: "job_knowledge",          label: "1. Job Knowledge",            hint: "Understanding of duties, procedures, regulations." },
@@ -140,17 +141,7 @@ export default function Appraisals() {
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-xl border border-emerald-700/20 bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-600 p-5 shadow-md">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]" />
-        <div className="relative flex items-center gap-3 flex-wrap">
-          <div className="rounded-lg bg-white/15 backdrop-blur p-2.5 ring-1 ring-white/20">
-            <Award className="h-7 w-7 text-white" />
-          </div>
-          <div className="text-white">
-            <h1 className="text-2xl font-bold tracking-tight">Staff Appraisal Dashboard</h1>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={Award} title="Staff Appraisal Dashboard" />
 
       <Tabs defaultValue="charts">
         <TabsList>

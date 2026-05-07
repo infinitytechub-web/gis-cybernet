@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "phone", "email", "ghana_card_number",
@@ -108,18 +109,11 @@ export default function MyProfile() {
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-xl border border-emerald-700/20 bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-600 p-5 shadow-md">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]" />
-        <div className="relative flex items-center gap-3 flex-wrap">
-          <div className="rounded-lg bg-white/15 backdrop-blur p-2.5 ring-1 ring-white/20">
-            <UserCog className="h-7 w-7 text-white" />
-          </div>
-          <div className="text-white">
-            <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
-            <p className="text-xs text-white/80">Update your personal details. Changes sync across the system in real time.</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={UserCog}
+        title="My Profile"
+        subtitle="Update your personal details. Changes sync across the system in real time."
+      />
 
       <Card className="border-l-4 border-l-amber-500">
         <CardHeader className="pb-2">
