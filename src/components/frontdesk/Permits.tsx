@@ -82,14 +82,26 @@ export default function Permits() {
     mutationFn: async () => {
       const payload: any = {
         ...form,
+        applicant_name: form.applicant_name || `${form.surname} ${form.other_names}`.trim(),
         date_of_birth: form.date_of_birth || null,
+        passport_issue_date: form.passport_issue_date || null,
+        passport_expiry_date: form.passport_expiry_date || null,
         current_permit_expiry: form.current_permit_expiry || null,
         requested_start_date: form.requested_start_date || null,
         intended_duration_months: form.intended_duration_months === "" ? null : Number(form.intended_duration_months),
         fee_charged: form.fee_charged === "" ? null : Number(form.fee_charged),
         processed_by: user?.id,
       };
+      let savedId = editId;
       if (editId) {
+        const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await (supabase as any).from("permits").insert(payload).select("id").single();
+        if (error) throw error;
+        savedId = data?.id;
+      }
+      return savedId;
         const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
