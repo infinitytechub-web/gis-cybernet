@@ -352,10 +352,13 @@ export default function Appraisals() {
                   <div className="text-sm">
                     Total: <span className="font-semibold">{totalSum} / 35</span> · Average: <span className="font-semibold">{totalAvg.toFixed(2)} / 5</span>
                     {totalSum >= 30 && <Badge className="ml-2 bg-amber-100 text-amber-900"><Star className="h-3 w-3 mr-1 inline" /> Outstanding</Badge>}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      · {targetIds.length} officer{targetIds.length === 1 ? "" : "s"} selected
+                    </span>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" disabled={submit.isPending} onClick={() => submit.mutate("draft")} className="gap-1"><Save className="h-4 w-4" /> Save draft</Button>
-                    <Button disabled={submit.isPending} onClick={() => submit.mutate("submitted")} className="gap-1"><Send className="h-4 w-4" /> Submit to Command</Button>
+                    <Button variant="outline" disabled={submit.isPending || targetIds.length === 0} onClick={() => submit.mutate("draft")} className="gap-1"><Save className="h-4 w-4" /> Save draft</Button>
+                    <Button disabled={submit.isPending || targetIds.length === 0} onClick={() => submit.mutate("submitted")} className="gap-1"><Send className="h-4 w-4" /> Submit to Command</Button>
                   </div>
                 </div>
               </CardContent>
