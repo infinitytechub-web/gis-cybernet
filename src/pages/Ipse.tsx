@@ -114,7 +114,7 @@ export default function Ipse() {
   const analytics = useMemo(() => {
     const total = reports.length;
     const bySeverity = { low: 0, medium: 0, high: 0, none: 0 };
-    const byStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    const byStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_hoa: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
     const submitterCount: Record<string, number> = {};
     const trend: Record<string, number> = {};
 
