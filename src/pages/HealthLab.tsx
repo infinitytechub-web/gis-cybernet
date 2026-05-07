@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
-import { Activity, FileHeart, Stethoscope, CalendarClock, Pill, FilePlus2, ClipboardList, Search, AlertTriangle, Plus, Pencil, FileDown } from "lucide-react";
+import { Activity, FileHeart, Stethoscope, CalendarClock, Pill, FilePlus2, ClipboardList, Search, AlertTriangle, Plus, Pencil, FileDown, History, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import {
