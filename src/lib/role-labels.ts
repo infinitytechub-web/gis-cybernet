@@ -9,6 +9,8 @@ export const ROLE_LABEL: Partial<Record<AppRole, string>> = {
   "2ic": "2IC",
   head_of_administration: "Head of Administration",
   chief_staff_officer: "Chief Staff Officer",
+  head_of_processing: "Head of Processing",
+  deputy_head_of_processing: "Deputy Head of Processing",
   staff_officer: "Staff Officer",
   supervisor: "Supervisor",
   shift_supervisor: "Shift Supervisor",

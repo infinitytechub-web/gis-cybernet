@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit, Trash2, Download, Printer, Mail } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Download, Printer, Mail, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { softDelete, type RecyclableTable } from "@/lib/recycle-bin";
 import {
@@ -27,6 +27,7 @@ import {
   type RecordKind,
   RECORD_TITLES,
 } from "@/lib/record-pdf";
+import { downloadRecordDocx } from "@/lib/record-docx";
 import { EmailShareDialog } from "./EmailShareDialog";
 import { logRowAction } from "@/lib/row-action-audit";
 
@@ -87,6 +88,16 @@ export function RecordRowActions({
     }
   };
 
+  const handleDownloadDocx = async () => {
+    try {
+      await downloadRecordDocx(kind, record);
+      void logRowAction("download_pdf", kind, record);
+      toast.success("Word document downloaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Download failed");
+    }
+  };
+
   const handlePrint = () => {
     try {
       printRecordPdf(kind, record);
@@ -108,38 +119,70 @@ export function RecordRowActions({
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Record actions">
-            <MoreHorizontal className="h-4 w-4" />
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleEdit}
+          aria-label="Edit record"
+          title="Edit"
+        >
+          <Edit className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handlePrint}
+          aria-label="Print record"
+          title="Print"
+        >
+          <Printer className="h-4 w-4" />
+        </Button>
+        {canDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setConfirmOpen(true)}
+            aria-label="Delete record"
+            title="Delete"
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onClick={handleEdit}>
-            <Edit className="mr-2 h-4 w-4" /> Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDownload}>
-            <Download className="mr-2 h-4 w-4" /> Download PDF
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> Print
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleOpenEmail}>
-            <Mail className="mr-2 h-4 w-4" /> Send via Email
-          </DropdownMenuItem>
-          {canDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setConfirmOpen(true)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="More actions">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={handleDownload}>
+              <Download className="mr-2 h-4 w-4" /> Download PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDownloadDocx}>
+              <FileText className="mr-2 h-4 w-4" /> Download Word
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" /> Print
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleOpenEmail}>
+              <Mail className="mr-2 h-4 w-4" /> Send via Email
+            </DropdownMenuItem>
+            {canDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setConfirmOpen(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

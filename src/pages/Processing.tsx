@@ -11,8 +11,8 @@ import ProcessingEnquiryApplications from "@/components/processing/ProcessingEnq
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
 import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 
-const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
-const APPROVALS_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
+const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
+const APPROVALS_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
 
 export default function Processing() {
   const { role } = useAuth();
