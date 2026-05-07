@@ -5,6 +5,7 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
+import { isInternalCaller } from "../_shared/cron-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,6 +85,40 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+    // Authorization: allow internal/cron callers OR authenticated users with command-tier role.
+    const internal = isInternalCaller(req);
+    if (!internal) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      if (!authHeader.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const token = authHeader.slice(7);
+      const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: claims, error: authErr } = await userClient.auth.getClaims(token);
+      if (authErr || !claims?.claims?.sub) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const userId = claims.claims.sub as string;
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const allowed = new Set(["admin", "oic", "2ic", "staff_officer", "supervisor"]);
+      const ok = (roles ?? []).some((r: any) => allowed.has(r.role));
+      if (!ok) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
 
     const ref = body.reference_date ? new Date(body.reference_date + "T00:00:00Z") : new Date();
     const { from, to } = periodRange(body.period, ref);
