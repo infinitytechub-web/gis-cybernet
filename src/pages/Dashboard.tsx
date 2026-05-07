@@ -32,6 +32,7 @@ import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
 import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
+import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
