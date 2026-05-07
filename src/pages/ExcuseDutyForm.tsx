@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
+import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
@@ -40,6 +41,7 @@ export default function ExcuseDutyForm() {
     facility: "",
   });
   const [confirmation, setConfirmation] = useState<null | { period: string; submittedAt: Date }>(null);
+  const [attachmentPath, setAttachmentPath] = useState<string | null>(null);
 
   // Auto-fill: rank, department, office shift, staff ID, contact
   const { data: profile } = useQuery({
@@ -94,6 +96,7 @@ export default function ExcuseDutyForm() {
         diagnosis: form.diagnosis || null,
         doctor_name: form.doctor_name || null,
         facility: form.facility || null,
+        attachment_path: attachmentPath,
       } as any);
       if (error) throw error;
     },
@@ -101,6 +104,7 @@ export default function ExcuseDutyForm() {
       qc.invalidateQueries({ queryKey: ["my-excuse-forms"] });
       toast.success("Excuse Duty Form submitted — reviewers have been notified.");
       setConfirmation({ period: `${form.start_date} to ${form.end_date}`, submittedAt: new Date() });
+      setAttachmentPath(null);
       setForm({ ...form, reason: "", diagnosis: "", doctor_name: "", facility: "" });
     },
     onError: (e: any) => toast.error(e.message),
@@ -234,6 +238,7 @@ export default function ExcuseDutyForm() {
             <div className="md:col-span-2"><Label>Diagnosis</Label><Input value={form.diagnosis} onChange={(e) => setForm({ ...form, diagnosis: e.target.value })} /></div>
             <div className="md:col-span-2"><Label>Reason / Medical justification *</Label><Textarea rows={4} value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} /></div>
           </div>
+          <SecureAttachmentField value={attachmentPath} onChange={setAttachmentPath} label="Medical certificate / supporting doc" />
           <div className="flex gap-2 flex-wrap">
             <Button onClick={() => submit.mutate()} disabled={submit.isPending} className="gap-1"><FilePlus2 className="h-4 w-4" /> Submit</Button>
             <Button variant="outline" onClick={() => exportPDF()} className="gap-1"><FileDown className="h-4 w-4" /> Export PDF</Button>
