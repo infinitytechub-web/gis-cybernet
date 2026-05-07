@@ -270,8 +270,14 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
 
-    // Internal batch continuation call
+    // Internal batch continuation call — MUST be authenticated with service-role key
     if (body._batch && body.job_id) {
+      const batchAuth = req.headers.get("Authorization") ?? "";
+      if (!serviceRoleKey || !batchAuth.includes(serviceRoleKey)) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       EdgeRuntime.waitUntil(runNextBatch(body.job_id));
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
