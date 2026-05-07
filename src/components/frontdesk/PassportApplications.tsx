@@ -236,6 +236,7 @@ export default function PassportApplications() {
                 </div>
               )}
               <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+              {editId && <ApplicationDocuments recordType="passport" recordId={editId} />}
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editId ? "Update" : "Submit Application"}
               </Button>
