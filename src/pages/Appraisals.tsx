@@ -150,6 +150,9 @@ export default function Appraisals() {
         );
       }
 
+      const bulkBatchId = (typeof crypto !== "undefined" && "randomUUID" in crypto)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`;
       const result = await submitBulkAppraisals(supabase as any, {
         targetIds: fresh,
         payloadBase: {
@@ -162,6 +165,7 @@ export default function Appraisals() {
         },
         scores,
         criteria: CRITERIA,
+        bulkBatchId,
       });
       return {
         ...result,
