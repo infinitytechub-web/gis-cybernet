@@ -109,3 +109,101 @@ export async function exportHealthReportDOCX(report: any) {
   const blob = await Packer.toBlob(docx);
   saveAs(blob, `health_report_${format(new Date(report.report_date ?? new Date()), "yyyyMMdd")}.docx`);
 }
+
+// ─── List exports for filtered/paginated views ────────────────────────────
+function csvCell(v: any): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadCSV(filename: string, rows: string[][]) {
+  const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  saveAs(blob, filename);
+}
+
+export function exportRecordsCSV(records: any[], profileMap: Record<string, any>, suffix = "filtered") {
+  const rows: string[][] = [["Visit date", "Staff ID", "Officer", "Chief complaint", "Diagnosis", "Treatment", "Notes"]];
+  records.forEach((r) => {
+    const p = profileMap[r.staff_profile_id];
+    rows.push([
+      r.visit_date ? format(new Date(r.visit_date), "yyyy-MM-dd") : "",
+      p?.staff_id ?? "",
+      p ? `${p.last_name}, ${p.first_name}` : "",
+      r.chief_complaint ?? "",
+      r.diagnosis ?? "",
+      r.treatment ?? "",
+      r.notes ?? "",
+    ]);
+  });
+  downloadCSV(`medical_records_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.csv`, rows);
+}
+
+export function exportReportsCSV(reports: any[], suffix = "filtered") {
+  const rows: string[][] = [["Report date", "Title", "Category", "Summary", "File"]];
+  reports.forEach((r) => {
+    rows.push([
+      r.report_date ? format(new Date(r.report_date), "yyyy-MM-dd") : "",
+      r.title ?? "",
+      r.category ?? "",
+      r.summary ?? "",
+      r.file_name ?? "",
+    ]);
+  });
+  downloadCSV(`health_reports_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.csv`, rows);
+}
+
+function tablePDF(title: string, headers: string[], rows: string[][], filename: string) {
+  const doc = new jsPDF({ orientation: "landscape" });
+  header(doc, title);
+  let y = 46;
+  const colWidths = headers.map(() => Math.floor(265 / headers.length));
+  doc.setFontSize(9); doc.setFont("helvetica", "bold");
+  let x = 15;
+  headers.forEach((h, i) => { doc.text(h, x + 1, y); x += colWidths[i]; });
+  doc.line(15, y + 2, 280, y + 2);
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  rows.forEach((r) => {
+    if (y > 195) { doc.addPage({ orientation: "landscape" } as any); y = 20; }
+    let xi = 15;
+    let maxLines = 1;
+    r.forEach((cell, i) => {
+      const lines = doc.splitTextToSize(String(cell ?? ""), colWidths[i] - 2);
+      doc.text(lines, xi + 1, y);
+      maxLines = Math.max(maxLines, lines.length);
+      xi += colWidths[i];
+    });
+    y += maxLines * 4 + 2;
+  });
+  doc.setFont("helvetica", "italic"); doc.setFontSize(8);
+  doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · ${rows.length} rows`, 15, 200);
+  doc.save(filename);
+}
+
+export function exportRecordsPDF(records: any[], profileMap: Record<string, any>, suffix = "filtered") {
+  const rows = records.map((r) => {
+    const p = profileMap[r.staff_profile_id];
+    return [
+      r.visit_date ? format(new Date(r.visit_date), "dd MMM yyyy") : "",
+      p?.staff_id ?? "",
+      p ? `${p.last_name}, ${p.first_name}` : "",
+      r.diagnosis ?? "",
+      r.treatment ?? "",
+      r.notes ?? "",
+    ];
+  });
+  tablePDF("Medical Records", ["Date", "Staff ID", "Officer", "Diagnosis", "Treatment", "Notes"], rows,
+    `medical_records_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+}
+
+export function exportReportsPDF(reports: any[], suffix = "filtered") {
+  const rows = reports.map((r) => [
+    r.report_date ? format(new Date(r.report_date), "dd MMM yyyy") : "",
+    r.title ?? "",
+    r.category ?? "",
+    r.summary ?? "",
+  ]);
+  tablePDF("Health Reports", ["Date", "Title", "Category", "Summary"], rows,
+    `health_reports_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+}
