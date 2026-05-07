@@ -146,6 +146,52 @@ export default function AppraisalDetail() {
         </CardContent>
       </Card>
 
+      {(radarData.length > 0 || trendData.length > 1) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {radarData.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Criterion radar · {periodLabel}</CardTitle>
+                <CardDescription className="text-xs">Score per criterion (1–5).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <RadarChart data={radarData} outerRadius={90}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10 }} />
+                    <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                    <Radar name="Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.45} />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+          {trendData.length > 1 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Score trend across periods</CardTitle>
+                <CardDescription className="text-xs">Stacked criterion scores per recorded period (max 35).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={trendData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 35]} tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                    {CRIT_KEYS.map((k, i) => (
+                      <Bar key={k} dataKey={k} stackId="s" fill={CRIT_COLORS[i % CRIT_COLORS.length]} name={CRITERION_LABELS[k]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Scores · {periodLabel}</CardTitle>
