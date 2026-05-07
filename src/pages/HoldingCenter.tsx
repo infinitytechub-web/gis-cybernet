@@ -380,6 +380,12 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><Label>Marital Status</Label>
+                <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{["Single","Married","Divorced","Widowed","Separated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
               <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
               <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
               <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
