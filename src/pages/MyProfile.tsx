@@ -31,7 +31,7 @@ export default function MyProfile() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [form, setForm] = useState<Record<EditableKey, string>>({
-    first_name: "", last_name: "", gender: "", date_of_birth: "", phone: "", email: "",
+    first_name: "", last_name: "", gender: "", date_of_birth: "", marital_status: "", phone: "", email: "",
     ghana_card_number: "", blood_group: "", office: "", training_designation: "",
     staff_category: "", photo_url: "",
   });
