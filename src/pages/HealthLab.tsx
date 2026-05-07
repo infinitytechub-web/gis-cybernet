@@ -440,7 +440,7 @@ export default function HealthLab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const pendingExcuse = (excuseForms as any[]).filter((e) => e.status === "pending");
+  const pendingExcuse = (excuseForms as any[]).filter((e) => e.status === "submitted" || e.status === "pending");
 
   const openInvCreate = () => {
     setInvEdit(null);
