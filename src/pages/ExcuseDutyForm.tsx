@@ -18,6 +18,7 @@ import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
