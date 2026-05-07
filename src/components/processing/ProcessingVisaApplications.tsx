@@ -45,7 +45,7 @@ export default function ProcessingVisaApplications() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ status: "submitted", notes: "" });
+  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
 
   useEffect(() => {
     const channel = supabase
