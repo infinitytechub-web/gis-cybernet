@@ -106,7 +106,10 @@ export default function ExcuseDutyForm() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const canExport = (entry?: any) => !entry || entry.submitted_by === user?.id || isReviewer;
+
   const exportPDF = (entry?: any) => {
+    if (!canExport(entry)) { toast.error("Access denied: only the submitter or an authorized reviewer can download this form."); return; }
     if (!autoFill) { toast.error("Profile not loaded"); return; }
     const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
     const doc = new jsPDF();
