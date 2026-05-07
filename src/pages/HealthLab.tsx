@@ -835,7 +835,14 @@ export default function HealthLab() {
                         <TableCell className="text-xs max-w-[300px] truncate" title={e.reason}>{e.reason}</TableCell>
                         <TableCell><Badge className={STATUS_COLOR[e.status] ?? ""}>{e.status}</Badge></TableCell>
                         <TableCell className="text-right">
-                          {e.status === "pending" && (
+                          {(e.status === "submitted" || e.status === "pending") && (
+                            <div className="flex justify-end gap-1 flex-wrap">
+                              <Button size="sm" variant="outline" className="h-7" onClick={() => { setExcuseDecision({ id: e.id, action: "reviewed" }); setExcuseComment(""); }}>Mark reviewed</Button>
+                              <Button size="sm" className="h-7 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setExcuseDecision({ id: e.id, action: "approved" }); setExcuseComment(""); }}>Approve</Button>
+                              <Button size="sm" variant="destructive" className="h-7" onClick={() => { setExcuseDecision({ id: e.id, action: "rejected" }); setExcuseComment(""); }}>Reject</Button>
+                            </div>
+                          )}
+                          {e.status === "reviewed" && (
                             <div className="flex justify-end gap-1">
                               <Button size="sm" className="h-7 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setExcuseDecision({ id: e.id, action: "approved" }); setExcuseComment(""); }}>Approve</Button>
                               <Button size="sm" variant="destructive" className="h-7" onClick={() => { setExcuseDecision({ id: e.id, action: "rejected" }); setExcuseComment(""); }}>Reject</Button>
