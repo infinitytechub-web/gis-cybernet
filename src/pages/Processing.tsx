@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Stamp, FileText, BookOpen, ClipboardList, Shield, HelpCircle, ShieldCheck } from "lucide-react";
+import { Stamp, FileText, BookOpen, ClipboardList, Shield, HelpCircle, ShieldCheck, IdCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
 import ProcessingVisaApplications from "@/components/processing/ProcessingVisaApplications";
@@ -8,6 +8,7 @@ import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExte
 import ProcessingPassportApplications from "@/components/processing/ProcessingPassportApplications";
 import ProcessingOfficialApplications from "@/components/processing/ProcessingOfficialApplications";
 import ProcessingEnquiryApplications from "@/components/processing/ProcessingEnquiryApplications";
+import ProcessingPermits from "@/components/processing/ProcessingPermits";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
 import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 
@@ -30,7 +31,7 @@ export default function Processing() {
   }
 
   const showApprovals = !!role && APPROVALS_ROLES.includes(role);
-  const colsClass = showApprovals ? "grid w-full grid-cols-7" : "grid w-full grid-cols-6";
+  const colsClass = showApprovals ? "grid w-full grid-cols-8" : "grid w-full grid-cols-7";
 
   return (
     <div className="space-y-6">
@@ -42,6 +43,9 @@ export default function Processing() {
           </TabsTrigger>
           <TabsTrigger value="extensions" className="gap-1 text-xs sm:text-sm">
             <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" /> Extensions
+          </TabsTrigger>
+          <TabsTrigger value="permits" className="gap-1 text-xs sm:text-sm">
+            <IdCard className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Permits
           </TabsTrigger>
           <TabsTrigger value="passport" className="gap-1 text-xs sm:text-sm">
             <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Passport
@@ -63,6 +67,7 @@ export default function Processing() {
         </TabsList>
         <TabsContent value="visa"><ProcessingVisaApplications /></TabsContent>
         <TabsContent value="extensions"><ProcessingVisaExtensions /></TabsContent>
+        <TabsContent value="permits"><ProcessingPermits /></TabsContent>
         <TabsContent value="passport"><ProcessingPassportApplications /></TabsContent>
         <TabsContent value="official"><ProcessingOfficialApplications /></TabsContent>
         <TabsContent value="enquiry"><ProcessingEnquiryApplications /></TabsContent>
