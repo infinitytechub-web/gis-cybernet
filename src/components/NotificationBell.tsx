@@ -256,7 +256,7 @@ export function NotificationBell() {
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <div className="border-b px-2">
             <TabsList className="h-8 w-full bg-transparent gap-0 p-0">
-              {["all", "unread", "leave", "posting", "shift", "visa"].map((t) => (
+              {["all", "unread", "leave", "posting", "shift", "visa", "health"].map((t) => (
                 <TabsTrigger key={t} value={t} className="text-[11px] h-8 px-2 py-0 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent capitalize">
                   {t === "all" ? "All" : t === "unread" ? `Unread (${unreadCount})` : typeLabels[t] || t}
                 </TabsTrigger>
