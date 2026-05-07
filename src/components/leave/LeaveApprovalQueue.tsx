@@ -195,13 +195,38 @@ export function LeaveApprovalQueue() {
                         <Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge>
                       </TableCell>
                       <TableCell>
-                        {r.status === "pending" ? (
-                          <Button variant="outline" size="sm" onClick={() => { setSelectedRequest(r); setComments(""); }}>
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
+                        <div className="flex gap-1">
+                          {r.status === "pending" && (
+                            <Button variant="outline" size="sm" onClick={() => { setSelectedRequest(r); setComments(""); }}>
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {(r.status === "approved" || r.status === "rejected") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Download letter"
+                              onClick={() => {
+                                const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+                                const doc = generateLeaveLetter({
+                                  staffName: `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+                                  staffId: r.profiles?.staff_id ?? "—",
+                                  type: r.type,
+                                  startDate: r.start_date,
+                                  endDate: r.end_date,
+                                  days,
+                                  status: r.status,
+                                  reason: r.reason ?? undefined,
+                                  comments: r.comments ?? undefined,
+                                  reference: `LV-${r.id.slice(0, 8).toUpperCase()}`,
+                                });
+                                downloadPdf(doc, `leave-${r.profiles?.staff_id ?? r.id.slice(0,6)}.pdf`);
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
