@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,6 +75,7 @@ const healthItems = [
 
 const allStaffItems = [
   { title: "My Profile", url: "/my-profile", icon: UserCog, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "My Portal", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
   { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
   { title: "My Submissions", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
 ];
@@ -96,6 +97,8 @@ const adminItems = [
   { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
   { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Command Role Audit", url: "/command-role-audit", icon: History, iconColor: "text-primary" },
+  { title: "Role Assignments", url: "/role-assignments", icon: UserCog, iconColor: "text-amber-700 dark:text-amber-300" },
+  { title: "Audit Log Dashboard", url: "/audit-log", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
   { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
 

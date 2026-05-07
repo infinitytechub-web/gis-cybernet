@@ -71,6 +71,9 @@ const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 const MyExcuseDutySubmissions = lazy(() => import("./pages/MyExcuseDutySubmissions"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
 const Appraisals = lazy(() => import("./pages/Appraisals"));
+const RoleAssignmentsAdmin = lazy(() => import("./pages/RoleAssignmentsAdmin"));
+const StaffPortal = lazy(() => import("./pages/StaffPortal"));
+const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -149,6 +152,9 @@ function App() {
           <Route path="/excuse-duty/mine" element={<ProtectedRoute><Layout><MyExcuseDutySubmissions /></Layout></ProtectedRoute>} />
           <Route path="/my-profile" element={<ProtectedRoute><Layout><MyProfile /></Layout></ProtectedRoute>} />
           <Route path="/appraisals" element={<ProtectedRoute><Layout><Appraisals /></Layout></ProtectedRoute>} />
+          <Route path="/role-assignments" element={<ProtectedRoute><Layout><RoleAssignmentsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/my-portal" element={<ProtectedRoute><Layout><StaffPortal /></Layout></ProtectedRoute>} />
+          <Route path="/audit-log" element={<ProtectedRoute><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
