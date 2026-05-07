@@ -3740,10 +3740,12 @@ export type Database = {
           approved_by: string | null
           comments: string | null
           created_at: string
+          department_id: string | null
           end_date: string
           id: string
           profile_id: string
           reason: string | null
+          shift_group: string | null
           start_date: string
           status: Database["public"]["Enums"]["leave_status"]
           type: Database["public"]["Enums"]["leave_type"]
@@ -3753,10 +3755,12 @@ export type Database = {
           approved_by?: string | null
           comments?: string | null
           created_at?: string
+          department_id?: string | null
           end_date: string
           id?: string
           profile_id: string
           reason?: string | null
+          shift_group?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["leave_status"]
           type: Database["public"]["Enums"]["leave_type"]
@@ -3766,10 +3770,12 @@ export type Database = {
           approved_by?: string | null
           comments?: string | null
           created_at?: string
+          department_id?: string | null
           end_date?: string
           id?: string
           profile_id?: string
           reason?: string | null
+          shift_group?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["leave_status"]
           type?: Database["public"]["Enums"]["leave_type"]
@@ -3788,6 +3794,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {
