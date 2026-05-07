@@ -17,6 +17,8 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { ProcessingChecklist, VISA_CHECKLIST } from "@/components/applications/ProcessingChecklist";
 
 const PROCESSING_STATUSES = ["submitted", "under_review"];
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected"];
@@ -38,7 +40,7 @@ export default function ProcessingVisaExtensions() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ status: "submitted", notes: "" });
+  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
 
   useEffect(() => {
     const channel = supabase
@@ -68,7 +70,7 @@ export default function ProcessingVisaExtensions() {
       if (!editId) return;
       const existing = extensions.find((e: any) => e.id === editId);
       const { error } = await supabase.from("visa_extensions")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id })
+        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
         .eq("id", editId);
       if (error) throw error;
 
@@ -102,7 +104,7 @@ export default function ProcessingVisaExtensions() {
   const [reviewItem, setReviewItem] = useState<any>(null);
 
   const openReview = (ext: any) => {
-    setForm({ status: ext.status, notes: ext.notes || "" });
+    setForm({ status: ext.status, notes: ext.notes || "", checklist: (ext.processing_checklist as Record<string, boolean>) || {} });
     setEditId(ext.id);
     setReviewItem(ext);
     setOpen(true);
@@ -167,7 +169,15 @@ export default function ProcessingVisaExtensions() {
               {reviewItem.reason && <div className="col-span-2"><span className="text-muted-foreground">Reason:</span> {reviewItem.reason}</div>}
             </div>
           )}
+          {reviewItem && (
+            <ApplicationDocuments recordType="visa_extension" recordId={reviewItem.id} readOnly />
+          )}
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
+            <ProcessingChecklist
+              items={VISA_CHECKLIST}
+              value={form.checklist}
+              onChange={(checklist) => setForm({ ...form, checklist })}
+            />
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
