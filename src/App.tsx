@@ -123,6 +123,7 @@ function App() {
           <Route path="/guard-schedule" element={<ProtectedRoute><Layout><GuardSchedule /></Layout></ProtectedRoute>} />
           <Route path="/guard-schedule/import" element={<ProtectedRoute><Layout><GuardScheduleImport /></Layout></ProtectedRoute>} />
           <Route path="/route-history" element={<ProtectedRoute><Layout><RouteHistory /></Layout></ProtectedRoute>} />
+          <Route path="/verify-export" element={<ProtectedRoute><Layout><VerifyExport /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/pending" element={<ProtectedRoute><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/accounts" element={<ProtectedRoute><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
