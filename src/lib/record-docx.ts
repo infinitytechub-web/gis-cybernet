@@ -55,6 +55,7 @@ const LABELS: Record<string, string> = {
 const FIELDS_BY_KIND: Record<RecordKind, string[]> = {
   visa_application: ["applicant_name","passport_number","nationality","visa_type","date_of_birth","gender","marital_status","phone","home_address","foreign_address","next_of_kin","emergency_contact","entry_date","exit_date","purpose","status","notes","created_at"],
   visa_extension: ["applicant_name","passport_number","nationality","permit_type","fee_charged","current_visa_expiry","requested_extension_date","phone","reason","status","notes","created_at"],
+  permit: ["application_reference","applicant_name","passport_number","nationality","permit_type","permit_category","occupation","employer_sponsor_name","institution_name","course_of_study","intended_duration_months","current_permit_expiry","requested_start_date","fee_charged","phone","purpose","status","notes","created_at"],
   passport_application: ["applicant_name","date_of_birth","nationality","application_type","gender","marital_status","phone","address","next_of_kin","emergency_contact","status","notes","created_at"],
   official_application: ["applicant_name","passport_number","nationality","official_type","reference_number","requesting_entity","purpose","phone","status","notes","created_at"],
   enquiry_application: ["applicant_name","passport_number","nationality","enquiry_type","subject","purpose","response","phone","status","notes","created_at"],
