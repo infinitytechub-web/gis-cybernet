@@ -43,7 +43,7 @@ export default function ProcessingPermits() {
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<any>(null);
-  const [form, setForm] = useState({ status: "submitted", notes: "", fee_charged: "" });
+  const [form, setForm] = useState<{ status: string; notes: string; fee_charged: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", fee_charged: "", checklist: {} });
 
   useEffect(() => {
     const ch = supabase.channel("processing-permits-realtime")
