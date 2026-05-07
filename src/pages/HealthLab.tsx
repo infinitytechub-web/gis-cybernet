@@ -40,6 +40,19 @@ export default function HealthLab() {
   const [tab, setTab] = useState("overview");
   const [search, setSearch] = useState("");
 
+  // Advanced filters (records & reports)
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+  const [filterStaff, setFilterStaff] = useState("");
+  const [filterService, setFilterService] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [recordsPage, setRecordsPage] = useState(1);
+  const [reportsPage, setReportsPage] = useState(1);
+  const PAGE_SIZE = 20;
+
+  // Audit log dialog
+  const [auditOpen, setAuditOpen] = useState(false);
+
   // Records
   const [recordOpen, setRecordOpen] = useState(false);
   const [recordForm, setRecordForm] = useState({ staff_profile_id: "", chief_complaint: "", diagnosis: "", treatment: "", notes: "" });
@@ -59,12 +72,15 @@ export default function HealthLab() {
   // Appointments
   const [apptOpen, setApptOpen] = useState(false);
   const [apptEdit, setApptEdit] = useState<any | null>(null);
+  const [apptConflict, setApptConflict] = useState<string | null>(null);
   const [apptForm, setApptForm] = useState({
     staff_profile_id: "",
     service_id: "",
     scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"),
     status: "scheduled",
     notes: "",
+    authorized_by: "",
+    authorized_role: "",
   });
 
   if (!isAdminOrSupervisor) {
