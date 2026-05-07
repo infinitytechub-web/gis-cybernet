@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const PREFLIGHT_URL = `${SUPABASE_URL}/functions/v1/maps-tile-proxy?preflight=1`;
+// Include dummy z/x/y so even an older deployment of the proxy (without the
+// preflight branch) does not 400 on parameter validation.
+const PREFLIGHT_URL = `${SUPABASE_URL}/functions/v1/maps-tile-proxy?preflight=1&view=streets&z=0&x=0&y=0`;
 
 export type TilesPreflight =
   | { status: "loading" }
