@@ -111,6 +111,30 @@ export default function Ipse() {
   });
   const ipseUserIdSet = useMemo(() => new Set(ipseUserIds), [ipseUserIds]);
 
+  // Night Guard data (for the IPSE-side roster upload tab)
+  const { data: shifts = [] } = useQuery({
+    queryKey: ["ipse-shifts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shifts").select("id, name, start_time, end_time");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: nightGuardStaff = [] } = useQuery({
+    queryKey: ["ipse-night-guard-staff"],
+    queryFn: async () => {
+      const { data: dept } = await supabase.from("departments").select("id, name").ilike("name", "%night guard%").maybeSingle();
+      if (!dept?.id) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, user_id, first_name, last_name, staff_id, department_id")
+        .eq("department_id", dept.id)
+        .eq("status", "active");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // Analytics
   const analytics = useMemo(() => {
     const total = reports.length;
