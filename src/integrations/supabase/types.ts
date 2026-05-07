@@ -3855,6 +3855,30 @@ export type Database = {
           },
         ]
       }
+      map_access_audit: {
+        Row: {
+          id: string
+          occurred_at: string
+          surface: string
+          user_id: string
+          view_mode: string | null
+        }
+        Insert: {
+          id?: string
+          occurred_at?: string
+          surface: string
+          user_id: string
+          view_mode?: string | null
+        }
+        Update: {
+          id?: string
+          occurred_at?: string
+          surface?: string
+          user_id?: string
+          view_mode?: string | null
+        }
+        Relationships: []
+      }
       medical_appointment_audit: {
         Row: {
           action: string
@@ -6055,6 +6079,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      route_tracking_history: {
+        Row: {
+          client_ip: unknown
+          created_at: string
+          encrypted_route: string
+          id: string
+          point_count: number
+          recorded_at: string
+          source: string | null
+          user_agent: string | null
+          user_id: string
+          view_mode: string | null
+        }
+        Insert: {
+          client_ip?: unknown
+          created_at?: string
+          encrypted_route: string
+          id?: string
+          point_count?: number
+          recorded_at?: string
+          source?: string | null
+          user_agent?: string | null
+          user_id: string
+          view_mode?: string | null
+        }
+        Update: {
+          client_ip?: unknown
+          created_at?: string
+          encrypted_route?: string
+          id?: string
+          point_count?: number
+          recorded_at?: string
+          source?: string | null
+          user_agent?: string | null
+          user_id?: string
+          view_mode?: string | null
+        }
+        Relationships: []
       }
       secure_file_uploads: {
         Row: {
