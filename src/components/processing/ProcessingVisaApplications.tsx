@@ -20,6 +20,8 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { ProcessingChecklist, VISA_CHECKLIST } from "@/components/applications/ProcessingChecklist";
 
 const PROCESSING_STATUSES = ["submitted", "under_review"];
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
