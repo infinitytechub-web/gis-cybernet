@@ -5429,6 +5429,7 @@ export type Database = {
           intake: number | null
           last_name: string
           login_enabled: boolean
+          marital_status: string | null
           office: string | null
           phone: string | null
           photo_url: string | null
@@ -5458,6 +5459,7 @@ export type Database = {
           intake?: number | null
           last_name: string
           login_enabled?: boolean
+          marital_status?: string | null
           office?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -5487,6 +5489,7 @@ export type Database = {
           intake?: number | null
           last_name?: string
           login_enabled?: boolean
+          marital_status?: string | null
           office?: string | null
           phone?: string | null
           photo_url?: string | null
