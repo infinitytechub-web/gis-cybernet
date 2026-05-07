@@ -28,6 +28,7 @@ const SEVERITY_BADGE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending_ipse: "Pending IPSE",
+  forwarded_to_hoa: "With Head of Admin",
   forwarded_to_2ic: "With 2IC",
   forwarded_to_oic: "With OIC",
   approved: "Approved",
