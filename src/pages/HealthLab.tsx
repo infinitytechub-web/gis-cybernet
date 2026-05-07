@@ -909,12 +909,66 @@ export default function HealthLab() {
                 </Select>
               </div>
             </div>
+            <div>
+              <Label>Authorized by *</Label>
+              <Select value={apptForm.authorized_by || "none"} onValueChange={(v) => {
+                if (v === "none") { setApptForm({ ...apptForm, authorized_by: "", authorized_role: "" }); return; }
+                const u = (authorizers as any[]).find((x) => x.user_id === v);
+                setApptForm({ ...apptForm, authorized_by: v, authorized_role: u?.role ?? "" });
+              }}>
+                <SelectTrigger><SelectValue placeholder="Select authorizer…" /></SelectTrigger>
+                <SelectContent className="max-h-[260px]">
+                  <SelectItem value="none">— None —</SelectItem>
+                  {(authorizers as any[]).map((u) => (
+                    <SelectItem key={u.user_id} value={u.user_id}>
+                      {u.profile.last_name}, {u.profile.first_name} <span className="text-muted-foreground ml-1 text-[10px] capitalize">({u.role.replace(/_/g," ")})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">Command tier &amp; all shift supervisors</p>
+            </div>
             <div><Label>Notes</Label><Textarea rows={2} value={apptForm.notes} onChange={(e) => setApptForm({ ...apptForm, notes: e.target.value })} /></div>
+            {apptConflict && (
+              <div className="rounded-md border border-rose-300 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Scheduling conflict</div>
+                <div className="mt-0.5">{apptConflict}</div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); }}>Cancel</Button>
-            <Button onClick={() => saveAppointment.mutate()} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
+            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); setApptConflict(null); }}>Cancel</Button>
+            <Button onClick={() => { setApptConflict(null); saveAppointment.mutate(); }} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inventory audit log */}
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Inventory Audit Log</DialogTitle></DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <Table>
+              <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Action</TableHead><TableHead>Item</TableHead><TableHead className="text-right">Δ</TableHead><TableHead>Qty</TableHead><TableHead>By</TableHead><TableHead>Note</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {auditLog.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No audit entries.</TableCell></TableRow>}
+                {auditLog.map((a: any) => {
+                  const actor = (authorizers as any[]).find((u) => u.user_id === a.performed_by);
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(a.performed_at), "dd MMM yy HH:mm")}</TableCell>
+                      <TableCell><Badge variant="outline" className="capitalize text-[10px]">{a.action}</Badge></TableCell>
+                      <TableCell className="text-xs">{a.item_name}</TableCell>
+                      <TableCell className={`text-xs text-right font-mono ${a.delta && a.delta < 0 ? "text-rose-600" : a.delta && a.delta > 0 ? "text-emerald-600" : ""}`}>{a.delta != null ? (a.delta > 0 ? "+" : "") + a.delta : "—"}</TableCell>
+                      <TableCell className="text-xs">{a.quantity_before ?? "—"} → {a.quantity_after ?? "—"}</TableCell>
+                      <TableCell className="text-xs">{actor ? `${actor.profile.last_name}, ${actor.profile.first_name}` : (a.performed_by ? a.performed_by.slice(0,8) : "system")}</TableCell>
+                      <TableCell className="text-xs max-w-[180px] truncate" title={a.note ?? ""}>{a.note ?? "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
