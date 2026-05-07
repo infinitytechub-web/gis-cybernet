@@ -651,12 +651,13 @@ export default function HealthLab() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Staff</TableHead><TableHead>Service</TableHead><TableHead>Status</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Staff</TableHead><TableHead>Service</TableHead><TableHead>Status</TableHead><TableHead>Authorized by</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {appointments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No appointments.</TableCell></TableRow>}
+                  {appointments.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No appointments.</TableCell></TableRow>}
                   {appointments.map((a: any) => {
                     const p = profileMap[a.staff_profile_id];
                     const s = a.service_id ? serviceMap[a.service_id] : null;
+                    const auth = (authorizers as any[]).find((u) => u.user_id === a.authorized_by);
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="text-xs">{format(new Date(a.scheduled_at), "dd MMM yyyy HH:mm")}</TableCell>
@@ -670,6 +671,7 @@ export default function HealthLab() {
                             </SelectContent>
                           </Select>
                         </TableCell>
+                        <TableCell className="text-xs">{auth ? `${auth.profile.last_name}, ${auth.profile.first_name}` : "—"}{a.authorized_role && <div className="text-[10px] text-muted-foreground capitalize">{a.authorized_role.replace(/_/g," ")}</div>}</TableCell>
                         <TableCell className="text-xs max-w-[260px] truncate" title={a.notes ?? ""}>{a.notes ?? "—"}</TableCell>
                         <TableCell className="text-right">
                           <Button size="sm" variant="ghost" className="h-7 gap-1" onClick={() => openApptEdit(a)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
