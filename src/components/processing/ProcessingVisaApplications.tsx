@@ -199,7 +199,15 @@ export default function ProcessingVisaApplications() {
               {reviewApp.purpose && <div className="col-span-2"><span className="text-muted-foreground">Purpose:</span> {reviewApp.purpose}</div>}
             </div>
           )}
+          {reviewApp && (
+            <ApplicationDocuments recordType="visa" recordId={reviewApp.id} readOnly />
+          )}
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
+            <ProcessingChecklist
+              items={VISA_CHECKLIST}
+              value={form.checklist}
+              onChange={(checklist) => setForm({ ...form, checklist })}
+            />
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
