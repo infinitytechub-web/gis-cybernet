@@ -181,6 +181,8 @@ export default function ProcessingPermits() {
               {reviewItem.purpose && <div className="col-span-2"><span className="text-muted-foreground">Purpose:</span> {reviewItem.purpose}</div>}
             </div>
           )}
+          {reviewItem && <ApplicationDocuments recordType="permit" recordId={reviewItem.id} permitType={reviewItem.permit_type} readOnly />}
+          <ProcessingChecklist items={PERMIT_CHECKLIST} value={form.checklist} onChange={(c) => setForm({ ...form, checklist: c })} />
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Update Status</Label>
