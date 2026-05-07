@@ -433,7 +433,7 @@ export default function Ipse() {
         {/* TRIAGE */}
         <TabsContent value="triage" className="space-y-3">
           <Card className="border-t-4 border-t-amber-500">
-            <CardHeader className="pb-2 bg-amber-50/50 dark:bg-amber-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-amber-900 dark:text-amber-200"><FileWarning className="h-4 w-4" /> Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to 2IC → 2IC forwards to OIC → OIC issues final approval.</CardDescription></CardHeader>
+            <CardHeader className="pb-2 bg-amber-50/50 dark:bg-amber-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-amber-900 dark:text-amber-200"><FileWarning className="h-4 w-4" /> Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to Head of Administration → 2IC → OIC issues final approval.</CardDescription></CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[60vh]">
                 <Table>
