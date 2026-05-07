@@ -63,7 +63,7 @@ export default function HealthLab() {
   const [recordForm, setRecordForm] = useState({ staff_profile_id: "", chief_complaint: "", diagnosis: "", treatment: "", notes: "" });
 
   // Excuse duty review
-  const [excuseDecision, setExcuseDecision] = useState<{ id: string; action: "approved" | "rejected" } | null>(null);
+  const [excuseDecision, setExcuseDecision] = useState<{ id: string; action: "reviewed" | "approved" | "rejected" } | null>(null);
   const [excuseComment, setExcuseComment] = useState("");
 
   // Inventory
