@@ -91,8 +91,38 @@ export default function AppraisalDetail() {
     },
   });
 
+  const { data: trend = [] } = useQuery({
+    queryKey: ["appraisal-trend", staffProfileId],
+    enabled: !!staffProfileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_appraisals" as any)
+        .select("period_year, period_month, scores:staff_appraisal_scores(criterion, score)")
+        .eq("staff_profile_id", staffProfileId!)
+        .order("period_year", { ascending: true })
+        .order("period_month", { ascending: true, nullsFirst: true })
+        .limit(12);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const officerName = profile ? `${profile.last_name ?? ""}, ${profile.first_name ?? ""}` : "—";
   const scoreRows = useMemo(() => (appraisal?.scores ?? []) as { criterion: string; score: number; remarks?: string | null }[], [appraisal]);
+
+  const radarData = useMemo(
+    () => scoreRows.map((s) => ({ criterion: CRITERION_LABELS[s.criterion] ?? s.criterion, score: s.score })),
+    [scoreRows],
+  );
+  const trendData = useMemo(() => trend.map((a: any) => {
+    const row: any = {
+      period: a.period_month ? `${MONTHS[a.period_month - 1]} ${a.period_year}` : `Annual ${a.period_year}`,
+    };
+    (a.scores ?? []).forEach((s: any) => { row[s.criterion] = s.score; });
+    return row;
+  }), [trend]);
+  const CRIT_KEYS = Object.keys(CRITERION_LABELS);
+  const CRIT_COLORS = ["#10b981","#3b82f6","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899"];
 
   return (
     <div className="space-y-4">
