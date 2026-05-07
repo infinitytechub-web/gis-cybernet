@@ -68,6 +68,14 @@ const securityItems = [
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400" },
 ];
 
+const healthItems = [
+  { title: "GIS Health Lab", url: "/health-lab", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300" },
+];
+
+const allStaffItems = [
+  { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
+];
+
 const logisticsItems = [
   { title: "Stores & Inventory", url: "/stores", icon: Package, iconColor: "text-amber-700 dark:text-amber-500" },
 ];
