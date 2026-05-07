@@ -196,17 +196,28 @@ export default function HealthLab() {
     },
   });
 
-  // Inventory audit log
-  const { data: auditLog = [] } = useQuery({
-    queryKey: ["medical-inventory-audit"],
+  // Inventory audit log — server-paginated, role-checked via RPC
+  const { data: auditResp } = useQuery({
+    queryKey: ["medical-inventory-audit", auditFilters, auditPage],
     enabled: auditOpen,
     queryFn: async () => {
-      const { data, error } = await supabase.from("medical_inventory_audit" as any)
-        .select("*").order("performed_at", { ascending: false }).limit(300);
+      const { data, error } = await (supabase as any).rpc("list_medical_inventory_audit", {
+        p_from: auditFilters.from ? new Date(auditFilters.from).toISOString() : null,
+        p_to: auditFilters.to ? new Date(auditFilters.to + "T23:59:59").toISOString() : null,
+        p_performed_by: auditFilters.performed_by || null,
+        p_inventory_id: null,
+        p_item_search: auditFilters.item || null,
+        p_action: auditFilters.action || null,
+        p_page: auditPage,
+        p_page_size: AUDIT_PAGE_SIZE,
+      });
       if (error) throw error;
       return data as any[];
     },
   });
+  const auditLog = auditResp ?? [];
+  const auditTotal = (auditResp?.[0]?.total_count as number | undefined) ?? 0;
+  const auditPages = Math.max(1, Math.ceil(auditTotal / AUDIT_PAGE_SIZE));
 
   const filteredRecords = useMemo(() => {
     let list = records as any[];
