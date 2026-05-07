@@ -253,6 +253,7 @@ export default function Staff() {
         staff_category: staffCategory || null,
         office: office || null,
         date_of_birth: dateOfBirth || null,
+        marital_status: maritalStatus || null,
       };
 
       if (editing) {
