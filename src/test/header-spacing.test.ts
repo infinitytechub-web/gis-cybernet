@@ -27,7 +27,7 @@ function walk(dir: string, out: string[] = []): string[] {
 
 // Matches text-bearing tags that are completely empty (no children, no whitespace).
 // Allows any attributes. Excludes self-closing tags.
-const EMPTY_TEXT_TAG = /<(p|h[1-6]|span|label)\b[^>]*>\s*<\/\1>/g;
+const EMPTY_TEXT_TAG = /<(p|h[1-6]|span|label)\b[^>]*[^/]>\s*<\/\1>/g;
 
 // Allow-list: empty spans used purely as visual decorations (e.g. ping dots).
 // Match by class signature so the test stays strict but pragmatic.
