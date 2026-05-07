@@ -3,11 +3,12 @@
 // No API keys required — sources are public text feeds.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.53.0";
+import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 const BATCH = 50;
@@ -63,6 +64,7 @@ async function upsertEntries(
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (!isInternalCaller(req)) return unauthorizedResponse(corsHeaders);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
