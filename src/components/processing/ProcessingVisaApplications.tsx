@@ -75,7 +75,7 @@ export default function ProcessingVisaApplications() {
       if (!editId) return;
       const existing = applications.find((a: any) => a.id === editId);
       const { error } = await supabase.from("visa_applications")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id })
+        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
         .eq("id", editId);
       if (error) throw error;
 
