@@ -862,14 +862,18 @@ export default function HealthLab() {
       {/* Excuse decision dialog */}
       <Dialog open={!!excuseDecision} onOpenChange={(o) => { if (!o) { setExcuseDecision(null); setExcuseComment(""); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{excuseDecision?.action === "approved" ? "Approve" : "Reject"} excuse duty</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="capitalize">{excuseDecision?.action} excuse duty form</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <Label>Comment</Label>
-            <Textarea rows={3} value={excuseComment} onChange={(e) => setExcuseComment(e.target.value)} />
+            <Label>Comment {excuseDecision?.action === "rejected" && <span className="text-rose-600">*</span>}</Label>
+            <Textarea rows={3} value={excuseComment} onChange={(e) => setExcuseComment(e.target.value)} placeholder={excuseDecision?.action === "rejected" ? "Reason is required" : "Optional notes for the submitter"} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExcuseDecision(null)}>Cancel</Button>
-            <Button variant={excuseDecision?.action === "rejected" ? "destructive" : "default"} onClick={() => decideExcuse.mutate()} disabled={decideExcuse.isPending}>Confirm</Button>
+            <Button
+              variant={excuseDecision?.action === "rejected" ? "destructive" : "default"}
+              onClick={() => decideExcuse.mutate()}
+              disabled={decideExcuse.isPending || (excuseDecision?.action === "rejected" && !excuseComment.trim())}
+            >Confirm</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
