@@ -13,9 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight } from "lucide-react";
+import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
+import { generatePostingLetter, downloadPdf } from "@/lib/branded-letter-pdf";
 
 export function PostingApprovalQueue() {
   const { user } = useAuth();
@@ -155,11 +156,35 @@ export function PostingApprovalQueue() {
                     <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.effective_date), "PP")}</TableCell>
                     <TableCell><Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge></TableCell>
                     <TableCell>
-                      {r.status === "pending" ? (
-                        <Button variant="outline" size="sm" onClick={() => { setSelectedRecord(r); setComments(""); }}>
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                      <div className="flex gap-1">
+                        {r.status === "pending" && (
+                          <Button variant="outline" size="sm" onClick={() => { setSelectedRecord(r); setComments(""); }}>
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {(r.status === "approved" || r.status === "rejected") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="Download letter"
+                            onClick={() => {
+                              const doc = generatePostingLetter({
+                                staffName: `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+                                staffId: r.profiles?.staff_id ?? "—",
+                                fromDepartment: r.from_dept?.name ?? undefined,
+                                toDepartment: r.to_dept?.name ?? undefined,
+                                effectiveDate: r.effective_date,
+                                status: r.status,
+                                comments: r.remarks ?? undefined,
+                                reference: `PT-${r.id.slice(0, 8).toUpperCase()}`,
+                              });
+                              downloadPdf(doc, `posting-${r.profiles?.staff_id ?? r.id.slice(0,6)}.pdf`);
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
