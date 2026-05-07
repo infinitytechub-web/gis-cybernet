@@ -301,6 +301,8 @@ export function AppSidebar() {
         {renderGroup("Immigration Services", immigrationItems)}
         {renderGroup("Security & Enforcement", securityItems)}
         {renderGroup("Logistics", logisticsItems)}
+        {renderGroup("My Forms", allStaffItems)}
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Healthcare", healthItems)}
         {renderGroup("Finance & Procurement", financeItems)}
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
