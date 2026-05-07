@@ -315,16 +315,25 @@ export function PermitForm({
       )}
 
       <div className="grid grid-cols-3 gap-3">
-        <div><Label>Duration (months)</Label><Input type="number" min={1} value={form.intended_duration_months} onChange={(e) => setForm({ ...form, intended_duration_months: e.target.value })} /></div>
+        <div><Label>Duration (months) *</Label><Input type="number" min={1} value={form.intended_duration_months} onChange={(e) => setForm({ ...form, intended_duration_months: e.target.value })} required /></div>
         <div><Label>Current Permit Expiry</Label><Input type="date" value={form.current_permit_expiry} onChange={(e) => setForm({ ...form, current_permit_expiry: e.target.value })} /></div>
-        <div><Label>Requested Start Date</Label><Input type="date" value={form.requested_start_date} onChange={(e) => setForm({ ...form, requested_start_date: e.target.value })} /></div>
-        <div><Label>Fee Charged (GHS)</Label><FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} /></div>
+        <div><Label>Requested Start Date *</Label><Input type="date" value={form.requested_start_date} onChange={(e) => setForm({ ...form, requested_start_date: e.target.value })} required /></div>
+        <div><Label>Fee Charged (GHS) *</Label><FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} required /></div>
+        <div className="col-span-2"><Label>Fee Receipt Number *</Label><Input value={form.fee_receipt_number} onChange={(e) => setForm({ ...form, fee_receipt_number: e.target.value })} placeholder="GRA / GIS receipt #" required /></div>
       </div>
 
-      <div><Label>Home Address</Label><Textarea rows={2} value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} /></div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 rounded-md border p-3 bg-muted/30">
+        <div className="col-span-2 text-sm font-medium">Host / Local Contact in Ghana</div>
+        <div><Label>Host Name</Label><Input value={form.host_name} onChange={(e) => setForm({ ...form, host_name: e.target.value })} /></div>
+        <div><Label>Host Phone</Label><Input value={form.host_phone} onChange={(e) => setForm({ ...form, host_phone: e.target.value })} /></div>
+        <div className="col-span-2"><Label>Host Address</Label><Input value={form.host_address} onChange={(e) => setForm({ ...form, host_address: e.target.value })} /></div>
+      </div>
+
+      <div><Label>Home Address (Ghana) *</Label><Textarea rows={2} value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} required /></div>
+      <div className="grid grid-cols-3 gap-3">
         <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>
         <div><Label>Nearest Landmark</Label><Input value={form.nearest_landmark} onChange={(e) => setForm({ ...form, nearest_landmark: e.target.value })} /></div>
+        <div><Label>GhanaPost GPS</Label><Input value={form.ghana_post_gps} onChange={(e) => setForm({ ...form, ghana_post_gps: e.target.value })} placeholder="e.g. GA-123-4567" /></div>
       </div>
       <div><Label>Foreign Address</Label><Textarea rows={2} value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3">
