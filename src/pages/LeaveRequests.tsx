@@ -1,10 +1,10 @@
 import { useAuth } from "@/hooks/useAuth";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
-import { LeaveApprovalQueue } from "@/components/leave/LeaveApprovalQueue";
+import { LeaveAdminDashboard } from "@/components/leave/LeaveAdminDashboard";
 
 export default function LeaveRequests() {
-  const { isAdmin, isSupervisor, isAdminOrSupervisor } = useAuth();
+  const { isAdminOrSupervisor } = useAuth();
 
   return (
     <div className="space-y-6">
@@ -14,13 +14,11 @@ export default function LeaveRequests() {
       <LeaveRequestForm />
       <MyLeaveHistory />
 
-      {/* Admin/Supervisor: approval queue */}
+      {/* Command tier (admin / OIC / 2IC / Staff Officer / Supervisor): dashboard + queue */}
       {isAdminOrSupervisor && (
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-secondary">
-            Approval Queue {isSupervisor && !isAdmin && <span className="text-sm font-normal text-muted-foreground">(Your Department)</span>}
-          </h2>
-          <LeaveApprovalQueue />
+          <h2 className="text-lg font-semibold text-secondary">Admin Dashboard</h2>
+          <LeaveAdminDashboard />
         </div>
       )}
     </div>
