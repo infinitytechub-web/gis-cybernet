@@ -34,15 +34,20 @@ function statusBadge(status: string) {
 }
 
 const EMPTY_FORM = {
-  application_reference: "", applicant_name: "", passport_number: "", nationality: "",
-  date_of_birth: "", gender: "", marital_status: "", phone: "",
-  home_address: "", foreign_address: "", street_name: "", nearest_landmark: "",
+  application_reference: "", applicant_name: "", surname: "", other_names: "",
+  passport_number: "", passport_type: "", passport_issue_date: "", passport_expiry_date: "",
+  passport_place_of_issue: "", port_of_entry: "",
+  nationality: "", dual_nationality: "", date_of_birth: "", place_of_birth: "",
+  gender: "", marital_status: "", phone: "",
+  home_address: "", ghana_post_gps: "", foreign_address: "", street_name: "", nearest_landmark: "",
   next_of_kin: "", emergency_contact: "",
   permit_type: "", permit_category: "", purpose: "",
   occupation: "", employer_sponsor_name: "", employer_sponsor_address: "",
   institution_name: "", course_of_study: "",
+  host_name: "", host_phone: "", host_address: "",
+  previous_permit_history: "",
   intended_duration_months: "", current_permit_expiry: "", requested_start_date: "",
-  fee_charged: "", status: "submitted", notes: "",
+  fee_charged: "", fee_receipt_number: "", status: "submitted", notes: "",
 };
 
 export default function Permits() {
