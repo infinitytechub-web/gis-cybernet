@@ -264,6 +264,7 @@ export default function Ipse() {
   });
 
   const canActIpse = isAdmin || isIpse;
+  const canActHoa  = isAdmin || isHoa;
   const canAct2ic = isAdmin || is2ic;
   const canActOic = isAdmin || isOic;
   const canManage = isAdmin || isIpse;
