@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { OfficerSelector } from "@/components/appraisals/OfficerSelector";
 
 const CRITERIA: { key: string; label: string; hint: string }[] = [
   { key: "job_knowledge",          label: "1. Job Knowledge",            hint: "Understanding of duties, procedures, regulations." },
@@ -85,21 +86,12 @@ export default function Appraisals() {
   const outstanding = useMemo(() => appraisals.filter((a: any) => a.outstanding), [appraisals]);
 
   // ---- Submit form ----
-  const { data: staffOptions = [] } = useQuery({
-    queryKey: ["staff-options-appraisal"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, staff_id")
-        .order("last_name")
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: canManage,
-  });
+  // (Officer list is now fetched inside <OfficerSelector />.)
 
   const [staffProfileId, setStaffProfileId] = useState<string>("");
+  // Junior workflow: a single appraisal is filed per officer in this set,
+  // re-using the same scoring sheet & comments.
+  const [bulkProfileIds, setBulkProfileIds] = useState<string[]>([]);
   const [scores, setScores] = useState<Record<string, number>>(() =>
     Object.fromEntries(CRITERIA.map(c => [c.key, 3]))
   );
@@ -110,27 +102,41 @@ export default function Appraisals() {
 
   const qc = useQueryClient();
 
+  const targetIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (staffProfileId) ids.add(staffProfileId);
+    bulkProfileIds.forEach((id) => ids.add(id));
+    return Array.from(ids);
+  }, [staffProfileId, bulkProfileIds]);
+
   const submit = useMutation({
     mutationFn: async (status: "draft" | "submitted") => {
-      if (!staffProfileId) throw new Error("Select a staff member");
-      const payload: any = {
-        staff_profile_id: staffProfileId,
-        appraised_by: user!.id,
-        period_year: periodYear,
-        period_month: periodMonth,
-        status,
-        comments: comments || null,
-        submitted_at: status === "submitted" ? new Date().toISOString() : null,
-      };
-      const { data: ap, error: ae } = await supabase.from("staff_appraisals" as any).insert(payload).select("id").single();
-      if (ae) throw ae;
-      const rows = CRITERIA.map(c => ({ appraisal_id: (ap as any).id, criterion: c.key, score: scores[c.key] }));
-      const { error: se } = await supabase.from("staff_appraisal_scores" as any).insert(rows);
-      if (se) throw se;
+      if (targetIds.length === 0) throw new Error("Select at least one officer");
+      for (const id of targetIds) {
+        const payload: any = {
+          staff_profile_id: id,
+          appraised_by: user!.id,
+          period_year: periodYear,
+          period_month: periodMonth,
+          status,
+          comments: comments || null,
+          submitted_at: status === "submitted" ? new Date().toISOString() : null,
+        };
+        const { data: ap, error: ae } = await supabase.from("staff_appraisals" as any).insert(payload).select("id").single();
+        if (ae) throw ae;
+        const rows = CRITERIA.map(c => ({ appraisal_id: (ap as any).id, criterion: c.key, score: scores[c.key] }));
+        const { error: se } = await supabase.from("staff_appraisal_scores" as any).insert(rows);
+        if (se) throw se;
+      }
+      return targetIds.length;
     },
-    onSuccess: (_d, status) => {
-      toast.success(status === "submitted" ? "Appraisal submitted to command." : "Draft saved.");
-      setStaffProfileId(""); setComments("");
+    onSuccess: (count, status) => {
+      toast.success(
+        status === "submitted"
+          ? `${count} appraisal${count === 1 ? "" : "s"} submitted to command.`
+          : `${count} draft${count === 1 ? "" : "s"} saved.`,
+      );
+      setStaffProfileId(""); setBulkProfileIds([]); setComments("");
       setScores(Object.fromEntries(CRITERIA.map(c => [c.key, 3])));
       qc.invalidateQueries({ queryKey: ["appraisals-list"] });
       qc.invalidateQueries({ queryKey: ["top5-month"] });
@@ -288,18 +294,19 @@ export default function Appraisals() {
                 <CardDescription className="text-xs">Score each criterion 1 (poor) – 5 (excellent). Total 35. Submitting routes to Command.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Officer *</Label>
-                    <Select value={staffProfileId} onValueChange={setStaffProfileId}>
-                      <SelectTrigger><SelectValue placeholder="Select officer" /></SelectTrigger>
-                      <SelectContent className="max-h-72">
-                        {staffOptions.map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>{s.last_name}, {s.first_name} ({s.staff_id})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Officer Selection *</Label>
+                  <div className="mt-1.5">
+                    <OfficerSelector
+                      selectedId={staffProfileId}
+                      onSelect={setStaffProfileId}
+                      bulkSelected={bulkProfileIds}
+                      onBulkChange={setBulkProfileIds}
+                    />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label>Period year</Label>
                     <Input type="number" value={periodYear} onChange={(e) => setPeriodYear(Number(e.target.value) || today.getFullYear())} />
@@ -345,10 +352,13 @@ export default function Appraisals() {
                   <div className="text-sm">
                     Total: <span className="font-semibold">{totalSum} / 35</span> · Average: <span className="font-semibold">{totalAvg.toFixed(2)} / 5</span>
                     {totalSum >= 30 && <Badge className="ml-2 bg-amber-100 text-amber-900"><Star className="h-3 w-3 mr-1 inline" /> Outstanding</Badge>}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      · {targetIds.length} officer{targetIds.length === 1 ? "" : "s"} selected
+                    </span>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" disabled={submit.isPending} onClick={() => submit.mutate("draft")} className="gap-1"><Save className="h-4 w-4" /> Save draft</Button>
-                    <Button disabled={submit.isPending} onClick={() => submit.mutate("submitted")} className="gap-1"><Send className="h-4 w-4" /> Submit to Command</Button>
+                    <Button variant="outline" disabled={submit.isPending || targetIds.length === 0} onClick={() => submit.mutate("draft")} className="gap-1"><Save className="h-4 w-4" /> Save draft</Button>
+                    <Button disabled={submit.isPending || targetIds.length === 0} onClick={() => submit.mutate("submitted")} className="gap-1"><Send className="h-4 w-4" /> Submit to Command</Button>
                   </div>
                 </div>
               </CardContent>
