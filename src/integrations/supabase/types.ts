@@ -7101,6 +7101,29 @@ export type Database = {
         Returns: number
       }
       expire_ip_blocks: { Args: never; Returns: number }
+      export_medical_inventory_audit: {
+        Args: {
+          p_action?: string
+          p_from?: string
+          p_inventory_id?: string
+          p_item_search?: string
+          p_max_rows?: number
+          p_performed_by?: string
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          delta: number
+          id: string
+          inventory_id: string
+          item_name: string
+          note: string
+          performed_at: string
+          performed_by: string
+          quantity_after: number
+          quantity_before: number
+        }[]
+      }
       export_security_audit: {
         Args: { _from: string; _to: string }
         Returns: {
