@@ -163,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isIpse: role === "ipse_supervisor" || role === "ipse_deputy_supervisor",
     is2ic: role === "2ic",
     isOic: role === "oic",
+    isHoa: role === "head_of_administration",
     canExportInterlinkLogs: role === "admin" || role === "oic",
   }), [user, role, loading, signIn, signOut]);
 
