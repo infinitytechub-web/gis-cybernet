@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Eye, Loader2, ShieldCheck, Download } from "lucide-react";
 import { format } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 export default function SensitiveAccessLog() {
   const { isAdmin, is2ic, isOic } = useAuth();
