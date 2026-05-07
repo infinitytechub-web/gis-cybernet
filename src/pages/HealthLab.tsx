@@ -1002,10 +1002,59 @@ export default function HealthLab() {
       </Dialog>
 
       {/* Inventory audit log */}
-      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Inventory Audit Log</DialogTitle></DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
+      <Dialog open={auditOpen} onOpenChange={(o) => { setAuditOpen(o); if (o) setAuditPage(1); }}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Inventory Audit Log</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-wrap items-end gap-2 border rounded-md p-2 bg-muted/30">
+            <div><Label className="text-[10px]">From</Label><Input type="date" className="h-8 w-[140px]" value={auditFilters.from} onChange={(e) => { setAuditFilters({ ...auditFilters, from: e.target.value }); setAuditPage(1); }} /></div>
+            <div><Label className="text-[10px]">To</Label><Input type="date" className="h-8 w-[140px]" value={auditFilters.to} onChange={(e) => { setAuditFilters({ ...auditFilters, to: e.target.value }); setAuditPage(1); }} /></div>
+            <div><Label className="text-[10px]">Item</Label><Input className="h-8 w-[160px]" placeholder="Item name…" value={auditFilters.item} onChange={(e) => { setAuditFilters({ ...auditFilters, item: e.target.value }); setAuditPage(1); }} /></div>
+            <div className="w-[160px]">
+              <Label className="text-[10px]">Action</Label>
+              <Select value={auditFilters.action || "all"} onValueChange={(v) => { setAuditFilters({ ...auditFilters, action: v === "all" ? "" : v }); setAuditPage(1); }}>
+                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All actions</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="edit">Edit</SelectItem>
+                  <SelectItem value="adjust">Adjust</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[220px]">
+              <Label className="text-[10px]">Performed by</Label>
+              <Select value={auditFilters.performed_by || "all"} onValueChange={(v) => { setAuditFilters({ ...auditFilters, performed_by: v === "all" ? "" : v }); setAuditPage(1); }}>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Anyone" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Anyone</SelectItem>
+                  {(authorizers as any[]).map((u) => (
+                    <SelectItem key={u.user_id} value={u.user_id}>{u.profile.last_name}, {u.profile.first_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(auditFilters.from || auditFilters.to || auditFilters.item || auditFilters.action || auditFilters.performed_by) && (
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => { setAuditFilters({ from: "", to: "", performed_by: "", item: "", action: "" }); setAuditPage(1); }}>Clear</Button>
+            )}
+            <div className="ml-auto flex gap-1">
+              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
+                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
+                exportAuditCSV(auditLog, map, `page${auditPage}`);
+              }}><FileDown className="h-3.5 w-3.5" /> CSV</Button>
+              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
+                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
+                exportAuditPDF(auditLog, map, `page${auditPage}`);
+              }}><FileDown className="h-3.5 w-3.5" /> PDF</Button>
+              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
+                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
+                exportAuditDOCX(auditLog, map, `page${auditPage}`);
+              }}><FileDown className="h-3.5 w-3.5" /> Word</Button>
+            </div>
+          </div>
+          <ScrollArea className="max-h-[55vh]">
             <Table>
               <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Action</TableHead><TableHead>Item</TableHead><TableHead className="text-right">Δ</TableHead><TableHead>Qty</TableHead><TableHead>By</TableHead><TableHead>Note</TableHead></TableRow></TableHeader>
               <TableBody>
@@ -1027,6 +1076,15 @@ export default function HealthLab() {
               </TableBody>
             </Table>
           </ScrollArea>
+          <DialogFooter className="flex items-center justify-between sm:justify-between gap-2">
+            <div className="text-[11px] text-muted-foreground">
+              {auditTotal} entries · Page {auditPage} of {auditPages}
+            </div>
+            <div className="flex gap-1">
+              <Button size="sm" variant="outline" className="h-8" disabled={auditPage <= 1} onClick={() => setAuditPage((p) => Math.max(1, p - 1))}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="outline" className="h-8" disabled={auditPage >= auditPages} onClick={() => setAuditPage((p) => Math.min(auditPages, p + 1))}><ChevronRight className="h-3.5 w-3.5" /></Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
