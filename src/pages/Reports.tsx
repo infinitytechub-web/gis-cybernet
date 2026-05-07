@@ -374,6 +374,10 @@ export default function Reports() {
                 <ShieldAlert className="h-3.5 w-3.5" /> Pending IPSE
                 {counts.pending_ipse > 0 && <Badge variant="secondary" className="ml-1">{counts.pending_ipse}</Badge>}
               </TabsTrigger>
+              <TabsTrigger value="with_hoa" className="gap-1.5">
+                <ArrowRightCircle className="h-3.5 w-3.5" /> With HoA
+                {counts.with_hoa > 0 && <Badge variant="secondary" className="ml-1">{counts.with_hoa}</Badge>}
+              </TabsTrigger>
               <TabsTrigger value="with_2ic" className="gap-1.5">
                 <ArrowRightCircle className="h-3.5 w-3.5" /> With 2IC
                 {counts.with_2ic > 0 && <Badge variant="secondary" className="ml-1">{counts.with_2ic}</Badge>}
