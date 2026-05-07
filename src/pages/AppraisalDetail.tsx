@@ -9,6 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Award, ArrowLeft, History, Star } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { format } from "date-fns";
+import {
+  ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+} from "recharts";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -87,8 +91,38 @@ export default function AppraisalDetail() {
     },
   });
 
+  const { data: trend = [] } = useQuery({
+    queryKey: ["appraisal-trend", staffProfileId],
+    enabled: !!staffProfileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff_appraisals" as any)
+        .select("period_year, period_month, scores:staff_appraisal_scores(criterion, score)")
+        .eq("staff_profile_id", staffProfileId!)
+        .order("period_year", { ascending: true })
+        .order("period_month", { ascending: true, nullsFirst: true })
+        .limit(12);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const officerName = profile ? `${profile.last_name ?? ""}, ${profile.first_name ?? ""}` : "—";
   const scoreRows = useMemo(() => (appraisal?.scores ?? []) as { criterion: string; score: number; remarks?: string | null }[], [appraisal]);
+
+  const radarData = useMemo(
+    () => scoreRows.map((s) => ({ criterion: CRITERION_LABELS[s.criterion] ?? s.criterion, score: s.score })),
+    [scoreRows],
+  );
+  const trendData = useMemo(() => trend.map((a: any) => {
+    const row: any = {
+      period: a.period_month ? `${MONTHS[a.period_month - 1]} ${a.period_year}` : `Annual ${a.period_year}`,
+    };
+    (a.scores ?? []).forEach((s: any) => { row[s.criterion] = s.score; });
+    return row;
+  }), [trend]);
+  const CRIT_KEYS = Object.keys(CRITERION_LABELS);
+  const CRIT_COLORS = ["#10b981","#3b82f6","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899"];
 
   return (
     <div className="space-y-4">
@@ -111,6 +145,52 @@ export default function AppraisalDetail() {
           <div><span className="text-muted-foreground text-xs">Department:</span> {profile?.departments?.name ?? "—"}</div>
         </CardContent>
       </Card>
+
+      {(radarData.length > 0 || trendData.length > 1) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {radarData.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Criterion radar · {periodLabel}</CardTitle>
+                <CardDescription className="text-xs">Score per criterion (1–5).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <RadarChart data={radarData} outerRadius={90}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10 }} />
+                    <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 10 }} />
+                    <Radar name="Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.45} />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+          {trendData.length > 1 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Score trend across periods</CardTitle>
+                <CardDescription className="text-xs">Stacked criterion scores per recorded period (max 35).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={trendData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 35]} tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                    {CRIT_KEYS.map((k, i) => (
+                      <Bar key={k} dataKey={k} stackId="s" fill={CRIT_COLORS[i % CRIT_COLORS.length]} name={CRITERION_LABELS[k]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-2">

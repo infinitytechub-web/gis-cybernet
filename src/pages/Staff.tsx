@@ -71,6 +71,7 @@ export default function Staff() {
   const [trainingDesignation, setTrainingDesignation] = useState<string>("");
   const [staffCategory, setStaffCategory] = useState<string>("");
   const [office, setOffice] = useState<string>("");
+  const [dateOfBirth, setDateOfBirth] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -128,6 +129,7 @@ export default function Staff() {
     setBloodGroup("");
     setTrainingDesignation("");
     setStaffCategory("");
+    setDateOfBirth("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -175,6 +177,7 @@ export default function Staff() {
     setTrainingDesignation(s.training_designation || "");
     setStaffCategory(s.staff_category || "");
     setOffice(s.office || "");
+    setDateOfBirth(s.date_of_birth || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -246,6 +249,7 @@ export default function Staff() {
         training_designation: trainingDesignation || null,
         staff_category: staffCategory || null,
         office: office || null,
+        date_of_birth: dateOfBirth || null,
       };
 
       if (editing) {
@@ -699,7 +703,15 @@ export default function Staff() {
                   </SelectContent>
                 </Select>
               </div>
-              <div />
+              <div>
+                <Label>Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={format(new Date(), "yyyy-MM-dd")}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
