@@ -154,6 +154,57 @@ export type Database = {
         }
         Relationships: []
       }
+      application_documents: {
+        Row: {
+          filename: string
+          id: string
+          mime_type: string | null
+          record_id: string
+          record_type: string
+          scan_action: string | null
+          sha256: string | null
+          size_bytes: number | null
+          slot: string
+          slot_label: string | null
+          sniffed_mime: string | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          filename: string
+          id?: string
+          mime_type?: string | null
+          record_id: string
+          record_type: string
+          scan_action?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          slot: string
+          slot_label?: string | null
+          sniffed_mime?: string | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          filename?: string
+          id?: string
+          mime_type?: string | null
+          record_id?: string
+          record_type?: string
+          scan_action?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          slot?: string
+          slot_label?: string | null
+          sniffed_mime?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       appraisal_reminders_sent: {
         Row: {
           actor_id: string | null
@@ -4544,64 +4595,127 @@ export type Database = {
         Row: {
           address: string | null
           applicant_name: string
+          application_reference: string | null
           application_type: string
           created_at: string
           date_of_birth: string
+          distinguishing_marks: string | null
+          district: string | null
           emergency_contact: string | null
+          eye_colour: string | null
+          father_name: string | null
+          fee_charged: number | null
+          fee_receipt_number: string | null
           foreign_address: string | null
           gender: string | null
+          ghana_card_number: string | null
+          ghana_post_gps: string | null
+          height_cm: number | null
           id: string
           marital_status: string | null
+          mother_name: string | null
           nationality: string
           nearest_landmark: string | null
           next_of_kin: string | null
           notes: string | null
+          occupation: string | null
+          other_names: string | null
           phone: string | null
+          place_of_birth: string | null
+          previous_passport_expiry_date: string | null
+          previous_passport_issue_date: string | null
+          previous_passport_number: string | null
           processed_by: string | null
+          processing_checklist: Json | null
+          region: string | null
           status: string
           street_name: string | null
+          surname: string | null
+          town: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           applicant_name: string
+          application_reference?: string | null
           application_type?: string
           created_at?: string
           date_of_birth: string
+          distinguishing_marks?: string | null
+          district?: string | null
           emergency_contact?: string | null
+          eye_colour?: string | null
+          father_name?: string | null
+          fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_card_number?: string | null
+          ghana_post_gps?: string | null
+          height_cm?: number | null
           id?: string
           marital_status?: string | null
+          mother_name?: string | null
           nationality: string
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
+          occupation?: string | null
+          other_names?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          previous_passport_expiry_date?: string | null
+          previous_passport_issue_date?: string | null
+          previous_passport_number?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
+          region?: string | null
           status?: string
           street_name?: string | null
+          surname?: string | null
+          town?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           applicant_name?: string
+          application_reference?: string | null
           application_type?: string
           created_at?: string
           date_of_birth?: string
+          distinguishing_marks?: string | null
+          district?: string | null
           emergency_contact?: string | null
+          eye_colour?: string | null
+          father_name?: string | null
+          fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_card_number?: string | null
+          ghana_post_gps?: string | null
+          height_cm?: number | null
           id?: string
           marital_status?: string | null
+          mother_name?: string | null
           nationality?: string
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
+          occupation?: string | null
+          other_names?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          previous_passport_expiry_date?: string | null
+          previous_passport_issue_date?: string | null
+          previous_passport_number?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
+          region?: string | null
           status?: string
           street_name?: string | null
+          surname?: string | null
+          town?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4744,13 +4858,19 @@ export type Database = {
           created_at: string
           current_permit_expiry: string | null
           date_of_birth: string | null
+          dual_nationality: string | null
           emergency_contact: string | null
           employer_sponsor_address: string | null
           employer_sponsor_name: string | null
           fee_charged: number | null
+          fee_receipt_number: string | null
           foreign_address: string | null
           gender: string | null
+          ghana_post_gps: string | null
           home_address: string | null
+          host_address: string | null
+          host_name: string | null
+          host_phone: string | null
           id: string
           institution_name: string | null
           intended_duration_months: number | null
@@ -4760,15 +4880,25 @@ export type Database = {
           next_of_kin: string | null
           notes: string | null
           occupation: string | null
+          other_names: string | null
+          passport_expiry_date: string | null
+          passport_issue_date: string | null
           passport_number: string
+          passport_place_of_issue: string | null
+          passport_type: string | null
           permit_category: string | null
           permit_type: string
           phone: string | null
+          place_of_birth: string | null
+          port_of_entry: string | null
+          previous_permit_history: string | null
           processed_by: string | null
+          processing_checklist: Json | null
           purpose: string | null
           requested_start_date: string | null
           status: string
           street_name: string | null
+          surname: string | null
           updated_at: string
         }
         Insert: {
@@ -4778,13 +4908,19 @@ export type Database = {
           created_at?: string
           current_permit_expiry?: string | null
           date_of_birth?: string | null
+          dual_nationality?: string | null
           emergency_contact?: string | null
           employer_sponsor_address?: string | null
           employer_sponsor_name?: string | null
           fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_post_gps?: string | null
           home_address?: string | null
+          host_address?: string | null
+          host_name?: string | null
+          host_phone?: string | null
           id?: string
           institution_name?: string | null
           intended_duration_months?: number | null
@@ -4794,15 +4930,25 @@ export type Database = {
           next_of_kin?: string | null
           notes?: string | null
           occupation?: string | null
+          other_names?: string | null
+          passport_expiry_date?: string | null
+          passport_issue_date?: string | null
           passport_number: string
+          passport_place_of_issue?: string | null
+          passport_type?: string | null
           permit_category?: string | null
           permit_type: string
           phone?: string | null
+          place_of_birth?: string | null
+          port_of_entry?: string | null
+          previous_permit_history?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
           purpose?: string | null
           requested_start_date?: string | null
           status?: string
           street_name?: string | null
+          surname?: string | null
           updated_at?: string
         }
         Update: {
@@ -4812,13 +4958,19 @@ export type Database = {
           created_at?: string
           current_permit_expiry?: string | null
           date_of_birth?: string | null
+          dual_nationality?: string | null
           emergency_contact?: string | null
           employer_sponsor_address?: string | null
           employer_sponsor_name?: string | null
           fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_post_gps?: string | null
           home_address?: string | null
+          host_address?: string | null
+          host_name?: string | null
+          host_phone?: string | null
           id?: string
           institution_name?: string | null
           intended_duration_months?: number | null
@@ -4828,15 +4980,25 @@ export type Database = {
           next_of_kin?: string | null
           notes?: string | null
           occupation?: string | null
+          other_names?: string | null
+          passport_expiry_date?: string | null
+          passport_issue_date?: string | null
           passport_number?: string
+          passport_place_of_issue?: string | null
+          passport_type?: string | null
           permit_category?: string | null
           permit_type?: string
           phone?: string | null
+          place_of_birth?: string | null
+          port_of_entry?: string | null
+          previous_permit_history?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
           purpose?: string | null
           requested_start_date?: string | null
           status?: string
           street_name?: string | null
+          surname?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -7535,24 +7697,42 @@ export type Database = {
           applicant_name: string
           created_at: string
           date_of_birth: string | null
+          dual_nationality: string | null
           emergency_contact: string | null
           entry_date: string | null
           exit_date: string | null
+          fee_charged: number | null
+          fee_receipt_number: string | null
           foreign_address: string | null
           gender: string | null
+          ghana_post_gps: string | null
           home_address: string | null
+          host_address: string | null
+          host_name: string | null
+          host_phone: string | null
           id: string
           marital_status: string | null
           nationality: string
           nearest_landmark: string | null
           next_of_kin: string | null
           notes: string | null
+          occupation: string | null
+          other_names: string | null
+          passport_expiry_date: string | null
+          passport_issue_date: string | null
           passport_number: string
+          passport_place_of_issue: string | null
+          passport_type: string | null
           phone: string | null
+          place_of_birth: string | null
+          port_of_entry: string | null
+          previous_visa_history: string | null
           processed_by: string | null
+          processing_checklist: Json | null
           purpose: string | null
           status: string
           street_name: string | null
+          surname: string | null
           updated_at: string
           visa_type: string
         }
@@ -7560,24 +7740,42 @@ export type Database = {
           applicant_name: string
           created_at?: string
           date_of_birth?: string | null
+          dual_nationality?: string | null
           emergency_contact?: string | null
           entry_date?: string | null
           exit_date?: string | null
+          fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_post_gps?: string | null
           home_address?: string | null
+          host_address?: string | null
+          host_name?: string | null
+          host_phone?: string | null
           id?: string
           marital_status?: string | null
           nationality: string
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
+          occupation?: string | null
+          other_names?: string | null
+          passport_expiry_date?: string | null
+          passport_issue_date?: string | null
           passport_number: string
+          passport_place_of_issue?: string | null
+          passport_type?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          port_of_entry?: string | null
+          previous_visa_history?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
           purpose?: string | null
           status?: string
           street_name?: string | null
+          surname?: string | null
           updated_at?: string
           visa_type?: string
         }
@@ -7585,24 +7783,42 @@ export type Database = {
           applicant_name?: string
           created_at?: string
           date_of_birth?: string | null
+          dual_nationality?: string | null
           emergency_contact?: string | null
           entry_date?: string | null
           exit_date?: string | null
+          fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_post_gps?: string | null
           home_address?: string | null
+          host_address?: string | null
+          host_name?: string | null
+          host_phone?: string | null
           id?: string
           marital_status?: string | null
           nationality?: string
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
+          occupation?: string | null
+          other_names?: string | null
+          passport_expiry_date?: string | null
+          passport_issue_date?: string | null
           passport_number?: string
+          passport_place_of_issue?: string | null
+          passport_type?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          port_of_entry?: string | null
+          previous_visa_history?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
           purpose?: string | null
           status?: string
           street_name?: string | null
+          surname?: string | null
           updated_at?: string
           visa_type?: string
         }
@@ -7614,25 +7830,41 @@ export type Database = {
           created_at: string
           current_visa_expiry: string
           date_of_birth: string | null
+          dual_nationality: string | null
           emergency_contact: string | null
           fee_charged: number | null
+          fee_receipt_number: string | null
           foreign_address: string | null
           gender: string | null
+          ghana_post_gps: string | null
           home_address: string | null
+          host_address: string | null
+          host_name: string | null
+          host_phone: string | null
           id: string
           marital_status: string | null
           nationality: string | null
           nearest_landmark: string | null
           next_of_kin: string | null
           notes: string | null
+          occupation: string | null
+          other_names: string | null
+          passport_expiry_date: string | null
+          passport_issue_date: string | null
           passport_number: string
+          passport_place_of_issue: string | null
+          passport_type: string | null
           permit_type: string | null
           phone: string | null
+          place_of_birth: string | null
+          port_of_entry: string | null
           processed_by: string | null
+          processing_checklist: Json | null
           reason: string | null
           requested_extension_date: string
           status: string
           street_name: string | null
+          surname: string | null
           updated_at: string
           visa_application_id: string | null
         }
@@ -7641,25 +7873,41 @@ export type Database = {
           created_at?: string
           current_visa_expiry: string
           date_of_birth?: string | null
+          dual_nationality?: string | null
           emergency_contact?: string | null
           fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_post_gps?: string | null
           home_address?: string | null
+          host_address?: string | null
+          host_name?: string | null
+          host_phone?: string | null
           id?: string
           marital_status?: string | null
           nationality?: string | null
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
+          occupation?: string | null
+          other_names?: string | null
+          passport_expiry_date?: string | null
+          passport_issue_date?: string | null
           passport_number: string
+          passport_place_of_issue?: string | null
+          passport_type?: string | null
           permit_type?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          port_of_entry?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
           reason?: string | null
           requested_extension_date: string
           status?: string
           street_name?: string | null
+          surname?: string | null
           updated_at?: string
           visa_application_id?: string | null
         }
@@ -7668,25 +7916,41 @@ export type Database = {
           created_at?: string
           current_visa_expiry?: string
           date_of_birth?: string | null
+          dual_nationality?: string | null
           emergency_contact?: string | null
           fee_charged?: number | null
+          fee_receipt_number?: string | null
           foreign_address?: string | null
           gender?: string | null
+          ghana_post_gps?: string | null
           home_address?: string | null
+          host_address?: string | null
+          host_name?: string | null
+          host_phone?: string | null
           id?: string
           marital_status?: string | null
           nationality?: string | null
           nearest_landmark?: string | null
           next_of_kin?: string | null
           notes?: string | null
+          occupation?: string | null
+          other_names?: string | null
+          passport_expiry_date?: string | null
+          passport_issue_date?: string | null
           passport_number?: string
+          passport_place_of_issue?: string | null
+          passport_type?: string | null
           permit_type?: string | null
           phone?: string | null
+          place_of_birth?: string | null
+          port_of_entry?: string | null
           processed_by?: string | null
+          processing_checklist?: Json | null
           reason?: string | null
           requested_extension_date?: string
           status?: string
           street_name?: string | null
+          surname?: string | null
           updated_at?: string
           visa_application_id?: string | null
         }
