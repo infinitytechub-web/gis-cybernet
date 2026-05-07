@@ -205,11 +205,12 @@ export function NotificationBell() {
     setOpen(false);
   };
 
+  const normType = (n: any) => HEALTH_APPT_TYPES.has(n?.type) ? "health" : n?.type;
   const filtered = tab === "all"
     ? notifications
     : tab === "unread"
       ? notifications.filter((n: any) => !n.is_read)
-      : notifications.filter((n: any) => n.type === tab);
+      : notifications.filter((n: any) => normType(n) === tab);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
