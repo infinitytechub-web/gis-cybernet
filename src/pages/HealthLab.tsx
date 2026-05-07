@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,9 +14,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
-import { Activity, FileHeart, Stethoscope, CalendarClock, Pill, FilePlus2, Package, ClipboardList, Search } from "lucide-react";
-import { format } from "date-fns";
+import { Activity, FileHeart, Stethoscope, CalendarClock, Pill, FilePlus2, ClipboardList, Search, AlertTriangle, Plus, Pencil, FileDown } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { toast } from "sonner";
+import {
+  exportMedicalRecordPDF, exportMedicalRecordDOCX,
+  exportHealthReportPDF, exportHealthReportDOCX,
+} from "@/lib/health-lab-export";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-amber-100 text-amber-900",
@@ -27,6 +31,8 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled: "bg-slate-200 text-slate-800",
   no_show: "bg-rose-100 text-rose-900",
 };
+
+const APPT_STATUSES = ["scheduled", "completed", "cancelled", "no_show"] as const;
 
 export default function HealthLab() {
   const { isAdminOrSupervisor } = useAuth();
@@ -42,9 +48,40 @@ export default function HealthLab() {
   const [excuseDecision, setExcuseDecision] = useState<{ id: string; action: "approved" | "rejected" } | null>(null);
   const [excuseComment, setExcuseComment] = useState("");
 
+  // Inventory
+  const [invOpen, setInvOpen] = useState(false);
+  const [invEdit, setInvEdit] = useState<any | null>(null);
+  const [invForm, setInvForm] = useState({ item_name: "", category: "", quantity: 0, unit: "", reorder_threshold: 0, expiry_date: "", notes: "" });
+  const [adjustTarget, setAdjustTarget] = useState<any | null>(null);
+  const [adjustDelta, setAdjustDelta] = useState<number>(0);
+  const [adjustNote, setAdjustNote] = useState("");
+
+  // Appointments
+  const [apptOpen, setApptOpen] = useState(false);
+  const [apptEdit, setApptEdit] = useState<any | null>(null);
+  const [apptForm, setApptForm] = useState({
+    staff_profile_id: "",
+    service_id: "",
+    scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"),
+    status: "scheduled",
+    notes: "",
+  });
+
   if (!isAdminOrSupervisor) {
     return <div className="p-6 text-sm text-muted-foreground">Access restricted to System Administrator and Command Tier.</div>;
   }
+
+  // Realtime sync across all dashboards
+  useEffect(() => {
+    const ch = supabase.channel("health-lab-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "medical_records" }, () => qc.invalidateQueries({ queryKey: ["medical-records"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "health_reports" }, () => qc.invalidateQueries({ queryKey: ["health-reports"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "medical_appointments" }, () => qc.invalidateQueries({ queryKey: ["medical-appointments"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "medical_inventory" }, () => qc.invalidateQueries({ queryKey: ["medical-inventory"] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "excuse_duty_forms" }, () => qc.invalidateQueries({ queryKey: ["excuse-duty-all"] }))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["health-profiles"],
@@ -76,7 +113,7 @@ export default function HealthLab() {
   const { data: appointments = [] } = useQuery({
     queryKey: ["medical-appointments"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("medical_appointments" as any).select("*").order("scheduled_at", { ascending: false }).limit(100);
+      const { data, error } = await supabase.from("medical_appointments" as any).select("*").order("scheduled_at", { ascending: false }).limit(200);
       if (error) throw error;
       return data as any[];
     },
@@ -114,6 +151,11 @@ export default function HealthLab() {
     (profiles as any[]).forEach((p) => { m[p.id] = p; });
     return m;
   }, [profiles]);
+  const serviceMap = useMemo(() => {
+    const m: Record<string, any> = {};
+    (services as any[]).forEach((s) => { m[s.id] = s; });
+    return m;
+  }, [services]);
 
   const filteredRecords = useMemo(() => {
     if (!search.trim()) return records;
@@ -125,6 +167,24 @@ export default function HealthLab() {
     });
   }, [records, search, profileMap]);
 
+  const today = new Date();
+  const inventoryAlerts = useMemo(() => {
+    const lowStock: any[] = [];
+    const expSoon: any[] = [];
+    const expired: any[] = [];
+    (inventory as any[]).forEach((i) => {
+      if ((i.quantity ?? 0) <= (i.reorder_threshold ?? 0)) lowStock.push(i);
+      if (i.expiry_date) {
+        const d = new Date(i.expiry_date);
+        const days = Math.ceil((d.getTime() - today.getTime()) / 86400000);
+        if (days < 0) expired.push(i);
+        else if (days <= 30) expSoon.push(i);
+      }
+    });
+    return { lowStock, expSoon, expired };
+  }, [inventory]);
+
+  // ── Mutations ────────────────────────────────────────────────────────────
   const createRecord = useMutation({
     mutationFn: async () => {
       if (!recordForm.staff_profile_id) throw new Error("Select a staff member");
@@ -149,12 +209,9 @@ export default function HealthLab() {
   const decideExcuse = useMutation({
     mutationFn: async () => {
       if (!excuseDecision) throw new Error("No selection");
-      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("excuse_duty_forms" as any).update({
         status: excuseDecision.action,
         review_comment: excuseComment || null,
-        reviewed_by: user?.id,
-        reviewed_at: new Date().toISOString(),
       } as any).eq("id", excuseDecision.id);
       if (error) throw error;
     },
@@ -167,8 +224,133 @@ export default function HealthLab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const lowStock = (inventory as any[]).filter((i) => (i.quantity ?? 0) <= (i.reorder_threshold ?? 0));
+  const saveInventory = useMutation({
+    mutationFn: async () => {
+      if (!invForm.item_name.trim()) throw new Error("Item name is required");
+      const payload: any = {
+        item_name: invForm.item_name.trim(),
+        category: invForm.category || null,
+        quantity: Number(invForm.quantity) || 0,
+        unit: invForm.unit || null,
+        reorder_threshold: Number(invForm.reorder_threshold) || 0,
+        expiry_date: invForm.expiry_date || null,
+        notes: invForm.notes || null,
+      };
+      if (invEdit) {
+        const { error } = await supabase.from("medical_inventory" as any).update(payload).eq("id", invEdit.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("medical_inventory" as any).insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["medical-inventory"] });
+      toast.success(invEdit ? "Item updated" : "Item created");
+      setInvOpen(false); setInvEdit(null);
+      setInvForm({ item_name: "", category: "", quantity: 0, unit: "", reorder_threshold: 0, expiry_date: "", notes: "" });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const adjustInventory = useMutation({
+    mutationFn: async () => {
+      if (!adjustTarget) throw new Error("No item");
+      const newQty = Math.max(0, (adjustTarget.quantity ?? 0) + Number(adjustDelta));
+      const note = adjustNote
+        ? `${adjustTarget.notes ? adjustTarget.notes + "\n" : ""}[${format(new Date(), "yyyy-MM-dd HH:mm")}] adj ${adjustDelta > 0 ? "+" : ""}${adjustDelta}: ${adjustNote}`
+        : adjustTarget.notes;
+      const { error } = await supabase.from("medical_inventory" as any).update({ quantity: newQty, notes: note }).eq("id", adjustTarget.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["medical-inventory"] });
+      toast.success("Stock adjusted");
+      setAdjustTarget(null); setAdjustDelta(0); setAdjustNote("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteInventory = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("medical_inventory" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medical-inventory"] }); toast.success("Item removed"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const saveAppointment = useMutation({
+    mutationFn: async () => {
+      if (!apptForm.staff_profile_id) throw new Error("Select a staff member");
+      if (!apptForm.scheduled_at) throw new Error("Pick a date/time");
+      const payload: any = {
+        staff_profile_id: apptForm.staff_profile_id,
+        service_id: apptForm.service_id || null,
+        scheduled_at: new Date(apptForm.scheduled_at).toISOString(),
+        status: apptForm.status,
+        notes: apptForm.notes || null,
+      };
+      if (apptEdit) {
+        const { error } = await supabase.from("medical_appointments" as any).update(payload).eq("id", apptEdit.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("medical_appointments" as any).insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["medical-appointments"] });
+      toast.success(apptEdit ? "Appointment updated" : "Appointment scheduled");
+      setApptOpen(false); setApptEdit(null);
+      setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "" });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const updateApptStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("medical_appointments" as any).update({ status }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["medical-appointments"] }); toast.success("Status updated"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const pendingExcuse = (excuseForms as any[]).filter((e) => e.status === "pending");
+
+  const openInvCreate = () => {
+    setInvEdit(null);
+    setInvForm({ item_name: "", category: "", quantity: 0, unit: "", reorder_threshold: 0, expiry_date: "", notes: "" });
+    setInvOpen(true);
+  };
+  const openInvEdit = (i: any) => {
+    setInvEdit(i);
+    setInvForm({
+      item_name: i.item_name ?? "", category: i.category ?? "",
+      quantity: i.quantity ?? 0, unit: i.unit ?? "",
+      reorder_threshold: i.reorder_threshold ?? 0,
+      expiry_date: i.expiry_date ?? "", notes: i.notes ?? "",
+    });
+    setInvOpen(true);
+  };
+
+  const openApptCreate = () => {
+    setApptEdit(null);
+    setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "" });
+    setApptOpen(true);
+  };
+  const openApptEdit = (a: any) => {
+    setApptEdit(a);
+    setApptForm({
+      staff_profile_id: a.staff_profile_id,
+      service_id: a.service_id ?? "",
+      scheduled_at: format(new Date(a.scheduled_at), "yyyy-MM-dd'T'HH:mm"),
+      status: a.status,
+      notes: a.notes ?? "",
+    });
+    setApptOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -190,7 +372,7 @@ export default function HealthLab() {
         <Card className="border-l-4 border-l-sky-600"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Appointments</div><div className="text-2xl font-bold text-sky-700">{appointments.length}</div></CardContent></Card>
         <Card className="border-l-4 border-l-amber-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending Excuse Duty</div><div className="text-2xl font-bold text-amber-600">{pendingExcuse.length}</div></CardContent></Card>
         <Card className="border-l-4 border-l-purple-600"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Reports</div><div className="text-2xl font-bold text-purple-700">{reports.length}</div></CardContent></Card>
-        <Card className="border-l-4 border-l-rose-600"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Low-stock items</div><div className="text-2xl font-bold text-rose-700">{lowStock.length}</div></CardContent></Card>
+        <Card className="border-l-4 border-l-rose-600"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Low / Expired</div><div className="text-2xl font-bold text-rose-700">{inventoryAlerts.lowStock.length + inventoryAlerts.expired.length}</div></CardContent></Card>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -207,15 +389,16 @@ export default function HealthLab() {
         <TabsContent value="overview" className="space-y-3">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">Recent activity</CardTitle></CardHeader>
-            <CardContent className="space-y-3 text-xs">
+            <CardContent className="space-y-2 text-xs">
               <div>Latest record: {records[0] ? format(new Date(records[0].visit_date), "dd MMM yyyy") : "—"}</div>
               <div>Latest report: {reports[0] ? reports[0].title : "—"}</div>
               <div>Pending excuse duty: <strong>{pendingExcuse.length}</strong></div>
-              <div>Low stock items: <strong>{lowStock.length}</strong></div>
+              <div>Low-stock items: <strong className="text-rose-700">{inventoryAlerts.lowStock.length}</strong> · Expiring ≤30d: <strong className="text-amber-700">{inventoryAlerts.expSoon.length}</strong> · Expired: <strong className="text-destructive">{inventoryAlerts.expired.length}</strong></div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* RECORDS */}
         <TabsContent value="records" className="space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="relative w-full sm:w-80">
@@ -255,10 +438,10 @@ export default function HealthLab() {
               <ScrollArea className="max-h-[60vh]">
                 <Table>
                   <TableHeader>
-                    <TableRow><TableHead>Date</TableHead><TableHead>Staff</TableHead><TableHead>Diagnosis</TableHead><TableHead>Treatment</TableHead></TableRow>
+                    <TableRow><TableHead>Date</TableHead><TableHead>Staff</TableHead><TableHead>Diagnosis</TableHead><TableHead>Treatment</TableHead><TableHead className="text-right">Export</TableHead></TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRecords.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">No records.</TableCell></TableRow>}
+                    {filteredRecords.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No records.</TableCell></TableRow>}
                     {filteredRecords.map((r: any) => {
                       const p = profileMap[r.staff_profile_id];
                       return (
@@ -267,6 +450,12 @@ export default function HealthLab() {
                           <TableCell className="text-xs font-medium">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
                           <TableCell className="text-xs">{r.diagnosis ?? "—"}</TableCell>
                           <TableCell className="text-xs">{r.treatment ?? "—"}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => exportMedicalRecordPDF(r, p)}>PDF</Button>
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => exportMedicalRecordDOCX(r, p)}>Word</Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -277,19 +466,26 @@ export default function HealthLab() {
           </Card>
         </TabsContent>
 
+        {/* REPORTS */}
         <TabsContent value="reports">
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Summary</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Summary</TableHead><TableHead className="text-right">Export</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {reports.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
+                  {reports.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
                   {reports.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
                       <TableCell className="text-xs font-medium">{r.title}</TableCell>
                       <TableCell className="text-xs"><Badge variant="outline">{r.category}</Badge></TableCell>
                       <TableCell className="text-xs">{r.summary ?? "—"}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="ghost" className="h-7 gap-1" onClick={() => exportHealthReportPDF(r)}><FileDown className="h-3.5 w-3.5" /> PDF</Button>
+                          <Button size="sm" variant="ghost" className="h-7 gap-1" onClick={() => exportHealthReportDOCX(r)}><FileDown className="h-3.5 w-3.5" /> Word</Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -298,21 +494,37 @@ export default function HealthLab() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="appointments">
+        {/* APPOINTMENTS */}
+        <TabsContent value="appointments" className="space-y-3">
+          <div className="flex justify-end">
+            <Button size="sm" className="gap-1" onClick={openApptCreate}><Plus className="h-4 w-4" /> Schedule Appointment</Button>
+          </div>
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Staff</TableHead><TableHead>Status</TableHead><TableHead>Notes</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Staff</TableHead><TableHead>Service</TableHead><TableHead>Status</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {appointments.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">No appointments.</TableCell></TableRow>}
+                  {appointments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No appointments.</TableCell></TableRow>}
                   {appointments.map((a: any) => {
                     const p = profileMap[a.staff_profile_id];
+                    const s = a.service_id ? serviceMap[a.service_id] : null;
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="text-xs">{format(new Date(a.scheduled_at), "dd MMM yyyy HH:mm")}</TableCell>
                         <TableCell className="text-xs">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
-                        <TableCell><Badge className={STATUS_COLOR[a.status] ?? ""}>{a.status}</Badge></TableCell>
-                        <TableCell className="text-xs">{a.notes ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{s?.name ?? "—"}</TableCell>
+                        <TableCell>
+                          <Select value={a.status} onValueChange={(v) => updateApptStatus.mutate({ id: a.id, status: v })}>
+                            <SelectTrigger className="h-7 w-[130px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {APPT_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-xs max-w-[260px] truncate" title={a.notes ?? ""}>{a.notes ?? "—"}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" className="h-7 gap-1" onClick={() => openApptEdit(a)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -322,6 +534,7 @@ export default function HealthLab() {
           </Card>
         </TabsContent>
 
+        {/* SERVICES */}
         <TabsContent value="services">
           <Card>
             <CardContent className="p-0">
@@ -343,30 +556,76 @@ export default function HealthLab() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="inventory">
+        {/* INVENTORY */}
+        <TabsContent value="inventory" className="space-y-3">
+          {(inventoryAlerts.lowStock.length > 0 || inventoryAlerts.expired.length > 0 || inventoryAlerts.expSoon.length > 0) && (
+            <Card className="border-l-4 border-l-rose-600 bg-rose-50/40 dark:bg-rose-950/20">
+              <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2 text-rose-800 dark:text-rose-200"><AlertTriangle className="h-4 w-4" /> Stock Alerts</CardTitle></CardHeader>
+              <CardContent className="text-xs space-y-1">
+                {inventoryAlerts.lowStock.length > 0 && <div><strong>{inventoryAlerts.lowStock.length}</strong> at or below reorder threshold</div>}
+                {inventoryAlerts.expired.length > 0 && <div className="text-destructive"><strong>{inventoryAlerts.expired.length}</strong> expired</div>}
+                {inventoryAlerts.expSoon.length > 0 && <div className="text-amber-700"><strong>{inventoryAlerts.expSoon.length}</strong> expiring within 30 days</div>}
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="flex justify-end">
+            <Button size="sm" className="gap-1" onClick={openInvCreate}><Plus className="h-4 w-4" /> New Item</Button>
+          </div>
+
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader><TableRow><TableHead>Item</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Qty</TableHead><TableHead>Expiry</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {inventory.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">No inventory.</TableCell></TableRow>}
-                  {inventory.map((i: any) => {
-                    const low = (i.quantity ?? 0) <= (i.reorder_threshold ?? 0);
-                    return (
-                      <TableRow key={i.id} className={low ? "bg-rose-50/40 dark:bg-rose-950/20" : ""}>
-                        <TableCell className="text-xs font-medium">{i.item_name}</TableCell>
-                        <TableCell className="text-xs">{i.category ?? "—"}</TableCell>
-                        <TableCell className="text-xs text-right">{i.quantity} {i.unit ?? ""}</TableCell>
-                        <TableCell className="text-xs">{i.expiry_date ? format(new Date(i.expiry_date), "dd MMM yyyy") : "—"}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <ScrollArea className="max-h-[60vh]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead><TableHead>Category</TableHead>
+                      <TableHead className="text-right">Qty</TableHead><TableHead>Unit</TableHead>
+                      <TableHead className="text-right">Reorder ≤</TableHead><TableHead>Expiry</TableHead>
+                      <TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inventory.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-xs text-muted-foreground py-6">No inventory.</TableCell></TableRow>}
+                    {inventory.map((i: any) => {
+                      const low = (i.quantity ?? 0) <= (i.reorder_threshold ?? 0);
+                      const days = i.expiry_date ? Math.ceil((new Date(i.expiry_date).getTime() - today.getTime()) / 86400000) : null;
+                      const expired = days !== null && days < 0;
+                      const soon = days !== null && days >= 0 && days <= 30;
+                      return (
+                        <TableRow key={i.id} className={expired ? "bg-rose-100/60 dark:bg-rose-950/30" : low ? "bg-rose-50/40 dark:bg-rose-950/20" : soon ? "bg-amber-50/50 dark:bg-amber-950/20" : ""}>
+                          <TableCell className="text-xs font-medium">{i.item_name}</TableCell>
+                          <TableCell className="text-xs">{i.category ?? "—"}</TableCell>
+                          <TableCell className="text-xs text-right font-bold">{i.quantity}</TableCell>
+                          <TableCell className="text-xs">{i.unit ?? "—"}</TableCell>
+                          <TableCell className="text-xs text-right">{i.reorder_threshold ?? 0}</TableCell>
+                          <TableCell className="text-xs">{i.expiry_date ? format(new Date(i.expiry_date), "dd MMM yyyy") : "—"}{days !== null && (<div className="text-[10px] text-muted-foreground">{expired ? `expired ${Math.abs(days)}d ago` : `${days}d left`}</div>)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {low && <Badge className="bg-rose-600 hover:bg-rose-700 text-[10px]">LOW</Badge>}
+                              {expired && <Badge className="bg-destructive text-[10px]">EXPIRED</Badge>}
+                              {soon && !expired && <Badge className="bg-amber-500 text-[10px]">≤30d</Badge>}
+                              {!low && !expired && !soon && <Badge variant="outline" className="text-[10px]">OK</Badge>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-1 flex-wrap">
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => { setAdjustTarget(i); setAdjustDelta(0); setAdjustNote(""); }}>Adjust</Button>
+                              <Button size="sm" variant="ghost" className="h-7" onClick={() => openInvEdit(i)}>Edit</Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={() => { if (confirm(`Delete "${i.item_name}"?`)) deleteInventory.mutate(i.id); }}>Delete</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* EXCUSE DUTY REVIEW */}
         <TabsContent value="excuse">
           <Card>
             <CardContent className="p-0">
@@ -403,6 +662,7 @@ export default function HealthLab() {
         </TabsContent>
       </Tabs>
 
+      {/* Excuse decision dialog */}
       <Dialog open={!!excuseDecision} onOpenChange={(o) => { if (!o) { setExcuseDecision(null); setExcuseComment(""); } }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{excuseDecision?.action === "approved" ? "Approve" : "Reject"} excuse duty</DialogTitle></DialogHeader>
@@ -413,6 +673,96 @@ export default function HealthLab() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setExcuseDecision(null)}>Cancel</Button>
             <Button variant={excuseDecision?.action === "rejected" ? "destructive" : "default"} onClick={() => decideExcuse.mutate()} disabled={decideExcuse.isPending}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inventory create/edit dialog */}
+      <Dialog open={invOpen} onOpenChange={(o) => { if (!o) { setInvOpen(false); setInvEdit(null); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{invEdit ? "Edit item" : "New inventory item"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Item name *</Label><Input value={invForm.item_name} onChange={(e) => setInvForm({ ...invForm, item_name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Category</Label><Input value={invForm.category} onChange={(e) => setInvForm({ ...invForm, category: e.target.value })} /></div>
+              <div><Label>Unit</Label><Input value={invForm.unit} onChange={(e) => setInvForm({ ...invForm, unit: e.target.value })} placeholder="box, ml, tab…" /></div>
+              <div><Label>Quantity</Label><Input type="number" value={invForm.quantity} onChange={(e) => setInvForm({ ...invForm, quantity: Number(e.target.value) })} /></div>
+              <div><Label>Reorder threshold</Label><Input type="number" value={invForm.reorder_threshold} onChange={(e) => setInvForm({ ...invForm, reorder_threshold: Number(e.target.value) })} /></div>
+              <div className="col-span-2"><Label>Expiry date</Label><Input type="date" value={invForm.expiry_date} onChange={(e) => setInvForm({ ...invForm, expiry_date: e.target.value })} /></div>
+            </div>
+            <div><Label>Notes</Label><Textarea rows={2} value={invForm.notes} onChange={(e) => setInvForm({ ...invForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setInvOpen(false); setInvEdit(null); }}>Cancel</Button>
+            <Button onClick={() => saveInventory.mutate()} disabled={saveInventory.isPending}>{invEdit ? "Save changes" : "Create"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inventory adjust dialog */}
+      <Dialog open={!!adjustTarget} onOpenChange={(o) => { if (!o) setAdjustTarget(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Adjust stock — {adjustTarget?.item_name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm">Current quantity: <strong>{adjustTarget?.quantity}</strong> {adjustTarget?.unit}</div>
+            <div>
+              <Label>Delta (use negative to subtract) *</Label>
+              <Input type="number" value={adjustDelta} onChange={(e) => setAdjustDelta(Number(e.target.value))} />
+            </div>
+            <div><Label>Note</Label><Textarea rows={2} value={adjustNote} onChange={(e) => setAdjustNote(e.target.value)} placeholder="Reason for adjustment…" /></div>
+            <div className="text-xs text-muted-foreground">New quantity will be: <strong>{Math.max(0, (adjustTarget?.quantity ?? 0) + Number(adjustDelta))}</strong></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdjustTarget(null)}>Cancel</Button>
+            <Button onClick={() => adjustInventory.mutate()} disabled={adjustInventory.isPending || adjustDelta === 0}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Appointment dialog */}
+      <Dialog open={apptOpen} onOpenChange={(o) => { if (!o) { setApptOpen(false); setApptEdit(null); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{apptEdit ? "Edit appointment" : "Schedule appointment"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Staff *</Label>
+              <StaffCombobox
+                staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
+                value={apptForm.staff_profile_id}
+                onValueChange={(v) => setApptForm({ ...apptForm, staff_profile_id: v })}
+                placeholder="Search staff…"
+              />
+            </div>
+            <div>
+              <Label>Service type</Label>
+              <Select value={apptForm.service_id || "none"} onValueChange={(v) => setApptForm({ ...apptForm, service_id: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Select service…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— No service —</SelectItem>
+                  {(services as any[]).filter((s) => s.active !== false).map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}{s.category ? ` (${s.category})` : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Scheduled at *</Label>
+                <Input type="datetime-local" value={apptForm.scheduled_at} onChange={(e) => setApptForm({ ...apptForm, scheduled_at: e.target.value })} />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={apptForm.status} onValueChange={(v) => setApptForm({ ...apptForm, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{APPT_STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div><Label>Notes</Label><Textarea rows={2} value={apptForm.notes} onChange={(e) => setApptForm({ ...apptForm, notes: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); }}>Cancel</Button>
+            <Button onClick={() => saveAppointment.mutate()} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
