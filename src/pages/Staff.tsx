@@ -180,6 +180,7 @@ export default function Staff() {
     setStaffCategory(s.staff_category || "");
     setOffice(s.office || "");
     setDateOfBirth(s.date_of_birth || "");
+    setMaritalStatus(s.marital_status || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
