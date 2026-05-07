@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 import { downloadCSVString } from "@/lib/download-utils";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 function toCsv(headers: string[], rows: (string | number | null | undefined)[][]) {
   const escape = (v: any) => {
