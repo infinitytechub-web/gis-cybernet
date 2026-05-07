@@ -444,12 +444,12 @@ export default function HealthLab() {
   };
 
   const openApptCreate = () => {
-    setApptEdit(null); setApptConflict(null);
+    setApptEdit(null); setApptConflict(null); setOverrideBy(""); setOverrideReason("");
     setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     setApptOpen(true);
   };
   const openApptEdit = (a: any) => {
-    setApptEdit(a); setApptConflict(null);
+    setApptEdit(a); setApptConflict(null); setOverrideBy(""); setOverrideReason("");
     setApptForm({
       staff_profile_id: a.staff_profile_id,
       service_id: a.service_id ?? "",
