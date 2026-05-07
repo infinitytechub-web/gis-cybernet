@@ -316,6 +316,9 @@ export default function Ipse() {
           <TabsTrigger value="triage" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
           <TabsTrigger value="sanctions" className="gap-1.5 data-[state=active]:bg-rose-700 data-[state=active]:text-white"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
           <TabsTrigger value="drilldown" className="gap-1.5 data-[state=active]:bg-sky-700 data-[state=active]:text-white"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
+          {(isAdmin || isIpse) && (
+            <TabsTrigger value="nightguard" className="gap-1.5 data-[state=active]:bg-[hsl(220,80%,18%)] data-[state=active]:text-white"><Moon className="h-4 w-4" /> Night Guard Roster</TabsTrigger>
+          )}
         </TabsList>
 
         {/* DASHBOARD */}
