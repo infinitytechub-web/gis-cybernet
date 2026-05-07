@@ -188,11 +188,15 @@ export default function Ipse() {
       if (!decision) throw new Error("No decision");
       const { report, action } = decision;
       const updates: any = {};
-      if (action === "forward_2ic") {
+      if (action === "forward_hoa") {
         if (!severity) throw new Error("Pick a severity level");
         updates.severity = severity;
-        updates.ipse_status = "forwarded_to_2ic";
+        updates.ipse_status = "forwarded_to_hoa";
         updates.ipse_comment = comment.trim() || null;
+        updates.forwarded_to = "head_of_administration";
+      } else if (action === "forward_2ic") {
+        updates.ipse_status = "forwarded_to_2ic";
+        updates.hoa_comment = comment.trim() || null;
         updates.forwarded_to = "2ic";
       } else if (action === "forward_oic") {
         updates.ipse_status = "forwarded_to_oic";
