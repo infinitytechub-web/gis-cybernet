@@ -17,6 +17,8 @@ export type AppRole =
   | "2ic"
   | "head_of_administration"
   | "chief_staff_officer"
+  | "head_of_processing"
+  | "deputy_head_of_processing"
   | "staff_officer"
   | "supervisor"
   | "ipse_supervisor"
