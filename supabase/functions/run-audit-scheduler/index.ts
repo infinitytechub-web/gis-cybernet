@@ -403,8 +403,11 @@ async function dispatchVarianceAlert(supabase: any, payload: any) {
   return out;
 }
 
+import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (!isInternalCaller(req)) return unauthorizedResponse(corsHeaders);
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { persistSession: false },

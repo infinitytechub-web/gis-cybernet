@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { generateSecurePassword } from "../_shared/csprng-password.ts";
 
 const BATCH_SIZE = 50;
 
@@ -9,25 +10,7 @@ const corsHeaders = {
 };
 
 function generatePassword(length = 12): string {
-  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const lower = "abcdefghijklmnopqrstuvwxyz";
-  const digits = "0123456789";
-  const special = "!@#$%&*";
-  const all = upper + lower + digits + special;
-  const chars = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
-  ];
-  for (let i = chars.length; i < length; i++) {
-    chars.push(all[Math.floor(Math.random() * all.length)]);
-  }
-  for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [chars[i], chars[j]] = [chars[j], chars[i]];
-  }
-  return chars.join("");
+  return generateSecurePassword(length);
 }
 
 function makeUsername(firstName: string, lastName: string, existingUsernames: Set<string>): string {
@@ -287,8 +270,14 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
 
-    // Internal batch continuation call
+    // Internal batch continuation call — MUST be authenticated with service-role key
     if (body._batch && body.job_id) {
+      const batchAuth = req.headers.get("Authorization") ?? "";
+      if (!serviceRoleKey || !batchAuth.includes(serviceRoleKey)) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       EdgeRuntime.waitUntil(runNextBatch(body.job_id));
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

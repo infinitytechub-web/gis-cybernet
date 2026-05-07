@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { generateSecurePassword } from "../_shared/csprng-password.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,25 +8,7 @@ const corsHeaders = {
 };
 
 function generatePassword(length = 12): string {
-  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const lower = "abcdefghijklmnopqrstuvwxyz";
-  const digits = "0123456789";
-  const special = "!@#$%&*";
-  const all = upper + lower + digits + special;
-  const chars = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
-  ];
-  for (let i = chars.length; i < length; i++) {
-    chars.push(all[Math.floor(Math.random() * all.length)]);
-  }
-  for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [chars[i], chars[j]] = [chars[j], chars[i]];
-  }
-  return chars.join("");
+  return generateSecurePassword(length);
 }
 
 function makeUsername(firstName: string, lastName: string, existingUsernames: Set<string>): string {
@@ -86,9 +69,14 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Validate caller is admin
-    const authHeader = req.headers.get("Authorization") ?? "";
-    if (authHeader) {
+    // Validate caller is admin (auth header is REQUIRED)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    {
       const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
       });
