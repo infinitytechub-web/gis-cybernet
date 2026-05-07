@@ -110,38 +110,63 @@ export default function Appraisals() {
     return Array.from(ids);
   }, [staffProfileId, bulkProfileIds]);
 
+  // Pre-submit lookup: which selected officers already have an appraisal
+  // for the chosen period? Updates live as the user changes selection/period.
+  const { data: existingForPeriod = [] } = useQuery({
+    queryKey: ["appraisal-existing", periodYear, periodMonth, targetIds.join(",")],
+    enabled: targetIds.length > 0,
+    queryFn: () =>
+      checkExistingAppraisals(supabase as any, {
+        targetIds,
+        periodYear,
+        periodMonth,
+      }),
+  });
+
+  const periodLabel = periodMonth ? `${MONTHS[periodMonth - 1]} ${periodYear}` : `Annual ${periodYear}`;
+
   const submit = useMutation({
     mutationFn: async (status: "draft" | "submitted") => {
       if (targetIds.length === 0) throw new Error("Select at least one officer");
-      const created: string[] = [];
-      const duplicates: string[] = [];
-      const failures: string[] = [];
-      for (const id of targetIds) {
-        const payload: any = {
-          staff_profile_id: id,
+
+      // Friendly pre-flight check before hitting the DB. The server-side
+      // unique index/trigger remains the source of truth — this is just UX.
+      const preExisting = await checkExistingAppraisals(supabase as any, {
+        targetIds,
+        periodYear,
+        periodMonth,
+      });
+      const fresh = targetIds.filter((id) => !preExisting.includes(id));
+      if (fresh.length === 0) {
+        const e: any = new Error(
+          `An appraisal already exists for ${preExisting.length === 1 ? "this officer" : `all ${preExisting.length} selected officers`} for ${periodLabel}.`,
+        );
+        e._preflight = true;
+        throw e;
+      }
+      if (preExisting.length > 0) {
+        toast.warning(
+          `${preExisting.length} officer${preExisting.length === 1 ? " already has" : "s already have"} an appraisal for ${periodLabel} — skipping.`,
+        );
+      }
+
+      const result = await submitBulkAppraisals(supabase as any, {
+        targetIds: fresh,
+        payloadBase: {
           appraised_by: user!.id,
           period_year: periodYear,
           period_month: periodMonth,
           status,
           comments: comments || null,
           submitted_at: status === "submitted" ? new Date().toISOString() : null,
-        };
-        const { data: ap, error: ae } = await supabase.from("staff_appraisals" as any).insert(payload).select("id").single();
-        if (ae) {
-          // 23505 = unique_violation (raised by DB trigger / unique index)
-          if ((ae as any).code === "23505" || /already exists/i.test(ae.message)) {
-            duplicates.push(id);
-          } else {
-            failures.push(`${id}: ${ae.message}`);
-          }
-          continue;
-        }
-        const rows = CRITERIA.map(c => ({ appraisal_id: (ap as any).id, criterion: c.key, score: scores[c.key] }));
-        const { error: se } = await supabase.from("staff_appraisal_scores" as any).insert(rows);
-        if (se) { failures.push(`${id}: ${se.message}`); continue; }
-        created.push(id);
-      }
-      return { created, duplicates, failures };
+        },
+        scores,
+        criteria: CRITERIA,
+      });
+      return {
+        ...result,
+        duplicates: [...preExisting, ...result.duplicates],
+      };
     },
     onSuccess: ({ created, duplicates, failures }, status) => {
       if (created.length) {
@@ -153,7 +178,7 @@ export default function Appraisals() {
       }
       if (duplicates.length) {
         toast.warning(
-          `${duplicates.length} skipped — appraisal already exists for this period.`,
+          `${duplicates.length} skipped — appraisal already exists for ${periodLabel}.`,
         );
       }
       if (failures.length) {
@@ -165,6 +190,7 @@ export default function Appraisals() {
         qc.invalidateQueries({ queryKey: ["appraisals-list"] });
         qc.invalidateQueries({ queryKey: ["top5-month"] });
         qc.invalidateQueries({ queryKey: ["top5-year"] });
+        qc.invalidateQueries({ queryKey: ["appraisal-existing"] });
       }
     },
     onError: (e: any) => toast.error(e.message ?? "Failed to save"),
