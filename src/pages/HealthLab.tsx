@@ -611,6 +611,11 @@ export default function HealthLab() {
               {(filterFrom || filterTo || filterService || search) && (
                 <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterService(""); setSearch(""); setReportsPage(1); }}>Clear</Button>
               )}
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportReportsPDF(filteredReports, "filtered")}><FileDown className="h-4 w-4" /> PDF (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportReportsCSV(filteredReports, "filtered")}><FileDown className="h-4 w-4" /> CSV (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportReportsPDF(pagedReports, `page${reportsPage}`)}><FileDown className="h-4 w-4" /> PDF (page)</Button>
+              </div>
             </div>
           </Card>
           <Card>
