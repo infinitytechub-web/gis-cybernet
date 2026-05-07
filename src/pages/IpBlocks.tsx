@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { ShieldOff, Ban, Clock, ScrollText } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 export default function IpBlocks() {
   const { isAdmin, loading } = useAuth();
