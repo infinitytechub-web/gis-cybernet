@@ -283,12 +283,17 @@ export function PermissionsMatrix() {
             <ExportMenu getData={buildExportData} className="gap-1" />
             {editing ? (
               <>
-                <Button size="sm" variant="outline" onClick={handleReset}>Reset</Button>
-                <Button size="sm" onClick={handleSave}>Save Changes</Button>
+                <Button size="sm" variant="outline" onClick={handleReset} disabled={saving}>Cancel</Button>
+                <Button size="sm" variant="outline" onClick={handleRestoreDefaults} disabled={saving}>Restore defaults</Button>
+                <Button size="sm" onClick={handleSave} disabled={saving || !isAdmin} className="gap-1">
+                  {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Save Changes{dirtyRows.length ? ` (${dirtyRows.length})` : ""}
+                </Button>
               </>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1">
-                <Pencil className="h-3.5 w-3.5" /> Edit Access
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1" disabled={loading || !isAdmin}>
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+                {loading ? "Loading…" : "Edit Access"}
               </Button>
             )}
           </div>
