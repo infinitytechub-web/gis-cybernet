@@ -116,6 +116,27 @@ Deno.serve(async (req) => {
     }
     const userId = claims.claims.sub;
 
+    // Role check — restrict outbound emailing to staff that legitimately handle records.
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: roleRows } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const allowedRoles = new Set([
+      "admin", "oic", "2ic", "staff_officer", "supervisor",
+      "front_desk", "processing", "enforcement",
+    ]);
+    const hasRole = (roleRows ?? []).some((r: any) => allowedRoles.has(r.role));
+    if (!hasRole) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Parse + validate input
     const body = (await req.json()) as SendBody;
     const errors: string[] = [];
