@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye, Pencil, Printer } from "lucide-react";
+import { Check, X, Eye, Pencil, Printer, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const roles = ["admin", "oic", "2ic", "head_of_administration", "chief_staff_officer", "supervisor", "ipse_supervisor", "ipse_deputy_supervisor", "shift_supervisor", "deputy_shift_supervisor", "shift_leader", "deputy_supervisor", "deputy_shift_leader", "special_duties", "deputy", "front_desk", "staff"] as const;
 
@@ -139,8 +141,41 @@ const accessBadge = (level: Access) => {
 };
 
 export function PermissionsMatrix() {
+  const { isAdmin, user } = useAuth();
   const [features, setFeatures] = useState(defaultFeatures);
+  const [originalFeatures, setOriginalFeatures] = useState(defaultFeatures);
   const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Apply persisted overrides on top of defaults
+  const applyOverrides = (overrides: Array<{ feature_name: string; role: string; access: Access }>) => {
+    const next = defaultFeatures.map((f) => ({ ...f, access: { ...f.access } }));
+    for (const o of overrides) {
+      const target = next.find((f) => f.name === o.feature_name);
+      if (target) target.access[o.role] = o.access;
+    }
+    setFeatures(next);
+    setOriginalFeatures(next.map((f) => ({ ...f, access: { ...f.access } })));
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("permission_matrix_overrides")
+        .select("feature_name, role, access");
+      if (cancelled) return;
+      if (error) {
+        toast.error("Could not load saved permissions; showing defaults");
+      } else {
+        applyOverrides((data ?? []) as any);
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleAccessChange = (featureIdx: number, role: string, newAccess: Access) => {
     setFeatures((prev) => {
@@ -153,15 +188,68 @@ export function PermissionsMatrix() {
     });
   };
 
-  const handleSave = () => {
-    setEditing(false);
-    toast.success("Permissions matrix updated for this session");
+  // Diff current vs original to compute the upsert payload
+  const dirtyRows = useMemo(() => {
+    const rows: { feature_name: string; role: string; access: Access }[] = [];
+    features.forEach((f, fi) => {
+      const orig = originalFeatures[fi]?.access ?? {};
+      Object.entries(f.access).forEach(([role, access]) => {
+        if (orig[role] !== access) rows.push({ feature_name: f.name, role, access });
+      });
+    });
+    return rows;
+  }, [features, originalFeatures]);
+
+  const handleSave = async () => {
+    if (!isAdmin) {
+      toast.error("Admin access required to save permissions");
+      return;
+    }
+    if (!dirtyRows.length) {
+      setEditing(false);
+      toast.info("No changes to save");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = dirtyRows.map((r) => ({ ...r, updated_by: user?.id ?? null })) as any;
+      const { error } = await supabase
+        .from("permission_matrix_overrides")
+        .upsert(payload, { onConflict: "feature_name,role" });
+      if (error) throw error;
+      setOriginalFeatures(features.map((f) => ({ ...f, access: { ...f.access } })));
+      setEditing(false);
+      toast.success(`Saved ${dirtyRows.length} access change(s)`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to save permissions");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleReset = () => {
-    setFeatures(defaultFeatures);
+  const handleReset = async () => {
+    if (!editing) return;
+    // Cancel — revert to last persisted state, do not touch DB
+    setFeatures(originalFeatures.map((f) => ({ ...f, access: { ...f.access } })));
     setEditing(false);
-    toast.info("Permissions matrix reset to defaults");
+  };
+
+  const handleRestoreDefaults = async () => {
+    if (!isAdmin) return;
+    if (!confirm("Restore the entire matrix to defaults? This deletes all saved overrides.")) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("permission_matrix_overrides").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+      if (error) throw error;
+      setFeatures(defaultFeatures.map((f) => ({ ...f, access: { ...f.access } })));
+      setOriginalFeatures(defaultFeatures.map((f) => ({ ...f, access: { ...f.access } })));
+      setEditing(false);
+      toast.success("Matrix restored to defaults");
+    } catch (e: any) {
+      toast.error(e.message ?? "Restore failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const buildExportData = () => {
@@ -195,12 +283,17 @@ export function PermissionsMatrix() {
             <ExportMenu getData={buildExportData} className="gap-1" />
             {editing ? (
               <>
-                <Button size="sm" variant="outline" onClick={handleReset}>Reset</Button>
-                <Button size="sm" onClick={handleSave}>Save Changes</Button>
+                <Button size="sm" variant="outline" onClick={handleReset} disabled={saving}>Cancel</Button>
+                <Button size="sm" variant="outline" onClick={handleRestoreDefaults} disabled={saving}>Restore defaults</Button>
+                <Button size="sm" onClick={handleSave} disabled={saving || !isAdmin} className="gap-1">
+                  {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Save Changes{dirtyRows.length ? ` (${dirtyRows.length})` : ""}
+                </Button>
               </>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1">
-                <Pencil className="h-3.5 w-3.5" /> Edit Access
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="gap-1" disabled={loading || !isAdmin}>
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+                {loading ? "Loading…" : "Edit Access"}
               </Button>
             )}
           </div>
