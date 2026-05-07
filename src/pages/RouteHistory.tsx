@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 import { toast } from "sonner";
+import { SecurityHero, securityButtonClass, securityButtonSolidClass } from "@/components/security/SecurityHero";
 
 interface RouteRow {
   id: string;
