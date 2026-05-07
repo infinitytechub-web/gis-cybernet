@@ -295,9 +295,10 @@ export default function Ipse() {
 
         {/* DASHBOARD */}
         <TabsContent value="dashboard" className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
             <Card className="border-l-4 border-l-[hsl(82,40%,30%)]"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">{analytics.total}</div></CardContent></Card>
             <Card className="border-l-4 border-l-amber-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-orange-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With Head of Admin</div><div className="text-2xl font-bold text-orange-600">{analytics.byStatus.forwarded_to_hoa ?? 0}</div></CardContent></Card>
             <Card className="border-l-4 border-l-blue-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
             <Card className="border-l-4 border-l-purple-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
             <Card className="border-l-4 border-l-emerald-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold text-emerald-600">{analytics.avgIpseHours}</div></CardContent></Card>
