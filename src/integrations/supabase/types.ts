@@ -4649,6 +4649,36 @@ export type Database = {
           },
         ]
       }
+      permission_matrix_overrides: {
+        Row: {
+          access: string
+          created_at: string
+          feature_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          access: string
+          created_at?: string
+          feature_name: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          access?: string
+          created_at?: string
+          feature_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       platform_sync_history: {
         Row: {
           action: string
@@ -6916,6 +6946,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_mapping_imports: {
+        Row: {
+          created_at: string
+          error_count: number
+          filename: string | null
+          id: string
+          imported_by: string | null
+          notes: string | null
+          skipped_count: number
+          total_rows: number
+          updated_count: number
+        }
+        Insert: {
+          created_at?: string
+          error_count?: number
+          filename?: string | null
+          id?: string
+          imported_by?: string | null
+          notes?: string | null
+          skipped_count?: number
+          total_rows?: number
+          updated_count?: number
+        }
+        Update: {
+          created_at?: string
+          error_count?: number
+          filename?: string | null
+          id?: string
+          imported_by?: string | null
+          notes?: string | null
+          skipped_count?: number
+          total_rows?: number
+          updated_count?: number
+        }
+        Relationships: []
       }
       staff_request_history: {
         Row: {
