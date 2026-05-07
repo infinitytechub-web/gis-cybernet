@@ -1,4 +1,4 @@
-import { Layers, Satellite, Map as MapIcon, Mountain, ShieldCheck } from "lucide-react";
+import { Layers, Satellite, Map as MapIcon, Mountain } from "lucide-react";
 
 /**
  * Small legend shown alongside maps to explain the four base-layer modes
