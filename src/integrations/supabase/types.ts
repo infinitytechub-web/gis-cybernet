@@ -6687,6 +6687,48 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_appraisal_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          appraisal_id: string | null
+          bulk_batch_id: string | null
+          bulk_size: number | null
+          created_at: string
+          details: Json
+          id: string
+          period_month: number | null
+          period_year: number
+          staff_profile_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          appraisal_id?: string | null
+          bulk_batch_id?: string | null
+          bulk_size?: number | null
+          created_at?: string
+          details?: Json
+          id?: string
+          period_month?: number | null
+          period_year: number
+          staff_profile_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          appraisal_id?: string | null
+          bulk_batch_id?: string | null
+          bulk_size?: number | null
+          created_at?: string
+          details?: Json
+          id?: string
+          period_month?: number | null
+          period_year?: number
+          staff_profile_id?: string
+        }
+        Relationships: []
+      }
       staff_appraisal_scores: {
         Row: {
           appraisal_id: string
@@ -7537,6 +7579,23 @@ export type Database = {
         Args: { _profile_id: string; _reason: string }
         Returns: Json
       }
+      appraisal_coverage_report: {
+        Args: { _period_month?: number; _period_year: number }
+        Returns: {
+          appraisal_status: string
+          department_name: string
+          duplicate_attempts: number
+          first_name: string
+          has_appraisal: boolean
+          last_attempt_at: string
+          last_name: string
+          rank_level: number
+          rank_name: string
+          staff_id: string
+          staff_profile_id: string
+          total_score: number
+        }[]
+      }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
       block_ip: {
         Args: {
@@ -7753,6 +7812,16 @@ export type Database = {
           total_count: number
         }[]
       }
+      log_appraisal_duplicate_attempt: {
+        Args: {
+          _bulk_batch_id?: string
+          _bulk_size?: number
+          _period_month: number
+          _period_year: number
+          _staff_profile_id: string
+        }
+        Returns: undefined
+      }
       log_hrm_export: {
         Args: {
           _details?: Json
@@ -7939,6 +8008,14 @@ export type Database = {
           _table: string
         }
         Returns: string
+      }
+      tag_appraisal_audit_batch: {
+        Args: {
+          _appraisal_id: string
+          _bulk_batch_id: string
+          _bulk_size: number
+        }
+        Returns: undefined
       }
       test_profile_office_history_access: {
         Args: never

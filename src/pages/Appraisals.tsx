@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Award, Star, Trophy, Send, Save, ClipboardList } from "lucide-react";
+import { Award, Star, Trophy, Send, Save, ClipboardList, ClipboardCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
@@ -150,6 +151,9 @@ export default function Appraisals() {
         );
       }
 
+      const bulkBatchId = (typeof crypto !== "undefined" && "randomUUID" in crypto)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`;
       const result = await submitBulkAppraisals(supabase as any, {
         targetIds: fresh,
         payloadBase: {
@@ -162,6 +166,7 @@ export default function Appraisals() {
         },
         scores,
         criteria: CRITERIA,
+        bulkBatchId,
       });
       return {
         ...result,
@@ -198,7 +203,15 @@ export default function Appraisals() {
 
   return (
     <div className="space-y-4">
-      <PageHeader icon={Award} title="Staff Appraisal Dashboard" />
+      <PageHeader
+        icon={Award}
+        title="Staff Appraisal Dashboard"
+        actions={canManage ? (
+          <Button asChild variant="outline" size="sm" className="gap-1">
+            <Link to="/appraisals/coverage"><ClipboardCheck className="h-4 w-4" /> Coverage report</Link>
+          </Button>
+        ) : undefined}
+      />
 
       <Tabs defaultValue="charts">
         <TabsList>
