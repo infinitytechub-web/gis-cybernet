@@ -26,7 +26,7 @@ import { logAdminAudit } from "@/lib/admin-audit";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
-type StatusTab = "pending_ipse" | "with_2ic" | "with_oic" | "approved" | "rejected" | "all";
+type StatusTab = "pending_ipse" | "with_hoa" | "with_2ic" | "with_oic" | "approved" | "rejected" | "all";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
