@@ -79,6 +79,10 @@ export default function MyProfile() {
   const save = useMutation({
     mutationFn: async () => {
       if (!profile?.id) throw new Error("Profile not loaded");
+      const gcn = (form.ghana_card_number ?? "").trim();
+      if (gcn && !isValidGhanaCard(gcn)) {
+        throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
+      }
       const payload: any = {};
       EDITABLE_FIELDS.forEach((k) => {
         const v = (form[k] ?? "").toString().trim();
