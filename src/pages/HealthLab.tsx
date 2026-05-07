@@ -39,7 +39,9 @@ const STATUS_COLOR: Record<string, string> = {
 const APPT_STATUSES = ["scheduled", "completed", "cancelled", "no_show"] as const;
 
 export default function HealthLab() {
-  const { isAdminOrSupervisor } = useAuth();
+  const { isAdminOrSupervisor, role } = useAuth();
+  const isMedical = role === "medical_officer";
+  const canAccessHealthLab = isAdminOrSupervisor || isMedical;
   const qc = useQueryClient();
   const [tab, setTab] = useState("overview");
   const [search, setSearch] = useState("");
@@ -90,8 +92,8 @@ export default function HealthLab() {
     authorized_role: "",
   });
 
-  if (!isAdminOrSupervisor) {
-    return <div className="p-6 text-sm text-muted-foreground">Access restricted to System Administrator and Command Tier.</div>;
+  if (!canAccessHealthLab) {
+    return <div className="p-6 text-sm text-muted-foreground">Access restricted to System Administrator, Command Tier, and Medical Officers.</div>;
   }
 
   // Realtime sync across all dashboards
