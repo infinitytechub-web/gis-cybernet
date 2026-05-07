@@ -227,6 +227,9 @@ export default function Staff() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
+      if (ghanaCardNumber && !isValidGhanaCard(ghanaCardNumber)) {
+        throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
+      }
       setUploadingPhoto(!!photoFile);
 
       // Derive primary phone from contacts list (fallback to legacy field)
