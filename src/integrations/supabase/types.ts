@@ -3687,10 +3687,47 @@ export type Database = {
           },
         ]
       }
+      medical_appointment_audit: {
+        Row: {
+          action: string
+          after_data: Json | null
+          appointment_id: string | null
+          before_data: Json | null
+          details: Json | null
+          id: string
+          performed_at: string
+          performed_by: string | null
+        }
+        Insert: {
+          action: string
+          after_data?: Json | null
+          appointment_id?: string | null
+          before_data?: Json | null
+          details?: Json | null
+          id?: string
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Update: {
+          action?: string
+          after_data?: Json | null
+          appointment_id?: string | null
+          before_data?: Json | null
+          details?: Json | null
+          id?: string
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Relationships: []
+      }
       medical_appointments: {
         Row: {
           authorized_by: string | null
           authorized_role: string | null
+          conflict_override_at: string | null
+          conflict_override_by: string | null
+          conflict_override_reason: string | null
+          conflict_override_role: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -3704,6 +3741,10 @@ export type Database = {
         Insert: {
           authorized_by?: string | null
           authorized_role?: string | null
+          conflict_override_at?: string | null
+          conflict_override_by?: string | null
+          conflict_override_reason?: string | null
+          conflict_override_role?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3717,6 +3758,10 @@ export type Database = {
         Update: {
           authorized_by?: string | null
           authorized_role?: string | null
+          conflict_override_at?: string | null
+          conflict_override_by?: string | null
+          conflict_override_reason?: string | null
+          conflict_override_role?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
