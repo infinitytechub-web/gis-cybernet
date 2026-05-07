@@ -92,8 +92,38 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Parse + validate tile coords ─────────────────────────────────────
     const url = new URL(req.url);
+
+    // ── Preflight check: returns JSON describing tile API availability ──
+    if (url.searchParams.get("preflight") === "1") {
+      const apiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
+      if (!apiKey) {
+        return new Response(JSON.stringify({
+          ok: false, reason: "missing_key",
+          message: "Google Maps API key is not configured on the server.",
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      try {
+        await getSession("streets", apiKey);
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        SESSIONS.delete("streets");
+        const msg = (e as Error).message ?? "";
+        const disabled = /SERVICE_DISABLED|accessNotConfigured|has not been used in project|Map Tiles API/i.test(msg);
+        return new Response(JSON.stringify({
+          ok: false,
+          reason: disabled ? "api_disabled" : "unknown",
+          message: disabled
+            ? "Google Map Tiles API is disabled for this project. Enable it in Google Cloud Console, then refresh."
+            : "Google tile service is unavailable. Falling back to OSM/Esri layers.",
+          detail: msg.slice(0, 500),
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    // ── Parse + validate tile coords ─────────────────────────────────────
     const view = (url.searchParams.get("view") ?? "streets").toLowerCase();
     const z = parseInt(url.searchParams.get("z") ?? "", 10);
     const x = parseInt(url.searchParams.get("x") ?? "", 10);
