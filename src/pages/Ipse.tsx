@@ -459,7 +459,12 @@ export default function Ipse() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1 flex-wrap">
                             {r.ipse_status === "pending_ipse" && canActIpse && (
-                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_2ic" }); setSeverity(r.severity ?? ""); setComment(""); }}>
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_hoa" }); setSeverity(r.severity ?? ""); setComment(""); }}>
+                                <ArrowRightCircle className="h-3.5 w-3.5" /> Forward to HoA
+                              </Button>
+                            )}
+                            {r.ipse_status === "forwarded_to_hoa" && canActHoa && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_2ic" }); setComment(""); }}>
                                 <ArrowRightCircle className="h-3.5 w-3.5" /> Forward to 2IC
                               </Button>
                             )}
