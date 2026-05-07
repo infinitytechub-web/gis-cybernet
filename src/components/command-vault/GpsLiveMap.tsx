@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
 import { MapLegend } from "@/components/maps/MapLegend";
+import { MapTilesStatusBanner } from "@/components/maps/MapTilesStatusBanner";
 
 interface GpsLiveMapProps {
   lat: number;
@@ -197,9 +198,12 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
   }, [lat, lng]);
 
   return (
-    <div className="relative w-full">
-      <div ref={containerRef} style={{ height }} className="w-full rounded-md overflow-hidden border" />
-      <MapLegend className="absolute bottom-2 left-2 z-[1000] max-w-[260px] hidden sm:block" />
+    <div className="relative w-full space-y-2">
+      <MapTilesStatusBanner />
+      <div className="relative w-full">
+        <div ref={containerRef} style={{ height }} className="w-full rounded-md overflow-hidden border" />
+        <MapLegend className="absolute bottom-2 left-2 z-[1000] max-w-[260px] hidden sm:block" />
+      </div>
     </div>
   );
 }
