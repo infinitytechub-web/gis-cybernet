@@ -35,6 +35,7 @@ export type AppRole =
   | "enquiry"
   | "storekeeper"
   | "procurement_officer"
+  | "medical_officer"
   | "staff";
 
 export type ReportSeverity = "low" | "medium" | "high";
