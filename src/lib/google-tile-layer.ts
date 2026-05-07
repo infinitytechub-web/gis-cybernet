@@ -17,10 +17,16 @@ const AuthGoogleLayer = L.GridLayer.extend({
     tile.alt = "";
     tile.setAttribute("role", "presentation");
 
-    // 1x1 transparent PNG fallback so a misconfigured Google Tiles API
-    // (e.g. SERVICE_DISABLED) does not blank the map or spam runtime errors.
     const TRANSPARENT_PX =
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+    const reportFailure = (reason: string) => {
+      try {
+        window.dispatchEvent(
+          new CustomEvent("google-tiles-failed", { detail: { view: this.options.view, reason } }),
+        );
+      } catch { /* ignore */ }
+    };
 
     (async () => {
       try {
@@ -31,7 +37,15 @@ const AuthGoogleLayer = L.GridLayer.extend({
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         if (!res.ok) {
-          // Swallow proxy errors quietly — switch to a fallback layer instead.
+          reportFailure(`http_${res.status}`);
+          tile.src = TRANSPARENT_PX;
+          done(null, tile);
+          return;
+        }
+        // Edge function returns a transparent PNG with X-Tile-Fallback: 1
+        // when Google's API rejects the request (e.g. SERVICE_DISABLED).
+        if (res.headers.get("X-Tile-Fallback") === "1") {
+          reportFailure("api_disabled");
           tile.src = TRANSPARENT_PX;
           done(null, tile);
           return;
@@ -41,11 +55,13 @@ const AuthGoogleLayer = L.GridLayer.extend({
         tile.onload = () => { URL.revokeObjectURL(objUrl); done(null, tile); };
         tile.onerror = () => {
           URL.revokeObjectURL(objUrl);
+          reportFailure("decode_error");
           tile.src = TRANSPARENT_PX;
           done(null, tile);
         };
         tile.src = objUrl;
-      } catch {
+      } catch (e) {
+        reportFailure((e as Error).message ?? "exception");
         tile.src = TRANSPARENT_PX;
         done(null, tile);
       }
