@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
+import { MapLegend } from "@/components/maps/MapLegend";
 
 interface GpsLiveMapProps {
   lat: number;
