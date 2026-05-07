@@ -153,6 +153,7 @@ export default function ExcuseDutyForm() {
   };
 
   const exportDOCX = async (entry?: any) => {
+    if (!canExport(entry)) { toast.error("Access denied: only the submitter or an authorized reviewer can download this form."); return; }
     if (!autoFill) { toast.error("Profile not loaded"); return; }
     const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
     const heading = (text: string) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, bold: true })] });
