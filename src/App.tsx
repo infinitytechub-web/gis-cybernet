@@ -69,6 +69,7 @@ const StaffAccountApprovals = lazy(() => import("./pages/StaffAccountApprovals")
 const HealthLab = lazy(() => import("./pages/HealthLab"));
 const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 const MyExcuseDutySubmissions = lazy(() => import("./pages/MyExcuseDutySubmissions"));
+const MyProfile = lazy(() => import("./pages/MyProfile"));
 
 const queryClient = new QueryClient();
 
