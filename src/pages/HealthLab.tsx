@@ -494,39 +494,62 @@ export default function HealthLab() {
 
         {/* RECORDS */}
         <TabsContent value="records" className="space-y-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8" placeholder="Search staff or diagnosis…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Card className="p-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-8" placeholder="Search staff, diagnosis, complaint…" value={search} onChange={(e) => { setSearch(e.target.value); setRecordsPage(1); }} />
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs">From</Label>
+                <Input type="date" className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setRecordsPage(1); }} />
+                <Label className="text-xs">To</Label>
+                <Input type="date" className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setRecordsPage(1); }} />
+              </div>
+              <div className="w-[220px]">
+                <StaffCombobox
+                  staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
+                  value={filterStaff}
+                  onValueChange={(v) => { setFilterStaff(v); setRecordsPage(1); }}
+                  placeholder="Filter staff…"
+                />
+              </div>
+              {(filterFrom || filterTo || filterStaff || search) && (
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterStaff(""); setSearch(""); setRecordsPage(1); }}>Clear</Button>
+              )}
+              <div className="ml-auto flex gap-2">
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setAuditOpen(true)}><History className="h-4 w-4" /> Inventory Audit</Button>
+                <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-1"><FilePlus2 className="h-4 w-4" /> New Record</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>New Medical Record</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Staff *</Label>
+                        <StaffCombobox
+                          staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
+                          value={recordForm.staff_profile_id}
+                          onValueChange={(v) => setRecordForm({ ...recordForm, staff_profile_id: v })}
+                          placeholder="Search staff…"
+                        />
+                      </div>
+                      <div><Label>Chief complaint</Label><Textarea rows={2} value={recordForm.chief_complaint} onChange={(e) => setRecordForm({ ...recordForm, chief_complaint: e.target.value })} /></div>
+                      <div><Label>Diagnosis</Label><Input value={recordForm.diagnosis} onChange={(e) => setRecordForm({ ...recordForm, diagnosis: e.target.value })} /></div>
+                      <div><Label>Treatment</Label><Textarea rows={2} value={recordForm.treatment} onChange={(e) => setRecordForm({ ...recordForm, treatment: e.target.value })} /></div>
+                      <div><Label>Notes</Label><Textarea rows={2} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} /></div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
+                      <Button onClick={() => createRecord.mutate()} disabled={createRecord.isPending}>Save</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-            <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1"><FilePlus2 className="h-4 w-4" /> New Record</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>New Medical Record</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Staff *</Label>
-                    <StaffCombobox
-                      staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
-                      value={recordForm.staff_profile_id}
-                      onValueChange={(v) => setRecordForm({ ...recordForm, staff_profile_id: v })}
-                      placeholder="Search staff…"
-                    />
-                  </div>
-                  <div><Label>Chief complaint</Label><Textarea rows={2} value={recordForm.chief_complaint} onChange={(e) => setRecordForm({ ...recordForm, chief_complaint: e.target.value })} /></div>
-                  <div><Label>Diagnosis</Label><Input value={recordForm.diagnosis} onChange={(e) => setRecordForm({ ...recordForm, diagnosis: e.target.value })} /></div>
-                  <div><Label>Treatment</Label><Textarea rows={2} value={recordForm.treatment} onChange={(e) => setRecordForm({ ...recordForm, treatment: e.target.value })} /></div>
-                  <div><Label>Notes</Label><Textarea rows={2} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} /></div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
-                  <Button onClick={() => createRecord.mutate()} disabled={createRecord.isPending}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          </Card>
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="max-h-[60vh]">
@@ -535,8 +558,8 @@ export default function HealthLab() {
                     <TableRow><TableHead>Date</TableHead><TableHead>Staff</TableHead><TableHead>Diagnosis</TableHead><TableHead>Treatment</TableHead><TableHead className="text-right">Export</TableHead></TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRecords.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No records.</TableCell></TableRow>}
-                    {filteredRecords.map((r: any) => {
+                    {pagedRecords.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No records.</TableCell></TableRow>}
+                    {pagedRecords.map((r: any) => {
                       const p = profileMap[r.staff_profile_id];
                       return (
                         <TableRow key={r.id}>
@@ -558,17 +581,41 @@ export default function HealthLab() {
               </ScrollArea>
             </CardContent>
           </Card>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing {pagedRecords.length} of {filteredRecords.length}</span>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" className="h-7" disabled={recordsPage <= 1} onClick={() => setRecordsPage((p) => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+              <span>Page {recordsPage} / {recordsPages}</span>
+              <Button size="sm" variant="outline" className="h-7" disabled={recordsPage >= recordsPages} onClick={() => setRecordsPage((p) => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* REPORTS */}
-        <TabsContent value="reports">
+        <TabsContent value="reports" className="space-y-3">
+          <Card className="p-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-8" placeholder="Search title, summary, category…" value={search} onChange={(e) => { setSearch(e.target.value); setReportsPage(1); }} />
+              </div>
+              <Label className="text-xs">From</Label>
+              <Input type="date" className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setReportsPage(1); }} />
+              <Label className="text-xs">To</Label>
+              <Input type="date" className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setReportsPage(1); }} />
+              <Input className="h-8 w-[160px]" placeholder="Category…" value={filterService} onChange={(e) => { setFilterService(e.target.value); setReportsPage(1); }} />
+              {(filterFrom || filterTo || filterService || search) && (
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterService(""); setSearch(""); setReportsPage(1); }}>Clear</Button>
+              )}
+            </div>
+          </Card>
           <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Summary</TableHead><TableHead className="text-right">Export</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {reports.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
-                  {reports.map((r: any) => (
+                  {pagedReports.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
+                  {pagedReports.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
                       <TableCell className="text-xs font-medium">{r.title}</TableCell>
@@ -586,6 +633,14 @@ export default function HealthLab() {
               </Table>
             </CardContent>
           </Card>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing {pagedReports.length} of {filteredReports.length}</span>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" className="h-7" disabled={reportsPage <= 1} onClick={() => setReportsPage((p) => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+              <span>Page {reportsPage} / {reportsPages}</span>
+              <Button size="sm" variant="outline" className="h-7" disabled={reportsPage >= reportsPages} onClick={() => setReportsPage((p) => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* APPOINTMENTS */}
