@@ -10,10 +10,11 @@
 // false) jump straight to "approved" so the UI's bulk send picks them up.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 interface ScheduleRow {
