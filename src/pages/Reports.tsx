@@ -122,6 +122,7 @@ export default function Reports() {
     if (statusTab === "all") return uploadedReports;
     const map: Record<Exclude<StatusTab, "all">, string> = {
       pending_ipse: "pending_ipse",
+      with_hoa: "forwarded_to_hoa",
       with_2ic: "forwarded_to_2ic",
       with_oic: "forwarded_to_oic",
       approved: "approved",
@@ -132,10 +133,11 @@ export default function Reports() {
   }, [uploadedReports, statusTab]);
 
   const counts = useMemo(() => {
-    const c = { pending_ipse: 0, with_2ic: 0, with_oic: 0, approved: 0, rejected: 0, all: uploadedReports.length };
+    const c = { pending_ipse: 0, with_hoa: 0, with_2ic: 0, with_oic: 0, approved: 0, rejected: 0, all: uploadedReports.length };
     uploadedReports.forEach((r: any) => {
       const s = r.ipse_status ?? "pending_ipse";
       if (s === "pending_ipse") c.pending_ipse++;
+      else if (s === "forwarded_to_hoa") c.with_hoa++;
       else if (s === "forwarded_to_2ic") c.with_2ic++;
       else if (s === "forwarded_to_oic") c.with_oic++;
       else if (s === "approved") c.approved++;
