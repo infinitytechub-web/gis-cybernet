@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { OfficerSelector } from "@/components/appraisals/OfficerSelector";
+import { checkExistingAppraisals, submitBulkAppraisals } from "@/lib/appraisal-submit";
 
 const CRITERIA: { key: string; label: string; hint: string }[] = [
   { key: "job_knowledge",          label: "1. Job Knowledge",            hint: "Understanding of duties, procedures, regulations." },
