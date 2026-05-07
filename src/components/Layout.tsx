@@ -8,6 +8,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
+import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { HeaderRoleSwitcher } from "@/components/HeaderRoleSwitcher";
 import { HeaderCommandSwitcher } from "@/components/HeaderCommandSwitcher";
 import { HeaderOverflowMenu } from "@/components/HeaderOverflowMenu";
