@@ -97,6 +97,8 @@ const adminItems = [
   { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
   { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Command Role Audit", url: "/command-role-audit", icon: History, iconColor: "text-primary" },
+  { title: "Role Assignments", url: "/role-assignments", icon: UserCog, iconColor: "text-amber-700 dark:text-amber-300" },
+  { title: "Audit Log Dashboard", url: "/audit-log", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
   { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
 
