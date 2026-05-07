@@ -11,6 +11,7 @@ import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
@@ -81,6 +82,12 @@ export default function MyProfile() {
       if (!profile?.id) throw new Error("Profile not loaded");
       const gcn = (form.ghana_card_number ?? "").trim();
       if (gcn && !isValidGhanaCard(gcn)) {
+        await logAdminAudit("ghana_card_verification", "mismatch", {
+          staff_id: profile.staff_id ?? null,
+          attempted_value: gcn,
+          context: "my_profile_self_edit",
+          reason: "format_invalid",
+        }, profile.id);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
       const payload: any = {};
