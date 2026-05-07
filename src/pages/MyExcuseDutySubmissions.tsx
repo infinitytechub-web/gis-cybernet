@@ -39,6 +39,23 @@ export default function MyExcuseDutySubmissions() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
+  // Filters
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+
+  // Debounce search
+  useMemo(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(0); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const resetFilters = () => {
+    setFromDate(""); setToDate(""); setStatusFilter("all"); setSearchInput(""); setSearch(""); setPage(0);
+  };
+
   const { data: profile } = useQuery({
     queryKey: ["my-profile-mysubs"],
     queryFn: async () => {
@@ -53,15 +70,31 @@ export default function MyExcuseDutySubmissions() {
     enabled: !!user,
   });
 
+  // Server-side text match against own profile (officer name / staff ID).
+  // Since this view only shows the current user's submissions, the search either
+  // matches their profile (returning all rows) or returns nothing.
+  const searchMatchesMe = useMemo(() => {
+    if (!search) return true;
+    if (!profile) return false;
+    const hay = `${profile.first_name ?? ""} ${profile.last_name ?? ""} ${profile.staff_id ?? ""}`.toLowerCase();
+    return hay.includes(search.toLowerCase());
+  }, [search, profile]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["my-excuse-subs", user?.id, sortKey, sortDir, page, pageSize],
+    queryKey: ["my-excuse-subs", user?.id, sortKey, sortDir, page, pageSize, fromDate, toDate, statusFilter, search, searchMatchesMe],
     queryFn: async () => {
+      if (search && !searchMatchesMe) return { rows: [] as any[], total: 0 };
       const from = page * pageSize;
       const to = from + pageSize - 1;
-      const { data, error, count } = await supabase
+      let q = supabase
         .from("excuse_duty_forms" as any)
         .select("*", { count: "exact" })
-        .eq("submitted_by", user!.id)
+        .eq("submitted_by", user!.id);
+      // Date range applies to the duty period (overlap)
+      if (fromDate) q = q.gte("end_date", fromDate);
+      if (toDate) q = q.lte("start_date", toDate);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      const { data, error, count } = await q
         .order(sortKey, { ascending: sortDir === "asc" })
         .range(from, to);
       if (error) throw error;
