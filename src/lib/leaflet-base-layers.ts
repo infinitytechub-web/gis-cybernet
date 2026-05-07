@@ -58,7 +58,7 @@ export function addBaseLayerSwitcher(
   const initial = baseLayers[def] ?? gStreets;
   initial.addTo(map);
 
-  L.control.layers(baseLayers, undefined, { position: "topright", collapsed: true }).addTo(map);
+  const layersControl = L.control.layers(baseLayers, undefined, { position: "topright", collapsed: true }).addTo(map);
 
   // Audit access (best-effort, fire-and-forget)
   const logAccess = (view: string) => {
@@ -74,6 +74,26 @@ export function addBaseLayerSwitcher(
   };
   logAccess(def);
   map.on("baselayerchange", (e: L.LayersControlEvent) => logAccess(e.name));
+
+  // ── Auto-fallback: when Google tiles fail (e.g. Map Tiles API disabled),
+  // swap the active Google layer for "Streets (OSM)". Only triggers once.
+  const googleLayers = new Set<L.Layer>([gStreets, gSatellite, gHybrid, gTerrain]);
+  let didFallback = false;
+  const onGoogleFailed = () => {
+    if (didFallback) return;
+    let activeIsGoogle = false;
+    googleLayers.forEach((l) => { if (map.hasLayer(l)) activeIsGoogle = true; });
+    if (!activeIsGoogle) return;
+    didFallback = true;
+    googleLayers.forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    osmStreets.addTo(map);
+    logAccess("Streets (OSM) [auto-fallback]");
+    try {
+      window.dispatchEvent(new CustomEvent("google-tiles-fallback-applied"));
+    } catch { /* ignore */ }
+  };
+  window.addEventListener("google-tiles-failed", onGoogleFailed);
+  map.on("unload", () => window.removeEventListener("google-tiles-failed", onGoogleFailed));
 
   return initial;
 }
