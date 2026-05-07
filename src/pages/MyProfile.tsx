@@ -81,6 +81,12 @@ export default function MyProfile() {
       if (!profile?.id) throw new Error("Profile not loaded");
       const gcn = (form.ghana_card_number ?? "").trim();
       if (gcn && !isValidGhanaCard(gcn)) {
+        await logAdminAudit("ghana_card_verification", "mismatch", {
+          staff_id: profile.staff_id ?? null,
+          attempted_value: gcn,
+          context: "my_profile_self_edit",
+          reason: "format_invalid",
+        }, profile.id);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
       const payload: any = {};
