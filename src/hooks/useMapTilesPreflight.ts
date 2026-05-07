@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const PREFLIGHT_URL = `${SUPABASE_URL}/functions/v1/maps-tile-proxy?preflight=1`;
+// Include dummy z/x/y so even an older deployment of the proxy (without the
+// preflight branch) does not 400 on parameter validation.
+const PREFLIGHT_URL = `${SUPABASE_URL}/functions/v1/maps-tile-proxy?preflight=1&view=streets&z=0&x=0&y=0`;
 
 export type TilesPreflight =
   | { status: "loading" }
@@ -43,17 +45,27 @@ export function useMapTilesPreflight() {
         const res = await fetch(PREFLIGHT_URL, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        const body = await res.json().catch(() => ({}));
+        const ctype = res.headers.get("Content-Type") ?? "";
         let v: TilesPreflight;
-        if (body?.ok) {
-          v = { status: "ok" };
+        if (ctype.startsWith("image/")) {
+          // Old proxy deployment: it ignored ?preflight=1 and returned a tile.
+          // If it's a real tile (no fallback header) we treat tiles as healthy.
+          const fallback = res.headers.get("X-Tile-Fallback") === "1";
+          v = fallback
+            ? { status: "error", reason: "api_disabled", message: "Google Map Tiles API appears disabled. Using fallback layers." }
+            : { status: "ok" };
         } else {
-          v = {
-            status: "error",
-            reason: body?.reason ?? "unknown",
-            message: body?.message ?? "Google tile service is unavailable.",
-            detail: body?.detail,
-          };
+          const body = await res.json().catch(() => ({}));
+          if (res.ok && body?.ok) {
+            v = { status: "ok" };
+          } else {
+            v = {
+              status: "error",
+              reason: body?.reason ?? "unknown",
+              message: body?.message ?? body?.error ?? "Google tile service is unavailable.",
+              detail: body?.detail,
+            };
+          }
         }
         cache.value = v;
         if (!cancelled) setState(v);
