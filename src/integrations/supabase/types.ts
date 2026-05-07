@@ -7624,6 +7624,7 @@ export type Database = {
           staff_id: string
           staff_profile_id: string
           total_score: number
+          unit: string
         }[]
       }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
