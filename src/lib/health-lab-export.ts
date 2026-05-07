@@ -207,3 +207,68 @@ export function exportReportsPDF(reports: any[], suffix = "filtered") {
   tablePDF("Health Reports", ["Date", "Title", "Category", "Summary"], rows,
     `health_reports_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
 }
+
+// ---------- Inventory audit log exports ----------
+function actorName(actorMap: Record<string, any>, uid?: string | null) {
+  if (!uid) return "system";
+  const a = actorMap[uid];
+  return a ? `${a.last_name}, ${a.first_name}${a.staff_id ? ` (${a.staff_id})` : ""}` : uid.slice(0, 8);
+}
+
+export function exportAuditCSV(rows: any[], actorMap: Record<string, any>, suffix = "filtered") {
+  const csvRows: string[][] = [["When", "Action", "Item", "Δ", "Qty before", "Qty after", "Performed by", "Note"]];
+  rows.forEach((a) => {
+    csvRows.push([
+      a.performed_at ? format(new Date(a.performed_at), "yyyy-MM-dd HH:mm") : "",
+      a.action ?? "",
+      a.item_name ?? "",
+      a.delta != null ? String(a.delta) : "",
+      a.quantity_before != null ? String(a.quantity_before) : "",
+      a.quantity_after != null ? String(a.quantity_after) : "",
+      actorName(actorMap, a.performed_by),
+      a.note ?? "",
+    ]);
+  });
+  downloadCSV(`inventory_audit_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.csv`, csvRows);
+}
+
+export function exportAuditPDF(rows: any[], actorMap: Record<string, any>, suffix = "filtered") {
+  const pdfRows = rows.map((a) => [
+    a.performed_at ? format(new Date(a.performed_at), "dd MMM yy HH:mm") : "",
+    a.action ?? "",
+    a.item_name ?? "",
+    a.delta != null ? (a.delta > 0 ? `+${a.delta}` : String(a.delta)) : "",
+    `${a.quantity_before ?? "—"} → ${a.quantity_after ?? "—"}`,
+    actorName(actorMap, a.performed_by),
+    a.note ?? "",
+  ]);
+  tablePDF("Inventory Audit Log",
+    ["When", "Action", "Item", "Δ", "Qty", "By", "Note"], pdfRows,
+    `inventory_audit_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+}
+
+export async function exportAuditDOCX(rows: any[], actorMap: Record<string, any>, suffix = "filtered") {
+  const lines: Paragraph[] = [
+    new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "GIS HEALTH LAB – Inventory Audit Log", bold: true })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Ghana Immigration Service · Medical Services")] }),
+    new Paragraph({ children: [new TextRun("")] }),
+  ];
+  rows.forEach((a) => {
+    lines.push(new Paragraph({
+      children: [
+        new TextRun({ text: `${a.performed_at ? format(new Date(a.performed_at), "dd MMM yy HH:mm") : "—"} · `, bold: true }),
+        new TextRun({ text: `${(a.action ?? "").toUpperCase()} `, bold: true }),
+        new TextRun(`${a.item_name ?? "—"} `),
+        new TextRun(a.delta != null ? `(Δ ${a.delta > 0 ? "+" : ""}${a.delta}) ` : ""),
+        new TextRun(`[${a.quantity_before ?? "—"} → ${a.quantity_after ?? "—"}] `),
+        new TextRun(`by ${actorName(actorMap, a.performed_by)}`),
+        ...(a.note ? [new TextRun({ text: ` — ${a.note}`, italics: true })] : []),
+      ],
+    }));
+  });
+  lines.push(new Paragraph({ children: [new TextRun("")] }));
+  lines.push(new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · ${rows.length} entries`, italics: true, size: 18 })] }));
+  const docx = new Document({ sections: [{ children: lines }] });
+  const blob = await Packer.toBlob(docx);
+  saveAs(blob, `inventory_audit_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.docx`);
+}

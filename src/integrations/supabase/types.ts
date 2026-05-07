@@ -7222,6 +7222,31 @@ export type Database = {
         Args: { _purpose?: string; _ttl_minutes?: number }
         Returns: string
       }
+      list_medical_inventory_audit: {
+        Args: {
+          p_action?: string
+          p_from?: string
+          p_inventory_id?: string
+          p_item_search?: string
+          p_page?: number
+          p_page_size?: number
+          p_performed_by?: string
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          delta: number
+          id: string
+          inventory_id: string
+          item_name: string
+          note: string
+          performed_at: string
+          performed_by: string
+          quantity_after: number
+          quantity_before: number
+          total_count: number
+        }[]
+      }
       log_hrm_export: {
         Args: {
           _details?: Json
