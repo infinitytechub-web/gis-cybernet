@@ -71,6 +71,9 @@ const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 const MyExcuseDutySubmissions = lazy(() => import("./pages/MyExcuseDutySubmissions"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
 const Appraisals = lazy(() => import("./pages/Appraisals"));
+const RoleAssignmentsAdmin = lazy(() => import("./pages/RoleAssignmentsAdmin"));
+const StaffPortal = lazy(() => import("./pages/StaffPortal"));
+const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
 
 const queryClient = new QueryClient();
 
