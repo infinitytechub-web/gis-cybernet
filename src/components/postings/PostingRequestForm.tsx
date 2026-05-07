@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 
 type TransferType = Database["public"]["Enums"]["transfer_type"];
 
@@ -21,6 +22,7 @@ export function PostingRequestForm() {
   const [toDeptId, setToDeptId] = useState("");
   const [effectiveDate, setEffectiveDate] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [attachmentPath, setAttachmentPath] = useState<string | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -56,6 +58,7 @@ export function PostingRequestForm() {
         to_department_id: toDeptId,
         effective_date: effectiveDate,
         remarks: remarks || null,
+        attachment_path: attachmentPath,
       });
       if (error) throw error;
     },
@@ -65,6 +68,7 @@ export function PostingRequestForm() {
       setToDeptId("");
       setEffectiveDate("");
       setRemarks("");
+      setAttachmentPath(null);
       toast.success("Request submitted");
     },
     onError: (e: any) => toast.error(e.message),
@@ -108,6 +112,7 @@ export function PostingRequestForm() {
           <Label>Remarks</Label>
           <Textarea placeholder="Additional remarks..." value={remarks} onChange={(e) => setRemarks(e.target.value)} rows={2} />
         </div>
+        <SecureAttachmentField value={attachmentPath} onChange={setAttachmentPath} label="Posting/transfer letter" />
         <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || !toDeptId || !effectiveDate} className="w-full">
           {mutation.isPending ? "Submitting..." : "Submit Request"}
         </Button>

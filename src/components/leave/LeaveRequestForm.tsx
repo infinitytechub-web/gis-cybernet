@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
 
@@ -21,6 +22,7 @@ export function LeaveRequestForm() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [attachmentPath, setAttachmentPath] = useState<string | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -48,6 +50,7 @@ export function LeaveRequestForm() {
         start_date: startDate,
         end_date: endDate,
         reason: reason || null,
+        attachment_path: attachmentPath,
       });
       if (error) throw error;
     },
@@ -57,6 +60,7 @@ export function LeaveRequestForm() {
       setStartDate("");
       setEndDate("");
       setReason("");
+      setAttachmentPath(null);
       toast.success("Leave request submitted successfully");
     },
     onError: (e: any) => toast.error(e.message),
@@ -103,6 +107,8 @@ export function LeaveRequestForm() {
             rows={3}
           />
         </div>
+        <SecureAttachmentField value={attachmentPath} onChange={setAttachmentPath} />
+        
         <Button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending || !startDate || !endDate}

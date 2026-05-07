@@ -3738,6 +3738,7 @@ export type Database = {
       leave_requests: {
         Row: {
           approved_by: string | null
+          attachment_path: string | null
           comments: string | null
           created_at: string
           department_id: string | null
@@ -3753,6 +3754,7 @@ export type Database = {
         }
         Insert: {
           approved_by?: string | null
+          attachment_path?: string | null
           comments?: string | null
           created_at?: string
           department_id?: string | null
@@ -3768,6 +3770,7 @@ export type Database = {
         }
         Update: {
           approved_by?: string | null
+          attachment_path?: string | null
           comments?: string | null
           created_at?: string
           department_id?: string | null
@@ -4697,6 +4700,7 @@ export type Database = {
       postings_transfers: {
         Row: {
           approved_by: string | null
+          attachment_path: string | null
           created_at: string
           effective_date: string
           from_department_id: string | null
@@ -4710,6 +4714,7 @@ export type Database = {
         }
         Insert: {
           approved_by?: string | null
+          attachment_path?: string | null
           created_at?: string
           effective_date: string
           from_department_id?: string | null
@@ -4723,6 +4728,7 @@ export type Database = {
         }
         Update: {
           approved_by?: string | null
+          attachment_path?: string | null
           created_at?: string
           effective_date?: string
           from_department_id?: string | null
