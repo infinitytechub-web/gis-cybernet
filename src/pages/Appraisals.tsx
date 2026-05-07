@@ -112,6 +112,9 @@ export default function Appraisals() {
   const submit = useMutation({
     mutationFn: async (status: "draft" | "submitted") => {
       if (targetIds.length === 0) throw new Error("Select at least one officer");
+      const created: string[] = [];
+      const duplicates: string[] = [];
+      const failures: string[] = [];
       for (const id of targetIds) {
         const payload: any = {
           staff_profile_id: id,
@@ -123,24 +126,45 @@ export default function Appraisals() {
           submitted_at: status === "submitted" ? new Date().toISOString() : null,
         };
         const { data: ap, error: ae } = await supabase.from("staff_appraisals" as any).insert(payload).select("id").single();
-        if (ae) throw ae;
+        if (ae) {
+          // 23505 = unique_violation (raised by DB trigger / unique index)
+          if ((ae as any).code === "23505" || /already exists/i.test(ae.message)) {
+            duplicates.push(id);
+          } else {
+            failures.push(`${id}: ${ae.message}`);
+          }
+          continue;
+        }
         const rows = CRITERIA.map(c => ({ appraisal_id: (ap as any).id, criterion: c.key, score: scores[c.key] }));
         const { error: se } = await supabase.from("staff_appraisal_scores" as any).insert(rows);
-        if (se) throw se;
+        if (se) { failures.push(`${id}: ${se.message}`); continue; }
+        created.push(id);
       }
-      return targetIds.length;
+      return { created, duplicates, failures };
     },
-    onSuccess: (count, status) => {
-      toast.success(
-        status === "submitted"
-          ? `${count} appraisal${count === 1 ? "" : "s"} submitted to command.`
-          : `${count} draft${count === 1 ? "" : "s"} saved.`,
-      );
-      setStaffProfileId(""); setBulkProfileIds([]); setComments("");
-      setScores(Object.fromEntries(CRITERIA.map(c => [c.key, 3])));
-      qc.invalidateQueries({ queryKey: ["appraisals-list"] });
-      qc.invalidateQueries({ queryKey: ["top5-month"] });
-      qc.invalidateQueries({ queryKey: ["top5-year"] });
+    onSuccess: ({ created, duplicates, failures }, status) => {
+      if (created.length) {
+        toast.success(
+          status === "submitted"
+            ? `${created.length} appraisal${created.length === 1 ? "" : "s"} submitted to command.`
+            : `${created.length} draft${created.length === 1 ? "" : "s"} saved.`,
+        );
+      }
+      if (duplicates.length) {
+        toast.warning(
+          `${duplicates.length} skipped — appraisal already exists for this period.`,
+        );
+      }
+      if (failures.length) {
+        toast.error(`${failures.length} failed to save. ${failures[0]}`);
+      }
+      if (created.length) {
+        setStaffProfileId(""); setBulkProfileIds([]); setComments("");
+        setScores(Object.fromEntries(CRITERIA.map(c => [c.key, 3])));
+        qc.invalidateQueries({ queryKey: ["appraisals-list"] });
+        qc.invalidateQueries({ queryKey: ["top5-month"] });
+        qc.invalidateQueries({ queryKey: ["top5-year"] });
+      }
     },
     onError: (e: any) => toast.error(e.message ?? "Failed to save"),
   });
