@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "phone", "email", "ghana_card_number",
