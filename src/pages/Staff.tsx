@@ -19,7 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { ExportMenu } from "@/components/ui/export-menu";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
-import { GhanaCardInput } from "@/components/shared/GhanaCardInput";
+import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
@@ -227,6 +227,9 @@ export default function Staff() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
+      if (ghanaCardNumber && !isValidGhanaCard(ghanaCardNumber)) {
+        throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
+      }
       setUploadingPhoto(!!photoFile);
 
       // Derive primary phone from contacts list (fallback to legacy field)

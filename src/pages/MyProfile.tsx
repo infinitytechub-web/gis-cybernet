@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { GhanaCardInput } from "@/components/shared/GhanaCardInput";
+import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
@@ -79,6 +79,10 @@ export default function MyProfile() {
   const save = useMutation({
     mutationFn: async () => {
       if (!profile?.id) throw new Error("Profile not loaded");
+      const gcn = (form.ghana_card_number ?? "").trim();
+      if (gcn && !isValidGhanaCard(gcn)) {
+        throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
+      }
       const payload: any = {};
       EDITABLE_FIELDS.forEach((k) => {
         const v = (form[k] ?? "").toString().trim();
