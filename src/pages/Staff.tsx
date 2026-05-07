@@ -648,7 +648,7 @@ export default function Staff() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Ghana Card Number</Label>
-                <Input value={ghanaCardNumber} onChange={(e) => setGhanaCardNumber(e.target.value)} placeholder="GHA-XXXXXXXXX-X" />
+                <GhanaCardInput value={ghanaCardNumber} onChange={setGhanaCardNumber} />
               </div>
               <div>
                 <Label>Email Address</Label>
