@@ -23,6 +23,7 @@ import {
   exportRecordsCSV, exportRecordsPDF, exportReportsCSV, exportReportsPDF,
   exportAuditCSV, exportAuditPDF, exportAuditDOCX,
 } from "@/lib/health-lab-export";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-amber-100 text-amber-900",
