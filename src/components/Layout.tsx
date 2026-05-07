@@ -44,6 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
               <ThemeToggle />
               {/* Primary tiles always visible */}
+              {isAdmin && <SystemAuditTray />}
               <NotificationBell />
               <HeaderProfileDropdown />
               {/* Overflow tile — collapses 3+ secondary icons into a dropdown grid
