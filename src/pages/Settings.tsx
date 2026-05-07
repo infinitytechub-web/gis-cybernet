@@ -68,6 +68,8 @@ const roleColors: Record<AppRole, string> = {
   "2ic": "bg-teal-500/15 text-teal-700 border-teal-500/20",
   head_of_administration: "bg-cyan-500/15 text-cyan-700 border-cyan-500/20",
   chief_staff_officer: "bg-sky-500/15 text-sky-700 border-sky-500/20",
+  head_of_processing: "bg-indigo-500/15 text-indigo-700 border-indigo-500/20",
+  deputy_head_of_processing: "bg-violet-500/15 text-violet-700 border-violet-500/20",
   staff_officer: "bg-blue-500/15 text-blue-700 border-blue-500/20",
   supervisor: "bg-primary/10 text-primary border-primary/20",
   ipse_supervisor: "bg-[hsl(82,40%,30%)]/15 text-[hsl(82,40%,30%)] border-[hsl(82,40%,30%)]/30 dark:text-[hsl(82,50%,65%)]",
