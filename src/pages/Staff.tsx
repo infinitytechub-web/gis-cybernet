@@ -129,6 +129,7 @@ export default function Staff() {
     setBloodGroup("");
     setTrainingDesignation("");
     setStaffCategory("");
+    setDateOfBirth("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
