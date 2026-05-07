@@ -36,7 +36,7 @@ const ALLOWED_EMPTY = [
   // Any rounded-full dot/pill is a visual indicator, not a content gap
   /class(Name)?="[^"]*rounded-full[^"]*"/,
   // Inline-styled decorative spans (e.g. map markers) injected as HTML strings
-  /style=(["'`])[^"'`]*background[^"'`]*\1/,
+  /style=["'`][^>]*border-radius:\s*50%/,
   // Wrapper spans whose only child is a self-closed decorative element
   /<span[^>]*>\s*<(span|div|i|svg)\b[^>]*\/>\s*<\/span>/,
 ];
