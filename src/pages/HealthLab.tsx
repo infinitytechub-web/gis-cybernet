@@ -1053,18 +1053,34 @@ export default function HealthLab() {
               <Button size="sm" variant="ghost" className="h-8" onClick={() => { setAuditFilters({ from: "", to: "", performed_by: "", item: "", action: "" }); setAuditPage(1); }}>Clear</Button>
             )}
             <div className="ml-auto flex gap-1">
-              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
-                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
-                exportAuditCSV(auditLog, map, `page${auditPage}`);
-              }}><FileDown className="h-3.5 w-3.5" /> CSV</Button>
-              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
-                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
-                exportAuditPDF(auditLog, map, `page${auditPage}`);
-              }}><FileDown className="h-3.5 w-3.5" /> PDF</Button>
-              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
-                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
-                exportAuditDOCX(auditLog, map, `page${auditPage}`);
-              }}><FileDown className="h-3.5 w-3.5" /> Word</Button>
+              {(["csv","pdf","docx"] as const).map((fmt) => (
+                <Button key={fmt} size="sm" variant="outline" className="h-8 gap-1" onClick={async () => {
+                  const { data, error } = await (supabase as any).rpc("export_medical_inventory_audit", {
+                    p_from: auditFilters.from ? new Date(auditFilters.from).toISOString() : null,
+                    p_to: auditFilters.to ? new Date(auditFilters.to + "T23:59:59").toISOString() : null,
+                    p_performed_by: auditFilters.performed_by || null,
+                    p_inventory_id: null,
+                    p_item_search: auditFilters.item || null,
+                    p_action: auditFilters.action || null,
+                    p_max_rows: 5000,
+                  });
+                  if (error) {
+                    toast.error(error.message?.includes("NOT_AUTHORIZED")
+                      ? "Access denied — you don't have permission to export the audit log."
+                      : `Export failed: ${error.message}`);
+                    return;
+                  }
+                  const rows = (data ?? []) as any[];
+                  if (rows.length === 0) { toast.info("No audit entries match the current filters."); return; }
+                  const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
+                  if (fmt === "csv") exportAuditCSV(rows, map, "filtered");
+                  else if (fmt === "pdf") exportAuditPDF(rows, map, "filtered");
+                  else await exportAuditDOCX(rows, map, "filtered");
+                  toast.success(`Exported ${rows.length} entries (${fmt.toUpperCase()})`);
+                }}>
+                  <FileDown className="h-3.5 w-3.5" /> {fmt.toUpperCase()}
+                </Button>
+              ))}
             </div>
           </div>
           <ScrollArea className="max-h-[55vh]">
