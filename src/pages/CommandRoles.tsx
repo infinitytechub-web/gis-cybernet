@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 type Holder = { user_id: string; first_name?: string | null; last_name?: string | null; email?: string | null; staff_id?: string | null };
 type Candidate = Holder & { department_id?: string | null; office?: string | null; shift_group?: string | null; user_id: string };
