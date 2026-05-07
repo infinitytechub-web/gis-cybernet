@@ -576,7 +576,8 @@ export default function Ipse() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {decision?.action === "forward_2ic" && "Assign severity & forward to 2IC"}
+              {decision?.action === "forward_hoa" && "Assign severity & forward to Head of Administration"}
+              {decision?.action === "forward_2ic" && "Forward to 2IC"}
               {decision?.action === "forward_oic" && "Forward to OIC"}
               {decision?.action === "approve" && "Final OIC approval"}
               {decision?.action === "reject" && "Return report"}
@@ -584,7 +585,7 @@ export default function Ipse() {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm"><strong>{decision?.report?.title}</strong></p>
-            {decision?.action === "forward_2ic" && (
+            {decision?.action === "forward_hoa" && (
               <div>
                 <label className="text-sm font-medium">Severity *</label>
                 <Select value={severity} onValueChange={setSeverity}>
