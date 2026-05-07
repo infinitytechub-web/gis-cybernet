@@ -30,12 +30,6 @@ export function MapLegend({ className = "" }: { className?: string }) {
           <span><span className="text-foreground font-medium">Terrain</span> — elevation & relief</span>
         </li>
       </ul>
-      <div className="pt-1 border-t flex items-start gap-2 text-muted-foreground">
-        <ShieldCheck className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" aria-hidden />
-        <span>
-          <span className="text-foreground font-medium">Route tracking:</span> visible to the route owner and Command tier (Admin, OIC, 2IC, Staff Officer, Supervisor).
-        </span>
-      </div>
     </div>
   );
 }
