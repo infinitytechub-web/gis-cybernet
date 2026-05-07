@@ -260,6 +260,45 @@ export default function ExcuseDutyForm() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!confirmation} onOpenChange={(o) => !o && setConfirmation(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50">
+              <CheckCircle2 className="h-8 w-8 text-emerald-700" />
+            </div>
+            <DialogTitle className="text-center">Excuse Duty Form Submitted</DialogTitle>
+            <DialogDescription className="text-center">
+              Your form has been received by HEALTH LAB+ reviewers.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <Badge className={STATUS_COLOR.submitted + " px-3 py-1 text-xs"}>Status: SUBMITTED</Badge>
+          </div>
+          {confirmation && (
+            <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
+              <div><span className="text-muted-foreground">Officer:</span> <span className="font-medium">{autoFill?.officer}</span></div>
+              <div><span className="text-muted-foreground">Period:</span> <span className="font-medium">{confirmation.period}</span></div>
+              <div><span className="text-muted-foreground">Submitted:</span> <span className="font-medium">{format(confirmation.submittedAt, "dd MMM yyyy HH:mm")}</span></div>
+            </div>
+          )}
+          <div className="space-y-2 text-xs">
+            <div className="font-semibold text-sm flex items-center gap-1.5"><ClipboardList className="h-4 w-4 text-emerald-700" /> Next steps</div>
+            <ol className="list-decimal pl-5 space-y-1.5 text-muted-foreground">
+              <li className="flex gap-2"><BellRing className="h-3.5 w-3.5 mt-0.5 text-amber-600 shrink-0" /><span>Reviewers (HEALTH LAB+ / Command tier) have been notified in-app.</span></li>
+              <li className="flex gap-2"><ShieldCheck className="h-3.5 w-3.5 mt-0.5 text-sky-600 shrink-0" /><span>Your form moves through <span className="font-medium text-foreground">Submitted → Reviewed → Approved/Rejected</span>.</span></li>
+              <li className="flex gap-2"><FileText className="h-3.5 w-3.5 mt-0.5 text-emerald-700 shrink-0" /><span>Track progress under <span className="font-medium text-foreground">My submissions</span> below; you'll receive a notification when the status changes.</span></li>
+              <li className="flex gap-2"><FileDown className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" /><span>You can export a PDF or Word copy from the table at any time.</span></li>
+            </ol>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setConfirmation(null)}>Close</Button>
+            <Button onClick={() => { const latest = myForms[0]; if (latest) exportPDF(latest); }} className="gap-1">
+              <FileDown className="h-4 w-4" /> Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
