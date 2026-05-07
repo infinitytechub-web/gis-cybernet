@@ -212,7 +212,7 @@ export function PermissionsMatrix() {
     }
     setSaving(true);
     try {
-      const payload = dirtyRows.map((r) => ({ ...r, updated_by: user?.id ?? null }));
+      const payload = dirtyRows.map((r) => ({ ...r, updated_by: user?.id ?? null })) as any;
       const { error } = await supabase
         .from("permission_matrix_overrides")
         .upsert(payload, { onConflict: "feature_name,role" });
