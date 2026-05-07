@@ -31,6 +31,7 @@ import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget"
 import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
 import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
+import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
