@@ -287,7 +287,7 @@ export function NotificationBell() {
                           {urgent && !n.is_read ? (
                             <AlertTriangle className="h-4 w-4 text-destructive" />
                           ) : (
-                            typeIcons[n.type] ?? typeIcons.general
+                            typeIcons[normType(n)] ?? typeIcons.general
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
