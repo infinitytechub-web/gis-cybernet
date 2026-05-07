@@ -233,6 +233,48 @@ export default function MyExcuseDutySubmissions() {
             </Select>
           </div>
         </CardHeader>
+        <div className="px-6 pb-3 pt-1 border-b grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <div>
+            <Label className="text-[10px] uppercase text-muted-foreground">From</Label>
+            <Input type="date" className="h-8 text-xs" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0); }} />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase text-muted-foreground">To</Label>
+            <Input type="date" className="h-8 text-xs" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0); }} />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase text-muted-foreground">Status</Label>
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="reviewed">Reviewed</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="lg:col-span-2">
+            <Label className="text-[10px] uppercase text-muted-foreground">Search (officer / staff ID)</Label>
+            <div className="relative">
+              <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="h-8 text-xs pl-7 pr-7" placeholder="e.g. last name or GIS staff ID" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+              {searchInput && (
+                <button onClick={() => setSearchInput("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Clear search">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+          {(fromDate || toDate || statusFilter !== "all" || search) && (
+            <div className="lg:col-span-5 flex justify-end">
+              <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={resetFilters}>
+                <X className="h-3 w-3" /> Clear filters
+              </Button>
+            </div>
+          )}
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[700px]">
