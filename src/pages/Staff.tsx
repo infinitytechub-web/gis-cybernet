@@ -703,7 +703,15 @@ export default function Staff() {
                   </SelectContent>
                 </Select>
               </div>
-              <div />
+              <div>
+                <Label>Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={format(new Date(), "yyyy-MM-dd")}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
