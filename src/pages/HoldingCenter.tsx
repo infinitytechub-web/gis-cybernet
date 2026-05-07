@@ -435,7 +435,7 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
   const qc = useQueryClient();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [form, setForm] = useState({
-    first_name: "", last_name: "", alias: "", gender: "male", date_of_birth: "",
+    first_name: "", last_name: "", alias: "", gender: "male", date_of_birth: "", marital_status: "",
     nationality: "", country_of_origin: "", id_type: "Passport", id_number: "",
     home_address: "", phone: "", next_of_kin: "", next_of_kin_phone: "", emergency_contact: "",
     crime_type: "Illegal Entry", charge_description: "", location_of_arrest: "",
