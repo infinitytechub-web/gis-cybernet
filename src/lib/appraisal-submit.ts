@@ -59,6 +59,13 @@ export async function checkExistingAppraisals(
 /**
  * Inserts one appraisal + its score rows per target id. Reports per-officer
  * outcome instead of failing the whole batch on first error.
+ *
+ * If `bulkBatchId` is provided, every duplicate attempt is logged via the
+ * `log_appraisal_duplicate_attempt` RPC and every successful insert is tagged
+ * with the same batch id via `tag_appraisal_audit_batch`. These RPCs are
+ * SECURITY DEFINER on the server side; failures from logging never break the
+ * core insert flow (they're swallowed and reported in `failures` only when
+ * the appraisal itself failed).
  */
 export async function submitBulkAppraisals(
   client: SupabaseLike,
@@ -67,12 +74,14 @@ export async function submitBulkAppraisals(
     payloadBase: AppraisalPayloadBase;
     scores: Record<string, number>;
     criteria: AppraisalCriterion[];
+    bulkBatchId?: string;
   },
 ): Promise<BulkResult> {
-  const { targetIds, payloadBase, scores, criteria } = args;
+  const { targetIds, payloadBase, scores, criteria, bulkBatchId } = args;
   const created: string[] = [];
   const duplicates: string[] = [];
   const failures: string[] = [];
+  const bulkSize = targetIds.length;
 
   for (const id of targetIds) {
     const { data: ap, error: ae } = await client
@@ -81,8 +90,22 @@ export async function submitBulkAppraisals(
       .select("id")
       .single();
     if (ae) {
-      if (isUniqueViolation(ae)) duplicates.push(id);
-      else failures.push(`${id}: ${ae.message}`);
+      if (isUniqueViolation(ae)) {
+        duplicates.push(id);
+        if (bulkBatchId) {
+          try {
+            await (client as any).rpc("log_appraisal_duplicate_attempt", {
+              _staff_profile_id: id,
+              _period_year: payloadBase.period_year,
+              _period_month: payloadBase.period_month,
+              _bulk_batch_id: bulkBatchId,
+              _bulk_size: bulkSize,
+            });
+          } catch { /* logging is best-effort */ }
+        }
+      } else {
+        failures.push(`${id}: ${ae.message}`);
+      }
       continue;
     }
     const rows = criteria.map((c) => ({
@@ -96,6 +119,16 @@ export async function submitBulkAppraisals(
       continue;
     }
     created.push(id);
+    if (bulkBatchId) {
+      try {
+        await (client as any).rpc("tag_appraisal_audit_batch", {
+          _appraisal_id: (ap as any).id,
+          _bulk_batch_id: bulkBatchId,
+          _bulk_size: bulkSize,
+        });
+      } catch { /* best-effort */ }
+    }
   }
   return { created, duplicates, failures };
 }
+
