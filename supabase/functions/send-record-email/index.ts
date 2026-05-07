@@ -183,8 +183,15 @@ Deno.serve(async (req) => {
     const ccList = isBulk ? [] : sanitizeEmailList(body.cc);
     const bccList = isBulk ? [] : sanitizeEmailList(body.bcc);
 
+    const escapeHtml = (s: string) =>
+      s.replace(/&/g, "&amp;")
+       .replace(/</g, "&lt;")
+       .replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;")
+       .replace(/'/g, "&#39;");
+
     const htmlBody = `<div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a">
-        <p>${body.message.replace(/\n/g, "<br/>")}</p>
+        <p>${escapeHtml(body.message).replace(/\n/g, "<br/>")}</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
         <p style="font-size:12px;color:#64748b">
           Ghana Immigration Service — Amasaman Sector Command · Cybernet
