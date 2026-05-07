@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {
   exportMedicalRecordPDF, exportMedicalRecordDOCX,
   exportHealthReportPDF, exportHealthReportDOCX,
+  exportRecordsCSV, exportRecordsPDF, exportReportsCSV, exportReportsPDF,
 } from "@/lib/health-lab-export";
 
 const STATUS_COLOR: Record<string, string> = {
