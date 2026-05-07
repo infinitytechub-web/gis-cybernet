@@ -340,7 +340,10 @@ export function PermitForm({
         <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
         <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
       </div>
-      <div><Label>Purpose</Label><Textarea rows={2} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} /></div>
+      <div><Label>Purpose *</Label><Textarea rows={2} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} required /></div>
+      <div><Label>Previous Permit / Visa History (if any)</Label><Textarea rows={2} value={form.previous_permit_history} onChange={(e) => setForm({ ...form, previous_permit_history: e.target.value })} /></div>
+
+      <ApplicationDocuments recordType="permit" recordId={editId} permitType={form.permit_type} />
 
       {editId && (
         <div><Label>Status</Label>
