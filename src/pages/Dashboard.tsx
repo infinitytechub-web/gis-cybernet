@@ -324,6 +324,9 @@ export default function Dashboard() {
       {/* HEALTH LAB+ — visible to all */}
       <HealthLabWidget />
 
+      {/* Birthdays this month — visible to all */}
+      <BirthdayWidget />
+
       {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
       {isAdmin && <SecurityThreatsWidget />}
 
