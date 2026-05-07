@@ -61,14 +61,11 @@ export default function SensitiveAccessLog() {
 
   return (
     <div className="space-y-4 p-1">
-      <div>
-        <h1 className="text-2xl font-bold text-secondary flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Sensitive Data Access Log
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Every read of sensitive tables (recipients lists, failed login attempts, etc.) is recorded here.
-        </p>
-      </div>
+      <SecurityHero
+        icon={ShieldCheck}
+        title="Sensitive Data Access Log"
+        subtitle="Every read of sensitive tables (recipients lists, failed login attempts, etc.) is recorded here."
+      />
 
       <Card>
         <CardHeader className="pb-2">
