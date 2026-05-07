@@ -36,6 +36,7 @@ export default function ExcuseDutyForm() {
     doctor_name: "",
     facility: "",
   });
+  const [confirmation, setConfirmation] = useState<null | { period: string; submittedAt: Date }>(null);
 
   // Auto-fill: rank, department, office shift, staff ID, contact
   const { data: profile } = useQuery({
