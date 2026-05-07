@@ -17,6 +17,11 @@ const AuthGoogleLayer = L.GridLayer.extend({
     tile.alt = "";
     tile.setAttribute("role", "presentation");
 
+    // 1x1 transparent PNG fallback so a misconfigured Google Tiles API
+    // (e.g. SERVICE_DISABLED) does not blank the map or spam runtime errors.
+    const TRANSPARENT_PX =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -25,14 +30,24 @@ const AuthGoogleLayer = L.GridLayer.extend({
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
-        if (!res.ok) throw new Error(`Tile ${res.status}`);
+        if (!res.ok) {
+          // Swallow proxy errors quietly — switch to a fallback layer instead.
+          tile.src = TRANSPARENT_PX;
+          done(null, tile);
+          return;
+        }
         const blob = await res.blob();
         const objUrl = URL.createObjectURL(blob);
         tile.onload = () => { URL.revokeObjectURL(objUrl); done(null, tile); };
-        tile.onerror = () => { URL.revokeObjectURL(objUrl); done(new Error("img load"), tile); };
+        tile.onerror = () => {
+          URL.revokeObjectURL(objUrl);
+          tile.src = TRANSPARENT_PX;
+          done(null, tile);
+        };
         tile.src = objUrl;
-      } catch (e) {
-        done(e as Error, tile);
+      } catch {
+        tile.src = TRANSPARENT_PX;
+        done(null, tile);
       }
     })();
 
