@@ -60,7 +60,7 @@ const roleLabels: Record<AppRole, string> = {
   deputy_shift_supervisor: "Dep. Shift Supervisor",
   storekeeper: "Storekeeper",
   procurement_officer: "Procurement Officer",
-};
+  medical_officer: "Medical Officer",
 
 const roleColors: Record<AppRole, string> = {
   admin: "bg-destructive/10 text-destructive border-destructive/20",
