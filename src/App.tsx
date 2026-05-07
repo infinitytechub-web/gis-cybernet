@@ -74,6 +74,7 @@ const Appraisals = lazy(() => import("./pages/Appraisals"));
 const RoleAssignmentsAdmin = lazy(() => import("./pages/RoleAssignmentsAdmin"));
 const StaffPortal = lazy(() => import("./pages/StaffPortal"));
 const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
+const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
 
 const queryClient = new QueryClient();
 
@@ -153,6 +154,7 @@ function App() {
           <Route path="/my-profile" element={<ProtectedRoute><Layout><MyProfile /></Layout></ProtectedRoute>} />
           <Route path="/appraisals" element={<ProtectedRoute><Layout><Appraisals /></Layout></ProtectedRoute>} />
           <Route path="/role-assignments" element={<ProtectedRoute><Layout><RoleAssignmentsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/staff-mapping-import" element={<ProtectedRoute><Layout><StaffMappingImport /></Layout></ProtectedRoute>} />
           <Route path="/my-portal" element={<ProtectedRoute><Layout><StaffPortal /></Layout></ProtectedRoute>} />
           <Route path="/audit-log" element={<ProtectedRoute><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
