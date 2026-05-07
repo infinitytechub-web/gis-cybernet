@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreHorizontal, Edit, Trash2, Download, Printer, Mail } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Download, Printer, Mail, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { softDelete, type RecyclableTable } from "@/lib/recycle-bin";
 import {
@@ -27,6 +27,7 @@ import {
   type RecordKind,
   RECORD_TITLES,
 } from "@/lib/record-pdf";
+import { downloadRecordDocx } from "@/lib/record-docx";
 import { EmailShareDialog } from "./EmailShareDialog";
 import { logRowAction } from "@/lib/row-action-audit";
 
