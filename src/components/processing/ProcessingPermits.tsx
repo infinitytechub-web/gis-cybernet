@@ -103,7 +103,7 @@ export default function ProcessingPermits() {
   });
 
   const openReview = (p: any) => {
-    setForm({ status: p.status, notes: p.notes || "", fee_charged: p.fee_charged != null ? String(p.fee_charged) : "" });
+    setForm({ status: p.status, notes: p.notes || "", fee_charged: p.fee_charged != null ? String(p.fee_charged) : "", checklist: (p.processing_checklist as Record<string, boolean>) || {} });
     setEditId(p.id);
     setReviewItem(p);
     setOpen(true);
