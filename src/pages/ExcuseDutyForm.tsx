@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function ExcuseDutyForm() {
   const { user } = useAuth();
+  const { isAdminOrSupervisor, isHoa } = useAuthContext();
+  const isReviewer = isAdminOrSupervisor || isHoa;
   const qc = useQueryClient();
   const [form, setForm] = useState({
     start_date: format(new Date(), "yyyy-MM-dd"),
@@ -103,7 +106,10 @@ export default function ExcuseDutyForm() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const canExport = (entry?: any) => !entry || entry.submitted_by === user?.id || isReviewer;
+
   const exportPDF = (entry?: any) => {
+    if (!canExport(entry)) { toast.error("Access denied: only the submitter or an authorized reviewer can download this form."); return; }
     if (!autoFill) { toast.error("Profile not loaded"); return; }
     const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
     const doc = new jsPDF();
@@ -147,6 +153,7 @@ export default function ExcuseDutyForm() {
   };
 
   const exportDOCX = async (entry?: any) => {
+    if (!canExport(entry)) { toast.error("Access denied: only the submitter or an authorized reviewer can download this form."); return; }
     if (!autoFill) { toast.error("Profile not loaded"); return; }
     const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
     const heading = (text: string) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, bold: true })] });
