@@ -152,7 +152,7 @@ export default function Ipse() {
       return sb && ipseUserIdSet.has(sb);
     });
     const ipseBySeverity = { low: 0, medium: 0, high: 0, none: 0 };
-    const ipseByStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    const ipseByStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_hoa: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
     ipseSubmissions.forEach((r: any) => {
       ipseBySeverity[(r.severity as keyof typeof ipseBySeverity) || "none"]++;
       ipseByStatus[r.ipse_status || "pending_ipse"] = (ipseByStatus[r.ipse_status || "pending_ipse"] ?? 0) + 1;
