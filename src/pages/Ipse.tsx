@@ -38,10 +38,10 @@ const STATUS_LABEL: Record<string, string> = {
 const OLIVE_PALETTE = ["#556B2F", "#6B8E23", "#808000", "#9ACD32", "#BDB76B", "#8FBC8F"];
 
 export default function Ipse() {
-  const { user, isAdmin, isIpse, is2ic, isOic } = useAuth();
+  const { user, isAdmin, isIpse, is2ic, isOic, isHoa } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState("dashboard");
-  const [decision, setDecision] = useState<{ report: any; action: "forward_2ic" | "forward_oic" | "approve" | "reject" } | null>(null);
+  const [decision, setDecision] = useState<{ report: any; action: "forward_hoa" | "forward_2ic" | "forward_oic" | "approve" | "reject" } | null>(null);
   const [comment, setComment] = useState("");
   const [severity, setSeverity] = useState<string>("");
   const [drillStaffId, setDrillStaffId] = useState<string>("");
