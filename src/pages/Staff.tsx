@@ -249,6 +249,7 @@ export default function Staff() {
         training_designation: trainingDesignation || null,
         staff_category: staffCategory || null,
         office: office || null,
+        date_of_birth: dateOfBirth || null,
       };
 
       if (editing) {
