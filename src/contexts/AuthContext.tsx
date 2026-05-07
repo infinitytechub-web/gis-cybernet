@@ -19,6 +19,7 @@ interface AuthContextValue {
   isIpse: boolean;
   is2ic: boolean;
   isOic: boolean;
+  isHoa: boolean;
   /** Tightest tier — only Admin + OIC may export Interlink dispatch & approval logs. */
   canExportInterlinkLogs: boolean;
 }
@@ -41,6 +42,7 @@ const FALLBACK_AUTH: AuthContextValue = {
   isIpse: false,
   is2ic: false,
   isOic: false,
+  isHoa: false,
   canExportInterlinkLogs: false,
 };
 
@@ -161,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isIpse: role === "ipse_supervisor" || role === "ipse_deputy_supervisor",
     is2ic: role === "2ic",
     isOic: role === "oic",
+    isHoa: role === "head_of_administration",
     canExportInterlinkLogs: role === "admin" || role === "oic",
   }), [user, role, loading, signIn, signOut]);
 

@@ -8,6 +8,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
+import { SystemAuditTray } from "@/components/SystemAuditTray";
 import { HeaderRoleSwitcher } from "@/components/HeaderRoleSwitcher";
 import { HeaderCommandSwitcher } from "@/components/HeaderCommandSwitcher";
 import { HeaderOverflowMenu } from "@/components/HeaderOverflowMenu";
@@ -18,7 +19,7 @@ import { format } from "date-fns";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { org_name, system_label } = useAppSettings();
-  useAuth();
+  const { isAdmin } = useAuth();
   const [clock, setClock] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
@@ -43,6 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
               <ThemeToggle />
               {/* Primary tiles always visible */}
+              {isAdmin && <SystemAuditTray />}
               <NotificationBell />
               <HeaderProfileDropdown />
               {/* Overflow tile — collapses 3+ secondary icons into a dropdown grid

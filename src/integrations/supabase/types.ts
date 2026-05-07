@@ -1691,6 +1691,71 @@ export type Database = {
           },
         ]
       }
+      excuse_duty_forms: {
+        Row: {
+          attachment_path: string | null
+          created_at: string
+          diagnosis: string | null
+          doctor_name: string | null
+          end_date: string
+          facility: string | null
+          id: string
+          reason: string
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          staff_profile_id: string
+          start_date: string
+          status: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_path?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_name?: string | null
+          end_date: string
+          facility?: string | null
+          id?: string
+          reason: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_profile_id: string
+          start_date: string
+          status?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_path?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_name?: string | null
+          end_date?: string
+          facility?: string | null
+          id?: string
+          reason?: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_profile_id?: string
+          start_date?: string
+          status?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "excuse_duty_forms_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       failed_login_attempts: {
         Row: {
           attempted_at: string
@@ -2229,6 +2294,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      health_reports: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          report_date: string
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          report_date?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          report_date?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      healthcare_services: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          fee: number | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       holidays: {
         Row: {
@@ -3538,6 +3681,142 @@ export type Database = {
           {
             foreignKeyName: "leave_requests_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_appointments: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          scheduled_at: string
+          service_id: string | null
+          staff_profile_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_at: string
+          service_id?: string | null
+          staff_profile_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_at?: string
+          service_id?: string | null
+          staff_profile_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_appointments_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_inventory: {
+        Row: {
+          category: string | null
+          created_at: string
+          expiry_date: string | null
+          id: string
+          item_name: string
+          notes: string | null
+          quantity: number
+          reorder_threshold: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_name: string
+          notes?: string | null
+          quantity?: number
+          reorder_threshold?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          item_name?: string
+          notes?: string | null
+          quantity?: number
+          reorder_threshold?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      medical_records: {
+        Row: {
+          attachment_path: string | null
+          chief_complaint: string | null
+          created_at: string
+          created_by: string | null
+          diagnosis: string | null
+          id: string
+          notes: string | null
+          staff_profile_id: string
+          treatment: string | null
+          updated_at: string
+          visit_date: string
+          vitals: Json | null
+        }
+        Insert: {
+          attachment_path?: string | null
+          chief_complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          diagnosis?: string | null
+          id?: string
+          notes?: string | null
+          staff_profile_id: string
+          treatment?: string | null
+          updated_at?: string
+          visit_date?: string
+          vitals?: Json | null
+        }
+        Update: {
+          attachment_path?: string | null
+          chief_complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          diagnosis?: string | null
+          id?: string
+          notes?: string | null
+          staff_profile_id?: string
+          treatment?: string | null
+          updated_at?: string
+          visit_date?: string
+          vitals?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_records_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -5210,6 +5489,9 @@ export type Database = {
           file_size: number
           file_type: string
           forwarded_to: string | null
+          hoa_comment: string | null
+          hoa_reviewed_at: string | null
+          hoa_reviewer: string | null
           id: string
           ipse_comment: string | null
           ipse_reviewed_at: string | null
@@ -5240,6 +5522,9 @@ export type Database = {
           file_size: number
           file_type: string
           forwarded_to?: string | null
+          hoa_comment?: string | null
+          hoa_reviewed_at?: string | null
+          hoa_reviewer?: string | null
           id?: string
           ipse_comment?: string | null
           ipse_reviewed_at?: string | null
@@ -5270,6 +5555,9 @@ export type Database = {
           file_size?: number
           file_type?: string
           forwarded_to?: string | null
+          hoa_comment?: string | null
+          hoa_reviewed_at?: string | null
+          hoa_reviewer?: string | null
           id?: string
           ipse_comment?: string | null
           ipse_reviewed_at?: string | null

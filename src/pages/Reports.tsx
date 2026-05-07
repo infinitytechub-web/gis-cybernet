@@ -26,7 +26,7 @@ import { logAdminAudit } from "@/lib/admin-audit";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
-type StatusTab = "pending_ipse" | "with_2ic" | "with_oic" | "approved" | "rejected" | "all";
+type StatusTab = "pending_ipse" | "with_hoa" | "with_2ic" | "with_oic" | "approved" | "rejected" | "all";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "text/csv", "image/jpeg", "image/jpg"];
@@ -42,7 +42,7 @@ export default function Reports() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [statusTab, setStatusTab] = useState<StatusTab>(() => {
     const t = searchParams.get("tab");
-    const valid: StatusTab[] = ["pending_ipse", "with_2ic", "with_oic", "approved", "rejected", "all"];
+    const valid: StatusTab[] = ["pending_ipse", "with_hoa", "with_2ic", "with_oic", "approved", "rejected", "all"];
     return valid.includes(t as StatusTab) ? (t as StatusTab) : "pending_ipse";
   });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -122,6 +122,7 @@ export default function Reports() {
     if (statusTab === "all") return uploadedReports;
     const map: Record<Exclude<StatusTab, "all">, string> = {
       pending_ipse: "pending_ipse",
+      with_hoa: "forwarded_to_hoa",
       with_2ic: "forwarded_to_2ic",
       with_oic: "forwarded_to_oic",
       approved: "approved",
@@ -132,10 +133,11 @@ export default function Reports() {
   }, [uploadedReports, statusTab]);
 
   const counts = useMemo(() => {
-    const c = { pending_ipse: 0, with_2ic: 0, with_oic: 0, approved: 0, rejected: 0, all: uploadedReports.length };
+    const c = { pending_ipse: 0, with_hoa: 0, with_2ic: 0, with_oic: 0, approved: 0, rejected: 0, all: uploadedReports.length };
     uploadedReports.forEach((r: any) => {
       const s = r.ipse_status ?? "pending_ipse";
       if (s === "pending_ipse") c.pending_ipse++;
+      else if (s === "forwarded_to_hoa") c.with_hoa++;
       else if (s === "forwarded_to_2ic") c.with_2ic++;
       else if (s === "forwarded_to_oic") c.with_oic++;
       else if (s === "approved") c.approved++;
@@ -371,6 +373,10 @@ export default function Reports() {
               <TabsTrigger value="pending_ipse" className="gap-1.5">
                 <ShieldAlert className="h-3.5 w-3.5" /> Pending IPSE
                 {counts.pending_ipse > 0 && <Badge variant="secondary" className="ml-1">{counts.pending_ipse}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="with_hoa" className="gap-1.5">
+                <ArrowRightCircle className="h-3.5 w-3.5" /> With HoA
+                {counts.with_hoa > 0 && <Badge variant="secondary" className="ml-1">{counts.with_hoa}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="with_2ic" className="gap-1.5">
                 <ArrowRightCircle className="h-3.5 w-3.5" /> With 2IC

@@ -28,6 +28,7 @@ const SEVERITY_BADGE: Record<string, string> = {
 
 const STATUS_LABEL: Record<string, string> = {
   pending_ipse: "Pending IPSE",
+  forwarded_to_hoa: "With Head of Admin",
   forwarded_to_2ic: "With 2IC",
   forwarded_to_oic: "With OIC",
   approved: "Approved",
@@ -37,10 +38,10 @@ const STATUS_LABEL: Record<string, string> = {
 const OLIVE_PALETTE = ["#556B2F", "#6B8E23", "#808000", "#9ACD32", "#BDB76B", "#8FBC8F"];
 
 export default function Ipse() {
-  const { user, isAdmin, isIpse, is2ic, isOic } = useAuth();
+  const { user, isAdmin, isIpse, is2ic, isOic, isHoa } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState("dashboard");
-  const [decision, setDecision] = useState<{ report: any; action: "forward_2ic" | "forward_oic" | "approve" | "reject" } | null>(null);
+  const [decision, setDecision] = useState<{ report: any; action: "forward_hoa" | "forward_2ic" | "forward_oic" | "approve" | "reject" } | null>(null);
   const [comment, setComment] = useState("");
   const [severity, setSeverity] = useState<string>("");
   const [drillStaffId, setDrillStaffId] = useState<string>("");
@@ -113,7 +114,7 @@ export default function Ipse() {
   const analytics = useMemo(() => {
     const total = reports.length;
     const bySeverity = { low: 0, medium: 0, high: 0, none: 0 };
-    const byStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    const byStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_hoa: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
     const submitterCount: Record<string, number> = {};
     const trend: Record<string, number> = {};
 
@@ -151,7 +152,7 @@ export default function Ipse() {
       return sb && ipseUserIdSet.has(sb);
     });
     const ipseBySeverity = { low: 0, medium: 0, high: 0, none: 0 };
-    const ipseByStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
+    const ipseByStatus: Record<string, number> = { pending_ipse: 0, forwarded_to_hoa: 0, forwarded_to_2ic: 0, forwarded_to_oic: 0, approved: 0, rejected: 0 };
     ipseSubmissions.forEach((r: any) => {
       ipseBySeverity[(r.severity as keyof typeof ipseBySeverity) || "none"]++;
       ipseByStatus[r.ipse_status || "pending_ipse"] = (ipseByStatus[r.ipse_status || "pending_ipse"] ?? 0) + 1;
@@ -187,11 +188,15 @@ export default function Ipse() {
       if (!decision) throw new Error("No decision");
       const { report, action } = decision;
       const updates: any = {};
-      if (action === "forward_2ic") {
+      if (action === "forward_hoa") {
         if (!severity) throw new Error("Pick a severity level");
         updates.severity = severity;
-        updates.ipse_status = "forwarded_to_2ic";
+        updates.ipse_status = "forwarded_to_hoa";
         updates.ipse_comment = comment.trim() || null;
+        updates.forwarded_to = "head_of_administration";
+      } else if (action === "forward_2ic") {
+        updates.ipse_status = "forwarded_to_2ic";
+        updates.hoa_comment = comment.trim() || null;
         updates.forwarded_to = "2ic";
       } else if (action === "forward_oic") {
         updates.ipse_status = "forwarded_to_oic";
@@ -259,6 +264,7 @@ export default function Ipse() {
   });
 
   const canActIpse = isAdmin || isIpse;
+  const canActHoa  = isAdmin || isHoa;
   const canAct2ic = isAdmin || is2ic;
   const canActOic = isAdmin || isOic;
   const canManage = isAdmin || isIpse;
@@ -289,9 +295,10 @@ export default function Ipse() {
 
         {/* DASHBOARD */}
         <TabsContent value="dashboard" className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
             <Card className="border-l-4 border-l-[hsl(82,40%,30%)]"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Total reports</div><div className="text-2xl font-bold text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]">{analytics.total}</div></CardContent></Card>
             <Card className="border-l-4 border-l-amber-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Pending IPSE</div><div className="text-2xl font-bold text-amber-600">{analytics.byStatus.pending_ipse ?? 0}</div></CardContent></Card>
+            <Card className="border-l-4 border-l-orange-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With Head of Admin</div><div className="text-2xl font-bold text-orange-600">{analytics.byStatus.forwarded_to_hoa ?? 0}</div></CardContent></Card>
             <Card className="border-l-4 border-l-blue-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With 2IC</div><div className="text-2xl font-bold text-blue-600">{analytics.byStatus.forwarded_to_2ic ?? 0}</div></CardContent></Card>
             <Card className="border-l-4 border-l-purple-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">With OIC</div><div className="text-2xl font-bold text-purple-600">{analytics.byStatus.forwarded_to_oic ?? 0}</div></CardContent></Card>
             <Card className="border-l-4 border-l-emerald-500"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Avg IPSE response (h)</div><div className="text-2xl font-bold text-emerald-600">{analytics.avgIpseHours}</div></CardContent></Card>
@@ -426,7 +433,7 @@ export default function Ipse() {
         {/* TRIAGE */}
         <TabsContent value="triage" className="space-y-3">
           <Card className="border-t-4 border-t-amber-500">
-            <CardHeader className="pb-2 bg-amber-50/50 dark:bg-amber-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-amber-900 dark:text-amber-200"><FileWarning className="h-4 w-4" /> Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to 2IC → 2IC forwards to OIC → OIC issues final approval.</CardDescription></CardHeader>
+            <CardHeader className="pb-2 bg-amber-50/50 dark:bg-amber-950/20 rounded-t-lg"><CardTitle className="text-sm flex items-center gap-2 text-amber-900 dark:text-amber-200"><FileWarning className="h-4 w-4" /> Active reports queue</CardTitle><CardDescription className="text-xs">IPSE assigns severity → forwards to Head of Administration → 2IC → OIC issues final approval.</CardDescription></CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[60vh]">
                 <Table>
@@ -452,7 +459,12 @@ export default function Ipse() {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1 flex-wrap">
                             {r.ipse_status === "pending_ipse" && canActIpse && (
-                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_2ic" }); setSeverity(r.severity ?? ""); setComment(""); }}>
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_hoa" }); setSeverity(r.severity ?? ""); setComment(""); }}>
+                                <ArrowRightCircle className="h-3.5 w-3.5" /> Forward to HoA
+                              </Button>
+                            )}
+                            {r.ipse_status === "forwarded_to_hoa" && canActHoa && (
+                              <Button size="sm" variant="outline" className="gap-1 h-7" onClick={() => { setDecision({ report: r, action: "forward_2ic" }); setComment(""); }}>
                                 <ArrowRightCircle className="h-3.5 w-3.5" /> Forward to 2IC
                               </Button>
                             )}
@@ -466,7 +478,7 @@ export default function Ipse() {
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                               </Button>
                             )}
-                            {(canActIpse || canAct2ic || canActOic) && (
+                            {(canActIpse || canActHoa || canAct2ic || canActOic) && (
                               <Button size="sm" variant="outline" className="gap-1 h-7 text-destructive" onClick={() => { setDecision({ report: r, action: "reject" }); setComment(""); }}>
                                 <XCircle className="h-3.5 w-3.5" /> Return
                               </Button>
@@ -564,7 +576,8 @@ export default function Ipse() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {decision?.action === "forward_2ic" && "Assign severity & forward to 2IC"}
+              {decision?.action === "forward_hoa" && "Assign severity & forward to Head of Administration"}
+              {decision?.action === "forward_2ic" && "Forward to 2IC"}
               {decision?.action === "forward_oic" && "Forward to OIC"}
               {decision?.action === "approve" && "Final OIC approval"}
               {decision?.action === "reject" && "Return report"}
@@ -572,7 +585,7 @@ export default function Ipse() {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm"><strong>{decision?.report?.title}</strong></p>
-            {decision?.action === "forward_2ic" && (
+            {decision?.action === "forward_hoa" && (
               <div>
                 <label className="text-sm font-medium">Severity *</label>
                 <Select value={severity} onValueChange={setSeverity}>
@@ -596,7 +609,7 @@ export default function Ipse() {
             <Button variant="outline" onClick={() => setDecision(null)}>Cancel</Button>
             <Button
               variant={decision?.action === "reject" ? "destructive" : "default"}
-              disabled={decideMutation.isPending || (decision?.action === "forward_2ic" && !severity) || (decision?.action === "reject" && !comment.trim())}
+              disabled={decideMutation.isPending || (decision?.action === "forward_hoa" && !severity) || (decision?.action === "reject" && !comment.trim())}
               onClick={() => decideMutation.mutate()}
             >
               Confirm
