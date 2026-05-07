@@ -26,6 +26,8 @@ import {
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-amber-100 text-amber-900",
+  submitted: "bg-amber-100 text-amber-900",
+  reviewed: "bg-sky-100 text-sky-900",
   approved: "bg-emerald-100 text-emerald-900",
   rejected: "bg-rose-100 text-rose-900",
   scheduled: "bg-sky-100 text-sky-900",
@@ -61,7 +63,7 @@ export default function HealthLab() {
   const [recordForm, setRecordForm] = useState({ staff_profile_id: "", chief_complaint: "", diagnosis: "", treatment: "", notes: "" });
 
   // Excuse duty review
-  const [excuseDecision, setExcuseDecision] = useState<{ id: string; action: "approved" | "rejected" } | null>(null);
+  const [excuseDecision, setExcuseDecision] = useState<{ id: string; action: "reviewed" | "approved" | "rejected" } | null>(null);
   const [excuseComment, setExcuseComment] = useState("");
 
   // Inventory
@@ -438,7 +440,7 @@ export default function HealthLab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const pendingExcuse = (excuseForms as any[]).filter((e) => e.status === "pending");
+  const pendingExcuse = (excuseForms as any[]).filter((e) => e.status === "submitted" || e.status === "pending");
 
   const openInvCreate = () => {
     setInvEdit(null);
@@ -484,7 +486,7 @@ export default function HealthLab() {
             <Activity className="h-7 w-7 text-white" />
           </div>
           <div className="text-white">
-            <h1 className="text-2xl font-bold tracking-tight">GIS HEALTH LAB</h1>
+            <h1 className="text-2xl font-bold tracking-tight">HEALTH LAB+</h1>
             <p className="text-xs text-white/80">Medical records, health reports, appointments, healthcare services & inventory</p>
           </div>
         </div>
@@ -833,7 +835,14 @@ export default function HealthLab() {
                         <TableCell className="text-xs max-w-[300px] truncate" title={e.reason}>{e.reason}</TableCell>
                         <TableCell><Badge className={STATUS_COLOR[e.status] ?? ""}>{e.status}</Badge></TableCell>
                         <TableCell className="text-right">
-                          {e.status === "pending" && (
+                          {(e.status === "submitted" || e.status === "pending") && (
+                            <div className="flex justify-end gap-1 flex-wrap">
+                              <Button size="sm" variant="outline" className="h-7" onClick={() => { setExcuseDecision({ id: e.id, action: "reviewed" }); setExcuseComment(""); }}>Mark reviewed</Button>
+                              <Button size="sm" className="h-7 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setExcuseDecision({ id: e.id, action: "approved" }); setExcuseComment(""); }}>Approve</Button>
+                              <Button size="sm" variant="destructive" className="h-7" onClick={() => { setExcuseDecision({ id: e.id, action: "rejected" }); setExcuseComment(""); }}>Reject</Button>
+                            </div>
+                          )}
+                          {e.status === "reviewed" && (
                             <div className="flex justify-end gap-1">
                               <Button size="sm" className="h-7 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setExcuseDecision({ id: e.id, action: "approved" }); setExcuseComment(""); }}>Approve</Button>
                               <Button size="sm" variant="destructive" className="h-7" onClick={() => { setExcuseDecision({ id: e.id, action: "rejected" }); setExcuseComment(""); }}>Reject</Button>
@@ -853,14 +862,18 @@ export default function HealthLab() {
       {/* Excuse decision dialog */}
       <Dialog open={!!excuseDecision} onOpenChange={(o) => { if (!o) { setExcuseDecision(null); setExcuseComment(""); } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{excuseDecision?.action === "approved" ? "Approve" : "Reject"} excuse duty</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="capitalize">{excuseDecision?.action} excuse duty form</DialogTitle></DialogHeader>
           <div className="space-y-2">
-            <Label>Comment</Label>
-            <Textarea rows={3} value={excuseComment} onChange={(e) => setExcuseComment(e.target.value)} />
+            <Label>Comment {excuseDecision?.action === "rejected" && <span className="text-rose-600">*</span>}</Label>
+            <Textarea rows={3} value={excuseComment} onChange={(e) => setExcuseComment(e.target.value)} placeholder={excuseDecision?.action === "rejected" ? "Reason is required" : "Optional notes for the submitter"} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExcuseDecision(null)}>Cancel</Button>
-            <Button variant={excuseDecision?.action === "rejected" ? "destructive" : "default"} onClick={() => decideExcuse.mutate()} disabled={decideExcuse.isPending}>Confirm</Button>
+            <Button
+              variant={excuseDecision?.action === "rejected" ? "destructive" : "default"}
+              onClick={() => decideExcuse.mutate()}
+              disabled={decideExcuse.isPending || (excuseDecision?.action === "rejected" && !excuseComment.trim())}
+            >Confirm</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1040,18 +1053,34 @@ export default function HealthLab() {
               <Button size="sm" variant="ghost" className="h-8" onClick={() => { setAuditFilters({ from: "", to: "", performed_by: "", item: "", action: "" }); setAuditPage(1); }}>Clear</Button>
             )}
             <div className="ml-auto flex gap-1">
-              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
-                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
-                exportAuditCSV(auditLog, map, `page${auditPage}`);
-              }}><FileDown className="h-3.5 w-3.5" /> CSV</Button>
-              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
-                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
-                exportAuditPDF(auditLog, map, `page${auditPage}`);
-              }}><FileDown className="h-3.5 w-3.5" /> PDF</Button>
-              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => {
-                const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
-                exportAuditDOCX(auditLog, map, `page${auditPage}`);
-              }}><FileDown className="h-3.5 w-3.5" /> Word</Button>
+              {(["csv","pdf","docx"] as const).map((fmt) => (
+                <Button key={fmt} size="sm" variant="outline" className="h-8 gap-1" onClick={async () => {
+                  const { data, error } = await (supabase as any).rpc("export_medical_inventory_audit", {
+                    p_from: auditFilters.from ? new Date(auditFilters.from).toISOString() : null,
+                    p_to: auditFilters.to ? new Date(auditFilters.to + "T23:59:59").toISOString() : null,
+                    p_performed_by: auditFilters.performed_by || null,
+                    p_inventory_id: null,
+                    p_item_search: auditFilters.item || null,
+                    p_action: auditFilters.action || null,
+                    p_max_rows: 5000,
+                  });
+                  if (error) {
+                    toast.error(error.message?.includes("NOT_AUTHORIZED")
+                      ? "Access denied — you don't have permission to export the audit log."
+                      : `Export failed: ${error.message}`);
+                    return;
+                  }
+                  const rows = (data ?? []) as any[];
+                  if (rows.length === 0) { toast.info("No audit entries match the current filters."); return; }
+                  const map = Object.fromEntries((authorizers as any[]).map((u) => [u.user_id, u.profile]));
+                  if (fmt === "csv") exportAuditCSV(rows, map, "filtered");
+                  else if (fmt === "pdf") exportAuditPDF(rows, map, "filtered");
+                  else await exportAuditDOCX(rows, map, "filtered");
+                  toast.success(`Exported ${rows.length} entries (${fmt.toUpperCase()})`);
+                }}>
+                  <FileDown className="h-3.5 w-3.5" /> {fmt.toUpperCase()}
+                </Button>
+              ))}
             </div>
           </div>
           <ScrollArea className="max-h-[55vh]">
