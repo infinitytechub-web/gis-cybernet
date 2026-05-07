@@ -177,6 +177,7 @@ export default function Staff() {
     setTrainingDesignation(s.training_designation || "");
     setStaffCategory(s.staff_category || "");
     setOffice(s.office || "");
+    setDateOfBirth(s.date_of_birth || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
