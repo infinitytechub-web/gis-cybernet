@@ -3689,6 +3689,8 @@ export type Database = {
       }
       medical_appointments: {
         Row: {
+          authorized_by: string | null
+          authorized_role: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -3700,6 +3702,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          authorized_by?: string | null
+          authorized_role?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3711,6 +3715,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          authorized_by?: string | null
+          authorized_role?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -3767,6 +3773,51 @@ export type Database = {
           reorder_threshold?: number | null
           unit?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      medical_inventory_audit: {
+        Row: {
+          action: string
+          after_data: Json | null
+          before_data: Json | null
+          delta: number | null
+          id: string
+          inventory_id: string | null
+          item_name: string | null
+          note: string | null
+          performed_at: string
+          performed_by: string | null
+          quantity_after: number | null
+          quantity_before: number | null
+        }
+        Insert: {
+          action: string
+          after_data?: Json | null
+          before_data?: Json | null
+          delta?: number | null
+          id?: string
+          inventory_id?: string | null
+          item_name?: string | null
+          note?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          quantity_after?: number | null
+          quantity_before?: number | null
+        }
+        Update: {
+          action?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          delta?: number | null
+          id?: string
+          inventory_id?: string | null
+          item_name?: string | null
+          note?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          quantity_after?: number | null
+          quantity_before?: number | null
         }
         Relationships: []
       }

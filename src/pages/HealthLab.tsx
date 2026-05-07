@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
-import { Activity, FileHeart, Stethoscope, CalendarClock, Pill, FilePlus2, ClipboardList, Search, AlertTriangle, Plus, Pencil, FileDown } from "lucide-react";
+import { Activity, FileHeart, Stethoscope, CalendarClock, Pill, FilePlus2, ClipboardList, Search, AlertTriangle, Plus, Pencil, FileDown, History, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -40,6 +40,19 @@ export default function HealthLab() {
   const [tab, setTab] = useState("overview");
   const [search, setSearch] = useState("");
 
+  // Advanced filters (records & reports)
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+  const [filterStaff, setFilterStaff] = useState("");
+  const [filterService, setFilterService] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [recordsPage, setRecordsPage] = useState(1);
+  const [reportsPage, setReportsPage] = useState(1);
+  const PAGE_SIZE = 20;
+
+  // Audit log dialog
+  const [auditOpen, setAuditOpen] = useState(false);
+
   // Records
   const [recordOpen, setRecordOpen] = useState(false);
   const [recordForm, setRecordForm] = useState({ staff_profile_id: "", chief_complaint: "", diagnosis: "", treatment: "", notes: "" });
@@ -59,12 +72,15 @@ export default function HealthLab() {
   // Appointments
   const [apptOpen, setApptOpen] = useState(false);
   const [apptEdit, setApptEdit] = useState<any | null>(null);
+  const [apptConflict, setApptConflict] = useState<string | null>(null);
   const [apptForm, setApptForm] = useState({
     staff_profile_id: "",
     service_id: "",
     scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"),
     status: "scheduled",
     notes: "",
+    authorized_by: "",
+    authorized_role: "",
   });
 
   if (!isAdminOrSupervisor) {
@@ -157,15 +173,71 @@ export default function HealthLab() {
     return m;
   }, [services]);
 
+  // Authorizers: command tier + all shift supervisors
+  const { data: authorizers = [] } = useQuery({
+    queryKey: ["health-authorizers"],
+    queryFn: async () => {
+      const ROLES = ["admin","oic","2ic","staff_officer","supervisor","head_of_administration","shift_supervisor","deputy_shift_supervisor"];
+      const { data, error } = await supabase
+        .from("user_roles" as any)
+        .select("user_id, role, profiles!inner(id, first_name, last_name, staff_id, user_id)")
+        .in("role", ROLES);
+      if (error) throw error;
+      const seen = new Set<string>();
+      return (data ?? []).map((r: any) => ({
+        user_id: r.user_id, role: r.role,
+        profile: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles,
+      })).filter((r: any) => r.profile && !seen.has(r.profile.id) && seen.add(r.profile.id));
+    },
+  });
+
+  // Inventory audit log
+  const { data: auditLog = [] } = useQuery({
+    queryKey: ["medical-inventory-audit"],
+    enabled: auditOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("medical_inventory_audit" as any)
+        .select("*").order("performed_at", { ascending: false }).limit(300);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const filteredRecords = useMemo(() => {
-    if (!search.trim()) return records;
-    const q = search.toLowerCase();
-    return records.filter((r: any) => {
-      const p = profileMap[r.staff_profile_id];
-      const name = p ? `${p.first_name} ${p.last_name} ${p.staff_id}`.toLowerCase() : "";
-      return name.includes(q) || (r.diagnosis ?? "").toLowerCase().includes(q);
-    });
-  }, [records, search, profileMap]);
+    let list = records as any[];
+    if (filterFrom) list = list.filter((r) => r.visit_date >= filterFrom);
+    if (filterTo) list = list.filter((r) => r.visit_date <= filterTo);
+    if (filterStaff) list = list.filter((r) => r.staff_profile_id === filterStaff);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((r: any) => {
+        const p = profileMap[r.staff_profile_id];
+        const name = p ? `${p.first_name} ${p.last_name} ${p.staff_id}`.toLowerCase() : "";
+        return name.includes(q) || (r.diagnosis ?? "").toLowerCase().includes(q) || (r.chief_complaint ?? "").toLowerCase().includes(q);
+      });
+    }
+    return list;
+  }, [records, search, filterFrom, filterTo, filterStaff, profileMap]);
+
+  const filteredReports = useMemo(() => {
+    let list = reports as any[];
+    if (filterFrom) list = list.filter((r) => r.report_date >= filterFrom);
+    if (filterTo) list = list.filter((r) => r.report_date <= filterTo);
+    if (filterService) list = list.filter((r) => (r.category ?? "") === filterService);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((r: any) =>
+        (r.title ?? "").toLowerCase().includes(q) ||
+        (r.summary ?? "").toLowerCase().includes(q) ||
+        (r.category ?? "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [reports, search, filterFrom, filterTo, filterService]);
+
+  const pagedRecords = useMemo(() => filteredRecords.slice((recordsPage - 1) * PAGE_SIZE, recordsPage * PAGE_SIZE), [filteredRecords, recordsPage]);
+  const pagedReports = useMemo(() => filteredReports.slice((reportsPage - 1) * PAGE_SIZE, reportsPage * PAGE_SIZE), [filteredReports, reportsPage]);
+  const recordsPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
+  const reportsPages = Math.max(1, Math.ceil(filteredReports.length / PAGE_SIZE));
 
   const today = new Date();
   const inventoryAlerts = useMemo(() => {
@@ -284,12 +356,25 @@ export default function HealthLab() {
     mutationFn: async () => {
       if (!apptForm.staff_profile_id) throw new Error("Select a staff member");
       if (!apptForm.scheduled_at) throw new Error("Pick a date/time");
+      // Client-side conflict pre-check
+      const iso = new Date(apptForm.scheduled_at).toISOString();
+      const conflict = (appointments as any[]).find((a) =>
+        a.staff_profile_id === apptForm.staff_profile_id &&
+        new Date(a.scheduled_at).toISOString() === iso &&
+        !["cancelled","no_show"].includes(a.status) &&
+        a.id !== apptEdit?.id);
+      if (conflict) {
+        setApptConflict(`This staff member already has an appointment at ${format(new Date(conflict.scheduled_at), "dd MMM yyyy HH:mm")} (${conflict.status}). Pick a different time or cancel the existing one.`);
+        throw new Error("APPOINTMENT_CONFLICT");
+      }
       const payload: any = {
         staff_profile_id: apptForm.staff_profile_id,
         service_id: apptForm.service_id || null,
-        scheduled_at: new Date(apptForm.scheduled_at).toISOString(),
+        scheduled_at: iso,
         status: apptForm.status,
         notes: apptForm.notes || null,
+        authorized_by: apptForm.authorized_by || null,
+        authorized_role: apptForm.authorized_role || null,
       };
       if (apptEdit) {
         const { error } = await supabase.from("medical_appointments" as any).update(payload).eq("id", apptEdit.id);
@@ -302,10 +387,17 @@ export default function HealthLab() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["medical-appointments"] });
       toast.success(apptEdit ? "Appointment updated" : "Appointment scheduled");
-      setApptOpen(false); setApptEdit(null);
-      setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "" });
+      setApptOpen(false); setApptEdit(null); setApptConflict(null);
+      setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      if (e.message?.includes("APPOINTMENT_CONFLICT")) return;
+      if (typeof e.message === "string" && e.message.includes("APPOINTMENT_CONFLICT")) {
+        setApptConflict("This staff member already has an appointment at that time. Please pick a different slot.");
+        return;
+      }
+      toast.error(e.message);
+    },
   });
 
   const updateApptStatus = useMutation({
@@ -336,18 +428,20 @@ export default function HealthLab() {
   };
 
   const openApptCreate = () => {
-    setApptEdit(null);
-    setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "" });
+    setApptEdit(null); setApptConflict(null);
+    setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     setApptOpen(true);
   };
   const openApptEdit = (a: any) => {
-    setApptEdit(a);
+    setApptEdit(a); setApptConflict(null);
     setApptForm({
       staff_profile_id: a.staff_profile_id,
       service_id: a.service_id ?? "",
       scheduled_at: format(new Date(a.scheduled_at), "yyyy-MM-dd'T'HH:mm"),
       status: a.status,
       notes: a.notes ?? "",
+      authorized_by: a.authorized_by ?? "",
+      authorized_role: a.authorized_role ?? "",
     });
     setApptOpen(true);
   };
@@ -400,39 +494,62 @@ export default function HealthLab() {
 
         {/* RECORDS */}
         <TabsContent value="records" className="space-y-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-8" placeholder="Search staff or diagnosis…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Card className="p-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-8" placeholder="Search staff, diagnosis, complaint…" value={search} onChange={(e) => { setSearch(e.target.value); setRecordsPage(1); }} />
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs">From</Label>
+                <Input type="date" className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setRecordsPage(1); }} />
+                <Label className="text-xs">To</Label>
+                <Input type="date" className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setRecordsPage(1); }} />
+              </div>
+              <div className="w-[220px]">
+                <StaffCombobox
+                  staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
+                  value={filterStaff}
+                  onValueChange={(v) => { setFilterStaff(v); setRecordsPage(1); }}
+                  placeholder="Filter staff…"
+                />
+              </div>
+              {(filterFrom || filterTo || filterStaff || search) && (
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterStaff(""); setSearch(""); setRecordsPage(1); }}>Clear</Button>
+              )}
+              <div className="ml-auto flex gap-2">
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setAuditOpen(true)}><History className="h-4 w-4" /> Inventory Audit</Button>
+                <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-1"><FilePlus2 className="h-4 w-4" /> New Record</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>New Medical Record</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Staff *</Label>
+                        <StaffCombobox
+                          staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
+                          value={recordForm.staff_profile_id}
+                          onValueChange={(v) => setRecordForm({ ...recordForm, staff_profile_id: v })}
+                          placeholder="Search staff…"
+                        />
+                      </div>
+                      <div><Label>Chief complaint</Label><Textarea rows={2} value={recordForm.chief_complaint} onChange={(e) => setRecordForm({ ...recordForm, chief_complaint: e.target.value })} /></div>
+                      <div><Label>Diagnosis</Label><Input value={recordForm.diagnosis} onChange={(e) => setRecordForm({ ...recordForm, diagnosis: e.target.value })} /></div>
+                      <div><Label>Treatment</Label><Textarea rows={2} value={recordForm.treatment} onChange={(e) => setRecordForm({ ...recordForm, treatment: e.target.value })} /></div>
+                      <div><Label>Notes</Label><Textarea rows={2} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} /></div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
+                      <Button onClick={() => createRecord.mutate()} disabled={createRecord.isPending}>Save</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-            <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1"><FilePlus2 className="h-4 w-4" /> New Record</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>New Medical Record</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Staff *</Label>
-                    <StaffCombobox
-                      staff={(profiles as any[]).map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id ?? "—" }))}
-                      value={recordForm.staff_profile_id}
-                      onValueChange={(v) => setRecordForm({ ...recordForm, staff_profile_id: v })}
-                      placeholder="Search staff…"
-                    />
-                  </div>
-                  <div><Label>Chief complaint</Label><Textarea rows={2} value={recordForm.chief_complaint} onChange={(e) => setRecordForm({ ...recordForm, chief_complaint: e.target.value })} /></div>
-                  <div><Label>Diagnosis</Label><Input value={recordForm.diagnosis} onChange={(e) => setRecordForm({ ...recordForm, diagnosis: e.target.value })} /></div>
-                  <div><Label>Treatment</Label><Textarea rows={2} value={recordForm.treatment} onChange={(e) => setRecordForm({ ...recordForm, treatment: e.target.value })} /></div>
-                  <div><Label>Notes</Label><Textarea rows={2} value={recordForm.notes} onChange={(e) => setRecordForm({ ...recordForm, notes: e.target.value })} /></div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setRecordOpen(false)}>Cancel</Button>
-                  <Button onClick={() => createRecord.mutate()} disabled={createRecord.isPending}>Save</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          </Card>
           <Card>
             <CardContent className="p-0">
               <ScrollArea className="max-h-[60vh]">
@@ -441,8 +558,8 @@ export default function HealthLab() {
                     <TableRow><TableHead>Date</TableHead><TableHead>Staff</TableHead><TableHead>Diagnosis</TableHead><TableHead>Treatment</TableHead><TableHead className="text-right">Export</TableHead></TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRecords.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No records.</TableCell></TableRow>}
-                    {filteredRecords.map((r: any) => {
+                    {pagedRecords.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No records.</TableCell></TableRow>}
+                    {pagedRecords.map((r: any) => {
                       const p = profileMap[r.staff_profile_id];
                       return (
                         <TableRow key={r.id}>
@@ -464,17 +581,41 @@ export default function HealthLab() {
               </ScrollArea>
             </CardContent>
           </Card>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing {pagedRecords.length} of {filteredRecords.length}</span>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" className="h-7" disabled={recordsPage <= 1} onClick={() => setRecordsPage((p) => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+              <span>Page {recordsPage} / {recordsPages}</span>
+              <Button size="sm" variant="outline" className="h-7" disabled={recordsPage >= recordsPages} onClick={() => setRecordsPage((p) => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* REPORTS */}
-        <TabsContent value="reports">
+        <TabsContent value="reports" className="space-y-3">
+          <Card className="p-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input className="pl-8" placeholder="Search title, summary, category…" value={search} onChange={(e) => { setSearch(e.target.value); setReportsPage(1); }} />
+              </div>
+              <Label className="text-xs">From</Label>
+              <Input type="date" className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setReportsPage(1); }} />
+              <Label className="text-xs">To</Label>
+              <Input type="date" className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setReportsPage(1); }} />
+              <Input className="h-8 w-[160px]" placeholder="Category…" value={filterService} onChange={(e) => { setFilterService(e.target.value); setReportsPage(1); }} />
+              {(filterFrom || filterTo || filterService || search) && (
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterService(""); setSearch(""); setReportsPage(1); }}>Clear</Button>
+              )}
+            </div>
+          </Card>
           <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Summary</TableHead><TableHead className="text-right">Export</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {reports.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
-                  {reports.map((r: any) => (
+                  {pagedReports.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
+                  {pagedReports.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
                       <TableCell className="text-xs font-medium">{r.title}</TableCell>
@@ -492,6 +633,14 @@ export default function HealthLab() {
               </Table>
             </CardContent>
           </Card>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Showing {pagedReports.length} of {filteredReports.length}</span>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="outline" className="h-7" disabled={reportsPage <= 1} onClick={() => setReportsPage((p) => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
+              <span>Page {reportsPage} / {reportsPages}</span>
+              <Button size="sm" variant="outline" className="h-7" disabled={reportsPage >= reportsPages} onClick={() => setReportsPage((p) => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
         </TabsContent>
 
         {/* APPOINTMENTS */}
@@ -502,12 +651,13 @@ export default function HealthLab() {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Staff</TableHead><TableHead>Service</TableHead><TableHead>Status</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Staff</TableHead><TableHead>Service</TableHead><TableHead>Status</TableHead><TableHead>Authorized by</TableHead><TableHead>Notes</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {appointments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No appointments.</TableCell></TableRow>}
+                  {appointments.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No appointments.</TableCell></TableRow>}
                   {appointments.map((a: any) => {
                     const p = profileMap[a.staff_profile_id];
                     const s = a.service_id ? serviceMap[a.service_id] : null;
+                    const auth = (authorizers as any[]).find((u) => u.user_id === a.authorized_by);
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="text-xs">{format(new Date(a.scheduled_at), "dd MMM yyyy HH:mm")}</TableCell>
@@ -521,6 +671,7 @@ export default function HealthLab() {
                             </SelectContent>
                           </Select>
                         </TableCell>
+                        <TableCell className="text-xs">{auth ? `${auth.profile.last_name}, ${auth.profile.first_name}` : "—"}{a.authorized_role && <div className="text-[10px] text-muted-foreground capitalize">{a.authorized_role.replace(/_/g," ")}</div>}</TableCell>
                         <TableCell className="text-xs max-w-[260px] truncate" title={a.notes ?? ""}>{a.notes ?? "—"}</TableCell>
                         <TableCell className="text-right">
                           <Button size="sm" variant="ghost" className="h-7 gap-1" onClick={() => openApptEdit(a)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
@@ -758,12 +909,66 @@ export default function HealthLab() {
                 </Select>
               </div>
             </div>
+            <div>
+              <Label>Authorized by *</Label>
+              <Select value={apptForm.authorized_by || "none"} onValueChange={(v) => {
+                if (v === "none") { setApptForm({ ...apptForm, authorized_by: "", authorized_role: "" }); return; }
+                const u = (authorizers as any[]).find((x) => x.user_id === v);
+                setApptForm({ ...apptForm, authorized_by: v, authorized_role: u?.role ?? "" });
+              }}>
+                <SelectTrigger><SelectValue placeholder="Select authorizer…" /></SelectTrigger>
+                <SelectContent className="max-h-[260px]">
+                  <SelectItem value="none">— None —</SelectItem>
+                  {(authorizers as any[]).map((u) => (
+                    <SelectItem key={u.user_id} value={u.user_id}>
+                      {u.profile.last_name}, {u.profile.first_name} <span className="text-muted-foreground ml-1 text-[10px] capitalize">({u.role.replace(/_/g," ")})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">Command tier &amp; all shift supervisors</p>
+            </div>
             <div><Label>Notes</Label><Textarea rows={2} value={apptForm.notes} onChange={(e) => setApptForm({ ...apptForm, notes: e.target.value })} /></div>
+            {apptConflict && (
+              <div className="rounded-md border border-rose-300 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Scheduling conflict</div>
+                <div className="mt-0.5">{apptConflict}</div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); }}>Cancel</Button>
-            <Button onClick={() => saveAppointment.mutate()} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
+            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); setApptConflict(null); }}>Cancel</Button>
+            <Button onClick={() => { setApptConflict(null); saveAppointment.mutate(); }} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inventory audit log */}
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Inventory Audit Log</DialogTitle></DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <Table>
+              <TableHeader><TableRow><TableHead>When</TableHead><TableHead>Action</TableHead><TableHead>Item</TableHead><TableHead className="text-right">Δ</TableHead><TableHead>Qty</TableHead><TableHead>By</TableHead><TableHead>Note</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {auditLog.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">No audit entries.</TableCell></TableRow>}
+                {auditLog.map((a: any) => {
+                  const actor = (authorizers as any[]).find((u) => u.user_id === a.performed_by);
+                  return (
+                    <TableRow key={a.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(a.performed_at), "dd MMM yy HH:mm")}</TableCell>
+                      <TableCell><Badge variant="outline" className="capitalize text-[10px]">{a.action}</Badge></TableCell>
+                      <TableCell className="text-xs">{a.item_name}</TableCell>
+                      <TableCell className={`text-xs text-right font-mono ${a.delta && a.delta < 0 ? "text-rose-600" : a.delta && a.delta > 0 ? "text-emerald-600" : ""}`}>{a.delta != null ? (a.delta > 0 ? "+" : "") + a.delta : "—"}</TableCell>
+                      <TableCell className="text-xs">{a.quantity_before ?? "—"} → {a.quantity_after ?? "—"}</TableCell>
+                      <TableCell className="text-xs">{actor ? `${actor.profile.last_name}, ${actor.profile.first_name}` : (a.performed_by ? a.performed_by.slice(0,8) : "system")}</TableCell>
+                      <TableCell className="text-xs max-w-[180px] truncate" title={a.note ?? ""}>{a.note ?? "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
