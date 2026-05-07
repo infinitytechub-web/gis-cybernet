@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {
   exportMedicalRecordPDF, exportMedicalRecordDOCX,
   exportHealthReportPDF, exportHealthReportDOCX,
+  exportRecordsCSV, exportRecordsPDF, exportReportsCSV, exportReportsPDF,
 } from "@/lib/health-lab-export";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -73,6 +74,8 @@ export default function HealthLab() {
   const [apptOpen, setApptOpen] = useState(false);
   const [apptEdit, setApptEdit] = useState<any | null>(null);
   const [apptConflict, setApptConflict] = useState<string | null>(null);
+  const [overrideBy, setOverrideBy] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
   const [apptForm, setApptForm] = useState({
     staff_profile_id: "",
     service_id: "",
@@ -356,17 +359,20 @@ export default function HealthLab() {
     mutationFn: async () => {
       if (!apptForm.staff_profile_id) throw new Error("Select a staff member");
       if (!apptForm.scheduled_at) throw new Error("Pick a date/time");
-      // Client-side conflict pre-check
       const iso = new Date(apptForm.scheduled_at).toISOString();
       const conflict = (appointments as any[]).find((a) =>
         a.staff_profile_id === apptForm.staff_profile_id &&
         new Date(a.scheduled_at).toISOString() === iso &&
         !["cancelled","no_show"].includes(a.status) &&
         a.id !== apptEdit?.id);
-      if (conflict) {
-        setApptConflict(`This staff member already has an appointment at ${format(new Date(conflict.scheduled_at), "dd MMM yyyy HH:mm")} (${conflict.status}). Pick a different time or cancel the existing one.`);
-        throw new Error("APPOINTMENT_CONFLICT");
+      const overriding = !!conflict;
+      if (overriding) {
+        if (!overrideBy || !overrideReason.trim()) {
+          setApptConflict(`This staff member already has an appointment at ${format(new Date(conflict.scheduled_at), "dd MMM yyyy HH:mm")} (${conflict.status}). To override, choose an authorizer and provide a reason.`);
+          throw new Error("APPOINTMENT_CONFLICT");
+        }
       }
+      const overrider = overriding ? (authorizers as any[]).find((u) => u.user_id === overrideBy) : null;
       const payload: any = {
         staff_profile_id: apptForm.staff_profile_id,
         service_id: apptForm.service_id || null,
@@ -375,6 +381,10 @@ export default function HealthLab() {
         notes: apptForm.notes || null,
         authorized_by: apptForm.authorized_by || null,
         authorized_role: apptForm.authorized_role || null,
+        conflict_override_by: overriding ? overrideBy : null,
+        conflict_override_role: overriding ? overrider?.role ?? null : null,
+        conflict_override_reason: overriding ? overrideReason.trim() : null,
+        conflict_override_at: overriding ? new Date().toISOString() : null,
       };
       if (apptEdit) {
         const { error } = await supabase.from("medical_appointments" as any).update(payload).eq("id", apptEdit.id);
@@ -383,20 +393,26 @@ export default function HealthLab() {
         const { error } = await supabase.from("medical_appointments" as any).insert(payload);
         if (error) throw error;
       }
+      return { overriding };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["medical-appointments"] });
-      toast.success(apptEdit ? "Appointment updated" : "Appointment scheduled");
+      toast.success(res?.overriding ? "Conflict override authorized & saved" : (apptEdit ? "Appointment updated" : "Appointment scheduled"));
       setApptOpen(false); setApptEdit(null); setApptConflict(null);
+      setOverrideBy(""); setOverrideReason("");
       setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     },
     onError: (e: any) => {
-      if (e.message?.includes("APPOINTMENT_CONFLICT")) return;
-      if (typeof e.message === "string" && e.message.includes("APPOINTMENT_CONFLICT")) {
-        setApptConflict("This staff member already has an appointment at that time. Please pick a different slot.");
+      const msg = e?.message ?? "";
+      if (msg.includes("APPOINTMENT_CONFLICT")) {
+        setApptConflict((c) => c ?? "This staff member already has an appointment at that time. To override, choose an authorizer and provide a reason.");
         return;
       }
-      toast.error(e.message);
+      if (msg.includes("OVERRIDE_NOT_AUTHORIZED")) {
+        toast.error("The selected authorizer is not allowed to override conflicts.");
+        return;
+      }
+      toast.error(msg);
     },
   });
 
@@ -428,12 +444,12 @@ export default function HealthLab() {
   };
 
   const openApptCreate = () => {
-    setApptEdit(null); setApptConflict(null);
+    setApptEdit(null); setApptConflict(null); setOverrideBy(""); setOverrideReason("");
     setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     setApptOpen(true);
   };
   const openApptEdit = (a: any) => {
-    setApptEdit(a); setApptConflict(null);
+    setApptEdit(a); setApptConflict(null); setOverrideBy(""); setOverrideReason("");
     setApptForm({
       staff_profile_id: a.staff_profile_id,
       service_id: a.service_id ?? "",
@@ -518,7 +534,10 @@ export default function HealthLab() {
               {(filterFrom || filterTo || filterStaff || search) && (
                 <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterStaff(""); setSearch(""); setRecordsPage(1); }}>Clear</Button>
               )}
-              <div className="ml-auto flex gap-2">
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportRecordsPDF(filteredRecords, profileMap, "filtered")}><FileDown className="h-4 w-4" /> PDF (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportRecordsCSV(filteredRecords, profileMap, "filtered")}><FileDown className="h-4 w-4" /> CSV (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportRecordsPDF(pagedRecords, profileMap, `page${recordsPage}`)}><FileDown className="h-4 w-4" /> PDF (page)</Button>
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => setAuditOpen(true)}><History className="h-4 w-4" /> Inventory Audit</Button>
                 <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
                   <DialogTrigger asChild>
@@ -607,6 +626,11 @@ export default function HealthLab() {
               {(filterFrom || filterTo || filterService || search) && (
                 <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterService(""); setSearch(""); setReportsPage(1); }}>Clear</Button>
               )}
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportReportsPDF(filteredReports, "filtered")}><FileDown className="h-4 w-4" /> PDF (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportReportsCSV(filteredReports, "filtered")}><FileDown className="h-4 w-4" /> CSV (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportReportsPDF(pagedReports, `page${reportsPage}`)}><FileDown className="h-4 w-4" /> PDF (page)</Button>
+              </div>
             </div>
           </Card>
           <Card>
@@ -930,15 +954,36 @@ export default function HealthLab() {
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={apptForm.notes} onChange={(e) => setApptForm({ ...apptForm, notes: e.target.value })} /></div>
             {apptConflict && (
-              <div className="rounded-md border border-rose-300 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
-                <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Scheduling conflict</div>
-                <div className="mt-0.5">{apptConflict}</div>
+              <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900 dark:bg-rose-950/40 dark:text-rose-200 space-y-2">
+                <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Scheduling conflict — override required</div>
+                <div>{apptConflict}</div>
+                <div>
+                  <Label className="text-xs">Authorized override by *</Label>
+                  <Select value={overrideBy || "none"} onValueChange={(v) => setOverrideBy(v === "none" ? "" : v)}>
+                    <SelectTrigger className="h-8"><SelectValue placeholder="Select authorizer…" /></SelectTrigger>
+                    <SelectContent className="max-h-[240px]">
+                      <SelectItem value="none">— None —</SelectItem>
+                      {(authorizers as any[]).map((u) => (
+                        <SelectItem key={u.user_id} value={u.user_id}>
+                          {u.profile.last_name}, {u.profile.first_name} <span className="ml-1 text-[10px] text-muted-foreground capitalize">({u.role.replace(/_/g," ")})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Reason for override *</Label>
+                  <Textarea rows={2} value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Explain why double-booking is acceptable…" />
+                </div>
+                <div className="text-[10px] opacity-80">The override will be recorded in the appointment audit log.</div>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); setApptConflict(null); }}>Cancel</Button>
-            <Button onClick={() => { setApptConflict(null); saveAppointment.mutate(); }} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
+            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); setApptConflict(null); setOverrideBy(""); setOverrideReason(""); }}>Cancel</Button>
+            <Button onClick={() => { saveAppointment.mutate(); }} disabled={saveAppointment.isPending}>
+              {apptConflict && overrideBy && overrideReason.trim() ? "Override & Save" : (apptEdit ? "Save changes" : "Schedule")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

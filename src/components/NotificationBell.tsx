@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Bell, Check, CheckCheck, Calendar, ArrowRightLeft, Clock, Info,
-  AlertTriangle, Volume2, VolumeX
+  AlertTriangle, Volume2, VolumeX, Stethoscope
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,19 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
+const HEALTH_APPT_TYPES = new Set([
+  "health_appointment_created",
+  "health_appointment_status",
+  "health_appointment_rescheduled",
+  "health_appointment_cancelled",
+]);
+
 const typeIcons: Record<string, React.ReactNode> = {
   leave: <Calendar className="h-4 w-4 text-primary" />,
   posting: <ArrowRightLeft className="h-4 w-4 text-secondary" />,
   shift: <Clock className="h-4 w-4 text-amber-600" />,
   visa: <AlertTriangle className="h-4 w-4 text-orange-600" />,
+  health: <Stethoscope className="h-4 w-4 text-emerald-600" />,
   general: <Info className="h-4 w-4 text-muted-foreground" />,
 };
 
@@ -28,12 +36,14 @@ const typeLabels: Record<string, string> = {
   posting: "Posting",
   shift: "Shift",
   visa: "Visa",
+  health: "Health",
   general: "General",
 };
 
 // Smart routing: 'general' notifications are routed by title keyword to the right module
 function routeForNotification(n: any): string {
   const t = (n?.title || "").toLowerCase();
+  if (HEALTH_APPT_TYPES.has(n?.type) || t.includes("appointment")) return "/health-lab";
   if (t.includes("detention") || t.includes("custody")) return "/holding";
   if (t.includes("inventory") || t.includes("stock")) return "/stores";
   if (t.includes("requisition") || t.includes("purchase order") || t.includes("invoice") || t.includes("rfq") || t.includes("contract")) return "/procurement";
@@ -195,11 +205,12 @@ export function NotificationBell() {
     setOpen(false);
   };
 
+  const normType = (n: any) => HEALTH_APPT_TYPES.has(n?.type) ? "health" : n?.type;
   const filtered = tab === "all"
     ? notifications
     : tab === "unread"
       ? notifications.filter((n: any) => !n.is_read)
-      : notifications.filter((n: any) => n.type === tab);
+      : notifications.filter((n: any) => normType(n) === tab);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -245,7 +256,7 @@ export function NotificationBell() {
         <Tabs value={tab} onValueChange={setTab} className="w-full">
           <div className="border-b px-2">
             <TabsList className="h-8 w-full bg-transparent gap-0 p-0">
-              {["all", "unread", "leave", "posting", "shift", "visa"].map((t) => (
+              {["all", "unread", "leave", "posting", "shift", "visa", "health"].map((t) => (
                 <TabsTrigger key={t} value={t} className="text-[11px] h-8 px-2 py-0 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent capitalize">
                   {t === "all" ? "All" : t === "unread" ? `Unread (${unreadCount})` : typeLabels[t] || t}
                 </TabsTrigger>
@@ -276,7 +287,7 @@ export function NotificationBell() {
                           {urgent && !n.is_read ? (
                             <AlertTriangle className="h-4 w-4 text-destructive" />
                           ) : (
-                            typeIcons[n.type] ?? typeIcons.general
+                            typeIcons[normType(n)] ?? typeIcons.general
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
