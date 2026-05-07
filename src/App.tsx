@@ -152,6 +152,9 @@ function App() {
           <Route path="/excuse-duty/mine" element={<ProtectedRoute><Layout><MyExcuseDutySubmissions /></Layout></ProtectedRoute>} />
           <Route path="/my-profile" element={<ProtectedRoute><Layout><MyProfile /></Layout></ProtectedRoute>} />
           <Route path="/appraisals" element={<ProtectedRoute><Layout><Appraisals /></Layout></ProtectedRoute>} />
+          <Route path="/role-assignments" element={<ProtectedRoute><Layout><RoleAssignmentsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/my-portal" element={<ProtectedRoute><Layout><StaffPortal /></Layout></ProtectedRoute>} />
+          <Route path="/audit-log" element={<ProtectedRoute><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
