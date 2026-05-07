@@ -478,7 +478,7 @@ export default function Ipse() {
                                 <CheckCircle2 className="h-3.5 w-3.5" /> Approve
                               </Button>
                             )}
-                            {(canActIpse || canAct2ic || canActOic) && (
+                            {(canActIpse || canActHoa || canAct2ic || canActOic) && (
                               <Button size="sm" variant="outline" className="gap-1 h-7 text-destructive" onClick={() => { setDecision({ report: r, action: "reject" }); setComment(""); }}>
                                 <XCircle className="h-3.5 w-3.5" /> Return
                               </Button>
