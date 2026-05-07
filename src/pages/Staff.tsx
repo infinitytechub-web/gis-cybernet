@@ -40,6 +40,7 @@ export default function Staff() {
   const [rankFilter, setRankFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [maritalFilter, setMaritalFilter] = useState("all");
   const [sortField, setSortField] = useState<"name" | "rank" | "department" | "status">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -312,11 +313,13 @@ export default function Staff() {
         s.first_name.toLowerCase().includes(q) ||
         s.last_name.toLowerCase().includes(q) ||
         s.staff_id.toLowerCase().includes(q) ||
-        (s.unit?.toLowerCase().includes(q) ?? false);
+        (s.unit?.toLowerCase().includes(q) ?? false) ||
+        (s.marital_status?.toLowerCase().includes(q) ?? false);
       const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
       const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-      return matchesSearch && matchesRank && matchesDept && matchesStatus;
+      const matchesMarital = maritalFilter === "all" || (s.marital_status ?? "") === maritalFilter;
+      return matchesSearch && matchesRank && matchesDept && matchesStatus && matchesMarital;
     });
 
     list.sort((a, b) => {
@@ -330,7 +333,7 @@ export default function Staff() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [staff, search, rankFilter, deptFilter, statusFilter, sortField, sortDir]);
+  }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, sortField, sortDir]);
 
   const buildStaffExportRows = () =>
     filtered.map((s) => [
@@ -382,7 +385,7 @@ export default function Staff() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by name, ID, or unit..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Search by name, ID, unit, or marital status..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={rankFilter} onValueChange={setRankFilter}>
           <SelectTrigger className="w-full sm:w-[150px]">
@@ -416,6 +419,17 @@ export default function Staff() {
             <SelectItem value="inactive">Inactive</SelectItem>
             <SelectItem value="study_leave">Study Leave</SelectItem>
             <SelectItem value="transferred">Transferred</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={maritalFilter} onValueChange={setMaritalFilter}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Marital" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Marital</SelectItem>
+            {["Single","Married","Divorced","Widowed","Separated"].map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

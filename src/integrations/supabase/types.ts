@@ -1109,6 +1109,7 @@ export type Database = {
           intake_at: string
           last_name: string
           location_of_arrest: string | null
+          marital_status: string | null
           medical_alerts: string | null
           nationality: string | null
           next_of_kin: string | null
@@ -1147,6 +1148,7 @@ export type Database = {
           intake_at?: string
           last_name: string
           location_of_arrest?: string | null
+          marital_status?: string | null
           medical_alerts?: string | null
           nationality?: string | null
           next_of_kin?: string | null
@@ -1185,6 +1187,7 @@ export type Database = {
           intake_at?: string
           last_name?: string
           location_of_arrest?: string | null
+          marital_status?: string | null
           medical_alerts?: string | null
           nationality?: string | null
           next_of_kin?: string | null

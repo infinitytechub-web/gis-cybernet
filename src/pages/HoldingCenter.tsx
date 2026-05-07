@@ -332,6 +332,7 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
     alias: record.alias || "",
     gender: record.gender || "male",
     date_of_birth: record.date_of_birth || "",
+    marital_status: record.marital_status || "",
     nationality: record.nationality || "",
     country_of_origin: record.country_of_origin || "",
     id_type: record.id_type || "Passport",
@@ -379,6 +380,12 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><Label>Marital Status</Label>
+                <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{["Single","Married","Divorced","Widowed","Separated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
               <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
               <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
               <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
@@ -435,7 +442,7 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
   const qc = useQueryClient();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [form, setForm] = useState({
-    first_name: "", last_name: "", alias: "", gender: "male", date_of_birth: "",
+    first_name: "", last_name: "", alias: "", gender: "male", date_of_birth: "", marital_status: "",
     nationality: "", country_of_origin: "", id_type: "Passport", id_number: "",
     home_address: "", phone: "", next_of_kin: "", next_of_kin_phone: "", emergency_contact: "",
     crime_type: "Illegal Entry", charge_description: "", location_of_arrest: "",
@@ -478,6 +485,12 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><Label>Marital Status</Label>
+                <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{["Single","Married","Divorced","Widowed","Separated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
               <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
               <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
               <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
