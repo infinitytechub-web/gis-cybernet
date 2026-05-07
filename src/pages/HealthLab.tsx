@@ -173,15 +173,71 @@ export default function HealthLab() {
     return m;
   }, [services]);
 
+  // Authorizers: command tier + all shift supervisors
+  const { data: authorizers = [] } = useQuery({
+    queryKey: ["health-authorizers"],
+    queryFn: async () => {
+      const ROLES = ["admin","oic","2ic","staff_officer","supervisor","head_of_administration","shift_supervisor","deputy_shift_supervisor"];
+      const { data, error } = await supabase
+        .from("user_roles" as any)
+        .select("user_id, role, profiles!inner(id, first_name, last_name, staff_id, user_id)")
+        .in("role", ROLES);
+      if (error) throw error;
+      const seen = new Set<string>();
+      return (data ?? []).map((r: any) => ({
+        user_id: r.user_id, role: r.role,
+        profile: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles,
+      })).filter((r: any) => r.profile && !seen.has(r.profile.id) && seen.add(r.profile.id));
+    },
+  });
+
+  // Inventory audit log
+  const { data: auditLog = [] } = useQuery({
+    queryKey: ["medical-inventory-audit"],
+    enabled: auditOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("medical_inventory_audit" as any)
+        .select("*").order("performed_at", { ascending: false }).limit(300);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const filteredRecords = useMemo(() => {
-    if (!search.trim()) return records;
-    const q = search.toLowerCase();
-    return records.filter((r: any) => {
-      const p = profileMap[r.staff_profile_id];
-      const name = p ? `${p.first_name} ${p.last_name} ${p.staff_id}`.toLowerCase() : "";
-      return name.includes(q) || (r.diagnosis ?? "").toLowerCase().includes(q);
-    });
-  }, [records, search, profileMap]);
+    let list = records as any[];
+    if (filterFrom) list = list.filter((r) => r.visit_date >= filterFrom);
+    if (filterTo) list = list.filter((r) => r.visit_date <= filterTo);
+    if (filterStaff) list = list.filter((r) => r.staff_profile_id === filterStaff);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((r: any) => {
+        const p = profileMap[r.staff_profile_id];
+        const name = p ? `${p.first_name} ${p.last_name} ${p.staff_id}`.toLowerCase() : "";
+        return name.includes(q) || (r.diagnosis ?? "").toLowerCase().includes(q) || (r.chief_complaint ?? "").toLowerCase().includes(q);
+      });
+    }
+    return list;
+  }, [records, search, filterFrom, filterTo, filterStaff, profileMap]);
+
+  const filteredReports = useMemo(() => {
+    let list = reports as any[];
+    if (filterFrom) list = list.filter((r) => r.report_date >= filterFrom);
+    if (filterTo) list = list.filter((r) => r.report_date <= filterTo);
+    if (filterService) list = list.filter((r) => (r.category ?? "") === filterService);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((r: any) =>
+        (r.title ?? "").toLowerCase().includes(q) ||
+        (r.summary ?? "").toLowerCase().includes(q) ||
+        (r.category ?? "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [reports, search, filterFrom, filterTo, filterService]);
+
+  const pagedRecords = useMemo(() => filteredRecords.slice((recordsPage - 1) * PAGE_SIZE, recordsPage * PAGE_SIZE), [filteredRecords, recordsPage]);
+  const pagedReports = useMemo(() => filteredReports.slice((reportsPage - 1) * PAGE_SIZE, reportsPage * PAGE_SIZE), [filteredReports, reportsPage]);
+  const recordsPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
+  const reportsPages = Math.max(1, Math.ceil(filteredReports.length / PAGE_SIZE));
 
   const today = new Date();
   const inventoryAlerts = useMemo(() => {
