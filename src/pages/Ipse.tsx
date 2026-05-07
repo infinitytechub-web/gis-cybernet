@@ -597,6 +597,25 @@ export default function Ipse() {
           </Card>
         </TabsContent>
 
+        {/* NIGHT GUARD ROSTER (IPSE-managed) */}
+        {(isAdmin || isIpse) && (
+          <TabsContent value="nightguard" className="space-y-3">
+            <Card className="border-t-4 border-t-[hsl(220,80%,18%)]">
+              <CardHeader className="pb-2 bg-[hsl(220,80%,18%)]/5 rounded-t-lg">
+                <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,70%)]">
+                  <Moon className="h-4 w-4" /> Night Guard Duty Upload (IPSE)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  IPSE Supervisors and Deputies share Night Guard roster management with Admin and Command tier. Uploads sync system-wide.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NightGuardDutyUpload nightGuardStaff={nightGuardStaff as any[]} shifts={shifts as any[]} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
       </Tabs>
 
       {/* Decision dialog */}
