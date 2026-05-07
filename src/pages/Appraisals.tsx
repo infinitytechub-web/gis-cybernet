@@ -306,18 +306,19 @@ export default function Appraisals() {
                 <CardDescription className="text-xs">Score each criterion 1 (poor) – 5 (excellent). Total 35. Submitting routes to Command.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <Label>Officer *</Label>
-                    <Select value={staffProfileId} onValueChange={setStaffProfileId}>
-                      <SelectTrigger><SelectValue placeholder="Select officer" /></SelectTrigger>
-                      <SelectContent className="max-h-72">
-                        {staffOptions.map((s: any) => (
-                          <SelectItem key={s.id} value={s.id}>{s.last_name}, {s.first_name} ({s.staff_id})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <Label className="text-xs uppercase text-muted-foreground">Officer Selection *</Label>
+                  <div className="mt-1.5">
+                    <OfficerSelector
+                      selectedId={staffProfileId}
+                      onSelect={setStaffProfileId}
+                      bulkSelected={bulkProfileIds}
+                      onBulkChange={setBulkProfileIds}
+                    />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label>Period year</Label>
                     <Input type="number" value={periodYear} onChange={(e) => setPeriodYear(Number(e.target.value) || today.getFullYear())} />
