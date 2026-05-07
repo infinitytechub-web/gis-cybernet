@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { generateSecurePassword } from "../_shared/csprng-password.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,24 +8,7 @@ const corsHeaders = {
 };
 
 function generatePassword(length = 12): string {
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lower = "abcdefghijkmnpqrstuvwxyz";
-  const digits = "23456789";
-  const symbols = "!@#$%&*";
-  const all = upper + lower + digits + symbols;
-  // Ensure at least one from each category
-  let pw = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    symbols[Math.floor(Math.random() * symbols.length)],
-  ];
-  for (let i = pw.length; i < length; i++) {
-    pw.push(all[Math.floor(Math.random() * all.length)]);
-  }
-  // Shuffle
-  pw = pw.sort(() => Math.random() - 0.5);
-  return pw.join("");
+  return generateSecurePassword(length);
 }
 
 Deno.serve(async (req) => {
