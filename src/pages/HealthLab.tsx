@@ -482,18 +482,11 @@ export default function HealthLab() {
 
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-xl border border-emerald-700/20 bg-gradient-to-r from-emerald-900 via-emerald-700 to-teal-600 p-5 shadow-md">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white,transparent_60%)]" />
-        <div className="relative flex items-center gap-3 flex-wrap">
-          <div className="rounded-lg bg-white/15 backdrop-blur p-2.5 ring-1 ring-white/20">
-            <Activity className="h-7 w-7 text-white" />
-          </div>
-          <div className="text-white">
-            <h1 className="text-2xl font-bold tracking-tight">HEALTH LAB+</h1>
-            <p className="text-xs text-white/80">Medical records, health reports, appointments, healthcare services & inventory</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={Activity}
+        title="HEALTH LAB+"
+        subtitle="Medical records, health reports, appointments, healthcare services & inventory"
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Card className="border-l-4 border-l-emerald-600"><CardContent className="p-4"><div className="text-xs text-muted-foreground">Records</div><div className="text-2xl font-bold text-emerald-700">{records.length}</div></CardContent></Card>
