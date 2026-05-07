@@ -74,6 +74,8 @@ export default function HealthLab() {
   const [apptOpen, setApptOpen] = useState(false);
   const [apptEdit, setApptEdit] = useState<any | null>(null);
   const [apptConflict, setApptConflict] = useState<string | null>(null);
+  const [overrideBy, setOverrideBy] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
   const [apptForm, setApptForm] = useState({
     staff_profile_id: "",
     service_id: "",
