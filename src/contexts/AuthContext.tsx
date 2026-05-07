@@ -19,6 +19,7 @@ interface AuthContextValue {
   isIpse: boolean;
   is2ic: boolean;
   isOic: boolean;
+  isHoa: boolean;
   /** Tightest tier — only Admin + OIC may export Interlink dispatch & approval logs. */
   canExportInterlinkLogs: boolean;
 }
