@@ -484,7 +484,7 @@ export default function HealthLab() {
             <Activity className="h-7 w-7 text-white" />
           </div>
           <div className="text-white">
-            <h1 className="text-2xl font-bold tracking-tight">GIS HEALTH LAB</h1>
+            <h1 className="text-2xl font-bold tracking-tight">HEALTH LAB+</h1>
             <p className="text-xs text-white/80">Medical records, health reports, appointments, healthcare services & inventory</p>
           </div>
         </div>

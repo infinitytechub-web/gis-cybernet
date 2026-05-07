@@ -69,7 +69,7 @@ const securityItems = [
 ];
 
 const healthItems = [
-  { title: "GIS Health Lab", url: "/health-lab", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Health Lab+", url: "/health-lab", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300" },
 ];
 
 const allStaffItems = [

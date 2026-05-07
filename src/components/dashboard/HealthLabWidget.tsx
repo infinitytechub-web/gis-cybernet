@@ -30,7 +30,7 @@ export default function HealthLabWidget() {
     <Card className="border-l-4 border-l-emerald-700">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Activity className="h-4 w-4 text-emerald-700" /> GIS HEALTH LAB
+          <Activity className="h-4 w-4 text-emerald-700" /> HEALTH LAB+
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">

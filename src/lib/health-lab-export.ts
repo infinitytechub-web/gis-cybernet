@@ -7,7 +7,7 @@ type Profile = { first_name?: string; last_name?: string; staff_id?: string };
 
 function header(doc: jsPDF, title: string) {
   doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-  doc.text("GIS HEALTH LAB", 105, 18, { align: "center" });
+  doc.text("HEALTH LAB+", 105, 18, { align: "center" });
   doc.setFontSize(13); doc.text(title, 105, 26, { align: "center" });
   doc.setFont("helvetica", "normal"); doc.setFontSize(10);
   doc.text("Ghana Immigration Service · Medical Services", 105, 32, { align: "center" });
@@ -45,7 +45,7 @@ export async function exportMedicalRecordDOCX(record: any, profile?: Profile | n
   const docx = new Document({
     sections: [{
       children: [
-        new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "GIS HEALTH LAB – Medical Record", bold: true })] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "HEALTH LAB+ – Medical Record", bold: true })] }),
         new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Ghana Immigration Service · Medical Services")] }),
         new Paragraph({ children: [new TextRun("")] }),
         kv("Officer:", profile ? `${profile.last_name}, ${profile.first_name}` : "—"),
@@ -92,7 +92,7 @@ export async function exportHealthReportDOCX(report: any) {
   const docx = new Document({
     sections: [{
       children: [
-        new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "GIS HEALTH LAB – Health Report", bold: true })] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "HEALTH LAB+ – Health Report", bold: true })] }),
         new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Ghana Immigration Service · Medical Services")] }),
         new Paragraph({ children: [new TextRun("")] }),
         kv("Title:", report.title ?? "—"),
@@ -249,7 +249,7 @@ export function exportAuditPDF(rows: any[], actorMap: Record<string, any>, suffi
 
 export async function exportAuditDOCX(rows: any[], actorMap: Record<string, any>, suffix = "filtered") {
   const lines: Paragraph[] = [
-    new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "GIS HEALTH LAB – Inventory Audit Log", bold: true })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "HEALTH LAB+ – Inventory Audit Log", bold: true })] }),
     new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Ghana Immigration Service · Medical Services")] }),
     new Paragraph({ children: [new TextRun("")] }),
   ];
