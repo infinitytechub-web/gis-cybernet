@@ -101,6 +101,9 @@ export default function Appraisals() {
   });
 
   const [staffProfileId, setStaffProfileId] = useState<string>("");
+  // Junior workflow: a single appraisal is filed per officer in this set,
+  // re-using the same scoring sheet & comments.
+  const [bulkProfileIds, setBulkProfileIds] = useState<string[]>([]);
   const [scores, setScores] = useState<Record<string, number>>(() =>
     Object.fromEntries(CRITERIA.map(c => [c.key, 3]))
   );
