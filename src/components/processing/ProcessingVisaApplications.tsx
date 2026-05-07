@@ -109,7 +109,7 @@ export default function ProcessingVisaApplications() {
   const [reviewApp, setReviewApp] = useState<any>(null);
 
   const openReview = (app: any) => {
-    setForm({ status: app.status, notes: app.notes || "" });
+    setForm({ status: app.status, notes: app.notes || "", checklist: (app.processing_checklist as Record<string, boolean>) || {} });
     setEditId(app.id);
     setReviewApp(app);
     setOpen(true);
