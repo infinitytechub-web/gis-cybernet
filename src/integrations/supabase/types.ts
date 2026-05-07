@@ -6390,6 +6390,94 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_appraisal_scores: {
+        Row: {
+          appraisal_id: string
+          criterion: Database["public"]["Enums"]["appraisal_criterion"]
+          id: string
+          remarks: string | null
+          score: number
+        }
+        Insert: {
+          appraisal_id: string
+          criterion: Database["public"]["Enums"]["appraisal_criterion"]
+          id?: string
+          remarks?: string | null
+          score: number
+        }
+        Update: {
+          appraisal_id?: string
+          criterion?: Database["public"]["Enums"]["appraisal_criterion"]
+          id?: string
+          remarks?: string | null
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_appraisal_scores_appraisal_id_fkey"
+            columns: ["appraisal_id"]
+            isOneToOne: false
+            referencedRelation: "staff_appraisals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_appraisals: {
+        Row: {
+          appraised_by: string
+          average_score: number
+          comments: string | null
+          created_at: string
+          id: string
+          outstanding: boolean
+          period_month: number | null
+          period_year: number
+          staff_profile_id: string
+          status: Database["public"]["Enums"]["appraisal_status"]
+          submitted_at: string | null
+          total_score: number
+          updated_at: string
+        }
+        Insert: {
+          appraised_by: string
+          average_score?: number
+          comments?: string | null
+          created_at?: string
+          id?: string
+          outstanding?: boolean
+          period_month?: number | null
+          period_year: number
+          staff_profile_id: string
+          status?: Database["public"]["Enums"]["appraisal_status"]
+          submitted_at?: string | null
+          total_score?: number
+          updated_at?: string
+        }
+        Update: {
+          appraised_by?: string
+          average_score?: number
+          comments?: string | null
+          created_at?: string
+          id?: string
+          outstanding?: boolean
+          period_month?: number | null
+          period_year?: number
+          staff_profile_id?: string
+          status?: Database["public"]["Enums"]["appraisal_status"]
+          submitted_at?: string | null
+          total_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_appraisals_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_bulk_upload_audit: {
         Row: {
           created_count: number
@@ -7072,6 +7160,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      can_manage_appraisals: { Args: { _uid: string }; Returns: boolean }
       can_shift_connection_action: {
         Args: { _action: string }
         Returns: boolean
@@ -7462,6 +7551,24 @@ export type Database = {
           status: string
         }[]
       }
+      top5_staff_of_month: {
+        Args: { _month: number; _year: number }
+        Returns: {
+          appraisal_count: number
+          avg_score: number
+          staff_name: string
+          staff_profile_id: string
+        }[]
+      }
+      top5_staff_of_year: {
+        Args: { _year: number }
+        Returns: {
+          appraisal_count: number
+          avg_score: number
+          staff_name: string
+          staff_profile_id: string
+        }[]
+      }
       unblock_ip: { Args: { _block_id: string }; Returns: undefined }
       user_department_ids: {
         Args: { _user_id: string }
@@ -7522,6 +7629,15 @@ export type Database = {
         | "ipse_deputy_supervisor"
         | "head_of_administration"
         | "chief_staff_officer"
+      appraisal_criterion:
+        | "job_knowledge"
+        | "quality_of_work"
+        | "productivity"
+        | "discipline_conduct"
+        | "leadership_teamwork"
+        | "initiative"
+        | "punctuality_attendance"
+      appraisal_status: "draft" | "submitted" | "acknowledged"
       attendance_status: "present" | "late" | "absent" | "excused"
       firewall_action: "allow" | "warn" | "quarantine" | "block"
       firewall_event_layer: "file" | "url" | "auth" | "waf"
@@ -7694,6 +7810,16 @@ export const Constants = {
         "head_of_administration",
         "chief_staff_officer",
       ],
+      appraisal_criterion: [
+        "job_knowledge",
+        "quality_of_work",
+        "productivity",
+        "discipline_conduct",
+        "leadership_teamwork",
+        "initiative",
+        "punctuality_attendance",
+      ],
+      appraisal_status: ["draft", "submitted", "acknowledged"],
       attendance_status: ["present", "late", "absent", "excused"],
       firewall_action: ["allow", "warn", "quarantine", "block"],
       firewall_event_layer: ["file", "url", "auth", "waf"],
