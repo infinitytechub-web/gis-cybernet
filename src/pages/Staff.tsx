@@ -72,6 +72,7 @@ export default function Staff() {
   const [staffCategory, setStaffCategory] = useState<string>("");
   const [office, setOffice] = useState<string>("");
   const [dateOfBirth, setDateOfBirth] = useState<string>("");
+  const [maritalStatus, setMaritalStatus] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -130,6 +131,7 @@ export default function Staff() {
     setTrainingDesignation("");
     setStaffCategory("");
     setDateOfBirth("");
+    setMaritalStatus("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -178,6 +180,7 @@ export default function Staff() {
     setStaffCategory(s.staff_category || "");
     setOffice(s.office || "");
     setDateOfBirth(s.date_of_birth || "");
+    setMaritalStatus(s.marital_status || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -250,6 +253,7 @@ export default function Staff() {
         staff_category: staffCategory || null,
         office: office || null,
         date_of_birth: dateOfBirth || null,
+        marital_status: maritalStatus || null,
       };
 
       if (editing) {
@@ -711,6 +715,19 @@ export default function Staff() {
                   onChange={(e) => setDateOfBirth(e.target.value)}
                   max={format(new Date(), "yyyy-MM-dd")}
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Marital Status</Label>
+                <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {["Single","Married","Divorced","Widowed","Separated"].map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
