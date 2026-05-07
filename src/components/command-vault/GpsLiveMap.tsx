@@ -196,7 +196,12 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
     lastCoordsRef.current = { lat, lng };
   }, [lat, lng]);
 
-  return <div ref={containerRef} style={{ height }} className="w-full rounded-md overflow-hidden border" />;
+  return (
+    <div className="relative w-full">
+      <div ref={containerRef} style={{ height }} className="w-full rounded-md overflow-hidden border" />
+      <MapLegend className="absolute bottom-2 left-2 z-[1000] max-w-[260px] hidden sm:block" />
+    </div>
+  );
 }
 
 export default GpsLiveMap;
