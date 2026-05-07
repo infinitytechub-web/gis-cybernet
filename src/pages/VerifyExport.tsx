@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 async function sha256Hex(data: ArrayBuffer): Promise<string> {
   const d = await crypto.subtle.digest("SHA-256", data);
