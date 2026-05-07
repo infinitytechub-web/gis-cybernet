@@ -21,6 +21,7 @@ import {
   exportMedicalRecordPDF, exportMedicalRecordDOCX,
   exportHealthReportPDF, exportHealthReportDOCX,
   exportRecordsCSV, exportRecordsPDF, exportReportsCSV, exportReportsPDF,
+  exportAuditCSV, exportAuditPDF, exportAuditDOCX,
 } from "@/lib/health-lab-export";
 
 const STATUS_COLOR: Record<string, string> = {
