@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { GhanaCardInput } from "@/components/shared/GhanaCardInput";
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
@@ -172,7 +173,7 @@ export default function MyProfile() {
             </div>
             <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0XXXXXXXXX" /></div>
             <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label>Ghana Card number</Label><Input value={form.ghana_card_number} onChange={(e) => setForm({ ...form, ghana_card_number: e.target.value })} placeholder="GHA-XXXXXXXXX-X" /></div>
+            <div><Label>Ghana Card number</Label><GhanaCardInput value={form.ghana_card_number} onChange={(v) => setForm({ ...form, ghana_card_number: v })} /></div>
             <div><Label>Office</Label><Input value={form.office} onChange={(e) => setForm({ ...form, office: e.target.value })} /></div>
             <div><Label>Training designation</Label><Input value={form.training_designation} onChange={(e) => setForm({ ...form, training_designation: e.target.value })} /></div>
             <div><Label>Staff category</Label><Input value={form.staff_category} onChange={(e) => setForm({ ...form, staff_category: e.target.value })} /></div>
