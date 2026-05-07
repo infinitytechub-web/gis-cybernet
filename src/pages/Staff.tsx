@@ -332,7 +332,7 @@ export default function Staff() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [staff, search, rankFilter, deptFilter, statusFilter, sortField, sortDir]);
+  }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, sortField, sortDir]);
 
   const buildStaffExportRows = () =>
     filtered.map((s) => [
