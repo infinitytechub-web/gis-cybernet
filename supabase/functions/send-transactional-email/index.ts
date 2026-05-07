@@ -30,9 +30,9 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Roles allowed to invoke this function from the client. Service-role
+// callers (other edge functions, cron) bypass this check.
+const ALLOWED_ROLES = ['admin', 'oic', '2ic', 'staff_officer', 'supervisor']
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -42,6 +42,40 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+  // ── Authorization gate ──────────────────────────────────────────────
+  // Reject anonymous / anon-key-only callers. Service-role bypasses.
+  const auth = req.headers.get('Authorization') ?? ''
+  const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+  const isServiceRole = !!supabaseServiceKey && bearer === supabaseServiceKey
+  if (!isServiceRole) {
+    if (!bearer || !supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: auth } },
+    })
+    const { data: claims, error: claimErr } = await userClient.auth.getClaims(bearer)
+    if (claimErr || !claims?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: roles } = await adminClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', claims.claims.sub)
+    const allowed = (roles ?? []).some((r: { role: string }) => ALLOWED_ROLES.includes(r.role))
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
