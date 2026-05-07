@@ -154,6 +154,36 @@ export type Database = {
         }
         Relationships: []
       }
+      appraisal_reminders_sent: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          period_month: number | null
+          period_year: number
+          recipients_count: number
+          skipped_count: number
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          period_month?: number | null
+          period_year: number
+          recipients_count?: number
+          skipped_count?: number
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          period_month?: number | null
+          period_year?: number
+          recipients_count?: number
+          skipped_count?: number
+        }
+        Relationships: []
+      }
       asset_tag_counters: {
         Row: {
           next_value: number
@@ -7995,6 +8025,13 @@ export type Database = {
         }[]
       }
       security_audit_create_anchor: { Args: never; Returns: string }
+      send_appraisal_reminders: {
+        Args: { _period_month?: number; _period_year: number }
+        Returns: {
+          sent: number
+          skipped: number
+        }[]
+      }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
