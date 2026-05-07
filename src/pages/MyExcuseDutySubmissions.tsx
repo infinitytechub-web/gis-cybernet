@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,9 +6,11 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Activity, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, FileDown, ShieldAlert } from "lucide-react";
+import { Activity, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, FileDown, ShieldAlert, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
@@ -37,6 +39,23 @@ export default function MyExcuseDutySubmissions() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
 
+  // Filters
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(0); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const resetFilters = () => {
+    setFromDate(""); setToDate(""); setStatusFilter("all"); setSearchInput(""); setSearch(""); setPage(0);
+  };
+
   const { data: profile } = useQuery({
     queryKey: ["my-profile-mysubs"],
     queryFn: async () => {
@@ -51,15 +70,31 @@ export default function MyExcuseDutySubmissions() {
     enabled: !!user,
   });
 
+  // Server-side text match against own profile (officer name / staff ID).
+  // Since this view only shows the current user's submissions, the search either
+  // matches their profile (returning all rows) or returns nothing.
+  const searchMatchesMe = useMemo(() => {
+    if (!search) return true;
+    if (!profile) return false;
+    const hay = `${profile.first_name ?? ""} ${profile.last_name ?? ""} ${profile.staff_id ?? ""}`.toLowerCase();
+    return hay.includes(search.toLowerCase());
+  }, [search, profile]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["my-excuse-subs", user?.id, sortKey, sortDir, page, pageSize],
+    queryKey: ["my-excuse-subs", user?.id, sortKey, sortDir, page, pageSize, fromDate, toDate, statusFilter, search, searchMatchesMe],
     queryFn: async () => {
+      if (search && !searchMatchesMe) return { rows: [] as any[], total: 0 };
       const from = page * pageSize;
       const to = from + pageSize - 1;
-      const { data, error, count } = await supabase
+      let q = supabase
         .from("excuse_duty_forms" as any)
         .select("*", { count: "exact" })
-        .eq("submitted_by", user!.id)
+        .eq("submitted_by", user!.id);
+      // Date range applies to the duty period (overlap)
+      if (fromDate) q = q.gte("end_date", fromDate);
+      if (toDate) q = q.lte("start_date", toDate);
+      if (statusFilter !== "all") q = q.eq("status", statusFilter);
+      const { data, error, count } = await q
         .order(sortKey, { ascending: sortDir === "asc" })
         .range(from, to);
       if (error) throw error;
@@ -198,6 +233,48 @@ export default function MyExcuseDutySubmissions() {
             </Select>
           </div>
         </CardHeader>
+        <div className="px-6 pb-3 pt-1 border-b grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <div>
+            <Label className="text-[10px] uppercase text-muted-foreground">From</Label>
+            <Input type="date" className="h-8 text-xs" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0); }} />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase text-muted-foreground">To</Label>
+            <Input type="date" className="h-8 text-xs" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0); }} />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase text-muted-foreground">Status</Label>
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="reviewed">Reviewed</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="lg:col-span-2">
+            <Label className="text-[10px] uppercase text-muted-foreground">Search (officer / staff ID)</Label>
+            <div className="relative">
+              <Search className="h-3.5 w-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input className="h-8 text-xs pl-7 pr-7" placeholder="e.g. last name or GIS staff ID" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+              {searchInput && (
+                <button onClick={() => setSearchInput("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Clear search">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+          {(fromDate || toDate || statusFilter !== "all" || search) && (
+            <div className="lg:col-span-5 flex justify-end">
+              <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={resetFilters}>
+                <X className="h-3 w-3" /> Clear filters
+              </Button>
+            </div>
+          )}
+        </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[700px]">
