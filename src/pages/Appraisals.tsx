@@ -114,27 +114,41 @@ export default function Appraisals() {
 
   const qc = useQueryClient();
 
+  const targetIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (staffProfileId) ids.add(staffProfileId);
+    bulkProfileIds.forEach((id) => ids.add(id));
+    return Array.from(ids);
+  }, [staffProfileId, bulkProfileIds]);
+
   const submit = useMutation({
     mutationFn: async (status: "draft" | "submitted") => {
-      if (!staffProfileId) throw new Error("Select a staff member");
-      const payload: any = {
-        staff_profile_id: staffProfileId,
-        appraised_by: user!.id,
-        period_year: periodYear,
-        period_month: periodMonth,
-        status,
-        comments: comments || null,
-        submitted_at: status === "submitted" ? new Date().toISOString() : null,
-      };
-      const { data: ap, error: ae } = await supabase.from("staff_appraisals" as any).insert(payload).select("id").single();
-      if (ae) throw ae;
-      const rows = CRITERIA.map(c => ({ appraisal_id: (ap as any).id, criterion: c.key, score: scores[c.key] }));
-      const { error: se } = await supabase.from("staff_appraisal_scores" as any).insert(rows);
-      if (se) throw se;
+      if (targetIds.length === 0) throw new Error("Select at least one officer");
+      for (const id of targetIds) {
+        const payload: any = {
+          staff_profile_id: id,
+          appraised_by: user!.id,
+          period_year: periodYear,
+          period_month: periodMonth,
+          status,
+          comments: comments || null,
+          submitted_at: status === "submitted" ? new Date().toISOString() : null,
+        };
+        const { data: ap, error: ae } = await supabase.from("staff_appraisals" as any).insert(payload).select("id").single();
+        if (ae) throw ae;
+        const rows = CRITERIA.map(c => ({ appraisal_id: (ap as any).id, criterion: c.key, score: scores[c.key] }));
+        const { error: se } = await supabase.from("staff_appraisal_scores" as any).insert(rows);
+        if (se) throw se;
+      }
+      return targetIds.length;
     },
-    onSuccess: (_d, status) => {
-      toast.success(status === "submitted" ? "Appraisal submitted to command." : "Draft saved.");
-      setStaffProfileId(""); setComments("");
+    onSuccess: (count, status) => {
+      toast.success(
+        status === "submitted"
+          ? `${count} appraisal${count === 1 ? "" : "s"} submitted to command.`
+          : `${count} draft${count === 1 ? "" : "s"} saved.`,
+      );
+      setStaffProfileId(""); setBulkProfileIds([]); setComments("");
       setScores(Object.fromEntries(CRITERIA.map(c => [c.key, 3])));
       qc.invalidateQueries({ queryKey: ["appraisals-list"] });
       qc.invalidateQueries({ queryKey: ["top5-month"] });
