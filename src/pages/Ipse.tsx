@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 const SEVERITY_BADGE: Record<string, string> = {
   low: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200",
