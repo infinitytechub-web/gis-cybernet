@@ -229,13 +229,11 @@ export default function RouteHistory() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <MapIcon className="h-6 w-6 text-primary" />
-        <div>
-          <h1 className="text-2xl font-bold">Route Tracking History</h1>
-          <p className="text-sm text-muted-foreground">Your saved routes and map access audit, with date-range export.</p>
-        </div>
-      </div>
+      <SecurityHero
+        icon={MapIcon}
+        title="Route Tracking History"
+        subtitle="Your saved routes and map access audit, with date-range export."
+      />
 
       <Card>
         <CardHeader>
