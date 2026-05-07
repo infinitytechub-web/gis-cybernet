@@ -10,6 +10,7 @@ import { format } from "date-fns";
 export type RecordKind =
   | "visa_application"
   | "visa_extension"
+  | "permit"
   | "passport_application"
   | "official_application"
   | "enquiry_application";
@@ -17,6 +18,7 @@ export type RecordKind =
 const TITLES: Record<RecordKind, string> = {
   visa_application: "Visa Application",
   visa_extension: "Visa Extension Request",
+  permit: "Permit Application",
   passport_application: "Passport Application",
   official_application: "Official Application",
   enquiry_application: "Enquiry Application",
@@ -54,6 +56,16 @@ const LABELS: Record<string, string> = {
   requested_extension_date: "Requested Extension Date",
   fee_charged: "Fee Charged (GHS)",
   reference_number: "Reference Number",
+  application_reference: "Application Reference",
+  permit_category: "Permit Category",
+  occupation: "Occupation",
+  employer_sponsor_name: "Employer / Sponsor",
+  employer_sponsor_address: "Employer / Sponsor Address",
+  institution_name: "Institution",
+  course_of_study: "Course of Study",
+  intended_duration_months: "Duration (months)",
+  current_permit_expiry: "Current Permit Expiry",
+  requested_start_date: "Requested Start Date",
   requesting_entity: "Requesting Entity",
   notes: "Notes",
   created_at: "Submitted At",
@@ -74,6 +86,15 @@ const FIELDS_BY_KIND: Record<RecordKind, string[]> = {
     "date_of_birth", "gender", "marital_status", "phone",
     "home_address", "foreign_address", "street_name", "nearest_landmark",
     "next_of_kin", "emergency_contact", "reason", "status", "notes", "created_at",
+  ],
+  permit: [
+    "application_reference", "applicant_name", "passport_number", "nationality", "permit_type",
+    "permit_category", "occupation", "employer_sponsor_name", "employer_sponsor_address",
+    "institution_name", "course_of_study", "intended_duration_months",
+    "current_permit_expiry", "requested_start_date", "fee_charged",
+    "date_of_birth", "gender", "marital_status", "phone",
+    "home_address", "foreign_address", "street_name", "nearest_landmark",
+    "next_of_kin", "emergency_contact", "purpose", "status", "notes", "created_at",
   ],
   passport_application: [
     "applicant_name", "date_of_birth", "nationality", "application_type",

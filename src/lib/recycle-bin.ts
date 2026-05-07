@@ -37,6 +37,7 @@ export type RecyclableTable =
   | "postings_transfers"
   | "visa_applications"
   | "visa_extensions"
+  | "permits"
   | "passport_applications"
   | "official_applications"
   | "enquiry_applications"
