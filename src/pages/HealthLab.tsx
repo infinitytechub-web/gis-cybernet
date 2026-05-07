@@ -519,7 +519,10 @@ export default function HealthLab() {
               {(filterFrom || filterTo || filterStaff || search) && (
                 <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterStaff(""); setSearch(""); setRecordsPage(1); }}>Clear</Button>
               )}
-              <div className="ml-auto flex gap-2">
+              <div className="ml-auto flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportRecordsPDF(filteredRecords, profileMap, "filtered")}><FileDown className="h-4 w-4" /> PDF (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportRecordsCSV(filteredRecords, profileMap, "filtered")}><FileDown className="h-4 w-4" /> CSV (filtered)</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => exportRecordsPDF(pagedRecords, profileMap, `page${recordsPage}`)}><FileDown className="h-4 w-4" /> PDF (page)</Button>
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => setAuditOpen(true)}><History className="h-4 w-4" /> Inventory Audit</Button>
                 <Dialog open={recordOpen} onOpenChange={setRecordOpen}>
                   <DialogTrigger asChild>
