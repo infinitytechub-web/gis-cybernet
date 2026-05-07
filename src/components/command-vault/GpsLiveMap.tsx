@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
 
 interface GpsLiveMapProps {
   lat: number;
@@ -89,15 +90,7 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
     const map = L.map(containerRef.current, { zoomControl: true }).setView([lat, lng], 16);
     mapRef.current = map;
 
-    L.tileLayer(
-      dark
-        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      },
-    ).addTo(map);
+    addBaseLayerSwitcher(map, { dark, defaultLayer: "Streets" });
 
     // Build a custom DivIcon so we can target the dot/ring with CSS animations.
     const wrap = document.createElement("div");

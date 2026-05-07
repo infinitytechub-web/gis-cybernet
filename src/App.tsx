@@ -69,6 +69,7 @@ const StaffAccountApprovals = lazy(() => import("./pages/StaffAccountApprovals")
 const HealthLab = lazy(() => import("./pages/HealthLab"));
 const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 const MyExcuseDutySubmissions = lazy(() => import("./pages/MyExcuseDutySubmissions"));
+const MyProfile = lazy(() => import("./pages/MyProfile"));
 
 const queryClient = new QueryClient();
 
@@ -145,6 +146,7 @@ function App() {
           <Route path="/health-lab" element={<ProtectedRoute><Layout><HealthLab /></Layout></ProtectedRoute>} />
           <Route path="/excuse-duty" element={<ProtectedRoute><Layout><ExcuseDutyForm /></Layout></ProtectedRoute>} />
           <Route path="/excuse-duty/mine" element={<ProtectedRoute><Layout><MyExcuseDutySubmissions /></Layout></ProtectedRoute>} />
+          <Route path="/my-profile" element={<ProtectedRoute><Layout><MyProfile /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
