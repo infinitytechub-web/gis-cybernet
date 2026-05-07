@@ -75,6 +75,7 @@ export default function ProcessingPermits() {
         processed_by: user?.id,
       };
       if (form.fee_charged !== "") payload.fee_charged = Number(form.fee_charged);
+      payload.processing_checklist = form.checklist;
       const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
       if (error) throw error;
 
