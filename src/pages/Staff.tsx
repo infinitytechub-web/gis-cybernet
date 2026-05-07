@@ -228,6 +228,12 @@ export default function Staff() {
     mutationFn: async () => {
       if (!staffId.trim() || !firstName.trim() || !lastName.trim()) throw new Error("Staff ID, first name, and last name are required");
       if (ghanaCardNumber && !isValidGhanaCard(ghanaCardNumber)) {
+        await logAdminAudit("ghana_card_verification", "mismatch", {
+          staff_id: staffId.trim() || null,
+          attempted_value: ghanaCardNumber,
+          context: editing ? "edit_staff" : "create_staff",
+          reason: "format_invalid",
+        }, editing?.id ?? null);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
       setUploadingPhoto(!!photoFile);
