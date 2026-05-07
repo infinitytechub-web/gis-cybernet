@@ -21,6 +21,7 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 const APP_TYPES = ["new", "renewal", "replacement"];
 const STATUSES = ["submitted", "processing", "ready", "collected", "rejected"];
