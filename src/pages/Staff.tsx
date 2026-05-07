@@ -719,6 +719,19 @@ export default function Staff() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <Label>Marital Status</Label>
+                <Select value={maritalStatus} onValueChange={setMaritalStatus}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    {["Single","Married","Divorced","Widowed","Separated"].map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <Label>Unit</Label>
                 <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" />
               </div>
