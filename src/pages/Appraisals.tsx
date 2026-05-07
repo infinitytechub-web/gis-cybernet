@@ -148,7 +148,7 @@ export default function Appraisals() {
           </div>
           <div className="text-white">
             <h1 className="text-2xl font-bold tracking-tight">Staff Appraisal Dashboard</h1>
-            <p className="text-xs text-white/80">Standard 7-criteria GIS HR / PPMED / Promotion appraisal · Outstanding Staff · Top 5 of the Month / Year</p>
+            <p className="text-xs text-white/80"></p>
           </div>
         </div>
       </div>
