@@ -320,6 +320,9 @@ export default function Dashboard() {
       {/* Low Stock Alerts */}
       <LowStockWidget />
 
+      {/* GIS HEALTH LAB — visible to all */}
+      <HealthLabWidget />
+
       {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
       {isAdmin && <SecurityThreatsWidget />}
 
