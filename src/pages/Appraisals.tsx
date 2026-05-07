@@ -86,19 +86,7 @@ export default function Appraisals() {
   const outstanding = useMemo(() => appraisals.filter((a: any) => a.outstanding), [appraisals]);
 
   // ---- Submit form ----
-  const { data: staffOptions = [] } = useQuery({
-    queryKey: ["staff-options-appraisal"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, staff_id")
-        .order("last_name")
-        .limit(2000);
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-    enabled: canManage,
-  });
+  // (Officer list is now fetched inside <OfficerSelector />.)
 
   const [staffProfileId, setStaffProfileId] = useState<string>("");
   // Junior workflow: a single appraisal is filed per officer in this set,
