@@ -202,7 +202,15 @@ export default function Appraisals() {
 
   return (
     <div className="space-y-4">
-      <PageHeader icon={Award} title="Staff Appraisal Dashboard" />
+      <PageHeader
+        icon={Award}
+        title="Staff Appraisal Dashboard"
+        actions={canManage ? (
+          <Button asChild variant="outline" size="sm" className="gap-1">
+            <Link to="/appraisals/coverage"><ClipboardCheck className="h-4 w-4" /> Coverage report</Link>
+          </Button>
+        ) : undefined}
+      />
 
       <Tabs defaultValue="charts">
         <TabsList>
