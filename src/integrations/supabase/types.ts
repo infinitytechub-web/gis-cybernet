@@ -56,6 +56,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "account_unlock_audit_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       announcements: {
@@ -255,6 +262,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attendance_compliance_snapshots_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       attendance_edit_requests: {
@@ -424,6 +438,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attendances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       audit_retention_settings: {
@@ -511,6 +532,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -611,6 +639,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "command_vault_files_related_profile_id_fkey"
+            columns: ["related_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       compliance_upload_audit: {
@@ -665,6 +700,13 @@ export type Database = {
             columns: ["target_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_upload_audit_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -1137,8 +1179,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "detention_records_arresting_officer_id_fkey"
+            columns: ["arresting_officer_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "detention_records_officer_in_charge_id_fkey"
             columns: ["officer_in_charge_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_records_officer_in_charge_id_fkey"
+            columns: ["officer_in_charge_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_records_released_by_fkey"
+            columns: ["released_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1147,7 +1210,7 @@ export type Database = {
             foreignKeyName: "detention_records_released_by_fkey"
             columns: ["released_by"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -1555,6 +1618,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "enforcement_operations_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "enforcement_operations_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
@@ -1689,6 +1759,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "equipment_issuance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       excuse_duty_forms: {
@@ -1752,6 +1829,13 @@ export type Database = {
             columns: ["staff_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "excuse_duty_forms_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -2234,6 +2318,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guard_schedule_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
           {
@@ -3308,6 +3399,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "inventory_issuance_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       inventory_items: {
@@ -3442,6 +3540,13 @@ export type Database = {
             columns: ["issued_to_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_issued_to_profile_id_fkey"
+            columns: ["issued_to_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
           {
@@ -3679,10 +3784,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leave_requests_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -3778,6 +3897,13 @@ export type Database = {
             columns: ["staff_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_appointments_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -3917,6 +4043,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "medical_records_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       mfa_backup_codes: {
@@ -4054,6 +4187,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "night_guard_activity_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -4120,6 +4260,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "office_history_access_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -4272,6 +4419,13 @@ export type Database = {
             columns: ["authorized_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operations_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
           {
@@ -4443,6 +4597,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pending_staff_matches_created_profile_id_fkey"
+            columns: ["created_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pending_staff_matches_entry_id_fkey"
             columns: ["entry_id"]
             isOneToOne: false
@@ -4461,6 +4622,13 @@ export type Database = {
             columns: ["matched_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_staff_matches_matched_profile_id_fkey"
+            columns: ["matched_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -4502,6 +4670,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_sync_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -4555,6 +4730,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "postings_transfers_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "postings_transfers_from_department_id_fkey"
             columns: ["from_department_id"]
             isOneToOne: false
@@ -4566,6 +4748,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "postings_transfers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
           {
@@ -5046,6 +5235,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profile_contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profile_departments: {
@@ -5083,6 +5279,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_departments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -5123,6 +5326,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profile_office_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -5130,6 +5340,7 @@ export type Database = {
           account_locked: boolean
           blood_group: string | null
           created_at: string
+          date_of_birth: string | null
           department_id: string | null
           email: string | null
           first_name: string
@@ -5158,6 +5369,7 @@ export type Database = {
           account_locked?: boolean
           blood_group?: string | null
           created_at?: string
+          date_of_birth?: string | null
           department_id?: string | null
           email?: string | null
           first_name: string
@@ -5186,6 +5398,7 @@ export type Database = {
           account_locked?: boolean
           blood_group?: string | null
           created_at?: string
+          date_of_birth?: string | null
           department_id?: string | null
           email?: string | null
           first_name?: string
@@ -5736,10 +5949,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "request_approval_audit_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "request_approval_audit_request_profile_id_fkey"
             columns: ["request_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "request_approval_audit_request_profile_id_fkey"
+            columns: ["request_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -6005,6 +6232,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shift_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shift_assignments_shift_id_fkey"
             columns: ["shift_id"]
             isOneToOne: false
@@ -6137,6 +6371,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "shift_change_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shift_change_requests_requested_shift_id_fkey"
             columns: ["requested_shift_id"]
             isOneToOne: false
@@ -6212,6 +6453,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_platform_connections_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -6476,6 +6724,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "staff_appraisals_staff_profile_id_fkey"
+            columns: ["staff_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       staff_bulk_upload_audit: {
@@ -6632,6 +6887,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
           },
         ]
@@ -7132,6 +7394,53 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_birthdays: {
+        Row: {
+          bday_day: number | null
+          bday_month: number | null
+          date_of_birth: string | null
+          department_id: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          photo_url: string | null
+          staff_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bday_day?: never
+          bday_month?: never
+          date_of_birth?: string | null
+          department_id?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          photo_url?: string | null
+          staff_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bday_day?: never
+          bday_month?: never
+          date_of_birth?: string | null
+          department_id?: string | null
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          photo_url?: string | null
+          staff_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_purge_shift_connections: { Args: never; Returns: number }
@@ -7631,6 +7940,7 @@ export type Database = {
         | "chief_staff_officer"
         | "head_of_processing"
         | "deputy_head_of_processing"
+        | "medical_officer"
       appraisal_criterion:
         | "job_knowledge"
         | "quality_of_work"
@@ -7813,6 +8123,7 @@ export const Constants = {
         "chief_staff_officer",
         "head_of_processing",
         "deputy_head_of_processing",
+        "medical_officer",
       ],
       appraisal_criterion: [
         "job_knowledge",
