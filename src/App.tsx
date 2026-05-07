@@ -66,6 +66,8 @@ const GuardSchedule = lazy(() => import("./pages/GuardSchedule"));
 const GuardScheduleImport = lazy(() => import("./pages/GuardScheduleImport"));
 const PendingStaffApprovals = lazy(() => import("./pages/PendingStaffApprovals"));
 const StaffAccountApprovals = lazy(() => import("./pages/StaffAccountApprovals"));
+const HealthLab = lazy(() => import("./pages/HealthLab"));
+const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 
 const queryClient = new QueryClient();
 
@@ -139,6 +141,8 @@ function App() {
           <Route path="/procurement" element={<ProtectedRoute><Layout><Procurement /></Layout></ProtectedRoute>} />
           <Route path="/misd" element={<ProtectedRoute><Layout><Misd /></Layout></ProtectedRoute>} />
           <Route path="/ipse" element={<ProtectedRoute><Layout><Ipse /></Layout></ProtectedRoute>} />
+          <Route path="/health-lab" element={<ProtectedRoute><Layout><HealthLab /></Layout></ProtectedRoute>} />
+          <Route path="/excuse-duty" element={<ProtectedRoute><Layout><ExcuseDutyForm /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}

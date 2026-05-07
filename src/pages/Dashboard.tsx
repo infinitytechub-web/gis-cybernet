@@ -31,6 +31,7 @@ import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget"
 import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
 import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
+import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -318,6 +319,9 @@ export default function Dashboard() {
 
       {/* Low Stock Alerts */}
       <LowStockWidget />
+
+      {/* GIS HEALTH LAB — visible to all */}
+      <HealthLabWidget />
 
       {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
       {isAdmin && <SecurityThreatsWidget />}

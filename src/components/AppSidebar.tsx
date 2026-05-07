@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -66,6 +66,14 @@ const securityItems = [
   { title: "IPSE", url: "/ipse", icon: Shield, iconColor: "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" },
   { title: "MISD / CYBER", url: "/misd", icon: Shield, iconColor: "text-purple-700 dark:text-purple-300" },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400" },
+];
+
+const healthItems = [
+  { title: "GIS Health Lab", url: "/health-lab", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300" },
+];
+
+const allStaffItems = [
+  { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
 ];
 
 const logisticsItems = [
@@ -293,6 +301,8 @@ export function AppSidebar() {
         {renderGroup("Immigration Services", immigrationItems)}
         {renderGroup("Security & Enforcement", securityItems)}
         {renderGroup("Logistics", logisticsItems)}
+        {renderGroup("My Forms", allStaffItems)}
+        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Healthcare", healthItems)}
         {renderGroup("Finance & Procurement", financeItems)}
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}

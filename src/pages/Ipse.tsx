@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
-import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search, Pencil, Trash2 } from "lucide-react";
+import { Shield, Gavel, FileWarning, BarChart3, Users, Clock, ArrowRightCircle, CheckCircle2, XCircle, Search, Pencil, Trash2, Moon } from "lucide-react";
+import NightGuardDutyUpload from "@/components/shifts/NightGuardDutyUpload";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
@@ -109,6 +110,30 @@ export default function Ipse() {
     },
   });
   const ipseUserIdSet = useMemo(() => new Set(ipseUserIds), [ipseUserIds]);
+
+  // Night Guard data (for the IPSE-side roster upload tab)
+  const { data: shifts = [] } = useQuery({
+    queryKey: ["ipse-shifts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("shifts").select("id, name, start_time, end_time");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: nightGuardStaff = [] } = useQuery({
+    queryKey: ["ipse-night-guard-staff"],
+    queryFn: async () => {
+      const { data: dept } = await supabase.from("departments").select("id, name").ilike("name", "%night guard%").maybeSingle();
+      if (!dept?.id) return [];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, user_id, first_name, last_name, staff_id, department_id")
+        .eq("department_id", dept.id)
+        .eq("status", "active");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Analytics
   const analytics = useMemo(() => {
@@ -291,6 +316,9 @@ export default function Ipse() {
           <TabsTrigger value="triage" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white"><FileWarning className="h-4 w-4" /> Reports Triage</TabsTrigger>
           <TabsTrigger value="sanctions" className="gap-1.5 data-[state=active]:bg-rose-700 data-[state=active]:text-white"><Gavel className="h-4 w-4" /> Sanctions Reference</TabsTrigger>
           <TabsTrigger value="drilldown" className="gap-1.5 data-[state=active]:bg-sky-700 data-[state=active]:text-white"><Search className="h-4 w-4" /> Officer Drill-down</TabsTrigger>
+          {(isAdmin || isIpse) && (
+            <TabsTrigger value="nightguard" className="gap-1.5 data-[state=active]:bg-[hsl(220,80%,18%)] data-[state=active]:text-white"><Moon className="h-4 w-4" /> Night Guard Roster</TabsTrigger>
+          )}
         </TabsList>
 
         {/* DASHBOARD */}
@@ -568,6 +596,25 @@ export default function Ipse() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* NIGHT GUARD ROSTER (IPSE-managed) */}
+        {(isAdmin || isIpse) && (
+          <TabsContent value="nightguard" className="space-y-3">
+            <Card className="border-t-4 border-t-[hsl(220,80%,18%)]">
+              <CardHeader className="pb-2 bg-[hsl(220,80%,18%)]/5 rounded-t-lg">
+                <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,70%)]">
+                  <Moon className="h-4 w-4" /> Night Guard Duty Upload (IPSE)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  IPSE Supervisors and Deputies share Night Guard roster management with Admin and Command tier. Uploads sync system-wide.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NightGuardDutyUpload nightGuardStaff={nightGuardStaff as any[]} shifts={shifts as any[]} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
       </Tabs>
 
