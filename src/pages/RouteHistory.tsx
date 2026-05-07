@@ -29,9 +29,16 @@ interface AuditRow {
   occurred_at: string;
 }
 
-function csvEscape(v: unknown) {
-  const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+async function sha256Hex(data: string | ArrayBuffer): Promise<string> {
+  const buf = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function signExport(args: { contentSha256: string; kind: string; range: string; recordCount: number }) {
+  const { data, error } = await supabase.functions.invoke("sign-export", { body: args });
+  if (error) throw new Error(error.message);
+  return data as { payload: Record<string, unknown>; signature: string; algorithm: string };
 }
 
 export default function RouteHistory() {
