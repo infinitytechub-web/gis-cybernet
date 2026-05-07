@@ -609,7 +609,7 @@ export default function Ipse() {
             <Button variant="outline" onClick={() => setDecision(null)}>Cancel</Button>
             <Button
               variant={decision?.action === "reject" ? "destructive" : "default"}
-              disabled={decideMutation.isPending || (decision?.action === "forward_2ic" && !severity) || (decision?.action === "reject" && !comment.trim())}
+              disabled={decideMutation.isPending || (decision?.action === "forward_hoa" && !severity) || (decision?.action === "reject" && !comment.trim())}
               onClick={() => decideMutation.mutate()}
             >
               Confirm
