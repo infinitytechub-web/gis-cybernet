@@ -34,6 +34,18 @@ function csvEscape(v: unknown) {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+async function sha256Hex(data: string | ArrayBuffer): Promise<string> {
+  const buf = typeof data === "string" ? new TextEncoder().encode(data) : new Uint8Array(data);
+  const digest = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function signExport(args: { contentSha256: string; kind: string; range: string; recordCount: number }) {
+  const { data, error } = await supabase.functions.invoke("sign-export", { body: args });
+  if (error) throw new Error(error.message);
+  return data as { payload: Record<string, unknown>; signature: string; algorithm: string };
+}
+
 export default function RouteHistory() {
   const [from, setFrom] = useState<Date | undefined>(() => {
     const d = new Date(); d.setDate(d.getDate() - 30); d.setHours(0, 0, 0, 0); return d;
@@ -77,63 +89,128 @@ export default function RouteHistory() {
   const stamp = useMemo(() => format(new Date(), "yyyyMMdd-HHmmss"), [routes, audit]);
   const range = from && to ? `${format(from, "yyyy-MM-dd")}_to_${format(to, "yyyy-MM-dd")}` : "all";
 
-  const exportCsv = () => {
-    const lines: string[] = [];
-    lines.push("ROUTE TRACKING HISTORY");
-    lines.push(`Range,${csvEscape(range)}`);
-    lines.push(`Generated,${csvEscape(new Date().toISOString())}`);
-    lines.push(`User,${csvEscape(userId ?? "")}`);
-    lines.push("");
-    lines.push("Recorded At,Points,View Mode,Source,Client IP,User Agent");
-    for (const r of routes) {
-      lines.push([r.recorded_at, r.point_count, r.view_mode, r.source, r.client_ip, r.user_agent].map(csvEscape).join(","));
+  const exportCsv = async () => {
+    try {
+      const dataLines: string[] = [];
+      dataLines.push("ROUTE TRACKING HISTORY");
+      dataLines.push(`Range,${csvEscape(range)}`);
+      dataLines.push(`Generated,${csvEscape(new Date().toISOString())}`);
+      dataLines.push(`User,${csvEscape(userId ?? "")}`);
+      dataLines.push("");
+      dataLines.push("Recorded At,Points,View Mode,Source,Client IP,User Agent");
+      for (const r of routes) {
+        dataLines.push([r.recorded_at, r.point_count, r.view_mode, r.source, r.client_ip, r.user_agent].map(csvEscape).join(","));
+      }
+      dataLines.push("");
+      dataLines.push("MAP ACCESS AUDIT");
+      dataLines.push("Occurred At,Surface,View Mode");
+      for (const a of audit) dataLines.push([a.occurred_at, a.surface, a.view_mode].map(csvEscape).join(","));
+
+      const dataBlock = dataLines.join("\n");
+      const contentSha256 = await sha256Hex(dataBlock);
+      const sig = await signExport({
+        contentSha256, kind: "route-history-csv", range, recordCount: routes.length + audit.length,
+      });
+
+      const trailer = [
+        "",
+        "# === SIGNED METADATA (do not edit; covers everything ABOVE this block) ===",
+        `# SHA-256: ${contentSha256}`,
+        `# Algorithm: ${sig.algorithm}`,
+        `# Signature: ${sig.signature}`,
+        `# Payload: ${JSON.stringify(sig.payload)}`,
+        "# Verify at /verify-export by uploading this file.",
+      ].join("\n");
+
+      downloadCSVString(dataBlock + "\n" + trailer + "\n", `route-history_${range}_${stamp}.csv`);
+      toast.success("Signed CSV exported");
+    } catch (e) {
+      toast.error(`Export failed: ${(e as Error).message}`);
     }
-    lines.push("");
-    lines.push("MAP ACCESS AUDIT");
-    lines.push("Occurred At,Surface,View Mode");
-    for (const a of audit) lines.push([a.occurred_at, a.surface, a.view_mode].map(csvEscape).join(","));
-    downloadCSVString(lines.join("\n"), `route-history_${range}_${stamp}.csv`);
   };
 
-  const exportPdf = () => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-    doc.setFontSize(14);
-    doc.text("Route Tracking History", 40, 40);
-    doc.setFontSize(9);
-    doc.text(`Range: ${range}`, 40, 58);
-    doc.text(`Generated: ${new Date().toISOString()}`, 40, 70);
-    doc.text(`User: ${userId ?? ""}`, 40, 82);
+  const exportPdf = async () => {
+    try {
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      doc.setFontSize(14);
+      doc.text("Route Tracking History", 40, 40);
+      doc.setFontSize(9);
+      doc.text(`Range: ${range}`, 40, 58);
+      doc.text(`Generated: ${new Date().toISOString()}`, 40, 70);
+      doc.text(`User: ${userId ?? ""}`, 40, 82);
 
-    autoTable(doc, {
-      startY: 100,
-      head: [["Recorded At", "Points", "View", "Source", "Client IP", "User Agent"]],
-      body: routes.map(r => [r.recorded_at, r.point_count, r.view_mode ?? "", r.source ?? "", r.client_ip ?? "", r.user_agent ?? ""]),
-      styles: { fontSize: 7 },
-      headStyles: { fillColor: [21, 94, 56] },
-    });
+      autoTable(doc, {
+        startY: 100,
+        head: [["Recorded At", "Points", "View", "Source", "Client IP", "User Agent"]],
+        body: routes.map(r => [r.recorded_at, r.point_count, r.view_mode ?? "", r.source ?? "", r.client_ip ?? "", r.user_agent ?? ""]),
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [21, 94, 56] },
+      });
 
-    const afterY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120;
-    doc.setFontSize(11);
-    doc.text("Map Access Audit", 40, afterY + 24);
-    autoTable(doc, {
-      startY: afterY + 32,
-      head: [["Occurred At", "Surface", "View Mode"]],
-      body: audit.map(a => [a.occurred_at, a.surface, a.view_mode ?? ""]),
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [21, 94, 56] },
-    });
+      const afterY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120;
+      doc.setFontSize(11);
+      doc.text("Map Access Audit", 40, afterY + 24);
+      autoTable(doc, {
+        startY: afterY + 32,
+        head: [["Occurred At", "Surface", "View Mode"]],
+        body: audit.map(a => [a.occurred_at, a.surface, a.view_mode ?? ""]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [21, 94, 56] },
+      });
 
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7);
-      doc.text("CONFIDENTIAL — GIS Cybernet", 40, doc.internal.pageSize.getHeight() - 18);
-      doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 18);
+      // Compute hash over a canonical text representation of the data
+      // (independent of PDF layout — same rows yield same hash).
+      const canonical = JSON.stringify({
+        kind: "route-history-pdf",
+        range,
+        user: userId,
+        routes: routes.map(r => [r.recorded_at, r.point_count, r.view_mode, r.source, r.client_ip, r.user_agent]),
+        audit: audit.map(a => [a.occurred_at, a.surface, a.view_mode]),
+      });
+      const contentSha256 = await sha256Hex(canonical);
+      const sig = await signExport({
+        contentSha256, kind: "route-history-pdf", range, recordCount: routes.length + audit.length,
+      });
+
+      // Signed metadata page
+      doc.addPage();
+      doc.setFontSize(13);
+      doc.text("Signed Export Metadata", 40, 50);
+      doc.setFontSize(9);
+      const lines = [
+        `Algorithm: ${sig.algorithm}`,
+        `SHA-256 (content): ${contentSha256}`,
+        `Signature: ${sig.signature}`,
+        "",
+        "Payload (canonical JSON, sorted keys):",
+        ...JSON.stringify(sig.payload, Object.keys(sig.payload).sort(), 2).split("\n"),
+        "",
+        "To verify: open /verify-export, paste the SHA-256, signature, and payload.",
+        "Any modification to the data above invalidates this signature.",
+      ];
+      let y = 76;
+      const pageH = doc.internal.pageSize.getHeight();
+      for (const ln of lines) {
+        if (y > pageH - 40) { doc.addPage(); y = 50; }
+        doc.text(ln, 40, y);
+        y += 12;
+      }
+
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.text("CONFIDENTIAL — GIS Cybernet", 40, doc.internal.pageSize.getHeight() - 18);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 18);
+      }
+
+      const blob = doc.output("blob");
+      downloadBlob(blob, `route-history_${range}_${stamp}.pdf`);
+      toast.success("Signed PDF exported");
+    } catch (e) {
+      toast.error(`Export failed: ${(e as Error).message}`);
     }
-
-    const blob = doc.output("blob");
-    downloadBlob(blob, `route-history_${range}_${stamp}.pdf`);
   };
 
   const DateBtn = ({ value, onChange, label }: { value: Date | undefined; onChange: (d?: Date) => void; label: string }) => (

@@ -65,6 +65,7 @@ const DutyRosterImport = lazy(() => import("./pages/DutyRosterImport"));
 const GuardSchedule = lazy(() => import("./pages/GuardSchedule"));
 const GuardScheduleImport = lazy(() => import("./pages/GuardScheduleImport"));
 const RouteHistory = lazy(() => import("./pages/RouteHistory"));
+const VerifyExport = lazy(() => import("./pages/VerifyExport"));
 const PendingStaffApprovals = lazy(() => import("./pages/PendingStaffApprovals"));
 const StaffAccountApprovals = lazy(() => import("./pages/StaffAccountApprovals"));
 const HealthLab = lazy(() => import("./pages/HealthLab"));
@@ -122,6 +123,7 @@ function App() {
           <Route path="/guard-schedule" element={<ProtectedRoute><Layout><GuardSchedule /></Layout></ProtectedRoute>} />
           <Route path="/guard-schedule/import" element={<ProtectedRoute><Layout><GuardScheduleImport /></Layout></ProtectedRoute>} />
           <Route path="/route-history" element={<ProtectedRoute><Layout><RouteHistory /></Layout></ProtectedRoute>} />
+          <Route path="/verify-export" element={<ProtectedRoute><Layout><VerifyExport /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/pending" element={<ProtectedRoute><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/accounts" element={<ProtectedRoute><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
