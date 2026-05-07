@@ -7718,6 +7718,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_sensitive_read: {
+        Args: { _context?: Json; _entity_id: string; _entity_type: string }
+        Returns: undefined
+      }
       mfa_consume_backup_code: { Args: { _code: string }; Returns: boolean }
       mfa_generate_backup_codes: {
         Args: never
