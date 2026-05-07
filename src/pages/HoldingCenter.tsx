@@ -332,6 +332,7 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
     alias: record.alias || "",
     gender: record.gender || "male",
     date_of_birth: record.date_of_birth || "",
+    marital_status: record.marital_status || "",
     nationality: record.nationality || "",
     country_of_origin: record.country_of_origin || "",
     id_type: record.id_type || "Passport",
