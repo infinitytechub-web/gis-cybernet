@@ -131,6 +131,7 @@ export default function Staff() {
     setTrainingDesignation("");
     setStaffCategory("");
     setDateOfBirth("");
+    setMaritalStatus("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
