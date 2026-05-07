@@ -421,6 +421,17 @@ export default function Staff() {
             <SelectItem value="transferred">Transferred</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={maritalFilter} onValueChange={setMaritalFilter}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Marital" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Marital</SelectItem>
+            {["Single","Married","Divorced","Widowed","Separated"].map(s => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
