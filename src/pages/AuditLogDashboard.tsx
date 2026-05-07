@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollText, Filter, Download, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { SecurityHero } from "@/components/security/SecurityHero";
 
 const ACTIONS = ["all", "INSERT", "UPDATE", "DELETE"];
 
