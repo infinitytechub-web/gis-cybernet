@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { PERMIT_TYPES, PROCESSING_PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { ProcessingChecklist, PERMIT_CHECKLIST } from "@/components/applications/ProcessingChecklist";
 
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
 
