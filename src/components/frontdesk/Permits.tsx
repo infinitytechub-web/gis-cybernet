@@ -103,11 +103,12 @@ export default function Permits() {
       }
       return savedId;
     },
-    onSuccess: () => {
+    onSuccess: (savedId: string | null) => {
       qc.invalidateQueries({ queryKey: ["permits-frontdesk"] });
       qc.invalidateQueries({ queryKey: ["permits-processing"] });
-      toast.success(editId ? "Permit updated" : "Permit application submitted");
-      reset();
+      toast.success(editId ? "Permit updated" : "Permit application submitted — you can now attach documents");
+      if (!editId && savedId) setEditId(savedId);
+      else reset();
     },
     onError: (e: any) => toast.error(e.message),
   });
