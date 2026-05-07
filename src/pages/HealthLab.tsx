@@ -356,12 +356,25 @@ export default function HealthLab() {
     mutationFn: async () => {
       if (!apptForm.staff_profile_id) throw new Error("Select a staff member");
       if (!apptForm.scheduled_at) throw new Error("Pick a date/time");
+      // Client-side conflict pre-check
+      const iso = new Date(apptForm.scheduled_at).toISOString();
+      const conflict = (appointments as any[]).find((a) =>
+        a.staff_profile_id === apptForm.staff_profile_id &&
+        new Date(a.scheduled_at).toISOString() === iso &&
+        !["cancelled","no_show"].includes(a.status) &&
+        a.id !== apptEdit?.id);
+      if (conflict) {
+        setApptConflict(`This staff member already has an appointment at ${format(new Date(conflict.scheduled_at), "dd MMM yyyy HH:mm")} (${conflict.status}). Pick a different time or cancel the existing one.`);
+        throw new Error("APPOINTMENT_CONFLICT");
+      }
       const payload: any = {
         staff_profile_id: apptForm.staff_profile_id,
         service_id: apptForm.service_id || null,
-        scheduled_at: new Date(apptForm.scheduled_at).toISOString(),
+        scheduled_at: iso,
         status: apptForm.status,
         notes: apptForm.notes || null,
+        authorized_by: apptForm.authorized_by || null,
+        authorized_role: apptForm.authorized_role || null,
       };
       if (apptEdit) {
         const { error } = await supabase.from("medical_appointments" as any).update(payload).eq("id", apptEdit.id);
@@ -374,10 +387,17 @@ export default function HealthLab() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["medical-appointments"] });
       toast.success(apptEdit ? "Appointment updated" : "Appointment scheduled");
-      setApptOpen(false); setApptEdit(null);
-      setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "" });
+      setApptOpen(false); setApptEdit(null); setApptConflict(null);
+      setApptForm({ staff_profile_id: "", service_id: "", scheduled_at: format(addDays(new Date(), 1), "yyyy-MM-dd'T'HH:mm"), status: "scheduled", notes: "", authorized_by: "", authorized_role: "" });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      if (e.message?.includes("APPOINTMENT_CONFLICT")) return;
+      if (typeof e.message === "string" && e.message.includes("APPOINTMENT_CONFLICT")) {
+        setApptConflict("This staff member already has an appointment at that time. Please pick a different slot.");
+        return;
+      }
+      toast.error(e.message);
+    },
   });
 
   const updateApptStatus = useMutation({
