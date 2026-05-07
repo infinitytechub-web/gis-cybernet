@@ -19,6 +19,8 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { ProcessingChecklist, PASSPORT_CHECKLIST } from "@/components/applications/ProcessingChecklist";
 
 const PROCESSING_STATUSES = ["submitted", "processing"];
 const ALL_STATUSES = ["submitted", "processing", "ready", "collected", "rejected"];
@@ -42,7 +44,7 @@ export default function ProcessingPassportApplications() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ status: "submitted", notes: "" });
+  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
 
   useEffect(() => {
     const channel = supabase
@@ -72,7 +74,7 @@ export default function ProcessingPassportApplications() {
       if (!editId) return;
       const existing = applications.find((a: any) => a.id === editId);
       const { error } = await supabase.from("passport_applications")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id })
+        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
         .eq("id", editId);
       if (error) throw error;
 
@@ -107,7 +109,7 @@ export default function ProcessingPassportApplications() {
   const [reviewApp, setReviewApp] = useState<any>(null);
 
   const openReview = (app: any) => {
-    setForm({ status: app.status, notes: app.notes || "" });
+    setForm({ status: app.status, notes: app.notes || "", checklist: (app.processing_checklist as Record<string, boolean>) || {} });
     setEditId(app.id);
     setReviewApp(app);
     setOpen(true);
@@ -173,7 +175,15 @@ export default function ProcessingPassportApplications() {
               {reviewApp.emergency_contact && <div><span className="text-muted-foreground">Emergency:</span> {reviewApp.emergency_contact}</div>}
             </div>
           )}
+          {reviewApp && (
+            <ApplicationDocuments recordType="passport" recordId={reviewApp.id} readOnly />
+          )}
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
+            <ProcessingChecklist
+              items={PASSPORT_CHECKLIST}
+              value={form.checklist}
+              onChange={(checklist) => setForm({ ...form, checklist })}
+            />
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
