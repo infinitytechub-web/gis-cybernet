@@ -317,7 +317,8 @@ export default function Staff() {
       const matchesRank = rankFilter === "all" || s.rank_id === rankFilter;
       const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
-      return matchesSearch && matchesRank && matchesDept && matchesStatus;
+      const matchesMarital = maritalFilter === "all" || (s.marital_status ?? "") === maritalFilter;
+      return matchesSearch && matchesRank && matchesDept && matchesStatus && matchesMarital;
     });
 
     list.sort((a, b) => {
