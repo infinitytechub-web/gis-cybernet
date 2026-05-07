@@ -4736,6 +4736,111 @@ export type Database = {
         }
         Relationships: []
       }
+      permits: {
+        Row: {
+          applicant_name: string
+          application_reference: string | null
+          course_of_study: string | null
+          created_at: string
+          current_permit_expiry: string | null
+          date_of_birth: string | null
+          emergency_contact: string | null
+          employer_sponsor_address: string | null
+          employer_sponsor_name: string | null
+          fee_charged: number | null
+          foreign_address: string | null
+          gender: string | null
+          home_address: string | null
+          id: string
+          institution_name: string | null
+          intended_duration_months: number | null
+          marital_status: string | null
+          nationality: string | null
+          nearest_landmark: string | null
+          next_of_kin: string | null
+          notes: string | null
+          occupation: string | null
+          passport_number: string
+          permit_category: string | null
+          permit_type: string
+          phone: string | null
+          processed_by: string | null
+          purpose: string | null
+          requested_start_date: string | null
+          status: string
+          street_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_name: string
+          application_reference?: string | null
+          course_of_study?: string | null
+          created_at?: string
+          current_permit_expiry?: string | null
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          employer_sponsor_address?: string | null
+          employer_sponsor_name?: string | null
+          fee_charged?: number | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          institution_name?: string | null
+          intended_duration_months?: number | null
+          marital_status?: string | null
+          nationality?: string | null
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
+          notes?: string | null
+          occupation?: string | null
+          passport_number: string
+          permit_category?: string | null
+          permit_type: string
+          phone?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          requested_start_date?: string | null
+          status?: string
+          street_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_name?: string
+          application_reference?: string | null
+          course_of_study?: string | null
+          created_at?: string
+          current_permit_expiry?: string | null
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          employer_sponsor_address?: string | null
+          employer_sponsor_name?: string | null
+          fee_charged?: number | null
+          foreign_address?: string | null
+          gender?: string | null
+          home_address?: string | null
+          id?: string
+          institution_name?: string | null
+          intended_duration_months?: number | null
+          marital_status?: string | null
+          nationality?: string | null
+          nearest_landmark?: string | null
+          next_of_kin?: string | null
+          notes?: string | null
+          occupation?: string | null
+          passport_number?: string
+          permit_category?: string | null
+          permit_type?: string
+          phone?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          requested_start_date?: string | null
+          status?: string
+          street_name?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_sync_history: {
         Row: {
           action: string
