@@ -20,6 +20,7 @@ import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { PERMIT_TYPES, PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
