@@ -28,6 +28,8 @@ const STATUS_COLOR: Record<string, string> = {
 
 export default function ExcuseDutyForm() {
   const { user } = useAuth();
+  const { isAdminOrSupervisor, isHoa } = useAuthContext();
+  const isReviewer = isAdminOrSupervisor || isHoa;
   const qc = useQueryClient();
   const [form, setForm] = useState({
     start_date: format(new Date(), "yyyy-MM-dd"),
