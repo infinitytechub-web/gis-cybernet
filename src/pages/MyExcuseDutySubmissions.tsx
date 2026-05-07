@@ -47,7 +47,7 @@ export default function MyExcuseDutySubmissions() {
   const [search, setSearch] = useState<string>("");
 
   // Debounce search
-  useMemo(() => {
+  useEffect(() => {
     const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(0); }, 300);
     return () => clearTimeout(t);
   }, [searchInput]);
