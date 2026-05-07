@@ -399,6 +399,20 @@ export default function Appraisals() {
                   <Textarea rows={3} value={comments} onChange={(e) => setComments(e.target.value)} placeholder="Optional commendations or recommendations…" />
                 </div>
 
+                {existingForPeriod.length > 0 && (
+                  <div
+                    role="alert"
+                    data-testid="appraisal-duplicate-warning"
+                    className="rounded-md border border-amber-300 bg-amber-50 text-amber-900 text-xs px-3 py-2"
+                  >
+                    {existingForPeriod.length === targetIds.length ? (
+                      <>An appraisal <strong>already exists</strong> for {existingForPeriod.length === 1 ? "this officer" : `all ${existingForPeriod.length} selected officers`} for <strong>{periodLabel}</strong>. Change the period or pick different officers.</>
+                    ) : (
+                      <><strong>{existingForPeriod.length}</strong> of {targetIds.length} selected officer{targetIds.length === 1 ? "" : "s"} already have an appraisal for <strong>{periodLabel}</strong> and will be skipped.</>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
                   <div className="text-sm">
                     Total: <span className="font-semibold">{totalSum} / 35</span> · Average: <span className="font-semibold">{totalAvg.toFixed(2)} / 5</span>
@@ -409,7 +423,11 @@ export default function Appraisals() {
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" disabled={submit.isPending || targetIds.length === 0} onClick={() => submit.mutate("draft")} className="gap-1"><Save className="h-4 w-4" /> Save draft</Button>
-                    <Button disabled={submit.isPending || targetIds.length === 0} onClick={() => submit.mutate("submitted")} className="gap-1"><Send className="h-4 w-4" /> Submit to Command</Button>
+                    <Button
+                      disabled={submit.isPending || targetIds.length === 0 || existingForPeriod.length === targetIds.length}
+                      onClick={() => submit.mutate("submitted")}
+                      className="gap-1"
+                    ><Send className="h-4 w-4" /> Submit to Command</Button>
                   </div>
                 </div>
               </CardContent>
