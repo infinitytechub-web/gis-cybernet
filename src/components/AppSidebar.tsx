@@ -74,6 +74,7 @@ const healthItems = [
 
 const allStaffItems = [
   { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
+  { title: "My Submissions", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
 ];
 
 const logisticsItems = [
