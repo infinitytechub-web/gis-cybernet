@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { FeeInput } from "@/components/ui/fee-input";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
 const PERMIT_TYPES = [
