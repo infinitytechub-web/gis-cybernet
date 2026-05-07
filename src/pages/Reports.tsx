@@ -42,7 +42,7 @@ export default function Reports() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [statusTab, setStatusTab] = useState<StatusTab>(() => {
     const t = searchParams.get("tab");
-    const valid: StatusTab[] = ["pending_ipse", "with_2ic", "with_oic", "approved", "rejected", "all"];
+    const valid: StatusTab[] = ["pending_ipse", "with_hoa", "with_2ic", "with_oic", "approved", "rejected", "all"];
     return valid.includes(t as StatusTab) ? (t as StatusTab) : "pending_ipse";
   });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
