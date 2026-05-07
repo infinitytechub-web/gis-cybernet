@@ -253,14 +253,14 @@ export default function RouteHistory() {
             <label className="text-xs text-muted-foreground">To</label>
             <DateBtn value={to} onChange={setTo} label="To date" />
           </div>
-          <Button variant="outline" onClick={load} disabled={loading}>
+          <Button variant="outline" onClick={load} disabled={loading} className={securityButtonClass}>
             {loading ? "Loading..." : "Refresh"}
           </Button>
           <div className="ml-auto flex gap-2">
-            <Button onClick={exportCsv} disabled={loading || (routes.length + audit.length === 0)}>
+            <Button onClick={exportCsv} disabled={loading || (routes.length + audit.length === 0)} className={securityButtonSolidClass}>
               <Download className="mr-2 h-4 w-4" /> CSV
             </Button>
-            <Button onClick={exportPdf} variant="secondary" disabled={loading || (routes.length + audit.length === 0)}>
+            <Button onClick={exportPdf} variant="outline" disabled={loading || (routes.length + audit.length === 0)} className={securityButtonClass}>
               <FileText className="mr-2 h-4 w-4" /> PDF
             </Button>
           </div>
