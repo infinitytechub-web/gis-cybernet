@@ -714,10 +714,12 @@ export default function GpsAddresses() {
       toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
       return;
     }
+    const esc = (s: string) =>
+      String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
     const rowsHtml = rows
       .map(
         ([k, v]) =>
-          `<tr><th style="text-align:left;padding:6px 10px;border:1px solid #ccc;background:#f5f5f5;width:200px;">${k}</th><td style="padding:6px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;word-break:break-all;">${v}</td></tr>`,
+          `<tr><th style="text-align:left;padding:6px 10px;border:1px solid #ccc;background:#f5f5f5;width:200px;">${esc(k)}</th><td style="padding:6px 10px;border:1px solid #ccc;font-family:monospace;font-size:12px;word-break:break-all;">${esc(v)}</td></tr>`,
       )
       .join("");
     const snapshotSvg = buildStaticMapSvg({
