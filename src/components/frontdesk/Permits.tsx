@@ -247,11 +247,30 @@ export function PermitForm({
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
+        <div><Label>Surname *</Label><Input value={form.surname} onChange={(e) => setForm({ ...form, surname: e.target.value })} required /></div>
+        <div><Label>Other Names *</Label><Input value={form.other_names} onChange={(e) => setForm({ ...form, other_names: e.target.value })} required /></div>
+        <div className="col-span-2"><Label>Full Name (as on passport)</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} placeholder="Auto-filled from surname + other names" /></div>
         <div><Label>Passport Number *</Label><Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} required /></div>
-        <div className="col-span-2"><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} /></div>
-        <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
-        <div><Label>Gender</Label>
+        <div><Label>Passport Type</Label>
+          <Select value={form.passport_type} onValueChange={(v) => setForm({ ...form, passport_type: v })}>
+            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ordinary">Ordinary</SelectItem>
+              <SelectItem value="diplomatic">Diplomatic</SelectItem>
+              <SelectItem value="service">Service / Official</SelectItem>
+              <SelectItem value="ecowas">ECOWAS</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div><Label>Passport Issue Date</Label><Input type="date" value={form.passport_issue_date} onChange={(e) => setForm({ ...form, passport_issue_date: e.target.value })} /></div>
+        <div><Label>Passport Expiry Date *</Label><Input type="date" value={form.passport_expiry_date} onChange={(e) => setForm({ ...form, passport_expiry_date: e.target.value })} required /></div>
+        <div><Label>Passport Place of Issue</Label><Input value={form.passport_place_of_issue} onChange={(e) => setForm({ ...form, passport_place_of_issue: e.target.value })} /></div>
+        <div><Label>Port of Entry</Label><Input value={form.port_of_entry} onChange={(e) => setForm({ ...form, port_of_entry: e.target.value })} placeholder="e.g. KIA, Aflao, Elubo" /></div>
+        <div className="col-span-2"><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
+        <div className="col-span-2"><Label>Dual Nationality (if any)</Label><CountryCombobox value={form.dual_nationality} onValueChange={(v) => setForm({ ...form, dual_nationality: v })} /></div>
+        <div><Label>Date of Birth *</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required /></div>
+        <div><Label>Place of Birth</Label><Input value={form.place_of_birth} onChange={(e) => setForm({ ...form, place_of_birth: e.target.value })} /></div>
+        <div><Label>Gender *</Label>
           <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
             <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
             <SelectContent>
@@ -271,7 +290,7 @@ export function PermitForm({
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Telephone</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+        <div><Label>Telephone *</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
