@@ -102,12 +102,6 @@ export default function Permits() {
         savedId = data?.id;
       }
       return savedId;
-        const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
-        if (error) throw error;
-      } else {
-        const { error } = await (supabase as any).from("permits").insert(payload);
-        if (error) throw error;
-      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["permits-frontdesk"] });
