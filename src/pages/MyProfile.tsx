@@ -11,7 +11,7 @@ import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 const EDITABLE_FIELDS = [
-  "first_name", "last_name", "gender", "phone", "email", "ghana_card_number",
+  "first_name", "last_name", "gender", "date_of_birth", "phone", "email", "ghana_card_number",
   "blood_group", "office", "training_designation", "staff_category", "photo_url",
 ] as const;
 
