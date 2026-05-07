@@ -954,15 +954,36 @@ export default function HealthLab() {
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={apptForm.notes} onChange={(e) => setApptForm({ ...apptForm, notes: e.target.value })} /></div>
             {apptConflict && (
-              <div className="rounded-md border border-rose-300 bg-rose-50 p-2 text-xs text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
-                <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Scheduling conflict</div>
-                <div className="mt-0.5">{apptConflict}</div>
+              <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900 dark:bg-rose-950/40 dark:text-rose-200 space-y-2">
+                <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Scheduling conflict — override required</div>
+                <div>{apptConflict}</div>
+                <div>
+                  <Label className="text-xs">Authorized override by *</Label>
+                  <Select value={overrideBy || "none"} onValueChange={(v) => setOverrideBy(v === "none" ? "" : v)}>
+                    <SelectTrigger className="h-8"><SelectValue placeholder="Select authorizer…" /></SelectTrigger>
+                    <SelectContent className="max-h-[240px]">
+                      <SelectItem value="none">— None —</SelectItem>
+                      {(authorizers as any[]).map((u) => (
+                        <SelectItem key={u.user_id} value={u.user_id}>
+                          {u.profile.last_name}, {u.profile.first_name} <span className="ml-1 text-[10px] text-muted-foreground capitalize">({u.role.replace(/_/g," ")})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Reason for override *</Label>
+                  <Textarea rows={2} value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} placeholder="Explain why double-booking is acceptable…" />
+                </div>
+                <div className="text-[10px] opacity-80">The override will be recorded in the appointment audit log.</div>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); setApptConflict(null); }}>Cancel</Button>
-            <Button onClick={() => { setApptConflict(null); saveAppointment.mutate(); }} disabled={saveAppointment.isPending}>{apptEdit ? "Save changes" : "Schedule"}</Button>
+            <Button variant="outline" onClick={() => { setApptOpen(false); setApptEdit(null); setApptConflict(null); setOverrideBy(""); setOverrideReason(""); }}>Cancel</Button>
+            <Button onClick={() => { saveAppointment.mutate(); }} disabled={saveAppointment.isPending}>
+              {apptConflict && overrideBy && overrideReason.trim() ? "Override & Save" : (apptEdit ? "Save changes" : "Schedule")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
