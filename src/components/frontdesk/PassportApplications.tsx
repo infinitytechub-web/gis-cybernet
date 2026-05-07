@@ -21,6 +21,7 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 const APP_TYPES = ["new", "renewal", "replacement"];
 const STATUSES = ["submitted", "processing", "ready", "collected", "rejected"];
@@ -235,6 +236,7 @@ export default function PassportApplications() {
                 </div>
               )}
               <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+              {editId && <ApplicationDocuments recordType="passport" recordId={editId} />}
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editId ? "Update" : "Submit Application"}
               </Button>

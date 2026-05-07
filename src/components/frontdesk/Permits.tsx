@@ -20,6 +20,7 @@ import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { PERMIT_TYPES, PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
@@ -33,15 +34,20 @@ function statusBadge(status: string) {
 }
 
 const EMPTY_FORM = {
-  application_reference: "", applicant_name: "", passport_number: "", nationality: "",
-  date_of_birth: "", gender: "", marital_status: "", phone: "",
-  home_address: "", foreign_address: "", street_name: "", nearest_landmark: "",
+  application_reference: "", applicant_name: "", surname: "", other_names: "",
+  passport_number: "", passport_type: "", passport_issue_date: "", passport_expiry_date: "",
+  passport_place_of_issue: "", port_of_entry: "",
+  nationality: "", dual_nationality: "", date_of_birth: "", place_of_birth: "",
+  gender: "", marital_status: "", phone: "",
+  home_address: "", ghana_post_gps: "", foreign_address: "", street_name: "", nearest_landmark: "",
   next_of_kin: "", emergency_contact: "",
   permit_type: "", permit_category: "", purpose: "",
   occupation: "", employer_sponsor_name: "", employer_sponsor_address: "",
   institution_name: "", course_of_study: "",
+  host_name: "", host_phone: "", host_address: "",
+  previous_permit_history: "",
   intended_duration_months: "", current_permit_expiry: "", requested_start_date: "",
-  fee_charged: "", status: "submitted", notes: "",
+  fee_charged: "", fee_receipt_number: "", status: "submitted", notes: "",
 };
 
 export default function Permits() {
@@ -76,26 +82,33 @@ export default function Permits() {
     mutationFn: async () => {
       const payload: any = {
         ...form,
+        applicant_name: form.applicant_name || `${form.surname} ${form.other_names}`.trim(),
         date_of_birth: form.date_of_birth || null,
+        passport_issue_date: form.passport_issue_date || null,
+        passport_expiry_date: form.passport_expiry_date || null,
         current_permit_expiry: form.current_permit_expiry || null,
         requested_start_date: form.requested_start_date || null,
         intended_duration_months: form.intended_duration_months === "" ? null : Number(form.intended_duration_months),
         fee_charged: form.fee_charged === "" ? null : Number(form.fee_charged),
         processed_by: user?.id,
       };
+      let savedId = editId;
       if (editId) {
         const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await (supabase as any).from("permits").insert(payload);
+        const { data, error } = await (supabase as any).from("permits").insert(payload).select("id").single();
         if (error) throw error;
+        savedId = data?.id;
       }
+      return savedId;
     },
-    onSuccess: () => {
+    onSuccess: (savedId: string | null) => {
       qc.invalidateQueries({ queryKey: ["permits-frontdesk"] });
       qc.invalidateQueries({ queryKey: ["permits-processing"] });
-      toast.success(editId ? "Permit updated" : "Permit application submitted");
-      reset();
+      toast.success(editId ? "Permit updated" : "Permit application submitted — you can now attach documents");
+      if (!editId && savedId) setEditId(savedId);
+      else reset();
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -234,11 +247,30 @@ export function PermitForm({
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
+        <div><Label>Surname *</Label><Input value={form.surname} onChange={(e) => setForm({ ...form, surname: e.target.value })} required /></div>
+        <div><Label>Other Names *</Label><Input value={form.other_names} onChange={(e) => setForm({ ...form, other_names: e.target.value })} required /></div>
+        <div className="col-span-2"><Label>Full Name (as on passport)</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} placeholder="Auto-filled from surname + other names" /></div>
         <div><Label>Passport Number *</Label><Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} required /></div>
-        <div className="col-span-2"><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} /></div>
-        <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
-        <div><Label>Gender</Label>
+        <div><Label>Passport Type</Label>
+          <Select value={form.passport_type} onValueChange={(v) => setForm({ ...form, passport_type: v })}>
+            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ordinary">Ordinary</SelectItem>
+              <SelectItem value="diplomatic">Diplomatic</SelectItem>
+              <SelectItem value="service">Service / Official</SelectItem>
+              <SelectItem value="ecowas">ECOWAS</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div><Label>Passport Issue Date</Label><Input type="date" value={form.passport_issue_date} onChange={(e) => setForm({ ...form, passport_issue_date: e.target.value })} /></div>
+        <div><Label>Passport Expiry Date *</Label><Input type="date" value={form.passport_expiry_date} onChange={(e) => setForm({ ...form, passport_expiry_date: e.target.value })} required /></div>
+        <div><Label>Passport Place of Issue</Label><Input value={form.passport_place_of_issue} onChange={(e) => setForm({ ...form, passport_place_of_issue: e.target.value })} /></div>
+        <div><Label>Port of Entry</Label><Input value={form.port_of_entry} onChange={(e) => setForm({ ...form, port_of_entry: e.target.value })} placeholder="e.g. KIA, Aflao, Elubo" /></div>
+        <div className="col-span-2"><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
+        <div className="col-span-2"><Label>Dual Nationality (if any)</Label><CountryCombobox value={form.dual_nationality} onValueChange={(v) => setForm({ ...form, dual_nationality: v })} /></div>
+        <div><Label>Date of Birth *</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required /></div>
+        <div><Label>Place of Birth</Label><Input value={form.place_of_birth} onChange={(e) => setForm({ ...form, place_of_birth: e.target.value })} /></div>
+        <div><Label>Gender *</Label>
           <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
             <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
             <SelectContent>
@@ -258,7 +290,7 @@ export function PermitForm({
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Telephone</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+        <div><Label>Telephone *</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -283,23 +315,35 @@ export function PermitForm({
       )}
 
       <div className="grid grid-cols-3 gap-3">
-        <div><Label>Duration (months)</Label><Input type="number" min={1} value={form.intended_duration_months} onChange={(e) => setForm({ ...form, intended_duration_months: e.target.value })} /></div>
+        <div><Label>Duration (months) *</Label><Input type="number" min={1} value={form.intended_duration_months} onChange={(e) => setForm({ ...form, intended_duration_months: e.target.value })} required /></div>
         <div><Label>Current Permit Expiry</Label><Input type="date" value={form.current_permit_expiry} onChange={(e) => setForm({ ...form, current_permit_expiry: e.target.value })} /></div>
-        <div><Label>Requested Start Date</Label><Input type="date" value={form.requested_start_date} onChange={(e) => setForm({ ...form, requested_start_date: e.target.value })} /></div>
-        <div><Label>Fee Charged (GHS)</Label><FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} /></div>
+        <div><Label>Requested Start Date *</Label><Input type="date" value={form.requested_start_date} onChange={(e) => setForm({ ...form, requested_start_date: e.target.value })} required /></div>
+        <div><Label>Fee Charged (GHS) *</Label><FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} required /></div>
+        <div className="col-span-2"><Label>Fee Receipt Number *</Label><Input value={form.fee_receipt_number} onChange={(e) => setForm({ ...form, fee_receipt_number: e.target.value })} placeholder="GRA / GIS receipt #" required /></div>
       </div>
 
-      <div><Label>Home Address</Label><Textarea rows={2} value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} /></div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 rounded-md border p-3 bg-muted/30">
+        <div className="col-span-2 text-sm font-medium">Host / Local Contact in Ghana</div>
+        <div><Label>Host Name</Label><Input value={form.host_name} onChange={(e) => setForm({ ...form, host_name: e.target.value })} /></div>
+        <div><Label>Host Phone</Label><Input value={form.host_phone} onChange={(e) => setForm({ ...form, host_phone: e.target.value })} /></div>
+        <div className="col-span-2"><Label>Host Address</Label><Input value={form.host_address} onChange={(e) => setForm({ ...form, host_address: e.target.value })} /></div>
+      </div>
+
+      <div><Label>Home Address (Ghana) *</Label><Textarea rows={2} value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} required /></div>
+      <div className="grid grid-cols-3 gap-3">
         <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>
         <div><Label>Nearest Landmark</Label><Input value={form.nearest_landmark} onChange={(e) => setForm({ ...form, nearest_landmark: e.target.value })} /></div>
+        <div><Label>GhanaPost GPS</Label><Input value={form.ghana_post_gps} onChange={(e) => setForm({ ...form, ghana_post_gps: e.target.value })} placeholder="e.g. GA-123-4567" /></div>
       </div>
       <div><Label>Foreign Address</Label><Textarea rows={2} value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3">
         <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
         <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
       </div>
-      <div><Label>Purpose</Label><Textarea rows={2} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} /></div>
+      <div><Label>Purpose *</Label><Textarea rows={2} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} required /></div>
+      <div><Label>Previous Permit / Visa History (if any)</Label><Textarea rows={2} value={form.previous_permit_history} onChange={(e) => setForm({ ...form, previous_permit_history: e.target.value })} /></div>
+
+      <ApplicationDocuments recordType="permit" recordId={editId} permitType={form.permit_type} />
 
       {editId && (
         <div><Label>Status</Label>

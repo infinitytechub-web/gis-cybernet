@@ -21,6 +21,7 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 const VISA_TYPES = ["tourist", "business", "work", "transit", "student", "diplomatic"];
 const STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
@@ -276,6 +277,7 @@ export default function VisaApplications() {
                 </div>
               )}
               <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+              {editId && <ApplicationDocuments recordType="visa" recordId={editId} />}
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editId ? "Update" : "Submit Application"}
               </Button>

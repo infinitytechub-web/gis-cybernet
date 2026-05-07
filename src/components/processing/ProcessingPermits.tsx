@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { PERMIT_TYPES, PROCESSING_PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { ProcessingChecklist, PERMIT_CHECKLIST } from "@/components/applications/ProcessingChecklist";
 
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
 
@@ -41,7 +43,7 @@ export default function ProcessingPermits() {
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<any>(null);
-  const [form, setForm] = useState({ status: "submitted", notes: "", fee_charged: "" });
+  const [form, setForm] = useState<{ status: string; notes: string; fee_charged: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", fee_charged: "", checklist: {} });
 
   useEffect(() => {
     const ch = supabase.channel("processing-permits-realtime")
@@ -73,6 +75,7 @@ export default function ProcessingPermits() {
         processed_by: user?.id,
       };
       if (form.fee_charged !== "") payload.fee_charged = Number(form.fee_charged);
+      payload.processing_checklist = form.checklist;
       const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
       if (error) throw error;
 
@@ -100,7 +103,7 @@ export default function ProcessingPermits() {
   });
 
   const openReview = (p: any) => {
-    setForm({ status: p.status, notes: p.notes || "", fee_charged: p.fee_charged != null ? String(p.fee_charged) : "" });
+    setForm({ status: p.status, notes: p.notes || "", fee_charged: p.fee_charged != null ? String(p.fee_charged) : "", checklist: (p.processing_checklist as Record<string, boolean>) || {} });
     setEditId(p.id);
     setReviewItem(p);
     setOpen(true);
@@ -178,6 +181,8 @@ export default function ProcessingPermits() {
               {reviewItem.purpose && <div className="col-span-2"><span className="text-muted-foreground">Purpose:</span> {reviewItem.purpose}</div>}
             </div>
           )}
+          {reviewItem && <ApplicationDocuments recordType="permit" recordId={reviewItem.id} permitType={reviewItem.permit_type} readOnly />}
+          <ProcessingChecklist items={PERMIT_CHECKLIST} value={form.checklist} onChange={(c) => setForm({ ...form, checklist: c })} />
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Update Status</Label>

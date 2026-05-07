@@ -20,6 +20,8 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { ProcessingChecklist, VISA_CHECKLIST } from "@/components/applications/ProcessingChecklist";
 
 const PROCESSING_STATUSES = ["submitted", "under_review"];
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
@@ -43,7 +45,7 @@ export default function ProcessingVisaApplications() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ status: "submitted", notes: "" });
+  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
 
   useEffect(() => {
     const channel = supabase
@@ -73,7 +75,7 @@ export default function ProcessingVisaApplications() {
       if (!editId) return;
       const existing = applications.find((a: any) => a.id === editId);
       const { error } = await supabase.from("visa_applications")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id })
+        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
         .eq("id", editId);
       if (error) throw error;
 
@@ -107,7 +109,7 @@ export default function ProcessingVisaApplications() {
   const [reviewApp, setReviewApp] = useState<any>(null);
 
   const openReview = (app: any) => {
-    setForm({ status: app.status, notes: app.notes || "" });
+    setForm({ status: app.status, notes: app.notes || "", checklist: (app.processing_checklist as Record<string, boolean>) || {} });
     setEditId(app.id);
     setReviewApp(app);
     setOpen(true);

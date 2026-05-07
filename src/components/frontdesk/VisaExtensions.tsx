@@ -20,6 +20,7 @@ import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { FeeInput } from "@/components/ui/fee-input";
+import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
 const PERMIT_TYPES = [
@@ -294,6 +295,7 @@ export default function VisaExtensions() {
                 </div>
               )}
               <div><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
+              {editId && <ApplicationDocuments recordType="visa_extension" recordId={editId} />}
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? "Saving..." : editId ? "Update" : "Submit Request"}
               </Button>
