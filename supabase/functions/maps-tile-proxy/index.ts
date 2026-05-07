@@ -123,18 +123,40 @@ Deno.serve(async (req) => {
       });
     }
 
-    const session = await getSession(view, apiKey);
+    // 1×1 transparent PNG returned when Google is misconfigured/unreachable.
+    // Returning 200 (instead of 5xx) prevents the client from logging runtime
+    // errors per tile and lets the user fall back to the OSM/Esri base layers.
+    const TRANSPARENT_PNG = Uint8Array.from(atob(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    ), c => c.charCodeAt(0));
+    const fallback = () => new Response(TRANSPARENT_PNG, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "image/png",
+        "Cache-Control": "private, max-age=60",
+        "X-Tile-Fallback": "1",
+      },
+    });
+
+    let session: string;
+    try {
+      session = await getSession(view, apiKey);
+    } catch (e) {
+      console.error("maps-tile-proxy createSession failed", (e as Error).message);
+      SESSIONS.delete(view);
+      return fallback();
+    }
+
     const tileUrl =
       `https://tile.googleapis.com/v1/2dtiles/${z}/${x}/${y}` +
       `?session=${encodeURIComponent(session)}&key=${encodeURIComponent(apiKey)}`;
 
     const tileRes = await fetch(tileUrl);
     if (!tileRes.ok) {
-      // Invalidate cached session on auth-ish failures
       if (tileRes.status === 401 || tileRes.status === 403) SESSIONS.delete(view);
-      return new Response(JSON.stringify({ error: "Tile fetch failed", status: tileRes.status }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("maps-tile-proxy tile fetch failed", tileRes.status);
+      return fallback();
     }
 
     const buf = await tileRes.arrayBuffer();
