@@ -56,6 +56,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
   enquiry: "Enquiry",
   storekeeper: "Storekeeper",
   procurement_officer: "Procurement Officer",
+  medical_officer: "Medical Officer",
   staff: "Staff",
 };
 const ROLE_ORDER: AppRole[] = [

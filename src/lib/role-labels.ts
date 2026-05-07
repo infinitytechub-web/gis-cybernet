@@ -21,6 +21,7 @@ export const ROLE_LABEL: Partial<Record<AppRole, string>> = {
   front_desk: "Front Desk",
   storekeeper: "Storekeeper",
   procurement_officer: "Procurement Officer",
+  medical_officer: "Medical Officer",
   special_duties: "Special Duties",
   staff: "Staff",
 };

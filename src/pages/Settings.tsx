@@ -60,6 +60,7 @@ const roleLabels: Record<AppRole, string> = {
   deputy_shift_supervisor: "Dep. Shift Supervisor",
   storekeeper: "Storekeeper",
   procurement_officer: "Procurement Officer",
+  medical_officer: "Medical Officer",
 };
 
 const roleColors: Record<AppRole, string> = {
@@ -87,6 +88,7 @@ const roleColors: Record<AppRole, string> = {
   deputy_shift_supervisor: "bg-violet-500/15 text-violet-700 border-violet-500/20",
   storekeeper: "bg-amber-500/15 text-amber-700 border-amber-500/20",
   procurement_officer: "bg-emerald-500/15 text-emerald-700 border-emerald-500/20",
+  medical_officer: "bg-rose-500/15 text-rose-700 border-rose-500/20",
 };
 
 export default function Settings() {

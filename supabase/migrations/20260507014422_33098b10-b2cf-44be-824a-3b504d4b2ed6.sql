@@ -1,0 +1,1 @@
+ALTER VIEW public.staff_birthdays SET (security_invoker = on);

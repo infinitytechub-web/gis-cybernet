@@ -32,6 +32,7 @@ import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
 import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
+import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -322,6 +323,9 @@ export default function Dashboard() {
 
       {/* HEALTH LAB+ — visible to all */}
       <HealthLabWidget />
+
+      {/* Birthdays this month — visible to all */}
+      <BirthdayWidget />
 
       {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
       {isAdmin && <SecurityThreatsWidget />}
