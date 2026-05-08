@@ -11,7 +11,7 @@ export type TilesPreflight =
   | { status: "ok" }
   | {
       status: "error";
-      reason: "missing_key" | "api_disabled" | "unknown" | "network";
+      reason: "missing_key" | "api_disabled" | "key_blocked" | "unknown" | "network";
       message: string;
       detail?: string;
     };
