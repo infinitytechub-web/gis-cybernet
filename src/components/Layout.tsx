@@ -30,7 +30,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="border-b bg-card px-4">
             <div className="h-14 flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground" />
@@ -65,7 +65,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {clock.toLocaleTimeString()}
             </div>
           </header>
-          <main className="flex-1 p-3 md:p-6 overflow-auto pb-20 lg:pb-6 scroll-smooth-gpu">
+          <main className="flex-1 min-w-0 max-w-full p-3 md:p-6 overflow-x-hidden overflow-y-auto pb-20 lg:pb-6 scroll-smooth-gpu">
             <WelcomeBanner />
             {children}
           </main>
