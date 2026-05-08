@@ -402,11 +402,11 @@ async function dispatchVarianceAlert(supabase: any, payload: any) {
     Array.isArray(settings?.email_recipients) &&
     settings.email_recipients.length > 0
   ) {
-    const html = `<p>${text}</p><p>Recorded count id: <code>${payload.count_id}</code></p>`;
+    const html = `<p>${htmlText}</p><p>Recorded count id: <code>${esc(payload.count_id)}</code></p>`;
     out.email = await trySendEmail(
       supabase,
       settings.email_recipients,
-      `Inventory Variance Alert — ${payload.item_name}`,
+      `Inventory Variance Alert — ${String(payload.item_name ?? "").replace(/[\r\n]/g, " ").slice(0, 200)}`,
       html,
     );
   }
