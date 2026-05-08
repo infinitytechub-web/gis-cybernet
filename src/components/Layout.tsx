@@ -30,7 +30,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="border-b bg-card px-4">
             <div className="h-14 flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground" />
