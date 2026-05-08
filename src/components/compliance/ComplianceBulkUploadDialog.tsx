@@ -287,7 +287,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>{kind === "documents" ? "Issuing Authority" : "Issuing Body"}</Label>
               <Input value={issuingBody} onChange={(e) => setIssuingBody(e.target.value)} />
