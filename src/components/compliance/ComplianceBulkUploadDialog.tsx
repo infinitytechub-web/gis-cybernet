@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, AlertCircle, Loader2, Upload, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, Upload, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { isPast } from "date-fns";
 import { validateComplianceFile, COMPLIANCE_MAX_BYTES } from "@/lib/compliance-file-validator";
@@ -106,30 +106,24 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
     rows.some((r) => r.status === "pending") &&
     (kind === "documents" ? !!docType : !!certName);
 
-  async function startUpload() {
-    if (!canStart) return;
-    if (!isAdmin && profileId !== ownProfileId) {
-      toast.error("You can only upload to your own profile");
-      return;
-    }
+  async function uploadRows(targetRows: Row[]) {
+    if (!targetRows.length) return { ok: 0, fail: 0 };
     setRunning(true);
     setProgress(0);
     const { data: { user } } = await supabase.auth.getUser();
     const batchId = crypto.randomUUID();
-    const queue = rows.filter((r) => r.status === "pending");
     let done = 0;
     let okCount = 0;
     let failCount = 0;
 
-    // Write each audit row immediately (instead of batching at the end) so the
-    // realtime subscription on the audit dialog reflects per-file outcomes live.
     async function writeAudit(entry: Record<string, unknown>) {
       const { error } = await supabase.from("compliance_upload_audit").insert(entry as any);
       if (error) console.warn("compliance audit insert failed", error);
     }
 
-    for (const row of queue) {
-      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "uploading" } : r)));
+    for (const row of targetRows) {
+      // Reset any previous error message when retrying
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "uploading", message: undefined } : r)));
       let recordId: string | null = null;
       let storedPath: string | null = null;
       try {
@@ -191,7 +185,6 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
       } catch (e: any) {
         failCount++;
         const message = e?.message || "Upload failed";
-        // best-effort cleanup of orphaned object if DB insert failed after upload
         if (storedPath) {
           await supabase.storage.from(BUCKET).remove([storedPath]).catch(() => {});
         }
@@ -211,17 +204,41 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
         setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "error", message } : r)));
       }
       done++;
-      setProgress(Math.round((done / queue.length) * 100));
+      setProgress(Math.round((done / targetRows.length) * 100));
     }
 
     qc.invalidateQueries({ queryKey: ["compliance-upload-audit"] });
     qc.invalidateQueries({ queryKey: [kind === "documents" ? "staff-documents" : "certifications"] });
     setRunning(false);
-    if (failCount === 0) {
-      toast.success(`${okCount} file${okCount === 1 ? "" : "s"} uploaded`);
-    } else {
-      toast.warning(`${okCount} succeeded, ${failCount} failed`);
+    return { ok: okCount, fail: failCount };
+  }
+
+  async function startUpload() {
+    if (!canStart) return;
+    if (!isAdmin && profileId !== ownProfileId) {
+      toast.error("You can only upload to your own profile");
+      return;
     }
+    const queue = rows.filter((r) => r.status === "pending");
+    const { ok, fail } = await uploadRows(queue);
+    if (fail === 0) toast.success(`${ok} file${ok === 1 ? "" : "s"} uploaded`);
+    else toast.warning(`${ok} succeeded, ${fail} failed — tap retry to try again`);
+  }
+
+  async function retryRow(id: string) {
+    const row = rows.find((r) => r.id === id);
+    if (!row || row.status !== "error") return;
+    const { ok, fail } = await uploadRows([row]);
+    if (ok) toast.success("Retry succeeded");
+    else if (fail) toast.error("Retry failed");
+  }
+
+  async function retryAllFailed() {
+    const failed = rows.filter((r) => r.status === "error");
+    if (!failed.length) return;
+    const { ok, fail } = await uploadRows(failed);
+    if (fail === 0) toast.success(`${ok} retried successfully`);
+    else toast.warning(`${ok} succeeded, ${fail} still failing`);
   }
 
   const pending = rows.filter((r) => r.status === "pending").length;
@@ -270,7 +287,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label>{kind === "documents" ? "Issuing Authority" : "Issuing Body"}</Label>
               <Input value={issuingBody} onChange={(e) => setIssuingBody(e.target.value)} />
@@ -311,17 +328,29 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             <div className="rounded-lg border max-h-64 overflow-y-auto divide-y">
               {rows.map((r) => (
                 <div key={r.id} className="flex items-center gap-2 px-3 py-2 text-xs">
-                  {r.status === "pending" && <Badge variant="outline">Pending</Badge>}
-                  {r.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
-                  {r.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-                  {r.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                  {r.status === "pending" && <Badge variant="outline" className="shrink-0">Pending</Badge>}
+                  {r.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />}
+                  {r.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />}
+                  {r.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium" title={r.cleanName}>{r.cleanName}</div>
-                    {r.message && <div className="text-destructive truncate">{r.message}</div>}
+                    {r.message && <div className="text-destructive truncate" title={r.message}>{r.message}</div>}
                   </div>
-                  <span className="text-muted-foreground tabular-nums">{(r.size / 1024).toFixed(0)} KB</span>
+                  <span className="text-muted-foreground tabular-nums shrink-0">{(r.size / 1024).toFixed(0)} KB</span>
+                  {!running && r.status === "error" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-primary hover:text-primary"
+                      onClick={() => retryRow(r.id)}
+                      title="Retry this file"
+                      aria-label="Retry this file"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   {!running && r.status !== "done" && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeRow(r.id)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeRow(r.id)} aria-label="Remove">
                       <X className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -334,7 +363,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium">
-                  {running ? "Uploading…" : "Last batch"}
+                  {running ? "Uploading…" : errored === 0 && completed > 0 ? "Batch complete" : "Last batch"}
                 </span>
                 <span className="tabular-nums text-muted-foreground">{progress}%</span>
               </div>
@@ -343,18 +372,41 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
                 <span className="text-muted-foreground">{pending} pending</span>
                 <span className="text-emerald-700 font-medium">{completed} uploaded</span>
                 {errored > 0 && <span className="text-destructive font-medium">{errored} failed</span>}
-                <span className="ml-auto text-muted-foreground">Audit log updates instantly</span>
+                <span className="ml-auto text-muted-foreground hidden sm:inline">Audit log updates instantly</span>
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-1">
+          {!running && completed > 0 && errored === 0 && pending === 0 && (
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-300/60 bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100 dark:border-emerald-700/50">
+              <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-medium">All {completed} file{completed === 1 ? "" : "s"} uploaded successfully</div>
+                <div className="opacity-80">Records are now visible in the {kind === "documents" ? "documents" : "certifications"} list.</div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
             <div className="text-xs text-muted-foreground">
               {pending} ready · {completed} done · {errored} failed
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={running}>Close</Button>
-              <Button onClick={startUpload} disabled={!canStart} className="gap-1">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={running} className="w-full sm:w-auto">
+                Close
+              </Button>
+              {errored > 0 && !running && (
+                <Button
+                  variant="secondary"
+                  onClick={retryAllFailed}
+                  className="gap-1 w-full sm:w-auto"
+                  title="Retry all failed uploads"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Retry {errored} failed
+                </Button>
+              )}
+              <Button onClick={startUpload} disabled={!canStart} className="gap-1 w-full sm:w-auto">
                 {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {running ? "Uploading..." : `Upload ${pending} file${pending === 1 ? "" : "s"}`}
               </Button>
