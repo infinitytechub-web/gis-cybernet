@@ -112,12 +112,18 @@ Deno.serve(async (req) => {
         SESSIONS.delete("streets");
         const msg = (e as Error).message ?? "";
         const disabled = /SERVICE_DISABLED|accessNotConfigured|has not been used in project|Map Tiles API/i.test(msg);
+        const blocked = /API_KEY_SERVICE_BLOCKED|are blocked|PERMISSION_DENIED|forbidden|API key not valid|API_KEY_INVALID/i.test(msg);
+        const reason = disabled ? "api_disabled" : blocked ? "key_blocked" : "unknown";
+        const message =
+          reason === "api_disabled"
+            ? "Google Map Tiles API is disabled for this project. Enable it in Google Cloud Console, then refresh."
+            : reason === "key_blocked"
+              ? "Google blocked this API key for the Map Tiles API. In Google Cloud Console: enable 'Map Tiles API', remove API restrictions on the key (or whitelist tile.googleapis.com), and ensure billing is active."
+              : "Google tile service is unavailable. Falling back to OSM/Esri layers.";
         return new Response(JSON.stringify({
           ok: false,
-          reason: disabled ? "api_disabled" : "unknown",
-          message: disabled
-            ? "Google Map Tiles API is disabled for this project. Enable it in Google Cloud Console, then refresh."
-            : "Google tile service is unavailable. Falling back to OSM/Esri layers.",
+          reason,
+          message,
           detail: msg.slice(0, 500),
         }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
