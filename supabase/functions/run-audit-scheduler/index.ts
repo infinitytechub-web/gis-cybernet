@@ -368,11 +368,21 @@ async function dispatchVarianceAlert(supabase: any, payload: any) {
     .limit(1)
     .maybeSingle();
 
+  const esc = (s: unknown) =>
+    String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   const locTxt = payload.item_location ? ` [${payload.item_location}]` : "";
   const thTxt = payload.threshold_qty
-    ? ` (threshold ${payload.threshold_qty}/${payload.threshold_value})`
+    ? ` (threshold ${Number(payload.threshold_qty)}/${Number(payload.threshold_value)})`
     : "";
+  // Plain-text version for webhooks/subject (raw values acceptable here).
   const text = `⚠️ Variance alert: ${payload.item_name}${locTxt} — variance ${payload.variance_qty} ${payload.item_unit} (≈ ₵${payload.variance_value})${thTxt}.`;
+  // HTML-escaped version for email body.
+  const htmlText = `⚠️ Variance alert: ${esc(payload.item_name)}${esc(locTxt)} — variance ${esc(payload.variance_qty)} ${esc(payload.item_unit)} (≈ ₵${esc(payload.variance_value)})${esc(thTxt)}.`;
   const out: any = {};
 
   // Per-override webhook takes precedence over the global one
