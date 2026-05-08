@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
-import { MapLegend } from "@/components/maps/MapLegend";
 import { MapTilesStatusBanner } from "@/components/maps/MapTilesStatusBanner";
 
 interface GpsLiveMapProps {
@@ -93,6 +92,49 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
     mapRef.current = map;
 
     addBaseLayerSwitcher(map, { dark, defaultLayer: "Streets" });
+
+    // Fullscreen toggle control (top-left, below zoom buttons).
+    const FullscreenControl = L.Control.extend({
+      options: { position: "topleft" as L.ControlPosition },
+      onAdd: () => {
+        const btn = L.DomUtil.create("a", "leaflet-bar leaflet-control leaflet-control-custom") as HTMLAnchorElement;
+        btn.href = "#";
+        btn.title = "Toggle fullscreen";
+        btn.setAttribute("role", "button");
+        btn.setAttribute("aria-label", "Toggle fullscreen");
+        btn.style.cssText = "background:#fff;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;cursor:pointer;color:#333";
+        const enterIcon = "⛶";
+        const exitIcon = "🗙";
+        btn.textContent = enterIcon;
+        const target = () => containerRef.current?.parentElement as HTMLElement | null;
+        const sync = () => {
+          const isFs = !!document.fullscreenElement && document.fullscreenElement === target();
+          btn.textContent = isFs ? exitIcon : enterIcon;
+          btn.title = isFs ? "Exit fullscreen" : "Toggle fullscreen";
+          // Resize map to fit new dimensions.
+          window.setTimeout(() => map.invalidateSize(), 100);
+        };
+        L.DomEvent.on(btn, "click", (e) => {
+          L.DomEvent.preventDefault(e);
+          L.DomEvent.stopPropagation(e);
+          const el = target();
+          if (!el) return;
+          if (!document.fullscreenElement) {
+            el.requestFullscreen?.().catch(() => {});
+          } else {
+            document.exitFullscreen?.().catch(() => {});
+          }
+        });
+        document.addEventListener("fullscreenchange", sync);
+        (btn as unknown as { _onRemove?: () => void })._onRemove = () =>
+          document.removeEventListener("fullscreenchange", sync);
+        return btn;
+      },
+      onRemove: function () {
+        // no-op; listener cleanup handled above via container element if needed
+      },
+    });
+    new FullscreenControl().addTo(map);
 
     // Build a custom DivIcon so we can target the dot/ring with CSS animations.
     const wrap = document.createElement("div");
@@ -200,7 +242,7 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
   return (
     <div className="relative w-full space-y-2">
       <MapTilesStatusBanner />
-      <div className="relative w-full">
+      <div className="relative w-full [&:fullscreen]:bg-background [&:fullscreen]:p-0 [&:fullscreen>div]:!h-screen [&:fullscreen>div]:rounded-none">
         <div ref={containerRef} style={{ height }} className="w-full rounded-md overflow-hidden border" />
       </div>
     </div>
