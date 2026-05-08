@@ -242,7 +242,7 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
   return (
     <div className="relative w-full space-y-2">
       <MapTilesStatusBanner />
-      <div className="relative w-full">
+      <div className="relative w-full [&:fullscreen]:bg-background [&:fullscreen]:p-0 [&:fullscreen>div]:!h-screen [&:fullscreen>div]:rounded-none">
         <div ref={containerRef} style={{ height }} className="w-full rounded-md overflow-hidden border" />
       </div>
     </div>
