@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
-import gisLogo from "@/assets/gis-logo.jpeg";
+import gisLogo from "@/assets/gis-logo-192.webp";
 import { INTERLINK_LABELS } from "@/lib/interlink-types";
 import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
@@ -286,7 +286,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" aria-label="Primary navigation" aria-expanded={!collapsed}>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <img src={gisLogo} alt="GIS" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
+          <img src={gisLogo} alt="GIS" width={40} height={40} decoding="async" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-bold text-sidebar-primary-foreground">{org_name.length > 20 ? org_name.slice(0, 20) + "…" : org_name}</span>

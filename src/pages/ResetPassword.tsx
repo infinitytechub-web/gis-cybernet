@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KeyRound, CheckCircle } from "lucide-react";
 import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
-import gisLogo from "@/assets/gis-logo.jpeg";
+import gisLogo from "@/assets/gis-logo-192.webp";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -97,7 +97,7 @@ export default function ResetPassword() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
         <CardHeader className="text-center space-y-4 pb-2">
-          <img src={gisLogo} alt="GIS" className="h-20 w-20 rounded-full object-cover mx-auto border-2 border-primary/30" />
+          <img src={gisLogo} alt="GIS" width={80} height={80} decoding="async" className="h-20 w-20 rounded-full object-cover mx-auto border-2 border-primary/30" />
           <div>
             <h1 className="text-xl font-bold text-secondary">Set New Password</h1>
             <p className="text-sm text-muted-foreground">Enter your new password below</p>
