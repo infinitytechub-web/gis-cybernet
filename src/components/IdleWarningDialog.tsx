@@ -34,11 +34,9 @@ export function IdleWarningDialog() {
 
   return (
     <AlertDialog open={warning}>
-      <AlertDialogContent
-        // Block the auto-close behaviours so the user is forced to confirm.
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
+      {/* No onOpenChange handler is wired, so Esc / overlay clicks cannot
+          dismiss the modal — only the action button below resets the timer. */}
+      <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-destructive" />
