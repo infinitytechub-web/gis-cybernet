@@ -363,7 +363,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium">
-                  {running ? "Uploading…" : "Last batch"}
+                  {running ? "Uploading…" : errored === 0 && completed > 0 ? "Batch complete" : "Last batch"}
                 </span>
                 <span className="tabular-nums text-muted-foreground">{progress}%</span>
               </div>
@@ -372,18 +372,41 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
                 <span className="text-muted-foreground">{pending} pending</span>
                 <span className="text-emerald-700 font-medium">{completed} uploaded</span>
                 {errored > 0 && <span className="text-destructive font-medium">{errored} failed</span>}
-                <span className="ml-auto text-muted-foreground">Audit log updates instantly</span>
+                <span className="ml-auto text-muted-foreground hidden sm:inline">Audit log updates instantly</span>
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 pt-1">
+          {!running && completed > 0 && errored === 0 && pending === 0 && (
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-300/60 bg-emerald-50 p-3 text-xs text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100 dark:border-emerald-700/50">
+              <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-medium">All {completed} file{completed === 1 ? "" : "s"} uploaded successfully</div>
+                <div className="opacity-80">Records are now visible in the {kind === "documents" ? "documents" : "certifications"} list.</div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
             <div className="text-xs text-muted-foreground">
               {pending} ready · {completed} done · {errored} failed
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={running}>Close</Button>
-              <Button onClick={startUpload} disabled={!canStart} className="gap-1">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={running} className="w-full sm:w-auto">
+                Close
+              </Button>
+              {errored > 0 && !running && (
+                <Button
+                  variant="secondary"
+                  onClick={retryAllFailed}
+                  className="gap-1 w-full sm:w-auto"
+                  title="Retry all failed uploads"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Retry {errored} failed
+                </Button>
+              )}
+              <Button onClick={startUpload} disabled={!canStart} className="gap-1 w-full sm:w-auto">
                 {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {running ? "Uploading..." : `Upload ${pending} file${pending === 1 ? "" : "s"}`}
               </Button>
