@@ -47,6 +47,8 @@ async function fetchLovableStatus(token: string): Promise<{ status: string; raw:
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (!isInternalCaller(req)) return unauthorizedResponse(corsHeaders);
+
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
