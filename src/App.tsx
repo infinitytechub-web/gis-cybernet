@@ -107,6 +107,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
         <ForcedSignoutMount />
+        <IdleWarningDialog />
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
