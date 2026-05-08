@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, AlertCircle, Loader2, Upload, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, Loader2, Upload, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { isPast } from "date-fns";
 import { validateComplianceFile, COMPLIANCE_MAX_BYTES } from "@/lib/compliance-file-validator";
