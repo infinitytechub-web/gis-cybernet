@@ -2,9 +2,26 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const ACTIVITY_EVENTS: (keyof DocumentEventMap | keyof WindowEventMap)[] = [
-  "mousemove", "mousedown", "keydown", "touchstart", "scroll", "visibilitychange",
-];
+/**
+ * Activity events. We deliberately listen for a *broad* set so that any
+ * realistic user interaction (typing, clicking, scrolling inside an
+ * overflow container, touch, pointer, wheel, form input) resets the idle
+ * timer. Events are registered on `window` with capture so child handlers
+ * that call stopPropagation cannot starve us.
+ */
+const ACTIVITY_EVENTS = [
+  "mousemove",
+  "mousedown",
+  "click",
+  "pointerdown",
+  "keydown",
+  "keypress",
+  "wheel",
+  "scroll",
+  "touchstart",
+  "touchmove",
+  "input",
+] as const;
 
 interface Options {
   enabled: boolean;
@@ -16,62 +33,93 @@ interface Options {
 }
 
 /**
- * Signs the user out after `idleMinutes` of inactivity, with a warning
- * toast `warnSeconds` before the logout fires.
- * Activity = mouse, keyboard, touch, scroll, or tab becoming visible.
+ * Signs the user out after `idleMinutes` of *true* inactivity, with a
+ * warning toast `warnSeconds` before the logout fires.
+ *
+ * Implementation: we record a `lastActivity` timestamp on every input
+ * event and poll once per second. The clock-based check is immune to
+ * stale closures, missed setTimeouts (background tab throttling), or
+ * dependency churn that would otherwise reset / fire timers incorrectly.
  */
 export function useIdleTimeout({ enabled, idleMinutes, warnSeconds, onLogout }: Options) {
-  const idleTimer = useRef<number | null>(null);
-  const warnTimer = useRef<number | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
   const warnedRef = useRef(false);
+  const loggedOutRef = useRef(false);
+
+  // Keep latest config in refs so the polling interval never goes stale.
+  const idleMinutesRef = useRef(idleMinutes);
+  const warnSecondsRef = useRef(warnSeconds);
+  const onLogoutRef = useRef(onLogout);
+  useEffect(() => { idleMinutesRef.current = idleMinutes; }, [idleMinutes]);
+  useEffect(() => { warnSecondsRef.current = warnSeconds; }, [warnSeconds]);
+  useEffect(() => { onLogoutRef.current = onLogout; }, [onLogout]);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const idleMs = Math.max(60_000, Math.round(idleMinutes * 60_000));
-    const warnMs = Math.max(5_000, Math.min(idleMs - 5_000, Math.round(warnSeconds * 1_000)));
+    loggedOutRef.current = false;
+    warnedRef.current = false;
+    lastActivityRef.current = Date.now();
 
-    const clearTimers = () => {
-      if (idleTimer.current) window.clearTimeout(idleTimer.current);
-      if (warnTimer.current) window.clearTimeout(warnTimer.current);
-      idleTimer.current = null;
-      warnTimer.current = null;
-    };
-
-    const doLogout = async () => {
-      clearTimers();
-      try { await supabase.auth.signOut(); } catch { /* noop */ }
-      toast.error(`Signed out due to ${idleMinutes} minute${idleMinutes === 1 ? "" : "s"} of inactivity.`);
-      onLogout?.();
-    };
-
-    const reset = () => {
-      clearTimers();
-      warnedRef.current = false;
-      warnTimer.current = window.setTimeout(() => {
-        if (warnedRef.current) return;
-        warnedRef.current = true;
-        toast.warning(`You will be signed out in ${Math.round(warnMs / 1000)} seconds due to inactivity.`);
-      }, idleMs - warnMs);
-      idleTimer.current = window.setTimeout(doLogout, idleMs);
+    const markActive = () => {
+      // Any signal of life resets the warning state.
+      lastActivityRef.current = Date.now();
+      if (warnedRef.current) {
+        warnedRef.current = false;
+        toast.dismiss("idle-warn");
+      }
     };
 
     const onActivity = () => {
-      if (document.visibilityState === "hidden") return;
-      reset();
+      // Ignore events fired while the tab is hidden — those don't represent
+      // a present user, and we don't want background scripts to keep the
+      // session alive forever.
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      markActive();
+    };
+
+    const onVisibility = () => {
+      // When the user returns to the tab, count that as fresh activity.
+      if (document.visibilityState === "visible") markActive();
     };
 
     ACTIVITY_EVENTS.forEach((evt) => {
-      window.addEventListener(evt as string, onActivity, { passive: true });
+      window.addEventListener(evt, onActivity, { passive: true, capture: true });
     });
+    document.addEventListener("visibilitychange", onVisibility);
 
-    reset();
+    const tick = window.setInterval(async () => {
+      if (loggedOutRef.current) return;
+      const idleMs = Math.max(60_000, Math.round(idleMinutesRef.current * 60_000));
+      const warnMs = Math.max(5_000, Math.min(idleMs - 5_000, Math.round(warnSecondsRef.current * 1_000)));
+      const elapsed = Date.now() - lastActivityRef.current;
+
+      if (elapsed >= idleMs) {
+        loggedOutRef.current = true;
+        try { await supabase.auth.signOut(); } catch { /* noop */ }
+        const mins = idleMinutesRef.current;
+        toast.error(`Signed out due to ${mins} minute${mins === 1 ? "" : "s"} of inactivity.`);
+        onLogoutRef.current?.();
+        return;
+      }
+
+      if (!warnedRef.current && elapsed >= idleMs - warnMs) {
+        warnedRef.current = true;
+        const remaining = Math.max(1, Math.round((idleMs - elapsed) / 1000));
+        toast.warning(`You will be signed out in ${remaining} seconds due to inactivity.`, {
+          id: "idle-warn",
+        });
+      }
+    }, 1000);
 
     return () => {
-      clearTimers();
+      window.clearInterval(tick);
       ACTIVITY_EVENTS.forEach((evt) => {
-        window.removeEventListener(evt as string, onActivity);
+        window.removeEventListener(evt, onActivity, { capture: true } as EventListenerOptions);
       });
+      document.removeEventListener("visibilitychange", onVisibility);
+      toast.dismiss("idle-warn");
     };
-  }, [enabled, idleMinutes, warnSeconds, onLogout]);
+    // Only re-bind when auth toggles. Config changes flow through refs.
+  }, [enabled]);
 }
