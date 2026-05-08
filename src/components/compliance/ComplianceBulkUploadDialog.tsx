@@ -328,17 +328,29 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             <div className="rounded-lg border max-h-64 overflow-y-auto divide-y">
               {rows.map((r) => (
                 <div key={r.id} className="flex items-center gap-2 px-3 py-2 text-xs">
-                  {r.status === "pending" && <Badge variant="outline">Pending</Badge>}
-                  {r.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
-                  {r.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
-                  {r.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive" />}
+                  {r.status === "pending" && <Badge variant="outline" className="shrink-0">Pending</Badge>}
+                  {r.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />}
+                  {r.status === "done" && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />}
+                  {r.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="truncate font-medium" title={r.cleanName}>{r.cleanName}</div>
-                    {r.message && <div className="text-destructive truncate">{r.message}</div>}
+                    {r.message && <div className="text-destructive truncate" title={r.message}>{r.message}</div>}
                   </div>
-                  <span className="text-muted-foreground tabular-nums">{(r.size / 1024).toFixed(0)} KB</span>
+                  <span className="text-muted-foreground tabular-nums shrink-0">{(r.size / 1024).toFixed(0)} KB</span>
+                  {!running && r.status === "error" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-primary hover:text-primary"
+                      onClick={() => retryRow(r.id)}
+                      title="Retry this file"
+                      aria-label="Retry this file"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                   {!running && r.status !== "done" && (
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeRow(r.id)}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeRow(r.id)} aria-label="Remove">
                       <X className="h-3.5 w-3.5" />
                     </Button>
                   )}
