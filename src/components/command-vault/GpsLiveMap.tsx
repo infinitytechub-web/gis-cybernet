@@ -93,6 +93,49 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
 
     addBaseLayerSwitcher(map, { dark, defaultLayer: "Streets" });
 
+    // Fullscreen toggle control (top-left, below zoom buttons).
+    const FullscreenControl = L.Control.extend({
+      options: { position: "topleft" as L.ControlPosition },
+      onAdd: () => {
+        const btn = L.DomUtil.create("a", "leaflet-bar leaflet-control leaflet-control-custom") as HTMLAnchorElement;
+        btn.href = "#";
+        btn.title = "Toggle fullscreen";
+        btn.setAttribute("role", "button");
+        btn.setAttribute("aria-label", "Toggle fullscreen");
+        btn.style.cssText = "background:#fff;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;cursor:pointer;color:#333";
+        const enterIcon = "⛶";
+        const exitIcon = "🗙";
+        btn.textContent = enterIcon;
+        const target = () => containerRef.current?.parentElement as HTMLElement | null;
+        const sync = () => {
+          const isFs = !!document.fullscreenElement && document.fullscreenElement === target();
+          btn.textContent = isFs ? exitIcon : enterIcon;
+          btn.title = isFs ? "Exit fullscreen" : "Toggle fullscreen";
+          // Resize map to fit new dimensions.
+          window.setTimeout(() => map.invalidateSize(), 100);
+        };
+        L.DomEvent.on(btn, "click", (e) => {
+          L.DomEvent.preventDefault(e);
+          L.DomEvent.stopPropagation(e);
+          const el = target();
+          if (!el) return;
+          if (!document.fullscreenElement) {
+            el.requestFullscreen?.().catch(() => {});
+          } else {
+            document.exitFullscreen?.().catch(() => {});
+          }
+        });
+        document.addEventListener("fullscreenchange", sync);
+        (btn as unknown as { _onRemove?: () => void })._onRemove = () =>
+          document.removeEventListener("fullscreenchange", sync);
+        return btn;
+      },
+      onRemove: function () {
+        // no-op; listener cleanup handled above via container element if needed
+      },
+    });
+    new FullscreenControl().addTo(map);
+
     // Build a custom DivIcon so we can target the dot/ring with CSS animations.
     const wrap = document.createElement("div");
     wrap.className = "gps-live-marker-wrap";
