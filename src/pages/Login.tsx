@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,20 @@ export default function Login() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Idle-time prefetch of the post-login Dashboard chunk so navigation after
+  // sign-in is instant. No UI impact; runs only when the browser is idle.
+  useEffect(() => {
+    const ric: (cb: () => void) => number =
+      (window as any).requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500));
+    const cic: (id: number) => void =
+      (window as any).cancelIdleCallback ?? ((id: number) => window.clearTimeout(id));
+    const handle = ric(() => {
+      void import("./Dashboard");
+      void import("@/components/Layout");
+    });
+    return () => cic(handle);
+  }, []);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
