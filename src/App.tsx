@@ -10,13 +10,15 @@ import { Layout } from "@/components/Layout";
 import { lazy, Suspense } from "react";
 import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
 
-// Eagerly loaded (lightweight pages)
+// Eagerly loaded (entry/LCP page only)
 import Index from "./pages/Index";
 import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
-import ForcePasswordChange from "./pages/ForcePasswordChange";
-import NotFound from "./pages/NotFound";
-import Unsubscribe from "./pages/Unsubscribe";
+
+// Lazy-loaded (auth side-routes & error pages, rarely the entry)
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ForcePasswordChange = lazy(() => import("./pages/ForcePasswordChange"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 // Lazy-loaded pages (contain heavy deps: recharts, jspdf, xlsx)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
