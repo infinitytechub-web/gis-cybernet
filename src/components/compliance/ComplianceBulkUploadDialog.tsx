@@ -106,30 +106,24 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
     rows.some((r) => r.status === "pending") &&
     (kind === "documents" ? !!docType : !!certName);
 
-  async function startUpload() {
-    if (!canStart) return;
-    if (!isAdmin && profileId !== ownProfileId) {
-      toast.error("You can only upload to your own profile");
-      return;
-    }
+  async function uploadRows(targetRows: Row[]) {
+    if (!targetRows.length) return { ok: 0, fail: 0 };
     setRunning(true);
     setProgress(0);
     const { data: { user } } = await supabase.auth.getUser();
     const batchId = crypto.randomUUID();
-    const queue = rows.filter((r) => r.status === "pending");
     let done = 0;
     let okCount = 0;
     let failCount = 0;
 
-    // Write each audit row immediately (instead of batching at the end) so the
-    // realtime subscription on the audit dialog reflects per-file outcomes live.
     async function writeAudit(entry: Record<string, unknown>) {
       const { error } = await supabase.from("compliance_upload_audit").insert(entry as any);
       if (error) console.warn("compliance audit insert failed", error);
     }
 
-    for (const row of queue) {
-      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "uploading" } : r)));
+    for (const row of targetRows) {
+      // Reset any previous error message when retrying
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "uploading", message: undefined } : r)));
       let recordId: string | null = null;
       let storedPath: string | null = null;
       try {
@@ -191,7 +185,6 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
       } catch (e: any) {
         failCount++;
         const message = e?.message || "Upload failed";
-        // best-effort cleanup of orphaned object if DB insert failed after upload
         if (storedPath) {
           await supabase.storage.from(BUCKET).remove([storedPath]).catch(() => {});
         }
@@ -211,17 +204,41 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
         setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, status: "error", message } : r)));
       }
       done++;
-      setProgress(Math.round((done / queue.length) * 100));
+      setProgress(Math.round((done / targetRows.length) * 100));
     }
 
     qc.invalidateQueries({ queryKey: ["compliance-upload-audit"] });
     qc.invalidateQueries({ queryKey: [kind === "documents" ? "staff-documents" : "certifications"] });
     setRunning(false);
-    if (failCount === 0) {
-      toast.success(`${okCount} file${okCount === 1 ? "" : "s"} uploaded`);
-    } else {
-      toast.warning(`${okCount} succeeded, ${failCount} failed`);
+    return { ok: okCount, fail: failCount };
+  }
+
+  async function startUpload() {
+    if (!canStart) return;
+    if (!isAdmin && profileId !== ownProfileId) {
+      toast.error("You can only upload to your own profile");
+      return;
     }
+    const queue = rows.filter((r) => r.status === "pending");
+    const { ok, fail } = await uploadRows(queue);
+    if (fail === 0) toast.success(`${ok} file${ok === 1 ? "" : "s"} uploaded`);
+    else toast.warning(`${ok} succeeded, ${fail} failed — tap retry to try again`);
+  }
+
+  async function retryRow(id: string) {
+    const row = rows.find((r) => r.id === id);
+    if (!row || row.status !== "error") return;
+    const { ok, fail } = await uploadRows([row]);
+    if (ok) toast.success("Retry succeeded");
+    else if (fail) toast.error("Retry failed");
+  }
+
+  async function retryAllFailed() {
+    const failed = rows.filter((r) => r.status === "error");
+    if (!failed.length) return;
+    const { ok, fail } = await uploadRows(failed);
+    if (fail === 0) toast.success(`${ok} retried successfully`);
+    else toast.warning(`${ok} succeeded, ${fail} still failing`);
   }
 
   const pending = rows.filter((r) => r.status === "pending").length;
