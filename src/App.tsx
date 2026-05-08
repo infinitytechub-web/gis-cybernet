@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Layout } from "@/components/Layout";
 import { lazy, Suspense } from "react";
 import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
+import { IdleWarningDialog } from "@/components/IdleWarningDialog";
 
 // Eagerly loaded (entry/LCP page only)
 import Index from "./pages/Index";
@@ -107,6 +108,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
         <ForcedSignoutMount />
+        <IdleWarningDialog />
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
