@@ -4,9 +4,9 @@
  * detection patterns to non-command-tier roles.
  *
  * Rules enforced by scanning every supabase/migrations/*.sql file:
- *   1. Any CREATE POLICY ... ON [public.]firewall_rules FOR SELECT (or ALL)
- *      MUST reference has_role(..., 'admin') in its USING clause.
- *   2. Disallow USING (is_enabled = ...) or USING (true) on firewall_rules.
+ *   - Any CREATE POLICY ... ON [public.]firewall_rules with a USING clause
+ *     (SELECT or ALL) MUST reference has_role(..., 'admin') in that USING.
+ *   - Disallow USING (is_enabled ...) or USING (true) on firewall_rules.
  *
  * Fails the build with ::error file= annotations on the offending lines.
  */
@@ -20,33 +20,39 @@ const files = readdirSync(MIG_DIR)
   .filter((f) => f.endsWith(".sql"))
   .map((f) => join(MIG_DIR, f));
 
-const policyRe =
-  /CREATE\s+POLICY[\s\S]*?ON\s+(?:public\.)?firewall_rules[\s\S]*?(?:;)/gi;
+function lineOf(sql, idx) {
+  return sql.slice(0, idx).split("\n").length;
+}
 
 for (const file of files) {
   const sql = readFileSync(file, "utf8");
-  const lines = sql.split("\n");
-  let m;
-  policyRe.lastIndex = 0;
-  while ((m = policyRe.exec(sql)) !== null) {
-    const stmt = m[0];
-    const startLine = sql.slice(0, m.index).split("\n").length;
-    const isWriteOnly = /\bFOR\s+(INSERT|UPDATE|DELETE)\b/i.test(stmt);
-    if (isWriteOnly) continue; // write-only policies are not the concern here
+  // Split on semicolons that end a statement (rough but adequate for migrations).
+  let cursor = 0;
+  for (const raw of sql.split(/;/)) {
+    const stmt = raw;
+    const stmtStart = cursor;
+    cursor += raw.length + 1; // +1 for the consumed semicolon
 
-    const requiresAdmin = /has_role\s*\([^)]*'admin'/i.test(stmt);
+    // Only inspect CREATE POLICY ... ON ... firewall_rules statements.
+    if (!/CREATE\s+POLICY\b/i.test(stmt)) continue;
+    if (!/ON\s+(?:public\.)?firewall_rules\b/i.test(stmt)) continue;
+
+    // Only enforce on policies with a USING clause (read side).
+    const usingMatch = /USING\s*\(([\s\S]*?)\)\s*(?:WITH\s+CHECK|$)/i.exec(stmt);
+    if (!usingMatch) continue;
+    const usingExpr = usingMatch[1];
+
     const permissive =
-      /USING\s*\(\s*true\s*\)/i.test(stmt) ||
-      /USING\s*\(\s*is_enabled\b/i.test(stmt);
+      /^\s*true\s*$/i.test(usingExpr) || /\bis_enabled\b/i.test(usingExpr);
+    const requiresAdmin = /has_role\s*\([^)]*'admin'/i.test(usingExpr);
 
     if (permissive || !requiresAdmin) {
       failed++;
+      const lineNo = lineOf(sql, stmtStart + stmt.search(/CREATE\s+POLICY/i));
       console.error(
-        `::error file=${file},line=${startLine}::firewall_rules policy must restrict reads to command tier (has_role(...,'admin') or oic/2ic). Permissive or role-less USING clause detected.`
+        `::error file=${file},line=${lineNo}::firewall_rules policy USING clause must require has_role(...,'admin') and must not be permissive (true / is_enabled).`
       );
-      // Echo the offending statement to logs for context.
-      const snippet = lines.slice(startLine - 1, startLine + 6).join("\n");
-      console.error(snippet);
+      console.error(stmt.trim().split("\n").slice(0, 8).join("\n"));
     }
   }
 }
