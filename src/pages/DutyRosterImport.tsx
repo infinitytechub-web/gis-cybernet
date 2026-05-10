@@ -192,25 +192,35 @@ export default function DutyRosterImport() {
     queryKey: ["roster-preview-directory"],
     enabled: !!parsed && parsed.rows.length > 0 && isAdminOrSupervisor,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group");
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        id: string; first_name: string | null; last_name: string | null;
-        staff_id: string | null; shift_group: string | null;
-      }>;
+      const [{ data: profs, error: e1 }, { data: depts, error: e2 }] = await Promise.all([
+        supabase.from("profiles").select("id, first_name, last_name, staff_id, shift_group, department_id, office"),
+        supabase.from("departments").select("id, name"),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const deptMap = new Map<string, string>();
+      (depts ?? []).forEach((d: any) => deptMap.set(d.id, d.name));
+      return {
+        profiles: (profs ?? []) as Array<{
+          id: string; first_name: string | null; last_name: string | null;
+          staff_id: string | null; shift_group: string | null;
+          department_id: string | null; office: string | null;
+        }>,
+        deptMap,
+      };
     },
   });
 
   const previewPlan = useMemo(() => {
     if (!parsed || !directory.data) return null;
-    const dir = directory.data;
+    const { profiles: dir, deptMap } = directory.data;
     const upper = (s: string | null | undefined) => (s ?? "").toUpperCase().trim();
+    const emptyShifts = () => ({ A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>);
 
     const matches: Array<{
       shift: "A"|"B"|"C"|"D"; staff_name: string; staff_id: string | null;
       previous: string | null; next: "A"|"B"|"C"|"D"; status: "matched"|"new";
+      department: string; office: string;
     }> = [];
 
     parsed.rows.forEach((r) => {
@@ -227,6 +237,10 @@ export default function DutyRosterImport() {
           upper(x.last_name).startsWith(upper(first))
         );
       }
+      const department =
+        (p?.department_id && deptMap.get(p.department_id)) ||
+        (r.unit?.trim() ? r.unit.trim() : "Unassigned");
+      const office = p?.office?.trim() || "Unassigned";
       matches.push({
         shift: r.shift,
         staff_name: p ? `${p.last_name ?? ""}, ${p.first_name ?? ""}` : r.name,
@@ -234,19 +248,39 @@ export default function DutyRosterImport() {
         previous: p?.shift_group ?? null,
         next: r.shift,
         status: p ? "matched" : "new",
+        department,
+        office,
       });
     });
 
-    const summary = { A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>;
+    const summary = emptyShifts();
     let changed = 0, kept = 0, created = 0;
+    const byDepartment = new Map<string, Record<"A"|"B"|"C"|"D", number> & { total: number }>();
+    const byOffice = new Map<string, Record<"A"|"B"|"C"|"D", number> & { total: number }>();
+    const bump = (m: Map<string, any>, key: string, shift: "A"|"B"|"C"|"D") => {
+      let row = m.get(key);
+      if (!row) { row = { ...emptyShifts(), total: 0 }; m.set(key, row); }
+      row[shift]++; row.total++;
+    };
     matches.forEach((m) => {
       summary[m.next]++;
       if (m.status === "new") created++;
       else if (m.previous === m.next) kept++;
       else changed++;
+      bump(byDepartment, m.department, m.next);
+      bump(byOffice, m.office, m.next);
     });
-    return { matches, summary, changed, kept, created };
+    const sortRows = (m: Map<string, any>) =>
+      Array.from(m.entries())
+        .map(([name, v]) => ({ name, ...v }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    return {
+      matches, summary, changed, kept, created,
+      byDepartment: sortRows(byDepartment),
+      byOffice: sortRows(byOffice),
+    };
   }, [parsed, directory.data]);
+
 
 
   if (loading) return null;
@@ -264,7 +298,7 @@ export default function DutyRosterImport() {
 
   const exportPreviewCSV = () => {
     if (!previewPlan) { toast.error("Preview not ready"); return; }
-    const header = ["Shift", "Staff Name", "Staff ID", "Current Shift", "Will Become", "Status"];
+    const header = ["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current Shift", "Will Become", "Status"];
     const lines = [header.join(",")];
     const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
     previewPlan.matches.forEach((m) => {
@@ -272,6 +306,8 @@ export default function DutyRosterImport() {
         m.shift,
         esc(m.staff_name),
         esc(m.staff_id ?? ""),
+        esc(m.department),
+        esc(m.office),
         esc(m.status === "new" ? "new stub" : (m.previous ?? "")),
         `Shift ${m.next}`,
         m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
@@ -283,6 +319,21 @@ export default function DutyRosterImport() {
     lines.push(`# Changing,${previewPlan.changed}`);
     lines.push(`# Unchanged,${previewPlan.kept}`);
     lines.push(`# New stubs,${previewPlan.created}`);
+
+    lines.push("");
+    lines.push("## By Department");
+    lines.push(["Department", "Shift A", "Shift B", "Shift C", "Shift D", "Total"].join(","));
+    previewPlan.byDepartment.forEach((r) => {
+      lines.push([esc(r.name), r.A, r.B, r.C, r.D, r.total].join(","));
+    });
+
+    lines.push("");
+    lines.push("## By Office");
+    lines.push(["Office", "Shift A", "Shift B", "Shift C", "Shift D", "Total"].join(","));
+    previewPlan.byOffice.forEach((r) => {
+      lines.push([esc(r.name), r.A, r.B, r.C, r.D, r.total].join(","));
+    });
+
     downloadCSVString(lines.join("\n"), `schedule-preview_${effectiveDate}.csv`);
     toast.success("CSV exported");
   };
@@ -297,28 +348,61 @@ export default function DutyRosterImport() {
     const summary = `Shift A: ${previewPlan.summary.A}   Shift B: ${previewPlan.summary.B}   Shift C: ${previewPlan.summary.C}   Shift D: ${previewPlan.summary.D}   |   Changing: ${previewPlan.changed}   Unchanged: ${previewPlan.kept}   New stubs: ${previewPlan.created}`;
     doc.text(summary, 40, 74);
 
+    const headStyles = { fillColor: [30, 64, 35] as [number, number, number], textColor: 255 };
+    const baseStyles = { fontSize: 8, cellPadding: 3 };
+    const footer = () => {
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.text(
+        `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
+        40, doc.internal.pageSize.getHeight() - 20,
+      );
+    };
+
     autoTable(doc, {
       startY: 90,
-      head: [["Shift", "Staff Name", "Staff ID", "Current", "Will Become", "Status"]],
+      head: [["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current", "Will Become", "Status"]],
       body: previewPlan.matches.map((m) => [
         m.shift,
         m.staff_name,
         m.staff_id ?? "—",
+        m.department,
+        m.office,
         m.status === "new" ? "new stub" : (m.previous ?? "—"),
         `Shift ${m.next}`,
         m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
       ]),
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [30, 64, 35], textColor: 255 },
-      didDrawPage: () => {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
-        doc.setFontSize(8);
-        doc.text(
-          `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
-          40, doc.internal.pageSize.getHeight() - 20,
-        );
-      },
+      styles: baseStyles,
+      headStyles,
+      didDrawPage: footer,
+    });
+
+    doc.addPage();
+    doc.setFontSize(12);
+    doc.text("Summary by Department", 40, 40);
+    autoTable(doc, {
+      startY: 56,
+      head: [["Department", "Shift A", "Shift B", "Shift C", "Shift D", "Total"]],
+      body: previewPlan.byDepartment.map((r) => [r.name, r.A, r.B, r.C, r.D, r.total]),
+      styles: baseStyles,
+      headStyles,
+      didDrawPage: footer,
+    });
+
+    const lastY = (doc as any).lastAutoTable?.finalY ?? 56;
+    const pageH = doc.internal.pageSize.getHeight();
+    let nextY = lastY + 28;
+    if (nextY > pageH - 100) { doc.addPage(); nextY = 40; }
+    doc.setFontSize(12);
+    doc.text("Summary by Office", 40, nextY);
+    autoTable(doc, {
+      startY: nextY + 16,
+      head: [["Office", "Shift A", "Shift B", "Shift C", "Shift D", "Total"]],
+      body: previewPlan.byOffice.map((r) => [r.name, r.A, r.B, r.C, r.D, r.total]),
+      styles: baseStyles,
+      headStyles,
+      didDrawPage: footer,
     });
 
     doc.save(`schedule-preview_${effectiveDate}.pdf`);
