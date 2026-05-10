@@ -319,6 +319,7 @@ export default function Dashboard() {
           {isAdmin && <SystemAuditPanel />}
           <InterlinkWidget />
           {isAdminOrSupervisor && <CommandRosterWidget />}
+          {isAdminOrSupervisor && <StaffAppraisalsWidget />}
           <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
         </div>
       )}
