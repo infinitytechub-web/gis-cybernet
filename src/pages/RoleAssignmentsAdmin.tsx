@@ -637,7 +637,12 @@ export default function RoleAssignmentsAdmin() {
                                   size="sm" variant="outline" className="gap-1 h-7"
                                   disabled={revert.isPending}
                                   onClick={() => {
-                                    if (confirm("Revert this change?")) revert.mutate(e);
+                                    askConfirm({
+                                      title: "Revert this change?",
+                                      message: `Undo "${e.action}"${e.target ? ` for ${e.target.staff_id} (${e.target.last_name}, ${e.target.first_name})` : ""}? This action will itself be audited.`,
+                                      confirmLabel: "Revert",
+                                      onConfirm: () => revert.mutate(e),
+                                    });
                                   }}
                                 >
                                   <Undo2 className="h-3 w-3" /> Revert
