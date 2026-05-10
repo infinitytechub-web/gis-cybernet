@@ -1,6 +1,7 @@
 // Server-side IP discovery + geolocation proxy.
 // Keeps client IPs from being sent directly to third-party services from the browser.
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
 
 function pickClientIp(req: Request): string | null {
   const cf = req.headers.get("cf-connecting-ip");
@@ -27,6 +28,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    // Require an authenticated Supabase user. Prevents the function from being
+    // used as an open IP-lookup relay against ipapi.co's rate limits.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claims?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const url = new URL(req.url);
     let target = url.searchParams.get("ip");
     let body: any = null;
