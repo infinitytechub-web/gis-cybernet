@@ -189,3 +189,18 @@ jobs:
             exit 0
           fi
           exit $code
+
+  # ───────────────────────────────────────────────────────────────────
+  # 5. Subresource Integrity (SRI) on external CDN <script>/<link>
+  # ───────────────────────────────────────────────────────────────────
+  sri-check:
+    name: External script/style SRI + crossorigin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run SRI checker
+        run: node scripts/check-sri.mjs
+
