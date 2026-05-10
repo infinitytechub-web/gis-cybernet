@@ -220,9 +220,18 @@ export default function DutyRosterImport() {
         toast.warning(`Saved ${entries.length} rows, but auto-match failed: ${e4.message}`);
       } else {
         const r: any = matchRes ?? {};
-        toast.success(
-          `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${r.pending ?? 0} pending approval`
-        );
+        // Auto-deploy A/B/C/D shift assignments for matched staff
+        const { data: depRes, error: e5 } = await supabase.rpc("auto_deploy_roster_assignments", { _import_id: imp.id });
+        if (e5) {
+          toast.warning(
+            `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${r.pending ?? 0} pending · deploy failed: ${e5.message}`
+          );
+        } else {
+          const d: any = depRes ?? {};
+          toast.success(
+            `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${d.assigned ?? 0} deployed to A/B/C/D · ${r.pending ?? 0} pending approval`
+          );
+        }
       }
       qc.invalidateQueries({ queryKey: ["duty-roster-imports"] });
       qc.invalidateQueries({ queryKey: ["pending-staff-matches"] });
