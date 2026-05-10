@@ -12,10 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2, Settings2, CalendarRange } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2, Settings2, CalendarRange, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import { DeployedAssignmentsDialog } from "@/components/shifts/DeployedAssignmentsDialog";
+import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
