@@ -214,15 +214,16 @@ export function RotationChangeProposalPanel() {
         payload = { scope: "unit_wide", cycle_days: cycleDays, groups: trimmed };
         effective = effectiveFrom;
       } else {
-        const selected = staffDirectory.filter((s) => raStaffIds.includes(s.id));
+        const uniqueIds = Array.from(new Set(raStaffIds));
+        const selected = staffDirectory.filter((s) => uniqueIds.includes(s.id));
         payload = {
           scope: "reassignment",
           target_group: raTargetGroup,
           date_from: raDateFrom,
           date_to: raDateTo,
           new_shift_id: raNewShiftId,
-          staff_profile_ids: raStaffIds,
-          staff_ids: selected.map((s) => s.staff_id).filter(Boolean),
+          staff_profile_ids: uniqueIds,
+          staff_ids: Array.from(new Set(selected.map((s) => s.staff_id).filter(Boolean))),
           staff_names: selected.map((s) => `${s.last_name ?? ""}, ${s.first_name ?? ""}`.trim()),
         };
         effective = raDateFrom;
