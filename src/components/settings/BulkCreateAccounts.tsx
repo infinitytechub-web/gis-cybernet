@@ -20,6 +20,7 @@ interface CreatedAccount {
 export function BulkCreateAccounts() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
   const [results, setResults] = useState<CreatedAccount[] | null>(null);
   const [errors, setErrors] = useState<Array<{ staffId: string; error: string }>>([]);
   const [total, setTotal] = useState(0);
@@ -153,7 +154,29 @@ export function BulkCreateAccounts() {
     };
   };
 
-  const isAnyLoading = isLoading || isResetting;
+  const handleRepair = async () => {
+    setIsRepairing(true);
+    setResults(null);
+    setErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("repair-missing-auth");
+      if (error) throw error;
+      setResults(data.created ?? []);
+      setErrors(data.errors ?? []);
+      setTotal(data.total ?? 0);
+      if (data.created?.length > 0) {
+        toast.success(`${data.created.length} profile(s) repaired`);
+      } else {
+        toast.info("No profiles need repair");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Repair failed");
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
+  const isAnyLoading = isLoading || isResetting || isRepairing;
 
   return (
     <Card>
@@ -196,6 +219,27 @@ export function BulkCreateAccounts() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleBulkCreate}>Create Accounts</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="secondary" disabled={isAnyLoading} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  {isRepairing ? "Repairing..." : "Repair Missing Auth"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Repair profiles missing auth accounts?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Finds every profile marked login_enabled but with no linked auth user (any status). Reuses an existing matching auth user if available, otherwise creates a new one. Safe to run repeatedly.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRepair}>Repair Now</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
