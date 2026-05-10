@@ -161,7 +161,7 @@ export function SharedFilesPanel() {
         retention_days = null;
         expires_at = null;
       }
-      const { error } = await supabase.from("announcement_files").insert({
+      const { data: inserted, error } = await supabase.from("announcement_files").insert({
         title: title.trim(),
         description: description.trim() || null,
         department_id: deptId === "global" ? null : deptId,
@@ -174,8 +174,16 @@ export function SharedFilesPanel() {
         uploaded_by: user.id,
         expires_at,
         retention_days,
-      });
+      }).select("id").single();
       if (error) throw error;
+      await logFileAudit(inserted?.id ?? null, "upload", {
+        title: title.trim(),
+        filename: file.name,
+        size_bytes: file.size,
+        audience: deptId === "global" ? "global" : "department",
+        department_id: deptId === "global" ? null : deptId,
+        retention_days,
+      });
       toast.success("File shared");
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
       reset();
@@ -194,6 +202,7 @@ export function SharedFilesPanel() {
         .createSignedUrl(f.storage_path, 60);
       if (error) throw error;
       await supabase.rpc("increment_announcement_file_downloads", { _file_id: f.id });
+      await logFileAudit(f.id, "download", { filename: f.filename });
       window.open(data.signedUrl, "_blank", "noopener,noreferrer");
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
     } catch (e: any) {
@@ -201,10 +210,24 @@ export function SharedFilesPanel() {
     }
   };
 
+  const handlePreview = async (f: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("secure-uploads")
+        .createSignedUrl(f.storage_path, 60);
+      if (error) throw error;
+      await logFileAudit(f.id, "preview", { filename: f.filename });
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast.error(e.message ?? "Preview failed");
+    }
+  };
+
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase.from("announcement_files").update({ is_active }).eq("id", id);
       if (error) throw error;
+      await logFileAudit(id, "permission_change", { field: "is_active", value: is_active });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
@@ -215,6 +238,7 @@ export function SharedFilesPanel() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      await logFileAudit(id, "delete", {});
       await softDelete({ table: "announcement_files", id, label: "Shared file" });
     },
     onSuccess: () => {
