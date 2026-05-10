@@ -1,0 +1,32 @@
+# gitleaks config for GAR-Cybernet.
+# Extends the default rule set and whitelists publishable Supabase anon keys
+# (which are intentionally embedded in client code per Lovable conventions).
+
+title = "GAR-Cybernet gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Files and patterns that are allowed to contain key-like strings."
+paths = [
+  '''(?i)(^|/)\.lovable/.*''',
+  '''(?i)(^|/)mem/.*''',
+  '''(?i)(^|/)\.lovable/memory/.*''',
+  '''(?i)(^|/)src/integrations/supabase/types\.ts''',
+  '''(?i)(^|/)supabase/migrations/.*\.sql''',
+  '''(?i)(^|/)package-lock\.json''',
+  '''(?i)(^|/)bun\.lock(b)?''',
+  '''(?i)(^|/)dist/.*''',
+]
+regexes = [
+  # Supabase publishable anon JWT — safe to embed client-side.
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+''',
+  # Lovable / Supabase project ID references.
+  '''ebndffutyrgybsduvijo''',
+]
+stopwords = [
+  "anon",
+  "publishable",
+  "VITE_SUPABASE_PUBLISHABLE_KEY",
+]
