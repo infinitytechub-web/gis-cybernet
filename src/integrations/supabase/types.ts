@@ -65,6 +65,56 @@ export type Database = {
           },
         ]
       }
+      announcement_file_audit: {
+        Row: {
+          action: Database["public"]["Enums"]["announcement_file_audit_action"]
+          actor_user_id: string | null
+          created_at: string
+          department_id: string | null
+          department_name: string | null
+          file_id: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json
+          staff_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["announcement_file_audit_action"]
+          actor_user_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          department_name?: string | null
+          file_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          staff_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["announcement_file_audit_action"]
+          actor_user_id?: string | null
+          created_at?: string
+          department_id?: string | null
+          department_name?: string | null
+          file_id?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          staff_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_file_audit_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "announcement_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcement_file_cleanup_runs: {
         Row: {
           error_message: string | null
@@ -8891,6 +8941,16 @@ export type Database = {
           total_count: number
         }[]
       }
+      log_announcement_file_audit: {
+        Args: {
+          _action: Database["public"]["Enums"]["announcement_file_audit_action"]
+          _file_id: string
+          _ip?: string
+          _metadata?: Json
+          _user_agent?: string
+        }
+        Returns: string
+      }
       log_appraisal_duplicate_attempt: {
         Args: {
           _bulk_batch_id?: string
@@ -9190,6 +9250,12 @@ export type Database = {
       }
     }
     Enums: {
+      announcement_file_audit_action:
+        | "upload"
+        | "download"
+        | "preview"
+        | "permission_change"
+        | "delete"
       app_role:
         | "admin"
         | "supervisor"
@@ -9373,6 +9439,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      announcement_file_audit_action: [
+        "upload",
+        "download",
+        "preview",
+        "permission_change",
+        "delete",
+      ],
       app_role: [
         "admin",
         "supervisor",
