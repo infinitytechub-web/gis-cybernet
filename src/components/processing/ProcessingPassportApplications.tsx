@@ -122,6 +122,22 @@ export default function ProcessingPassportApplications() {
 
   const [reviewApp, setReviewApp] = useState<any>(null);
 
+  const { data: mfaAuditTrail = [] } = useQuery({
+    queryKey: ["mfa-review-audit", reviewApp?.id],
+    queryFn: async () => {
+      if (!reviewApp?.id) return [];
+      const { data, error } = await supabase
+        .from("mfa_review_audit")
+        .select("*, reviewer:reviewer_id(first_name, last_name, staff_id)")
+        .eq("application_id", reviewApp.id)
+        .order("reviewed_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!reviewApp?.id && open,
+  });
+
   const openReview = (app: any) => {
     setForm({
       status: app.status,
