@@ -35,6 +35,7 @@ const ProfileChangeStatusEmail = ({
   reviewerName,
   reviewerNotes,
   reviewedAt,
+  requestUrl,
 }: ProfileChangeStatusProps) => (
   <Html lang="en" dir="ltr">
     <Head />
