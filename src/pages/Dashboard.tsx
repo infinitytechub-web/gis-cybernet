@@ -335,9 +335,6 @@ export default function Dashboard() {
         <ScheduledReportsWidget />
       </div>
 
-      {/* Quick Search — staff-only variant (command tier sees the admin one inside Tier 1) */}
-      {!isAdminOrSupervisor && !isAdmin && <StaffQuickSearchWidget />}
-
 
       {/* System Health Widget */}
       {systemHealth && (
