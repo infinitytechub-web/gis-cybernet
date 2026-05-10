@@ -4,9 +4,6 @@
 // table covering the most common high-impact issues for this stack. Every
 // finding is conservative — we only flag a dep when its declared semver range
 // allows a known-vulnerable or known-deprecated version.
-//
-// To extend: add an entry to ADVISORIES with the package name, an optional
-// `vulnerableBelow` (semver-style "x.y.z") plus a severity/title/detail.
 import pkgRaw from "../../package.json?raw";
 
 export type ScanSeverity = "info" | "warn" | "error";
@@ -15,6 +12,16 @@ export interface ScanFinding {
   severity: ScanSeverity;
   title: string;
   detail?: string;
+  /** package name for dependency findings */
+  package?: string;
+  /** declared / installed version range */
+  currentVersion?: string;
+  /** recommended fixed version (semver "x.y.z" or range) */
+  fixedVersion?: string;
+  /** public advisory URL (GHSA, CVE, npm, etc.) */
+  advisoryUrl?: string;
+  /** advisory identifier (e.g. CVE-2024-..., GHSA-...) */
+  advisoryId?: string;
 }
 
 interface Advisory {
@@ -22,65 +29,80 @@ interface Advisory {
   name: string;
   /** versions strictly less than this are flagged */
   vulnerableBelow?: string;
+  /** recommended minimum upgrade target */
+  fixedIn: string;
   severity: ScanSeverity;
   title: (declared: string) => string;
   detail: string;
+  advisoryId?: string;
+  advisoryUrl?: string;
 }
 
 const ADVISORIES: Advisory[] = [
-  // Vite < 5.4.20 has a couple of public CVEs (path traversal, dev-server XSS).
   {
     name: "vite",
     vulnerableBelow: "5.4.20",
+    fixedIn: "5.4.20",
     severity: "warn",
     title: (v) => `vite ${v} is below the recommended patched 5.4.20`,
     detail:
       "Older Vite 5 versions have known dev-server path traversal advisories. Upgrade to ^5.4.20 or later.",
+    advisoryId: "GHSA-g4jq-h2w9-997c",
+    advisoryUrl: "https://github.com/advisories/GHSA-g4jq-h2w9-997c",
   },
-  // axios < 1.8.0 — SSRF / credential leak class CVEs.
   {
     name: "axios",
     vulnerableBelow: "1.8.0",
+    fixedIn: "1.8.0",
     severity: "error",
     title: (v) => `axios ${v} is affected by published CVEs`,
     detail: "Upgrade axios to >= 1.8.0 to pick up SSRF + credential-leak fixes.",
+    advisoryId: "GHSA-jr5f-v2jv-69x6",
+    advisoryUrl: "https://github.com/advisories/GHSA-jr5f-v2jv-69x6",
   },
-  // Cross-spawn DoS prototype regression
   {
     name: "cross-spawn",
     vulnerableBelow: "7.0.5",
+    fixedIn: "7.0.5",
     severity: "warn",
     title: (v) => `cross-spawn ${v} has a published ReDoS advisory`,
     detail: "Upgrade cross-spawn to >= 7.0.5.",
+    advisoryId: "GHSA-3xgq-45jj-v275",
+    advisoryUrl: "https://github.com/advisories/GHSA-3xgq-45jj-v275",
   },
-  // node-fetch < 2.6.7 has SSRF
   {
     name: "node-fetch",
     vulnerableBelow: "2.6.7",
+    fixedIn: "2.6.7",
     severity: "warn",
     title: (v) => `node-fetch ${v} predates the SSRF patch`,
     detail: "Upgrade to >= 2.6.7 (or migrate to native fetch).",
+    advisoryId: "GHSA-r683-j2x4-v87g",
+    advisoryUrl: "https://github.com/advisories/GHSA-r683-j2x4-v87g",
   },
-  // semver < 7.5.2 has a ReDoS
   {
     name: "semver",
     vulnerableBelow: "7.5.2",
+    fixedIn: "7.5.2",
     severity: "warn",
     title: (v) => `semver ${v} has a published ReDoS advisory`,
     detail: "Upgrade semver to >= 7.5.2.",
+    advisoryId: "GHSA-c2qf-rxjj-qqgw",
+    advisoryUrl: "https://github.com/advisories/GHSA-c2qf-rxjj-qqgw",
   },
-  // jspdf < 3.0.0 had multiple prototype-pollution / XSS issues
   {
     name: "jspdf",
     vulnerableBelow: "3.0.0",
+    fixedIn: "3.0.0",
     severity: "warn",
     title: (v) => `jspdf ${v} predates the 3.x security rewrite`,
     detail: "Upgrade jspdf to ^3.0.0 (or 4.x) for the modernised renderer.",
+    advisoryId: "GHSA-w532-jxjh-hjhj",
+    advisoryUrl: "https://github.com/advisories/GHSA-w532-jxjh-hjhj",
   },
 ];
 
 function parseSemver(v: string): [number, number, number] | null {
-  // Strip leading ^, ~, >=, etc.
   const m = v.replace(/^[^\d]*/, "").match(/^(\d+)\.(\d+)\.(\d+)/);
   if (!m) return null;
   return [Number(m[1]), Number(m[2]), Number(m[3])];
@@ -90,6 +112,8 @@ function lt(a: [number, number, number], b: [number, number, number]) {
   if (a[1] !== b[1]) return a[1] < b[1];
   return a[2] < b[2];
 }
+
+const npmUrl = (name: string) => `https://www.npmjs.com/package/${name}`;
 
 export function runRepoHygieneScan(): ScanFinding[] {
   const findings: ScanFinding[] = [];
@@ -129,6 +153,11 @@ export function runRepoHygieneScan(): ScanFinding[] {
         severity: adv.severity,
         title: adv.title(declared),
         detail: adv.detail,
+        package: adv.name,
+        currentVersion: declared,
+        fixedVersion: adv.fixedIn,
+        advisoryId: adv.advisoryId,
+        advisoryUrl: adv.advisoryUrl ?? npmUrl(adv.name),
       });
     }
   }
@@ -146,6 +175,10 @@ export function runRepoHygieneScan(): ScanFinding[] {
       title: `Dependency "${name}" uses a non-pinned spec (${v})`,
       detail:
         "Floating ranges like *, latest, git URLs or http URLs make builds non-reproducible and bypass advisory checks. Pin to a fixed semver.",
+      package: name,
+      currentVersion: v,
+      fixedVersion: "pin to exact semver",
+      advisoryUrl: npmUrl(name),
     });
   }
 
@@ -160,7 +193,7 @@ export function runRepoHygieneScan(): ScanFinding[] {
     });
   }
 
-  // 4. Informational summary so the report always carries a baseline number.
+  // 4. Informational summary
   findings.push({
     check: "dependency_summary",
     severity: "info",
