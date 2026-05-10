@@ -11,11 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   UserCog, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet,
-  Trash2, Search, Users, History, Plus, Building2, Undo2,
+  Trash2, Search, Users, History, Plus, Building2, Undo2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
@@ -53,6 +57,45 @@ function normalizeRole(r: string): AppRole | null {
 
 const labelFor = (r: string) => (ROLE_LABEL as Record<string, string>)[r] ?? r.replace(/_/g, " ");
 
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportAuditCsv(rows: any[]) {
+  const header = ["timestamp", "actor_staff_id", "actor_name", "action", "entity_type", "target_staff_id", "target_name", "detail", "reverted"];
+  const lines = [header.join(",")];
+  for (const e of rows) {
+    const detail =
+      e.action === "department.change"
+        ? `${e.details?.from_name ?? ""} -> ${e.details?.to_name ?? ""}`
+        : e.details?.role
+          ? labelFor(e.details.role)
+          : "";
+    lines.push([
+      new Date(e.created_at).toISOString(),
+      e.actor?.staff_id ?? "",
+      e.actor ? `${e.actor.last_name}, ${e.actor.first_name}` : "",
+      e.action,
+      e.entity_type,
+      e.target?.staff_id ?? "",
+      e.target ? `${e.target.last_name}, ${e.target.first_name}` : "",
+      detail,
+      e.details?.reverted_from ? "yes" : "no",
+    ].map(csvEscape).join(","));
+  }
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `role-audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function RoleAssignmentsAdmin() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
@@ -63,6 +106,11 @@ export default function RoleAssignmentsAdmin() {
   const [editing, setEditing] = useState<{ user_id: string; staff_id: string; name: string; department_id: string | null; roles: AppRole[] } | null>(null);
   const [addingRole, setAddingRole] = useState<AppRole | "">("");
   const [editingDept, setEditingDept] = useState<string>("");
+  const [confirmState, setConfirmState] = useState<{
+    title: string; message: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void;
+  } | null>(null);
+  const askConfirm = (cfg: { title: string; message: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void }) =>
+    setConfirmState(cfg);
 
   // ---- Data ---------------------------------------------------------------
 
@@ -547,7 +595,13 @@ export default function RoleAssignmentsAdmin() {
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7 text-destructive"
                             onClick={() => {
-                              if (confirm(`Remove ${r.role} from ${r.profile?.staff_id}?`)) remove.mutate(r.id);
+                              askConfirm({
+                                title: "Remove role?",
+                                message: `Remove "${labelFor(r.role)}" from ${r.profile?.staff_id ?? "this user"}? This will be recorded in the audit trail and is reversible.`,
+                                confirmLabel: "Remove",
+                                destructive: true,
+                                onConfirm: () => remove.mutate(r.id),
+                              });
                             }}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -565,10 +619,17 @@ export default function RoleAssignmentsAdmin() {
         {/* ---------------- AUDIT ---------------- */}
         <TabsContent value="audit">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="flex items-center gap-2 text-base">
                 <History className="h-4 w-4" /> Recent Changes (last 100)
               </CardTitle>
+              <Button
+                size="sm" variant="outline" className="gap-1"
+                disabled={auditTrail.length === 0}
+                onClick={() => exportAuditCsv(auditTrail)}
+              >
+                <Download className="h-4 w-4" /> Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {loadingAudit ? (
@@ -622,7 +683,12 @@ export default function RoleAssignmentsAdmin() {
                                   size="sm" variant="outline" className="gap-1 h-7"
                                   disabled={revert.isPending}
                                   onClick={() => {
-                                    if (confirm("Revert this change?")) revert.mutate(e);
+                                    askConfirm({
+                                      title: "Revert this change?",
+                                      message: `Undo "${e.action}"${e.target ? ` for ${e.target.staff_id} (${e.target.last_name}, ${e.target.first_name})` : ""}? This action will itself be audited.`,
+                                      confirmLabel: "Revert",
+                                      onConfirm: () => revert.mutate(e),
+                                    });
                                   }}
                                 >
                                   <Undo2 className="h-3 w-3" /> Revert
@@ -681,10 +747,15 @@ export default function RoleAssignmentsAdmin() {
                     }
                     onClick={() => {
                       const to = editingDept === "none" ? null : editingDept;
-                      changeDepartment.mutate(
-                        { user_id: editing.user_id, from: editing.department_id, to },
-                        { onSuccess: () => setEditing(null) }
-                      );
+                      askConfirm({
+                        title: "Change department?",
+                        message: `Move ${editing.name} from "${deptName(editing.department_id)}" to "${deptName(to)}"? This will be recorded in the audit trail and is reversible.`,
+                        confirmLabel: "Change",
+                        onConfirm: () => changeDepartment.mutate(
+                          { user_id: editing.user_id, from: editing.department_id, to },
+                          { onSuccess: () => setEditing(null) }
+                        ),
+                      });
                     }}
                   >
                     Save
@@ -707,12 +778,16 @@ export default function RoleAssignmentsAdmin() {
                         className="hover:text-destructive"
                         disabled={removeRoleByUser.isPending}
                         onClick={() => {
-                          if (confirm(`Remove ${labelFor(r)}?`)) {
-                            removeRoleByUser.mutate(
+                          askConfirm({
+                            title: "Remove role?",
+                            message: `Remove "${labelFor(r)}" from ${editing.name}? This will be recorded in the audit trail and is reversible.`,
+                            confirmLabel: "Remove",
+                            destructive: true,
+                            onConfirm: () => removeRoleByUser.mutate(
                               { user_id: editing.user_id, role: r },
                               { onSuccess: () => setEditing((prev) => prev ? { ...prev, roles: prev.roles.filter((x) => x !== r) } : prev) }
-                            );
-                          }
+                            ),
+                          });
                         }}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -743,15 +818,21 @@ export default function RoleAssignmentsAdmin() {
                     disabled={!addingRole || addRole.isPending}
                     onClick={() => {
                       if (!addingRole) return;
-                      addRole.mutate(
-                        { user_id: editing.user_id, role: addingRole as AppRole },
-                        {
-                          onSuccess: () => {
-                            setEditing((prev) => prev ? { ...prev, roles: [...prev.roles, addingRole as AppRole] } : prev);
-                            setAddingRole("");
-                          },
-                        }
-                      );
+                      const newRole = addingRole as AppRole;
+                      askConfirm({
+                        title: "Add role?",
+                        message: `Grant "${labelFor(newRole)}" to ${editing.name}? This will be recorded in the audit trail and is reversible.`,
+                        confirmLabel: "Add",
+                        onConfirm: () => addRole.mutate(
+                          { user_id: editing.user_id, role: newRole },
+                          {
+                            onSuccess: () => {
+                              setEditing((prev) => prev ? { ...prev, roles: [...prev.roles, newRole] } : prev);
+                              setAddingRole("");
+                            },
+                          }
+                        ),
+                      });
                     }}
                   >
                     Add
@@ -766,6 +847,29 @@ export default function RoleAssignmentsAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ---------------- CONFIRM DIALOG ---------------- */}
+      <AlertDialog open={!!confirmState} onOpenChange={(o) => !o && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmState?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmState?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={confirmState?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                const fn = confirmState?.onConfirm;
+                setConfirmState(null);
+                fn?.();
+              }}
+            >
+              {confirmState?.confirmLabel ?? "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
