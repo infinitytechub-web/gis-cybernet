@@ -212,6 +212,37 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent>
+          {mfaStep === "totp" ? (
+            <div className="space-y-4">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="bg-destructive/10 p-2.5 rounded-full">
+                  <Shield className="h-6 w-6 text-destructive" />
+                </div>
+                <h2 className="text-base font-semibold text-secondary">Two-Factor Authentication</h2>
+                <p className="text-xs text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app to finish signing in.
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+                  <InputOTPGroup>
+                    {[0,1,2,3,4,5].map((i) => <InputOTPSlot key={i} index={i} />)}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <Button onClick={handleVerifyOtp} disabled={isLoading || otp.length !== 6} className="w-full bg-secondary hover:bg-secondary/90">
+                {isLoading ? "Verifying…" : "Verify & Sign In"}
+              </Button>
+              <div className="flex items-center justify-between">
+                <Button type="button" variant="ghost" size="sm" className="gap-1 text-xs" onClick={handleCancelMfa}>
+                  <ArrowLeft className="h-3 w-3" /> Back
+                </Button>
+                <Button type="button" variant="link" size="sm" className="gap-1 text-xs" onClick={() => navigate("/mfa-gate", { state: { from: { pathname: "/" } } })}>
+                  <KeyRound className="h-3 w-3" /> Lost your authenticator?
+                </Button>
+              </div>
+            </div>
+          ) : (
           <Tabs defaultValue="staff" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="staff" className="gap-2"><Users className="h-4 w-4" /> Staff</TabsTrigger>
@@ -224,6 +255,7 @@ export default function Login() {
               {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary hover:bg-secondary/90", "Admin Sign In")}
             </TabsContent>
           </Tabs>
+          )}
           <p className="text-xs text-center text-muted-foreground mt-6">
             Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026
           </p>
