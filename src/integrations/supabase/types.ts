@@ -65,16 +65,61 @@ export type Database = {
           },
         ]
       }
+      announcement_file_cleanup_runs: {
+        Row: {
+          error_message: string | null
+          files_deactivated: number
+          files_scanned: number
+          files_soft_deleted: number
+          files_with_default_applied: number
+          finished_at: string | null
+          id: string
+          started_at: string
+          status: string
+          trigger_kind: string
+          triggered_by: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          files_deactivated?: number
+          files_scanned?: number
+          files_soft_deleted?: number
+          files_with_default_applied?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          trigger_kind?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          files_deactivated?: number
+          files_scanned?: number
+          files_soft_deleted?: number
+          files_with_default_applied?: number
+          finished_at?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          trigger_kind?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
       announcement_files: {
         Row: {
           created_at: string
           department_id: string | null
           description: string | null
           download_count: number
+          expired_at: string | null
+          expires_at: string | null
           filename: string
           id: string
           is_active: boolean
           mime_type: string | null
+          retention_days: number | null
           scan_action: string | null
           sha256: string | null
           size_bytes: number
@@ -88,10 +133,13 @@ export type Database = {
           department_id?: string | null
           description?: string | null
           download_count?: number
+          expired_at?: string | null
+          expires_at?: string | null
           filename: string
           id?: string
           is_active?: boolean
           mime_type?: string | null
+          retention_days?: number | null
           scan_action?: string | null
           sha256?: string | null
           size_bytes: number
@@ -105,10 +153,13 @@ export type Database = {
           department_id?: string | null
           description?: string | null
           download_count?: number
+          expired_at?: string | null
+          expires_at?: string | null
           filename?: string
           id?: string
           is_active?: boolean
           mime_type?: string | null
+          retention_days?: number | null
           scan_action?: string | null
           sha256?: string | null
           size_bytes?: number
@@ -177,6 +228,11 @@ export type Database = {
       app_settings: {
         Row: {
           allow_self_registration: boolean
+          announcement_file_cleanup_last_run_at: string | null
+          announcement_file_cleanup_mode: string
+          announcement_file_retention_days_department: number
+          announcement_file_retention_days_global: number
+          announcement_file_retention_enabled: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
           created_at: string
@@ -193,6 +249,11 @@ export type Database = {
         }
         Insert: {
           allow_self_registration?: boolean
+          announcement_file_cleanup_last_run_at?: string | null
+          announcement_file_cleanup_mode?: string
+          announcement_file_retention_days_department?: number
+          announcement_file_retention_days_global?: number
+          announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           created_at?: string
@@ -209,6 +270,11 @@ export type Database = {
         }
         Update: {
           allow_self_registration?: boolean
+          announcement_file_cleanup_last_run_at?: string | null
+          announcement_file_cleanup_mode?: string
+          announcement_file_retention_days_department?: number
+          announcement_file_retention_days_global?: number
+          announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           created_at?: string
@@ -8555,6 +8621,15 @@ export type Database = {
       admin_unlock_account: {
         Args: { _profile_id: string; _reason: string }
         Returns: Json
+      }
+      apply_announcement_file_retention: {
+        Args: never
+        Returns: {
+          deactivated: number
+          default_applied: number
+          scanned: number
+          soft_deleted: number
+        }[]
       }
       appraisal_coverage_report: {
         Args: { _period_month?: number; _period_year: number }
