@@ -141,6 +141,8 @@ export default function DutyRosterImport() {
   const [notes, setNotes] = useState("");
   const [committing, setCommitting] = useState(false);
   const [deployingId, setDeployingId] = useState<string | null>(null);
+  const [overrideTarget, setOverrideTarget] = useState<{ effective_date: string; label: string } | null>(null);
+  const [previewEndDate, setPreviewEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 
   const handleRedeploy = async (importId: string) => {
     setDeployingId(importId);
