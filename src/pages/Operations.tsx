@@ -474,13 +474,17 @@ export default function Operations() {
   const openEdit = useCallback((op: OperationRecord) => {
     setEditingOp(op);
     setForm({
+      ...INITIAL_FORM,
       operation_type: op.operation_type,
       operation_date: op.operation_date,
+      operation_time: (op as any).operation_time || "",
       location: op.location || "",
+      gps_coordinates: (op as any).gps_coordinates || "",
       description: op.description || "",
       severity: op.severity,
       suspects_count: op.suspects_count,
       arrests_count: op.arrests_count,
+      casualties_count: (op as any).casualties_count ?? 0,
       status: op.status,
       outcome: op.outcome || "",
       notes: op.notes || "",
@@ -488,6 +492,15 @@ export default function Operations() {
       contact_details: op.contact_details || "",
       mugshot_path: (op as any).mugshot_path ?? null,
       authorized_by: (op as any).authorized_by ?? null,
+      weapons_used: (op as any).weapons_used || "",
+      vehicles_involved: (op as any).vehicles_involved || "",
+      items_seized: (op as any).items_seized || "",
+      witnesses: (op as any).witnesses || "",
+      action_taken: (op as any).action_taken || "",
+      follow_up_required: (op as any).follow_up_required ?? false,
+      follow_up_notes: (op as any).follow_up_notes || "",
+      supervisor_remarks: (op as any).supervisor_remarks || "",
+      hq_reference_number: (op as any).hq_reference_number || "",
     });
   }, []);
 
