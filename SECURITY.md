@@ -149,3 +149,47 @@ Deno.serve(async (req) => {
   // … your handler …
 });
 ```
+
+## Subresource Integrity (SRI) for third-party assets
+
+We follow a **"self-host first, SRI second"** policy:
+
+1. **Self-host all executable third-party code.** The Cybernet app loads zero
+   `<script>` or `<link rel="stylesheet">` tags from external CDNs. Every JS
+   bundle (including the `pdfjs-dist` worker used by the duty-roster importer)
+   is bundled by Vite and served from our own origin under `/assets/…` with a
+   content-hashed filename. This is strictly stronger than SRI: there is no
+   third-party origin to compromise in the first place.
+
+2. **CSP allow-list is origin-locked.** `script-src` and `script-src-elem` are
+   restricted to `'self'` only — `cdnjs.cloudflare.com` and similar CDNs were
+   removed once the pdf.js worker was self-hosted. The browser will refuse to
+   execute any injected `<script src="https://attacker.tld/…">` tag.
+
+3. **If you ever add a `<script>` or `<link rel="stylesheet">` from a CDN**,
+   you MUST attach both `integrity="sha384-…"` and `crossorigin="anonymous"`
+   attributes, AND add the CDN host to `script-src-elem` / `style-src-elem`
+   in `index.html`, `public/_headers`, `vercel.json`, and
+   `deploy/nginx-security-headers.conf`. Generate the hash with:
+
+   ```bash
+   curl -sSL https://cdn.example.com/lib.js | openssl dgst -sha384 -binary | openssl base64 -A
+   ```
+
+   Then:
+
+   ```html
+   <script
+     src="https://cdn.example.com/lib.js"
+     integrity="sha384-<hash>"
+     crossorigin="anonymous"
+     referrerpolicy="no-referrer"
+   ></script>
+   ```
+
+4. **Tile/image hosts (OSM, CartoCDN, ArcGIS, qrserver) are not in scope** for
+   SRI — SRI only applies to `<script>`, `<link rel="stylesheet">`, and
+   `<link rel="preload" as="script|style">`. Map tiles and QR images are
+   constrained instead by `img-src` in CSP and rendered as non-executable
+   raster data.
+
