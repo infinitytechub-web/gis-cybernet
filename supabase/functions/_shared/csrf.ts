@@ -65,9 +65,16 @@ export function assertCsrfSafe(req: Request): CsrfCheck {
   }
 
   // Cron / service-to-service callers pass through the shared cron-auth.
-  // Skip CSRF when the request comes from an internal caller (it has no
-  // browser origin to spoof).
-  if (req.headers.get("x-internal-caller") === "1") {
+  // Skip CSRF when the request authenticates as an internal caller — those
+  // requests have no browser origin to spoof.
+  const auth = req.headers.get("authorization") ?? "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  if (
+    req.headers.get("x-internal-caller") === "1" ||
+    (serviceRoleKey && auth.includes(serviceRoleKey)) ||
+    (cronSecret && req.headers.get("x-cron-secret") === cronSecret)
+  ) {
     return { ok: true, origin: "internal" };
   }
 
