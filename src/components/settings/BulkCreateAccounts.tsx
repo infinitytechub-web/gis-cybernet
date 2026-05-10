@@ -67,10 +67,10 @@ export function BulkCreateAccounts() {
         setErrors(r?.errors ?? []);
         setTotal(r?.total ?? 0);
 
-        if (result?.created?.length > 0) {
-          toast.success(`${result.created.length} accounts regenerated successfully`);
+        if (r?.created?.length > 0) {
+          toast.success(`${r.created.length} accounts regenerated successfully`);
         } else {
-          toast.info(result?.message || "No accounts to regenerate");
+          toast.info(r?.message || "No accounts to regenerate");
         }
       } else if (data.status === "failed") {
         clearInterval(pollingRef.current!);
