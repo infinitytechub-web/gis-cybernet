@@ -497,14 +497,14 @@ export default function HealthLab() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="flex-wrap h-auto bg-muted/60 p-1">
-          <TabsTrigger value="overview" className="gap-1.5"><Activity className="h-4 w-4" /> Overview</TabsTrigger>
-          <TabsTrigger value="records" className="gap-1.5"><FileHeart className="h-4 w-4" /> Records</TabsTrigger>
-          <TabsTrigger value="reports" className="gap-1.5"><ClipboardList className="h-4 w-4" /> Reports</TabsTrigger>
-          <TabsTrigger value="appointments" className="gap-1.5"><CalendarClock className="h-4 w-4" /> Appointments</TabsTrigger>
-          <TabsTrigger value="services" className="gap-1.5"><Stethoscope className="h-4 w-4" /> Services</TabsTrigger>
-          <TabsTrigger value="inventory" className="gap-1.5"><Pill className="h-4 w-4" /> Inventory</TabsTrigger>
-          <TabsTrigger value="excuse" className="gap-1.5"><FilePlus2 className="h-4 w-4" /> Excuse Duty</TabsTrigger>
+        <TabsList className="flex-wrap h-auto bg-muted/60 p-1 gap-1">
+          <TabsTrigger value="overview" className="gap-1.5 data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><Activity className="h-4 w-4" /> Overview</TabsTrigger>
+          <TabsTrigger value="records" className="gap-1.5 data-[state=active]:bg-sky-600 data-[state=active]:text-white"><FileHeart className="h-4 w-4" /> Records</TabsTrigger>
+          <TabsTrigger value="reports" className="gap-1.5 data-[state=active]:bg-purple-600 data-[state=active]:text-white"><ClipboardList className="h-4 w-4" /> Reports</TabsTrigger>
+          <TabsTrigger value="appointments" className="gap-1.5 data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><CalendarClock className="h-4 w-4" /> Appointments</TabsTrigger>
+          <TabsTrigger value="services" className="gap-1.5 data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><Stethoscope className="h-4 w-4" /> Services</TabsTrigger>
+          <TabsTrigger value="inventory" className="gap-1.5 data-[state=active]:bg-rose-600 data-[state=active]:text-white"><Pill className="h-4 w-4" /> Inventory</TabsTrigger>
+          <TabsTrigger value="excuse" className="gap-1.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white"><FilePlus2 className="h-4 w-4" /> Excuse Duty</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-3">

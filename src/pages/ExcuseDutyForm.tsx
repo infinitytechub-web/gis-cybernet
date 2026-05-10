@@ -14,11 +14,10 @@ import { FilePlus2, FileDown, FileText, Activity, UserCheck, CheckCircle2, BellR
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
-import { saveAs } from "file-saver";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { downloadExcuseDutyPDF, downloadExcuseDutyDOCX, type ExcuseDutyData } from "@/lib/excuse-duty-templates";
+import { FileDown as FileDownIcon } from "lucide-react";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
@@ -113,85 +112,41 @@ export default function ExcuseDutyForm() {
 
   const canExport = (entry?: any) => !entry || entry.submitted_by === user?.id || isReviewer;
 
+  const buildPayload = (entry?: any): ExcuseDutyData => {
+    const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
+    return {
+      staff_name: autoFill?.officer,
+      rank: autoFill?.rank,
+      staff_id: autoFill?.staff_id,
+      directorate: autoFill?.department,
+      office: autoFill?.office,
+      shift_group: autoFill?.shift_group,
+      phone: autoFill?.phone,
+      email: autoFill?.email,
+      start_date: data.start_date,
+      end_date: data.end_date,
+      doctor_name: data.doctor_name,
+      facility: data.facility,
+      diagnosis: data.diagnosis,
+      reason: data.reason,
+      recommendation: data.review_comment,
+      status: data.status,
+      reviewed_at: data.reviewed_at,
+    };
+  };
+
   const exportPDF = (entry?: any) => {
     if (!canExport(entry)) { toast.error("Access denied: only the submitter or an authorized reviewer can download this form."); return; }
     if (!autoFill) { toast.error("Profile not loaded"); return; }
-    const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
-    const doc = new jsPDF();
-    let y = 20;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("GIS – EXCUSE DUTY FORM", 105, y, { align: "center" });
-    y += 8;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Ghana Immigration Service · HEALTH LAB+", 105, y, { align: "center" });
-    y += 12;
-    const lines: [string, string][] = [
-      ["Officer:", autoFill.officer],
-      ["Rank:", autoFill.rank],
-      ["Staff ID:", autoFill.staff_id],
-      ["Department:", autoFill.department],
-      ["Office:", autoFill.office],
-      ["Office Shift:", autoFill.shift_group],
-      ["Contact:", `${autoFill.phone}${autoFill.email !== "—" ? ` · ${autoFill.email}` : ""}`],
-      ["Period:", `${data.start_date} to ${data.end_date}`],
-      ["Doctor:", data.doctor_name || "—"],
-      ["Facility:", data.facility || "—"],
-      ["Diagnosis:", data.diagnosis || "—"],
-      ["Status:", (data.status || "SUBMITTED").toUpperCase()],
-    ];
-    doc.setFontSize(11);
-    lines.forEach(([k, v]) => {
-      doc.setFont("helvetica", "bold"); doc.text(k, 20, y);
-      doc.setFont("helvetica", "normal"); doc.text(String(v), 60, y);
-      y += 7;
-    });
-    y += 4;
-    doc.setFont("helvetica", "bold"); doc.text("Reason / Medical justification:", 20, y); y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(doc.splitTextToSize(data.reason || "—", 170), 20, y);
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
-    doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, 20, 285);
-    doc.save(`excuse_duty_${format(new Date(), "yyyyMMdd_HHmm")}.pdf`);
+    downloadExcuseDutyPDF(buildPayload(entry));
   };
 
   const exportDOCX = async (entry?: any) => {
     if (!canExport(entry)) { toast.error("Access denied: only the submitter or an authorized reviewer can download this form."); return; }
     if (!autoFill) { toast.error("Profile not loaded"); return; }
-    const data = entry ?? { ...form, status: "DRAFT", created_at: new Date().toISOString() };
-    const heading = (text: string) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, bold: true })] });
-    const kv = (k: string, v: string) => new Paragraph({ children: [new TextRun({ text: k + " ", bold: true }), new TextRun(v || "—")] });
-    const docx = new Document({
-      sections: [{
-        children: [
-          new Paragraph({ alignment: AlignmentType.CENTER, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: "GIS – EXCUSE DUTY FORM", bold: true })] }),
-          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun("Ghana Immigration Service · HEALTH LAB+")] }),
-          new Paragraph({ children: [new TextRun("")] }),
-          kv("Officer:", autoFill.officer),
-          kv("Rank:", autoFill.rank),
-          kv("Staff ID:", autoFill.staff_id),
-          kv("Department:", autoFill.department),
-          kv("Office:", autoFill.office),
-          kv("Office Shift:", autoFill.shift_group),
-          kv("Contact:", `${autoFill.phone}${autoFill.email !== "—" ? ` · ${autoFill.email}` : ""}`),
-          kv("Period:", `${data.start_date} to ${data.end_date}`),
-          kv("Doctor:", data.doctor_name || "—"),
-          kv("Facility:", data.facility || "—"),
-          kv("Diagnosis:", data.diagnosis || "—"),
-          kv("Status:", (data.status || "SUBMITTED").toUpperCase()),
-          new Paragraph({ children: [new TextRun("")] }),
-          heading("Reason / Medical justification"),
-          new Paragraph({ children: [new TextRun(data.reason || "—")] }),
-          new Paragraph({ children: [new TextRun("")] }),
-          new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, italics: true, size: 18 })] }),
-        ],
-      }],
-    });
-    const blob = await Packer.toBlob(docx);
-    saveAs(blob, `excuse_duty_${format(new Date(), "yyyyMMdd_HHmm")}.docx`);
+    await downloadExcuseDutyDOCX(buildPayload(entry));
   };
+
 
   return (
     <div className="space-y-4">
@@ -237,6 +192,14 @@ export default function ExcuseDutyForm() {
             <Button onClick={() => submit.mutate()} disabled={submit.isPending} className="gap-1"><FilePlus2 className="h-4 w-4" /> Submit</Button>
             <Button variant="outline" onClick={() => exportPDF()} className="gap-1"><FileDown className="h-4 w-4" /> Export PDF</Button>
             <Button variant="outline" onClick={() => exportDOCX()} className="gap-1"><FileDown className="h-4 w-4" /> Export Word</Button>
+            <div className="ml-auto flex gap-2 flex-wrap">
+              <Button variant="secondary" onClick={() => downloadExcuseDutyPDF({}, true)} className="gap-1" title="Download blank, printable GIS Excuse Duty Form">
+                <FileDownIcon className="h-4 w-4" /> Blank PDF template
+              </Button>
+              <Button variant="secondary" onClick={() => downloadExcuseDutyDOCX({}, true)} className="gap-1" title="Download blank, editable GIS Excuse Duty Form">
+                <FileDownIcon className="h-4 w-4" /> Blank Word template
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

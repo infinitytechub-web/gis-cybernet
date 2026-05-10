@@ -31,14 +31,14 @@ export function AnnouncementsBanner() {
   const [deptId, setDeptId] = useState<string>("global");
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ["announcements"],
+    queryKey: ["announcements", "history"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("announcements")
         .select("*, departments(name)")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(100);
       if (error) throw error;
       return data ?? [];
     },
@@ -97,6 +97,11 @@ export function AnnouncementsBanner() {
           <CardTitle className="font-bold tracking-tight text-sm flex items-center gap-2 text-destructive">
             <Megaphone className="h-4 w-4 text-destructive" />
             Announcements
+            {announcements.length > 0 && (
+              <Badge variant="outline" className="ml-1 text-[10px] h-4 border-destructive/40 text-destructive bg-transparent">
+                {announcements.length}
+              </Badge>
+            )}
           </CardTitle>
           {isAdminOrSupervisor && (
             <Dialog open={open} onOpenChange={setOpen}>
@@ -148,8 +153,13 @@ export function AnnouncementsBanner() {
         {announcements.length === 0 ? (
           <p className="text-xs text-destructive/80 text-center py-2">No active announcements</p>
         ) : (
-          <ScrollArea className="max-h-[200px]">
+          <ScrollArea className="h-[420px] pr-2">
             <div className="space-y-2">
+              {announcements.length > 5 && (
+                <p className="text-[10px] text-destructive/70 text-center pb-1 border-b border-destructive/20 mb-1">
+                  Scroll for older announcements ({announcements.length} total)
+                </p>
+              )}
               {announcements.map((a: any) => {
                 const cfg = priorityConfig[a.priority as keyof typeof priorityConfig] || priorityConfig.normal;
                 const Icon = cfg.icon;
