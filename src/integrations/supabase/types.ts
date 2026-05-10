@@ -6559,6 +6559,67 @@ export type Database = {
           },
         ]
       }
+      rotation_change_proposal_audit: {
+        Row: {
+          action: string
+          actor_profile_id: string | null
+          actor_user_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          new_status: string | null
+          previous_status: string | null
+          proposal_id: string
+          snapshot: Json | null
+        }
+        Insert: {
+          action: string
+          actor_profile_id?: string | null
+          actor_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          previous_status?: string | null
+          proposal_id: string
+          snapshot?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string | null
+          actor_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string | null
+          previous_status?: string | null
+          proposal_id?: string
+          snapshot?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotation_change_proposal_audit_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotation_change_proposal_audit_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotation_change_proposal_audit_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "rotation_change_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rotation_change_proposals: {
         Row: {
           affected_profile_ids: string[] | null
