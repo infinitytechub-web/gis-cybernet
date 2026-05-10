@@ -77,9 +77,26 @@ export default function MyProfile() {
     return EDITABLE_FIELDS.some((k) => (form[k] ?? "") !== ((profile as any)[k] ?? ""));
   }, [form, profile]);
 
+  // Pending change requests submitted by this user
+  const { data: myRequests } = useQuery({
+    queryKey: ["my-profile-change-requests", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("profile_change_requests")
+        .select("*, reviewer:reviewer_id(first_name, last_name)")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!profile?.id,
+  });
+
   const save = useMutation({
     mutationFn: async () => {
-      if (!profile?.id) throw new Error("Profile not loaded");
+      if (!profile?.id || !user) throw new Error("Profile not loaded");
       const gcn = (form.ghana_card_number ?? "").trim();
       if (gcn && !isValidGhanaCard(gcn)) {
         await logAdminAudit("ghana_card_verification", "mismatch", {
@@ -90,21 +107,46 @@ export default function MyProfile() {
         }, profile.id);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
-      const payload: any = {};
+      // Build a diff of only changed fields
+      const requested: Record<string, string | null> = {};
+      const previous: Record<string, string | null> = {};
       EDITABLE_FIELDS.forEach((k) => {
-        const v = (form[k] ?? "").toString().trim();
-        payload[k] = v === "" ? null : v;
+        const next = (form[k] ?? "").toString().trim();
+        const curr = ((profile as any)[k] ?? "").toString();
+        if (next !== curr) {
+          requested[k] = next === "" ? null : next;
+          previous[k] = curr === "" ? null : curr;
+        }
       });
-      const { error } = await supabase.from("profiles").update(payload).eq("id", profile.id);
+      if (Object.keys(requested).length === 0) throw new Error("No changes to submit");
+      const { error } = await supabase.from("profile_change_requests").insert({
+        profile_id: profile.id,
+        user_id: user.id,
+        requested_changes: requested,
+        previous_values: previous,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Profile updated — changes synced to the system.");
-      qc.invalidateQueries({ queryKey: ["my-profile-self-edit"] });
-      qc.invalidateQueries({ queryKey: ["my-profile-excuse"] });
-      qc.invalidateQueries({ queryKey: ["my-profile-mysubs"] });
+      toast.success("Change request submitted — awaiting Command / Admin approval.");
+      qc.invalidateQueries({ queryKey: ["my-profile-change-requests"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Failed to update profile"),
+    onError: (e: any) => toast.error(e.message ?? "Failed to submit change request"),
+  });
+
+  const cancelRequest = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("profile_change_requests")
+        .update({ status: "cancelled" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Request cancelled.");
+      qc.invalidateQueries({ queryKey: ["my-profile-change-requests"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to cancel"),
   });
 
   if (isLoading) return <div className="text-sm text-muted-foreground p-6">Loading your profile…</div>;
