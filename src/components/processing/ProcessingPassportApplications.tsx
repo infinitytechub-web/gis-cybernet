@@ -73,8 +73,22 @@ export default function ProcessingPassportApplications() {
     mutationFn: async () => {
       if (!editId) return;
       const existing = applications.find((a: any) => a.id === editId);
+      const prevMfa = (existing as any)?.mfa_review_status ?? "pending";
+      const mfaChanged = prevMfa !== form.mfa_review_status;
+      const payload: any = {
+        status: form.status,
+        notes: form.notes,
+        processed_by: user?.id,
+        processing_checklist: form.checklist as any,
+        mfa_review_status: form.mfa_review_status,
+        mfa_review_notes: form.mfa_review_notes || null,
+      };
+      if (mfaChanged) {
+        payload.mfa_reviewed_by = user?.id ?? null;
+        payload.mfa_reviewed_at = form.mfa_review_status === "pending" ? null : new Date().toISOString();
+      }
       const { error } = await supabase.from("passport_applications")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
+        .update(payload)
         .eq("id", editId);
       if (error) throw error;
 
@@ -109,7 +123,13 @@ export default function ProcessingPassportApplications() {
   const [reviewApp, setReviewApp] = useState<any>(null);
 
   const openReview = (app: any) => {
-    setForm({ status: app.status, notes: app.notes || "", checklist: (app.processing_checklist as Record<string, boolean>) || {} });
+    setForm({
+      status: app.status,
+      notes: app.notes || "",
+      checklist: (app.processing_checklist as Record<string, boolean>) || {},
+      mfa_review_status: app.mfa_review_status || "pending",
+      mfa_review_notes: app.mfa_review_notes || "",
+    });
     setEditId(app.id);
     setReviewApp(app);
     setOpen(true);
