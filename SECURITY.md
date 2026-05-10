@@ -96,3 +96,56 @@ curl -sSI https://gis-cybernet.lovable.app/ | grep -iE 'content-security|frame|h
 
 or paste the URL into <https://securityheaders.com>. Target grade: **A**.
 
+
+## Cross-Site Request Forgery (CSRF)
+
+Cybernet uses **Supabase JWT Bearer tokens** stored in `localStorage` for all
+authenticated calls. Browsers do not auto-attach `localStorage` values to
+cross-site requests, so the **classic cookie-CSRF threat does not apply** to
+the REST/RPC/Storage/Functions surface.
+
+Two additional defences are in place anyway:
+
+1. **Custom request header on every state-changing call.**
+   `src/lib/csrf-fetch.ts` patches `window.fetch` at startup to attach
+   `x-cybernet-app: cybernet-web` to every non-GET/HEAD/OPTIONS request. Because
+   browsers refuse to send custom headers on cross-origin form submissions
+   without a CORS preflight (which our edge functions deny for unknown
+   origins), a third-party page that somehow obtained a user's bearer token
+   still cannot trigger a write.
+
+2. **Origin + custom-header verification on the edge.**
+   `supabase/functions/_shared/csrf.ts` exports `assertCsrfSafe(req)` for any
+   state-changing edge function:
+
+   ```ts
+   import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+
+   const csrf = assertCsrfSafe(req);
+   if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
+   ```
+
+   The check rejects any non-safe method whose `Origin`/`Referer` is not on
+   the allow-list (`*.lovable.app`, `*.lovableproject.com`, the published
+   Cybernet domain) **or** that lacks the `x-cybernet-app` header. Cron and
+   service-role callers (already authenticated via
+   `_shared/cron-auth.ts`) bypass the check.
+
+3. **SameSite cookies.**
+   The only application cookie (`sidebar:state`, set in `components/ui/sidebar.tsx`)
+   uses `SameSite=Lax; Secure`. No other cookies are issued by client code;
+   Supabase's auth tokens live in `localStorage`, not cookies.
+
+### Adding CSRF protection to a new edge function
+
+```ts
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const csrf = assertCsrfSafe(req);
+  if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
+  // … your handler …
+});
+```
