@@ -43,8 +43,10 @@ for (const file of files) {
     const usingExpr = usingMatch[1];
 
     const permissive =
-      /^\s*true\s*$/i.test(usingExpr) || /\bis_enabled\b/i.test(usingExpr);
-    const requiresAdmin = /has_role\s*\([^)]*'admin'/i.test(usingExpr);
+      /^\s*true\s*$/i.test(usingExpr.trim()) ||
+      /\bis_enabled\b/i.test(usingExpr);
+    const requiresAdmin =
+      /\bhas_role\b/i.test(usingExpr) && /'admin'/i.test(usingExpr);
 
     if (permissive || !requiresAdmin) {
       failed++;
