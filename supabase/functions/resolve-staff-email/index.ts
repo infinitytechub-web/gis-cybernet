@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const RATE_WINDOW_MS = 5 * 60 * 1000;
-const RATE_LIMIT = 10;
+const INVALID_LOOKUP_LIMIT = 25;
 const ipCounters = new Map<string, { count: number; resetAt: number }>();
 
 function clientIp(req: Request): string {
@@ -20,7 +20,7 @@ function clientIp(req: Request): string {
   return (fwd.split(",")[0] || req.headers.get("cf-connecting-ip") || "unknown").trim();
 }
 
-function rateLimitHit(ip: string): boolean {
+function incrementInvalidLookupCounter(ip: string): boolean {
   const now = Date.now();
   const cur = ipCounters.get(ip);
   if (!cur || cur.resetAt < now) {
@@ -28,7 +28,7 @@ function rateLimitHit(ip: string): boolean {
     return false;
   }
   cur.count += 1;
-  return cur.count > RATE_LIMIT;
+  return cur.count > INVALID_LOOKUP_LIMIT;
 }
 
 Deno.serve(async (req) => {
@@ -41,12 +41,6 @@ Deno.serve(async (req) => {
   }
 
   const ip = clientIp(req);
-  if (rateLimitHit(ip)) {
-    return new Response(JSON.stringify({ error: "Too many lookups" }), {
-      status: 429,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
 
   let body: { staff_id?: unknown };
   try {
@@ -77,6 +71,14 @@ Deno.serve(async (req) => {
   });
 
   if (error || !email) {
+    const rateLimited = incrementInvalidLookupCounter(ip);
+    if (rateLimited) {
+      return new Response(JSON.stringify({ error: "Too many failed lookups" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Audit only misses so we can detect enumeration without locking out
     // legitimate users. The signIn path records its own failure on bad password.
     try {
