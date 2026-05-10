@@ -26,12 +26,12 @@ type Req = {
 };
 
 export default function ProfileChangeApprovals() {
-  const { user, role } = useAuth();
+  const { user, isAdminOrSupervisor } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pending" | "history">("pending");
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const allowed = isAdminOrSupervisor(role);
+  const allowed = isAdminOrSupervisor;
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["profile-change-requests", tab],
