@@ -122,11 +122,14 @@ function getPreviousDateRange(period: string) {
 const INITIAL_FORM = {
   operation_type: "patrol",
   operation_date: new Date().toISOString().split("T")[0],
+  operation_time: "",
   location: "",
+  gps_coordinates: "",
   description: "",
   severity: "medium",
   suspects_count: 0,
   arrests_count: 0,
+  casualties_count: 0,
   status: "open",
   outcome: "",
   notes: "",
@@ -134,6 +137,15 @@ const INITIAL_FORM = {
   contact_details: "",
   mugshot_path: null as string | null,
   authorized_by: null as string | null,
+  weapons_used: "",
+  vehicles_involved: "",
+  items_seized: "",
+  witnesses: "",
+  action_taken: "",
+  follow_up_required: false,
+  follow_up_notes: "",
+  supervisor_remarks: "",
+  hq_reference_number: "",
 };
 
 // GhanaGPSButton was inlined here; the shared GhanaGPSInput component
