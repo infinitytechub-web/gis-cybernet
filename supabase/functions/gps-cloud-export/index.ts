@@ -6,7 +6,7 @@ import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-cybernet-app",
 };
 
 const ALLOWED_ROLES = new Set(["admin", "oic", "2ic", "staff_officer"]);

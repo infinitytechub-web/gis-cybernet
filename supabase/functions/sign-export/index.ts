@@ -5,7 +5,7 @@ import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cybernet-app",
 };
 
 async function hmacSha256Hex(key: string, msg: string): Promise<string> {
