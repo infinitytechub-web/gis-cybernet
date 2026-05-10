@@ -446,6 +446,84 @@ export default function DutyRosterImport() {
               </Tabs>
             )}
 
+            {/* Schedule preview — what auto-deploy will do for the effective date */}
+            {parsed.rows.length > 0 && (
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <CalendarRange className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Schedule preview</span>
+                  <span className="text-xs text-muted-foreground">
+                    Computed A/B/C/D assignments effective <strong>{effectiveDate}</strong>
+                    {previewEndDate && previewEndDate !== effectiveDate ? <> through <strong>{previewEndDate}</strong></> : null}
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Label htmlFor="prev-end" className="text-[11px] text-muted-foreground">Range end</Label>
+                    <Input
+                      id="prev-end" type="date" className="h-7 text-xs w-36"
+                      value={previewEndDate}
+                      min={effectiveDate}
+                      onChange={(e) => setPreviewEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {directory.isLoading || !previewPlan ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Computing planned assignments…
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2 text-[11px]">
+                      {(["A","B","C","D"] as const).map((s) => (
+                        <Badge key={s} variant="outline">Shift {s}: <strong className="ml-1">{previewPlan.summary[s]}</strong></Badge>
+                      ))}
+                      <Badge className="bg-primary/15 text-primary border-primary/30">Changing: {previewPlan.changed}</Badge>
+                      <Badge variant="outline">Unchanged: {previewPlan.kept}</Badge>
+                      <Badge variant="outline">New stubs: {previewPlan.created}</Badge>
+                    </div>
+                    {previewPlan.changed === 0 && previewPlan.created === 0 ? (
+                      <p className="text-[11px] text-muted-foreground italic">All staff already match this shift configuration.</p>
+                    ) : (
+                      <details className="text-xs">
+                        <summary className="cursor-pointer font-medium text-muted-foreground">
+                          View {previewPlan.changed + previewPlan.created} planned change{previewPlan.changed + previewPlan.created === 1 ? "" : "s"}
+                        </summary>
+                        <div className="rounded border mt-2 overflow-x-auto max-h-60">
+                          <Table className="min-w-[640px]">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-16">Shift</TableHead>
+                                <TableHead>Staff</TableHead>
+                                <TableHead className="w-28">Staff ID</TableHead>
+                                <TableHead className="w-32">Current</TableHead>
+                                <TableHead className="w-32">Will become</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {previewPlan.matches
+                                .filter((m) => m.status === "new" || m.previous !== m.next)
+                                .slice(0, 200)
+                                .map((m, i) => (
+                                  <TableRow key={i}>
+                                    <TableCell className="text-[11px]"><Badge variant="outline">{m.shift}</Badge></TableCell>
+                                    <TableCell className="text-xs">{m.staff_name}</TableCell>
+                                    <TableCell className="text-[11px] font-mono">{m.staff_id ?? "—"}</TableCell>
+                                    <TableCell className="text-[11px]">
+                                      {m.status === "new" ? <span className="italic text-muted-foreground">new stub</span> : (m.previous ?? "—")}
+                                    </TableCell>
+                                    <TableCell className="text-[11px] font-medium">Shift {m.next}</TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </details>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button variant="outline" onClick={reset} disabled={committing}>
                 <XCircle className="h-4 w-4 mr-1" /> Discard
