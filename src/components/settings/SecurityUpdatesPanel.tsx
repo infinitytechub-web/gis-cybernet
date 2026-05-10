@@ -318,10 +318,11 @@ export function SecurityUpdatesPanel() {
                     <TableHead className="text-center">Errors</TableHead>
                     <TableHead className="text-center">Warnings</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Export</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {history.map((h: any) => (
+                  {history.map((h) => (
                     <TableRow key={h.id}>
                       <TableCell className="text-xs">{format(new Date(h.started_at), "PPp")}</TableCell>
                       <TableCell>
@@ -346,6 +347,26 @@ export function SecurityUpdatesPanel() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{h.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1"
+                            onClick={() => handleExportRun(h, "csv")}
+                          >
+                            <FileDown className="h-3.5 w-3.5" /> CSV
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1"
+                            onClick={() => handleExportRun(h, "pdf")}
+                          >
+                            <FileText className="h-3.5 w-3.5" /> PDF
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
