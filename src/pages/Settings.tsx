@@ -31,6 +31,7 @@ import { FirewallAlertSettings } from "@/components/settings/FirewallAlertSettin
 import { SecurityAuditPanel } from "@/components/settings/SecurityAuditPanel";
 import { HrmExportDlpPanel } from "@/components/settings/HrmExportDlpPanel";
 import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
+import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
