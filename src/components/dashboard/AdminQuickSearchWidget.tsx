@@ -99,38 +99,23 @@ export default function AdminQuickSearchWidget() {
       .slice(0, 8);
   }, [q]);
 
-  const { data: staffResults = [] } = useQuery({
-    queryKey: ["admin-quick-search", "staff", q],
+  const { data: serverResults } = useQuery({
+    queryKey: ["admin-quick-search-rpc", q],
     enabled: q.trim().length >= 2,
     queryFn: async () => {
-      const term = `%${q.trim()}%`;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, staff_id, rank, department, email")
-        .or(`first_name.ilike.${term},last_name.ilike.${term},staff_id.ilike.${term},email.ilike.${term}`)
-        .limit(6);
+      const { data, error } = await supabase.rpc("admin_quick_search", { _q: q.trim() });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? { staff: [], applications: [] }) as {
+        staff: any[];
+        applications: { id: string; ref: string | null; name: string | null; kind: string }[];
+      };
     },
     staleTime: 10_000,
+    retry: false,
   });
 
-  const { data: appResults = [] } = useQuery({
-    queryKey: ["admin-quick-search", "apps", q],
-    enabled: q.trim().length >= 3,
-    queryFn: async () => {
-      const term = `%${q.trim()}%`;
-      const out: { id: string; ref: string; kind: string; name?: string }[] = [];
-      const [pa, va] = await Promise.all([
-        supabase.from("passport_applications").select("id, reference_number, applicant_first_name, applicant_last_name").or(`reference_number.ilike.${term},applicant_first_name.ilike.${term},applicant_last_name.ilike.${term}`).limit(4),
-        supabase.from("visa_applications").select("id, reference_number, applicant_first_name, applicant_last_name").or(`reference_number.ilike.${term},applicant_first_name.ilike.${term},applicant_last_name.ilike.${term}`).limit(4),
-      ]);
-      pa.data?.forEach((r: any) => out.push({ id: r.id, ref: r.reference_number, kind: "Passport", name: `${r.applicant_first_name ?? ""} ${r.applicant_last_name ?? ""}`.trim() }));
-      va.data?.forEach((r: any) => out.push({ id: r.id, ref: r.reference_number, kind: "Visa", name: `${r.applicant_first_name ?? ""} ${r.applicant_last_name ?? ""}`.trim() }));
-      return out;
-    },
-    staleTime: 10_000,
-  });
+  const staffResults = serverResults?.staff ?? [];
+  const appResults = serverResults?.applications ?? [];
 
   type Row = { kind: "page" | "staff" | "app"; label: string; sublabel?: string; onSelect: () => void; group: string };
   const flatRows: Row[] = useMemo(() => {
