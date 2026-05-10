@@ -65,6 +65,68 @@ export type Database = {
           },
         ]
       }
+      announcement_files: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          description: string | null
+          download_count: number
+          filename: string
+          id: string
+          is_active: boolean
+          mime_type: string | null
+          scan_action: string | null
+          sha256: string | null
+          size_bytes: number
+          storage_path: string
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          download_count?: number
+          filename: string
+          id?: string
+          is_active?: boolean
+          mime_type?: string | null
+          scan_action?: string | null
+          sha256?: string | null
+          size_bytes: number
+          storage_path: string
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          description?: string | null
+          download_count?: number
+          filename?: string
+          id?: string
+          is_active?: boolean
+          mime_type?: string | null
+          scan_action?: string | null
+          sha256?: string | null
+          size_bytes?: number
+          storage_path?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_files_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           content: string
@@ -8696,6 +8758,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_announcement_file_downloads: {
+        Args: { _file_id: string }
+        Returns: undefined
       }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
       is_frontdesk_realtime_topic: {
