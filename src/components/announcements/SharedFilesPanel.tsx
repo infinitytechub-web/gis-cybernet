@@ -381,6 +381,7 @@ export function SharedFilesPanel() {
                   <TableHead className="hidden md:table-cell">Size</TableHead>
                   <TableHead className="hidden md:table-cell text-center">Downloads</TableHead>
                   <TableHead className="hidden lg:table-cell">Shared</TableHead>
+                  <TableHead className="hidden lg:table-cell">Expires</TableHead>
                   {isAdminOrSupervisor && <TableHead className="text-center w-[70px]">Active</TableHead>}
                   <TableHead className="w-[120px] text-right">Actions</TableHead>
                 </TableRow>
