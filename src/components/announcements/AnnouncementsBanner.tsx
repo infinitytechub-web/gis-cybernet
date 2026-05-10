@@ -31,14 +31,14 @@ export function AnnouncementsBanner() {
   const [deptId, setDeptId] = useState<string>("global");
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ["announcements"],
+    queryKey: ["announcements", "history"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("announcements")
         .select("*, departments(name)")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(100);
       if (error) throw error;
       return data ?? [];
     },
