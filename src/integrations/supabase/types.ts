@@ -6559,6 +6559,86 @@ export type Database = {
           },
         ]
       }
+      rotation_change_proposals: {
+        Row: {
+          affected_profile_ids: string[] | null
+          created_at: string
+          effective_from: string
+          id: string
+          pattern: Json
+          proposer_id: string
+          proposer_user_id: string
+          review_comment: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_profile_ids?: string[] | null
+          created_at?: string
+          effective_from: string
+          id?: string
+          pattern: Json
+          proposer_id: string
+          proposer_user_id: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_profile_ids?: string[] | null
+          created_at?: string
+          effective_from?: string
+          id?: string
+          pattern?: Json
+          proposer_id?: string
+          proposer_user_id?: string
+          review_comment?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rotation_change_proposals_proposer_id_fkey"
+            columns: ["proposer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotation_change_proposals_proposer_id_fkey"
+            columns: ["proposer_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotation_change_proposals_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rotation_change_proposals_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       route_tracking_history: {
         Row: {
           client_ip: unknown
@@ -8290,12 +8370,14 @@ export type Database = {
         Returns: string
       }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_export_hrm: { Args: { _kind: string }; Returns: boolean }
       can_export_interlink_logs: {
         Args: { _user_id: string }
         Returns: boolean
       }
       can_manage_appraisals: { Args: { _uid: string }; Returns: boolean }
+      can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_shift_connection_action: {
         Args: { _action: string }
         Returns: boolean
