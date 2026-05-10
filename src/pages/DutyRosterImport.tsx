@@ -180,6 +180,68 @@ export default function DutyRosterImport() {
     return acc;
   }, [parsed]);
 
+  // Schedule preview — fetch directory once parsed rows exist
+  const directory = useQuery({
+    queryKey: ["roster-preview-directory"],
+    enabled: !!parsed && parsed.rows.length > 0 && isAdminOrSupervisor,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, shift_group");
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; first_name: string | null; last_name: string | null;
+        staff_id: string | null; shift_group: string | null;
+      }>;
+    },
+  });
+
+  const previewPlan = useMemo(() => {
+    if (!parsed || !directory.data) return null;
+    const dir = directory.data;
+    const upper = (s: string | null | undefined) => (s ?? "").toUpperCase().trim();
+
+    const matches: Array<{
+      shift: "A"|"B"|"C"|"D"; staff_name: string; staff_id: string | null;
+      previous: string | null; next: "A"|"B"|"C"|"D"; status: "matched"|"new";
+    }> = [];
+
+    parsed.rows.forEach((r) => {
+      const parts = r.name.trim().split(/\s+/);
+      const last = parts[0] ?? "";
+      const first = parts[1] ?? "";
+      let p = dir.find((x) =>
+        upper(x.last_name) === upper(last) &&
+        (first === "" || upper(x.first_name).startsWith(upper(first)))
+      );
+      if (!p && first) {
+        p = dir.find((x) =>
+          upper(x.first_name) === upper(last) &&
+          upper(x.last_name).startsWith(upper(first))
+        );
+      }
+      matches.push({
+        shift: r.shift,
+        staff_name: p ? `${p.last_name ?? ""}, ${p.first_name ?? ""}` : r.name,
+        staff_id: p?.staff_id ?? null,
+        previous: p?.shift_group ?? null,
+        next: r.shift,
+        status: p ? "matched" : "new",
+      });
+    });
+
+    const summary = { A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>;
+    let changed = 0, kept = 0, created = 0;
+    matches.forEach((m) => {
+      summary[m.next]++;
+      if (m.status === "new") created++;
+      else if (m.previous === m.next) kept++;
+      else changed++;
+    });
+    return { matches, summary, changed, kept, created };
+  }, [parsed, directory.data]);
+
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
