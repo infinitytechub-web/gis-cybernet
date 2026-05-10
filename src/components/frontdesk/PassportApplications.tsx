@@ -61,6 +61,12 @@ export default function PassportApplications() {
     notes: "", status: "submitted",
     marital_status: "", foreign_address: "", next_of_kin: "",
     emergency_contact: "", street_name: "", nearest_landmark: "",
+    email: "", spouse_name: "",
+    surname: "", other_names: "", place_of_birth: "", occupation: "",
+    ghana_card_number: "",
+    biometric_consent: false,
+    witnessing_officer_name: "", witnessing_officer_rank: "",
+    declaration_signed: false, declaration_date: "",
   });
 
   const { data: applications = [], isLoading } = useQuery({
