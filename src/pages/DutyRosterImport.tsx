@@ -407,13 +407,14 @@ export default function DutyRosterImport() {
                   <TableHead className="w-20">Rows</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Saved at</TableHead>
+                  <TableHead className="w-32 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recent.isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : (recent.data ?? []).length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No imports yet</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No imports yet</TableCell></TableRow>
                 ) : (
                   (recent.data ?? []).map((i: any) => (
                     <TableRow key={i.id}>
@@ -426,6 +427,23 @@ export default function DutyRosterImport() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs">{i.committed_at ? new Date(i.committed_at).toLocaleString() : "—"}</TableCell>
+                      <TableCell className="text-right">
+                        {i.status === "committed" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs gap-1"
+                            disabled={deployingId === i.id}
+                            onClick={() => handleRedeploy(i.id)}
+                            title="Re-deploy A/B/C/D shift assignments using this import's effective date"
+                          >
+                            {deployingId === i.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Rocket className="h-3 w-3" />}
+                            Deploy
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
