@@ -273,6 +273,52 @@ export default function ProcessingPassportApplications() {
                   Last reviewed {format(new Date(reviewApp.mfa_reviewed_at), "dd MMM yyyy HH:mm")}
                 </div>
               )}
+
+              <div className="border-t pt-3 mt-2">
+                <div className="text-xs font-semibold mb-2">MFA Review Audit Trail</div>
+                {mfaAuditTrail.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">No prior reviews recorded.</div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {mfaAuditTrail.map((a: any) => {
+                      const r = a.reviewer;
+                      const who = r ? `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() + (r.staff_id ? ` (${r.staff_id})` : "") : "System";
+                      const colorMap: Record<string, string> = {
+                        approved: "bg-green-100 text-green-800",
+                        rejected: "bg-red-100 text-red-800",
+                        pending: "bg-amber-100 text-amber-800",
+                      };
+                      return (
+                        <div key={a.id} className="text-xs rounded border p-2 bg-muted/30">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className={colorMap[a.previous_status ?? "pending"] ?? ""}>
+                                {a.previous_status ?? "—"}
+                              </Badge>
+                              <span className="text-muted-foreground">→</span>
+                              <Badge variant="outline" className={colorMap[a.new_status] ?? ""}>
+                                {a.new_status}
+                              </Badge>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">
+                              {format(new Date(a.reviewed_at), "dd MMM yyyy HH:mm")}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-muted-foreground">
+                            By: <span className="text-foreground font-medium">{who}</span>
+                          </div>
+                          {a.reviewer_notes && (
+                            <div className="mt-1">
+                              <span className="text-muted-foreground">Comment:</span>{" "}
+                              <span className="text-foreground">{a.reviewer_notes}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
