@@ -268,6 +268,14 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           <Label>Date *</Label>
           <Input type="date" value={form.operation_date} onChange={e => setForm(p => ({ ...p, operation_date: e.target.value }))} required />
         </div>
+        <div className="space-y-2">
+          <Label>Time</Label>
+          <Input type="time" value={form.operation_time} onChange={e => setForm(p => ({ ...p, operation_time: e.target.value }))} />
+        </div>
+        <div className="space-y-2">
+          <Label>GPS Coordinates (lat,lng)</Label>
+          <Input placeholder="e.g. 5.6037, -0.1870" value={form.gps_coordinates} onChange={e => setForm(p => ({ ...p, gps_coordinates: e.target.value }))} />
+        </div>
       </div>
       <div className="space-y-2">
         <Label>Location</Label>
