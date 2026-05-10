@@ -220,6 +220,55 @@ export default function MfaGate() {
               <Button onClick={handleVerify} disabled={busy || code.length !== 6} className="w-full">
                 {busy ? "Verifying…" : "Verify"}
               </Button>
+              <div className="text-center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setRecoveryCode(""); setPhase("recovery"); }}
+                >
+                  <KeyRound className="h-3 w-3" />
+                  Lost your authenticator? Use a recovery code
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {phase === "recovery" && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Enter one of the one-time recovery codes you saved when setting up 2FA.
+                Each code can only be used once and will let you enrol a new authenticator.
+              </p>
+              <div>
+                <Label className="text-xs">Recovery code</Label>
+                <Input
+                  value={recoveryCode}
+                  onChange={(e) => setRecoveryCode(e.target.value)}
+                  placeholder="e.g. ABCD-EFGH-1234"
+                  className="mt-2 font-mono tracking-wider text-center"
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <Button
+                onClick={handleRecovery}
+                disabled={busy || recoveryCode.trim().length < 8}
+                className="w-full"
+              >
+                {busy ? "Verifying…" : "Use recovery code"}
+              </Button>
+              <div className="text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setRecoveryCode(""); setCode(""); setPhase("verify"); }}
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Back to authenticator code
+                </Button>
+              </div>
             </div>
           )}
 
