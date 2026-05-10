@@ -262,8 +262,11 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Announcements */}
-      <AnnouncementsBanner />
+      {/* Announcements + Birthdays — informational pair, side-by-side on desktop */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AnnouncementsBanner />
+        <BirthdayWidget />
+      </div>
 
 
       {/* Live GPS Map — Admin / OIC / 2IC / Staff Officer (Head of Admin & Chief Staff Officer) */}
