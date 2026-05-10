@@ -26,6 +26,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Staff = lazy(() => import("./pages/Staff"));
 const StaffProfile = lazy(() => import("./pages/StaffProfile"));
 const StaffDirectory = lazy(() => import("./pages/StaffDirectory"));
+const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const Shifts = lazy(() => import("./pages/Shifts"));
