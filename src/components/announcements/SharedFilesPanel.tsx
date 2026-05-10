@@ -261,14 +261,16 @@ export function SharedFilesPanel() {
           </CardDescription>
         </div>
         {isAdminOrSupervisor && (
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5">
-                <FileUp className="h-4 w-4" /> Share File
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Share a file</DialogTitle></DialogHeader>
+          <div className="flex items-center gap-2">
+            <FileAuditTrailDialog />
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1.5">
+                  <FileUp className="h-4 w-4" /> Share File
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Share a file</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Title</Label>
