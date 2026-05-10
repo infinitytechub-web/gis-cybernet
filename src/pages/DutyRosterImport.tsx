@@ -192,25 +192,35 @@ export default function DutyRosterImport() {
     queryKey: ["roster-preview-directory"],
     enabled: !!parsed && parsed.rows.length > 0 && isAdminOrSupervisor,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group");
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        id: string; first_name: string | null; last_name: string | null;
-        staff_id: string | null; shift_group: string | null;
-      }>;
+      const [{ data: profs, error: e1 }, { data: depts, error: e2 }] = await Promise.all([
+        supabase.from("profiles").select("id, first_name, last_name, staff_id, shift_group, department_id, office"),
+        supabase.from("departments").select("id, name"),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const deptMap = new Map<string, string>();
+      (depts ?? []).forEach((d: any) => deptMap.set(d.id, d.name));
+      return {
+        profiles: (profs ?? []) as Array<{
+          id: string; first_name: string | null; last_name: string | null;
+          staff_id: string | null; shift_group: string | null;
+          department_id: string | null; office: string | null;
+        }>,
+        deptMap,
+      };
     },
   });
 
   const previewPlan = useMemo(() => {
     if (!parsed || !directory.data) return null;
-    const dir = directory.data;
+    const { profiles: dir, deptMap } = directory.data;
     const upper = (s: string | null | undefined) => (s ?? "").toUpperCase().trim();
+    const emptyShifts = () => ({ A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>);
 
     const matches: Array<{
       shift: "A"|"B"|"C"|"D"; staff_name: string; staff_id: string | null;
       previous: string | null; next: "A"|"B"|"C"|"D"; status: "matched"|"new";
+      department: string; office: string;
     }> = [];
 
     parsed.rows.forEach((r) => {
@@ -227,6 +237,10 @@ export default function DutyRosterImport() {
           upper(x.last_name).startsWith(upper(first))
         );
       }
+      const department =
+        (p?.department_id && deptMap.get(p.department_id)) ||
+        (r.unit?.trim() ? r.unit.trim() : "Unassigned");
+      const office = p?.office?.trim() || "Unassigned";
       matches.push({
         shift: r.shift,
         staff_name: p ? `${p.last_name ?? ""}, ${p.first_name ?? ""}` : r.name,
@@ -234,19 +248,39 @@ export default function DutyRosterImport() {
         previous: p?.shift_group ?? null,
         next: r.shift,
         status: p ? "matched" : "new",
+        department,
+        office,
       });
     });
 
-    const summary = { A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>;
+    const summary = emptyShifts();
     let changed = 0, kept = 0, created = 0;
+    const byDepartment = new Map<string, Record<"A"|"B"|"C"|"D", number> & { total: number }>();
+    const byOffice = new Map<string, Record<"A"|"B"|"C"|"D", number> & { total: number }>();
+    const bump = (m: Map<string, any>, key: string, shift: "A"|"B"|"C"|"D") => {
+      let row = m.get(key);
+      if (!row) { row = { ...emptyShifts(), total: 0 }; m.set(key, row); }
+      row[shift]++; row.total++;
+    };
     matches.forEach((m) => {
       summary[m.next]++;
       if (m.status === "new") created++;
       else if (m.previous === m.next) kept++;
       else changed++;
+      bump(byDepartment, m.department, m.next);
+      bump(byOffice, m.office, m.next);
     });
-    return { matches, summary, changed, kept, created };
+    const sortRows = (m: Map<string, any>) =>
+      Array.from(m.entries())
+        .map(([name, v]) => ({ name, ...v }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    return {
+      matches, summary, changed, kept, created,
+      byDepartment: sortRows(byDepartment),
+      byOffice: sortRows(byOffice),
+    };
   }, [parsed, directory.data]);
+
 
 
   if (loading) return null;
