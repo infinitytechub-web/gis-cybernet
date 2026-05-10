@@ -4695,6 +4695,10 @@ export type Database = {
           height_cm: number | null
           id: string
           marital_status: string | null
+          mfa_review_notes: string | null
+          mfa_review_status: string
+          mfa_reviewed_at: string | null
+          mfa_reviewed_by: string | null
           mother_name: string | null
           nationality: string
           nearest_landmark: string | null
@@ -4745,6 +4749,10 @@ export type Database = {
           height_cm?: number | null
           id?: string
           marital_status?: string | null
+          mfa_review_notes?: string | null
+          mfa_review_status?: string
+          mfa_reviewed_at?: string | null
+          mfa_reviewed_by?: string | null
           mother_name?: string | null
           nationality: string
           nearest_landmark?: string | null
@@ -4795,6 +4803,10 @@ export type Database = {
           height_cm?: number | null
           id?: string
           marital_status?: string | null
+          mfa_review_notes?: string | null
+          mfa_review_status?: string
+          mfa_reviewed_at?: string | null
+          mfa_reviewed_by?: string | null
           mother_name?: string | null
           nationality?: string
           nearest_landmark?: string | null
