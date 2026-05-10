@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 
@@ -139,6 +139,23 @@ export default function DutyRosterImport() {
   const [effectiveDate, setEffectiveDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [deployingId, setDeployingId] = useState<string | null>(null);
+
+  const handleRedeploy = async (importId: string) => {
+    setDeployingId(importId);
+    try {
+      const { data, error } = await supabase.rpc("auto_deploy_roster_assignments", { _import_id: importId });
+      if (error) throw error;
+      const d: any = data ?? {};
+      toast.success(
+        `Deployed ${d.assigned ?? 0} staff to shifts · ${d.skipped_already_on_shift ?? 0} already current · ${d.missing_shift_definition ?? 0} unmapped`
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Deploy failed");
+    } finally {
+      setDeployingId(null);
+    }
+  };
 
   const recent = useQuery({
     queryKey: ["duty-roster-imports"],
@@ -220,9 +237,18 @@ export default function DutyRosterImport() {
         toast.warning(`Saved ${entries.length} rows, but auto-match failed: ${e4.message}`);
       } else {
         const r: any = matchRes ?? {};
-        toast.success(
-          `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${r.pending ?? 0} pending approval`
-        );
+        // Auto-deploy A/B/C/D shift assignments for matched staff
+        const { data: depRes, error: e5 } = await supabase.rpc("auto_deploy_roster_assignments", { _import_id: imp.id });
+        if (e5) {
+          toast.warning(
+            `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${r.pending ?? 0} pending · deploy failed: ${e5.message}`
+          );
+        } else {
+          const d: any = depRes ?? {};
+          toast.success(
+            `Saved ${entries.length} rows · ${r.matched ?? 0} matched · ${d.assigned ?? 0} deployed to A/B/C/D · ${r.pending ?? 0} pending approval`
+          );
+        }
       }
       qc.invalidateQueries({ queryKey: ["duty-roster-imports"] });
       qc.invalidateQueries({ queryKey: ["pending-staff-matches"] });
@@ -381,13 +407,14 @@ export default function DutyRosterImport() {
                   <TableHead className="w-20">Rows</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Saved at</TableHead>
+                  <TableHead className="w-32 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recent.isLoading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
                 ) : (recent.data ?? []).length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No imports yet</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">No imports yet</TableCell></TableRow>
                 ) : (
                   (recent.data ?? []).map((i: any) => (
                     <TableRow key={i.id}>
@@ -400,6 +427,23 @@ export default function DutyRosterImport() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs">{i.committed_at ? new Date(i.committed_at).toLocaleString() : "—"}</TableCell>
+                      <TableCell className="text-right">
+                        {i.status === "committed" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs gap-1"
+                            disabled={deployingId === i.id}
+                            onClick={() => handleRedeploy(i.id)}
+                            title="Re-deploy A/B/C/D shift assignments using this import's effective date"
+                          >
+                            {deployingId === i.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Rocket className="h-3 w-3" />}
+                            Deploy
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
