@@ -3,6 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <!-- ─── Security headers (defence-in-depth against XSS/clickjacking/sniffing) ───
+         Note: `frame-ancestors` and `X-Frame-Options` must be set as HTTP headers
+         to be enforced; meta-tag fallbacks are included for hosts that honour them.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      base-uri 'self';
+      object-src 'none';
+      form-action 'self';
+      frame-ancestors 'self';
+      script-src 'self' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com;
+      script-src-elem 'self' https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline';
+      style-src-elem 'self' 'unsafe-inline';
+      font-src 'self' data:;
+      img-src 'self' data: blob: https:;
+      media-src 'self' blob: data:;
+      worker-src 'self' blob:;
+      manifest-src 'self';
+      connect-src 'self' https://ebndffutyrgybsduvijo.supabase.co wss://ebndffutyrgybsduvijo.supabase.co https://nominatim.openstreetmap.org https://api.qrserver.com https://server.arcgisonline.com https://*.tile.openstreetmap.org https://hooks.slack.com;
+      frame-src 'self' https://view.officeapps.live.com;
+      upgrade-insecure-requests;
+    ">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="geolocation=(self), camera=(self), microphone=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=()" />
+
     <title>GAR-Cybernet</title>
     <meta name="description" content="Ghana Immigration Service, Amasaman Sector Command - Cybernet HRM System">
     <meta name="author" content="Lovable" />
