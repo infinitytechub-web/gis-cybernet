@@ -225,7 +225,29 @@ export default function StaffAppraisalsWidget() {
             Staff Appraisal Reports
             <Badge variant="outline" className="ml-1 text-[10px]">{periodLabel}</Badge>
           </CardTitle>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={exportCsv}
+              disabled={exporting !== null}
+              title="Export full coverage report as CSV"
+            >
+              {exporting === "csv" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileSpreadsheet className="h-3 w-3" />}
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={exportPdf}
+              disabled={exporting !== null}
+              title="Export full coverage report as PDF"
+            >
+              {exporting === "pdf" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+              PDF
+            </Button>
             <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/appraisals/coverage")}>
               Coverage
             </Button>
