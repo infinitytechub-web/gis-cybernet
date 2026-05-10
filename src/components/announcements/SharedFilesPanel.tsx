@@ -486,11 +486,30 @@ export function SharedFilesPanel() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7"
+                            title="Preview"
+                            onClick={() => handlePreview(f)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
                             title="Download"
                             onClick={() => handleDownload(f)}
                           >
                             <Download className="h-3.5 w-3.5" />
                           </Button>
+                          {isAdminOrSupervisor && (
+                            <FileAuditTrailDialog
+                              fileId={f.id}
+                              trigger={
+                                <Button size="icon" variant="ghost" className="h-7 w-7" title="Audit trail">
+                                  <ScrollText className="h-3.5 w-3.5" />
+                                </Button>
+                              }
+                            />
+                          )}
                           {isAdminOrSupervisor && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
