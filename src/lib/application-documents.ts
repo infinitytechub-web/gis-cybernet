@@ -26,6 +26,7 @@ const COMMON_PASSPORT: DocSlot[] = [
   { key: "birth_cert", label: "Birth certificate", required: true },
   { key: "passport_photo", label: "Two recent passport photographs", required: true },
   { key: "guarantor_form", label: "Guarantor form (signed)", required: true },
+  { key: "signed_declaration", label: "Signed Declaration (MFA Form A)", required: true },
   { key: "old_passport", label: "Previous passport (renewal/replacement)", required: false },
   { key: "police_report", label: "Police report (replacement only)", required: false },
   { key: "fee_receipt", label: "Application fee receipt", required: true },
