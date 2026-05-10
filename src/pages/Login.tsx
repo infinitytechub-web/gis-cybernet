@@ -98,7 +98,13 @@ export default function Login() {
       const emailData = (lookupData as { email?: string } | null)?.email ?? null;
       if (lookupErr || !emailData) {
         // record_failed_login already logged inside the edge function — no
-        // need to double-log here.
+        // need to double-log here. Surface a toast so the user isn't stuck
+        // staring at a silent form.
+        toast({
+          title: "Login Failed",
+          description: "Invalid Staff/Admin ID or password. Please check the ID and try again.",
+          variant: "destructive",
+        });
         throw new Error("Invalid ID or password");
       }
 
