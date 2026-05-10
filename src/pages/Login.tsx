@@ -61,8 +61,8 @@ export default function Login() {
       // Best-effort client IP lookup (used by admin alert trigger)
       let clientIp: string | null = null;
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        if (ipRes.ok) clientIp = (await ipRes.json())?.ip ?? null;
+        const { data } = await supabase.functions.invoke("client-ip-info");
+        clientIp = (data as any)?.ip ?? null;
       } catch { /* ignore network errors */ }
 
       // Device fingerprint for block check
