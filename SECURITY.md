@@ -129,7 +129,26 @@ Two additional defences are in place anyway:
    the allow-list (`*.lovable.app`, `*.lovableproject.com`, the published
    Cybernet domain) **or** that lacks the `x-cybernet-app` header. Cron and
    service-role callers (already authenticated via
-   `_shared/cron-auth.ts`) bypass the check.
+   `_shared/cron-auth.ts`) bypass the check automatically.
+
+   **Currently protected** (browser-invokable, state-changing):
+   `admin-delete-staff-account`, `admin-reset-password`,
+   `bulk-create-accounts`, `bulk-upload-staff`,
+   `interlink-resend-notification`, `reset-and-create-accounts`,
+   `send-record-email`, `send-transactional-email`, `sign-export`,
+   `system-backup`, `system-backup-restore`, `verify-shift-auth`,
+   `gps-cloud-export`, `preview-transactional-email`. Each function also
+   adds `x-cybernet-app` to its `Access-Control-Allow-Headers` so the
+   browser preflight succeeds.
+
+   **Intentionally exempt**: cron-only handlers (`run-*`,
+   `*-scheduler`, `*-dispatcher`, `process-email-queue`,
+   `refresh-threat-feeds`, `system-backup-cleanup`,
+   `attendance-compliance-report`, `generate-scheduled-report`,
+   `email-domain-recheck`, `role-based-notifier`), public webhooks
+   (`handle-email-suppression`, `handle-email-unsubscribe`), and read-only
+   GET endpoints (`client-ip-info`, `maps-tile-proxy`).
+
 
 3. **SameSite cookies.**
    The only application cookie (`sidebar:state`, set in `components/ui/sidebar.tsx`)
