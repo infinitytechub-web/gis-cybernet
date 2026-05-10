@@ -1,0 +1,1 @@
+DELETE FROM auth.mfa_factors WHERE user_id IN ('e8a92d56-f3dc-4cb8-851f-9ade59aabb7a','3ba080df-3016-4dc5-a889-7d172198122a','95b4521f-f0fc-43fe-8658-38d8201ba41e');
