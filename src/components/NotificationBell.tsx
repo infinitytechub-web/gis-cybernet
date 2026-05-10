@@ -43,6 +43,9 @@ const typeLabels: Record<string, string> = {
 // Smart routing: 'general' notifications are routed by title keyword to the right module
 function routeForNotification(n: any): string {
   const t = (n?.title || "").toLowerCase();
+  if (t.startsWith("profile change")) {
+    return n?.reference_id ? `/my-profile?request=${n.reference_id}` : "/my-profile";
+  }
   if (HEALTH_APPT_TYPES.has(n?.type) || t.includes("appointment")) return "/health-lab";
   if (t.includes("detention") || t.includes("custody")) return "/holding";
   if (t.includes("inventory") || t.includes("stock")) return "/stores";
