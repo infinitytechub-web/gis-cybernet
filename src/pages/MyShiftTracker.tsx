@@ -933,6 +933,9 @@ export default function MyShiftTracker() {
           attendances={attendances}
         />
       )}
+
+      {/* Unit-wide rotation change proposal (authorised proposers only) */}
+      <RotationChangeProposalPanel />
     </div>
   );
 }
