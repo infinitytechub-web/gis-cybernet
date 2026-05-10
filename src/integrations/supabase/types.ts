@@ -4514,67 +4514,106 @@ export type Database = {
       }
       operations: {
         Row: {
+          action_taken: string | null
           arrests_count: number
           authorized_by: string | null
+          casualties_count: number
           contact_details: string | null
           created_at: string
           department_id: string | null
           description: string | null
+          follow_up_notes: string | null
+          follow_up_required: boolean
+          gps_coordinates: string | null
+          hq_reference_number: string | null
           id: string
+          items_seized: string | null
           location: string | null
+          log_reference: string | null
           mugshot_path: string | null
           notes: string | null
           officer_in_charge: string | null
           operation_date: string
+          operation_time: string | null
           operation_type: string
           outcome: string | null
           reported_by: string
           severity: string
           status: string
+          supervisor_remarks: string | null
           suspects_count: number
           updated_at: string
+          vehicles_involved: string | null
+          weapons_used: string | null
+          witnesses: string | null
         }
         Insert: {
+          action_taken?: string | null
           arrests_count?: number
           authorized_by?: string | null
+          casualties_count?: number
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          gps_coordinates?: string | null
+          hq_reference_number?: string | null
           id?: string
+          items_seized?: string | null
           location?: string | null
+          log_reference?: string | null
           mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
+          operation_time?: string | null
           operation_type?: string
           outcome?: string | null
           reported_by: string
           severity?: string
           status?: string
+          supervisor_remarks?: string | null
           suspects_count?: number
           updated_at?: string
+          vehicles_involved?: string | null
+          weapons_used?: string | null
+          witnesses?: string | null
         }
         Update: {
+          action_taken?: string | null
           arrests_count?: number
           authorized_by?: string | null
+          casualties_count?: number
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          gps_coordinates?: string | null
+          hq_reference_number?: string | null
           id?: string
+          items_seized?: string | null
           location?: string | null
+          log_reference?: string | null
           mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
+          operation_time?: string | null
           operation_type?: string
           outcome?: string | null
           reported_by?: string
           severity?: string
           status?: string
+          supervisor_remarks?: string | null
           suspects_count?: number
           updated_at?: string
+          vehicles_involved?: string | null
+          weapons_used?: string | null
+          witnesses?: string | null
         }
         Relationships: [
           {
