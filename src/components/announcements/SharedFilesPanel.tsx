@@ -14,10 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck } from "lucide-react";
+import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck, Eye, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { softDelete } from "@/lib/recycle-bin";
+import { logFileAudit } from "@/lib/announcement-file-audit";
+import { FileAuditTrailDialog } from "./FileAuditTrailDialog";
 
 const fmtSize = (n: number) => {
   if (n < 1024) return `${n} B`;
