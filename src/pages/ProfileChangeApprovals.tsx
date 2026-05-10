@@ -204,10 +204,10 @@ export default function ProfileChangeApprovals() {
                         onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })}
                         rows={2}
                       />
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           size="sm"
-                          onClick={() => review.mutate({ id: r.id, status: "approved" })}
+                          onClick={() => review.mutate({ id: r.id, status: "approved", req: r })}
                           disabled={review.isPending}
                           className="gap-1 bg-emerald-600 hover:bg-emerald-700"
                         >
@@ -216,7 +216,7 @@ export default function ProfileChangeApprovals() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => review.mutate({ id: r.id, status: "rejected" })}
+                          onClick={() => review.mutate({ id: r.id, status: "rejected", req: r })}
                           disabled={review.isPending}
                           className="gap-1"
                         >
@@ -224,11 +224,33 @@ export default function ProfileChangeApprovals() {
                         </Button>
                       </div>
                     </>
-                  ) : r.reviewer_notes ? (
-                    <div className="text-xs text-muted-foreground">
-                      Reviewer notes: <span className="text-foreground">{r.reviewer_notes}</span>
+                  ) : (
+                    <div className="space-y-2">
+                      {r.reviewer_notes && (
+                        <div className="text-xs text-muted-foreground">
+                          Reviewer notes: <span className="text-foreground">{r.reviewer_notes}</span>
+                        </div>
+                      )}
+                      {(r.status === "approved" || r.status === "rejected") && (
+                        <div className="flex flex-col gap-2">
+                          <Textarea
+                            placeholder="Notes for re-review (optional)"
+                            value={notes[r.id] ?? ""}
+                            onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })}
+                            rows={2}
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => review.mutate({ id: r.id, status: "pending", req: r })}
+                            disabled={review.isPending}
+                          >
+                            Mark Pending (re-review)
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  ) : null}
+                  )}
                 </CardContent>
               </Card>
             ))
