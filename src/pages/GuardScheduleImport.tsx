@@ -54,9 +54,12 @@ export const SHIFT_PERIOD_INFO: Record<Shift, { label: string; start: string; en
 
 // ----- PDF text extraction -----
 async function extractPdfText(file: File): Promise<string[]> {
-  // Lazy import; configure worker via CDN to avoid Vite worker setup.
+  // Lazy import; self-host worker (bundled by Vite) so we never load executable
+  // code from a third-party CDN. This sidesteps SRI/version-pinning concerns.
   const pdfjs: any = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+  // @ts-expect-error - Vite ?url suffix returns a string URL for the asset
+  const workerUrl: string = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const pages: string[] = [];
