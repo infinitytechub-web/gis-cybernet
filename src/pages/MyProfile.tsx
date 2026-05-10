@@ -189,7 +189,9 @@ export default function MyProfile() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Editable details</CardTitle>
-          <CardDescription className="text-xs">Update your name, contact, and personal info.</CardDescription>
+          <CardDescription className="text-xs">
+            Edits are submitted for Command / Admin approval before they appear in the system.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -235,13 +237,52 @@ export default function MyProfile() {
 
           <div className="flex gap-2 flex-wrap pt-2">
             <Button onClick={() => save.mutate()} disabled={!dirty || save.isPending} className="gap-1">
-              <Save className="h-4 w-4" /> {save.isPending ? "Saving…" : "Save changes"}
+              <Save className="h-4 w-4" /> {save.isPending ? "Submitting…" : "Submit for approval"}
             </Button>
             <Button variant="outline" onClick={() => qc.invalidateQueries({ queryKey: ["my-profile-self-edit"] })} className="gap-1">
               <RefreshCw className="h-4 w-4" /> Reload
             </Button>
             {dirty && <span className="text-xs text-amber-600 self-center">Unsaved changes</span>}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">My change requests</CardTitle>
+          <CardDescription className="text-xs">Recent profile edits you submitted and their review status.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!myRequests || myRequests.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No change requests yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {myRequests.map((r: any) => (
+                <div key={r.id} className="rounded border p-2 text-xs space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${
+                      r.status === "approved" ? "bg-emerald-100 text-emerald-800" :
+                      r.status === "rejected" ? "bg-red-100 text-red-800" :
+                      r.status === "cancelled" ? "bg-muted text-muted-foreground" :
+                      "bg-amber-100 text-amber-800"
+                    }`}>{r.status}</span>
+                    <span className="text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    Fields: <span className="font-medium text-foreground">{Object.keys(r.requested_changes || {}).join(", ") || "—"}</span>
+                  </div>
+                  {r.reviewer_notes && (
+                    <div className="text-muted-foreground">Reviewer notes: <span className="text-foreground">{r.reviewer_notes}</span></div>
+                  )}
+                  {r.status === "pending" && (
+                    <Button size="sm" variant="outline" onClick={() => cancelRequest.mutate(r.id)} disabled={cancelRequest.isPending}>
+                      Cancel request
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
