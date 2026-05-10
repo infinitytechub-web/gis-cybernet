@@ -315,14 +315,25 @@ export function NotificationBell() {
                             </span>
                           </div>
                         </div>
-                        {!n.is_read && (
+                        {!n.is_read ? (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 shrink-0"
+                            title="Mark as read"
                             onClick={(e) => { e.stopPropagation(); markAsReadMutation.mutate(n.id); }}
                           >
                             <Check className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            title="Mark as unread"
+                            onClick={(e) => { e.stopPropagation(); markAsUnreadMutation.mutate(n.id); }}
+                          >
+                            <Undo2 className="h-3 w-3" />
                           </Button>
                         )}
                       </button>
