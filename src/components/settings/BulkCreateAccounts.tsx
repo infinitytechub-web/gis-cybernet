@@ -20,6 +20,7 @@ interface CreatedAccount {
 export function BulkCreateAccounts() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
   const [results, setResults] = useState<CreatedAccount[] | null>(null);
   const [errors, setErrors] = useState<Array<{ staffId: string; error: string }>>([]);
   const [total, setTotal] = useState(0);
