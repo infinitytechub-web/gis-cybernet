@@ -328,8 +328,9 @@ export function SharedFilesPanel() {
                   Upload &amp; Share
                 </Button>
               </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
