@@ -40,7 +40,7 @@ export function BulkCreateAccounts() {
     pollingRef.current = setInterval(async () => {
       const { data, error } = await supabase
         .from("processing_jobs")
-        .select("status, progress, total, result, error")
+        .select("status, progress, total, error")
         .eq("id", jobId)
         .single();
 
@@ -55,15 +55,22 @@ export function BulkCreateAccounts() {
         setJobStatus(null);
         setIsResetting(false);
 
-        const result = data.result as any;
-        setResults(result?.created ?? []);
-        setErrors(result?.errors ?? []);
-        setTotal(result?.total ?? 0);
+        // Fetch credentials via admin-only RPC that scrubs passwords from storage after read
+        const { data: result, error: rpcErr } = await supabase
+          .rpc("consume_processing_job_credentials", { p_job_id: jobId });
+        if (rpcErr) {
+          toast.error(rpcErr.message || "Failed to retrieve credentials");
+          return;
+        }
+        const r = result as any;
+        setResults(r?.created ?? []);
+        setErrors(r?.errors ?? []);
+        setTotal(r?.total ?? 0);
 
-        if (result?.created?.length > 0) {
-          toast.success(`${result.created.length} accounts regenerated successfully`);
+        if (r?.created?.length > 0) {
+          toast.success(`${r.created.length} accounts regenerated successfully`);
         } else {
-          toast.info(result?.message || "No accounts to regenerate");
+          toast.info(r?.message || "No accounts to regenerate");
         }
       } else if (data.status === "failed") {
         clearInterval(pollingRef.current!);

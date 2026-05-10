@@ -8462,6 +8462,10 @@ export type Database = {
         }
         Returns: string
       }
+      consume_processing_job_credentials: {
+        Args: { p_job_id: string }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -8786,6 +8790,7 @@ export type Database = {
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }
         | { Args: { _ip_address?: string; _staff_id: string }; Returns: Json }
+      redact_old_job_passwords: { Args: never; Returns: undefined }
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
