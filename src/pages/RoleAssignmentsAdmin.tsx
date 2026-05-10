@@ -9,8 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { UserCog, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  UserCog, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet,
+  Trash2, Search, Users, History, Plus, Building2, Undo2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { logAdminAudit } from "@/lib/admin-audit";
+import { ROLE_LABEL } from "@/lib/role-labels";
 
 type AppRole =
   | "admin" | "supervisor" | "staff" | "deputy_supervisor" | "deputy_shift_leader"
@@ -42,25 +51,75 @@ function normalizeRole(r: string): AppRole | null {
   return (KNOWN_ROLES as string[]).includes(k) ? (k as AppRole) : null;
 }
 
+const labelFor = (r: string) => (ROLE_LABEL as Record<string, string>)[r] ?? r.replace(/_/g, " ");
+
 export default function RoleAssignmentsAdmin() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
   const [preview, setPreview] = useState<PreviewRow[] | null>(null);
   const [parsing, setParsing] = useState(false);
+  const [tab, setTab] = useState("users");
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<{ user_id: string; staff_id: string; name: string; department_id: string | null; roles: AppRole[] } | null>(null);
+  const [addingRole, setAddingRole] = useState<AppRole | "">("");
+  const [editingDept, setEditingDept] = useState<string>("");
 
-  const { data: existingAssignments = [], isLoading } = useQuery({
+  // ---- Data ---------------------------------------------------------------
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("departments").select("id, name").order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
+  });
+  const deptName = (id?: string | null) => departments.find((d) => d.id === id)?.name ?? "—";
+
+  const { data: users = [], isLoading: loadingUsers } = useQuery({
+    queryKey: ["role-mgmt-users"],
+    queryFn: async () => {
+      const { data: profs, error } = await supabase
+        .from("profiles")
+        .select("user_id, staff_id, first_name, last_name, department_id, status")
+        .order("last_name");
+      if (error) throw error;
+      const ids = (profs ?? []).map((p) => p.user_id);
+      if (!ids.length) return [];
+      const { data: roles } = await supabase
+        .from("user_roles").select("user_id, role").in("user_id", ids);
+      const rolesByUser = new Map<string, AppRole[]>();
+      (roles ?? []).forEach((r) => {
+        const k = r.user_id;
+        if (!rolesByUser.has(k)) rolesByUser.set(k, []);
+        rolesByUser.get(k)!.push(r.role as AppRole);
+      });
+      return (profs ?? []).map((p) => ({ ...p, roles: rolesByUser.get(p.user_id) ?? [] }));
+    },
+    enabled: isAdmin,
+  });
+
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) =>
+      [u.staff_id, u.first_name, u.last_name, deptName(u.department_id), ...u.roles]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [users, search, departments]);
+
+  const { data: existingAssignments = [] } = useQuery({
     queryKey: ["role-assignments-list"],
     queryFn: async () => {
       const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("id, role, user_id");
+        .from("user_roles").select("id, role, user_id");
       if (error) throw error;
       const userIds = Array.from(new Set(roles.map((r) => r.user_id)));
       if (!userIds.length) return [];
       const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id, staff_id, first_name, last_name")
-        .in("user_id", userIds);
+        .from("profiles").select("user_id, staff_id, first_name, last_name").in("user_id", userIds);
       const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
       return roles.map((r) => ({ ...r, profile: map.get(r.user_id) }));
     },
@@ -73,6 +132,132 @@ export default function RoleAssignmentsAdmin() {
     return c;
   }, [existingAssignments]);
 
+  const { data: auditTrail = [], isLoading: loadingAudit } = useQuery({
+    queryKey: ["role-mgmt-audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("system_audit_log")
+        .select("id, action, entity_type, entity_id, details, created_at, performed_by")
+        .in("entity_type", ["user_role", "profile_department"])
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      const actorIds = Array.from(new Set((data ?? []).map((d: any) => d.performed_by).filter(Boolean)));
+      const targetIds = Array.from(new Set((data ?? []).map((d: any) => d.entity_id).filter(Boolean)));
+      const allIds = Array.from(new Set([...actorIds, ...targetIds]));
+      const { data: profs } = allIds.length
+        ? await supabase.from("profiles").select("user_id, staff_id, first_name, last_name").in("user_id", allIds)
+        : { data: [] as any[] };
+      const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
+      return (data ?? []).map((d: any) => ({
+        ...d,
+        actor: map.get(d.performed_by),
+        target: map.get(d.entity_id),
+      }));
+    },
+    enabled: isAdmin && tab === "audit",
+    refetchInterval: tab === "audit" ? 15000 : false,
+  });
+
+  // ---- Mutations ----------------------------------------------------------
+
+  const addRole = useMutation({
+    mutationFn: async ({ user_id, role }: { user_id: string; role: AppRole }) => {
+      const { error } = await supabase.from("user_roles").insert({ user_id, role });
+      if (error) throw error;
+      await logAdminAudit("user_role", "role.add", { role, reversible: true }, user_id);
+    },
+    onSuccess: () => {
+      toast.success("Role added");
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeRoleByUser = useMutation({
+    mutationFn: async ({ user_id, role }: { user_id: string; role: AppRole }) => {
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role);
+      if (error) throw error;
+      await logAdminAudit("user_role", "role.remove", { role, reversible: true }, user_id);
+    },
+    onSuccess: () => {
+      toast.success("Role removed");
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const changeDepartment = useMutation({
+    mutationFn: async ({ user_id, from, to }: { user_id: string; from: string | null; to: string | null }) => {
+      const { error } = await supabase.from("profiles").update({ department_id: to }).eq("user_id", user_id);
+      if (error) throw error;
+      await logAdminAudit("profile_department", "department.change", {
+        from, to,
+        from_name: deptName(from),
+        to_name: deptName(to),
+        reversible: true,
+      }, user_id);
+    },
+    onSuccess: () => {
+      toast.success("Department updated");
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: row } = await supabase.from("user_roles").select("user_id, role").eq("id", id).maybeSingle();
+      const { error } = await supabase.from("user_roles").delete().eq("id", id);
+      if (error) throw error;
+      if (row) await logAdminAudit("user_role", "role.remove", { role: row.role, reversible: true }, row.user_id);
+    },
+    onSuccess: () => {
+      toast.success("Role removed");
+      qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const revert = useMutation({
+    mutationFn: async (entry: any) => {
+      const d = entry.details ?? {};
+      if (entry.action === "role.add") {
+        const { error } = await supabase.from("user_roles").delete().eq("user_id", entry.entity_id).eq("role", d.role);
+        if (error) throw error;
+        await logAdminAudit("user_role", "role.remove", { role: d.role, reverted_from: entry.id }, entry.entity_id);
+      } else if (entry.action === "role.remove") {
+        const { error } = await supabase.from("user_roles").insert({ user_id: entry.entity_id, role: d.role });
+        if (error) throw error;
+        await logAdminAudit("user_role", "role.add", { role: d.role, reverted_from: entry.id }, entry.entity_id);
+      } else if (entry.action === "department.change") {
+        const { error } = await supabase.from("profiles").update({ department_id: d.from ?? null }).eq("user_id", entry.entity_id);
+        if (error) throw error;
+        await logAdminAudit("profile_department", "department.change", {
+          from: d.to, to: d.from, from_name: d.to_name, to_name: d.from_name, reverted_from: entry.id,
+        }, entry.entity_id);
+      } else {
+        throw new Error("Action not reversible");
+      }
+    },
+    onSuccess: () => {
+      toast.success("Change reverted");
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // ---- Bulk upload (preserved) -------------------------------------------
+
   const handleFile = async (file: File) => {
     setParsing(true);
     try {
@@ -83,10 +268,8 @@ export default function RoleAssignmentsAdmin() {
       if (!rows.length) throw new Error("Empty file");
 
       const staffIds = rows.map((r) => String(r.staff_id ?? r["Staff ID"] ?? r.STAFF_ID ?? "").trim()).filter(Boolean);
-      const { data: profs } = await supabase
-        .from("profiles").select("staff_id, user_id").in("staff_id", staffIds);
+      const { data: profs } = await supabase.from("profiles").select("staff_id, user_id").in("staff_id", staffIds);
       const profMap = new Map((profs ?? []).map((p) => [p.staff_id, p.user_id]));
-
       const { data: existing } = await supabase.from("user_roles").select("user_id, role");
       const existingSet = new Set((existing ?? []).map((e) => `${e.user_id}|${e.role}`));
 
@@ -114,19 +297,21 @@ export default function RoleAssignmentsAdmin() {
       const ready = preview.filter((r) => r.status === "ready" && r.user_id && r.role);
       if (!ready.length) throw new Error("No new assignments to commit");
       const seen = new Set<string>();
-      const rows = ready
-        .filter((r) => {
-          const k = `${r.user_id}|${r.role}`;
-          if (seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        })
-        .map((r) => ({ user_id: r.user_id!, role: r.role! }));
+      const rows = ready.filter((r) => {
+        const k = `${r.user_id}|${r.role}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      }).map((r) => ({ user_id: r.user_id!, role: r.role! }));
       let inserted = 0;
       for (let i = 0; i < rows.length; i += 50) {
-        const { error } = await supabase.from("user_roles").insert(rows.slice(i, i + 50));
+        const batch = rows.slice(i, i + 50);
+        const { error } = await supabase.from("user_roles").insert(batch);
         if (error) throw error;
-        inserted += rows.slice(i, i + 50).length;
+        for (const row of batch) {
+          await logAdminAudit("user_role", "role.add", { role: row.role, source: "bulk_upload", reversible: true }, row.user_id);
+        }
+        inserted += batch.length;
       }
       return inserted;
     },
@@ -134,18 +319,8 @@ export default function RoleAssignmentsAdmin() {
       toast.success(`${n} role(s) assigned`);
       setPreview(null);
       qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("user_roles").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Role removed");
-      qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -158,148 +333,439 @@ export default function RoleAssignmentsAdmin() {
   const dupCount = preview?.filter((r) => r.status === "duplicate").length ?? 0;
   const errCount = preview?.filter((r) => r.status === "no_staff" || r.status === "bad_role").length ?? 0;
 
+  // Roles available to add for a user (exclude already assigned)
+  const addableRoles = editing ? KNOWN_ROLES.filter((r) => !editing.roles.includes(r)) : [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <UserCog className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-secondary">Role &amp; Department Assignments</h1>
+        <h1 className="text-2xl font-bold text-secondary">Role &amp; Department Management</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Upload className="h-4 w-4" /> Bulk Upload Roles
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Upload a CSV or Excel file with columns <code>staff_id</code> and <code>role</code>.
-            Duplicates are detected and skipped automatically. Recognized roles: {KNOWN_ROLES.length} app roles.
-          </p>
-          <div className="flex gap-2 items-center">
-            <Input
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-              disabled={parsing}
-              className="max-w-md"
-            />
-            {preview && (
-              <Button onClick={() => setPreview(null)} variant="outline" size="sm">Clear</Button>
-            )}
-          </div>
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          Self-approve mode: changes apply immediately. Every change is recorded in the <b>Audit Trail</b> and can be reverted.
+        </AlertDescription>
+      </Alert>
 
-          {preview && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <Badge className="bg-emerald-100 text-emerald-800">Ready: {readyCount}</Badge>
-                <Badge className="bg-amber-100 text-amber-800">Duplicate (skip): {dupCount}</Badge>
-                <Badge variant="destructive">Errors: {errCount}</Badge>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Users</TabsTrigger>
+          <TabsTrigger value="bulk"><Upload className="h-4 w-4 mr-1" /> Bulk</TabsTrigger>
+          <TabsTrigger value="assignments"><FileSpreadsheet className="h-4 w-4 mr-1" /> Assignments</TabsTrigger>
+          <TabsTrigger value="audit"><History className="h-4 w-4 mr-1" /> Audit Trail</TabsTrigger>
+        </TabsList>
+
+        {/* ---------------- USERS ---------------- */}
+        <TabsContent value="users" className="space-y-3">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="h-4 w-4" /> Users ({filteredUsers.length} of {users.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="relative max-w-md">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, staff ID, role, department…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8"
+                />
               </div>
-              <div className="rounded border max-h-80 overflow-auto">
-                <Table>
+
+              {loadingUsers ? (
+                <div className="text-center py-6 text-muted-foreground">Loading…</div>
+              ) : (
+                <div className="rounded border max-h-[600px] overflow-auto">
+                  <Table className="min-w-[700px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Staff ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Roles</TableHead>
+                        <TableHead className="w-20">Edit</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.slice(0, 300).map((u: any) => (
+                        <TableRow key={u.user_id}>
+                          <TableCell className="font-mono text-xs">{u.staff_id ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{u.last_name}, {u.first_name}</TableCell>
+                          <TableCell className="text-xs">{deptName(u.department_id)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {u.roles.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                              {u.roles.map((r: AppRole) => (
+                                <Badge key={r} variant="secondary" className="text-[10px]">{labelFor(r)}</Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditing({
+                                  user_id: u.user_id,
+                                  staff_id: u.staff_id ?? "",
+                                  name: `${u.last_name}, ${u.first_name}`,
+                                  department_id: u.department_id,
+                                  roles: u.roles,
+                                });
+                                setEditingDept(u.department_id ?? "none");
+                                setAddingRole("");
+                              }}
+                            >
+                              Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {filteredUsers.length > 300 && (
+                    <div className="text-xs text-muted-foreground p-2 text-center">
+                      Showing first 300 — refine search to narrow.
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ---------------- BULK ---------------- */}
+        <TabsContent value="bulk">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Upload className="h-4 w-4" /> Bulk Upload Roles
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Upload a CSV or Excel file with columns <code>staff_id</code> and <code>role</code>.
+                Duplicates are skipped automatically. Recognised roles: {KNOWN_ROLES.length}.
+              </p>
+              <div className="flex gap-2 items-center flex-wrap">
+                <Input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                  disabled={parsing}
+                  className="max-w-md"
+                />
+                {preview && <Button onClick={() => setPreview(null)} variant="outline" size="sm">Clear</Button>}
+              </div>
+
+              {preview && (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="bg-emerald-100 text-emerald-800">Ready: {readyCount}</Badge>
+                    <Badge className="bg-amber-100 text-amber-800">Duplicate (skip): {dupCount}</Badge>
+                    <Badge variant="destructive">Errors: {errCount}</Badge>
+                  </div>
+                  <div className="rounded border max-h-80 overflow-auto">
+                    <Table className="min-w-[700px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Staff ID</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Reason</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {preview.slice(0, 200).map((r, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-mono text-xs">{r.staff_id || "—"}</TableCell>
+                            <TableCell className="text-xs">{r.raw_role}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="secondary"
+                                className={
+                                  r.status === "ready" ? "bg-emerald-100 text-emerald-800" :
+                                  r.status === "duplicate" ? "bg-amber-100 text-amber-800" :
+                                  "bg-red-100 text-red-800"
+                                }
+                              >
+                                {r.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{r.reason ?? "OK"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <Button onClick={() => commit.mutate()} disabled={commit.isPending || readyCount === 0} className="gap-2">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Commit {readyCount} new assignment(s)
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ---------------- ASSIGNMENTS ---------------- */}
+        <TabsContent value="assignments">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileSpreadsheet className="h-4 w-4" /> Current Assignments ({existingAssignments.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {Object.entries(counts).map(([role, n]) => (
+                  <Badge key={role} variant="outline">{labelFor(role)}: {n}</Badge>
+                ))}
+              </div>
+              <div className="rounded border max-h-[500px] overflow-auto">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Staff ID</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Reason</TableHead>
+                      <TableHead className="w-12">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {preview.slice(0, 200).map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-mono text-xs">{r.staff_id || "—"}</TableCell>
-                        <TableCell className="text-xs">{r.raw_role}</TableCell>
+                    {existingAssignments.map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-mono text-xs">{r.profile?.staff_id ?? "—"}</TableCell>
+                        <TableCell>{r.profile ? `${r.profile.last_name}, ${r.profile.first_name}` : "—"}</TableCell>
+                        <TableCell><Badge variant="secondary">{labelFor(r.role)}</Badge></TableCell>
                         <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={
-                              r.status === "ready" ? "bg-emerald-100 text-emerald-800" :
-                              r.status === "duplicate" ? "bg-amber-100 text-amber-800" :
-                              "bg-red-100 text-red-800"
-                            }
+                          <Button
+                            variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                            onClick={() => {
+                              if (confirm(`Remove ${r.role} from ${r.profile?.staff_id}?`)) remove.mutate(r.id);
+                            }}
                           >
-                            {r.status}
-                          </Badge>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{r.reason ?? "OK"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
-              <Button
-                onClick={() => commit.mutate()}
-                disabled={commit.isPending || readyCount === 0}
-                className="gap-2"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                Commit {readyCount} new assignment(s)
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileSpreadsheet className="h-4 w-4" /> Current Assignments ({existingAssignments.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {Object.entries(counts).map(([role, n]) => (
-              <Badge key={role} variant="outline">{role}: {n}</Badge>
-            ))}
-          </div>
-          {isLoading ? (
-            <div className="text-center py-6 text-muted-foreground">Loading…</div>
-          ) : (
-            <div className="rounded border max-h-[500px] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="w-12">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {existingAssignments.map((r: any) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs">{r.profile?.staff_id ?? "—"}</TableCell>
-                      <TableCell>{r.profile ? `${r.profile.last_name}, ${r.profile.first_name}` : "—"}</TableCell>
-                      <TableCell><Badge variant="secondary">{r.role}</Badge></TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive"
-                          onClick={() => {
-                            if (confirm(`Remove ${r.role} from ${r.profile?.staff_id}?`)) remove.mutate(r.id);
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+        {/* ---------------- AUDIT ---------------- */}
+        <TabsContent value="audit">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <History className="h-4 w-4" /> Recent Changes (last 100)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingAudit ? (
+                <div className="text-center py-6 text-muted-foreground">Loading…</div>
+              ) : auditTrail.length === 0 ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">No changes recorded yet.</div>
+              ) : (
+                <div className="rounded border max-h-[600px] overflow-auto">
+                  <Table className="min-w-[800px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>When</TableHead>
+                        <TableHead>Actor</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Target</TableHead>
+                        <TableHead>Detail</TableHead>
+                        <TableHead className="w-24">Revert</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {auditTrail.map((e: any) => {
+                        const reverted = e.details?.reverted_from;
+                        const reversible =
+                          (e.action === "role.add" || e.action === "role.remove" || e.action === "department.change")
+                          && !reverted;
+                        return (
+                          <TableRow key={e.id}>
+                            <TableCell className="text-xs whitespace-nowrap">
+                              {new Date(e.created_at).toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {e.actor ? `${e.actor.last_name}, ${e.actor.first_name}` : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-[10px]">{e.action}</Badge>
+                              {reverted && <Badge variant="outline" className="ml-1 text-[10px]">reverted</Badge>}
+                            </TableCell>
+                            <TableCell className="text-xs">
+                              {e.target ? `${e.target.staff_id} — ${e.target.last_name}, ${e.target.first_name}` : "—"}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {e.action === "department.change"
+                                ? `${e.details?.from_name ?? "—"} → ${e.details?.to_name ?? "—"}`
+                                : e.details?.role
+                                  ? labelFor(e.details.role)
+                                  : "—"}
+                            </TableCell>
+                            <TableCell>
+                              {reversible && (
+                                <Button
+                                  size="sm" variant="outline" className="gap-1 h-7"
+                                  disabled={revert.isPending}
+                                  onClick={() => {
+                                    if (confirm("Revert this change?")) revert.mutate(e);
+                                  }}
+                                >
+                                  <Undo2 className="h-3 w-3" /> Revert
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* ---------------- EDIT DIALOG ---------------- */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="h-5 w-5 text-primary" />
+              Edit {editing?.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {editing?.staff_id} — changes are applied immediately and audited.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editing && (
+            <div className="space-y-5">
+              {/* Department */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1 text-sm">
+                  <Building2 className="h-4 w-4" /> Department
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={editingDept} onValueChange={setEditingDept}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">— None —</SelectItem>
+                      {departments.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    disabled={
+                      changeDepartment.isPending ||
+                      (editingDept === "none" ? null : editingDept) === editing.department_id
+                    }
+                    onClick={() => {
+                      const to = editingDept === "none" ? null : editingDept;
+                      changeDepartment.mutate(
+                        { user_id: editing.user_id, from: editing.department_id, to },
+                        { onSuccess: () => setEditing(null) }
+                      );
+                    }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+
+              {/* Roles */}
+              <div className="space-y-2">
+                <Label className="text-sm">Current Roles</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {editing.roles.length === 0 && (
+                    <span className="text-xs text-muted-foreground">No roles assigned.</span>
+                  )}
+                  {editing.roles.map((r) => (
+                    <Badge key={r} variant="secondary" className="gap-1">
+                      {labelFor(r)}
+                      <button
+                        type="button"
+                        className="hover:text-destructive"
+                        disabled={removeRoleByUser.isPending}
+                        onClick={() => {
+                          if (confirm(`Remove ${labelFor(r)}?`)) {
+                            removeRoleByUser.mutate(
+                              { user_id: editing.user_id, role: r },
+                              { onSuccess: () => setEditing((prev) => prev ? { ...prev, roles: prev.roles.filter((x) => x !== r) } : prev) }
+                            );
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </Badge>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </div>
+
+              {/* Add role */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1 text-sm">
+                  <Plus className="h-4 w-4" /> Add Role
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={addingRole} onValueChange={(v) => setAddingRole(v as AppRole)}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select role to add" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {addableRoles.map((r) => (
+                        <SelectItem key={r} value={r}>{labelFor(r)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    disabled={!addingRole || addRole.isPending}
+                    onClick={() => {
+                      if (!addingRole) return;
+                      addRole.mutate(
+                        { user_id: editing.user_id, role: addingRole as AppRole },
+                        {
+                          onSuccess: () => {
+                            setEditing((prev) => prev ? { ...prev, roles: [...prev.roles, addingRole as AppRole] } : prev);
+                            setAddingRole("");
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription className="text-xs">
-          Roles are stored separately from profiles to prevent privilege-escalation. All assignments are written to the universal audit log.
-        </AlertDescription>
-      </Alert>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
