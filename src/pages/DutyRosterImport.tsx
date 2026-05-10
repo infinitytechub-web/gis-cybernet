@@ -144,6 +144,10 @@ export default function DutyRosterImport() {
   const [overrideTarget, setOverrideTarget] = useState<{ effective_date: string; label: string } | null>(null);
   const [previewEndDate, setPreviewEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 
+  useEffect(() => {
+    if (!previewEndDate || previewEndDate < effectiveDate) setPreviewEndDate(effectiveDate);
+  }, [effectiveDate]);
+
   const handleRedeploy = async (importId: string) => {
     setDeployingId(importId);
     try {
