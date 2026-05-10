@@ -8419,6 +8419,10 @@ export type Database = {
           unit: string
         }[]
       }
+      auto_deploy_roster_assignments: {
+        Args: { _import_id: string }
+        Returns: Json
+      }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
       block_ip: {
         Args: {
