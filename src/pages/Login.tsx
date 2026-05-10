@@ -25,7 +25,7 @@ export default function Login() {
   const [mfaStep, setMfaStep] = useState<null | "totp">(null);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
-  const { signIn, signOut } = useAuth();
+  const { signIn, signOut, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -42,6 +42,12 @@ export default function Login() {
     });
     return () => cic(handle);
   }, []);
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,23 +118,6 @@ export default function Login() {
         await signIn(emailData as string, password);
         // Clear failed attempts on success
         await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
-
-        // If this account has a verified TOTP factor (admins), require the
-        // 6-digit code on this same page before granting access.
-        try {
-          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-          if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
-            const { data: factors } = await supabase.auth.mfa.listFactors();
-            const verified = factors?.totp?.find((f: any) => f.status === "verified");
-            if (verified) {
-              setMfaFactorId(verified.id);
-              setOtp("");
-              setMfaStep("totp");
-              setIsLoading(false);
-              return;
-            }
-          }
-        } catch { /* fall through to normal navigation */ }
 
         navigate("/");
       } catch (signInErr) {
