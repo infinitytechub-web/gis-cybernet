@@ -163,7 +163,7 @@ export function RotationChangeProposalPanel() {
     setRaDateFrom(format(new Date(Date.now() + 7 * 86400000), "yyyy-MM-dd"));
     setRaDateTo(format(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd"));
     setRaNewShiftId("");
-    setRaStaffIds("");
+    setRaStaffIds([]);
   };
 
   const setSlot = (g: Group, i: number, shiftId: string) => {
