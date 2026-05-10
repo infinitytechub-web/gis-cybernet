@@ -98,7 +98,8 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
         lastActiveAt: nowIso,
       };
 
-      const ch = supabase.channel(`online-users-${user.id}-${Date.now()}`, {
+      // Shared channel name so all signed-in users join the same presence room.
+      const ch = supabase.channel("online-users-global", {
         config: { presence: { key: user.id } },
       });
       channelRef.current = ch;

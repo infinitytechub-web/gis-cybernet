@@ -77,9 +77,26 @@ export default function MyProfile() {
     return EDITABLE_FIELDS.some((k) => (form[k] ?? "") !== ((profile as any)[k] ?? ""));
   }, [form, profile]);
 
+  // Pending change requests submitted by this user
+  const { data: myRequests } = useQuery({
+    queryKey: ["my-profile-change-requests", profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data, error } = await supabase
+        .from("profile_change_requests")
+        .select("*, reviewer:reviewer_id(first_name, last_name)")
+        .eq("profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!profile?.id,
+  });
+
   const save = useMutation({
     mutationFn: async () => {
-      if (!profile?.id) throw new Error("Profile not loaded");
+      if (!profile?.id || !user) throw new Error("Profile not loaded");
       const gcn = (form.ghana_card_number ?? "").trim();
       if (gcn && !isValidGhanaCard(gcn)) {
         await logAdminAudit("ghana_card_verification", "mismatch", {
@@ -90,21 +107,46 @@ export default function MyProfile() {
         }, profile.id);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
-      const payload: any = {};
+      // Build a diff of only changed fields
+      const requested: Record<string, string | null> = {};
+      const previous: Record<string, string | null> = {};
       EDITABLE_FIELDS.forEach((k) => {
-        const v = (form[k] ?? "").toString().trim();
-        payload[k] = v === "" ? null : v;
+        const next = (form[k] ?? "").toString().trim();
+        const curr = ((profile as any)[k] ?? "").toString();
+        if (next !== curr) {
+          requested[k] = next === "" ? null : next;
+          previous[k] = curr === "" ? null : curr;
+        }
       });
-      const { error } = await supabase.from("profiles").update(payload).eq("id", profile.id);
+      if (Object.keys(requested).length === 0) throw new Error("No changes to submit");
+      const { error } = await supabase.from("profile_change_requests").insert({
+        profile_id: profile.id,
+        user_id: user.id,
+        requested_changes: requested,
+        previous_values: previous,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Profile updated — changes synced to the system.");
-      qc.invalidateQueries({ queryKey: ["my-profile-self-edit"] });
-      qc.invalidateQueries({ queryKey: ["my-profile-excuse"] });
-      qc.invalidateQueries({ queryKey: ["my-profile-mysubs"] });
+      toast.success("Change request submitted — awaiting Command / Admin approval.");
+      qc.invalidateQueries({ queryKey: ["my-profile-change-requests"] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Failed to update profile"),
+    onError: (e: any) => toast.error(e.message ?? "Failed to submit change request"),
+  });
+
+  const cancelRequest = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("profile_change_requests")
+        .update({ status: "cancelled" })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Request cancelled.");
+      qc.invalidateQueries({ queryKey: ["my-profile-change-requests"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to cancel"),
   });
 
   if (isLoading) return <div className="text-sm text-muted-foreground p-6">Loading your profile…</div>;
@@ -124,7 +166,7 @@ export default function MyProfile() {
       <PageHeader
         icon={UserCog}
         title="My Profile"
-        subtitle="Update your personal details. Changes sync across the system in real time."
+        subtitle="Submit profile changes for review. Edits take effect after Command / Admin approval."
       />
 
       <Card className="border-l-4 border-l-amber-500">
@@ -147,7 +189,9 @@ export default function MyProfile() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Editable details</CardTitle>
-          <CardDescription className="text-xs">Update your name, contact, and personal info.</CardDescription>
+          <CardDescription className="text-xs">
+            Edits are submitted for Command / Admin approval before they appear in the system.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -193,13 +237,52 @@ export default function MyProfile() {
 
           <div className="flex gap-2 flex-wrap pt-2">
             <Button onClick={() => save.mutate()} disabled={!dirty || save.isPending} className="gap-1">
-              <Save className="h-4 w-4" /> {save.isPending ? "Saving…" : "Save changes"}
+              <Save className="h-4 w-4" /> {save.isPending ? "Submitting…" : "Submit for approval"}
             </Button>
             <Button variant="outline" onClick={() => qc.invalidateQueries({ queryKey: ["my-profile-self-edit"] })} className="gap-1">
               <RefreshCw className="h-4 w-4" /> Reload
             </Button>
             {dirty && <span className="text-xs text-amber-600 self-center">Unsaved changes</span>}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">My change requests</CardTitle>
+          <CardDescription className="text-xs">Recent profile edits you submitted and their review status.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!myRequests || myRequests.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No change requests yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {myRequests.map((r: any) => (
+                <div key={r.id} className="rounded border p-2 text-xs space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${
+                      r.status === "approved" ? "bg-emerald-100 text-emerald-800" :
+                      r.status === "rejected" ? "bg-red-100 text-red-800" :
+                      r.status === "cancelled" ? "bg-muted text-muted-foreground" :
+                      "bg-amber-100 text-amber-800"
+                    }`}>{r.status}</span>
+                    <span className="text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    Fields: <span className="font-medium text-foreground">{Object.keys(r.requested_changes || {}).join(", ") || "—"}</span>
+                  </div>
+                  {r.reviewer_notes && (
+                    <div className="text-muted-foreground">Reviewer notes: <span className="text-foreground">{r.reviewer_notes}</span></div>
+                  )}
+                  {r.status === "pending" && (
+                    <Button size="sm" variant="outline" onClick={() => cancelRequest.mutate(r.id)} disabled={cancelRequest.isPending}>
+                      Cancel request
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -83,6 +83,7 @@ const RoleAssignmentsAdmin = lazy(() => import("./pages/RoleAssignmentsAdmin"));
 const StaffPortal = lazy(() => import("./pages/StaffPortal"));
 const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
 const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
+const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
 
 const queryClient = new QueryClient();
 
@@ -133,6 +134,7 @@ function App() {
 
           <Route path="/staff-approvals/pending" element={<ProtectedRoute><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/accounts" element={<ProtectedRoute><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals/profile-changes" element={<ProtectedRoute><Layout><ProfileChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
