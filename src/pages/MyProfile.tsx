@@ -95,6 +95,21 @@ export default function MyProfile() {
     enabled: !!profile?.id,
   });
 
+  // Deep-link: highlight a specific request from email/notification
+  const [searchParams] = useSearchParams();
+  const focusRequestId = searchParams.get("request");
+  const requestRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusRequestId || !myRequests?.length) return;
+    const el = requestRefs.current[focusRequestId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedId(focusRequestId);
+      const t = setTimeout(() => setHighlightedId(null), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [focusRequestId, myRequests]);
   const save = useMutation({
     mutationFn: async () => {
       if (!profile?.id || !user) throw new Error("Profile not loaded");
