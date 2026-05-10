@@ -539,6 +539,22 @@ export default function DutyRosterImport() {
                       min={effectiveDate}
                       onChange={(e) => setPreviewEndDate(e.target.value)}
                     />
+                    <Button
+                      type="button" size="sm" variant="outline" className="h-7 text-xs"
+                      onClick={exportPreviewCSV}
+                      disabled={!previewPlan}
+                      title="Download preview as CSV"
+                    >
+                      <Download className="h-3 w-3 mr-1" /> CSV
+                    </Button>
+                    <Button
+                      type="button" size="sm" variant="outline" className="h-7 text-xs"
+                      onClick={exportPreviewPDF}
+                      disabled={!previewPlan}
+                      title="Download preview as PDF"
+                    >
+                      <FileText className="h-3 w-3 mr-1" /> PDF
+                    </Button>
                   </div>
                 </div>
 
