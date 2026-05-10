@@ -701,10 +701,15 @@ export default function RoleAssignmentsAdmin() {
                     }
                     onClick={() => {
                       const to = editingDept === "none" ? null : editingDept;
-                      changeDepartment.mutate(
-                        { user_id: editing.user_id, from: editing.department_id, to },
-                        { onSuccess: () => setEditing(null) }
-                      );
+                      askConfirm({
+                        title: "Change department?",
+                        message: `Move ${editing.name} from "${deptName(editing.department_id)}" to "${deptName(to)}"? This will be recorded in the audit trail and is reversible.`,
+                        confirmLabel: "Change",
+                        onConfirm: () => changeDepartment.mutate(
+                          { user_id: editing.user_id, from: editing.department_id, to },
+                          { onSuccess: () => setEditing(null) }
+                        ),
+                      });
                     }}
                   >
                     Save
