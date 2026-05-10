@@ -183,9 +183,10 @@ export function GpsLiveMap({ lat, lng, label, height = 360 }: GpsLiveMapProps) {
     const gmaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     const sv = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
     const osm = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`;
+    const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c] as string));
     markerRef.current.bindPopup(`
       <div style="font-size:12px;min-width:200px">
-        <p style="font-weight:600;margin:0 0 4px">${label ?? "GPS Address"}</p>
+        <p style="font-weight:600;margin:0 0 4px">${esc(label ?? "GPS Address")}</p>
         <p style="margin:0;color:#666">📐 ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
         <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">
           <a href="${sv}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#1a73e8;color:#fff;text-decoration:none">🚶 Street View</a>
