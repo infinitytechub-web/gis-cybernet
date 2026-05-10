@@ -192,6 +192,14 @@ export default function ExcuseDutyForm() {
             <Button onClick={() => submit.mutate()} disabled={submit.isPending} className="gap-1"><FilePlus2 className="h-4 w-4" /> Submit</Button>
             <Button variant="outline" onClick={() => exportPDF()} className="gap-1"><FileDown className="h-4 w-4" /> Export PDF</Button>
             <Button variant="outline" onClick={() => exportDOCX()} className="gap-1"><FileDown className="h-4 w-4" /> Export Word</Button>
+            <div className="ml-auto flex gap-2 flex-wrap">
+              <Button variant="secondary" onClick={() => downloadExcuseDutyPDF({}, true)} className="gap-1" title="Download blank, printable GIS Excuse Duty Form">
+                <FileDownIcon className="h-4 w-4" /> Blank PDF template
+              </Button>
+              <Button variant="secondary" onClick={() => downloadExcuseDutyDOCX({}, true)} className="gap-1" title="Download blank, editable GIS Excuse Duty Form">
+                <FileDownIcon className="h-4 w-4" /> Blank Word template
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
