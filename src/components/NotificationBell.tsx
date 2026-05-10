@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Bell, Check, CheckCheck, Calendar, ArrowRightLeft, Clock, Info,
-  AlertTriangle, Volume2, VolumeX, Stethoscope
+  AlertTriangle, Volume2, VolumeX, Stethoscope, Undo2
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -191,6 +191,14 @@ export function NotificationBell() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] }),
   });
 
+  const markAsUnreadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").update({ is_read: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] }),
+  });
+
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user!.id).eq("is_read", false);
@@ -279,7 +287,7 @@ export function NotificationBell() {
                       <button
                         key={n.id}
                         onClick={() => handleClick(n)}
-                        className={`flex gap-3 px-4 py-3 text-sm transition-colors w-full text-left hover:bg-accent/50 ${
+                        className={`group flex gap-3 px-4 py-3 text-sm transition-colors w-full text-left hover:bg-accent/50 ${
                           n.is_read ? "opacity-60" : ""
                         } ${urgent && !n.is_read ? "bg-destructive/5 border-l-2 border-l-destructive" : !n.is_read ? "bg-primary/5 border-l-2 border-l-primary" : ""}`}
                       >
@@ -307,14 +315,25 @@ export function NotificationBell() {
                             </span>
                           </div>
                         </div>
-                        {!n.is_read && (
+                        {!n.is_read ? (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 shrink-0"
+                            title="Mark as read"
                             onClick={(e) => { e.stopPropagation(); markAsReadMutation.mutate(n.id); }}
                           >
                             <Check className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            title="Mark as unread"
+                            onClick={(e) => { e.stopPropagation(); markAsUnreadMutation.mutate(n.id); }}
+                          >
+                            <Undo2 className="h-3 w-3" />
                           </Button>
                         )}
                       </button>
