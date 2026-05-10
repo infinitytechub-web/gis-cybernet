@@ -32,6 +32,7 @@ const sevBadge = (s: Severity) => {
 export function SecurityUpdatesPanel() {
   const qc = useQueryClient();
   const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [latestRunId, setLatestRunId] = useState<string | null>(null);
 
   const { data: settings } = useQuery({
     queryKey: ["security-scan-settings"],
