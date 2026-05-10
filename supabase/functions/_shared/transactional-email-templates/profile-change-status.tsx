@@ -13,6 +13,7 @@ interface ProfileChangeStatusProps {
   reviewerName?: string
   reviewerNotes?: string
   reviewedAt?: string
+  requestUrl?: string
 }
 
 const labelFor = (s?: string) => {
