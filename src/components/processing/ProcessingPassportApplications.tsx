@@ -288,21 +288,31 @@ export default function ProcessingPassportApplications() {
               <TableHead>Nationality</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>MFA Review</TableHead>
               <TableHead>Submitted</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No passport applications pending processing</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No passport applications pending processing</TableCell></TableRow>
             ) : filtered.map((app: any) => (
               <TableRow key={app.id}>
                 <TableCell className="font-medium">{app.applicant_name}</TableCell>
                 <TableCell>{app.nationality}</TableCell>
                 <TableCell><Badge variant="outline">{app.application_type}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const s = app.mfa_review_status || "pending";
+                    const cls = s === "approved" ? "bg-green-100 text-green-800"
+                      : s === "rejected" ? "bg-red-100 text-red-800"
+                      : "bg-yellow-100 text-yellow-800";
+                    return <Badge className={cls}>{s}</Badge>;
+                  })()}
+                </TableCell>
                 <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
                 <TableCell>
                   <RecordRowActions
