@@ -14,11 +14,10 @@ import { FilePlus2, FileDown, FileText, Activity, UserCheck, CheckCircle2, BellR
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
-import { saveAs } from "file-saver";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { downloadExcuseDutyPDF, downloadExcuseDutyDOCX, type ExcuseDutyData } from "@/lib/excuse-duty-templates";
+import { FileDown as FileDownIcon } from "lucide-react";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
