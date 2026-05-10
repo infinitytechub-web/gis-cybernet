@@ -8727,6 +8727,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      override_shift_assignment: {
+        Args: {
+          _profile_id: string
+          _reason: string
+          _shift_letter: string
+          _start_date: string
+        }
+        Returns: Json
+      }
       prune_system_backup_audit: { Args: never; Returns: Json }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
       purge_old_presence_events: {
