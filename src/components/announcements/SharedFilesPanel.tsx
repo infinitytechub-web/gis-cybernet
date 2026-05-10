@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power } from "lucide-react";
+import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { softDelete } from "@/lib/recycle-bin";
@@ -37,6 +37,14 @@ export function SharedFilesPanel() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Filters
+  const [search, setSearch] = useState("");
+  const [filterDept, setFilterDept] = useState<string>("all");
+  const [filterUploader, setFilterUploader] = useState<string>("all");
+  const [filterCommandOnly, setFilterCommandOnly] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
   const { data: files = [], isLoading } = useQuery({
     queryKey: ["announcement-files", isAdminOrSupervisor],
     queryFn: async () => {
@@ -51,6 +59,36 @@ export function SharedFilesPanel() {
     },
   });
 
+  const uploaderIds = Array.from(new Set(files.map((f: any) => f.uploaded_by).filter(Boolean)));
+
+  const { data: uploaderMap = {} } = useQuery({
+    queryKey: ["announcement-file-uploaders", uploaderIds.sort().join(",")],
+    enabled: uploaderIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name, staff_id")
+        .in("user_id", uploaderIds as string[]);
+      const map: Record<string, { name: string; staff_id: string | null }> = {};
+      for (const p of data ?? []) {
+        const name = [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.staff_id || "Unknown";
+        map[p.user_id] = { name, staff_id: p.staff_id };
+      }
+      return map;
+    },
+  });
+
+  const { data: commandUserIds = new Set<string>() } = useQuery({
+    queryKey: ["command-tier-user-ids"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "oic", "2ic", "staff_officer", "supervisor"]);
+      return new Set((data ?? []).map((r: any) => r.user_id));
+    },
+  });
+
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
@@ -58,6 +96,48 @@ export function SharedFilesPanel() {
       return data ?? [];
     },
   });
+
+  const filteredFiles = files.filter((f: any) => {
+    // Search by file name / title / description
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const hay = [f.title, f.filename, f.description ?? "", uploaderMap[f.uploaded_by]?.name ?? ""]
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    // Department / audience
+    if (filterDept === "global" && f.department_id !== null) return false;
+    if (filterDept !== "all" && filterDept !== "global" && f.department_id !== filterDept) return false;
+    // Uploader
+    if (filterUploader !== "all" && f.uploaded_by !== filterUploader) return false;
+    // Command tier visibility
+    if (filterCommandOnly && !(commandUserIds as Set<string>).has(f.uploaded_by)) return false;
+    // Date range
+    const created = new Date(f.created_at).getTime();
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime();
+      if (created < from) return false;
+    }
+    if (dateTo) {
+      const to = new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1;
+      if (created > to) return false;
+    }
+    return true;
+  });
+
+  const uploaderOptions = uploaderIds
+    .map((id) => ({ id: id as string, name: uploaderMap[id as string]?.name ?? "Unknown" }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const filtersActive =
+    !!search.trim() || filterDept !== "all" || filterUploader !== "all" ||
+    filterCommandOnly || !!dateFrom || !!dateTo;
+
+  const clearFilters = () => {
+    setSearch(""); setFilterDept("all"); setFilterUploader("all");
+    setFilterCommandOnly(false); setDateFrom(""); setDateTo("");
+  };
 
   const reset = () => {
     setTitle(""); setDescription(""); setDeptId("global"); setFile(null);
