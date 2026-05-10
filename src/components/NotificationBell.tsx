@@ -191,6 +191,14 @@ export function NotificationBell() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] }),
   });
 
+  const markAsUnreadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").update({ is_read: false }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] }),
+  });
+
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("notifications").update({ is_read: true }).eq("user_id", user!.id).eq("is_read", false);
