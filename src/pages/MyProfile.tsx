@@ -274,7 +274,13 @@ export default function MyProfile() {
           ) : (
             <div className="space-y-2">
               {myRequests.map((r: any) => (
-                <div key={r.id} className="rounded border p-2 text-xs space-y-1">
+                <div
+                  key={r.id}
+                  ref={(el) => { requestRefs.current[r.id] = el; }}
+                  className={`rounded border p-2 text-xs space-y-1 transition-all ${
+                    highlightedId === r.id ? "ring-2 ring-primary bg-primary/5" : ""
+                  }`}
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${
                       r.status === "approved" ? "bg-emerald-100 text-emerald-800" :
