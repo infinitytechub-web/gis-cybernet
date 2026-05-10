@@ -33,6 +33,7 @@ import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
+import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -270,6 +271,8 @@ export default function Dashboard() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">Command &amp; Administration</h2>
             <Badge variant="outline" className="text-[10px] border-destructive/40 text-destructive">Restricted</Badge>
           </div>
+
+          {isAdmin && <AdminQuickSearchWidget />}
 
           {supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
             <Card className="border-primary/20 bg-primary/5">
