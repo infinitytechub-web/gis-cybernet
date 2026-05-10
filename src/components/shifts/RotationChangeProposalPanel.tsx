@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus, Repeat, ShieldCheck, Loader2, X, Eye, Users } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Repeat, ShieldCheck, Loader2, X, Eye, Users, Check, ChevronsUpDown, UserCircle2 } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
