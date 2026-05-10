@@ -167,6 +167,16 @@ jobs:
           echo "::endgroup::"
           exit $fail
 
+      - name: Setup Node (for firewall_rules policy guard)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: firewall_rules policy guard
+        # Fails if any effective policy on public.firewall_rules grants
+        # SELECT to non-command-tier roles (must require has_role(...,'admin')).
+        run: node scripts/check-firewall-rules-policy.mjs
+
   # ───────────────────────────────────────────────────────────────────
   # 4. Dependency vulnerabilities
   # ───────────────────────────────────────────────────────────────────
