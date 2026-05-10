@@ -772,15 +772,21 @@ export default function RoleAssignmentsAdmin() {
                     disabled={!addingRole || addRole.isPending}
                     onClick={() => {
                       if (!addingRole) return;
-                      addRole.mutate(
-                        { user_id: editing.user_id, role: addingRole as AppRole },
-                        {
-                          onSuccess: () => {
-                            setEditing((prev) => prev ? { ...prev, roles: [...prev.roles, addingRole as AppRole] } : prev);
-                            setAddingRole("");
-                          },
-                        }
-                      );
+                      const newRole = addingRole as AppRole;
+                      askConfirm({
+                        title: "Add role?",
+                        message: `Grant "${labelFor(newRole)}" to ${editing.name}? This will be recorded in the audit trail and is reversible.`,
+                        confirmLabel: "Add",
+                        onConfirm: () => addRole.mutate(
+                          { user_id: editing.user_id, role: newRole },
+                          {
+                            onSuccess: () => {
+                              setEditing((prev) => prev ? { ...prev, roles: [...prev.roles, newRole] } : prev);
+                              setAddingRole("");
+                            },
+                          }
+                        ),
+                      });
                     }}
                   >
                     Add
