@@ -83,6 +83,23 @@ export function RotationChangeProposalPanel() {
     },
   });
 
+  // Staff directory for the multi-select
+  const { data: staffDirectory = [] } = useQuery({
+    queryKey: ["rotation-proposal-staff-directory"],
+    enabled: canPropose,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, rotation_group, department")
+        .order("last_name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; first_name: string | null; last_name: string | null;
+        staff_id: string | null; rotation_group: string | null; department: string | null;
+      }>;
+    },
+  });
+
   const { data: mine = [] } = useQuery({
     queryKey: ["rotation-proposals-mine", profile?.id],
     enabled: !!profile?.id && canPropose,
