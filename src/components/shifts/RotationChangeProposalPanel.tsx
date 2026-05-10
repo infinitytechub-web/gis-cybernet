@@ -90,12 +90,12 @@ export function RotationChangeProposalPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group, department")
+        .select("id, first_name, last_name, staff_id, shift_group")
         .order("last_name", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string; first_name: string | null; last_name: string | null;
-        staff_id: string | null; shift_group: string | null; department: string | null;
+        staff_id: string | null; shift_group: string | null;
       }>;
     },
   });
