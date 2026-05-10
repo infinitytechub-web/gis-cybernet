@@ -25,6 +25,11 @@ const SKIP_DIRS = new Set([
   "node_modules", ".git", "dist", "build", ".next", ".turbo",
   "coverage", ".cache", "public/assets", ".vercel",
 ]);
+const SKIP_FILES = new Set([
+  // The scanner's own source contains documentation examples that look like
+  // remote tags; excluding it prevents self-flagging.
+  path.join("scripts", "check-sri.mjs"),
+]);
 const FILE_EXTS = new Set([".html", ".htm", ".tsx", ".jsx", ".ts", ".js", ".mjs"]);
 
 /** Recursively gather candidate files. */
