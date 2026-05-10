@@ -475,12 +475,152 @@ export function RotationChangeProposalPanel() {
                   </div>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs">Specific staff IDs (optional)</Label>
-                  <Input
-                    value={raStaffIds}
-                    onChange={(e) => setRaStaffIds(e.target.value)}
-                    placeholder="Comma-separated, e.g. GIS-001, GIS-014. Leave empty to apply to the whole group."
-                  />
+                  <Label className="text-xs flex items-center gap-2">
+                    <UserCircle2 className="h-3.5 w-3.5 opacity-70" />
+                    Target specific staff (optional)
+                    {raStaffIds.length > 0 && (
+                      <Badge variant="outline" className="ml-1 text-[10px]">
+                        {raStaffIds.length} selected
+                      </Badge>
+                    )}
+                  </Label>
+
+                  {/* Selected chips */}
+                  {raStaffIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 rounded-md border bg-muted/30 px-2 py-1.5">
+                      {raStaffIds.map((id) => {
+                        const s = staffDirectory.find((x) => x.id === id);
+                        if (!s) return null;
+                        return (
+                          <Badge key={id} variant="secondary" className="gap-1 pr-1 text-[11px]">
+                            <span className="truncate max-w-[180px]">
+                              {s.last_name}, {s.first_name}
+                              <span className="ml-1 font-mono text-[10px] opacity-70">
+                                {s.staff_id}
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Remove ${s.first_name} ${s.last_name}`}
+                              className="rounded p-0.5 hover:bg-background/60"
+                              onClick={() =>
+                                setRaStaffIds((prev) => prev.filter((p) => p !== id))
+                              }
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-[11px]"
+                        onClick={() => setRaStaffIds([])}
+                      >
+                        Clear all
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Picker */}
+                  <Popover open={staffPickerOpen} onOpenChange={setStaffPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={staffPickerOpen}
+                        className={cn(
+                          "w-full justify-between font-normal h-9",
+                          raStaffIds.length === 0 && "text-muted-foreground",
+                        )}
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <UserCircle2 className="h-4 w-4 shrink-0 opacity-60" />
+                          {raStaffIds.length === 0
+                            ? "Search and add staff…"
+                            : `Add more staff (${raStaffIds.length} selected)`}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] p-0" align="start">
+                      <Command
+                        filter={(itemValue, search) =>
+                          itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                        }
+                      >
+                        <CommandInput placeholder="Type a name or staff ID…" />
+                        <CommandList>
+                          <CommandEmpty>No staff match your search.</CommandEmpty>
+                          {raTargetGroup !== "ALL" && (
+                            <CommandGroup heading={`Group ${raTargetGroup}`}>
+                              {staffDirectory
+                                .filter((s) => s.shift_group === raTargetGroup)
+                                .map((s) => {
+                                  const checked = raStaffIds.includes(s.id);
+                                  const searchable = `${s.last_name ?? ""} ${s.first_name ?? ""} ${s.staff_id ?? ""}`;
+                                  return (
+                                    <CommandItem
+                                      key={s.id}
+                                      value={searchable}
+                                      onSelect={() =>
+                                        setRaStaffIds((prev) =>
+                                          checked ? prev.filter((p) => p !== s.id) : [...prev, s.id],
+                                        )
+                                      }
+                                    >
+                                      <Check className={cn("mr-2 h-4 w-4", checked ? "opacity-100" : "opacity-0")} />
+                                      <span className="flex-1 truncate">
+                                        {s.last_name}, {s.first_name}
+                                      </span>
+                                      <span className="ml-2 text-[11px] font-mono text-muted-foreground shrink-0">
+                                        {s.staff_id}
+                                      </span>
+                                    </CommandItem>
+                                  );
+                                })}
+                            </CommandGroup>
+                          )}
+                          <CommandGroup heading="All staff">
+                            {staffDirectory
+                              .filter((s) => raTargetGroup === "ALL" || s.shift_group !== raTargetGroup)
+                              .map((s) => {
+                                const checked = raStaffIds.includes(s.id);
+                                const searchable = `${s.last_name ?? ""} ${s.first_name ?? ""} ${s.staff_id ?? ""}`;
+                                return (
+                                  <CommandItem
+                                    key={s.id}
+                                    value={searchable}
+                                    onSelect={() =>
+                                      setRaStaffIds((prev) =>
+                                        checked ? prev.filter((p) => p !== s.id) : [...prev, s.id],
+                                      )
+                                    }
+                                  >
+                                    <Check className={cn("mr-2 h-4 w-4", checked ? "opacity-100" : "opacity-0")} />
+                                    <span className="flex-1 truncate">
+                                      {s.last_name}, {s.first_name}
+                                    </span>
+                                    <span className="ml-2 text-[10px] uppercase text-muted-foreground shrink-0">
+                                      {s.shift_group ? `Grp ${s.shift_group}` : "—"}
+                                    </span>
+                                    <span className="ml-2 text-[11px] font-mono text-muted-foreground shrink-0">
+                                      {s.staff_id}
+                                    </span>
+                                  </CommandItem>
+                                );
+                              })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-[11px] text-muted-foreground">
+                    Leave empty to apply the reassignment to every member of the target group.
+                  </p>
                 </div>
               </div>
             </TabsContent>
