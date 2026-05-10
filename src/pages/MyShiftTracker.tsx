@@ -655,8 +655,11 @@ export default function MyShiftTracker() {
                 {win.enforce_window ? ` · grace ${win.grace_minutes}m` : " · enforcement off"}
                 {win.source === "override" ? " · per-shift rule" : ""}
               </span>
-            )}
-          </div>
+      )}
+
+      {/* Unit-wide rotation change proposal (authorised proposers only) */}
+      <RotationChangeProposalPanel />
+    </div>
 
           {/* Punctuality alert for today */}
           {todayPunctuality && todayPunctuality.kind !== "ontime" && (
