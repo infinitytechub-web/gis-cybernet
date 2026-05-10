@@ -272,6 +272,8 @@ export default function Dashboard() {
             <Badge variant="outline" className="text-[10px] border-destructive/40 text-destructive">Restricted</Badge>
           </div>
 
+          {isAdmin && <AdminQuickSearchWidget />}
+
           {supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-2">
