@@ -52,6 +52,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import { ShiftChangeRequestPanel } from "@/components/shifts/ShiftChangeRequestPanel";
 import { AttendanceEditRequestPanel } from "@/components/shifts/AttendanceEditRequestPanel";
 import { MyShiftRotationCalendar } from "@/components/shifts/MyShiftRotationCalendar";
+import { RotationChangeProposalPanel } from "@/components/shifts/RotationChangeProposalPanel";
 import { cn } from "@/lib/utils";
 
 type WindowSettings = {
