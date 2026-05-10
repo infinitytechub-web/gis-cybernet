@@ -56,3 +56,43 @@ Beyond CI, the application enforces the following at runtime:
   IP services directly.
 - Row-Level Security on every public table; SECURITY DEFINER RPCs gate writes
   to sensitive tables (e.g., `recycle_bin`, `firewall_threat_entries`).
+
+## Server-side HTTP security headers
+
+The same policy that ships in the `<meta>` fallback in `index.html` is also
+delivered as **HTTP response headers** so directives that browsers ignore in
+meta form (notably `frame-ancestors`, `X-Frame-Options`, and HSTS) are
+enforced at the transport layer. Pick the file that matches your host:
+
+| Host | File | How it is consumed |
+|------|------|--------------------|
+| Cloudflare Pages, Netlify, Render static sites | [`public/_headers`](public/_headers) | Copied verbatim into the build output and applied per route. |
+| Vercel | [`vercel.json`](vercel.json) | `headers[]` block applied to every path. |
+| Self-hosted nginx | [`deploy/nginx-security-headers.conf`](deploy/nginx-security-headers.conf) | `include` from your `server { … }` block. |
+
+### Headers sent
+
+- `Content-Security-Policy` — same allow-list as the meta tag (no inline
+  scripts, scoped `connect-src`, `frame-ancestors 'self'`).
+- `X-Frame-Options: SAMEORIGIN` — legacy clickjacking protection for browsers
+  that pre-date CSP `frame-ancestors`.
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` —
+  forces HTTPS for a year, eligible for HSTS preload submission.
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` — disables camera/mic/payment/USB/sensors by default;
+  geolocation limited to same origin.
+- `Cross-Origin-Opener-Policy: same-origin` and
+  `Cross-Origin-Resource-Policy: same-site` — isolates the browsing context
+  from cross-origin popup tampering.
+
+### Verifying
+
+After deploying, run:
+
+```bash
+curl -sSI https://gis-cybernet.lovable.app/ | grep -iE 'content-security|frame|hsts|referrer|permissions'
+```
+
+or paste the URL into <https://securityheaders.com>. Target grade: **A**.
+
