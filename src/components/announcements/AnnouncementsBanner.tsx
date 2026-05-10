@@ -153,8 +153,13 @@ export function AnnouncementsBanner() {
         {announcements.length === 0 ? (
           <p className="text-xs text-destructive/80 text-center py-2">No active announcements</p>
         ) : (
-          <ScrollArea className="max-h-[200px]">
+          <ScrollArea className="h-[420px] pr-2">
             <div className="space-y-2">
+              {announcements.length > 5 && (
+                <p className="text-[10px] text-destructive/70 text-center pb-1 border-b border-destructive/20 mb-1">
+                  Scroll for older announcements ({announcements.length} total)
+                </p>
+              )}
               {announcements.map((a: any) => {
                 const cfg = priorityConfig[a.priority as keyof typeof priorityConfig] || priorityConfig.normal;
                 const Icon = cfg.icon;
