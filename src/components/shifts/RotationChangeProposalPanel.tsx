@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus, Repeat, ShieldCheck, Loader2, X } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Repeat, ShieldCheck, Loader2, X, Eye, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ShiftRow = { id: string; name: string; start_time: string | null; end_time: string | null };
 const GROUPS = ["A", "B", "C", "D"] as const;
@@ -45,16 +46,17 @@ const STATUS_TONE: Record<string, string> = {
   applied:   "bg-primary/15 text-primary border-primary/30",
 };
 
+const PROPOSER_ROLES = [
+  "admin","staff_officer","oic","2ic","supervisor","ipse_supervisor",
+];
+
 export function RotationChangeProposalPanel() {
   const { user, role } = useAuth();
   const qc = useQueryClient();
 
-  // Local check that mirrors the DB rule (also enforced server-side via RLS).
-  const canPropose = !!role && [
-    "admin","staff_officer","oic","2ic","supervisor","ipse_supervisor",
-  ].includes(role);
+  const canPropose = !!role && PROPOSER_ROLES.includes(role);
 
-  // Available shifts for the cycle builder
+  // Available shifts
   const { data: shifts = [] } = useQuery({
     queryKey: ["rotation-proposal-shifts"],
     queryFn: async () => {
@@ -65,13 +67,11 @@ export function RotationChangeProposalPanel() {
       if (error) throw error;
       return (data ?? []) as ShiftRow[];
     },
-    enabled: canPropose,
   });
 
-  // The proposer's own profile id
   const { data: profile } = useQuery({
     queryKey: ["rotation-proposal-profile", user?.id],
-    enabled: !!user?.id && canPropose,
+    enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles").select("id").eq("user_id", user!.id).maybeSingle();
@@ -80,10 +80,9 @@ export function RotationChangeProposalPanel() {
     },
   });
 
-  // My recent proposals
   const { data: mine = [] } = useQuery({
     queryKey: ["rotation-proposals-mine", profile?.id],
-    enabled: !!profile?.id,
+    enabled: !!profile?.id && canPropose,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rotation_change_proposals")
@@ -96,30 +95,59 @@ export function RotationChangeProposalPanel() {
     },
   });
 
-  // ===== Builder state =====
+  // Recently approved/applied proposals — visible to everyone (read-only)
+  const { data: recentApproved = [] } = useQuery({
+    queryKey: ["rotation-proposals-recent-approved"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rotation_change_proposals")
+        .select("id, title, summary, status, effective_from, pattern, reviewer_id, review_comment, reviewed_at, created_at")
+        .in("status", ["approved","applied"])
+        .order("effective_from", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data ?? []) as Proposal[];
+    },
+  });
+
+  // ===== Builder dialog state =====
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"cycle"|"reassignment">("reassignment");
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [effectiveFrom, setEffectiveFrom] = useState<string>(() =>
     format(new Date(Date.now() + 7 * 86400000), "yyyy-MM-dd"),
   );
+
+  // Cycle builder state
   const [cycleDays, setCycleDays] = useState<number>(4);
-  // pattern[group][dayIndex] = shift_id
-  const [pattern, setPattern] = useState<Record<Group, string[]>>({
-    A: [], B: [], C: [], D: [],
-  });
+  const [pattern, setPattern] = useState<Record<Group, string[]>>({ A: [], B: [], C: [], D: [] });
+
+  // Reassignment builder state
+  const [raTargetGroup, setRaTargetGroup] = useState<"A"|"B"|"C"|"D"|"ALL">("A");
+  const [raDateFrom, setRaDateFrom] = useState<string>(() =>
+    format(new Date(Date.now() + 7 * 86400000), "yyyy-MM-dd"));
+  const [raDateTo, setRaDateTo] = useState<string>(() =>
+    format(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd"));
+  const [raNewShiftId, setRaNewShiftId] = useState<string>("");
+  const [raStaffIds, setRaStaffIds] = useState<string>(""); // comma-separated staff IDs (optional)
 
   const reset = () => {
+    setMode("reassignment");
     setTitle(""); setSummary("");
     setEffectiveFrom(format(new Date(Date.now() + 7 * 86400000), "yyyy-MM-dd"));
     setCycleDays(4);
     setPattern({ A: [], B: [], C: [], D: [] });
+    setRaTargetGroup("A");
+    setRaDateFrom(format(new Date(Date.now() + 7 * 86400000), "yyyy-MM-dd"));
+    setRaDateTo(format(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd"));
+    setRaNewShiftId("");
+    setRaStaffIds("");
   };
 
   const setSlot = (g: Group, i: number, shiftId: string) => {
     setPattern((p) => {
       const next = { ...p, [g]: [...(p[g] ?? [])] };
-      // pad if needed
       while (next[g].length < cycleDays) next[g].push("");
       next[g][i] = shiftId;
       return next;
@@ -130,43 +158,68 @@ export function RotationChangeProposalPanel() {
     const errs: string[] = [];
     if (title.trim().length < 4) errs.push("Title is too short.");
     if (summary.trim().length < 10) errs.push("Justification must be at least 10 characters.");
-    if (!effectiveFrom) errs.push("Pick an effective-from date.");
-    if (cycleDays < 2 || cycleDays > 28) errs.push("Cycle length must be between 2 and 28 days.");
-    let assigned = 0;
-    GROUPS.forEach((g) => {
-      for (let i = 0; i < cycleDays; i++) {
-        if (pattern[g]?.[i]) assigned++;
-      }
-    });
-    if (assigned === 0) errs.push("Assign at least one shift in the cycle grid.");
+
+    if (mode === "cycle") {
+      if (!effectiveFrom) errs.push("Pick an effective-from date.");
+      if (cycleDays < 2 || cycleDays > 28) errs.push("Cycle length must be between 2 and 28 days.");
+      let assigned = 0;
+      GROUPS.forEach((g) => {
+        for (let i = 0; i < cycleDays; i++) if (pattern[g]?.[i]) assigned++;
+      });
+      if (assigned === 0) errs.push("Assign at least one shift in the cycle grid.");
+    } else {
+      if (!raDateFrom || !raDateTo) errs.push("Pick the reassignment date range.");
+      if (raDateFrom && raDateTo && raDateTo < raDateFrom) errs.push("End date must be after start date.");
+      if (!raNewShiftId) errs.push("Pick the new shift type.");
+    }
     return errs;
-  }, [title, summary, effectiveFrom, cycleDays, pattern]);
+  }, [mode, title, summary, effectiveFrom, cycleDays, pattern, raDateFrom, raDateTo, raNewShiftId]);
 
   const submit = useMutation({
     mutationFn: async () => {
       if (!profile?.id || !user?.id) throw new Error("Profile not loaded");
       if (validation.length) throw new Error(validation[0]);
-      // Trim pattern arrays to cycleDays
-      const trimmed: Record<string, (string | null)[]> = {};
-      GROUPS.forEach((g) => {
-        const arr = (pattern[g] ?? []).slice(0, cycleDays);
-        while (arr.length < cycleDays) arr.push("");
-        trimmed[g] = arr.map((s) => s || null);
-      });
+
+      let payload: any;
+      let effective: string;
+
+      if (mode === "cycle") {
+        const trimmed: Record<string, (string | null)[]> = {};
+        GROUPS.forEach((g) => {
+          const arr = (pattern[g] ?? []).slice(0, cycleDays);
+          while (arr.length < cycleDays) arr.push("");
+          trimmed[g] = arr.map((s) => s || null);
+        });
+        payload = { scope: "unit_wide", cycle_days: cycleDays, groups: trimmed };
+        effective = effectiveFrom;
+      } else {
+        const staffIds = raStaffIds
+          .split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+        payload = {
+          scope: "reassignment",
+          target_group: raTargetGroup,
+          date_from: raDateFrom,
+          date_to: raDateTo,
+          new_shift_id: raNewShiftId,
+          staff_ids: staffIds,
+        };
+        effective = raDateFrom;
+      }
+
       const { error } = await supabase.from("rotation_change_proposals").insert({
         proposer_id: profile.id,
         proposer_user_id: user.id,
         title: title.trim(),
         summary: summary.trim(),
-        effective_from: effectiveFrom,
-        pattern: { cycle_days: cycleDays, groups: trimmed, scope: "unit_wide" },
+        effective_from: effective,
+        pattern: payload,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Rotation proposal submitted for approval");
       qc.invalidateQueries({ queryKey: ["rotation-proposals-mine"] });
-      qc.invalidateQueries({ queryKey: ["rotation-proposals-pending"] });
+      qc.invalidateQueries({ queryKey: ["rotation-proposals-queue"] });
       reset();
       setOpen(false);
     },
@@ -188,21 +241,67 @@ export function RotationChangeProposalPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!canPropose) return null;
+  const shiftName = (id?: string | null) =>
+    shifts.find((s) => s.id === id)?.name ?? (id ? "Unknown" : "Off");
+
+  // ===== Read-only view for non-authorized users =====
+  if (!canPropose) {
+    return (
+      <Card className="border-muted">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Eye className="h-4 w-4 text-muted-foreground" />
+            Shift Rotation — Read-only
+            <Badge variant="outline" className="ml-auto text-[10px]">View access</Badge>
+          </CardTitle>
+          <CardDescription>
+            Only Admins, Staff Officers, OIC, 2IC, Supervisors, and the Head of IPSE can
+            propose rotation changes. You can review the latest approved rotations below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recentApproved.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">
+              No approved rotation changes yet.
+            </p>
+          ) : (
+            <div className="border rounded-lg divide-y">
+              {recentApproved.map((p) => (
+                <div key={p.id} className="px-3 py-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium truncate">{p.title}</span>
+                    <Badge variant="outline" className={`text-[10px] ml-auto ${STATUS_TONE[p.status]}`}>
+                      {p.status}
+                    </Badge>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Effective {p.effective_from}
+                    {p.pattern?.scope === "reassignment"
+                      ? ` • Group ${p.pattern.target_group} → ${shiftName(p.pattern.new_shift_id)} (${p.pattern.date_from} → ${p.pattern.date_to})`
+                      : ` • Cycle ${p.pattern?.cycle_days ?? "?"}d`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-secondary/30">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Repeat className="h-4 w-4 text-secondary" />
-          Shift Rotation — Configuration
+          Rotation Reassignment & Configuration
           <Badge variant="outline" className="ml-auto text-[10px] gap-1">
             <ShieldCheck className="h-3 w-3" /> Approval required
           </Badge>
         </CardTitle>
         <CardDescription>
-          Propose changes to the unit-wide rotation pattern (groups A–D). Submitted
-          proposals are reviewed by the Admin, OIC, 2IC, Chief Staff Officer, or
+          Propose multi-day reassignments or revise the unit-wide rotation pattern.
+          All submissions are reviewed by Admin, OIC, 2IC, Chief Staff Officer, or
           Head of Administration before they take effect.
         </CardDescription>
       </CardHeader>
@@ -222,8 +321,10 @@ export function RotationChangeProposalPanel() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{p.title}</div>
                   <div className="text-[11px] text-muted-foreground truncate">
-                    Effective {p.effective_from} • cycle {p.pattern?.cycle_days}d •
-                    submitted {format(new Date(p.created_at), "dd MMM HH:mm")}
+                    {p.pattern?.scope === "reassignment"
+                      ? `Reassignment • Group ${p.pattern.target_group} → ${shiftName(p.pattern.new_shift_id)} • ${p.pattern.date_from} → ${p.pattern.date_to}`
+                      : `Cycle pattern • ${p.pattern?.cycle_days ?? "?"}d • effective ${p.effective_from}`}
+                    {" • "}submitted {format(new Date(p.created_at), "dd MMM HH:mm")}
                   </div>
                   {p.review_comment && (
                     <div className="text-[11px] mt-0.5 italic text-muted-foreground">
@@ -257,93 +358,178 @@ export function RotationChangeProposalPanel() {
           <DialogHeader>
             <DialogTitle>New rotation proposal</DialogTitle>
             <DialogDescription>
-              Define the new cycle. Each group (A–D) gets a sequence of shifts that
-              repeats over the chosen cycle length.
+              Choose between a multi-day reassignment or a full cycle pattern revision.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Title</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Q3 Rotation Adjustment"
-                maxLength={160}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Effective from</Label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="reassignment" className="gap-2">
+                <Users className="h-3.5 w-3.5" /> Reassignment
+              </TabsTrigger>
+              <TabsTrigger value="cycle" className="gap-2">
+                <Repeat className="h-3.5 w-3.5" /> Cycle pattern
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Common fields */}
+            <div className="grid gap-4 sm:grid-cols-2 mt-4">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs">Title</Label>
                 <Input
-                  type="date"
-                  value={effectiveFrom}
-                  onChange={(e) => setEffectiveFrom(e.target.value)}
-                  min={format(new Date(), "yyyy-MM-dd")}
-                  className="pl-8"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Group B reassigned to Night for festive week"
+                  maxLength={160}
+                />
+              </div>
+              <div className="sm:col-span-2 space-y-1.5">
+                <Label className="text-xs">Justification</Label>
+                <Textarea
+                  rows={3}
+                  value={summary}
+                  onChange={(e) => setSummary(e.target.value)}
+                  placeholder="Briefly explain the operational reason for this change…"
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Cycle length (days)</Label>
-              <Input
-                type="number"
-                min={2}
-                max={28}
-                value={cycleDays}
-                onChange={(e) => setCycleDays(Math.max(2, Math.min(28, parseInt(e.target.value || "4", 10))))}
-              />
-            </div>
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label className="text-xs">Justification</Label>
-              <Textarea
-                rows={3}
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="Briefly explain why the rotation needs to change…"
-              />
-            </div>
-          </div>
 
-          {/* Cycle grid */}
-          <div className="border rounded-lg overflow-x-auto" style={{ minWidth: 0 }}>
-            <table className="w-full text-xs" style={{ minWidth: 700 }}>
-              <thead>
-                <tr className="bg-muted/50">
-                  <th className="px-2 py-2 text-left">Group</th>
-                  {Array.from({ length: cycleDays }, (_, i) => (
-                    <th key={i} className="px-2 py-2 text-left">Day {i + 1}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {GROUPS.map((g) => (
-                  <tr key={g} className="border-t">
-                    <td className="px-2 py-2 font-bold">{g}</td>
-                    {Array.from({ length: cycleDays }, (_, i) => (
-                      <td key={i} className="px-1 py-1">
-                        <Select
-                          value={pattern[g]?.[i] ?? ""}
-                          onValueChange={(v) => setSlot(g, i, v === "__off" ? "" : v)}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="—" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__off">— Off —</SelectItem>
-                            {shifts.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
+            {/* Reassignment tab */}
+            <TabsContent value="reassignment" className="space-y-3 mt-3">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Target group</Label>
+                  <Select value={raTargetGroup} onValueChange={(v) => setRaTargetGroup(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">Group A</SelectItem>
+                      <SelectItem value="B">Group B</SelectItem>
+                      <SelectItem value="C">Group C</SelectItem>
+                      <SelectItem value="D">Group D</SelectItem>
+                      <SelectItem value="ALL">All groups</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">New shift type</Label>
+                  <Select value={raNewShiftId} onValueChange={setRaNewShiftId}>
+                    <SelectTrigger><SelectValue placeholder="Pick a shift" /></SelectTrigger>
+                    <SelectContent>
+                      {shifts.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                          {s.start_time && s.end_time
+                            ? ` (${s.start_time.slice(0,5)}–${s.end_time.slice(0,5)})`
+                            : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">From</Label>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="date"
+                      className="pl-8"
+                      value={raDateFrom}
+                      onChange={(e) => setRaDateFrom(e.target.value)}
+                      min={format(new Date(), "yyyy-MM-dd")}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">To</Label>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="date"
+                      className="pl-8"
+                      value={raDateTo}
+                      onChange={(e) => setRaDateTo(e.target.value)}
+                      min={raDateFrom || format(new Date(), "yyyy-MM-dd")}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label className="text-xs">Specific staff IDs (optional)</Label>
+                  <Input
+                    value={raStaffIds}
+                    onChange={(e) => setRaStaffIds(e.target.value)}
+                    placeholder="Comma-separated, e.g. GIS-001, GIS-014. Leave empty to apply to the whole group."
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Cycle tab */}
+            <TabsContent value="cycle" className="space-y-3 mt-3">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Effective from</Label>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="date"
+                      value={effectiveFrom}
+                      onChange={(e) => setEffectiveFrom(e.target.value)}
+                      min={format(new Date(), "yyyy-MM-dd")}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Cycle length (days)</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={28}
+                    value={cycleDays}
+                    onChange={(e) => setCycleDays(Math.max(2, Math.min(28, parseInt(e.target.value || "4", 10))))}
+                  />
+                </div>
+              </div>
+
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full text-xs" style={{ minWidth: 700 }}>
+                  <thead>
+                    <tr className="bg-muted/50">
+                      <th className="px-2 py-2 text-left">Group</th>
+                      {Array.from({ length: cycleDays }, (_, i) => (
+                        <th key={i} className="px-2 py-2 text-left">Day {i + 1}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {GROUPS.map((g) => (
+                      <tr key={g} className="border-t">
+                        <td className="px-2 py-2 font-bold">{g}</td>
+                        {Array.from({ length: cycleDays }, (_, i) => (
+                          <td key={i} className="px-1 py-1">
+                            <Select
+                              value={pattern[g]?.[i] ?? ""}
+                              onValueChange={(v) => setSlot(g, i, v === "__off" ? "" : v)}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="—" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__off">— Off —</SelectItem>
+                                {shifts.map((s) => (
+                                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {validation.length > 0 && (
             <Alert variant="destructive">
