@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2, Settings2, CalendarRange } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
+import { DeployedAssignmentsDialog } from "@/components/shifts/DeployedAssignmentsDialog";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
@@ -140,6 +141,12 @@ export default function DutyRosterImport() {
   const [notes, setNotes] = useState("");
   const [committing, setCommitting] = useState(false);
   const [deployingId, setDeployingId] = useState<string | null>(null);
+  const [overrideTarget, setOverrideTarget] = useState<{ effective_date: string; label: string } | null>(null);
+  const [previewEndDate, setPreviewEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    if (!previewEndDate || previewEndDate < effectiveDate) setPreviewEndDate(effectiveDate);
+  }, [effectiveDate]);
 
   const handleRedeploy = async (importId: string) => {
     setDeployingId(importId);
@@ -176,6 +183,68 @@ export default function DutyRosterImport() {
     parsed?.rows.forEach((r) => { acc[r.shift] = (acc[r.shift] ?? 0) + 1; });
     return acc;
   }, [parsed]);
+
+  // Schedule preview — fetch directory once parsed rows exist
+  const directory = useQuery({
+    queryKey: ["roster-preview-directory"],
+    enabled: !!parsed && parsed.rows.length > 0 && isAdminOrSupervisor,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, shift_group");
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; first_name: string | null; last_name: string | null;
+        staff_id: string | null; shift_group: string | null;
+      }>;
+    },
+  });
+
+  const previewPlan = useMemo(() => {
+    if (!parsed || !directory.data) return null;
+    const dir = directory.data;
+    const upper = (s: string | null | undefined) => (s ?? "").toUpperCase().trim();
+
+    const matches: Array<{
+      shift: "A"|"B"|"C"|"D"; staff_name: string; staff_id: string | null;
+      previous: string | null; next: "A"|"B"|"C"|"D"; status: "matched"|"new";
+    }> = [];
+
+    parsed.rows.forEach((r) => {
+      const parts = r.name.trim().split(/\s+/);
+      const last = parts[0] ?? "";
+      const first = parts[1] ?? "";
+      let p = dir.find((x) =>
+        upper(x.last_name) === upper(last) &&
+        (first === "" || upper(x.first_name).startsWith(upper(first)))
+      );
+      if (!p && first) {
+        p = dir.find((x) =>
+          upper(x.first_name) === upper(last) &&
+          upper(x.last_name).startsWith(upper(first))
+        );
+      }
+      matches.push({
+        shift: r.shift,
+        staff_name: p ? `${p.last_name ?? ""}, ${p.first_name ?? ""}` : r.name,
+        staff_id: p?.staff_id ?? null,
+        previous: p?.shift_group ?? null,
+        next: r.shift,
+        status: p ? "matched" : "new",
+      });
+    });
+
+    const summary = { A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>;
+    let changed = 0, kept = 0, created = 0;
+    matches.forEach((m) => {
+      summary[m.next]++;
+      if (m.status === "new") created++;
+      else if (m.previous === m.next) kept++;
+      else changed++;
+    });
+    return { matches, summary, changed, kept, created };
+  }, [parsed, directory.data]);
+
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
@@ -381,6 +450,84 @@ export default function DutyRosterImport() {
               </Tabs>
             )}
 
+            {/* Schedule preview — what auto-deploy will do for the effective date */}
+            {parsed.rows.length > 0 && (
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <CalendarRange className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Schedule preview</span>
+                  <span className="text-xs text-muted-foreground">
+                    Computed A/B/C/D assignments effective <strong>{effectiveDate}</strong>
+                    {previewEndDate && previewEndDate !== effectiveDate ? <> through <strong>{previewEndDate}</strong></> : null}
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Label htmlFor="prev-end" className="text-[11px] text-muted-foreground">Range end</Label>
+                    <Input
+                      id="prev-end" type="date" className="h-7 text-xs w-36"
+                      value={previewEndDate}
+                      min={effectiveDate}
+                      onChange={(e) => setPreviewEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {directory.isLoading || !previewPlan ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Computing planned assignments…
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2 text-[11px]">
+                      {(["A","B","C","D"] as const).map((s) => (
+                        <Badge key={s} variant="outline">Shift {s}: <strong className="ml-1">{previewPlan.summary[s]}</strong></Badge>
+                      ))}
+                      <Badge className="bg-primary/15 text-primary border-primary/30">Changing: {previewPlan.changed}</Badge>
+                      <Badge variant="outline">Unchanged: {previewPlan.kept}</Badge>
+                      <Badge variant="outline">New stubs: {previewPlan.created}</Badge>
+                    </div>
+                    {previewPlan.changed === 0 && previewPlan.created === 0 ? (
+                      <p className="text-[11px] text-muted-foreground italic">All staff already match this shift configuration.</p>
+                    ) : (
+                      <details className="text-xs">
+                        <summary className="cursor-pointer font-medium text-muted-foreground">
+                          View {previewPlan.changed + previewPlan.created} planned change{previewPlan.changed + previewPlan.created === 1 ? "" : "s"}
+                        </summary>
+                        <div className="rounded border mt-2 overflow-x-auto max-h-60">
+                          <Table className="min-w-[640px]">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-16">Shift</TableHead>
+                                <TableHead>Staff</TableHead>
+                                <TableHead className="w-28">Staff ID</TableHead>
+                                <TableHead className="w-32">Current</TableHead>
+                                <TableHead className="w-32">Will become</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {previewPlan.matches
+                                .filter((m) => m.status === "new" || m.previous !== m.next)
+                                .slice(0, 200)
+                                .map((m, i) => (
+                                  <TableRow key={i}>
+                                    <TableCell className="text-[11px]"><Badge variant="outline">{m.shift}</Badge></TableCell>
+                                    <TableCell className="text-xs">{m.staff_name}</TableCell>
+                                    <TableCell className="text-[11px] font-mono">{m.staff_id ?? "—"}</TableCell>
+                                    <TableCell className="text-[11px]">
+                                      {m.status === "new" ? <span className="italic text-muted-foreground">new stub</span> : (m.previous ?? "—")}
+                                    </TableCell>
+                                    <TableCell className="text-[11px] font-medium">Shift {m.next}</TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </details>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button variant="outline" onClick={reset} disabled={committing}>
                 <XCircle className="h-4 w-4 mr-1" /> Discard
@@ -429,19 +576,31 @@ export default function DutyRosterImport() {
                       <TableCell className="text-xs">{i.committed_at ? new Date(i.committed_at).toLocaleString() : "—"}</TableCell>
                       <TableCell className="text-right">
                         {i.status === "committed" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-xs gap-1"
-                            disabled={deployingId === i.id}
-                            onClick={() => handleRedeploy(i.id)}
-                            title="Re-deploy A/B/C/D shift assignments using this import's effective date"
-                          >
-                            {deployingId === i.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <Rocket className="h-3 w-3" />}
-                            Deploy
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="sm" variant="outline"
+                              className="h-7 px-2 text-xs gap-1"
+                              disabled={deployingId === i.id}
+                              onClick={() => handleRedeploy(i.id)}
+                              title="Re-deploy A/B/C/D shift assignments using this import's effective date"
+                            >
+                              {deployingId === i.id
+                                ? <Loader2 className="h-3 w-3 animate-spin" />
+                                : <Rocket className="h-3 w-3" />}
+                              Deploy
+                            </Button>
+                            <Button
+                              size="sm" variant="outline"
+                              className="h-7 px-2 text-xs gap-1"
+                              onClick={() => setOverrideTarget({
+                                effective_date: i.effective_date,
+                                label: i.source_filename,
+                              })}
+                              title="Override individual staff shift assignments (audited)"
+                            >
+                              <Settings2 className="h-3 w-3" /> Override
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -452,6 +611,15 @@ export default function DutyRosterImport() {
           </div>
         </CardContent>
       </Card>
+
+      {overrideTarget && (
+        <DeployedAssignmentsDialog
+          open={!!overrideTarget}
+          onOpenChange={(o) => { if (!o) setOverrideTarget(null); }}
+          effectiveDate={overrideTarget.effective_date}
+          importLabel={overrideTarget.label}
+        />
+      )}
     </div>
   );
 }
