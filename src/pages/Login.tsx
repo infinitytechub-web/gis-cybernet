@@ -101,6 +101,24 @@ export default function Login() {
         await signIn(emailData as string, password);
         // Clear failed attempts on success
         await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
+
+        // If this account has a verified TOTP factor (admins), require the
+        // 6-digit code on this same page before granting access.
+        try {
+          const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+            const { data: factors } = await supabase.auth.mfa.listFactors();
+            const verified = factors?.totp?.find((f: any) => f.status === "verified");
+            if (verified) {
+              setMfaFactorId(verified.id);
+              setOtp("");
+              setMfaStep("totp");
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch { /* fall through to normal navigation */ }
+
         navigate("/");
       } catch (signInErr) {
         // Record failed attempt server-side
@@ -127,6 +145,33 @@ export default function Login() {
       setIsLoading(false);
     }
   }, [staffId, password, signIn, navigate, toast]);
+
+  const handleVerifyOtp = useCallback(async () => {
+    if (!mfaFactorId || otp.length !== 6) return;
+    setIsLoading(true);
+    try {
+      const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+      if (cErr) throw cErr;
+      const { error: vErr } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId, challengeId: ch.id, code: otp,
+      });
+      if (vErr) throw vErr;
+      navigate("/");
+    } catch (e: any) {
+      toast({ title: "Invalid code", description: e?.message || "The 2FA code was rejected.", variant: "destructive" });
+      setOtp("");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mfaFactorId, otp, navigate, toast]);
+
+  const handleCancelMfa = useCallback(async () => {
+    try { await signOut(); } catch { /* ignore */ }
+    setMfaStep(null);
+    setMfaFactorId(null);
+    setOtp("");
+    setPassword("");
+  }, [signOut]);
 
   const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string) => (
     <form onSubmit={handleLogin} className="space-y-4">
