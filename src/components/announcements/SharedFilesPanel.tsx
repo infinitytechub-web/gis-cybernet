@@ -35,6 +35,7 @@ export function SharedFilesPanel() {
   const [description, setDescription] = useState("");
   const [deptId, setDeptId] = useState<string>("global");
   const [file, setFile] = useState<File | null>(null);
+  const [retention, setRetention] = useState<string>("default"); // default | 7 | 30 | 90 | 365 | never
   const [uploading, setUploading] = useState(false);
 
   // Filters
@@ -140,7 +141,7 @@ export function SharedFilesPanel() {
   };
 
   const reset = () => {
-    setTitle(""); setDescription(""); setDeptId("global"); setFile(null);
+    setTitle(""); setDescription(""); setDeptId("global"); setFile(null); setRetention("default");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -149,6 +150,15 @@ export function SharedFilesPanel() {
     setUploading(true);
     try {
       const { path, sha, verdict } = await uploadSecureFile(file, { maxMb: 25 });
+      let expires_at: string | null = null;
+      let retention_days: number | null = null;
+      if (retention !== "default" && retention !== "never") {
+        retention_days = parseInt(retention, 10);
+        expires_at = new Date(Date.now() + retention_days * 86400_000).toISOString();
+      } else if (retention === "never") {
+        retention_days = null;
+        expires_at = null;
+      }
       const { error } = await supabase.from("announcement_files").insert({
         title: title.trim(),
         description: description.trim() || null,
@@ -160,6 +170,8 @@ export function SharedFilesPanel() {
         sha256: sha,
         scan_action: verdict,
         uploaded_by: user.id,
+        expires_at,
+        retention_days,
       });
       if (error) throw error;
       toast.success("File shared");
@@ -265,6 +277,20 @@ export function SharedFilesPanel() {
                     </p>
                   )}
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Retention / expiry</Label>
+                  <Select value={retention} onValueChange={setRetention}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Use system default policy</SelectItem>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="30">30 days</SelectItem>
+                      <SelectItem value="90">90 days</SelectItem>
+                      <SelectItem value="365">1 year</SelectItem>
+                      <SelectItem value="never">Never expires</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   className="w-full gap-1.5"
                   onClick={upload}
@@ -355,6 +381,7 @@ export function SharedFilesPanel() {
                   <TableHead className="hidden md:table-cell">Size</TableHead>
                   <TableHead className="hidden md:table-cell text-center">Downloads</TableHead>
                   <TableHead className="hidden lg:table-cell">Shared</TableHead>
+                  <TableHead className="hidden lg:table-cell">Expires</TableHead>
                   {isAdminOrSupervisor && <TableHead className="text-center w-[70px]">Active</TableHead>}
                   <TableHead className="w-[120px] text-right">Actions</TableHead>
                 </TableRow>
@@ -399,6 +426,22 @@ export function SharedFilesPanel() {
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                         {format(new Date(f.created_at), "dd MMM yyyy")}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs">
+                        {f.expires_at ? (
+                          (() => {
+                            const ms = new Date(f.expires_at).getTime() - Date.now();
+                            const days = Math.ceil(ms / 86400_000);
+                            const cls = ms <= 0 ? "text-destructive" : days <= 7 ? "text-amber-600" : "text-muted-foreground";
+                            return (
+                              <span className={cls} title={format(new Date(f.expires_at), "PPpp")}>
+                                {ms <= 0 ? "Expired" : `${days}d`}
+                              </span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-muted-foreground">Never</span>
+                        )}
                       </TableCell>
                       {isAdminOrSupervisor && (
                         <TableCell className="text-center">
