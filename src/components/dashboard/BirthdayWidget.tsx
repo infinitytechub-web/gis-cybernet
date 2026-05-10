@@ -55,7 +55,15 @@ export default function BirthdayWidget() {
     <Card className="border-l-4 border-l-pink-500">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
-          <Cake className="h-4 w-4 text-pink-600" /> Birthdays this month
+          <span className="relative inline-flex">
+            <Cake className="h-4 w-4 text-pink-600" />
+            {/* Cyan blinking notification dot */}
+            <span className="absolute -top-1 -right-1 inline-flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-500" />
+            </span>
+          </span>
+          Birthdays this month
           <span className="ml-auto text-xs text-muted-foreground font-normal">
             {format(today, "MMMM yyyy")}
           </span>
