@@ -38,33 +38,70 @@ export default function ProfileChangeApprovals() {
     queryFn: async () => {
       let q = supabase
         .from("profile_change_requests")
-        .select("*, profiles:profile_id(first_name, last_name, staff_id)")
+        .select("*, profiles:profile_id(first_name, last_name, staff_id, email)")
         .order("created_at", { ascending: false });
       if (tab === "pending") q = q.eq("status", "pending");
       else q = q.in("status", ["approved", "rejected", "cancelled"]);
       const { data, error } = await q.limit(100);
       if (error) throw error;
-      return (data ?? []) as unknown as Req[];
+      return (data ?? []) as unknown as (Req & { profiles?: any })[];
     },
     enabled: allowed,
   });
 
   const review = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "approved" | "rejected" }) => {
+    mutationFn: async ({ id, status, req }: { id: string; status: "approved" | "rejected" | "pending"; req: any }) => {
       if (!user) throw new Error("Not signed in");
+      const reviewedAt = new Date().toISOString();
       const { error } = await supabase
         .from("profile_change_requests")
         .update({
           status,
           reviewer_id: user.id,
           reviewer_notes: notes[id] ?? null,
-          reviewed_at: new Date().toISOString(),
+          reviewed_at: reviewedAt,
         })
         .eq("id", id);
       if (error) throw error;
+
+      // Best-effort email alert via the transactional pipeline.
+      const recipientEmail: string | null = req?.profiles?.email ?? null;
+      if (recipientEmail) {
+        try {
+          // Look up reviewer's display name
+          const { data: me } = await supabase
+            .from("profiles")
+            .select("first_name, last_name")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          const reviewerName = me ? `${me.first_name ?? ""} ${me.last_name ?? ""}`.trim() : undefined;
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "profile-change-status",
+              recipientEmail,
+              idempotencyKey: `pcr-${id}-${status}`,
+              templateData: {
+                recipientName: req?.profiles ? `${req.profiles.first_name ?? ""} ${req.profiles.last_name ?? ""}`.trim() : undefined,
+                status,
+                fields: Object.keys(req?.requested_changes ?? {}),
+                reviewerName,
+                reviewerNotes: notes[id] ?? null,
+                reviewedAt: new Date(reviewedAt).toLocaleString(),
+              },
+            },
+          });
+        } catch (err) {
+          // Don't block on email failure — in-app notification still fires via DB trigger.
+          console.warn("Email alert failed:", err);
+        }
+      }
     },
     onSuccess: (_d, v) => {
-      toast.success(v.status === "approved" ? "Change approved and applied." : "Request rejected.");
+      toast.success(
+        v.status === "approved" ? "Change approved and applied." :
+        v.status === "rejected" ? "Request rejected." :
+        "Marked as pending for further review."
+      );
       qc.invalidateQueries({ queryKey: ["profile-change-requests"] });
     },
     onError: (e: any) => toast.error(e.message ?? "Failed to update request"),
