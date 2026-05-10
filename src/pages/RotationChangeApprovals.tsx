@@ -308,9 +308,7 @@ function PatternPreview({ pattern }: { pattern: any }) {
               {Array.from({ length: days }, (_, i) => (
                 <td key={i} className="px-2 py-2 text-muted-foreground">
                   {groups[g]?.[i] ? (
-                    <span className="text-foreground font-mono text-[10px]">
-                      {String(groups[g]![i]).slice(0, 8)}…
-                    </span>
+                    <span className="text-foreground text-[11px]">{shiftName(groups[g]![i])}</span>
                   ) : "Off"}
                 </td>
               ))}
