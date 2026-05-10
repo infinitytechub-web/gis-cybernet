@@ -52,11 +52,11 @@ export function SecurityUpdatesPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("security_scan_runs")
-        .select("id, trigger_kind, status, total_checks, passed_count, warn_count, error_count, started_at, finished_at")
+        .select("id, trigger_kind, status, total_checks, passed_count, warn_count, error_count, started_at, finished_at, findings")
         .order("started_at", { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as ExportRun[];
     },
   });
 
