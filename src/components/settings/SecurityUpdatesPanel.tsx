@@ -78,7 +78,7 @@ export function SecurityUpdatesPanel() {
 
       const { data, error } = await supabase.rpc("run_security_hygiene_scan");
       if (error) throw error;
-      const list = (data ?? []) as Finding[];
+      const list = (data ?? []) as unknown as Finding[];
 
       const errs = list.filter((f) => f.severity === "error").length;
       const warns = list.filter((f) => f.severity === "warn").length;
