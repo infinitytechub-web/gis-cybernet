@@ -97,6 +97,11 @@ export function AnnouncementsBanner() {
           <CardTitle className="font-bold tracking-tight text-sm flex items-center gap-2 text-destructive">
             <Megaphone className="h-4 w-4 text-destructive" />
             Announcements
+            {announcements.length > 0 && (
+              <Badge variant="outline" className="ml-1 text-[10px] h-4 border-destructive/40 text-destructive bg-transparent">
+                {announcements.length}
+              </Badge>
+            )}
           </CardTitle>
           {isAdminOrSupervisor && (
             <Dialog open={open} onOpenChange={setOpen}>
