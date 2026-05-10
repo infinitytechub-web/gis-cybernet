@@ -729,6 +729,7 @@ export default function Operations() {
           <Button variant="outline" size="icon" onClick={() => setShowPrintCols(true)} title="Print with Column Selection"><FileText className="h-4 w-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => queryClient.invalidateQueries({ queryKey: ["operations-data"] })}><RefreshCw className="h-4 w-4" /></Button>
         </div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
