@@ -172,8 +172,8 @@ export function SecurityUpdatesPanel() {
             <ShieldCheck className="h-5 w-5 text-emerald-600" /> Security Updates &amp; Scans
           </CardTitle>
           <CardDescription>
-            Run on-demand security audits across database tables, RLS policies and SECURITY DEFINER
-            functions, or schedule them to run automatically.
+            Run on-demand security audits across database tables, RLS policies, SECURITY DEFINER
+            functions and outdated/vulnerable npm dependencies — or schedule them to run automatically.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
