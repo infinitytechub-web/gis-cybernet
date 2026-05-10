@@ -384,28 +384,22 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Approved Reports — visible to all staff for download/print */}
-      <ApprovedReportsWidget variant="standard" />
+      {/* ═══════════ TIER 3 — INFORMATIONAL ═══════════ */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-l-4 border-l-cyan-500 pl-3 py-1">
+          <Calendar className="h-4 w-4 text-cyan-600" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-700">Information</h2>
+        </div>
 
-      {/* Approved IPSE Reports — separated from standard reports */}
-      <ApprovedReportsWidget variant="ipse" />
+        {/* Announcements + Birthdays — informational pair, side-by-side on desktop */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <AnnouncementsBanner />
+          <BirthdayWidget />
+        </div>
 
-      {/* Interlink System — command tier only */}
-      <InterlinkWidget />
-
-      {/* Scheduled Reports Widget */}
-      <ScheduledReportsWidget />
-
-      {/* Command Roster — visible to command tier */}
-      {isAdminOrSupervisor && <CommandRosterWidget />}
-
-      {/* Online Users Widget — command tier only */}
-      <div id="online-now" className="scroll-mt-20">
-        <OnlineNowPanel />
+        <GenderStatisticsWidget />
       </div>
 
-      {/* Gender Statistics */}
-      <GenderStatisticsWidget />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
