@@ -44,7 +44,7 @@ export default function ProcessingPassportApplications() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
+  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean>; mfa_review_status: string; mfa_review_notes: string }>({ status: "submitted", notes: "", checklist: {}, mfa_review_status: "pending", mfa_review_notes: "" });
 
   useEffect(() => {
     const channel = supabase
