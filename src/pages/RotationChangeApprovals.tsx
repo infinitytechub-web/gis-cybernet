@@ -321,3 +321,78 @@ function PatternPreview({ pattern }: { pattern: any }) {
     </div>
   );
 }
+
+type AuditEntry = {
+  id: string;
+  action: string;
+  previous_status: string | null;
+  new_status: string | null;
+  comment: string | null;
+  created_at: string;
+  actor: { first_name: string | null; last_name: string | null; staff_id: string | null } | null;
+};
+
+const ACTION_TONE: Record<string, string> = {
+  submitted: "bg-primary/15 text-primary border-primary/30",
+  approved:  "bg-success/15 text-success border-success/30",
+  rejected:  "bg-destructive/15 text-destructive border-destructive/30",
+  withdrawn: "bg-muted text-muted-foreground border-border",
+  applied:   "bg-secondary/15 text-secondary border-secondary/30",
+  edited:    "bg-warning/15 text-warning border-warning/30",
+};
+
+function AuditTrail({ proposalId }: { proposalId: string }) {
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ["rotation-proposal-audit", proposalId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rotation_change_proposal_audit")
+        .select(`
+          id, action, previous_status, new_status, comment, created_at,
+          actor:profiles!rotation_change_proposal_audit_actor_profile_id_fkey ( first_name, last_name, staff_id )
+        `)
+        .eq("proposal_id", proposalId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as AuditEntry[];
+    },
+  });
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs text-muted-foreground">Audit trail</Label>
+      {isLoading ? (
+        <p className="text-xs text-muted-foreground italic">Loading audit…</p>
+      ) : entries.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">No audit entries.</p>
+      ) : (
+        <ol className="border rounded-lg divide-y">
+          {entries.map((e) => (
+            <li key={e.id} className="px-3 py-2 text-xs flex items-start gap-2">
+              <Badge variant="outline" className={`text-[10px] capitalize ${ACTION_TONE[e.action] ?? ""}`}>
+                {e.action}
+              </Badge>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium">
+                  {e.actor?.first_name ?? "System"} {e.actor?.last_name ?? ""}{" "}
+                  <span className="text-muted-foreground font-normal">
+                    ({e.actor?.staff_id ?? "—"})
+                  </span>
+                </div>
+                <div className="text-muted-foreground">
+                  {format(new Date(e.created_at), "dd MMM yyyy HH:mm:ss")}
+                  {e.previous_status && e.new_status && e.previous_status !== e.new_status
+                    ? ` • ${e.previous_status} → ${e.new_status}`
+                    : ""}
+                </div>
+                {e.comment && (
+                  <div className="mt-0.5 italic text-muted-foreground">"{e.comment}"</div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
