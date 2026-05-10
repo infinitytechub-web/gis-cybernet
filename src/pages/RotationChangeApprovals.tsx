@@ -154,6 +154,8 @@ export default function RotationChangeApprovals() {
 
                 <PatternPreview pattern={active.pattern} />
 
+                <AuditTrail proposalId={active.id} />
+
                 {active.status === "pending" ? (
                   <>
                     <div>
