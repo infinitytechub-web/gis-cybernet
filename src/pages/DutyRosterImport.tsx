@@ -16,7 +16,7 @@ import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Tra
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import { DeployedAssignmentsDialog } from "@/components/shifts/DeployedAssignmentsDialog";
-import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
+import { downloadCSVString } from "@/lib/download-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
