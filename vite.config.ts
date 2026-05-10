@@ -4,7 +4,14 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
+const BUILD_TIME = new Date().toISOString();
+const BUILD_ID = BUILD_TIME.replace(/[-:T.Z]/g, "").slice(0, 12);
+
 export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(BUILD_ID),
+    __APP_BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  },
   server: {
     host: "::",
     port: 8080,
