@@ -277,6 +277,7 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           <Label>GPS Coordinates (lat,lng)</Label>
           <Input placeholder="e.g. 5.6037, -0.1870" value={form.gps_coordinates} onChange={e => setForm(p => ({ ...p, gps_coordinates: e.target.value }))} />
         </div>
+      </div>
       <div className="space-y-2">
         <Label>Location</Label>
         <Input placeholder="e.g. Amasaman Barrier, Pokuase — or use the digital address / GPS below" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
@@ -310,7 +311,7 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Suspects Count</Label>
           <Input type="number" min={0} value={form.suspects_count} onChange={e => setForm(p => ({ ...p, suspects_count: parseInt(e.target.value) || 0 }))} />
@@ -319,6 +320,52 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           <Label>Arrests Count</Label>
           <Input type="number" min={0} value={form.arrests_count} onChange={e => setForm(p => ({ ...p, arrests_count: parseInt(e.target.value) || 0 }))} />
         </div>
+        <div className="space-y-2">
+          <Label>Casualties</Label>
+          <Input type="number" min={0} value={form.casualties_count} onChange={e => setForm(p => ({ ...p, casualties_count: parseInt(e.target.value) || 0 }))} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Weapons Used</Label>
+          <Input placeholder="e.g. Sidearm, baton" value={form.weapons_used} onChange={e => setForm(p => ({ ...p, weapons_used: e.target.value }))} />
+        </div>
+        <div className="space-y-2">
+          <Label>Vehicles Involved</Label>
+          <Input placeholder="e.g. GP 1234-23 Patrol Pickup" value={form.vehicles_involved} onChange={e => setForm(p => ({ ...p, vehicles_involved: e.target.value }))} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Items Seized</Label>
+        <Textarea placeholder="List of items seized during the operation" value={form.items_seized} onChange={e => setForm(p => ({ ...p, items_seized: e.target.value }))} rows={2} />
+      </div>
+      <div className="space-y-2">
+        <Label>Witnesses</Label>
+        <Textarea placeholder="Witness names and contact info" value={form.witnesses} onChange={e => setForm(p => ({ ...p, witnesses: e.target.value }))} rows={2} />
+      </div>
+      <div className="space-y-2">
+        <Label>Action Taken</Label>
+        <Textarea placeholder="Actions taken on scene / chain of custody" value={form.action_taken} onChange={e => setForm(p => ({ ...p, action_taken: e.target.value }))} rows={2} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center gap-2 pt-6">
+          <input id="follow_up_required" type="checkbox" checked={form.follow_up_required} onChange={e => setForm(p => ({ ...p, follow_up_required: e.target.checked }))} />
+          <Label htmlFor="follow_up_required" className="cursor-pointer">Follow-up required</Label>
+        </div>
+        <div className="space-y-2">
+          <Label>HQ Reference Number</Label>
+          <Input placeholder="GIS-OPS-202405-0001" value={form.hq_reference_number} onChange={e => setForm(p => ({ ...p, hq_reference_number: e.target.value }))} />
+        </div>
+      </div>
+      {form.follow_up_required && (
+        <div className="space-y-2">
+          <Label>Follow-up Notes</Label>
+          <Textarea placeholder="What follow-up is required?" value={form.follow_up_notes} onChange={e => setForm(p => ({ ...p, follow_up_notes: e.target.value }))} rows={2} />
+        </div>
+      )}
+      <div className="space-y-2">
+        <Label>Supervisor Remarks</Label>
+        <Textarea placeholder="Endorsement / remarks by supervising officer" value={form.supervisor_remarks} onChange={e => setForm(p => ({ ...p, supervisor_remarks: e.target.value }))} rows={2} />
       </div>
       <div className="space-y-2">
         <Label>Outcome</Label>
@@ -417,11 +464,14 @@ export default function Operations() {
       const { error } = await supabase.from("operations").insert({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
+        operation_time: values.operation_time || null,
         location: canonicalLocation,
+        gps_coordinates: values.gps_coordinates || null,
         description: values.description || null,
         severity: values.severity,
         suspects_count: values.suspects_count,
         arrests_count: values.arrests_count,
+        casualties_count: values.casualties_count,
         status: values.status,
         outcome: values.outcome || null,
         notes: values.notes || null,
@@ -430,7 +480,16 @@ export default function Operations() {
         contact_details: values.contact_details || null,
         mugshot_path: values.mugshot_path,
         authorized_by: values.authorized_by,
-      });
+        weapons_used: values.weapons_used || null,
+        vehicles_involved: values.vehicles_involved || null,
+        items_seized: values.items_seized || null,
+        witnesses: values.witnesses || null,
+        action_taken: values.action_taken || null,
+        follow_up_required: values.follow_up_required,
+        follow_up_notes: values.follow_up_notes || null,
+        supervisor_remarks: values.supervisor_remarks || null,
+        hq_reference_number: values.hq_reference_number || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -454,11 +513,14 @@ export default function Operations() {
       const { error } = await supabase.from("operations").update({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
+        operation_time: values.operation_time || null,
         location: canonicalLocation,
+        gps_coordinates: values.gps_coordinates || null,
         description: values.description || null,
         severity: values.severity,
         suspects_count: values.suspects_count,
         arrests_count: values.arrests_count,
+        casualties_count: values.casualties_count,
         status: values.status,
         outcome: values.outcome || null,
         notes: values.notes || null,
@@ -466,7 +528,16 @@ export default function Operations() {
         contact_details: values.contact_details || null,
         mugshot_path: values.mugshot_path,
         authorized_by: values.authorized_by,
-      }).eq("id", id);
+        weapons_used: values.weapons_used || null,
+        vehicles_involved: values.vehicles_involved || null,
+        items_seized: values.items_seized || null,
+        witnesses: values.witnesses || null,
+        action_taken: values.action_taken || null,
+        follow_up_required: values.follow_up_required,
+        follow_up_notes: values.follow_up_notes || null,
+        supervisor_remarks: values.supervisor_remarks || null,
+        hq_reference_number: values.hq_reference_number || null,
+      } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
