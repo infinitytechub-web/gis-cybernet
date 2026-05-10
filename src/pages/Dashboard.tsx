@@ -34,6 +34,7 @@ import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWid
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
+import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
