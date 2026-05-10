@@ -34,6 +34,7 @@ import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWid
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
+import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -263,7 +264,11 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Quick Search — staff-only variant (command tier sees the admin one inside Tier 1) */}
+      {!isAdminOrSupervisor && !isAdmin && <StaffQuickSearchWidget />}
+
       {/* ═══════════ TIER 1 — COMMAND / ADMINISTRATION (sensitive) ═══════════ */}
+
       {(isAdminOrSupervisor || isAdmin) && (
         <div className="space-y-4">
           <div className="flex items-center gap-2 border-l-4 border-l-destructive pl-3 py-1">
