@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
           .update({ account_locked: false })
           .eq("user_id", row.user_id);
         if (prof.staff_id) {
-          await admin.rpc("admin_reset_failed_attempts", { _staff_id: prof.staff_id }).catch(() => {});
+          try { await admin.rpc("admin_reset_failed_attempts", { _staff_id: prof.staff_id }); } catch {}
         }
       }
 
