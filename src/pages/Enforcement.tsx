@@ -459,11 +459,14 @@ export default function Enforcement() {
       const { error } = await supabase.from("enforcement_operations").update({
         operation_type: values.operation_type,
         operation_date: values.operation_date,
+        operation_time: values.operation_time || null,
         location: canonicalLocation,
+        gps_coordinates: values.gps_coordinates || null,
         description: values.description || null,
         severity: values.severity,
         suspects_count: values.suspects_count,
         arrests_count: values.arrests_count,
+        casualties_count: values.casualties_count,
         status: values.status,
         outcome: values.outcome || null,
         notes: values.notes || null,
@@ -471,7 +474,16 @@ export default function Enforcement() {
         contact_details: values.contact_details || null,
         mugshot_path: values.mugshot_path,
         authorized_by: values.authorized_by,
-      }).eq("id", id);
+        weapons_used: values.weapons_used || null,
+        vehicles_involved: values.vehicles_involved || null,
+        items_seized: values.items_seized || null,
+        witnesses: values.witnesses || null,
+        action_taken: values.action_taken || null,
+        follow_up_required: values.follow_up_required,
+        follow_up_notes: values.follow_up_notes || null,
+        supervisor_remarks: values.supervisor_remarks || null,
+        hq_reference_number: values.hq_reference_number || null,
+      } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
