@@ -42,7 +42,7 @@ async function walk(dir, out = []) {
     if (SKIP_DIRS.has(rel)) continue;
     if (e.isDirectory()) {
       await walk(full, out);
-    } else if (FILE_EXTS.has(path.extname(e.name))) {
+    } else if (FILE_EXTS.has(path.extname(e.name)) && !SKIP_FILES.has(rel)) {
       out.push(full);
     }
   }
