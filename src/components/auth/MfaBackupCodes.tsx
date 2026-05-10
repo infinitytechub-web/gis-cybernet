@@ -12,11 +12,49 @@ import { toast } from "sonner";
 import { downloadBlob } from "@/lib/download-utils";
 import { logSecurityEvent } from "@/lib/security-audit";
 
+const AUTO_HIDE_SECONDS = 60;
+
 export default function MfaBackupCodes() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [showCodes, setShowCodes] = useState<string[] | null>(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(AUTO_HIDE_SECONDS);
+  const timerRef = useRef<number | null>(null);
+
+  // Wipe codes from memory the instant the dialog is dismissed (any reason).
+  const dismissCodes = () => {
+    setShowCodes(null);
+    if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+  };
+
+  // Countdown + auto-hide while dialog is open.
+  useEffect(() => {
+    if (!showCodes) return;
+    setSecondsLeft(AUTO_HIDE_SECONDS);
+    timerRef.current = window.setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          // time's up — wipe and close
+          window.clearInterval(timerRef.current!);
+          timerRef.current = null;
+          setShowCodes(null);
+          toast.message("Backup codes hidden for security");
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+
+    // Also wipe if the tab is hidden (user switches away)
+    const onVis = () => { if (document.hidden) dismissCodes(); };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [showCodes]);
 
   const { data: remaining = 0 } = useQuery({
     queryKey: ["mfa-backup-remaining", user?.id],
