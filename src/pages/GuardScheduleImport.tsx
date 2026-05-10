@@ -57,8 +57,7 @@ async function extractPdfText(file: File): Promise<string[]> {
   // Lazy import; self-host worker (bundled by Vite) so we never load executable
   // code from a third-party CDN. This sidesteps SRI/version-pinning concerns.
   const pdfjs: any = await import("pdfjs-dist");
-  // @ts-expect-error - Vite ?url suffix returns a string URL for the asset
-  const workerUrl: string = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+  const workerUrl: string = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url" as string)).default;
   pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
