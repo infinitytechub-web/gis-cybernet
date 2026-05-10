@@ -67,6 +67,11 @@ export default function RoleAssignmentsAdmin() {
   const [editing, setEditing] = useState<{ user_id: string; staff_id: string; name: string; department_id: string | null; roles: AppRole[] } | null>(null);
   const [addingRole, setAddingRole] = useState<AppRole | "">("");
   const [editingDept, setEditingDept] = useState<string>("");
+  const [confirmState, setConfirmState] = useState<{
+    title: string; message: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void;
+  } | null>(null);
+  const askConfirm = (cfg: { title: string; message: string; confirmLabel?: string; destructive?: boolean; onConfirm: () => void }) =>
+    setConfirmState(cfg);
 
   // ---- Data ---------------------------------------------------------------
 
