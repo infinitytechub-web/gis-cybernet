@@ -1,6 +1,7 @@
 // Admin-only safe restore. Upsert by primary key — never deletes existing rows.
 // Body: { snapshot_id?: string, snapshot_payload?: object, tables: string[] }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,11 @@ const CHUNK = 200;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // CSRF defence — verifies same-app origin + custom header for state-changing calls.
+  // Internal/service-role/cron callers bypass automatically (see _shared/csrf.ts).
+  const __csrf = assertCsrfSafe(req);
+  if (!__csrf.ok) return csrfDeniedResponse(corsHeaders, __csrf.reason);
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

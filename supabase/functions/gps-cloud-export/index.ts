@@ -1,6 +1,7 @@
 // Upload a generated GPS CSV to Supabase Storage (S3-style backend) and return
 // a time-limited signed URL for command-tier download.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,6 +25,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // CSRF defence — verifies same-app origin + custom header for state-changing calls.
+  // Internal/service-role/cron callers bypass automatically (see _shared/csrf.ts).
+  const __csrf = assertCsrfSafe(req);
+  if (!__csrf.ok) return csrfDeniedResponse(corsHeaders, __csrf.reason);
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");

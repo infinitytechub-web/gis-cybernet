@@ -2,6 +2,7 @@
 // Supports single and bulk send modes. Returns per-recipient outcome + provider message ids.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -90,6 +91,11 @@ const BULK_MAX = 200;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // CSRF defence — verifies same-app origin + custom header for state-changing calls.
+  // Internal/service-role/cron callers bypass automatically (see _shared/csrf.ts).
+  const __csrf = assertCsrfSafe(req);
+  if (!__csrf.ok) return csrfDeniedResponse(corsHeaders, __csrf.reason);
 
   try {
     // Authenticate caller

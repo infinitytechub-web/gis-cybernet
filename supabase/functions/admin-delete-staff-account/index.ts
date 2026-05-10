@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +11,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // CSRF defence — verifies same-app origin + custom header for state-changing calls.
+  // Internal/service-role/cron callers bypass automatically (see _shared/csrf.ts).
+  const __csrf = assertCsrfSafe(req);
+  if (!__csrf.ok) return csrfDeniedResponse(corsHeaders, __csrf.reason);
 
   try {
     const authHeader = req.headers.get("Authorization");
