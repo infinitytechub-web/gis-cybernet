@@ -122,3 +122,7 @@ const notesBox: React.CSSProperties = {
 const notesLabel: React.CSSProperties = { fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', margin: '0 0 4px' }
 const notesText: React.CSSProperties = { fontSize: '14px', color: '#1f2937', margin: 0, whiteSpace: 'pre-wrap' }
 const footer: React.CSSProperties = { fontSize: '12px', color: '#6b7280', margin: '24px 0 0' }
+const ctaBtn: React.CSSProperties = {
+  backgroundColor: '#0f5132', color: '#ffffff', padding: '10px 18px', borderRadius: '6px',
+  fontSize: '14px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block',
+}
