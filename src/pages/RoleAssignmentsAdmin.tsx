@@ -11,11 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   UserCog, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet,
-  Trash2, Search, Users, History, Plus, Building2, Undo2,
+  Trash2, Search, Users, History, Plus, Building2, Undo2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
