@@ -34,16 +34,18 @@ Deno.serve(async (req) => {
   let triggeredBy: string | null = null;
 
   // If invoked with a user JWT, capture identity + ensure they're admin.
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
+  // Pure service-role/cron callers (no user JWT) are accepted as scheduled.
+  if (hasUserBearer) {
+    let userIdentified = false;
     try {
       const userClient = createClient(
         SUPABASE_URL,
         Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } },
+        { global: { headers: { Authorization: authHeader! } } },
       );
       const { data: { user } } = await userClient.auth.getUser();
       if (user) {
+        userIdentified = true;
         triggerKind = "manual";
         triggeredBy = user.id;
         const { data: roles } = await supabase
@@ -59,7 +61,15 @@ Deno.serve(async (req) => {
         }
       }
     } catch {
-      /* fall through as scheduled */
+      /* invalid token */
+    }
+    // If a Bearer token was supplied but isn't a valid user AND isn't an
+    // internal caller, reject — don't silently fall through as "scheduled".
+    if (!userIdentified && !isInternalCaller(req)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
   }
 
