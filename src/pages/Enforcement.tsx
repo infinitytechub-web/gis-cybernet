@@ -310,7 +310,7 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label>Suspects Count</Label>
           <Input type="number" min={0} value={form.suspects_count} onChange={e => setForm(p => ({ ...p, suspects_count: parseInt(e.target.value) || 0 }))} />
@@ -319,6 +319,52 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           <Label>Arrests Count</Label>
           <Input type="number" min={0} value={form.arrests_count} onChange={e => setForm(p => ({ ...p, arrests_count: parseInt(e.target.value) || 0 }))} />
         </div>
+        <div className="space-y-2">
+          <Label>Casualties</Label>
+          <Input type="number" min={0} value={form.casualties_count} onChange={e => setForm(p => ({ ...p, casualties_count: parseInt(e.target.value) || 0 }))} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Weapons Used</Label>
+          <Input placeholder="e.g. Sidearm, baton" value={form.weapons_used} onChange={e => setForm(p => ({ ...p, weapons_used: e.target.value }))} />
+        </div>
+        <div className="space-y-2">
+          <Label>Vehicles Involved</Label>
+          <Input placeholder="e.g. GP 1234-23 Patrol Pickup" value={form.vehicles_involved} onChange={e => setForm(p => ({ ...p, vehicles_involved: e.target.value }))} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Items Seized</Label>
+        <Textarea placeholder="List of items seized during the operation" value={form.items_seized} onChange={e => setForm(p => ({ ...p, items_seized: e.target.value }))} rows={2} />
+      </div>
+      <div className="space-y-2">
+        <Label>Witnesses</Label>
+        <Textarea placeholder="Witness names and contact info" value={form.witnesses} onChange={e => setForm(p => ({ ...p, witnesses: e.target.value }))} rows={2} />
+      </div>
+      <div className="space-y-2">
+        <Label>Action Taken</Label>
+        <Textarea placeholder="Actions taken on scene / chain of custody" value={form.action_taken} onChange={e => setForm(p => ({ ...p, action_taken: e.target.value }))} rows={2} />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center gap-2 pt-6">
+          <input id="enf_follow_up_required" type="checkbox" checked={form.follow_up_required} onChange={e => setForm(p => ({ ...p, follow_up_required: e.target.checked }))} />
+          <Label htmlFor="enf_follow_up_required" className="cursor-pointer">Follow-up required</Label>
+        </div>
+        <div className="space-y-2">
+          <Label>HQ Reference Number</Label>
+          <Input placeholder="GIS-OPS-202405-0001" value={form.hq_reference_number} onChange={e => setForm(p => ({ ...p, hq_reference_number: e.target.value }))} />
+        </div>
+      </div>
+      {form.follow_up_required && (
+        <div className="space-y-2">
+          <Label>Follow-up Notes</Label>
+          <Textarea placeholder="What follow-up is required?" value={form.follow_up_notes} onChange={e => setForm(p => ({ ...p, follow_up_notes: e.target.value }))} rows={2} />
+        </div>
+      )}
+      <div className="space-y-2">
+        <Label>Supervisor Remarks</Label>
+        <Textarea placeholder="Endorsement / remarks by supervising officer" value={form.supervisor_remarks} onChange={e => setForm(p => ({ ...p, supervisor_remarks: e.target.value }))} rows={2} />
       </div>
       <div className="space-y-2">
         <Label>Outcome</Label>
