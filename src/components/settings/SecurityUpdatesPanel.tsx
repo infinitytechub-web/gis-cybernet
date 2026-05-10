@@ -81,24 +81,32 @@ export function SecurityUpdatesPanel() {
 
       const { data, error } = await supabase.rpc("run_security_hygiene_scan");
       if (error) throw error;
-      const list = (data ?? []) as unknown as Finding[];
+      const dbFindings = (data ?? []) as unknown as Finding[];
+
+      // Client-side repo / dependency hygiene
+      const repoFindings = runRepoHygieneScan() as Finding[];
+      const list: Finding[] = [...dbFindings, ...repoFindings];
 
       const errs = list.filter((f) => f.severity === "error").length;
       const warns = list.filter((f) => f.severity === "warn").length;
       const infos = list.filter((f) => f.severity === "info").length;
 
-      const { error: insErr } = await supabase.from("security_scan_runs").insert({
-        triggered_by: user.id,
-        trigger_kind: "manual",
-        status: "completed",
-        total_checks: list.length,
-        passed_count: infos,
-        warn_count: warns,
-        error_count: errs,
-        findings: list as any,
-        started_at: startedAt,
-        finished_at: new Date().toISOString(),
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("security_scan_runs")
+        .insert({
+          triggered_by: user.id,
+          trigger_kind: "manual",
+          status: "completed",
+          total_checks: list.length,
+          passed_count: infos,
+          warn_count: warns,
+          error_count: errs,
+          findings: list as any,
+          started_at: startedAt,
+          finished_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
       if (insErr) throw insErr;
 
       if (settings?.id) {
@@ -107,10 +115,11 @@ export function SecurityUpdatesPanel() {
           .update({ security_scan_last_run_at: new Date().toISOString() })
           .eq("id", settings.id);
       }
-      return list;
+      return { list, runId: inserted?.id as string };
     },
-    onSuccess: (list) => {
+    onSuccess: ({ list, runId }) => {
       setFindings(list);
+      setLatestRunId(runId);
       qc.invalidateQueries({ queryKey: ["security-scan-runs"] });
       qc.invalidateQueries({ queryKey: ["security-scan-settings"] });
       const errs = list.filter((f) => f.severity === "error").length;
@@ -119,6 +128,38 @@ export function SecurityUpdatesPanel() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const buildLatestRun = (): ExportRun | null => {
+    if (!findings) return null;
+    const fromHistory = latestRunId ? history.find((h) => h.id === latestRunId) : null;
+    return {
+      id: fromHistory?.id ?? "latest",
+      trigger_kind: fromHistory?.trigger_kind ?? "manual",
+      status: fromHistory?.status ?? "completed",
+      total_checks: findings.length,
+      passed_count: findings.filter((f) => f.severity === "info").length,
+      warn_count: findings.filter((f) => f.severity === "warn").length,
+      error_count: findings.filter((f) => f.severity === "error").length,
+      started_at: fromHistory?.started_at ?? new Date().toISOString(),
+      finished_at: fromHistory?.finished_at ?? new Date().toISOString(),
+      findings,
+    };
+  };
+
+  const handleExportRun = async (run: ExportRun, kind: "csv" | "pdf") => {
+    let full = run;
+    if (!run.findings || run.findings.length === 0) {
+      const { data } = await supabase
+        .from("security_scan_runs")
+        .select("id, trigger_kind, status, total_checks, passed_count, warn_count, error_count, started_at, finished_at, findings")
+        .eq("id", run.id)
+        .maybeSingle();
+      if (data) full = data as unknown as ExportRun;
+    }
+    if (kind === "csv") exportRunAsCsv(full, history);
+    else exportRunAsPdf(full, history);
+    toast.success(`Exported ${kind.toUpperCase()} report`);
+  };
 
   const errCount = findings?.filter((f) => f.severity === "error").length ?? 0;
   const warnCount = findings?.filter((f) => f.severity === "warn").length ?? 0;
