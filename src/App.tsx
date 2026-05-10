@@ -26,6 +26,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Staff = lazy(() => import("./pages/Staff"));
 const StaffProfile = lazy(() => import("./pages/StaffProfile"));
 const StaffDirectory = lazy(() => import("./pages/StaffDirectory"));
+const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const Shifts = lazy(() => import("./pages/Shifts"));
@@ -128,6 +129,8 @@ function App() {
           <Route path="/guard-schedule/import" element={<ProtectedRoute><Layout><GuardScheduleImport /></Layout></ProtectedRoute>} />
           <Route path="/route-history" element={<ProtectedRoute><Layout><RouteHistory /></Layout></ProtectedRoute>} />
           <Route path="/verify-export" element={<ProtectedRoute><Layout><VerifyExport /></Layout></ProtectedRoute>} />
+          <Route path="/staff-export-integrity" element={<ProtectedRoute><Layout><StaffExportIntegrity /></Layout></ProtectedRoute>} />
+
           <Route path="/staff-approvals/pending" element={<ProtectedRoute><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/accounts" element={<ProtectedRoute><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
