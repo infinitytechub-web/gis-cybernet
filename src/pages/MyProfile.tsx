@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,6 +95,21 @@ export default function MyProfile() {
     enabled: !!profile?.id,
   });
 
+  // Deep-link: highlight a specific request from email/notification
+  const [searchParams] = useSearchParams();
+  const focusRequestId = searchParams.get("request");
+  const requestRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusRequestId || !myRequests?.length) return;
+    const el = requestRefs.current[focusRequestId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedId(focusRequestId);
+      const t = setTimeout(() => setHighlightedId(null), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [focusRequestId, myRequests]);
   const save = useMutation({
     mutationFn: async () => {
       if (!profile?.id || !user) throw new Error("Profile not loaded");
@@ -258,7 +274,13 @@ export default function MyProfile() {
           ) : (
             <div className="space-y-2">
               {myRequests.map((r: any) => (
-                <div key={r.id} className="rounded border p-2 text-xs space-y-1">
+                <div
+                  key={r.id}
+                  ref={(el) => { requestRefs.current[r.id] = el; }}
+                  className={`rounded border p-2 text-xs space-y-1 transition-all ${
+                    highlightedId === r.id ? "ring-2 ring-primary bg-primary/5" : ""
+                  }`}
+                >
                   <div className="flex items-center justify-between gap-2">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${
                       r.status === "approved" ? "bg-emerald-100 text-emerald-800" :

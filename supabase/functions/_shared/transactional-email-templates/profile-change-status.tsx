@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Container, Head, Heading, Html, Preview, Section, Text,
+  Body, Button, Container, Head, Heading, Html, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
@@ -13,6 +13,7 @@ interface ProfileChangeStatusProps {
   reviewerName?: string
   reviewerNotes?: string
   reviewedAt?: string
+  requestUrl?: string
 }
 
 const labelFor = (s?: string) => {
@@ -34,6 +35,7 @@ const ProfileChangeStatusEmail = ({
   reviewerName,
   reviewerNotes,
   reviewedAt,
+  requestUrl,
 }: ProfileChangeStatusProps) => (
   <Html lang="en" dir="ltr">
     <Head />
@@ -74,6 +76,14 @@ const ProfileChangeStatusEmail = ({
           </Section>
         )}
 
+        {requestUrl && (
+          <Section style={{ textAlign: 'center', margin: '20px 0 8px' }}>
+            <Button href={requestUrl} style={ctaBtn}>
+              View request details
+            </Button>
+          </Section>
+        )}
+
         <Text style={footer}>
           This is an automated message from {SITE_NAME}. Please log in to view the latest state of your profile.
         </Text>
@@ -94,6 +104,7 @@ export const template = {
     reviewerName: 'OIC Adjei',
     reviewerNotes: 'Verified against Ghana Card.',
     reviewedAt: '10 May 2026 14:32',
+    requestUrl: 'https://gis-cybernet.lovable.app/my-profile?request=00000000-0000-0000-0000-000000000000',
   },
 } satisfies TemplateEntry
 
@@ -111,3 +122,7 @@ const notesBox: React.CSSProperties = {
 const notesLabel: React.CSSProperties = { fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', margin: '0 0 4px' }
 const notesText: React.CSSProperties = { fontSize: '14px', color: '#1f2937', margin: 0, whiteSpace: 'pre-wrap' }
 const footer: React.CSSProperties = { fontSize: '12px', color: '#6b7280', margin: '24px 0 0' }
+const ctaBtn: React.CSSProperties = {
+  backgroundColor: '#0f5132', color: '#ffffff', padding: '10px 18px', borderRadius: '6px',
+  fontSize: '14px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block',
+}
