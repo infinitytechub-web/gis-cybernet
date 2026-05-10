@@ -150,7 +150,8 @@ export function RotationChangeProposalPanel() {
   const [raDateTo, setRaDateTo] = useState<string>(() =>
     format(new Date(Date.now() + 14 * 86400000), "yyyy-MM-dd"));
   const [raNewShiftId, setRaNewShiftId] = useState<string>("");
-  const [raStaffIds, setRaStaffIds] = useState<string>(""); // comma-separated staff IDs (optional)
+  const [raStaffIds, setRaStaffIds] = useState<string[]>([]); // selected profile ids (optional)
+  const [staffPickerOpen, setStaffPickerOpen] = useState(false);
 
   const reset = () => {
     setMode("reassignment");
