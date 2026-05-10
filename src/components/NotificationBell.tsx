@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Bell, Check, CheckCheck, Calendar, ArrowRightLeft, Clock, Info,
-  AlertTriangle, Volume2, VolumeX, Stethoscope
+  AlertTriangle, Volume2, VolumeX, Stethoscope, Undo2
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
