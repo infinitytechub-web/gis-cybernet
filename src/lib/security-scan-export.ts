@@ -9,6 +9,11 @@ export interface ExportFinding {
   severity: string;
   title: string;
   detail?: string;
+  package?: string;
+  currentVersion?: string;
+  fixedVersion?: string;
+  advisoryId?: string;
+  advisoryUrl?: string;
 }
 export interface ExportRun {
   id: string;
@@ -40,10 +45,20 @@ export function exportRunAsCsv(run: ExportRun, history: ExportRun[]) {
     `# Totals,${run.total_checks} checks; ${run.error_count} errors; ${run.warn_count} warnings; ${run.passed_count} info`,
   );
   lines.push("");
-  lines.push("Severity,Check,Title,Recommendation");
+  lines.push("Severity,Check,Package,Current,Fixed In,Advisory,Advisory URL,Title,Recommendation");
   for (const f of run.findings ?? []) {
     lines.push(
-      [csvCell(f.severity), csvCell(f.check), csvCell(f.title), csvCell(f.detail ?? "")].join(","),
+      [
+        csvCell(f.severity),
+        csvCell(f.check),
+        csvCell(f.package ?? ""),
+        csvCell(f.currentVersion ?? ""),
+        csvCell(f.fixedVersion ?? ""),
+        csvCell(f.advisoryId ?? ""),
+        csvCell(f.advisoryUrl ?? ""),
+        csvCell(f.title),
+        csvCell(f.detail ?? ""),
+      ].join(","),
     );
   }
   lines.push("");
@@ -107,16 +122,42 @@ export function exportRunAsPdf(run: ExportRun, history: ExportRun[]) {
 
   autoTable(doc, {
     startY: y,
-    head: [["Severity", "Title", "Recommendation"]],
-    body: (run.findings ?? []).map((f) => [
-      f.severity.toUpperCase(),
-      f.title,
-      f.detail ?? "",
-    ]),
+    head: [["Severity", "Package", "Current", "Fixed In", "Advisory", "Title / Recommendation"]],
+    body: (run.findings ?? []).map((f) => {
+      const advisoryLine = f.advisoryId
+        ? `${f.advisoryId}${f.advisoryUrl ? `\n${f.advisoryUrl}` : ""}`
+        : f.advisoryUrl ?? "";
+      const titleBlock = [f.title, f.detail].filter(Boolean).join("\n");
+      return [
+        f.severity.toUpperCase(),
+        f.package ?? "—",
+        f.currentVersion ?? "—",
+        f.fixedVersion ?? "—",
+        advisoryLine || "—",
+        titleBlock,
+      ];
+    }),
     styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
     headStyles: { fillColor: [22, 101, 52], textColor: 255 },
-    columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 200 } },
+    columnStyles: {
+      0: { cellWidth: 50 },
+      1: { cellWidth: 70 },
+      2: { cellWidth: 55 },
+      3: { cellWidth: 55 },
+      4: { cellWidth: 110 },
+    },
     margin: { left: margin, right: margin },
+    didDrawCell: (data) => {
+      // Make advisory URL clickable in column 4 (body rows only)
+      if (data.section === "body" && data.column.index === 4) {
+        const finding = (run.findings ?? [])[data.row.index];
+        if (finding?.advisoryUrl) {
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, {
+            url: finding.advisoryUrl,
+          });
+        }
+      }
+    },
   });
 
   let afterY = (doc as any).lastAutoTable?.finalY ?? y;
