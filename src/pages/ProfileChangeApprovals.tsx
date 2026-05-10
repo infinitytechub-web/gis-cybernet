@@ -87,6 +87,7 @@ export default function ProfileChangeApprovals() {
                 reviewerName,
                 reviewerNotes: notes[id] ?? null,
                 reviewedAt: new Date(reviewedAt).toLocaleString(),
+                requestUrl: `${window.location.origin}/my-profile?request=${id}`,
               },
             },
           });
