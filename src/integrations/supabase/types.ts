@@ -1631,67 +1631,106 @@ export type Database = {
       }
       enforcement_operations: {
         Row: {
+          action_taken: string | null
           arrests_count: number
           authorized_by: string | null
+          casualties_count: number
           contact_details: string | null
           created_at: string
           department_id: string | null
           description: string | null
+          follow_up_notes: string | null
+          follow_up_required: boolean
+          gps_coordinates: string | null
+          hq_reference_number: string | null
           id: string
+          items_seized: string | null
           location: string | null
+          log_reference: string | null
           mugshot_path: string | null
           notes: string | null
           officer_in_charge: string | null
           operation_date: string
+          operation_time: string | null
           operation_type: string
           outcome: string | null
           reported_by: string
           severity: string
           status: string
+          supervisor_remarks: string | null
           suspects_count: number
           updated_at: string
+          vehicles_involved: string | null
+          weapons_used: string | null
+          witnesses: string | null
         }
         Insert: {
+          action_taken?: string | null
           arrests_count?: number
           authorized_by?: string | null
+          casualties_count?: number
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          gps_coordinates?: string | null
+          hq_reference_number?: string | null
           id?: string
+          items_seized?: string | null
           location?: string | null
+          log_reference?: string | null
           mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
+          operation_time?: string | null
           operation_type?: string
           outcome?: string | null
           reported_by: string
           severity?: string
           status?: string
+          supervisor_remarks?: string | null
           suspects_count?: number
           updated_at?: string
+          vehicles_involved?: string | null
+          weapons_used?: string | null
+          witnesses?: string | null
         }
         Update: {
+          action_taken?: string | null
           arrests_count?: number
           authorized_by?: string | null
+          casualties_count?: number
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          gps_coordinates?: string | null
+          hq_reference_number?: string | null
           id?: string
+          items_seized?: string | null
           location?: string | null
+          log_reference?: string | null
           mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
+          operation_time?: string | null
           operation_type?: string
           outcome?: string | null
           reported_by?: string
           severity?: string
           status?: string
+          supervisor_remarks?: string | null
           suspects_count?: number
           updated_at?: string
+          vehicles_involved?: string | null
+          weapons_used?: string | null
+          witnesses?: string | null
         }
         Relationships: [
           {
@@ -4475,67 +4514,106 @@ export type Database = {
       }
       operations: {
         Row: {
+          action_taken: string | null
           arrests_count: number
           authorized_by: string | null
+          casualties_count: number
           contact_details: string | null
           created_at: string
           department_id: string | null
           description: string | null
+          follow_up_notes: string | null
+          follow_up_required: boolean
+          gps_coordinates: string | null
+          hq_reference_number: string | null
           id: string
+          items_seized: string | null
           location: string | null
+          log_reference: string | null
           mugshot_path: string | null
           notes: string | null
           officer_in_charge: string | null
           operation_date: string
+          operation_time: string | null
           operation_type: string
           outcome: string | null
           reported_by: string
           severity: string
           status: string
+          supervisor_remarks: string | null
           suspects_count: number
           updated_at: string
+          vehicles_involved: string | null
+          weapons_used: string | null
+          witnesses: string | null
         }
         Insert: {
+          action_taken?: string | null
           arrests_count?: number
           authorized_by?: string | null
+          casualties_count?: number
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          gps_coordinates?: string | null
+          hq_reference_number?: string | null
           id?: string
+          items_seized?: string | null
           location?: string | null
+          log_reference?: string | null
           mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
+          operation_time?: string | null
           operation_type?: string
           outcome?: string | null
           reported_by: string
           severity?: string
           status?: string
+          supervisor_remarks?: string | null
           suspects_count?: number
           updated_at?: string
+          vehicles_involved?: string | null
+          weapons_used?: string | null
+          witnesses?: string | null
         }
         Update: {
+          action_taken?: string | null
           arrests_count?: number
           authorized_by?: string | null
+          casualties_count?: number
           contact_details?: string | null
           created_at?: string
           department_id?: string | null
           description?: string | null
+          follow_up_notes?: string | null
+          follow_up_required?: boolean
+          gps_coordinates?: string | null
+          hq_reference_number?: string | null
           id?: string
+          items_seized?: string | null
           location?: string | null
+          log_reference?: string | null
           mugshot_path?: string | null
           notes?: string | null
           officer_in_charge?: string | null
           operation_date?: string
+          operation_time?: string | null
           operation_type?: string
           outcome?: string | null
           reported_by?: string
           severity?: string
           status?: string
+          supervisor_remarks?: string | null
           suspects_count?: number
           updated_at?: string
+          vehicles_involved?: string | null
+          weapons_used?: string | null
+          witnesses?: string | null
         }
         Relationships: [
           {
@@ -4597,10 +4675,14 @@ export type Database = {
           applicant_name: string
           application_reference: string | null
           application_type: string
+          biometric_consent: boolean
           created_at: string
           date_of_birth: string
+          declaration_date: string | null
+          declaration_signed: boolean
           distinguishing_marks: string | null
           district: string | null
+          email: string | null
           emergency_contact: string | null
           eye_colour: string | null
           father_name: string | null
@@ -4625,24 +4707,32 @@ export type Database = {
           previous_passport_expiry_date: string | null
           previous_passport_issue_date: string | null
           previous_passport_number: string | null
+          previous_passport_place_of_issue: string | null
           processed_by: string | null
           processing_checklist: Json | null
           region: string | null
+          spouse_name: string | null
           status: string
           street_name: string | null
           surname: string | null
           town: string | null
           updated_at: string
+          witnessing_officer_name: string | null
+          witnessing_officer_rank: string | null
         }
         Insert: {
           address?: string | null
           applicant_name: string
           application_reference?: string | null
           application_type?: string
+          biometric_consent?: boolean
           created_at?: string
           date_of_birth: string
+          declaration_date?: string | null
+          declaration_signed?: boolean
           distinguishing_marks?: string | null
           district?: string | null
+          email?: string | null
           emergency_contact?: string | null
           eye_colour?: string | null
           father_name?: string | null
@@ -4667,24 +4757,32 @@ export type Database = {
           previous_passport_expiry_date?: string | null
           previous_passport_issue_date?: string | null
           previous_passport_number?: string | null
+          previous_passport_place_of_issue?: string | null
           processed_by?: string | null
           processing_checklist?: Json | null
           region?: string | null
+          spouse_name?: string | null
           status?: string
           street_name?: string | null
           surname?: string | null
           town?: string | null
           updated_at?: string
+          witnessing_officer_name?: string | null
+          witnessing_officer_rank?: string | null
         }
         Update: {
           address?: string | null
           applicant_name?: string
           application_reference?: string | null
           application_type?: string
+          biometric_consent?: boolean
           created_at?: string
           date_of_birth?: string
+          declaration_date?: string | null
+          declaration_signed?: boolean
           distinguishing_marks?: string | null
           district?: string | null
+          email?: string | null
           emergency_contact?: string | null
           eye_colour?: string | null
           father_name?: string | null
@@ -4709,14 +4807,18 @@ export type Database = {
           previous_passport_expiry_date?: string | null
           previous_passport_issue_date?: string | null
           previous_passport_number?: string | null
+          previous_passport_place_of_issue?: string | null
           processed_by?: string | null
           processing_checklist?: Json | null
           region?: string | null
+          spouse_name?: string | null
           status?: string
           street_name?: string | null
           surname?: string | null
           town?: string | null
           updated_at?: string
+          witnessing_officer_name?: string | null
+          witnessing_officer_rank?: string | null
         }
         Relationships: []
       }

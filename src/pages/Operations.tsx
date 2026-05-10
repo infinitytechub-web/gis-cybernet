@@ -122,11 +122,14 @@ function getPreviousDateRange(period: string) {
 const INITIAL_FORM = {
   operation_type: "patrol",
   operation_date: new Date().toISOString().split("T")[0],
+  operation_time: "",
   location: "",
+  gps_coordinates: "",
   description: "",
   severity: "medium",
   suspects_count: 0,
   arrests_count: 0,
+  casualties_count: 0,
   status: "open",
   outcome: "",
   notes: "",
@@ -134,6 +137,15 @@ const INITIAL_FORM = {
   contact_details: "",
   mugshot_path: null as string | null,
   authorized_by: null as string | null,
+  weapons_used: "",
+  vehicles_involved: "",
+  items_seized: "",
+  witnesses: "",
+  action_taken: "",
+  follow_up_required: false,
+  follow_up_notes: "",
+  supervisor_remarks: "",
+  hq_reference_number: "",
 };
 
 // GhanaGPSButton was inlined here; the shared GhanaGPSInput component
@@ -257,7 +269,14 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           <Label>Date *</Label>
           <Input type="date" value={form.operation_date} onChange={e => setForm(p => ({ ...p, operation_date: e.target.value }))} required />
         </div>
-      </div>
+        <div className="space-y-2">
+          <Label>Time</Label>
+          <Input type="time" value={form.operation_time} onChange={e => setForm(p => ({ ...p, operation_time: e.target.value }))} />
+        </div>
+        <div className="space-y-2">
+          <Label>GPS Coordinates (lat,lng)</Label>
+          <Input placeholder="e.g. 5.6037, -0.1870" value={form.gps_coordinates} onChange={e => setForm(p => ({ ...p, gps_coordinates: e.target.value }))} />
+        </div>
       <div className="space-y-2">
         <Label>Location</Label>
         <Input placeholder="e.g. Amasaman Barrier, Pokuase — or use the digital address / GPS below" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} />
@@ -462,13 +481,17 @@ export default function Operations() {
   const openEdit = useCallback((op: OperationRecord) => {
     setEditingOp(op);
     setForm({
+      ...INITIAL_FORM,
       operation_type: op.operation_type,
       operation_date: op.operation_date,
+      operation_time: (op as any).operation_time || "",
       location: op.location || "",
+      gps_coordinates: (op as any).gps_coordinates || "",
       description: op.description || "",
       severity: op.severity,
       suspects_count: op.suspects_count,
       arrests_count: op.arrests_count,
+      casualties_count: (op as any).casualties_count ?? 0,
       status: op.status,
       outcome: op.outcome || "",
       notes: op.notes || "",
@@ -476,6 +499,15 @@ export default function Operations() {
       contact_details: op.contact_details || "",
       mugshot_path: (op as any).mugshot_path ?? null,
       authorized_by: (op as any).authorized_by ?? null,
+      weapons_used: (op as any).weapons_used || "",
+      vehicles_involved: (op as any).vehicles_involved || "",
+      items_seized: (op as any).items_seized || "",
+      witnesses: (op as any).witnesses || "",
+      action_taken: (op as any).action_taken || "",
+      follow_up_required: (op as any).follow_up_required ?? false,
+      follow_up_notes: (op as any).follow_up_notes || "",
+      supervisor_remarks: (op as any).supervisor_remarks || "",
+      hq_reference_number: (op as any).hq_reference_number || "",
     });
   }, []);
 
