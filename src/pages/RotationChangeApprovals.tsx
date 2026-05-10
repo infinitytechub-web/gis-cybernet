@@ -257,6 +257,36 @@ function ProposalList({
 }
 
 function PatternPreview({ pattern }: { pattern: any }) {
+  const { data: shifts = [] } = useQuery({
+    queryKey: ["rotation-approval-shift-names"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts").select("id, name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const shiftName = (id?: string | null) =>
+    shifts.find((s: any) => s.id === id)?.name ?? (id ? "Unknown" : "Off");
+
+  if (pattern?.scope === "reassignment") {
+    const staff: string[] = pattern.staff_ids ?? [];
+    return (
+      <div className="border rounded-lg p-3 text-sm space-y-1.5 bg-muted/30">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Reassignment proposal
+        </div>
+        <div><strong>Target:</strong> {pattern.target_group === "ALL" ? "All groups" : `Group ${pattern.target_group}`}</div>
+        <div><strong>New shift:</strong> {shiftName(pattern.new_shift_id)}</div>
+        <div><strong>Date range:</strong> {pattern.date_from} → {pattern.date_to}</div>
+        <div>
+          <strong>Specific staff:</strong>{" "}
+          {staff.length ? staff.join(", ") : <em className="text-muted-foreground">whole group</em>}
+        </div>
+      </div>
+    );
+  }
+
   const days: number = pattern?.cycle_days ?? 0;
   const groups: Record<string, (string | null)[]> = pattern?.groups ?? {};
   if (!days) return null;
