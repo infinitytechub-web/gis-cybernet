@@ -14,10 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck } from "lucide-react";
+import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck, Eye, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { softDelete } from "@/lib/recycle-bin";
+import { logFileAudit } from "@/lib/announcement-file-audit";
+import { FileAuditTrailDialog } from "./FileAuditTrailDialog";
 
 const fmtSize = (n: number) => {
   if (n < 1024) return `${n} B`;
@@ -159,7 +161,7 @@ export function SharedFilesPanel() {
         retention_days = null;
         expires_at = null;
       }
-      const { error } = await supabase.from("announcement_files").insert({
+      const { data: inserted, error } = await supabase.from("announcement_files").insert({
         title: title.trim(),
         description: description.trim() || null,
         department_id: deptId === "global" ? null : deptId,
@@ -172,8 +174,16 @@ export function SharedFilesPanel() {
         uploaded_by: user.id,
         expires_at,
         retention_days,
-      });
+      }).select("id").single();
       if (error) throw error;
+      await logFileAudit(inserted?.id ?? null, "upload", {
+        title: title.trim(),
+        filename: file.name,
+        size_bytes: file.size,
+        audience: deptId === "global" ? "global" : "department",
+        department_id: deptId === "global" ? null : deptId,
+        retention_days,
+      });
       toast.success("File shared");
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
       reset();
@@ -192,6 +202,7 @@ export function SharedFilesPanel() {
         .createSignedUrl(f.storage_path, 60);
       if (error) throw error;
       await supabase.rpc("increment_announcement_file_downloads", { _file_id: f.id });
+      await logFileAudit(f.id, "download", { filename: f.filename });
       window.open(data.signedUrl, "_blank", "noopener,noreferrer");
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
     } catch (e: any) {
@@ -199,10 +210,24 @@ export function SharedFilesPanel() {
     }
   };
 
+  const handlePreview = async (f: any) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("secure-uploads")
+        .createSignedUrl(f.storage_path, 60);
+      if (error) throw error;
+      await logFileAudit(f.id, "preview", { filename: f.filename });
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast.error(e.message ?? "Preview failed");
+    }
+  };
+
   const toggleActive = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase.from("announcement_files").update({ is_active }).eq("id", id);
       if (error) throw error;
+      await logFileAudit(id, "permission_change", { field: "is_active", value: is_active });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
@@ -213,6 +238,7 @@ export function SharedFilesPanel() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
+      await logFileAudit(id, "delete", {});
       await softDelete({ table: "announcement_files", id, label: "Shared file" });
     },
     onSuccess: () => {
@@ -235,14 +261,16 @@ export function SharedFilesPanel() {
           </CardDescription>
         </div>
         {isAdminOrSupervisor && (
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5">
-                <FileUp className="h-4 w-4" /> Share File
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Share a file</DialogTitle></DialogHeader>
+          <div className="flex items-center gap-2">
+            <FileAuditTrailDialog />
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1.5">
+                  <FileUp className="h-4 w-4" /> Share File
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Share a file</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Title</Label>
@@ -300,8 +328,9 @@ export function SharedFilesPanel() {
                   Upload &amp; Share
                 </Button>
               </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -457,11 +486,30 @@ export function SharedFilesPanel() {
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7"
+                            title="Preview"
+                            onClick={() => handlePreview(f)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
                             title="Download"
                             onClick={() => handleDownload(f)}
                           >
                             <Download className="h-3.5 w-3.5" />
                           </Button>
+                          {isAdminOrSupervisor && (
+                            <FileAuditTrailDialog
+                              fileId={f.id}
+                              trigger={
+                                <Button size="icon" variant="ghost" className="h-7 w-7" title="Audit trail">
+                                  <ScrollText className="h-3.5 w-3.5" />
+                                </Button>
+                              }
+                            />
+                          )}
                           {isAdminOrSupervisor && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
