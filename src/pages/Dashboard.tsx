@@ -33,6 +33,7 @@ import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
+import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
