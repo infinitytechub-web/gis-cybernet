@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Shield, Smartphone, LogOut } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -22,11 +23,12 @@ export default function MfaGate() {
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname ?? "/dashboard";
 
-  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol">("loading");
+  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "recovery">("loading");
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrUri, setQrUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const [code, setCode] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -98,6 +100,37 @@ export default function MfaGate() {
     } catch (e: any) {
       toast.error(e.message || "Invalid code");
       setCode("");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRecovery = async () => {
+    const trimmed = recoveryCode.trim();
+    if (trimmed.length < 8) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("mfa_consume_backup_code", { _code: trimmed });
+      if (error) throw error;
+      if (!data) {
+        toast.error("Invalid or already-used recovery code");
+        setRecoveryCode("");
+        return;
+      }
+      // Recovery succeeded — remove the lost authenticator and force re-enrolment
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      for (const f of factors?.totp ?? []) {
+        try { await supabase.auth.mfa.unenroll({ factorId: f.id }); } catch {}
+      }
+      toast.success("Recovery code accepted. Enrol a new authenticator to continue.");
+      setFactorId(null);
+      setQrUri(null);
+      setSecret(null);
+      setCode("");
+      setRecoveryCode("");
+      setPhase("enroll");
+    } catch (e: any) {
+      toast.error(e.message || "Recovery failed");
     } finally {
       setBusy(false);
     }
@@ -187,6 +220,55 @@ export default function MfaGate() {
               <Button onClick={handleVerify} disabled={busy || code.length !== 6} className="w-full">
                 {busy ? "Verifying…" : "Verify"}
               </Button>
+              <div className="text-center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setRecoveryCode(""); setPhase("recovery"); }}
+                >
+                  <KeyRound className="h-3 w-3" />
+                  Lost your authenticator? Use a recovery code
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {phase === "recovery" && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Enter one of the one-time recovery codes you saved when setting up 2FA.
+                Each code can only be used once and will let you enrol a new authenticator.
+              </p>
+              <div>
+                <Label className="text-xs">Recovery code</Label>
+                <Input
+                  value={recoveryCode}
+                  onChange={(e) => setRecoveryCode(e.target.value)}
+                  placeholder="e.g. ABCD-EFGH-1234"
+                  className="mt-2 font-mono tracking-wider text-center"
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <Button
+                onClick={handleRecovery}
+                disabled={busy || recoveryCode.trim().length < 8}
+                className="w-full"
+              >
+                {busy ? "Verifying…" : "Use recovery code"}
+              </Button>
+              <div className="text-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setRecoveryCode(""); setCode(""); setPhase("verify"); }}
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Back to authenticator code
+                </Button>
+              </div>
             </div>
           )}
 
