@@ -76,6 +76,14 @@ const ProfileChangeStatusEmail = ({
           </Section>
         )}
 
+        {requestUrl && (
+          <Section style={{ textAlign: 'center', margin: '20px 0 8px' }}>
+            <Button href={requestUrl} style={ctaBtn}>
+              View request details
+            </Button>
+          </Section>
+        )}
+
         <Text style={footer}>
           This is an automated message from {SITE_NAME}. Please log in to view the latest state of your profile.
         </Text>
