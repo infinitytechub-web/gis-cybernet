@@ -262,81 +262,75 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Announcements + Birthdays — informational pair, side-by-side on desktop */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AnnouncementsBanner />
-        <BirthdayWidget />
-      </div>
+      {/* ═══════════ TIER 1 — COMMAND / ADMINISTRATION (sensitive) ═══════════ */}
+      {(isAdminOrSupervisor || isAdmin) && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 border-l-4 border-l-destructive pl-3 py-1">
+            <ShieldCheck className="h-4 w-4 text-destructive" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">Command &amp; Administration</h2>
+            <Badge variant="outline" className="text-[10px] border-destructive/40 text-destructive">Restricted</Badge>
+          </div>
 
+          {supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  {isSupervisor && !isAdmin ? "Your Department — " : ""}Pending Approvals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-4">
+                  {supervisorPending.leave > 0 && (
+                    <button onClick={() => navigate("/leave")} className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer">
+                      <CalendarOff className="h-6 w-6 text-warning" />
+                      <div className="text-left">
+                        <div className="text-xl font-bold">{supervisorPending.leave}</div>
+                        <div className="text-xs text-muted-foreground">Leave requests</div>
+                      </div>
+                    </button>
+                  )}
+                  {supervisorPending.postings > 0 && (
+                    <button onClick={() => navigate("/postings")} className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer">
+                      <ArrowRightLeft className="h-6 w-6 text-secondary" />
+                      <div className="text-left">
+                        <div className="text-xl font-bold">{supervisorPending.postings}</div>
+                        <div className="text-xs text-muted-foreground">Postings/Transfers</div>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Live GPS Map — Admin / OIC / 2IC / Staff Officer (Head of Admin & Chief Staff Officer) */}
-      <LiveGpsMapWidget />
-
-      {/* Daily Occurrences - visible to all users */}
-      <DailyOccurrencesWidget />
-
-      {/* Supervisor Pending Approvals Widget */}
-      {supervisorPending && (supervisorPending.leave > 0 || supervisorPending.postings > 0) && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              {isSupervisor && !isAdmin ? "Your Department — " : ""}Pending Approvals
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              {supervisorPending.leave > 0 && (
-                <button
-                  onClick={() => navigate("/leave")}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
-                >
-                  <CalendarOff className="h-6 w-6 text-warning" />
-                  <div className="text-left">
-                    <div className="text-xl font-bold">{supervisorPending.leave}</div>
-                    <div className="text-xs text-muted-foreground">Leave requests</div>
-                  </div>
-                </button>
-              )}
-              {supervisorPending.postings > 0 && (
-                <button
-                  onClick={() => navigate("/postings")}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors cursor-pointer"
-                >
-                  <ArrowRightLeft className="h-6 w-6 text-secondary" />
-                  <div className="text-left">
-                    <div className="text-xl font-bold">{supervisorPending.postings}</div>
-                    <div className="text-xs text-muted-foreground">Postings/Transfers</div>
-                  </div>
-                </button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          <LiveGpsMapWidget />
+          {isAdmin && <SecurityThreatsWidget />}
+          {isAdmin && <SystemHealthCheckWidget />}
+          {isAdmin && <SystemAuditPanel />}
+          <InterlinkWidget />
+          {isAdminOrSupervisor && <CommandRosterWidget />}
+          <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
+        </div>
       )}
 
-      {/* Processing Queue Widget */}
-      <ProcessingQueueWidget />
+      {/* ═══════════ TIER 2 — OPERATIONAL ═══════════ */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-l-4 border-l-primary pl-3 py-1">
+          <Activity className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-bold uppercase tracking-wider text-primary">Operations</h2>
+        </div>
 
-      {/* Front Desk Queue Widget */}
-      <FrontDeskQueueWidget />
+        <DailyOccurrencesWidget />
+        <ProcessingQueueWidget />
+        <FrontDeskQueueWidget />
+        <LowStockWidget />
+        <HealthLabWidget />
+        <ApprovedReportsWidget variant="standard" />
+        <ApprovedReportsWidget variant="ipse" />
+        <ScheduledReportsWidget />
+      </div>
 
-      {/* Low Stock Alerts */}
-      <LowStockWidget />
-
-      {/* HEALTH LAB+ — visible to all */}
-      <HealthLabWidget />
-
-      {/* Birthday widget moved up next to Announcements */}
-
-      {/* Security Threats — admin only (real-time failed-login & suspicious patterns) */}
-      {isAdmin && <SecurityThreatsWidget />}
-
-      {/* System Health Check — admin only, auto-scans every 60s */}
-      {isAdmin && <SystemHealthCheckWidget />}
-
-      {/* System Audit Trail — admin only, inline on dashboard */}
-      {isAdmin && <SystemAuditPanel />}
 
       {/* System Health Widget */}
       {systemHealth && (
