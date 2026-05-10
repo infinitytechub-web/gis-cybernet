@@ -657,6 +657,8 @@ export default function MyShiftTracker() {
               </span>
             )}
 
+          </div>
+
           {/* Punctuality alert for today */}
           {todayPunctuality && todayPunctuality.kind !== "ontime" && (
             <div
