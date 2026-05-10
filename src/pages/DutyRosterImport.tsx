@@ -298,7 +298,7 @@ export default function DutyRosterImport() {
 
   const exportPreviewCSV = () => {
     if (!previewPlan) { toast.error("Preview not ready"); return; }
-    const header = ["Shift", "Staff Name", "Staff ID", "Current Shift", "Will Become", "Status"];
+    const header = ["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current Shift", "Will Become", "Status"];
     const lines = [header.join(",")];
     const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
     previewPlan.matches.forEach((m) => {
@@ -306,6 +306,8 @@ export default function DutyRosterImport() {
         m.shift,
         esc(m.staff_name),
         esc(m.staff_id ?? ""),
+        esc(m.department),
+        esc(m.office),
         esc(m.status === "new" ? "new stub" : (m.previous ?? "")),
         `Shift ${m.next}`,
         m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
@@ -317,6 +319,21 @@ export default function DutyRosterImport() {
     lines.push(`# Changing,${previewPlan.changed}`);
     lines.push(`# Unchanged,${previewPlan.kept}`);
     lines.push(`# New stubs,${previewPlan.created}`);
+
+    lines.push("");
+    lines.push("## By Department");
+    lines.push(["Department", "Shift A", "Shift B", "Shift C", "Shift D", "Total"].join(","));
+    previewPlan.byDepartment.forEach((r) => {
+      lines.push([esc(r.name), r.A, r.B, r.C, r.D, r.total].join(","));
+    });
+
+    lines.push("");
+    lines.push("## By Office");
+    lines.push(["Office", "Shift A", "Shift B", "Shift C", "Shift D", "Total"].join(","));
+    previewPlan.byOffice.forEach((r) => {
+      lines.push([esc(r.name), r.A, r.B, r.C, r.D, r.total].join(","));
+    });
+
     downloadCSVString(lines.join("\n"), `schedule-preview_${effectiveDate}.csv`);
     toast.success("CSV exported");
   };
@@ -331,28 +348,61 @@ export default function DutyRosterImport() {
     const summary = `Shift A: ${previewPlan.summary.A}   Shift B: ${previewPlan.summary.B}   Shift C: ${previewPlan.summary.C}   Shift D: ${previewPlan.summary.D}   |   Changing: ${previewPlan.changed}   Unchanged: ${previewPlan.kept}   New stubs: ${previewPlan.created}`;
     doc.text(summary, 40, 74);
 
+    const headStyles = { fillColor: [30, 64, 35] as [number, number, number], textColor: 255 };
+    const baseStyles = { fontSize: 8, cellPadding: 3 };
+    const footer = () => {
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.text(
+        `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
+        40, doc.internal.pageSize.getHeight() - 20,
+      );
+    };
+
     autoTable(doc, {
       startY: 90,
-      head: [["Shift", "Staff Name", "Staff ID", "Current", "Will Become", "Status"]],
+      head: [["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current", "Will Become", "Status"]],
       body: previewPlan.matches.map((m) => [
         m.shift,
         m.staff_name,
         m.staff_id ?? "—",
+        m.department,
+        m.office,
         m.status === "new" ? "new stub" : (m.previous ?? "—"),
         `Shift ${m.next}`,
         m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
       ]),
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [30, 64, 35], textColor: 255 },
-      didDrawPage: () => {
-        const pageCount = (doc as any).internal.getNumberOfPages();
-        const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
-        doc.setFontSize(8);
-        doc.text(
-          `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
-          40, doc.internal.pageSize.getHeight() - 20,
-        );
-      },
+      styles: baseStyles,
+      headStyles,
+      didDrawPage: footer,
+    });
+
+    doc.addPage();
+    doc.setFontSize(12);
+    doc.text("Summary by Department", 40, 40);
+    autoTable(doc, {
+      startY: 56,
+      head: [["Department", "Shift A", "Shift B", "Shift C", "Shift D", "Total"]],
+      body: previewPlan.byDepartment.map((r) => [r.name, r.A, r.B, r.C, r.D, r.total]),
+      styles: baseStyles,
+      headStyles,
+      didDrawPage: footer,
+    });
+
+    const lastY = (doc as any).lastAutoTable?.finalY ?? 56;
+    const pageH = doc.internal.pageSize.getHeight();
+    let nextY = lastY + 28;
+    if (nextY > pageH - 100) { doc.addPage(); nextY = 40; }
+    doc.setFontSize(12);
+    doc.text("Summary by Office", 40, nextY);
+    autoTable(doc, {
+      startY: nextY + 16,
+      head: [["Office", "Shift A", "Shift B", "Shift C", "Shift D", "Total"]],
+      body: previewPlan.byOffice.map((r) => [r.name, r.A, r.B, r.C, r.D, r.total]),
+      styles: baseStyles,
+      headStyles,
+      didDrawPage: footer,
     });
 
     doc.save(`schedule-preview_${effectiveDate}.pdf`);
