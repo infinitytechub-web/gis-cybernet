@@ -76,15 +76,15 @@ Deno.serve(async (req) => {
     _staff_id: raw,
   });
 
-  // Audit every lookup (success or miss) so admins can detect enumeration.
-  try {
-    await supabase.rpc("record_failed_login", {
-      _staff_id: raw,
-      _ip_address: ip,
-    });
-  } catch { /* best effort */ }
-
   if (error || !email) {
+    // Audit only misses so we can detect enumeration without locking out
+    // legitimate users. The signIn path records its own failure on bad password.
+    try {
+      await supabase.rpc("record_failed_login", {
+        _staff_id: raw,
+        _ip_address: ip,
+      });
+    } catch { /* best effort */ }
     // Generic response — never leak whether the ID exists.
     return new Response(JSON.stringify({ error: "Invalid ID or password" }), {
       status: 404,
