@@ -8583,6 +8583,18 @@ export type Database = {
           unit: string
         }[]
       }
+      get_realtime_rls_coverage: {
+        Args: never
+        Returns: {
+          anon_reachable: number
+          permissive_select: boolean
+          rls_enabled: boolean
+          rls_forced: boolean
+          select_policies: number
+          table_name: string
+          total_policies: number
+        }[]
+      }
       get_security_threat_summary: { Args: never; Returns: Json }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {

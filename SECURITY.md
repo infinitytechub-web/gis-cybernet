@@ -193,3 +193,38 @@ We follow a **"self-host first, SRI second"** policy:
    constrained instead by `img-src` in CSP and rendered as non-executable
    raster data.
 
+## Realtime (postgres_changes) RLS enforcement
+
+Supabase Realtime v2+ runs every `postgres_changes` subscription **through the
+subscriber's RLS policies** using the JWT we bind via `supabase.realtime.setAuth`
+on every auth state change (see `src/contexts/AuthContext.tsx`). A row only
+appears on the wire if the subscriber's JWT would be allowed to `SELECT` it.
+
+### Hardening rules for any table added to `supabase_realtime`
+
+1. **`ENABLE ROW LEVEL SECURITY`** is mandatory. Realtime fails closed when RLS
+   is off — no rows are streamed.
+2. **At least one `SELECT` (or `ALL`) policy must exist**, scoped to
+   `authenticated` (not `public`/`anon`) unless the table is genuinely meant
+   to broadcast to logged-out clients (currently: none).
+3. **Never combine `USING (true)` with a role list containing `anon` or
+   `public`.** That would leak every row to every socket. The
+   `get_realtime_rls_coverage()` RPC flags this as `permissive_select = true`.
+4. **Service-role writes still go through subscriber RLS.** Edge functions
+   write as service-role, but Realtime re-evaluates each row against every
+   subscriber's JWT before delivery.
+
+### Verifying coverage
+
+Admins (admin / OIC / 2IC) can call:
+
+```sql
+SELECT * FROM public.get_realtime_rls_coverage();
+```
+
+It returns one row per realtime-published table with `rls_enabled`,
+`rls_forced`, `total_policies`, `select_policies`, `anon_reachable`, and
+`permissive_select`. Any row where `rls_enabled = false`,
+`select_policies = 0`, or `permissive_select = true` is a finding to fix
+immediately. Non-admins receive `42501 access denied`.
+
