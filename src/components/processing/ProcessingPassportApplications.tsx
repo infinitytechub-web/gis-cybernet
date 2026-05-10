@@ -44,7 +44,7 @@ export default function ProcessingPassportApplications() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
+  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean>; mfa_review_status: string; mfa_review_notes: string }>({ status: "submitted", notes: "", checklist: {}, mfa_review_status: "pending", mfa_review_notes: "" });
 
   useEffect(() => {
     const channel = supabase
@@ -73,8 +73,22 @@ export default function ProcessingPassportApplications() {
     mutationFn: async () => {
       if (!editId) return;
       const existing = applications.find((a: any) => a.id === editId);
+      const prevMfa = (existing as any)?.mfa_review_status ?? "pending";
+      const mfaChanged = prevMfa !== form.mfa_review_status;
+      const payload: any = {
+        status: form.status,
+        notes: form.notes,
+        processed_by: user?.id,
+        processing_checklist: form.checklist as any,
+        mfa_review_status: form.mfa_review_status,
+        mfa_review_notes: form.mfa_review_notes || null,
+      };
+      if (mfaChanged) {
+        payload.mfa_reviewed_by = user?.id ?? null;
+        payload.mfa_reviewed_at = form.mfa_review_status === "pending" ? null : new Date().toISOString();
+      }
       const { error } = await supabase.from("passport_applications")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
+        .update(payload)
         .eq("id", editId);
       if (error) throw error;
 
@@ -109,7 +123,13 @@ export default function ProcessingPassportApplications() {
   const [reviewApp, setReviewApp] = useState<any>(null);
 
   const openReview = (app: any) => {
-    setForm({ status: app.status, notes: app.notes || "", checklist: (app.processing_checklist as Record<string, boolean>) || {} });
+    setForm({
+      status: app.status,
+      notes: app.notes || "",
+      checklist: (app.processing_checklist as Record<string, boolean>) || {},
+      mfa_review_status: app.mfa_review_status || "pending",
+      mfa_review_notes: app.mfa_review_notes || "",
+    });
     setEditId(app.id);
     setReviewApp(app);
     setOpen(true);
@@ -178,6 +198,68 @@ export default function ProcessingPassportApplications() {
           {reviewApp && (
             <ApplicationDocuments recordType="passport" recordId={reviewApp.id} readOnly />
           )}
+
+          {reviewApp && (
+            <div className="rounded-md border-2 border-primary/30 p-3 space-y-3 bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-primary">MFA Compliance Review</div>
+                {(() => {
+                  const s = form.mfa_review_status;
+                  const cls = s === "approved" ? "bg-green-100 text-green-800"
+                    : s === "rejected" ? "bg-red-100 text-red-800"
+                    : "bg-yellow-100 text-yellow-800";
+                  return <Badge className={cls}>{s}</Badge>;
+                })()}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {reviewApp.surname && <div><span className="text-muted-foreground">Surname:</span> {reviewApp.surname}</div>}
+                {reviewApp.other_names && <div><span className="text-muted-foreground">Other Names:</span> {reviewApp.other_names}</div>}
+                {reviewApp.email && <div className="col-span-2"><span className="text-muted-foreground">Email:</span> {reviewApp.email}</div>}
+                {reviewApp.place_of_birth && <div><span className="text-muted-foreground">Place of Birth:</span> {reviewApp.place_of_birth}</div>}
+                {reviewApp.occupation && <div><span className="text-muted-foreground">Occupation:</span> {reviewApp.occupation}</div>}
+                {reviewApp.ghana_card_number && <div className="col-span-2"><span className="text-muted-foreground">Ghana Card #:</span> {reviewApp.ghana_card_number}</div>}
+                {reviewApp.spouse_name && <div className="col-span-2"><span className="text-muted-foreground">Spouse:</span> {reviewApp.spouse_name}</div>}
+                <div><span className="text-muted-foreground">Biometric Consent:</span> {reviewApp.biometric_consent ? "✓ Yes" : "✗ No"}</div>
+                <div><span className="text-muted-foreground">Declaration Signed:</span> {reviewApp.declaration_signed ? "✓ Yes" : "✗ No"}</div>
+                {reviewApp.declaration_date && <div><span className="text-muted-foreground">Declaration Date:</span> {reviewApp.declaration_date}</div>}
+                {reviewApp.witnessing_officer_name && <div className="col-span-2"><span className="text-muted-foreground">Witnessed By:</span> {reviewApp.witnessing_officer_rank ? `${reviewApp.witnessing_officer_rank} ` : ""}{reviewApp.witnessing_officer_name}</div>}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button type="button" size="sm" variant={form.mfa_review_status === "approved" ? "default" : "outline"}
+                  className={form.mfa_review_status === "approved" ? "bg-green-600 hover:bg-green-700" : ""}
+                  onClick={() => setForm({ ...form, mfa_review_status: "approved" })}>
+                  Approve
+                </Button>
+                <Button type="button" size="sm" variant={form.mfa_review_status === "rejected" ? "destructive" : "outline"}
+                  onClick={() => setForm({ ...form, mfa_review_status: "rejected" })}>
+                  Reject
+                </Button>
+                <Button type="button" size="sm" variant={form.mfa_review_status === "pending" ? "secondary" : "ghost"}
+                  onClick={() => setForm({ ...form, mfa_review_status: "pending" })}>
+                  Mark Pending
+                </Button>
+              </div>
+
+              <div>
+                <Label>Reviewer Notes</Label>
+                <Textarea
+                  value={form.mfa_review_notes}
+                  onChange={(e) => setForm({ ...form, mfa_review_notes: e.target.value })}
+                  rows={2}
+                  placeholder="Comments on MFA compliance, missing items, or rejection reason..."
+                />
+              </div>
+
+              {reviewApp.mfa_reviewed_at && (
+                <div className="text-xs text-muted-foreground">
+                  Last reviewed {format(new Date(reviewApp.mfa_reviewed_at), "dd MMM yyyy HH:mm")}
+                </div>
+              )}
+            </div>
+          )}
+
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
             <ProcessingChecklist
               items={PASSPORT_CHECKLIST}
@@ -206,21 +288,31 @@ export default function ProcessingPassportApplications() {
               <TableHead>Nationality</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>MFA Review</TableHead>
               <TableHead>Submitted</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No passport applications pending processing</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No passport applications pending processing</TableCell></TableRow>
             ) : filtered.map((app: any) => (
               <TableRow key={app.id}>
                 <TableCell className="font-medium">{app.applicant_name}</TableCell>
                 <TableCell>{app.nationality}</TableCell>
                 <TableCell><Badge variant="outline">{app.application_type}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
+                <TableCell>
+                  {(() => {
+                    const s = app.mfa_review_status || "pending";
+                    const cls = s === "approved" ? "bg-green-100 text-green-800"
+                      : s === "rejected" ? "bg-red-100 text-red-800"
+                      : "bg-yellow-100 text-yellow-800";
+                    return <Badge className={cls}>{s}</Badge>;
+                  })()}
+                </TableCell>
                 <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
                 <TableCell>
                   <RecordRowActions
