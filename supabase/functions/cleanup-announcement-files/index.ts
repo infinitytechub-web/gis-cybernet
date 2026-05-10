@@ -2,6 +2,7 @@
 // Uses service role to apply default retention to legacy rows and to deactivate
 // or soft-delete any file whose expires_at has passed.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { isInternalCaller } from "../_shared/cron-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +11,17 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Reject unauthenticated callers. Only accept either a user Bearer JWT
+  // (validated below as admin) or an internal/cron caller (service-role).
+  const authHeader = req.headers.get("Authorization");
+  const hasUserBearer = !!authHeader && authHeader.startsWith("Bearer ");
+  if (!hasUserBearer && !isInternalCaller(req)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -22,16 +34,18 @@ Deno.serve(async (req) => {
   let triggeredBy: string | null = null;
 
   // If invoked with a user JWT, capture identity + ensure they're admin.
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
+  // Pure service-role/cron callers (no user JWT) are accepted as scheduled.
+  if (hasUserBearer) {
+    let userIdentified = false;
     try {
       const userClient = createClient(
         SUPABASE_URL,
         Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } },
+        { global: { headers: { Authorization: authHeader! } } },
       );
       const { data: { user } } = await userClient.auth.getUser();
       if (user) {
+        userIdentified = true;
         triggerKind = "manual";
         triggeredBy = user.id;
         const { data: roles } = await supabase
@@ -47,7 +61,15 @@ Deno.serve(async (req) => {
         }
       }
     } catch {
-      /* fall through as scheduled */
+      /* invalid token */
+    }
+    // If a Bearer token was supplied but isn't a valid user AND isn't an
+    // internal caller, reject — don't silently fall through as "scheduled".
+    if (!userIdentified && !isInternalCaller(req)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
   }
 
