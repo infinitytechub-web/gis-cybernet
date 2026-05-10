@@ -139,6 +139,23 @@ export default function DutyRosterImport() {
   const [effectiveDate, setEffectiveDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [deployingId, setDeployingId] = useState<string | null>(null);
+
+  const handleRedeploy = async (importId: string) => {
+    setDeployingId(importId);
+    try {
+      const { data, error } = await supabase.rpc("auto_deploy_roster_assignments", { _import_id: importId });
+      if (error) throw error;
+      const d: any = data ?? {};
+      toast.success(
+        `Deployed ${d.assigned ?? 0} staff to shifts · ${d.skipped_already_on_shift ?? 0} already current · ${d.missing_shift_definition ?? 0} unmapped`
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Deploy failed");
+    } finally {
+      setDeployingId(null);
+    }
+  };
 
   const recent = useQuery({
     queryKey: ["duty-roster-imports"],
