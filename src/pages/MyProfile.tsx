@@ -166,7 +166,7 @@ export default function MyProfile() {
       <PageHeader
         icon={UserCog}
         title="My Profile"
-        subtitle="Update your personal details. Changes sync across the system in real time."
+        subtitle="Submit profile changes for review. Edits take effect after Command / Admin approval."
       />
 
       <Card className="border-l-4 border-l-amber-500">
