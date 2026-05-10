@@ -727,12 +727,16 @@ export default function RoleAssignmentsAdmin() {
                         className="hover:text-destructive"
                         disabled={removeRoleByUser.isPending}
                         onClick={() => {
-                          if (confirm(`Remove ${labelFor(r)}?`)) {
-                            removeRoleByUser.mutate(
+                          askConfirm({
+                            title: "Remove role?",
+                            message: `Remove "${labelFor(r)}" from ${editing.name}? This will be recorded in the audit trail and is reversible.`,
+                            confirmLabel: "Remove",
+                            destructive: true,
+                            onConfirm: () => removeRoleByUser.mutate(
                               { user_id: editing.user_id, role: r },
                               { onSuccess: () => setEditing((prev) => prev ? { ...prev, roles: prev.roles.filter((x) => x !== r) } : prev) }
-                            );
-                          }
+                            ),
+                          });
                         }}
                       >
                         <Trash2 className="h-3 w-3" />
