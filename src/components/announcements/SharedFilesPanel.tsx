@@ -427,6 +427,22 @@ export function SharedFilesPanel() {
                       <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                         {format(new Date(f.created_at), "dd MMM yyyy")}
                       </TableCell>
+                      <TableCell className="hidden lg:table-cell text-xs">
+                        {f.expires_at ? (
+                          (() => {
+                            const ms = new Date(f.expires_at).getTime() - Date.now();
+                            const days = Math.ceil(ms / 86400_000);
+                            const cls = ms <= 0 ? "text-destructive" : days <= 7 ? "text-amber-600" : "text-muted-foreground";
+                            return (
+                              <span className={cls} title={format(new Date(f.expires_at), "PPpp")}>
+                                {ms <= 0 ? "Expired" : `${days}d`}
+                              </span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-muted-foreground">Never</span>
+                        )}
+                      </TableCell>
                       {isAdminOrSupervisor && (
                         <TableCell className="text-center">
                           <Switch
