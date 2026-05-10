@@ -258,6 +258,74 @@ export default function DutyRosterImport() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const previewRangeLabel = previewEndDate && previewEndDate !== effectiveDate
+    ? `${effectiveDate} to ${previewEndDate}`
+    : effectiveDate;
+
+  const exportPreviewCSV = () => {
+    if (!previewPlan) { toast.error("Preview not ready"); return; }
+    const header = ["Shift", "Staff Name", "Staff ID", "Current Shift", "Will Become", "Status"];
+    const lines = [header.join(",")];
+    const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    previewPlan.matches.forEach((m) => {
+      lines.push([
+        m.shift,
+        esc(m.staff_name),
+        esc(m.staff_id ?? ""),
+        esc(m.status === "new" ? "new stub" : (m.previous ?? "")),
+        `Shift ${m.next}`,
+        m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
+      ].join(","));
+    });
+    lines.push("");
+    lines.push(`# Effective range,${previewRangeLabel}`);
+    (["A","B","C","D"] as const).forEach((s) => lines.push(`# Shift ${s} count,${previewPlan.summary[s]}`));
+    lines.push(`# Changing,${previewPlan.changed}`);
+    lines.push(`# Unchanged,${previewPlan.kept}`);
+    lines.push(`# New stubs,${previewPlan.created}`);
+    downloadCSVString(lines.join("\n"), `schedule-preview_${effectiveDate}.csv`);
+    toast.success("CSV exported");
+  };
+
+  const exportPreviewPDF = () => {
+    if (!previewPlan) { toast.error("Preview not ready"); return; }
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    doc.setFontSize(14);
+    doc.text("Duty Roster — Schedule Preview (A/B/C/D)", 40, 40);
+    doc.setFontSize(10);
+    doc.text(`Effective: ${previewRangeLabel}`, 40, 58);
+    const summary = `Shift A: ${previewPlan.summary.A}   Shift B: ${previewPlan.summary.B}   Shift C: ${previewPlan.summary.C}   Shift D: ${previewPlan.summary.D}   |   Changing: ${previewPlan.changed}   Unchanged: ${previewPlan.kept}   New stubs: ${previewPlan.created}`;
+    doc.text(summary, 40, 74);
+
+    autoTable(doc, {
+      startY: 90,
+      head: [["Shift", "Staff Name", "Staff ID", "Current", "Will Become", "Status"]],
+      body: previewPlan.matches.map((m) => [
+        m.shift,
+        m.staff_name,
+        m.staff_id ?? "—",
+        m.status === "new" ? "new stub" : (m.previous ?? "—"),
+        `Shift ${m.next}`,
+        m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
+      ]),
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [30, 64, 35], textColor: 255 },
+      didDrawPage: () => {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
+        doc.setFontSize(8);
+        doc.text(
+          `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
+          40, doc.internal.pageSize.getHeight() - 20,
+        );
+      },
+    });
+
+    doc.save(`schedule-preview_${effectiveDate}.pdf`);
+    toast.success("PDF exported");
+  };
+
+
   const handleFile = async (f: File) => {
     setFile(f); setParsed(null);
     try {
