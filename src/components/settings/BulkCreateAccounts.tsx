@@ -154,7 +154,29 @@ export function BulkCreateAccounts() {
     };
   };
 
-  const isAnyLoading = isLoading || isResetting;
+  const handleRepair = async () => {
+    setIsRepairing(true);
+    setResults(null);
+    setErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("repair-missing-auth");
+      if (error) throw error;
+      setResults(data.created ?? []);
+      setErrors(data.errors ?? []);
+      setTotal(data.total ?? 0);
+      if (data.created?.length > 0) {
+        toast.success(`${data.created.length} profile(s) repaired`);
+      } else {
+        toast.info("No profiles need repair");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Repair failed");
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
+  const isAnyLoading = isLoading || isResetting || isRepairing;
 
   return (
     <Card>
