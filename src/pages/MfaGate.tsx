@@ -105,6 +105,37 @@ export default function MfaGate() {
     }
   };
 
+  const handleRecovery = async () => {
+    const trimmed = recoveryCode.trim();
+    if (trimmed.length < 8) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("mfa_consume_backup_code", { _code: trimmed });
+      if (error) throw error;
+      if (!data) {
+        toast.error("Invalid or already-used recovery code");
+        setRecoveryCode("");
+        return;
+      }
+      // Recovery succeeded — remove the lost authenticator and force re-enrolment
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      for (const f of factors?.totp ?? []) {
+        try { await supabase.auth.mfa.unenroll({ factorId: f.id }); } catch {}
+      }
+      toast.success("Recovery code accepted. Enrol a new authenticator to continue.");
+      setFactorId(null);
+      setQrUri(null);
+      setSecret(null);
+      setCode("");
+      setRecoveryCode("");
+      setPhase("enroll");
+    } catch (e: any) {
+      toast.error(e.message || "Recovery failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/login", { replace: true });
