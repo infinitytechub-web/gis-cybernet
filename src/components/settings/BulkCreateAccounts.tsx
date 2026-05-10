@@ -225,6 +225,27 @@ export function BulkCreateAccounts() {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
+                <Button variant="secondary" disabled={isAnyLoading} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  {isRepairing ? "Repairing..." : "Repair Missing Auth"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Repair profiles missing auth accounts?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Finds every profile marked login_enabled but with no linked auth user (any status). Reuses an existing matching auth user if available, otherwise creates a new one. Safe to run repeatedly.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRepair}>Repair Now</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={isAnyLoading} className="gap-2">
                   <RefreshCw className="h-4 w-4" />
                   {isResetting ? "Resetting..." : "Reset & Regenerate All"}
