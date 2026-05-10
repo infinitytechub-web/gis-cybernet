@@ -287,7 +287,7 @@ export function NotificationBell() {
                       <button
                         key={n.id}
                         onClick={() => handleClick(n)}
-                        className={`flex gap-3 px-4 py-3 text-sm transition-colors w-full text-left hover:bg-accent/50 ${
+                        className={`group flex gap-3 px-4 py-3 text-sm transition-colors w-full text-left hover:bg-accent/50 ${
                           n.is_read ? "opacity-60" : ""
                         } ${urgent && !n.is_read ? "bg-destructive/5 border-l-2 border-l-destructive" : !n.is_read ? "bg-primary/5 border-l-2 border-l-primary" : ""}`}
                       >
