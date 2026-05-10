@@ -556,7 +556,13 @@ export default function RoleAssignmentsAdmin() {
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7 text-destructive"
                             onClick={() => {
-                              if (confirm(`Remove ${r.role} from ${r.profile?.staff_id}?`)) remove.mutate(r.id);
+                              askConfirm({
+                                title: "Remove role?",
+                                message: `Remove "${labelFor(r.role)}" from ${r.profile?.staff_id ?? "this user"}? This will be recorded in the audit trail and is reversible.`,
+                                confirmLabel: "Remove",
+                                destructive: true,
+                                onConfirm: () => remove.mutate(r.id),
+                              });
                             }}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
