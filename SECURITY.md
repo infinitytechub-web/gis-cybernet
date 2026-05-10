@@ -212,6 +212,18 @@ We follow a **"self-host first, SRI second"** policy:
    constrained instead by `img-src` in CSP and rendered as non-executable
    raster data.
 
+5. **Automated CI enforcement.** `scripts/check-sri.mjs` scans every `.html`,
+   `.tsx`, `.jsx`, `.ts`, `.js`, `.mjs` file in the repo for any
+   `<script src="https://…">` or `<link rel="stylesheet|preload|modulepreload" href="https://…">`
+   tag and fails the build if either `integrity="sha(256|384|512)-…"` or
+   `crossorigin="…"` is missing. It runs as the `sri-check` job in
+   `.github/workflows/security-scan.yml` on every push, PR, weekly cron, and
+   manual dispatch — and prints `::error file=…` annotations directly on the
+   offending lines in PRs.
+
+   Run locally with `npm run check:sri` (or `node scripts/check-sri.mjs`)
+   before opening a PR. Same-origin (relative) URLs are skipped.
+
 ## Realtime (postgres_changes) RLS enforcement
 
 Supabase Realtime v2+ runs every `postgres_changes` subscription **through the
