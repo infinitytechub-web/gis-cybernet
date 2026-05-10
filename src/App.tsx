@@ -85,6 +85,7 @@ const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
 const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
 const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
 const MfaGate = lazy(() => import("./pages/MfaGate"));
+const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
 
 const queryClient = new QueryClient();
 
@@ -139,6 +140,7 @@ function App() {
           <Route path="/staff-approvals/profile-changes" element={<ProtectedRoute><Layout><ProfileChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
+          <Route path="/shift-rotation-approvals" element={<ProtectedRoute><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals" element={<ProtectedRoute><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
           <Route path="/shift-window-audit" element={<ProtectedRoute><Layout><ShiftWindowAudit /></Layout></ProtectedRoute>} />
