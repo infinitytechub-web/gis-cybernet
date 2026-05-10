@@ -126,12 +126,23 @@ export default function MfaBackupCodes() {
         )}
       </CardContent>
 
-      <Dialog open={!!showCodes} onOpenChange={o => !o && setShowCodes(null)}>
+      <Dialog open={!!showCodes} onOpenChange={(o) => !o && dismissCodes()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Your new backup codes</DialogTitle>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>Your new backup codes</span>
+              <span
+                className={`text-xs font-mono px-2 py-0.5 rounded ${
+                  secondsLeft <= 10 ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"
+                }`}
+                aria-live="polite"
+              >
+                Auto-hides in {secondsLeft}s
+              </span>
+            </DialogTitle>
             <DialogDescription>
-              <strong>This is the only time these codes will be shown.</strong> Save them now.
+              <strong>This is the only time these codes will be shown.</strong> Copy or download them now —
+              they will disappear automatically when this dialog closes or in {AUTO_HIDE_SECONDS} seconds.
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-2 font-mono text-sm bg-muted/40 p-4 rounded-lg">
@@ -144,7 +155,7 @@ export default function MfaBackupCodes() {
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={copyAll}><Copy className="h-4 w-4 mr-2" /> Copy all</Button>
             <Button variant="outline" onClick={downloadCodes}><Download className="h-4 w-4 mr-2" /> Download .txt</Button>
-            <Button onClick={() => setShowCodes(null)}>I've saved them</Button>
+            <Button onClick={dismissCodes}>I've saved them</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
