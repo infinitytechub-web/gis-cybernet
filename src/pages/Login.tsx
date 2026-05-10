@@ -89,11 +89,16 @@ export default function Login() {
         }
       }
 
-      // Look up the auth email from the Staff/Admin ID
-      const { data: emailData, error: emailErr } = await supabase.rpc("get_email_by_staff_id", { _staff_id: trimmedId });
-      if (emailErr || !emailData) {
-        // Record as failed attempt to prevent enumeration timing attacks
-        await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
+      // Look up the auth email from the Staff/Admin ID via the hardened edge
+      // function (rate-limited, audited, no direct anon DB access).
+      const { data: lookupData, error: lookupErr } = await supabase.functions.invoke(
+        "resolve-staff-email",
+        { body: { staff_id: trimmedId } },
+      );
+      const emailData = (lookupData as { email?: string } | null)?.email ?? null;
+      if (lookupErr || !emailData) {
+        // record_failed_login already logged inside the edge function — no
+        // need to double-log here.
         throw new Error("Invalid ID or password");
       }
 
