@@ -149,6 +149,13 @@ export default function Login() {
   const handleVerifyOtp = useCallback(async () => {
     if (!mfaFactorId || otp.length !== 6) return;
     setIsLoading(true);
+    // Resolve audit metadata in parallel
+    const trimmedId = staffId.trim() || null;
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+    const fpPromise = getDeviceFingerprint().catch(() => null);
+    const ipPromise = supabase.functions.invoke("client-ip-info")
+      .then(({ data }) => (data as any)?.ip ?? null)
+      .catch(() => null);
     try {
       const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
       if (cErr) throw cErr;
@@ -156,14 +163,35 @@ export default function Login() {
         factorId: mfaFactorId, challengeId: ch.id, code: otp,
       });
       if (vErr) throw vErr;
+      // Audit success (best-effort)
+      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
+      void supabase.rpc("record_mfa_challenge", {
+        _outcome: "success",
+        _factor_id: mfaFactorId,
+        _staff_id: trimmedId,
+        _ip_address: ip,
+        _device_fingerprint: fp,
+        _user_agent: ua,
+      });
       navigate("/");
     } catch (e: any) {
-      toast({ title: "Invalid code", description: e?.message || "The 2FA code was rejected.", variant: "destructive" });
+      const reason = e?.message || "Invalid code";
+      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
+      void supabase.rpc("record_mfa_challenge", {
+        _outcome: "failure",
+        _failure_reason: reason,
+        _factor_id: mfaFactorId,
+        _staff_id: trimmedId,
+        _ip_address: ip,
+        _device_fingerprint: fp,
+        _user_agent: ua,
+      });
+      toast({ title: "Invalid code", description: reason, variant: "destructive" });
       setOtp("");
     } finally {
       setIsLoading(false);
     }
-  }, [mfaFactorId, otp, navigate, toast]);
+  }, [mfaFactorId, otp, staffId, navigate, toast]);
 
   const handleCancelMfa = useCallback(async () => {
     try { await signOut(); } catch { /* ignore */ }

@@ -88,6 +88,12 @@ export default function MfaGate() {
   const handleVerify = async () => {
     if (!factorId || code.length !== 6) return;
     setBusy(true);
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+    const { getDeviceFingerprint } = await import("@/lib/device-fingerprint");
+    const fpPromise = getDeviceFingerprint().catch(() => null);
+    const ipPromise = supabase.functions.invoke("client-ip-info")
+      .then(({ data }) => (data as any)?.ip ?? null)
+      .catch(() => null);
     try {
       const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId });
       if (cErr) throw cErr;
@@ -95,10 +101,28 @@ export default function MfaGate() {
         factorId, challengeId: ch.id, code,
       });
       if (vErr) throw vErr;
+      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
+      void supabase.rpc("record_mfa_challenge", {
+        _outcome: "success",
+        _factor_id: factorId,
+        _ip_address: ip,
+        _device_fingerprint: fp,
+        _user_agent: ua,
+      });
       toast.success("Verification successful");
       navigate(from, { replace: true });
     } catch (e: any) {
-      toast.error(e.message || "Invalid code");
+      const reason = e?.message || "Invalid code";
+      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
+      void supabase.rpc("record_mfa_challenge", {
+        _outcome: "failure",
+        _failure_reason: reason,
+        _factor_id: factorId,
+        _ip_address: ip,
+        _device_fingerprint: fp,
+        _user_agent: ua,
+      });
+      toast.error(reason);
       setCode("");
     } finally {
       setBusy(false);

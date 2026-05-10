@@ -4239,6 +4239,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mfa_challenge_audit: {
+        Row: {
+          created_at: string
+          device_fingerprint: string | null
+          factor_id: string | null
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          outcome: string
+          staff_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint?: string | null
+          factor_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          outcome: string
+          staff_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string | null
+          factor_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          outcome?: string
+          staff_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       mfa_recovery_requests: {
         Row: {
           created_at: string
@@ -8802,6 +8841,18 @@ export type Database = {
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }
         | { Args: { _ip_address?: string; _staff_id: string }; Returns: Json }
+      record_mfa_challenge: {
+        Args: {
+          _device_fingerprint?: string
+          _factor_id?: string
+          _failure_reason?: string
+          _ip_address?: string
+          _outcome: string
+          _staff_id?: string
+          _user_agent?: string
+        }
+        Returns: string
+      }
       redact_old_job_passwords: { Args: never; Returns: undefined }
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
