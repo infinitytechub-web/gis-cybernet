@@ -249,6 +249,29 @@ export default function PassportApplications() {
                 <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
                 <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>
                 <div><Label>Nearest Landmark</Label><Input value={form.nearest_landmark} onChange={(e) => setForm({ ...form, nearest_landmark: e.target.value })} /></div>
+                <div><Label>Surname</Label><Input value={form.surname} onChange={(e) => setForm({ ...form, surname: e.target.value })} /></div>
+                <div><Label>Other Names</Label><Input value={form.other_names} onChange={(e) => setForm({ ...form, other_names: e.target.value })} /></div>
+                <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+                <div><Label>Place of Birth</Label><Input value={form.place_of_birth} onChange={(e) => setForm({ ...form, place_of_birth: e.target.value })} /></div>
+                <div><Label>Occupation</Label><Input value={form.occupation} onChange={(e) => setForm({ ...form, occupation: e.target.value })} /></div>
+                <div><Label>Ghana Card Number</Label><Input value={form.ghana_card_number} onChange={(e) => setForm({ ...form, ghana_card_number: e.target.value })} /></div>
+                <div><Label>Spouse Name (if married)</Label><Input value={form.spouse_name} onChange={(e) => setForm({ ...form, spouse_name: e.target.value })} /></div>
+              </div>
+              <div className="rounded-md border p-3 space-y-3 bg-muted/20">
+                <div className="text-sm font-medium">MFA Compliance — Witnessing & Declaration</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Witnessing Officer Name</Label><Input value={form.witnessing_officer_name} onChange={(e) => setForm({ ...form, witnessing_officer_name: e.target.value })} /></div>
+                  <div><Label>Witnessing Officer Rank</Label><Input value={form.witnessing_officer_rank} onChange={(e) => setForm({ ...form, witnessing_officer_rank: e.target.value })} /></div>
+                  <div><Label>Declaration Date</Label><Input type="date" value={form.declaration_date} onChange={(e) => setForm({ ...form, declaration_date: e.target.value })} /></div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input id="biometric_consent" type="checkbox" checked={form.biometric_consent} onChange={(e) => setForm({ ...form, biometric_consent: e.target.checked })} />
+                  <Label htmlFor="biometric_consent" className="cursor-pointer">Applicant has consented to biometric capture</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input id="declaration_signed" type="checkbox" checked={form.declaration_signed} onChange={(e) => setForm({ ...form, declaration_signed: e.target.checked })} />
+                  <Label htmlFor="declaration_signed" className="cursor-pointer">Declaration form signed by applicant</Label>
+                </div>
               </div>
               <div><Label>Home Address</Label><Textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} /></div>
               <div><Label>Foreign Address</Label><Textarea value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} rows={2} /></div>
