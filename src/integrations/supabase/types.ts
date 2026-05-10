@@ -4278,6 +4278,47 @@ export type Database = {
         }
         Relationships: []
       }
+      mfa_review_audit: {
+        Row: {
+          application_id: string
+          created_at: string
+          id: string
+          new_status: string
+          previous_status: string | null
+          reviewed_at: string
+          reviewer_id: string | null
+          reviewer_notes: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          id?: string
+          new_status: string
+          previous_status?: string | null
+          reviewed_at?: string
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          previous_status?: string | null
+          reviewed_at?: string
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mfa_review_audit_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "passport_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       misd_unit_assignments: {
         Row: {
           assigned_at: string
