@@ -847,6 +847,29 @@ export default function RoleAssignmentsAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ---------------- CONFIRM DIALOG ---------------- */}
+      <AlertDialog open={!!confirmState} onOpenChange={(o) => !o && setConfirmState(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmState?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmState?.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={confirmState?.destructive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => {
+                const fn = confirmState?.onConfirm;
+                setConfirmState(null);
+                fn?.();
+              }}
+            >
+              {confirmState?.confirmLabel ?? "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
