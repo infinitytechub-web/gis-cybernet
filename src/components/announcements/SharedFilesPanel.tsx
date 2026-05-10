@@ -35,6 +35,7 @@ export function SharedFilesPanel() {
   const [description, setDescription] = useState("");
   const [deptId, setDeptId] = useState<string>("global");
   const [file, setFile] = useState<File | null>(null);
+  const [retention, setRetention] = useState<string>("default"); // default | 7 | 30 | 90 | 365 | never
   const [uploading, setUploading] = useState(false);
 
   // Filters
@@ -140,7 +141,7 @@ export function SharedFilesPanel() {
   };
 
   const reset = () => {
-    setTitle(""); setDescription(""); setDeptId("global"); setFile(null);
+    setTitle(""); setDescription(""); setDeptId("global"); setFile(null); setRetention("default");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -149,6 +150,15 @@ export function SharedFilesPanel() {
     setUploading(true);
     try {
       const { path, sha, verdict } = await uploadSecureFile(file, { maxMb: 25 });
+      let expires_at: string | null = null;
+      let retention_days: number | null = null;
+      if (retention !== "default" && retention !== "never") {
+        retention_days = parseInt(retention, 10);
+        expires_at = new Date(Date.now() + retention_days * 86400_000).toISOString();
+      } else if (retention === "never") {
+        retention_days = null;
+        expires_at = null;
+      }
       const { error } = await supabase.from("announcement_files").insert({
         title: title.trim(),
         description: description.trim() || null,
@@ -160,6 +170,8 @@ export function SharedFilesPanel() {
         sha256: sha,
         scan_action: verdict,
         uploaded_by: user.id,
+        expires_at,
+        retention_days,
       });
       if (error) throw error;
       toast.success("File shared");
