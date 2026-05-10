@@ -230,13 +230,39 @@ export function SecurityUpdatesPanel() {
 
       {findings && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Latest scan results</CardTitle>
-            <CardDescription>
-              {findings.length} check{findings.length === 1 ? "" : "s"} executed —{" "}
-              <span className="text-destructive font-medium">{errCount} error{errCount === 1 ? "" : "s"}</span>,{" "}
-              <span className="text-amber-600 font-medium">{warnCount} warning{warnCount === 1 ? "" : "s"}</span>.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Latest scan results</CardTitle>
+              <CardDescription>
+                {findings.length} check{findings.length === 1 ? "" : "s"} executed —{" "}
+                <span className="text-destructive font-medium">{errCount} error{errCount === 1 ? "" : "s"}</span>,{" "}
+                <span className="text-amber-600 font-medium">{warnCount} warning{warnCount === 1 ? "" : "s"}</span>.
+              </CardDescription>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const r = buildLatestRun();
+                  if (r) handleExportRun(r, "csv");
+                }}
+              >
+                <FileDown className="h-3.5 w-3.5" /> CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const r = buildLatestRun();
+                  if (r) handleExportRun(r, "pdf");
+                }}
+              >
+                <FileText className="h-3.5 w-3.5" /> PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {errCount === 0 && warnCount === 0 ? (
