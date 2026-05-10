@@ -166,6 +166,7 @@ export default function Settings() {
         <TabsContent value="security-audit"><SecurityAuditPanel /></TabsContent>
         <TabsContent value="hrm-dlp"><HrmExportDlpPanel /></TabsContent>
         <TabsContent value="mfa-recovery"><MfaRecoveryPanel /></TabsContent>
+        <TabsContent value="security-updates"><SecurityUpdatesPanel /></TabsContent>
       </Tabs>
     </div>
   );
