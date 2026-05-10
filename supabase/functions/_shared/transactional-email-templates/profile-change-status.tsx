@@ -104,6 +104,7 @@ export const template = {
     reviewerName: 'OIC Adjei',
     reviewerNotes: 'Verified against Ghana Card.',
     reviewedAt: '10 May 2026 14:32',
+    requestUrl: 'https://gis-cybernet.lovable.app/my-profile?request=00000000-0000-0000-0000-000000000000',
   },
 } satisfies TemplateEntry
 
