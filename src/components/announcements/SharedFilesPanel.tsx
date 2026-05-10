@@ -277,6 +277,20 @@ export function SharedFilesPanel() {
                     </p>
                   )}
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Retention / expiry</Label>
+                  <Select value={retention} onValueChange={setRetention}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Use system default policy</SelectItem>
+                      <SelectItem value="7">7 days</SelectItem>
+                      <SelectItem value="30">30 days</SelectItem>
+                      <SelectItem value="90">90 days</SelectItem>
+                      <SelectItem value="365">1 year</SelectItem>
+                      <SelectItem value="never">Never expires</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   className="w-full gap-1.5"
                   onClick={upload}
