@@ -580,10 +580,17 @@ export default function RoleAssignmentsAdmin() {
         {/* ---------------- AUDIT ---------------- */}
         <TabsContent value="audit">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
               <CardTitle className="flex items-center gap-2 text-base">
                 <History className="h-4 w-4" /> Recent Changes (last 100)
               </CardTitle>
+              <Button
+                size="sm" variant="outline" className="gap-1"
+                disabled={auditTrail.length === 0}
+                onClick={() => exportAuditCsv(auditTrail)}
+              >
+                <Download className="h-4 w-4" /> Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {loadingAudit ? (
