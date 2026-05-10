@@ -7,9 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardCheck, ArrowRight, Star, Sparkles, X, Filter } from "lucide-react";
+import { ClipboardCheck, ArrowRight, Star, Sparkles, X, Filter, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "sonner";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -119,6 +123,99 @@ export default function StaffAppraisalsWidget() {
     setRankId("all");
   };
 
+  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+
+  async function loadCoverage() {
+    const { data, error } = await supabase.rpc("appraisal_coverage_report" as any, {
+      _period_year: year,
+      _period_month: month === "all" ? null : parseInt(month, 10),
+    });
+    if (error) throw error;
+    const all = (data ?? []) as any[];
+    const deptName = deptId === "all" ? null : (departments as any[]).find((d) => d.id === deptId)?.name ?? null;
+    const rankName = rankId === "all" ? null : (ranks as any[]).find((r) => r.id === rankId)?.name ?? null;
+    return all.filter((r) => {
+      if (deptName && r.department_name !== deptName) return false;
+      if (rankName && r.rank_name !== rankName) return false;
+      return true;
+    });
+  }
+
+  const periodSuffix = `${year}${month !== "all" ? `-${String(parseInt(month, 10)).padStart(2, "0")}` : "-annual"}`;
+  const periodHuman = month === "all" ? `Annual ${year}` : `${MONTHS[parseInt(month, 10) - 1]} ${year}`;
+
+  async function exportCsv() {
+    setExporting("csv");
+    try {
+      const rows = await loadCoverage();
+      if (rows.length === 0) { toast.info("No coverage rows for the selected filters."); return; }
+      const header = ["Staff ID","Last Name","First Name","Rank","Department","Unit","Has Appraisal","Status","Total Score","Duplicate Attempts","Last Attempt"];
+      const lines = [header.join(",")];
+      for (const r of rows) {
+        const cells = [
+          r.staff_id ?? "", r.last_name ?? "", r.first_name ?? "",
+          r.rank_name ?? "", r.department_name ?? "", r.unit ?? "",
+          r.has_appraisal ? "Yes" : "No", r.appraisal_status ?? "",
+          r.total_score?.toString() ?? "", String(r.duplicate_attempts ?? 0),
+          r.last_attempt_at ? format(new Date(r.last_attempt_at), "yyyy-MM-dd HH:mm") : "",
+        ].map((c) => `"${String(c).replace(/"/g, '""')}"`);
+        lines.push(cells.join(","));
+      }
+      downloadCSVString(lines.join("\n"), `appraisal-coverage-${periodSuffix}.csv`);
+      toast.success(`Exported ${rows.length} row${rows.length === 1 ? "" : "s"}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Export failed");
+    } finally {
+      setExporting(null);
+    }
+  }
+
+  async function exportPdf() {
+    setExporting("pdf");
+    try {
+      const rows = await loadCoverage();
+      if (rows.length === 0) { toast.info("No coverage rows for the selected filters."); return; }
+      const completed = rows.filter((r: any) => r.has_appraisal).length;
+      const missing = rows.length - completed;
+      const dups = rows.filter((r: any) => (r.duplicate_attempts ?? 0) > 0).length;
+
+      const doc = new jsPDF({ orientation: "landscape" });
+      doc.setFontSize(14);
+      doc.text(`Appraisal Coverage Report — ${periodHuman}`, 14, 14);
+      doc.setFontSize(9);
+      const scope: string[] = [];
+      if (deptId !== "all") scope.push(`Dept: ${(departments as any[]).find((d) => d.id === deptId)?.name ?? ""}`);
+      if (rankId !== "all") scope.push(`Rank: ${(ranks as any[]).find((r) => r.id === rankId)?.name ?? ""}`);
+      doc.text(
+        `Total: ${rows.length} · Completed: ${completed} · Missing: ${missing} · Duplicate attempts: ${dups}${scope.length ? "  ·  " + scope.join(" · ") : ""}`,
+        14, 20,
+      );
+      autoTable(doc, {
+        startY: 24,
+        head: [["Staff ID","Officer","Rank","Department","Unit","Status","Score","Dup."]],
+        body: rows.map((r: any) => [
+          r.staff_id ?? "",
+          `${r.last_name ?? ""}, ${r.first_name ?? ""}`,
+          r.rank_name ?? "",
+          r.department_name ?? "",
+          r.unit ?? "",
+          r.has_appraisal ? (r.appraisal_status ?? "—") : "MISSING",
+          r.total_score != null ? `${r.total_score}/35` : "—",
+          String(r.duplicate_attempts ?? 0),
+        ]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [22, 92, 60] },
+      });
+      const blob = doc.output("blob");
+      downloadBlob(blob, `appraisal-coverage-${periodSuffix}.pdf`);
+      toast.success(`Exported ${rows.length} row${rows.length === 1 ? "" : "s"}`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Export failed");
+    } finally {
+      setExporting(null);
+    }
+  }
+
   return (
     <Card className="border-primary/30 bg-primary/5">
       <CardHeader className="pb-2">
@@ -128,7 +225,29 @@ export default function StaffAppraisalsWidget() {
             Staff Appraisal Reports
             <Badge variant="outline" className="ml-1 text-[10px]">{periodLabel}</Badge>
           </CardTitle>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={exportCsv}
+              disabled={exporting !== null}
+              title="Export full coverage report as CSV"
+            >
+              {exporting === "csv" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileSpreadsheet className="h-3 w-3" />}
+              CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={exportPdf}
+              disabled={exporting !== null}
+              title="Export full coverage report as PDF"
+            >
+              {exporting === "pdf" ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+              PDF
+            </Button>
             <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/appraisals/coverage")}>
               Coverage
             </Button>
