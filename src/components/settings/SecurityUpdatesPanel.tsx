@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ShieldAlert, ShieldX, Play, Loader2, Clock, FileDown, FileText } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, Play, Loader2, Clock, FileDown, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { runRepoHygieneScan } from "@/lib/security-dependency-scan";
@@ -21,6 +21,11 @@ interface Finding {
   severity: Severity;
   title: string;
   detail?: string;
+  package?: string;
+  currentVersion?: string;
+  fixedVersion?: string;
+  advisoryId?: string;
+  advisoryUrl?: string;
 }
 
 const sevBadge = (s: Severity) => {
@@ -278,6 +283,9 @@ export function SecurityUpdatesPanel() {
                     <TableRow>
                       <TableHead className="w-[110px]">Severity</TableHead>
                       <TableHead>Finding</TableHead>
+                      <TableHead className="hidden lg:table-cell w-[110px]">Current</TableHead>
+                      <TableHead className="hidden lg:table-cell w-[110px]">Fixed in</TableHead>
+                      <TableHead className="hidden xl:table-cell">Advisory</TableHead>
                       <TableHead className="hidden md:table-cell">Recommendation</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -285,7 +293,35 @@ export function SecurityUpdatesPanel() {
                     {findings.map((f, i) => (
                       <TableRow key={i}>
                         <TableCell>{sevBadge(f.severity)}</TableCell>
-                        <TableCell className="font-medium">{f.title}</TableCell>
+                        <TableCell className="font-medium">
+                          {f.title}
+                          {f.package && (
+                            <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
+                              {f.package}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-xs font-mono">
+                          {f.currentVersion ?? "—"}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-xs font-mono text-emerald-700 dark:text-emerald-400">
+                          {f.fixedVersion ?? "—"}
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell text-xs">
+                          {f.advisoryUrl ? (
+                            <a
+                              href={f.advisoryUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                            >
+                              {f.advisoryId ?? "Link"}
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
                           {f.detail}
                         </TableCell>
