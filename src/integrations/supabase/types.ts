@@ -123,6 +123,9 @@ export type Database = {
           mfa_required_roles: string[]
           min_password_length: number
           org_name: string
+          security_scan_enabled: boolean
+          security_scan_frequency: string
+          security_scan_last_run_at: string | null
           system_label: string
           updated_at: string
         }
@@ -136,6 +139,9 @@ export type Database = {
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
+          security_scan_enabled?: boolean
+          security_scan_frequency?: string
+          security_scan_last_run_at?: string | null
           system_label?: string
           updated_at?: string
         }
@@ -149,6 +155,9 @@ export type Database = {
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
+          security_scan_enabled?: boolean
+          security_scan_frequency?: string
+          security_scan_last_run_at?: string | null
           system_label?: string
           updated_at?: string
         }
@@ -6963,6 +6972,51 @@ export type Database = {
           },
         ]
       }
+      security_scan_runs: {
+        Row: {
+          error_count: number
+          error_message: string | null
+          findings: Json
+          finished_at: string | null
+          id: string
+          passed_count: number
+          started_at: string
+          status: string
+          total_checks: number
+          trigger_kind: string
+          triggered_by: string | null
+          warn_count: number
+        }
+        Insert: {
+          error_count?: number
+          error_message?: string | null
+          findings?: Json
+          finished_at?: string | null
+          id?: string
+          passed_count?: number
+          started_at?: string
+          status?: string
+          total_checks?: number
+          trigger_kind?: string
+          triggered_by?: string | null
+          warn_count?: number
+        }
+        Update: {
+          error_count?: number
+          error_message?: string | null
+          findings?: Json
+          finished_at?: string | null
+          id?: string
+          passed_count?: number
+          started_at?: string
+          status?: string
+          total_checks?: number
+          trigger_kind?: string
+          triggered_by?: string | null
+          warn_count?: number
+        }
+        Relationships: []
+      }
       sensitive_table_access_log: {
         Row: {
           accessed_by: string | null
@@ -8862,6 +8916,7 @@ export type Database = {
         Args: { p_snapshot_id: string }
         Returns: Json
       }
+      run_security_hygiene_scan: { Args: never; Returns: Json }
       search_approval_audit: {
         Args: {
           _actions?: string[]
