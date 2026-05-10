@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ShieldAlert, ShieldX, Play, Loader2, Clock } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, Play, Loader2, Clock, FileDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { runRepoHygieneScan } from "@/lib/security-dependency-scan";
+import { exportRunAsCsv, exportRunAsPdf, type ExportRun } from "@/lib/security-scan-export";
 
 type Severity = "info" | "warn" | "error";
 interface Finding {
