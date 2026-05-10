@@ -57,6 +57,45 @@ function normalizeRole(r: string): AppRole | null {
 
 const labelFor = (r: string) => (ROLE_LABEL as Record<string, string>)[r] ?? r.replace(/_/g, " ");
 
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportAuditCsv(rows: any[]) {
+  const header = ["timestamp", "actor_staff_id", "actor_name", "action", "entity_type", "target_staff_id", "target_name", "detail", "reverted"];
+  const lines = [header.join(",")];
+  for (const e of rows) {
+    const detail =
+      e.action === "department.change"
+        ? `${e.details?.from_name ?? ""} -> ${e.details?.to_name ?? ""}`
+        : e.details?.role
+          ? labelFor(e.details.role)
+          : "";
+    lines.push([
+      new Date(e.created_at).toISOString(),
+      e.actor?.staff_id ?? "",
+      e.actor ? `${e.actor.last_name}, ${e.actor.first_name}` : "",
+      e.action,
+      e.entity_type,
+      e.target?.staff_id ?? "",
+      e.target ? `${e.target.last_name}, ${e.target.first_name}` : "",
+      detail,
+      e.details?.reverted_from ? "yes" : "no",
+    ].map(csvEscape).join(","));
+  }
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `role-audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export default function RoleAssignmentsAdmin() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
