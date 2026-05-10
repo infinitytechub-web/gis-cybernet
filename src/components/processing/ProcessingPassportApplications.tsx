@@ -198,6 +198,68 @@ export default function ProcessingPassportApplications() {
           {reviewApp && (
             <ApplicationDocuments recordType="passport" recordId={reviewApp.id} readOnly />
           )}
+
+          {reviewApp && (
+            <div className="rounded-md border-2 border-primary/30 p-3 space-y-3 bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-primary">MFA Compliance Review</div>
+                {(() => {
+                  const s = form.mfa_review_status;
+                  const cls = s === "approved" ? "bg-green-100 text-green-800"
+                    : s === "rejected" ? "bg-red-100 text-red-800"
+                    : "bg-yellow-100 text-yellow-800";
+                  return <Badge className={cls}>{s}</Badge>;
+                })()}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {reviewApp.surname && <div><span className="text-muted-foreground">Surname:</span> {reviewApp.surname}</div>}
+                {reviewApp.other_names && <div><span className="text-muted-foreground">Other Names:</span> {reviewApp.other_names}</div>}
+                {reviewApp.email && <div className="col-span-2"><span className="text-muted-foreground">Email:</span> {reviewApp.email}</div>}
+                {reviewApp.place_of_birth && <div><span className="text-muted-foreground">Place of Birth:</span> {reviewApp.place_of_birth}</div>}
+                {reviewApp.occupation && <div><span className="text-muted-foreground">Occupation:</span> {reviewApp.occupation}</div>}
+                {reviewApp.ghana_card_number && <div className="col-span-2"><span className="text-muted-foreground">Ghana Card #:</span> {reviewApp.ghana_card_number}</div>}
+                {reviewApp.spouse_name && <div className="col-span-2"><span className="text-muted-foreground">Spouse:</span> {reviewApp.spouse_name}</div>}
+                <div><span className="text-muted-foreground">Biometric Consent:</span> {reviewApp.biometric_consent ? "✓ Yes" : "✗ No"}</div>
+                <div><span className="text-muted-foreground">Declaration Signed:</span> {reviewApp.declaration_signed ? "✓ Yes" : "✗ No"}</div>
+                {reviewApp.declaration_date && <div><span className="text-muted-foreground">Declaration Date:</span> {reviewApp.declaration_date}</div>}
+                {reviewApp.witnessing_officer_name && <div className="col-span-2"><span className="text-muted-foreground">Witnessed By:</span> {reviewApp.witnessing_officer_rank ? `${reviewApp.witnessing_officer_rank} ` : ""}{reviewApp.witnessing_officer_name}</div>}
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button type="button" size="sm" variant={form.mfa_review_status === "approved" ? "default" : "outline"}
+                  className={form.mfa_review_status === "approved" ? "bg-green-600 hover:bg-green-700" : ""}
+                  onClick={() => setForm({ ...form, mfa_review_status: "approved" })}>
+                  Approve
+                </Button>
+                <Button type="button" size="sm" variant={form.mfa_review_status === "rejected" ? "destructive" : "outline"}
+                  onClick={() => setForm({ ...form, mfa_review_status: "rejected" })}>
+                  Reject
+                </Button>
+                <Button type="button" size="sm" variant={form.mfa_review_status === "pending" ? "secondary" : "ghost"}
+                  onClick={() => setForm({ ...form, mfa_review_status: "pending" })}>
+                  Mark Pending
+                </Button>
+              </div>
+
+              <div>
+                <Label>Reviewer Notes</Label>
+                <Textarea
+                  value={form.mfa_review_notes}
+                  onChange={(e) => setForm({ ...form, mfa_review_notes: e.target.value })}
+                  rows={2}
+                  placeholder="Comments on MFA compliance, missing items, or rejection reason..."
+                />
+              </div>
+
+              {reviewApp.mfa_reviewed_at && (
+                <div className="text-xs text-muted-foreground">
+                  Last reviewed {format(new Date(reviewApp.mfa_reviewed_at), "dd MMM yyyy HH:mm")}
+                </div>
+              )}
+            </div>
+          )}
+
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
             <ProcessingChecklist
               items={PASSPORT_CHECKLIST}
