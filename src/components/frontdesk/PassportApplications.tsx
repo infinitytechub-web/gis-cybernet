@@ -125,7 +125,17 @@ export default function PassportApplications() {
   });
 
   const resetForm = () => {
-    setForm({ applicant_name: "", date_of_birth: "", nationality: "Ghanaian", application_type: "new", gender: "", phone: "", address: "", notes: "", status: "submitted", marital_status: "", foreign_address: "", next_of_kin: "", emergency_contact: "", street_name: "", nearest_landmark: "" });
+    setForm({
+      applicant_name: "", date_of_birth: "", nationality: "Ghanaian", application_type: "new",
+      gender: "", phone: "", address: "", notes: "", status: "submitted",
+      marital_status: "", foreign_address: "", next_of_kin: "", emergency_contact: "",
+      street_name: "", nearest_landmark: "",
+      email: "", spouse_name: "", surname: "", other_names: "", place_of_birth: "",
+      occupation: "", ghana_card_number: "",
+      biometric_consent: false,
+      witnessing_officer_name: "", witnessing_officer_rank: "",
+      declaration_signed: false, declaration_date: "",
+    });
     setEditId(null);
     setOpen(false);
   };
@@ -139,6 +149,15 @@ export default function PassportApplications() {
       marital_status: app.marital_status || "", foreign_address: app.foreign_address || "",
       next_of_kin: app.next_of_kin || "", emergency_contact: app.emergency_contact || "",
       street_name: app.street_name || "", nearest_landmark: app.nearest_landmark || "",
+      email: app.email || "", spouse_name: app.spouse_name || "",
+      surname: app.surname || "", other_names: app.other_names || "",
+      place_of_birth: app.place_of_birth || "", occupation: app.occupation || "",
+      ghana_card_number: app.ghana_card_number || "",
+      biometric_consent: !!app.biometric_consent,
+      witnessing_officer_name: app.witnessing_officer_name || "",
+      witnessing_officer_rank: app.witnessing_officer_rank || "",
+      declaration_signed: !!app.declaration_signed,
+      declaration_date: app.declaration_date || "",
     });
     setEditId(app.id);
     setOpen(true);
