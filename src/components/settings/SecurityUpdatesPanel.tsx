@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldCheck, ShieldAlert, ShieldX, Play, Loader2, Clock } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldX, Play, Loader2, Clock, FileDown, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { runRepoHygieneScan } from "@/lib/security-dependency-scan";
+import { exportRunAsCsv, exportRunAsPdf, type ExportRun } from "@/lib/security-scan-export";
 
 type Severity = "info" | "warn" | "error";
 interface Finding {
@@ -30,6 +32,7 @@ const sevBadge = (s: Severity) => {
 export function SecurityUpdatesPanel() {
   const qc = useQueryClient();
   const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [latestRunId, setLatestRunId] = useState<string | null>(null);
 
   const { data: settings } = useQuery({
     queryKey: ["security-scan-settings"],
@@ -49,11 +52,11 @@ export function SecurityUpdatesPanel() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("security_scan_runs")
-        .select("id, trigger_kind, status, total_checks, passed_count, warn_count, error_count, started_at, finished_at")
+        .select("id, trigger_kind, status, total_checks, passed_count, warn_count, error_count, started_at, finished_at, findings")
         .order("started_at", { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as ExportRun[];
     },
   });
 
@@ -78,24 +81,32 @@ export function SecurityUpdatesPanel() {
 
       const { data, error } = await supabase.rpc("run_security_hygiene_scan");
       if (error) throw error;
-      const list = (data ?? []) as unknown as Finding[];
+      const dbFindings = (data ?? []) as unknown as Finding[];
+
+      // Client-side repo / dependency hygiene
+      const repoFindings = runRepoHygieneScan() as Finding[];
+      const list: Finding[] = [...dbFindings, ...repoFindings];
 
       const errs = list.filter((f) => f.severity === "error").length;
       const warns = list.filter((f) => f.severity === "warn").length;
       const infos = list.filter((f) => f.severity === "info").length;
 
-      const { error: insErr } = await supabase.from("security_scan_runs").insert({
-        triggered_by: user.id,
-        trigger_kind: "manual",
-        status: "completed",
-        total_checks: list.length,
-        passed_count: infos,
-        warn_count: warns,
-        error_count: errs,
-        findings: list as any,
-        started_at: startedAt,
-        finished_at: new Date().toISOString(),
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("security_scan_runs")
+        .insert({
+          triggered_by: user.id,
+          trigger_kind: "manual",
+          status: "completed",
+          total_checks: list.length,
+          passed_count: infos,
+          warn_count: warns,
+          error_count: errs,
+          findings: list as any,
+          started_at: startedAt,
+          finished_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
       if (insErr) throw insErr;
 
       if (settings?.id) {
@@ -104,10 +115,11 @@ export function SecurityUpdatesPanel() {
           .update({ security_scan_last_run_at: new Date().toISOString() })
           .eq("id", settings.id);
       }
-      return list;
+      return { list, runId: inserted?.id as string };
     },
-    onSuccess: (list) => {
+    onSuccess: ({ list, runId }) => {
       setFindings(list);
+      setLatestRunId(runId);
       qc.invalidateQueries({ queryKey: ["security-scan-runs"] });
       qc.invalidateQueries({ queryKey: ["security-scan-settings"] });
       const errs = list.filter((f) => f.severity === "error").length;
@@ -116,6 +128,38 @@ export function SecurityUpdatesPanel() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const buildLatestRun = (): ExportRun | null => {
+    if (!findings) return null;
+    const fromHistory = latestRunId ? history.find((h) => h.id === latestRunId) : null;
+    return {
+      id: fromHistory?.id ?? "latest",
+      trigger_kind: fromHistory?.trigger_kind ?? "manual",
+      status: fromHistory?.status ?? "completed",
+      total_checks: findings.length,
+      passed_count: findings.filter((f) => f.severity === "info").length,
+      warn_count: findings.filter((f) => f.severity === "warn").length,
+      error_count: findings.filter((f) => f.severity === "error").length,
+      started_at: fromHistory?.started_at ?? new Date().toISOString(),
+      finished_at: fromHistory?.finished_at ?? new Date().toISOString(),
+      findings,
+    };
+  };
+
+  const handleExportRun = async (run: ExportRun, kind: "csv" | "pdf") => {
+    let full = run;
+    if (!run.findings || run.findings.length === 0) {
+      const { data } = await supabase
+        .from("security_scan_runs")
+        .select("id, trigger_kind, status, total_checks, passed_count, warn_count, error_count, started_at, finished_at, findings")
+        .eq("id", run.id)
+        .maybeSingle();
+      if (data) full = data as unknown as ExportRun;
+    }
+    if (kind === "csv") exportRunAsCsv(full, history);
+    else exportRunAsPdf(full, history);
+    toast.success(`Exported ${kind.toUpperCase()} report`);
+  };
 
   const errCount = findings?.filter((f) => f.severity === "error").length ?? 0;
   const warnCount = findings?.filter((f) => f.severity === "warn").length ?? 0;
@@ -128,8 +172,8 @@ export function SecurityUpdatesPanel() {
             <ShieldCheck className="h-5 w-5 text-emerald-600" /> Security Updates &amp; Scans
           </CardTitle>
           <CardDescription>
-            Run on-demand security audits across database tables, RLS policies and SECURITY DEFINER
-            functions, or schedule them to run automatically.
+            Run on-demand security audits across database tables, RLS policies, SECURITY DEFINER
+            functions and outdated/vulnerable npm dependencies — or schedule them to run automatically.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -186,13 +230,39 @@ export function SecurityUpdatesPanel() {
 
       {findings && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Latest scan results</CardTitle>
-            <CardDescription>
-              {findings.length} check{findings.length === 1 ? "" : "s"} executed —{" "}
-              <span className="text-destructive font-medium">{errCount} error{errCount === 1 ? "" : "s"}</span>,{" "}
-              <span className="text-amber-600 font-medium">{warnCount} warning{warnCount === 1 ? "" : "s"}</span>.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Latest scan results</CardTitle>
+              <CardDescription>
+                {findings.length} check{findings.length === 1 ? "" : "s"} executed —{" "}
+                <span className="text-destructive font-medium">{errCount} error{errCount === 1 ? "" : "s"}</span>,{" "}
+                <span className="text-amber-600 font-medium">{warnCount} warning{warnCount === 1 ? "" : "s"}</span>.
+              </CardDescription>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const r = buildLatestRun();
+                  if (r) handleExportRun(r, "csv");
+                }}
+              >
+                <FileDown className="h-3.5 w-3.5" /> CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => {
+                  const r = buildLatestRun();
+                  if (r) handleExportRun(r, "pdf");
+                }}
+              >
+                <FileText className="h-3.5 w-3.5" /> PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {errCount === 0 && warnCount === 0 ? (
@@ -248,10 +318,11 @@ export function SecurityUpdatesPanel() {
                     <TableHead className="text-center">Errors</TableHead>
                     <TableHead className="text-center">Warnings</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Export</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {history.map((h: any) => (
+                  {history.map((h) => (
                     <TableRow key={h.id}>
                       <TableCell className="text-xs">{format(new Date(h.started_at), "PPp")}</TableCell>
                       <TableCell>
@@ -276,6 +347,26 @@ export function SecurityUpdatesPanel() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{h.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1"
+                            onClick={() => handleExportRun(h, "csv")}
+                          >
+                            <FileDown className="h-3.5 w-3.5" /> CSV
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 gap-1"
+                            onClick={() => handleExportRun(h, "pdf")}
+                          >
+                            <FileText className="h-3.5 w-3.5" /> PDF
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
