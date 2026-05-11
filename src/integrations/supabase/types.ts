@@ -6968,6 +6968,95 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_file_deliveries: {
+        Row: {
+          attempts: number
+          created_at: string
+          dispatched_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          last_error: string | null
+          message: string | null
+          mime_type: string | null
+          scheduled_for: string
+          sender_id: string
+          status: Database["public"]["Enums"]["scheduled_delivery_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dispatched_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          last_error?: string | null
+          message?: string | null
+          mime_type?: string | null
+          scheduled_for: string
+          sender_id: string
+          status?: Database["public"]["Enums"]["scheduled_delivery_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dispatched_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          last_error?: string | null
+          message?: string | null
+          mime_type?: string | null
+          scheduled_for?: string
+          sender_id?: string
+          status?: Database["public"]["Enums"]["scheduled_delivery_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scheduled_file_recipients: {
+        Row: {
+          delivered: boolean
+          delivered_at: string | null
+          delivery_id: string
+          error: string | null
+          id: string
+          recipient_user_id: string
+        }
+        Insert: {
+          delivered?: boolean
+          delivered_at?: string | null
+          delivery_id: string
+          error?: string | null
+          id?: string
+          recipient_user_id: string
+        }
+        Update: {
+          delivered?: boolean
+          delivered_at?: string | null
+          delivery_id?: string
+          error?: string | null
+          id?: string
+          recipient_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_file_recipients_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_file_deliveries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       secure_file_uploads: {
         Row: {
           bucket: string
@@ -9408,6 +9497,7 @@ export type Database = {
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
       presence_event_type: "heartbeat" | "prune"
+      scheduled_delivery_status: "pending" | "sent" | "failed" | "cancelled"
       shift_pattern: "8h" | "12h" | "custom"
       staff_status: "active" | "inactive" | "study_leave" | "transferred"
       transfer_type: "posting" | "transfer"
@@ -9601,6 +9691,7 @@ export const Constants = {
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
       presence_event_type: ["heartbeat", "prune"],
+      scheduled_delivery_status: ["pending", "sent", "failed", "cancelled"],
       shift_pattern: ["8h", "12h", "custom"],
       staff_status: ["active", "inactive", "study_leave", "transferred"],
       transfer_type: ["posting", "transfer"],
