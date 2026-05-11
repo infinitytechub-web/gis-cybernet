@@ -234,8 +234,13 @@ export default function Login() {
       <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading}>
         {isLoading ? "Signing in..." : (buttonText || "Sign In")}
       </Button>
-      <div className="text-center">
+      <div className="text-center space-y-1">
         <ForgotPasswordDialog />
+        <div>
+          <a href="/admin-recovery" className="text-[11px] text-muted-foreground hover:text-primary hover:underline">
+            Administrator account locked? Use Admin Recovery
+          </a>
+        </div>
       </div>
     </form>
   );

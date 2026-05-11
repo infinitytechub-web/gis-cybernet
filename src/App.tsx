@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 
 // Lazy-loaded (auth side-routes & error pages, rarely the entry)
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AdminRecovery = lazy(() => import("./pages/AdminRecovery"));
 const ForcePasswordChange = lazy(() => import("./pages/ForcePasswordChange"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
@@ -119,6 +120,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin-recovery" element={<AdminRecovery />} />
           <Route path="/change-password" element={<ProtectedRoute><ForcePasswordChange /></ProtectedRoute>} />
           <Route path="/2fa" element={<MfaGate />} />
           <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
