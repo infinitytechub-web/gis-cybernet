@@ -189,9 +189,49 @@ export default function IpBlocks() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base">Block list ({blocks.length})</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>Refresh</Button>
+        <CardHeader className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base">
+              Block list ({(() => {
+                const filtered = blocks.filter(scopeFilter).filter(matcher);
+                return filtered.length === blocks.length
+                  ? blocks.length
+                  : `${filtered.length} of ${blocks.length}`;
+              })()})
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Refresh</Button>
+          </div>
+          <div className="flex flex-col md:flex-row gap-2 md:items-center">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search IP, MAC (any format), fingerprint, reason or notes…"
+                className="pl-8 pr-8"
+              />
+              {search && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Tabs value={scope} onValueChange={(v) => setScope(v as typeof scope)}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="mac" className="gap-1">
+                  <Cpu className="h-3.5 w-3.5" /> MAC
+                </TabsTrigger>
+                <TabsTrigger value="ip">IP only</TabsTrigger>
+                <TabsTrigger value="fingerprint">Fingerprint</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <div style={{ minWidth: 700 }}>
@@ -209,7 +249,18 @@ export default function IpBlocks() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {blocks.map((b: any) => {
+              {(() => {
+                const rows = blocks.filter(scopeFilter).filter(matcher);
+                if (rows.length === 0) {
+                  return (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        {blocks.length === 0 ? "No blocks yet." : "No entries match your search."}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+                return rows.map((b: any) => {
                 const active = isActive(b);
                 return (
                   <TableRow key={b.id}>
@@ -221,7 +272,14 @@ export default function IpBlocks() {
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{b.ip_address}</TableCell>
-                    <TableCell className="font-mono text-xs">{b.mac_address || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {b.mac_address ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Cpu className="h-3 w-3 text-muted-foreground" />
+                          {b.mac_address}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={b.device_fingerprint || ""}>
                       {b.device_fingerprint || "—"}
                     </TableCell>
@@ -248,10 +306,8 @@ export default function IpBlocks() {
                     </TableCell>
                   </TableRow>
                 );
-              })}
-              {blocks.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No blocks yet.</TableCell></TableRow>
-              )}
+                });
+              })()}
             </TableBody>
           </Table>
           </div>
