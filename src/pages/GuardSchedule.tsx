@@ -595,3 +595,294 @@ function AddPersonPopover({ scheduleId, date, shift }: { scheduleId: string; dat
     </Popover>
   );
 }
+
+/* ---------- Day-shift card with search, selection, edit, delete ---------- */
+function DayShiftCard({
+  scheduleId, date, shift, label, items,
+}: {
+  scheduleId: string;
+  date: string;
+  shift: "A" | "B" | "C" | "D";
+  label: string;
+  items: Assignment[];
+}) {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [editing, setEditing] = useState<Assignment | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ ids: string[]; label: string } | null>(null);
+
+  // Reset selection when items change (e.g. after refetch)
+  useEffect(() => {
+    setSelected((prev) => {
+      const next = new Set<string>();
+      const ids = new Set(items.map((i) => i.id));
+      prev.forEach((id) => { if (ids.has(id)) next.add(id); });
+      return next;
+    });
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((a) =>
+      [a.rank_text, a.name_text, a.position_label, a.serial_no?.toString(), a.unit]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q))
+    );
+  }, [items, search]);
+
+  const allVisibleSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
+
+  const toggleAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) filtered.forEach((a) => next.delete(a.id));
+      else filtered.forEach((a) => next.add(a.id));
+      return next;
+    });
+  };
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const performDelete = async (ids: string[]) => {
+    const { error } = await supabase.from("guard_schedule_assignments").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Removed ${ids.length} assignment${ids.length === 1 ? "" : "s"}`);
+    setSelected(new Set());
+    setConfirmDelete(null);
+    qc.invalidateQueries({ queryKey: ["guard-schedule", scheduleId] });
+  };
+
+  return (
+    <Card className="border">
+      <CardHeader className="pb-2 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm">{label}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-[10px]">{items.length} on duty</Badge>
+            <AddPersonPopover scheduleId={scheduleId} date={date} shift={shift} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search rank, name, position…"
+              className="h-8 pl-7 text-xs"
+            />
+          </div>
+          {selected.size > 0 && (
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 gap-1"
+              onClick={() => setConfirmDelete({
+                ids: Array.from(selected),
+                label: `${selected.size} selected assignment${selected.size === 1 ? "" : "s"}`,
+              })}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete ({selected.size})
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="rounded-md border-t overflow-x-auto">
+          <Table className="min-w-[560px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-8">
+                  <Checkbox
+                    checked={allVisibleSelected}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all"
+                    disabled={filtered.length === 0}
+                  />
+                </TableHead>
+                <TableHead className="w-12 text-xs">S/N</TableHead>
+                <TableHead className="text-xs">Rank</TableHead>
+                <TableHead className="text-xs">Name</TableHead>
+                <TableHead className="text-xs">Position</TableHead>
+                <TableHead className="w-20"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-4">
+                    {items.length === 0 ? "No personnel — click + to add" : "No matches"}
+                  </TableCell>
+                </TableRow>
+              ) : filtered.map((a) => (
+                <TableRow key={a.id} data-state={selected.has(a.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selected.has(a.id)}
+                      onCheckedChange={() => toggleOne(a.id)}
+                      aria-label={`Select ${a.name_text}`}
+                    />
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{a.serial_no ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{a.rank_text}</TableCell>
+                  <TableCell className="text-xs font-medium">{a.name_text}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{a.position_label ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditing(a)}
+                        aria-label="Edit"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setConfirmDelete({ ids: [a.id], label: a.name_text || "this assignment" })}
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+
+      {editing && (
+        <EditAssignmentDialog
+          scheduleId={scheduleId}
+          assignment={editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {confirmDelete?.label}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the assignment{(confirmDelete?.ids.length ?? 0) > 1 ? "s" : ""} from this schedule. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDelete && performDelete(confirmDelete.ids)}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+}
+
+/* ---------- Edit assignment dialog ---------- */
+function EditAssignmentDialog({
+  scheduleId, assignment, onClose,
+}: {
+  scheduleId: string;
+  assignment: Assignment;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [rank, setRank] = useState(assignment.rank_text ?? "");
+  const [name, setName] = useState(assignment.name_text ?? "");
+  const [serial, setSerial] = useState<string>(assignment.serial_no?.toString() ?? "");
+  const [position, setPosition] = useState(assignment.position_label ?? "");
+  const [shift, setShift] = useState<"A"|"B"|"C"|"D">(assignment.shift as any);
+  const [dutyDate, setDutyDate] = useState(assignment.duty_date);
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    if (!name.trim()) return toast.error("Name is required");
+    setBusy(true);
+    const serialNum = serial.trim() ? Number(serial) : null;
+    if (serial.trim() && Number.isNaN(serialNum)) {
+      setBusy(false);
+      return toast.error("S/N must be a number");
+    }
+    const { error } = await supabase
+      .from("guard_schedule_assignments")
+      .update({
+        rank_text: rank.trim() || null,
+        name_text: name.trim(),
+        serial_no: serialNum,
+        position_label: position.trim() || null,
+        shift,
+        duty_date: dutyDate,
+      })
+      .eq("id", assignment.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Assignment updated");
+    qc.invalidateQueries({ queryKey: ["guard-schedule", scheduleId] });
+    onClose();
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit assignment</DialogTitle>
+          <DialogDescription>Update details for this shift assignment.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Date</Label>
+              <Input type="date" value={dutyDate} onChange={(e) => setDutyDate(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">Shift</Label>
+              <Select value={shift} onValueChange={(v) => setShift(v as any)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(["A","B","C","D"] as const).map((s) => (
+                    <SelectItem key={s} value={s}>{s} · {SHIFT_PERIODS[s].label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">S/N</Label>
+              <Input value={serial} onChange={(e) => setSerial(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Rank</Label>
+              <Input value={rank} onChange={(e) => setRank(e.target.value)} className="h-8 text-xs" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div>
+            <Label className="text-xs">Position</Label>
+            <Input value={position} onChange={(e) => setPosition(e.target.value)} placeholder="e.g. Main gate" className="h-8 text-xs" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
