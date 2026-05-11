@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Shield, MapPin, Clock } from "lucide-react";
+import { Shield, MapPin, Clock, RefreshCw } from "lucide-react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNowStrict } from "date-fns";
