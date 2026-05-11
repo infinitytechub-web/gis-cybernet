@@ -47,8 +47,7 @@ Deno.serve(async (req) => {
             title: d.title,
             message: (d.message ?? "") + `\n\nAttachment: ${d.file_name}`,
             type: "scheduled_file",
-            link: `/files/scheduled/${d.id}`,
-            metadata: { delivery_id: d.id, file_path: d.file_path, file_name: d.file_name },
+            reference_id: d.id,
           });
 
           if (nErr) {
