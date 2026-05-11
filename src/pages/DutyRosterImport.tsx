@@ -302,10 +302,14 @@ export default function DutyRosterImport() {
             />
           </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-              <Label htmlFor="eff" className="text-xs">Effective date</Label>
+              <Label htmlFor="eff" className="text-xs">Effective from</Label>
               <Input id="eff" type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="effEnd" className="text-xs">Effective to (optional)</Label>
+              <Input id="effEnd" type="date" min={effectiveDate} value={effectiveEndDate} onChange={(e) => setEffectiveEndDate(e.target.value)} />
             </div>
             <div className="md:col-span-2">
               <Label htmlFor="nt" className="text-xs">Notes (optional)</Label>
