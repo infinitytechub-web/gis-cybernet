@@ -29,7 +29,7 @@ import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget"
 import InterlinkWidget from "@/components/dashboard/InterlinkWidget";
 import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget";
 import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
-import SystemAuditPanel from "@/components/dashboard/SystemAuditPanel";
+
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
