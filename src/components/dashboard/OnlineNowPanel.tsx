@@ -99,6 +99,21 @@ export default function OnlineNowPanel() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <div className="flex items-center gap-1.5 pl-1.5 ml-1 border-l border-emerald-200 dark:border-emerald-800">
+              <Switch
+                id="online-show-details"
+                checked={showDetails}
+                onCheckedChange={setShowDetails}
+                className="scale-75 data-[state=checked]:bg-emerald-600"
+                aria-label="Toggle staff names and department"
+              />
+              <Label
+                htmlFor="online-show-details"
+                className="text-[10px] font-normal text-muted-foreground cursor-pointer select-none"
+              >
+                {showDetails ? "Names" : "Compact"}
+              </Label>
+            </div>
             <Button
               variant="ghost"
               size="sm"
