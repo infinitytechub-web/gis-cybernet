@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { getMyClientIp } from "@/lib/client-ip";
+import { getTrustedMac } from "@/lib/trusted-mac";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
