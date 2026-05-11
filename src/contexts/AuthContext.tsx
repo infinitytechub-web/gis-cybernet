@@ -124,9 +124,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     };
 
-    // Get initial session first
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session first. If the persisted token is no longer valid
+    // (e.g. signing keys were rotated → "missing sub claim" / "bad_jwt"),
+    // clear it so the user can sign in fresh instead of being stuck.
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error || (session && !session.user)) {
+        try { await supabase.auth.signOut({ scope: "local" } as any); } catch { /* ignore */ }
+        handleSession(null);
+        return;
+      }
       handleSession(session as any);
+    }).catch(async () => {
+      try { await supabase.auth.signOut({ scope: "local" } as any); } catch { /* ignore */ }
+      handleSession(null);
     });
 
     // Then listen for changes (skip INITIAL_SESSION to avoid double-fetch).
