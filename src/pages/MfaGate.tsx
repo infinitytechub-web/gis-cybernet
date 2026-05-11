@@ -98,33 +98,66 @@ export default function MfaGate() {
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to={from} replace />;
 
+  const buildFriendlyName = () => {
+    const iso = new Date().toISOString().replace(/[:.]/g, "-");
+    let token = Math.random().toString(36).slice(2, 10);
+    try {
+      const uuid = (globalThis.crypto as any)?.randomUUID?.();
+      if (uuid) token = String(uuid).slice(0, 8);
+    } catch { /* ignore */ }
+    return `GIS Cybernet Admin (${iso}-${token})`;
+  };
+
+  const tryEnrolOnce = async () => {
+    return await supabase.auth.mfa.enroll({
+      factorType: "totp",
+      friendlyName: buildFriendlyName(),
+    });
+  };
+
   const handleEnrol = async () => {
     setBusy(true);
+    // Wipe any stale state from a previous attempt before starting fresh.
+    setFactorId(null);
+    setQrUri(null);
+    setSecret(null);
+    setCode("");
     try {
-      // Defensive: remove any lingering unverified factors so re-enrolment
-      // doesn't collide with a stale friendly-name from a prior attempt.
-      try {
-        const { data: existing } = await supabase.auth.mfa.listFactors();
-        for (const f of existing?.totp ?? []) {
-          if (f.status !== "verified") {
-            await supabase.auth.mfa.unenroll({ factorId: f.id });
-          }
+      await cleanupUnverifiedFactors();
+      let { data, error } = await tryEnrolOnce();
+      if (error) {
+        const msg = error.message || "";
+        const recoverable = /already exists|friendly.?name|unverified|duplicate/i.test(msg);
+        if (recoverable) {
+          console.warn("[MfaGate] enrol collision, auto-cleaning and retrying:", msg);
+          await cleanupUnverifiedFactors();
+          ({ data, error } = await tryEnrolOnce());
         }
-      } catch { /* best effort */ }
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: "totp",
-        friendlyName: `GIS Cybernet Admin (${new Date().toISOString().replace(/[:.]/g, "-")})`,
-      });
-      if (error) throw error;
-      setFactorId(data.id);
-      setQrUri(data.totp.uri);
-      setSecret(data.totp.secret);
+        if (error) throw error;
+      }
+      setFactorId(data!.id);
+      setQrUri(data!.totp.uri);
+      setSecret(data!.totp.secret);
       setPhase("verify-enrol");
     } catch (e: any) {
-      toast.error(e.message || "Enrolment failed");
+      console.warn("[MfaGate] enrol failed:", e?.message);
+      toast.error("Could not start 2FA setup. Tap Regenerate to try again.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleRegenerate = async () => {
+    setBusy(true);
+    try {
+      if (factorId) {
+        try { await supabase.auth.mfa.unenroll({ factorId }); } catch { /* ignore */ }
+      }
+      await cleanupUnverifiedFactors();
+    } finally {
+      setBusy(false);
+    }
+    await handleEnrol();
   };
 
   const handleVerify = async () => {
