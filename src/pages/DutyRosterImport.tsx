@@ -421,7 +421,7 @@ export default function DutyRosterImport() {
                   <TableHead className="w-20">Rows</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Saved at</TableHead>
-                  <TableHead className="w-32 text-right">Actions</TableHead>
+                  <TableHead className="w-64 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
