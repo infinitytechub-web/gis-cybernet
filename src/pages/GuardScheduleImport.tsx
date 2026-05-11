@@ -33,6 +33,10 @@ type RawRow = {
   serial_no: number;
   rank: string;
   name: string;
+  /** Optional explicit shift letter from CSV; overrides period→shift mapping. */
+  shift?: Shift;
+  /** Source line in the uploaded CSV (1-indexed including header), for error messages. */
+  source_line?: number;
 };
 
 type ParseResult = {
@@ -184,7 +188,12 @@ const DEFAULT_MAPPING: Mapping = { day: ["A", "B"], night: ["C"] };
 function applyMapping(rows: RawRow[], mapping: Mapping): Assignment[] {
   const out: Assignment[] = [];
   for (const r of rows) {
-    const shifts = r.period === "DAY" ? mapping.day : mapping.night;
+    // Honor explicit CSV shift letter when present; otherwise map by period.
+    const shifts: Shift[] = r.shift
+      ? [r.shift]
+      : r.period === "DAY"
+      ? mapping.day
+      : mapping.night;
     for (const s of shifts) {
       out.push({
         id: `${r.date}|${s}|${r.serial_no}|${r.name}`,
@@ -194,7 +203,7 @@ function applyMapping(rows: RawRow[], mapping: Mapping): Assignment[] {
         name_text: r.name,
         serial_no: r.serial_no,
         unit: null,
-        position_label: r.period,
+        position_label: r.shift ? `${SHIFT_PERIOD_INFO[s].label}` : r.period,
       });
     }
   }
