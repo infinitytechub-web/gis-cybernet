@@ -8664,6 +8664,10 @@ export type Database = {
     Functions: {
       admin_purge_shift_connections: { Args: never; Returns: number }
       admin_quick_search: { Args: { _q: string }; Returns: Json }
+      admin_recovery_consume_backup_code: {
+        Args: { _code: string; _user_id: string }
+        Returns: boolean
+      }
       admin_reset_failed_attempts: {
         Args: { _staff_id: string }
         Returns: undefined
