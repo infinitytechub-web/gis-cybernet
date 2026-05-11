@@ -49,7 +49,7 @@ export const SHIFT_PERIOD_INFO: Record<Shift, { label: string; start: string; en
   A: { label: "Morning", start: "06:00", end: "14:00" },
   B: { label: "Afternoon", start: "14:00", end: "22:00" },
   C: { label: "Night", start: "22:00", end: "06:00" },
-  D: { label: "Reserve", start: "—", end: "—" },
+  D: { label: "Operational (24/7)", start: "00:00", end: "24:00" },
 };
 
 // ----- PDF text extraction -----

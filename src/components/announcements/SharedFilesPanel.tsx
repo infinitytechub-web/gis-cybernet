@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck, Eye, ScrollText } from "lucide-react";
+import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck, Eye, ScrollText, UserCircle2 } from "lucide-react";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { softDelete } from "@/lib/recycle-bin";
@@ -36,6 +37,8 @@ export function SharedFilesPanel() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [deptId, setDeptId] = useState<string>("global");
+  const [audienceMode, setAudienceMode] = useState<"global" | "department" | "individual">("global");
+  const [targetUserId, setTargetUserId] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [retention, setRetention] = useState<string>("default"); // default | 7 | 30 | 90 | 365 | never
   const [uploading, setUploading] = useState(false);
@@ -100,6 +103,25 @@ export function SharedFilesPanel() {
     },
   });
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["share-file-staff-list"],
+    enabled: isAdminOrSupervisor && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, user_id, first_name, last_name, staff_id")
+        .not("user_id", "is", null)
+        .order("last_name");
+      if (error) throw error;
+      return (data ?? []).map((p: any) => ({
+        id: p.user_id as string,
+        first_name: p.first_name ?? "",
+        last_name: p.last_name ?? "",
+        staff_id: p.staff_id ?? "",
+      }));
+    },
+  });
+
   const filteredFiles = files.filter((f: any) => {
     // Search by file name / title / description
     if (search.trim()) {
@@ -143,12 +165,18 @@ export function SharedFilesPanel() {
   };
 
   const reset = () => {
-    setTitle(""); setDescription(""); setDeptId("global"); setFile(null); setRetention("default");
+    setTitle(""); setDescription("");
+    setAudienceMode("global"); setDeptId("global"); setTargetUserId("");
+    setFile(null); setRetention("default");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const upload = async () => {
     if (!file || !title.trim() || !user) return;
+    if (audienceMode === "individual" && !targetUserId) {
+      toast.error("Select a staff member to share with");
+      return;
+    }
     setUploading(true);
     try {
       const { path, sha, verdict } = await uploadSecureFile(file, { maxMb: 25 });
@@ -161,10 +189,14 @@ export function SharedFilesPanel() {
         retention_days = null;
         expires_at = null;
       }
-      const { data: inserted, error } = await supabase.from("announcement_files").insert({
+      const resolvedDept =
+        audienceMode === "department" && deptId !== "global" ? deptId : null;
+      const resolvedTarget = audienceMode === "individual" ? targetUserId : null;
+      const { data: inserted, error } = await (supabase.from("announcement_files") as any).insert({
         title: title.trim(),
         description: description.trim() || null,
-        department_id: deptId === "global" ? null : deptId,
+        department_id: resolvedDept,
+        target_user_id: resolvedTarget,
         storage_path: path,
         filename: file.name,
         size_bytes: file.size,
@@ -180,8 +212,9 @@ export function SharedFilesPanel() {
         title: title.trim(),
         filename: file.name,
         size_bytes: file.size,
-        audience: deptId === "global" ? "global" : "department",
-        department_id: deptId === "global" ? null : deptId,
+        audience: audienceMode,
+        department_id: resolvedDept,
+        target_user_id: resolvedTarget,
         retention_days,
       });
       toast.success("File shared");
@@ -281,16 +314,41 @@ export function SharedFilesPanel() {
                   <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Audience</Label>
-                  <Select value={deptId} onValueChange={setDeptId}>
+                  <Label className="text-xs">Share File Audience</Label>
+                  <Select
+                    value={audienceMode}
+                    onValueChange={(v: "global" | "department" | "individual") => {
+                      setAudienceMode(v);
+                      if (v === "global") { setDeptId("global"); setTargetUserId(""); }
+                      if (v === "department") setTargetUserId("");
+                      if (v === "individual") setDeptId("global");
+                    }}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="global">All Staff</SelectItem>
-                      {departments.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                      ))}
+                      <SelectItem value="department">Specific Department</SelectItem>
+                      <SelectItem value="individual">Individual Staff Member</SelectItem>
                     </SelectContent>
                   </Select>
+                  {audienceMode === "department" && (
+                    <Select value={deptId === "global" ? "" : deptId} onValueChange={setDeptId}>
+                      <SelectTrigger><SelectValue placeholder="Select a department…" /></SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {audienceMode === "individual" && (
+                    <StaffCombobox
+                      staff={staffList}
+                      value={targetUserId}
+                      onValueChange={setTargetUserId}
+                      placeholder="Search staff by name or ID…"
+                    />
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">File (max 25 MB)</Label>
@@ -322,7 +380,7 @@ export function SharedFilesPanel() {
                 <Button
                   className="w-full gap-1.5"
                   onClick={upload}
-                  disabled={!file || !title.trim() || uploading}
+                  disabled={!file || !title.trim() || uploading || (audienceMode === "individual" && !targetUserId) || (audienceMode === "department" && (deptId === "global" || !deptId))}
                 >
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
                   Upload &amp; Share
