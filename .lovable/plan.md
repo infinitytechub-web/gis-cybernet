@@ -1,76 +1,41 @@
-# Substantive Security Findings — Prioritized Fix Plan
+## Goal
 
-All 335 scan items are warnings; 325 are advisory "SECURITY DEFINER callable by anon/authenticated" notes that are intentional (RPC-based RBAC). The 10 below are real, fixable issues.
+Make TOTP enrolment in `src/pages/MfaGate.tsx` self-healing so a stale or duplicate unverified factor never blocks the admin. Any enrolment error should auto-clean and retry once, and the user should always have a visible "Regenerate" escape hatch.
 
----
+## Changes (single file: `src/pages/MfaGate.tsx`)
 
-## P0 — Audit forgery (HIGH impact)
+1. **Extract `cleanupUnverifiedFactors()` helper**
+   - Calls `supabase.auth.mfa.listFactors()`, unenrolls every factor where `status !== "verified"`.
+   - Swallows individual unenroll errors (best-effort) but returns a count for logging.
+   - Replaces the two inline cleanup loops in `useEffect` and `handleEnrol`.
 
-### 1. `medical_appointment_audit` INSERT policy is forgeable
-**Problem:** Policy `"System inserts appointment audit"` has `WITH CHECK (auth.uid() IS NOT NULL)`, so any signed-in user can fabricate audit rows for appointments they don't own.
+2. **Harden `handleEnrol` with auto-retry (no user-visible block)**
+   - Wrap `supabase.auth.mfa.enroll(...)` in a try/catch.
+   - On error whose message matches `/already exists|friendly.?name|unverified|duplicate/i`:
+     - Run `cleanupUnverifiedFactors()` again.
+     - Retry `enroll(...)` once with a fresh friendlyName suffix (append a short random token alongside the timestamp to guarantee uniqueness).
+   - Only surface a toast if the retry also fails. Toast becomes actionable: "Could not start 2FA setup. Tap Regenerate to try again."
+   - Always clear stale `factorId`, `qrUri`, `secret`, `code` before enrolling so a previous attempt's data never lingers in state.
 
-**Fix:** Drop the broad INSERT policy and replace with a service-role-only policy. Audit rows should only be inserted by the existing SECURITY DEFINER trigger function (which runs as definer and bypasses RLS).
+3. **Add a "Regenerate QR / secret" control on the `verify-enrol` screen**
+   - Small ghost button under the manual-key block: "Regenerate code" (icon: `RefreshCw`).
+   - Handler: unenroll the current `factorId` (best effort), call `cleanupUnverifiedFactors()`, then re-run `handleEnrol()`. Shows `busy` state on the button.
+   - Lets the admin recover instantly if their authenticator rejected the secret, without signing out.
 
-```sql
-DROP POLICY "System inserts appointment audit" ON public.medical_appointment_audit;
-CREATE POLICY "Only service role inserts appointment audit"
-  ON public.medical_appointment_audit FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.role() = 'service_role');
-```
+4. **Friendly-name uniqueness**
+   - Change suffix from `new Date().toISOString()` only → `${ISO}-${crypto.randomUUID().slice(0,8)}` so two rapid attempts can never collide on the Supabase unique constraint.
 
----
+5. **Telemetry-light logging**
+   - On retry path, `console.warn` with the original error message (no PII) so future debugging is easier. No new tables, no new RPCs.
 
-## P1 — Permissive write policy
+## Non-goals
 
-### 2. `inventory_audit_schedules` UPDATE — `WITH CHECK (true)`
-**Problem:** UPDATE policy `audit_sched_update` correctly gates `USING` on command-tier + storekeeper, but `WITH CHECK` is `true`, meaning a row can be mutated to any values (including reassigning ownership).
+- No DB migrations, no edge function changes, no auth config changes.
+- `verify` / `recovery` / `signOut` flows untouched.
+- No UI redesign — only one new button + tightened toasts.
 
-**Fix:** Mirror the USING expression in WITH CHECK.
+## Verification
 
-```sql
-ALTER POLICY audit_sched_update ON public.inventory_audit_schedules
-  WITH CHECK (
-    has_role(auth.uid(),'admin'::app_role)
-    OR has_role(auth.uid(),'oic'::app_role)
-    OR has_role(auth.uid(),'2ic'::app_role)
-    OR has_role(auth.uid(),'storekeeper'::app_role)
-  );
-```
-
----
-
-## P2 — Mutable `search_path` on 8 functions
-
-**Problem:** A SECURITY DEFINER function without a pinned `search_path` can be hijacked via shadowing in a malicious schema. Affected:
-
-1. `block_security_audit_mutation`
-2. `block_threshold_audit_mutation`
-3. `compute_interlink_next_run`
-4. `delete_email`
-5. `enqueue_email`
-6. `move_to_dlq`
-7. `read_email_batch`
-8. `set_interlink_schedule_next_run`
-
-**Fix:** Add `SET search_path = public, pg_temp` to each via `ALTER FUNCTION`. No body changes required.
-
-```sql
-ALTER FUNCTION public.block_security_audit_mutation()    SET search_path = public, pg_temp;
-ALTER FUNCTION public.block_threshold_audit_mutation()   SET search_path = public, pg_temp;
-ALTER FUNCTION public.compute_interlink_next_run(...)    SET search_path = public, pg_temp;
-ALTER FUNCTION public.delete_email(...)                  SET search_path = public, pg_temp;
-ALTER FUNCTION public.enqueue_email(...)                 SET search_path = public, pg_temp;
-ALTER FUNCTION public.move_to_dlq(...)                   SET search_path = public, pg_temp;
-ALTER FUNCTION public.read_email_batch(...)              SET search_path = public, pg_temp;
-ALTER FUNCTION public.set_interlink_schedule_next_run()  SET search_path = public, pg_temp;
-```
-(Exact argument signatures resolved at migration time via `pg_get_function_identity_arguments`.)
-
----
-
-## Execution
-
-One migration containing all three sections in P0 → P1 → P2 order. No application code changes; the SECURITY DEFINER triggers that write `medical_appointment_audit` already bypass RLS, so step 1 won't break the medical workflow. Step 2 only tightens UPDATE — current authorized callers already satisfy the same expression. Step 3 is metadata-only.
-
-After applying, re-run the security scan; expected residual = 325 advisory SECURITY DEFINER warnings (intentional RPC pattern).
+- Reload `/2fa` as GIS-ASC-0007 with a stale unverified factor present → should land on QR screen without an error toast.
+- Click "Regenerate code" → new QR + new secret render; old factor is gone from `listFactors()`.
+- Enter a valid TOTP from the latest secret → reaches `/dashboard`.

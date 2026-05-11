@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Input } from "@/components/ui/input";
-import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, Copy } from "lucide-react";
+import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, Copy, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import QRCode from "qrcode";
@@ -33,6 +33,22 @@ export default function MfaGate() {
   const [busy, setBusy] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  const cleanupUnverifiedFactors = async (): Promise<number> => {
+    let removed = 0;
+    try {
+      const { data } = await supabase.auth.mfa.listFactors();
+      for (const f of data?.totp ?? []) {
+        if (f.status !== "verified") {
+          try {
+            await supabase.auth.mfa.unenroll({ factorId: f.id });
+            removed += 1;
+          } catch { /* best effort */ }
+        }
+      }
+    } catch { /* best effort */ }
+    return removed;
+  };
+
   useEffect(() => {
     if (!user || !isAdmin) return;
     // If the admin still owes a password change (e.g. recovery temp password),
@@ -54,12 +70,7 @@ export default function MfaGate() {
         setFactorId(verifiedTotp.id);
         setPhase("verify");
       } else {
-        // Clean up stale unverified factors before enrolling fresh
-        for (const f of data?.totp ?? []) {
-          if (f.status !== "verified") {
-            try { await supabase.auth.mfa.unenroll({ factorId: f.id }); } catch {}
-          }
-        }
+        await cleanupUnverifiedFactors();
         setPhase("enroll");
       }
     })();
@@ -87,33 +98,66 @@ export default function MfaGate() {
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to={from} replace />;
 
+  const buildFriendlyName = () => {
+    const iso = new Date().toISOString().replace(/[:.]/g, "-");
+    let token = Math.random().toString(36).slice(2, 10);
+    try {
+      const uuid = (globalThis.crypto as any)?.randomUUID?.();
+      if (uuid) token = String(uuid).slice(0, 8);
+    } catch { /* ignore */ }
+    return `GIS Cybernet Admin (${iso}-${token})`;
+  };
+
+  const tryEnrolOnce = async () => {
+    return await supabase.auth.mfa.enroll({
+      factorType: "totp",
+      friendlyName: buildFriendlyName(),
+    });
+  };
+
   const handleEnrol = async () => {
     setBusy(true);
+    // Wipe any stale state from a previous attempt before starting fresh.
+    setFactorId(null);
+    setQrUri(null);
+    setSecret(null);
+    setCode("");
     try {
-      // Defensive: remove any lingering unverified factors so re-enrolment
-      // doesn't collide with a stale friendly-name from a prior attempt.
-      try {
-        const { data: existing } = await supabase.auth.mfa.listFactors();
-        for (const f of existing?.totp ?? []) {
-          if (f.status !== "verified") {
-            await supabase.auth.mfa.unenroll({ factorId: f.id });
-          }
+      await cleanupUnverifiedFactors();
+      let { data, error } = await tryEnrolOnce();
+      if (error) {
+        const msg = error.message || "";
+        const recoverable = /already exists|friendly.?name|unverified|duplicate/i.test(msg);
+        if (recoverable) {
+          console.warn("[MfaGate] enrol collision, auto-cleaning and retrying:", msg);
+          await cleanupUnverifiedFactors();
+          ({ data, error } = await tryEnrolOnce());
         }
-      } catch { /* best effort */ }
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: "totp",
-        friendlyName: `GIS Cybernet Admin (${new Date().toISOString().replace(/[:.]/g, "-")})`,
-      });
-      if (error) throw error;
-      setFactorId(data.id);
-      setQrUri(data.totp.uri);
-      setSecret(data.totp.secret);
+        if (error) throw error;
+      }
+      setFactorId(data!.id);
+      setQrUri(data!.totp.uri);
+      setSecret(data!.totp.secret);
       setPhase("verify-enrol");
     } catch (e: any) {
-      toast.error(e.message || "Enrolment failed");
+      console.warn("[MfaGate] enrol failed:", e?.message);
+      toast.error("Could not start 2FA setup. Tap Regenerate to try again.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleRegenerate = async () => {
+    setBusy(true);
+    try {
+      if (factorId) {
+        try { await supabase.auth.mfa.unenroll({ factorId }); } catch { /* ignore */ }
+      }
+      await cleanupUnverifiedFactors();
+    } finally {
+      setBusy(false);
+    }
+    await handleEnrol();
   };
 
   const handleVerify = async () => {
@@ -276,6 +320,19 @@ export default function MfaGate() {
               <Button onClick={handleVerify} disabled={busy || code.length !== 6} className="w-full">
                 {busy ? "Verifying…" : "Confirm & continue"}
               </Button>
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs gap-1 text-muted-foreground"
+                  onClick={handleRegenerate}
+                  disabled={busy}
+                >
+                  <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
+                  Regenerate code
+                </Button>
+              </div>
             </div>
           )}
 
