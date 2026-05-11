@@ -29,14 +29,33 @@ const ALLOWED_ROLES = [
 
 export default function OnlineNowPanel() {
   const { role } = useAuth();
-  const { onlineUsers, onlineCount, windowMinutes } = useOnlineUsers();
+  const { onlineUsers, onlineCount, windowMinutes, lastSyncAt, refreshIntervalMs } = useOnlineUsers();
+  const [tick, setTick] = useState(Date.now());
+  const [spinning, setSpinning] = useState(false);
+
+  // 1s ticker drives the visible countdown.
+  useEffect(() => {
+    const id = setInterval(() => setTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Briefly spin the refresh icon when a new presence sync arrives.
+  useEffect(() => {
+    setSpinning(true);
+    const t = setTimeout(() => setSpinning(false), 700);
+    return () => clearTimeout(t);
+  }, [lastSyncAt, onlineCount]);
+
+  const elapsed = tick - lastSyncAt;
+  const secondsToNext = Math.max(0, Math.ceil((refreshIntervalMs - elapsed) / 1000));
+  const secondsSinceSync = Math.max(0, Math.floor(elapsed / 1000));
 
   if (!role || !ALLOWED_ROLES.includes(role)) return null;
 
   return (
     <Card className="border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
@@ -45,9 +64,39 @@ export default function OnlineNowPanel() {
           <span className="text-[10px] font-normal text-muted-foreground">
             (active in last {windowMinutes} min)
           </span>
-          <Badge variant="outline" className="ml-auto text-[10px]">
-            {onlineCount} user{onlineCount !== 1 ? "s" : ""}
-          </Badge>
+          <div className="ml-auto flex items-center gap-1.5">
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-normal text-muted-foreground tabular-nums"
+                    aria-live="polite"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${spinning ? "animate-spin text-emerald-600" : ""}`} />
+                    {secondsToNext}s
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <div className="text-xs">
+                    <div>Next refresh in {secondsToNext}s</div>
+                    <div className="text-muted-foreground">Last sync {secondsSinceSync}s ago</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => setTick(Date.now())}
+              aria-label="Refresh now"
+            >
+              Refresh
+            </Button>
+            <Badge variant="outline" className="text-[10px]">
+              {onlineCount} user{onlineCount !== 1 ? "s" : ""}
+            </Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
