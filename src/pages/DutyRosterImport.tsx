@@ -188,7 +188,7 @@ export default function DutyRosterImport() {
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
 
   const reset = () => {
-    setFile(null); setParsed(null); setNotes("");
+    setFile(null); setParsed(null); setNotes(""); setEffectiveEndDate("");
     if (fileRef.current) fileRef.current.value = "";
   };
 
