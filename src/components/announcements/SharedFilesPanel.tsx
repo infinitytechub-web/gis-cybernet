@@ -355,6 +355,7 @@ export function SharedFilesPanel() {
                   <Input
                     ref={fileInputRef}
                     type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,image/*,text/plain"
                     onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                   />
                   {file && (
@@ -362,6 +363,9 @@ export function SharedFilesPanel() {
                       {file.name} — {fmtSize(file.size)}
                     </p>
                   )}
+                  <p className="text-[11px] text-muted-foreground">
+                    Supported: PDF, Word (.doc/.docx), Excel (.xls/.xlsx), CSV, PowerPoint, images.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">Retention / expiry</Label>
