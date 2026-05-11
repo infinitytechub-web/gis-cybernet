@@ -154,7 +154,7 @@ export default function AdminShiftRotations() {
       <div className="container mx-auto py-8">
         <PageHeader
           title="Shift Rotations"
-          description="Restricted to command-tier personnel."
+          subtitle="Restricted to command-tier personnel."
           icon={Layers}
         />
         <Card>
@@ -170,7 +170,7 @@ export default function AdminShiftRotations() {
     <div className="container mx-auto py-6 space-y-6">
       <PageHeader
         title="Flexible Shift Rotations"
-        description="Build, version, and deploy organisation-wide rotation schedules."
+        subtitle="Build, version, and deploy organisation-wide rotation schedules."
         icon={Layers}
       />
 
