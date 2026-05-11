@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldOff, Ban, Clock, ScrollText } from "lucide-react";
+import { ShieldOff, Ban, Clock, ScrollText, Search, Cpu, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { normalizeMac } from "@/lib/trusted-mac";
 import { formatDistanceToNow, format } from "date-fns";
 import { SecurityHero } from "@/components/security/SecurityHero";
 
@@ -27,11 +29,40 @@ export default function IpBlocks() {
   const [reason, setReason] = useState("Repeated failed login attempts");
   const [notes, setNotes] = useState("");
 
+  // Search + filter for both block list and audit log.
+  const [search, setSearch] = useState("");
+  const [scope, setScope] = useState<"all" | "mac" | "ip" | "fingerprint">("all");
+
   // Lightweight client-side check; server normalizes & validates definitively.
   const macLooksValid = (v: string) => {
     if (!v.trim()) return true;
     const hex = v.replace(/[^0-9a-fA-F]/g, "");
     return hex.length === 12;
+  };
+
+  // Build a haystack-aware match function. If the search term parses as a MAC,
+  // compare on its normalized canonical form so "aa-bb-cc-..." matches
+  // "AA:BB:CC:..." stored in the DB.
+  const buildMatcher = (term: string) => {
+    const t = term.trim().toLowerCase();
+    if (!t) return () => true;
+    const macForm = normalizeMac(term);
+    return (row: any) => {
+      const ip = (row.ip_address ?? "").toLowerCase();
+      const fp = (row.device_fingerprint ?? "").toLowerCase();
+      const mc = (row.mac_address ?? "").toLowerCase();
+      const reason = (row.reason ?? "").toLowerCase();
+      const notes = (row.notes ?? "").toLowerCase();
+      const macHit = macForm ? mc === macForm.toLowerCase() : mc.includes(t);
+      return ip.includes(t) || fp.includes(t) || macHit || reason.includes(t) || notes.includes(t);
+    };
+  };
+  const matcher = buildMatcher(search);
+  const scopeFilter = (row: any) => {
+    if (scope === "mac") return !!row.mac_address;
+    if (scope === "ip") return !!row.ip_address && !row.mac_address;
+    if (scope === "fingerprint") return !!row.device_fingerprint && !row.mac_address;
+    return true;
   };
 
   const { data: blocks = [], refetch } = useQuery({
@@ -158,9 +189,49 @@ export default function IpBlocks() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="text-base">Block list ({blocks.length})</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => refetch()}>Refresh</Button>
+        <CardHeader className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base">
+              Block list ({(() => {
+                const filtered = blocks.filter(scopeFilter).filter(matcher);
+                return filtered.length === blocks.length
+                  ? blocks.length
+                  : `${filtered.length} of ${blocks.length}`;
+              })()})
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Refresh</Button>
+          </div>
+          <div className="flex flex-col md:flex-row gap-2 md:items-center">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search IP, MAC (any format), fingerprint, reason or notes…"
+                className="pl-8 pr-8"
+              />
+              {search && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Tabs value={scope} onValueChange={(v) => setScope(v as typeof scope)}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="mac" className="gap-1">
+                  <Cpu className="h-3.5 w-3.5" /> MAC
+                </TabsTrigger>
+                <TabsTrigger value="ip">IP only</TabsTrigger>
+                <TabsTrigger value="fingerprint">Fingerprint</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <div style={{ minWidth: 700 }}>
@@ -178,7 +249,18 @@ export default function IpBlocks() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {blocks.map((b: any) => {
+              {(() => {
+                const rows = blocks.filter(scopeFilter).filter(matcher);
+                if (rows.length === 0) {
+                  return (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        {blocks.length === 0 ? "No blocks yet." : "No entries match your search."}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+                return rows.map((b: any) => {
                 const active = isActive(b);
                 return (
                   <TableRow key={b.id}>
@@ -190,7 +272,14 @@ export default function IpBlocks() {
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{b.ip_address}</TableCell>
-                    <TableCell className="font-mono text-xs">{b.mac_address || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {b.mac_address ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Cpu className="h-3 w-3 text-muted-foreground" />
+                          {b.mac_address}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={b.device_fingerprint || ""}>
                       {b.device_fingerprint || "—"}
                     </TableCell>
@@ -217,10 +306,8 @@ export default function IpBlocks() {
                     </TableCell>
                   </TableRow>
                 );
-              })}
-              {blocks.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No blocks yet.</TableCell></TableRow>
-              )}
+                });
+              })()}
             </TableBody>
           </Table>
           </div>
@@ -232,7 +319,15 @@ export default function IpBlocks() {
           <CardTitle className="text-base flex items-center gap-2">
             <ScrollText className="h-4 w-4 text-amber-700" />
             Block / Unblock Audit Log
-            <Badge variant="secondary" className="ml-1">{audit.length}</Badge>
+            <Badge variant="secondary" className="ml-1">
+              {(() => {
+                const filtered = audit.filter(scopeFilter).filter(matcher);
+                return filtered.length === audit.length ? audit.length : `${filtered.length}/${audit.length}`;
+              })()}
+            </Badge>
+            <span className="text-xs text-muted-foreground font-normal ml-auto">
+              Filtered by the search above
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -251,7 +346,18 @@ export default function IpBlocks() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {audit.map((a: any) => (
+                {(() => {
+                  const rows = audit.filter(scopeFilter).filter(matcher);
+                  if (rows.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                          {audit.length === 0 ? "No audit entries yet." : "No entries match your search."}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  return rows.map((a: any) => (
                   <TableRow key={a.id}>
                     <TableCell className="text-xs whitespace-nowrap">
                       {format(new Date(a.created_at), "dd MMM yyyy HH:mm:ss")}
@@ -265,7 +371,14 @@ export default function IpBlocks() {
                       {a.performed_by_name ?? <span className="font-mono text-muted-foreground">{(a.performed_by ?? "—").slice(0, 8)}</span>}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{a.ip_address ?? "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">{a.mac_address ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {a.mac_address ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Cpu className="h-3 w-3 text-muted-foreground" />
+                          {a.mac_address}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={a.device_fingerprint || ""}>
                       {a.device_fingerprint || "—"}
                     </TableCell>
@@ -278,10 +391,8 @@ export default function IpBlocks() {
                           : "—"}
                     </TableCell>
                   </TableRow>
-                ))}
-                {audit.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No audit entries yet.</TableCell></TableRow>
-                )}
+                  ));
+                })()}
               </TableBody>
             </Table>
           </div>
