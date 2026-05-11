@@ -190,6 +190,7 @@ export default function IpBlocks() {
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{b.ip_address}</TableCell>
+                    <TableCell className="font-mono text-xs">{b.mac_address || "—"}</TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={b.device_fingerprint || ""}>
                       {b.device_fingerprint || "—"}
                     </TableCell>
