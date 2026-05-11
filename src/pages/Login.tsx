@@ -134,14 +134,10 @@ export default function Login() {
         const { data: { user: freshUser } } = await supabase.auth.getUser();
         const mustChangePw = freshUser?.user_metadata?.must_change_password === true;
 
-        if (!roleErr && (roleRows?.length ?? 0) > 0) {
-          if (mustChangePw) {
-            navigate("/change-password", { replace: true });
-          } else {
-            navigate("/2fa", { replace: true, state: { from: { pathname: "/dashboard" } } });
-          }
-        } else if (mustChangePw) {
+        if (mustChangePw) {
           navigate("/change-password", { replace: true });
+        } else if (!roleErr && (roleRows?.length ?? 0) > 0) {
+          navigate("/dashboard", { replace: true });
         } else {
           navigate("/", { replace: true });
         }

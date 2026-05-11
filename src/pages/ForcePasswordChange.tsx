@@ -48,8 +48,7 @@ export default function ForcePasswordChange() {
       if (metaErr) throw metaErr;
 
       toast.success("Password updated! Welcome to GIS HRM.");
-      // Admins must still complete the MFA gate before reaching the dashboard.
-      navigate(isAdmin ? "/2fa" : "/dashboard", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Failed to update password");
     } finally {
