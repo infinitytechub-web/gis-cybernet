@@ -33,6 +33,10 @@ type RawRow = {
   serial_no: number;
   rank: string;
   name: string;
+  /** Optional explicit shift letter from CSV; overrides period→shift mapping. */
+  shift?: Shift;
+  /** Source line in the uploaded CSV (1-indexed including header), for error messages. */
+  source_line?: number;
 };
 
 type ParseResult = {
@@ -115,6 +119,126 @@ function parseDateToken(tok: string, fallbackYear: number): string | null {
   return isoDate(year, month, day);
 }
 
+// ----- CSV parser & structural validation -----
+// Required headers: date, name, serial_no (or s/n), and one of {shift, period}.
+// Shift values must be A/B/C/D. Each shift has fixed duty hours (see SHIFT_PERIOD_INFO),
+// notably Shift D = Operational (24/7).
+const CSV_HEADER_ALIASES: Record<string, string> = {
+  "date": "date", "duty_date": "date", "duty date": "date",
+  "name": "name", "officer": "name", "officer name": "name", "personnel": "name",
+  "serial_no": "serial_no", "serial": "serial_no", "s/n": "serial_no", "sn": "serial_no", "no": "serial_no",
+  "rank": "rank",
+  "group": "group", "shift_group": "group", "duty_group": "group",
+  "period": "period", "tour": "period",
+  "shift": "shift", "shift_letter": "shift", "shift_code": "shift",
+};
+
+function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else cur += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ",") { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out.map((s) => s.trim());
+}
+
+function parseCsv(text: string, fallbackYear: number): ParseResult {
+  const warnings: string[] = [];
+  const rows: RawRow[] = [];
+  const cleaned = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const lines = cleaned.split("\n").filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return { rows, warnings: ["CSV is empty"] };
+
+  const headerCells = splitCsvLine(lines[0]).map((h) => h.toLowerCase().replace(/[\.\-]/g, "_"));
+  const colMap: Record<string, number> = {};
+  headerCells.forEach((h, idx) => {
+    const canon = CSV_HEADER_ALIASES[h] ?? CSV_HEADER_ALIASES[h.replace(/_/g, " ")];
+    if (canon && colMap[canon] === undefined) colMap[canon] = idx;
+  });
+
+  const missingRequired: string[] = [];
+  if (colMap.date === undefined) missingRequired.push("date");
+  if (colMap.name === undefined) missingRequired.push("name");
+  if (colMap.serial_no === undefined) missingRequired.push("serial_no (or S/N)");
+  if (colMap.shift === undefined && colMap.period === undefined) missingRequired.push("shift OR period");
+  if (missingRequired.length) {
+    warnings.push(
+      `CSV header is missing required column(s): ${missingRequired.join(", ")}. ` +
+      `Detected headers: ${headerCells.join(" | ") || "(none)"}.`,
+    );
+    return { rows, warnings };
+  }
+
+  const dates: string[] = [];
+  for (let li = 1; li < lines.length; li++) {
+    const cells = splitCsvLine(lines[li]);
+    const get = (k: string) => (colMap[k] !== undefined ? cells[colMap[k]] ?? "" : "");
+    const sourceLine = li + 1;
+
+    const dateRaw = get("date").trim();
+    const name = get("name").trim();
+    const snRaw = get("serial_no").trim();
+    const rank = get("rank").trim();
+    const group = get("group").trim();
+    const periodRaw = get("period").trim().toUpperCase();
+    const shiftRaw = get("shift").trim().toUpperCase();
+
+    if (!dateRaw && !name && !snRaw) continue;
+
+    let date = "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) date = dateRaw;
+    else {
+      const parsed = parseDateToken(dateRaw, fallbackYear);
+      if (parsed) date = parsed;
+    }
+    if (!date) { warnings.push(`Line ${sourceLine}: invalid or unparseable date "${dateRaw}"`); continue; }
+
+    let period: Period | undefined;
+    if (periodRaw === "DAY" || periodRaw === "NIGHT") period = periodRaw as Period;
+
+    let shift: Shift | undefined;
+    if (shiftRaw) {
+      if (!/^[ABCD]$/.test(shiftRaw)) {
+        warnings.push(`Line ${sourceLine}: invalid shift "${shiftRaw}" — must be A, B, C, or D`);
+        continue;
+      }
+      shift = shiftRaw as Shift;
+      // Cross-check shift ↔ period when both supplied (D = Operational 24/7 → matches either).
+      if (period && shift !== "D") {
+        const expectedPeriod: Period = shift === "C" ? "NIGHT" : "DAY";
+        if (period !== expectedPeriod) {
+          warnings.push(
+            `Line ${sourceLine}: shift ${shift} (${SHIFT_PERIOD_INFO[shift].label}, ${SHIFT_PERIOD_INFO[shift].start}–${SHIFT_PERIOD_INFO[shift].end}) does not match period "${period}"`,
+          );
+        }
+      }
+      if (!period) period = shift === "C" ? "NIGHT" : shift === "D" ? "NIGHT" : "DAY";
+    }
+    if (!period) { warnings.push(`Line ${sourceLine}: missing both shift and period`); continue; }
+
+    const sn = parseInt(snRaw.replace(/[^0-9]/g, ""), 10);
+    if (!Number.isFinite(sn) || sn <= 0) { warnings.push(`Line ${sourceLine}: invalid serial number "${snRaw}"`); continue; }
+    if (!name || name.length < 2) { warnings.push(`Line ${sourceLine}: missing or too-short name`); continue; }
+
+    rows.push({ group, date, period, serial_no: sn, rank, name, shift, source_line: sourceLine });
+    dates.push(date);
+  }
+
+  dates.sort();
+  return { rows, warnings, startDate: dates[0], endDate: dates[dates.length - 1] };
+}
+
 function parsePages(pages: string[], fallbackYear: number): ParseResult {
   const warnings: string[] = [];
   const rows: RawRow[] = [];
@@ -184,7 +308,12 @@ const DEFAULT_MAPPING: Mapping = { day: ["A", "B"], night: ["C"] };
 function applyMapping(rows: RawRow[], mapping: Mapping): Assignment[] {
   const out: Assignment[] = [];
   for (const r of rows) {
-    const shifts = r.period === "DAY" ? mapping.day : mapping.night;
+    // Honor explicit CSV shift letter when present; otherwise map by period.
+    const shifts: Shift[] = r.shift
+      ? [r.shift]
+      : r.period === "DAY"
+      ? mapping.day
+      : mapping.night;
     for (const s of shifts) {
       out.push({
         id: `${r.date}|${s}|${r.serial_no}|${r.name}`,
@@ -194,7 +323,7 @@ function applyMapping(rows: RawRow[], mapping: Mapping): Assignment[] {
         name_text: r.name,
         serial_no: r.serial_no,
         unit: null,
-        position_label: r.period,
+        position_label: r.shift ? `${SHIFT_PERIOD_INFO[s].label}` : r.period,
       });
     }
   }
@@ -665,18 +794,39 @@ export default function GuardScheduleImport() {
   const handleFile = async (f: File) => {
     setFile(f); setParsed(null); setParsing(true);
     try {
-      if (!/\.pdf$/i.test(f.name)) {
-        toast.error("Please upload a PDF file");
+      const isCsv = /\.csv$/i.test(f.name) || f.type === "text/csv";
+      const isPdf = /\.pdf$/i.test(f.name) || f.type === "application/pdf";
+      if (!isCsv && !isPdf) {
+        toast.error("Please upload a PDF or CSV file");
         return;
       }
-      const pages = await extractPdfText(f);
-      const result = parsePages(pages, fallbackYear);
+      let result: ParseResult;
+      if (isCsv) {
+        if (f.size > 5 * 1024 * 1024) { toast.error("CSV too large (max 5 MB)"); return; }
+        const text = await f.text();
+        result = parseCsv(text, fallbackYear);
+        if (!name) setName(f.name.replace(/\.csv$/i, "").replace(/[_-]+/g, " "));
+        const structuralIssues = result.warnings.length;
+        if (result.rows.length === 0) {
+          toast.error(structuralIssues
+            ? `CSV rejected: ${structuralIssues} structural issue(s) — see warnings`
+            : "No personnel rows could be parsed");
+        } else {
+          toast.success(
+            `Parsed ${result.rows.length} CSV row(s)` +
+            (structuralIssues ? ` — ${structuralIssues} warning(s)` : ""),
+          );
+        }
+      } else {
+        const pages = await extractPdfText(f);
+        result = parsePages(pages, fallbackYear);
+        if (!name) setName(f.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " "));
+        if (result.rows.length === 0) toast.error("No personnel rows could be parsed");
+        else toast.success(`Parsed ${result.rows.length} entries from ${pages.length} page(s)`);
+      }
       setParsed(result);
-      if (!name) setName(f.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " "));
-      if (result.rows.length === 0) toast.error("No personnel rows could be parsed");
-      else toast.success(`Parsed ${result.rows.length} entries from ${pages.length} page(s)`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to read PDF");
+      toast.error(e?.message ?? "Failed to read file");
     } finally {
       setParsing(false);
     }
@@ -791,7 +941,7 @@ export default function GuardScheduleImport() {
             <input
               ref={fileRef}
               type="file"
-              accept=".pdf,application/pdf"
+              accept=".pdf,application/pdf,.csv,text/csv"
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
             />
