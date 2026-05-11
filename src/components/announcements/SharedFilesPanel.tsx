@@ -711,6 +711,107 @@ export function SharedFilesPanel() {
           </div>
         )}
       </CardContent>
+
+      <Dialog open={!!editing} onOpenChange={(v) => { if (!v) closeEdit(); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit shared file</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3">
+              <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{editing.filename}</span>
+                {" — "}{fmtSize(editing.size_bytes)}
+                <p className="mt-0.5">Shared {format(new Date(editing.created_at), "dd MMM yyyy")}.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Title</Label>
+                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Description (optional)</Label>
+                <Textarea rows={2} value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Audience</Label>
+                <Select
+                  value={editAudienceMode}
+                  onValueChange={(v: "global" | "department" | "individual") => {
+                    setEditAudienceMode(v);
+                    if (v === "global") { setEditDeptId("global"); setEditTargetUserId(""); }
+                    if (v === "department") setEditTargetUserId("");
+                    if (v === "individual") setEditDeptId("global");
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="global">All Staff</SelectItem>
+                    <SelectItem value="department">Specific Department</SelectItem>
+                    <SelectItem value="individual">Individual Staff Member</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editAudienceMode === "department" && (
+                  <Select value={editDeptId === "global" ? "" : editDeptId} onValueChange={setEditDeptId}>
+                    <SelectTrigger><SelectValue placeholder="Select a department…" /></SelectTrigger>
+                    <SelectContent>
+                      {departments.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {editAudienceMode === "individual" && (
+                  <StaffCombobox
+                    staff={staffList}
+                    value={editTargetUserId}
+                    onValueChange={setEditTargetUserId}
+                    placeholder="Search staff by name or ID…"
+                  />
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Retention / expiry</Label>
+                <Select value={editRetention} onValueChange={setEditRetention}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Use system default policy</SelectItem>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                    <SelectItem value="365">1 year</SelectItem>
+                    <SelectItem value="never">Never expires</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Choosing a duration restarts the expiry timer from now.
+                </p>
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2">
+                <Label className="text-xs flex items-center gap-1.5 cursor-pointer">
+                  <Send className="h-3.5 w-3.5 text-primary" />
+                  Re-share to audience (re-activate & notify)
+                </Label>
+                <Switch checked={editReshare} onCheckedChange={setEditReshare} />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="outline" onClick={closeEdit} disabled={savingEdit}>
+                  Cancel
+                </Button>
+                <Button
+                  className="gap-1.5"
+                  onClick={saveEdit}
+                  disabled={savingEdit || !editTitle.trim()}
+                >
+                  {savingEdit
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : (editReshare ? <Send className="h-4 w-4" /> : <Pencil className="h-4 w-4" />)}
+                  {editReshare ? "Save & re-share" : "Save changes"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
