@@ -76,9 +76,19 @@ export default function MfaGate() {
   const handleEnrol = async () => {
     setBusy(true);
     try {
+      // Defensive: remove any lingering unverified factors so re-enrolment
+      // doesn't collide with a stale friendly-name from a prior attempt.
+      try {
+        const { data: existing } = await supabase.auth.mfa.listFactors();
+        for (const f of existing?.totp ?? []) {
+          if (f.status !== "verified") {
+            await supabase.auth.mfa.unenroll({ factorId: f.id });
+          }
+        }
+      } catch { /* best effort */ }
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: "totp",
-        friendlyName: `GIS Cybernet Admin (${new Date().toISOString().slice(0, 10)})`,
+        friendlyName: `GIS Cybernet Admin (${new Date().toISOString().replace(/[:.]/g, "-")})`,
       });
       if (error) throw error;
       setFactorId(data.id);
