@@ -44,11 +44,12 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     queryKey: ["authorising-officer-selected", value],
     enabled: !!value,
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const sb: any = supabase;
+      const { data, error } = await sb
         .from("profiles")
         .select("id, first_name, last_name, ranks(abbreviation), departments(name), user_roles(role)")
         .eq("id", value!)
-        .maybeSingle() as any);
+        .maybeSingle();
       if (error) throw error;
       if (!data) return null;
       const role = (data as any).user_roles?.find((r: any) => r.role === "oic" || r.role === "2ic")?.role
