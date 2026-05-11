@@ -1,7 +1,13 @@
 // Server-side IP discovery + geolocation proxy.
 // Keeps client IPs from being sent directly to third-party services from the browser.
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, authorization, x-client-info, apikey, content-type, x-cybernet-app",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+};
 
 function pickClientIp(req: Request): string | null {
   const cf = req.headers.get("cf-connecting-ip");
