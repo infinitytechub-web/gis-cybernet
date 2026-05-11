@@ -228,5 +228,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
     onlineUsers,
     onlineCount: onlineUsers.length,
     windowMinutes,
+    lastSyncAt,
+    refreshIntervalMs: PRUNE_INTERVAL_MS,
   };
 }
