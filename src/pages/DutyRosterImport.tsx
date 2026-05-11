@@ -396,6 +396,9 @@ export default function DutyRosterImport() {
               <Button variant="outline" onClick={reset} disabled={committing}>
                 <XCircle className="h-4 w-4 mr-1" /> Discard
               </Button>
+              <Button variant="outline" onClick={() => setPreviewOpen(true)} disabled={committing || parsed.rows.length === 0}>
+                <CalendarRange className="h-4 w-4 mr-1" /> Preview schedule…
+              </Button>
               <Button onClick={handleCommit} disabled={committing || parsed.rows.length === 0}>
                 <CheckCircle2 className="h-4 w-4 mr-1" /> {committing ? "Saving…" : `Commit ${parsed.rows.length} rows`}
               </Button>
