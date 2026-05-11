@@ -12,6 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test -c playwright.e2e.config.ts",
+    "test:a11y": "playwright test -c playwright.e2e.config.ts tests/a11y",
     "check:edge": "bash scripts/check-edge-function.sh",
     "check:edge:all": "bash scripts/check-edge-function.sh",
     "check:edge:strict": "bash scripts/check-edge-function.sh --lint-strict",
