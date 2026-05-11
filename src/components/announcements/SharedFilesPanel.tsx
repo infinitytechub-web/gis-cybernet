@@ -211,7 +211,18 @@ export function SharedFilesPanel() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const upload = async () => {
+  // Compute SHA-256 of the selected file (matches the hash uploadSecureFile uses)
+  const computeSha256 = async (f: File): Promise<string> => {
+    const buf = await f.arrayBuffer();
+    const h = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  // Duplicate-detection state
+  const [duplicateMatches, setDuplicateMatches] = useState<any[] | null>(null);
+  const [pendingSha, setPendingSha] = useState<string | null>(null);
+
+  const upload = async (opts: { skipDuplicateCheck?: boolean } = {}) => {
     if (!file || !title.trim() || !user) return;
     if (audienceMode === "individual" && !targetUserId) {
       toast.error("Select a staff member to share with");
@@ -219,7 +230,26 @@ export function SharedFilesPanel() {
     }
     setUploading(true);
     try {
-      const { path, sha, verdict } = await uploadSecureFile(file, { maxMb: 25 });
+      // 1) Hash locally and look for duplicates (same filename + checksum) before
+      //    uploading to storage, so we don't waste bandwidth or quota on a re-share.
+      const sha = pendingSha ?? (await computeSha256(file));
+      if (!opts.skipDuplicateCheck) {
+        const { data: matches } = await supabase
+          .from("announcement_files")
+          .select("id, title, filename, created_at, is_active, department_id, target_user_id, uploaded_by, departments(name)")
+          .eq("sha256", sha)
+          .eq("filename", file.name)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (matches && matches.length > 0) {
+          setPendingSha(sha);
+          setDuplicateMatches(matches);
+          setUploading(false);
+          return;
+        }
+      }
+
+      const { path, verdict } = await uploadSecureFile(file, { maxMb: 25 });
       let expires_at: string | null = null;
       let retention_days: number | null = null;
       if (retention !== "default" && retention !== "never") {
@@ -256,9 +286,12 @@ export function SharedFilesPanel() {
         department_id: resolvedDept,
         target_user_id: resolvedTarget,
         retention_days,
+        duplicate_override: !!opts.skipDuplicateCheck,
       });
-      toast.success("File shared");
+      toast.success(opts.skipDuplicateCheck ? "Duplicate file re-shared" : "File shared");
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
+      setDuplicateMatches(null);
+      setPendingSha(null);
       reset();
       setOpen(false);
     } catch (e: any) {
