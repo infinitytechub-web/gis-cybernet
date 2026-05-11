@@ -265,6 +265,7 @@ export default function IpBlocks() {
                       {a.performed_by_name ?? <span className="font-mono text-muted-foreground">{(a.performed_by ?? "—").slice(0, 8)}</span>}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{a.ip_address ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{a.mac_address ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={a.device_fingerprint || ""}>
                       {a.device_fingerprint || "—"}
                     </TableCell>
