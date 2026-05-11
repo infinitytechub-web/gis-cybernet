@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck, Eye, ScrollText, UserCircle2 } from "lucide-react";
+import { FileUp, Globe, Building2, Trash2, Download, Loader2, FileText, Power, Search, X, ShieldCheck, Eye, ScrollText, UserCircle2, Pencil, Send } from "lucide-react";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { toast } from "sonner";
 import { format } from "date-fns";
