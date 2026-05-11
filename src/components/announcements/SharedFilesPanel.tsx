@@ -103,6 +103,25 @@ export function SharedFilesPanel() {
     },
   });
 
+  const { data: staffList = [] } = useQuery({
+    queryKey: ["share-file-staff-list"],
+    enabled: isAdminOrSupervisor && open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, user_id, first_name, last_name, staff_id")
+        .not("user_id", "is", null)
+        .order("last_name");
+      if (error) throw error;
+      return (data ?? []).map((p: any) => ({
+        id: p.user_id as string,
+        first_name: p.first_name ?? "",
+        last_name: p.last_name ?? "",
+        staff_id: p.staff_id ?? "",
+      }));
+    },
+  });
+
   const filteredFiles = files.filter((f: any) => {
     // Search by file name / title / description
     if (search.trim()) {
@@ -146,7 +165,9 @@ export function SharedFilesPanel() {
   };
 
   const reset = () => {
-    setTitle(""); setDescription(""); setDeptId("global"); setFile(null); setRetention("default");
+    setTitle(""); setDescription("");
+    setAudienceMode("global"); setDeptId("global"); setTargetUserId("");
+    setFile(null); setRetention("default");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
