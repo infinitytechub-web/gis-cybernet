@@ -321,6 +321,63 @@ export function SharedFilesPanel() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const saveEdit = async () => {
+    if (!editing || !editTitle.trim()) return;
+    if (editAudienceMode === "individual" && !editTargetUserId) {
+      toast.error("Select a staff member to share with");
+      return;
+    }
+    if (editAudienceMode === "department" && (editDeptId === "global" || !editDeptId)) {
+      toast.error("Select a department");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      let expires_at: string | null = null;
+      let retention_days: number | null = null;
+      if (editRetention !== "default" && editRetention !== "never") {
+        retention_days = parseInt(editRetention, 10);
+        expires_at = new Date(Date.now() + retention_days * 86400_000).toISOString();
+      }
+      const resolvedDept =
+        editAudienceMode === "department" && editDeptId !== "global" ? editDeptId : null;
+      const resolvedTarget = editAudienceMode === "individual" ? editTargetUserId : null;
+
+      const patch: Record<string, any> = {
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+        department_id: resolvedDept,
+        target_user_id: resolvedTarget,
+        expires_at,
+        retention_days,
+      };
+      if (editReshare) patch.is_active = true;
+
+      const { error } = await (supabase.from("announcement_files") as any)
+        .update(patch)
+        .eq("id", editing.id);
+      if (error) throw error;
+
+      await logFileAudit(editing.id, "permission_change", {
+        action: editReshare ? "edit_and_reshare" : "edit",
+        title: patch.title,
+        audience: editAudienceMode,
+        department_id: resolvedDept,
+        target_user_id: resolvedTarget,
+        retention_days,
+        reshared: editReshare,
+      });
+
+      qc.invalidateQueries({ queryKey: ["announcement-files"] });
+      toast.success(editReshare ? "File updated and re-shared" : "File updated");
+      closeEdit();
+    } catch (e: any) {
+      toast.error(e.message ?? "Update failed");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
