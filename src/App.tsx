@@ -92,6 +92,7 @@ const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
 const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
 const MfaGate = lazy(() => import("./pages/MfaGate"));
 const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
+const AdminShiftRotations = lazy(() => import("./pages/AdminShiftRotations"));
 
 const queryClient = new QueryClient();
 
@@ -167,6 +168,7 @@ function App() {
           <Route path="/enforcement" element={<ProtectedRoute><Layout><Enforcement /></Layout></ProtectedRoute>} />
           <Route path="/operations" element={<ProtectedRoute><Layout><Operations /></Layout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+          <Route path="/admin/shift-rotations" element={<ProtectedRoute><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
           <Route path="/command-roles" element={<ProtectedRoute><Layout><CommandRoles /></Layout></ProtectedRoute>} />
           <Route path="/admin-access-matrix" element={<ProtectedRoute><Layout><AdminAccessMatrix /></Layout></ProtectedRoute>} />
           <Route path="/command-role-audit" element={<ProtectedRoute><Layout><CommandRoleAudit /></Layout></ProtectedRoute>} />
