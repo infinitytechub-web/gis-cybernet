@@ -206,11 +206,7 @@ export default function GuardSchedule() {
     qc.invalidateQueries({ queryKey: ["guard-schedules"] });
   };
 
-  const handleRemoveAssignment = async (id: string) => {
-    const { error } = await supabase.from("guard_schedule_assignments").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["guard-schedule", activeId] });
-  };
+  // (delete handled inside DayShiftCard)
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-7xl">
