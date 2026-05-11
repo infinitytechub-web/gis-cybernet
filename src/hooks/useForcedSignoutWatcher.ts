@@ -23,8 +23,8 @@ export function useForcedSignoutWatcher() {
     const init = async () => {
       fpRef.current = await getDeviceFingerprint();
       try {
-        const { data } = await supabase.functions.invoke("client-ip-info");
-        ipRef.current = (data as any)?.ip ?? null;
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        if (ipRes.ok) ipRef.current = (await ipRes.json())?.ip ?? null;
       } catch { /* ignore */ }
       void check();
     };

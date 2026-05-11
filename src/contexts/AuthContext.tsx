@@ -95,22 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    // Push the current access token into the realtime client so that every
-    // WebSocket subscription is authenticated against RLS. Without this, the
-    // socket would attach with the anon key only and any postgres_changes
-    // stream would be silently filtered to the public-read subset.
-    const syncRealtimeAuth = (session: { access_token?: string } | null) => {
-      try {
-        const token = session?.access_token ?? null;
-        // Public type-stable surface; supabase-js v2 exposes setAuth on realtime.
-        (supabase as any).realtime?.setAuth?.(token);
-      } catch { /* best effort — never block auth flow on realtime hiccups */ }
-    };
-
-    const handleSession = async (session: { user: User; access_token?: string } | null) => {
+    const handleSession = async (session: { user: User } | null) => {
       const currentUser = session?.user ?? null;
       if (!isMounted) return;
-      syncRealtimeAuth(session);
       setUser(currentUser);
       if (currentUser) {
         const r = await fetchRole(currentUser.id);
@@ -118,37 +105,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRole(r);
       } else {
         setRole(null);
-        // No session → tear down the socket so a stale token can't linger.
-        try { (supabase as any).realtime?.disconnect?.(); } catch { /* ignore */ }
       }
       setLoading(false);
     };
 
-    // Get initial session first. If the persisted token is no longer valid
-    // (e.g. signing keys were rotated → "missing sub claim" / "bad_jwt"),
-    // clear it so the user can sign in fresh instead of being stuck.
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (error || (session && !session.user)) {
-        try { await supabase.auth.signOut({ scope: "local" } as any); } catch { /* ignore */ }
-        handleSession(null);
-        return;
-      }
-      handleSession(session as any);
-    }).catch(async () => {
-      try { await supabase.auth.signOut({ scope: "local" } as any); } catch { /* ignore */ }
-      handleSession(null);
+    // Get initial session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
     });
 
-    // Then listen for changes (skip INITIAL_SESSION to avoid double-fetch).
-    // TOKEN_REFRESHED must re-bind the socket so refreshed JWTs flow through.
+    // Then listen for changes (skip INITIAL_SESSION to avoid double-fetch)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'INITIAL_SESSION') return;
-        if (event === 'TOKEN_REFRESHED') {
-          syncRealtimeAuth(session as any);
-          return;
-        }
-        handleSession(session as any);
+        handleSession(session);
       }
     );
 

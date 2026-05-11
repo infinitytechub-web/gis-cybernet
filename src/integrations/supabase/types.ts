@@ -65,169 +65,6 @@ export type Database = {
           },
         ]
       }
-      announcement_file_audit: {
-        Row: {
-          action: Database["public"]["Enums"]["announcement_file_audit_action"]
-          actor_user_id: string | null
-          created_at: string
-          department_id: string | null
-          department_name: string | null
-          file_id: string | null
-          id: string
-          ip_address: string | null
-          metadata: Json
-          staff_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          action: Database["public"]["Enums"]["announcement_file_audit_action"]
-          actor_user_id?: string | null
-          created_at?: string
-          department_id?: string | null
-          department_name?: string | null
-          file_id?: string | null
-          id?: string
-          ip_address?: string | null
-          metadata?: Json
-          staff_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          action?: Database["public"]["Enums"]["announcement_file_audit_action"]
-          actor_user_id?: string | null
-          created_at?: string
-          department_id?: string | null
-          department_name?: string | null
-          file_id?: string | null
-          id?: string
-          ip_address?: string | null
-          metadata?: Json
-          staff_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "announcement_file_audit_file_id_fkey"
-            columns: ["file_id"]
-            isOneToOne: false
-            referencedRelation: "announcement_files"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      announcement_file_cleanup_runs: {
-        Row: {
-          error_message: string | null
-          files_deactivated: number
-          files_scanned: number
-          files_soft_deleted: number
-          files_with_default_applied: number
-          finished_at: string | null
-          id: string
-          started_at: string
-          status: string
-          trigger_kind: string
-          triggered_by: string | null
-        }
-        Insert: {
-          error_message?: string | null
-          files_deactivated?: number
-          files_scanned?: number
-          files_soft_deleted?: number
-          files_with_default_applied?: number
-          finished_at?: string | null
-          id?: string
-          started_at?: string
-          status?: string
-          trigger_kind?: string
-          triggered_by?: string | null
-        }
-        Update: {
-          error_message?: string | null
-          files_deactivated?: number
-          files_scanned?: number
-          files_soft_deleted?: number
-          files_with_default_applied?: number
-          finished_at?: string | null
-          id?: string
-          started_at?: string
-          status?: string
-          trigger_kind?: string
-          triggered_by?: string | null
-        }
-        Relationships: []
-      }
-      announcement_files: {
-        Row: {
-          created_at: string
-          department_id: string | null
-          description: string | null
-          download_count: number
-          expired_at: string | null
-          expires_at: string | null
-          filename: string
-          id: string
-          is_active: boolean
-          mime_type: string | null
-          retention_days: number | null
-          scan_action: string | null
-          sha256: string | null
-          size_bytes: number
-          storage_path: string
-          title: string
-          updated_at: string
-          uploaded_by: string
-        }
-        Insert: {
-          created_at?: string
-          department_id?: string | null
-          description?: string | null
-          download_count?: number
-          expired_at?: string | null
-          expires_at?: string | null
-          filename: string
-          id?: string
-          is_active?: boolean
-          mime_type?: string | null
-          retention_days?: number | null
-          scan_action?: string | null
-          sha256?: string | null
-          size_bytes: number
-          storage_path: string
-          title: string
-          updated_at?: string
-          uploaded_by: string
-        }
-        Update: {
-          created_at?: string
-          department_id?: string | null
-          description?: string | null
-          download_count?: number
-          expired_at?: string | null
-          expires_at?: string | null
-          filename?: string
-          id?: string
-          is_active?: boolean
-          mime_type?: string | null
-          retention_days?: number | null
-          scan_action?: string | null
-          sha256?: string | null
-          size_bytes?: number
-          storage_path?: string
-          title?: string
-          updated_at?: string
-          uploaded_by?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "announcement_files_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       announcements: {
         Row: {
           content: string
@@ -278,11 +115,6 @@ export type Database = {
       app_settings: {
         Row: {
           allow_self_registration: boolean
-          announcement_file_cleanup_last_run_at: string | null
-          announcement_file_cleanup_mode: string
-          announcement_file_retention_days_department: number
-          announcement_file_retention_days_global: number
-          announcement_file_retention_enabled: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
           created_at: string
@@ -291,19 +123,11 @@ export type Database = {
           mfa_required_roles: string[]
           min_password_length: number
           org_name: string
-          security_scan_enabled: boolean
-          security_scan_frequency: string
-          security_scan_last_run_at: string | null
           system_label: string
           updated_at: string
         }
         Insert: {
           allow_self_registration?: boolean
-          announcement_file_cleanup_last_run_at?: string | null
-          announcement_file_cleanup_mode?: string
-          announcement_file_retention_days_department?: number
-          announcement_file_retention_days_global?: number
-          announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           created_at?: string
@@ -312,19 +136,11 @@ export type Database = {
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
-          security_scan_enabled?: boolean
-          security_scan_frequency?: string
-          security_scan_last_run_at?: string | null
           system_label?: string
           updated_at?: string
         }
         Update: {
           allow_self_registration?: boolean
-          announcement_file_cleanup_last_run_at?: string | null
-          announcement_file_cleanup_mode?: string
-          announcement_file_retention_days_department?: number
-          announcement_file_retention_days_global?: number
-          announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           created_at?: string
@@ -333,9 +149,6 @@ export type Database = {
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
-          security_scan_enabled?: boolean
-          security_scan_frequency?: string
-          security_scan_last_run_at?: string | null
           system_label?: string
           updated_at?: string
         }
@@ -4426,45 +4239,6 @@ export type Database = {
         }
         Relationships: []
       }
-      mfa_challenge_audit: {
-        Row: {
-          created_at: string
-          device_fingerprint: string | null
-          factor_id: string | null
-          failure_reason: string | null
-          id: string
-          ip_address: string | null
-          outcome: string
-          staff_id: string | null
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          device_fingerprint?: string | null
-          factor_id?: string | null
-          failure_reason?: string | null
-          id?: string
-          ip_address?: string | null
-          outcome: string
-          staff_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          device_fingerprint?: string | null
-          factor_id?: string | null
-          failure_reason?: string | null
-          id?: string
-          ip_address?: string | null
-          outcome?: string
-          staff_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       mfa_recovery_requests: {
         Row: {
           created_at: string
@@ -7150,51 +6924,6 @@ export type Database = {
           },
         ]
       }
-      security_scan_runs: {
-        Row: {
-          error_count: number
-          error_message: string | null
-          findings: Json
-          finished_at: string | null
-          id: string
-          passed_count: number
-          started_at: string
-          status: string
-          total_checks: number
-          trigger_kind: string
-          triggered_by: string | null
-          warn_count: number
-        }
-        Insert: {
-          error_count?: number
-          error_message?: string | null
-          findings?: Json
-          finished_at?: string | null
-          id?: string
-          passed_count?: number
-          started_at?: string
-          status?: string
-          total_checks?: number
-          trigger_kind?: string
-          triggered_by?: string | null
-          warn_count?: number
-        }
-        Update: {
-          error_count?: number
-          error_message?: string | null
-          findings?: Json
-          finished_at?: string | null
-          id?: string
-          passed_count?: number
-          started_at?: string
-          status?: string
-          total_checks?: number
-          trigger_kind?: string
-          triggered_by?: string | null
-          warn_count?: number
-        }
-        Relationships: []
-      }
       sensitive_table_access_log: {
         Row: {
           accessed_by: string | null
@@ -8664,10 +8393,6 @@ export type Database = {
     Functions: {
       admin_purge_shift_connections: { Args: never; Returns: number }
       admin_quick_search: { Args: { _q: string }; Returns: Json }
-      admin_recovery_consume_backup_code: {
-        Args: { _code: string; _user_id: string }
-        Returns: boolean
-      }
       admin_reset_failed_attempts: {
         Args: { _staff_id: string }
         Returns: undefined
@@ -8675,15 +8400,6 @@ export type Database = {
       admin_unlock_account: {
         Args: { _profile_id: string; _reason: string }
         Returns: Json
-      }
-      apply_announcement_file_retention: {
-        Args: never
-        Returns: {
-          deactivated: number
-          default_applied: number
-          scanned: number
-          soft_deleted: number
-        }[]
       }
       appraisal_coverage_report: {
         Args: { _period_month?: number; _period_year: number }
@@ -8745,10 +8461,6 @@ export type Database = {
           _run_time: string
         }
         Returns: string
-      }
-      consume_processing_job_credentials: {
-        Args: { p_job_id: string }
-        Returns: Json
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -8867,18 +8579,6 @@ export type Database = {
           unit: string
         }[]
       }
-      get_realtime_rls_coverage: {
-        Args: never
-        Returns: {
-          anon_reachable: number
-          permissive_select: boolean
-          rls_enabled: boolean
-          rls_forced: boolean
-          select_policies: number
-          table_name: string
-          total_policies: number
-        }[]
-      }
       get_security_threat_summary: { Args: never; Returns: Json }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
@@ -8887,10 +8587,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      increment_announcement_file_downloads: {
-        Args: { _file_id: string }
-        Returns: undefined
       }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
       is_frontdesk_realtime_topic: {
@@ -8944,16 +8640,6 @@ export type Database = {
           quantity_before: number
           total_count: number
         }[]
-      }
-      log_announcement_file_audit: {
-        Args: {
-          _action: Database["public"]["Enums"]["announcement_file_audit_action"]
-          _file_id: string
-          _ip?: string
-          _metadata?: Json
-          _user_agent?: string
-        }
-        Returns: string
       }
       log_appraisal_duplicate_attempt: {
         Args: {
@@ -9041,15 +8727,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      override_shift_assignment: {
-        Args: {
-          _profile_id: string
-          _reason: string
-          _shift_letter: string
-          _start_date: string
-        }
-        Returns: Json
-      }
       prune_system_backup_audit: { Args: never; Returns: Json }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
       purge_old_presence_events: {
@@ -9100,19 +8777,6 @@ export type Database = {
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }
         | { Args: { _ip_address?: string; _staff_id: string }; Returns: Json }
-      record_mfa_challenge: {
-        Args: {
-          _device_fingerprint?: string
-          _factor_id?: string
-          _failure_reason?: string
-          _ip_address?: string
-          _outcome: string
-          _staff_id?: string
-          _user_agent?: string
-        }
-        Returns: string
-      }
-      redact_old_job_passwords: { Args: never; Returns: undefined }
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
@@ -9121,7 +8785,6 @@ export type Database = {
         Args: { p_snapshot_id: string }
         Returns: Json
       }
-      run_security_hygiene_scan: { Args: never; Returns: Json }
       search_approval_audit: {
         Args: {
           _actions?: string[]
@@ -9254,12 +8917,6 @@ export type Database = {
       }
     }
     Enums: {
-      announcement_file_audit_action:
-        | "upload"
-        | "download"
-        | "preview"
-        | "permission_change"
-        | "delete"
       app_role:
         | "admin"
         | "supervisor"
@@ -9443,13 +9100,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      announcement_file_audit_action: [
-        "upload",
-        "download",
-        "preview",
-        "permission_change",
-        "delete",
-      ],
       app_role: [
         "admin",
         "supervisor",

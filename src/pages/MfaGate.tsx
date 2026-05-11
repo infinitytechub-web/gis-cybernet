@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Input } from "@/components/ui/input";
-import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, RefreshCw, ShieldAlert } from "lucide-react";
+import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import QRCode from "qrcode";
 
 /**
  * Mandatory 2FA gate for system administrators.
@@ -24,40 +23,16 @@ export default function MfaGate() {
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname ?? "/dashboard";
 
-  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "enroll-help" | "recovery">("loading");
+  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "recovery">("loading");
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrUri, setQrUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  const cleanupUnverifiedFactors = async (): Promise<number> => {
-    let removed = 0;
-    try {
-      const { data } = await supabase.auth.mfa.listFactors();
-      for (const f of data?.totp ?? []) {
-        if (f.status !== "verified") {
-          try {
-            await supabase.auth.mfa.unenroll({ factorId: f.id });
-            removed += 1;
-          } catch { /* best effort */ }
-        }
-      }
-    } catch { /* best effort */ }
-    return removed;
-  };
 
   useEffect(() => {
     if (!user || !isAdmin) return;
-    // If the admin still owes a password change (e.g. recovery temp password),
-    // route them through the change-password flow before the MFA gate so they
-    // can rotate the secret first.
-    if ((user as any)?.user_metadata?.must_change_password === true) {
-      navigate("/change-password", { replace: true });
-      return;
-    }
     (async () => {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.currentLevel === "aal2") {
@@ -70,23 +45,16 @@ export default function MfaGate() {
         setFactorId(verifiedTotp.id);
         setPhase("verify");
       } else {
-        await cleanupUnverifiedFactors();
+        // Clean up stale unverified factors before enrolling fresh
+        for (const f of data?.totp ?? []) {
+          if (f.status !== "verified") {
+            try { await supabase.auth.mfa.unenroll({ factorId: f.id }); } catch {}
+          }
+        }
         setPhase("enroll");
       }
     })();
   }, [user, isAdmin, navigate, from]);
-
-  useEffect(() => {
-    if (!qrCanvasRef.current || !qrUri || phase !== "verify-enrol") return;
-    QRCode.toCanvas(qrCanvasRef.current, qrUri, {
-      width: 200,
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#111111", light: "#ffffff" },
-    }).catch(() => {
-      toast.error("Could not render QR code. Use the manual key instead.");
-    });
-  }, [phase, qrUri]);
 
   if (authLoading) {
     return (
@@ -98,77 +66,28 @@ export default function MfaGate() {
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to={from} replace />;
 
-  const buildFriendlyName = () => {
-    const iso = new Date().toISOString().replace(/[:.]/g, "-");
-    let token = Math.random().toString(36).slice(2, 10);
-    try {
-      const uuid = (globalThis.crypto as any)?.randomUUID?.();
-      if (uuid) token = String(uuid).slice(0, 8);
-    } catch { /* ignore */ }
-    return `GIS Cybernet Admin (${iso}-${token})`;
-  };
-
-  const tryEnrolOnce = async () => {
-    return await supabase.auth.mfa.enroll({
-      factorType: "totp",
-      friendlyName: buildFriendlyName(),
-    });
-  };
-
   const handleEnrol = async () => {
     setBusy(true);
-    // Wipe any stale state from a previous attempt before starting fresh.
-    setFactorId(null);
-    setQrUri(null);
-    setSecret(null);
-    setCode("");
     try {
-      await cleanupUnverifiedFactors();
-      let { data, error } = await tryEnrolOnce();
-      if (error) {
-        const msg = error.message || "";
-        const recoverable = /already exists|friendly.?name|unverified|duplicate/i.test(msg);
-        if (recoverable) {
-          console.warn("[MfaGate] enrol collision, auto-cleaning and retrying:", msg);
-          await cleanupUnverifiedFactors();
-          ({ data, error } = await tryEnrolOnce());
-        }
-        if (error) throw error;
-      }
-      setFactorId(data!.id);
-      setQrUri(data!.totp.uri);
-      setSecret(data!.totp.secret);
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: `GIS Cybernet Admin (${new Date().toISOString().slice(0, 10)})`,
+      });
+      if (error) throw error;
+      setFactorId(data.id);
+      setQrUri(data.totp.uri);
+      setSecret(data.totp.secret);
       setPhase("verify-enrol");
     } catch (e: any) {
-      console.warn("[MfaGate] enrol failed:", e?.message);
-      toast.error("Could not start 2FA setup. Tap Regenerate to try again.");
+      toast.error(e.message || "Enrolment failed");
     } finally {
       setBusy(false);
     }
-  };
-
-  const handleRegenerate = async () => {
-    setBusy(true);
-    try {
-      if (factorId) {
-        try { await supabase.auth.mfa.unenroll({ factorId }); } catch { /* ignore */ }
-      }
-      await cleanupUnverifiedFactors();
-    } finally {
-      setBusy(false);
-    }
-    await handleEnrol();
   };
 
   const handleVerify = async () => {
     if (!factorId || code.length !== 6) return;
     setBusy(true);
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
-    const { getDeviceFingerprint } = await import("@/lib/device-fingerprint");
-    const fpPromise = getDeviceFingerprint().catch(() => null);
-    const ipPromise = supabase.functions.invoke("client-ip-info")
-      .then(({ data }) => (data as any)?.ip ?? null)
-      .catch(() => null);
     try {
       const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId });
       if (cErr) throw cErr;
@@ -176,28 +95,10 @@ export default function MfaGate() {
         factorId, challengeId: ch.id, code,
       });
       if (vErr) throw vErr;
-      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
-      void supabase.rpc("record_mfa_challenge", {
-        _outcome: "success",
-        _factor_id: factorId,
-        _ip_address: ip,
-        _device_fingerprint: fp,
-        _user_agent: ua,
-      });
       toast.success("Verification successful");
       navigate(from, { replace: true });
     } catch (e: any) {
-      const reason = e?.message || "Invalid code";
-      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
-      void supabase.rpc("record_mfa_challenge", {
-        _outcome: "failure",
-        _failure_reason: reason,
-        _factor_id: factorId,
-        _ip_address: ip,
-        _device_fingerprint: fp,
-        _user_agent: ua,
-      });
-      toast.error(reason);
+      toast.error(e.message || "Invalid code");
       setCode("");
     } finally {
       setBusy(false);
@@ -278,18 +179,16 @@ export default function MfaGate() {
                 Scan this QR code with your authenticator app, then enter the 6-digit code below.
               </p>
               <div className="bg-white p-4 rounded-lg flex justify-center">
-                <canvas
-                  ref={qrCanvasRef}
-                  width={200}
-                  height={200}
-                  aria-label="2FA QR code"
-                  className="h-[200px] w-[200px]"
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUri)}`}
+                  alt="2FA QR Code" width={200} height={200}
                 />
               </div>
-              <p className="rounded-md border border-border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
-                For your protection, the secret key is never displayed. Scan the QR code above with
-                Google Authenticator, Authy, or 1Password to enrol this device.
-              </p>
+              {secret && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Or enter this key manually: <code className="bg-muted px-1.5 py-0.5 rounded select-all">{secret}</code>
+                </p>
+              )}
               <div>
                 <Label className="text-xs">6-digit code from your app</Label>
                 <div className="flex justify-center mt-2">
@@ -303,67 +202,6 @@ export default function MfaGate() {
               <Button onClick={handleVerify} disabled={busy || code.length !== 6} className="w-full">
                 {busy ? "Verifying…" : "Confirm & continue"}
               </Button>
-              <div className="text-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs gap-1 text-muted-foreground"
-                  onClick={handleRegenerate}
-                  disabled={busy}
-                >
-                  <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
-                  Regenerate code
-                </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="ml-2 text-xs gap-1"
-                  onClick={() => setPhase("enroll-help")}
-                  disabled={busy}
-                >
-                  <ShieldAlert className="h-3 w-3" />
-                  Can't scan the QR?
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {phase === "enroll-help" && (
-            <div className="space-y-4">
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground space-y-2">
-                <p className="font-medium text-foreground">The setup secret is hidden by design.</p>
-                <p>
-                  Showing the raw key in chat or on screen would let anyone glancing at this device
-                  enrol their own authenticator. Pick one of the safe options below instead.
-                </p>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
-                <li>Open your authenticator app on a phone and tap <strong>Scan QR code</strong>, then point the camera at the QR on the previous screen.</li>
-                <li>If you previously enrolled and saved recovery codes, use one of them — it will let you re-enrol cleanly.</li>
-                <li>If neither option works, sign out and ask another administrator to reset your 2FA from the Admin Settings page.</li>
-              </ul>
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPhase("verify-enrol")}
-                  disabled={busy || !qrUri}
-                  className="w-full gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to QR code
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => { setRecoveryCode(""); setPhase("recovery"); }}
-                  disabled={busy}
-                  className="w-full gap-2"
-                >
-                  <KeyRound className="h-4 w-4" />
-                  Use a recovery code
-                </Button>
-              </div>
             </div>
           )}
 

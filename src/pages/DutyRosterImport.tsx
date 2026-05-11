@@ -12,13 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2, Settings2, CalendarRange, Download, FileText } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertTriangle, Eye, Trash2, Rocket, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { DeployedAssignmentsDialog } from "@/components/shifts/DeployedAssignmentsDialog";
-import { downloadCSVString } from "@/lib/download-utils";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
@@ -144,12 +140,6 @@ export default function DutyRosterImport() {
   const [notes, setNotes] = useState("");
   const [committing, setCommitting] = useState(false);
   const [deployingId, setDeployingId] = useState<string | null>(null);
-  const [overrideTarget, setOverrideTarget] = useState<{ effective_date: string; label: string } | null>(null);
-  const [previewEndDate, setPreviewEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
-
-  useEffect(() => {
-    if (!previewEndDate || previewEndDate < effectiveDate) setPreviewEndDate(effectiveDate);
-  }, [effectiveDate]);
 
   const handleRedeploy = async (importId: string) => {
     setDeployingId(importId);
@@ -187,102 +177,6 @@ export default function DutyRosterImport() {
     return acc;
   }, [parsed]);
 
-  // Schedule preview — fetch directory once parsed rows exist
-  const directory = useQuery({
-    queryKey: ["roster-preview-directory"],
-    enabled: !!parsed && parsed.rows.length > 0 && isAdminOrSupervisor,
-    queryFn: async () => {
-      const [{ data: profs, error: e1 }, { data: depts, error: e2 }] = await Promise.all([
-        supabase.from("profiles").select("id, first_name, last_name, staff_id, shift_group, department_id, office"),
-        supabase.from("departments").select("id, name"),
-      ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
-      const deptMap = new Map<string, string>();
-      (depts ?? []).forEach((d: any) => deptMap.set(d.id, d.name));
-      return {
-        profiles: (profs ?? []) as Array<{
-          id: string; first_name: string | null; last_name: string | null;
-          staff_id: string | null; shift_group: string | null;
-          department_id: string | null; office: string | null;
-        }>,
-        deptMap,
-      };
-    },
-  });
-
-  const previewPlan = useMemo(() => {
-    if (!parsed || !directory.data) return null;
-    const { profiles: dir, deptMap } = directory.data;
-    const upper = (s: string | null | undefined) => (s ?? "").toUpperCase().trim();
-    const emptyShifts = () => ({ A: 0, B: 0, C: 0, D: 0 } as Record<"A"|"B"|"C"|"D", number>);
-
-    const matches: Array<{
-      shift: "A"|"B"|"C"|"D"; staff_name: string; staff_id: string | null;
-      previous: string | null; next: "A"|"B"|"C"|"D"; status: "matched"|"new";
-      department: string; office: string;
-    }> = [];
-
-    parsed.rows.forEach((r) => {
-      const parts = r.name.trim().split(/\s+/);
-      const last = parts[0] ?? "";
-      const first = parts[1] ?? "";
-      let p = dir.find((x) =>
-        upper(x.last_name) === upper(last) &&
-        (first === "" || upper(x.first_name).startsWith(upper(first)))
-      );
-      if (!p && first) {
-        p = dir.find((x) =>
-          upper(x.first_name) === upper(last) &&
-          upper(x.last_name).startsWith(upper(first))
-        );
-      }
-      const department =
-        (p?.department_id && deptMap.get(p.department_id)) ||
-        (r.unit?.trim() ? r.unit.trim() : "Unassigned");
-      const office = p?.office?.trim() || "Unassigned";
-      matches.push({
-        shift: r.shift,
-        staff_name: p ? `${p.last_name ?? ""}, ${p.first_name ?? ""}` : r.name,
-        staff_id: p?.staff_id ?? null,
-        previous: p?.shift_group ?? null,
-        next: r.shift,
-        status: p ? "matched" : "new",
-        department,
-        office,
-      });
-    });
-
-    const summary = emptyShifts();
-    let changed = 0, kept = 0, created = 0;
-    const byDepartment = new Map<string, Record<"A"|"B"|"C"|"D", number> & { total: number }>();
-    const byOffice = new Map<string, Record<"A"|"B"|"C"|"D", number> & { total: number }>();
-    const bump = (m: Map<string, any>, key: string, shift: "A"|"B"|"C"|"D") => {
-      let row = m.get(key);
-      if (!row) { row = { ...emptyShifts(), total: 0 }; m.set(key, row); }
-      row[shift]++; row.total++;
-    };
-    matches.forEach((m) => {
-      summary[m.next]++;
-      if (m.status === "new") created++;
-      else if (m.previous === m.next) kept++;
-      else changed++;
-      bump(byDepartment, m.department, m.next);
-      bump(byOffice, m.office, m.next);
-    });
-    const sortRows = (m: Map<string, any>) =>
-      Array.from(m.entries())
-        .map(([name, v]) => ({ name, ...v }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-    return {
-      matches, summary, changed, kept, created,
-      byDepartment: sortRows(byDepartment),
-      byOffice: sortRows(byOffice),
-    };
-  }, [parsed, directory.data]);
-
-
-
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
@@ -291,124 +185,6 @@ export default function DutyRosterImport() {
     setFile(null); setParsed(null); setNotes("");
     if (fileRef.current) fileRef.current.value = "";
   };
-
-  const previewRangeLabel = previewEndDate && previewEndDate !== effectiveDate
-    ? `${effectiveDate} to ${previewEndDate}`
-    : effectiveDate;
-
-  const exportPreviewCSV = () => {
-    if (!previewPlan) { toast.error("Preview not ready"); return; }
-    const header = ["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current Shift", "Will Become", "Status"];
-    const lines = [header.join(",")];
-    const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
-    previewPlan.matches.forEach((m) => {
-      lines.push([
-        m.shift,
-        esc(m.staff_name),
-        esc(m.staff_id ?? ""),
-        esc(m.department),
-        esc(m.office),
-        esc(m.status === "new" ? "new stub" : (m.previous ?? "")),
-        `Shift ${m.next}`,
-        m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
-      ].join(","));
-    });
-    lines.push("");
-    lines.push(`# Effective range,${previewRangeLabel}`);
-    (["A","B","C","D"] as const).forEach((s) => lines.push(`# Shift ${s} count,${previewPlan.summary[s]}`));
-    lines.push(`# Changing,${previewPlan.changed}`);
-    lines.push(`# Unchanged,${previewPlan.kept}`);
-    lines.push(`# New stubs,${previewPlan.created}`);
-
-    lines.push("");
-    lines.push("## By Department");
-    lines.push(["Department", "Shift A", "Shift B", "Shift C", "Shift D", "Total"].join(","));
-    previewPlan.byDepartment.forEach((r) => {
-      lines.push([esc(r.name), r.A, r.B, r.C, r.D, r.total].join(","));
-    });
-
-    lines.push("");
-    lines.push("## By Office");
-    lines.push(["Office", "Shift A", "Shift B", "Shift C", "Shift D", "Total"].join(","));
-    previewPlan.byOffice.forEach((r) => {
-      lines.push([esc(r.name), r.A, r.B, r.C, r.D, r.total].join(","));
-    });
-
-    downloadCSVString(lines.join("\n"), `schedule-preview_${effectiveDate}.csv`);
-    toast.success("CSV exported");
-  };
-
-  const exportPreviewPDF = () => {
-    if (!previewPlan) { toast.error("Preview not ready"); return; }
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-    doc.setFontSize(14);
-    doc.text("Duty Roster — Schedule Preview (A/B/C/D)", 40, 40);
-    doc.setFontSize(10);
-    doc.text(`Effective: ${previewRangeLabel}`, 40, 58);
-    const summary = `Shift A: ${previewPlan.summary.A}   Shift B: ${previewPlan.summary.B}   Shift C: ${previewPlan.summary.C}   Shift D: ${previewPlan.summary.D}   |   Changing: ${previewPlan.changed}   Unchanged: ${previewPlan.kept}   New stubs: ${previewPlan.created}`;
-    doc.text(summary, 40, 74);
-
-    const headStyles = { fillColor: [30, 64, 35] as [number, number, number], textColor: 255 };
-    const baseStyles = { fontSize: 8, cellPadding: 3 };
-    const footer = () => {
-      const pageCount = (doc as any).internal.getNumberOfPages();
-      const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      doc.setFontSize(8);
-      doc.text(
-        `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
-        40, doc.internal.pageSize.getHeight() - 20,
-      );
-    };
-
-    autoTable(doc, {
-      startY: 90,
-      head: [["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current", "Will Become", "Status"]],
-      body: previewPlan.matches.map((m) => [
-        m.shift,
-        m.staff_name,
-        m.staff_id ?? "—",
-        m.department,
-        m.office,
-        m.status === "new" ? "new stub" : (m.previous ?? "—"),
-        `Shift ${m.next}`,
-        m.status === "new" ? "new" : (m.previous === m.next ? "unchanged" : "changing"),
-      ]),
-      styles: baseStyles,
-      headStyles,
-      didDrawPage: footer,
-    });
-
-    doc.addPage();
-    doc.setFontSize(12);
-    doc.text("Summary by Department", 40, 40);
-    autoTable(doc, {
-      startY: 56,
-      head: [["Department", "Shift A", "Shift B", "Shift C", "Shift D", "Total"]],
-      body: previewPlan.byDepartment.map((r) => [r.name, r.A, r.B, r.C, r.D, r.total]),
-      styles: baseStyles,
-      headStyles,
-      didDrawPage: footer,
-    });
-
-    const lastY = (doc as any).lastAutoTable?.finalY ?? 56;
-    const pageH = doc.internal.pageSize.getHeight();
-    let nextY = lastY + 28;
-    if (nextY > pageH - 100) { doc.addPage(); nextY = 40; }
-    doc.setFontSize(12);
-    doc.text("Summary by Office", 40, nextY);
-    autoTable(doc, {
-      startY: nextY + 16,
-      head: [["Office", "Shift A", "Shift B", "Shift C", "Shift D", "Total"]],
-      body: previewPlan.byOffice.map((r) => [r.name, r.A, r.B, r.C, r.D, r.total]),
-      styles: baseStyles,
-      headStyles,
-      didDrawPage: footer,
-    });
-
-    doc.save(`schedule-preview_${effectiveDate}.pdf`);
-    toast.success("PDF exported");
-  };
-
 
   const handleFile = async (f: File) => {
     setFile(f); setParsed(null);
@@ -605,100 +381,6 @@ export default function DutyRosterImport() {
               </Tabs>
             )}
 
-            {/* Schedule preview — what auto-deploy will do for the effective date */}
-            {parsed.rows.length > 0 && (
-              <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <CalendarRange className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">Schedule preview</span>
-                  <span className="text-xs text-muted-foreground">
-                    Computed A/B/C/D assignments effective <strong>{effectiveDate}</strong>
-                    {previewEndDate && previewEndDate !== effectiveDate ? <> through <strong>{previewEndDate}</strong></> : null}
-                  </span>
-                  <div className="ml-auto flex items-center gap-2">
-                    <Label htmlFor="prev-end" className="text-[11px] text-muted-foreground">Range end</Label>
-                    <Input
-                      id="prev-end" type="date" className="h-7 text-xs w-36"
-                      value={previewEndDate}
-                      min={effectiveDate}
-                      onChange={(e) => setPreviewEndDate(e.target.value)}
-                    />
-                    <Button
-                      type="button" size="sm" variant="outline" className="h-7 text-xs"
-                      onClick={exportPreviewCSV}
-                      disabled={!previewPlan}
-                      title="Download preview as CSV"
-                    >
-                      <Download className="h-3 w-3 mr-1" /> CSV
-                    </Button>
-                    <Button
-                      type="button" size="sm" variant="outline" className="h-7 text-xs"
-                      onClick={exportPreviewPDF}
-                      disabled={!previewPlan}
-                      title="Download preview as PDF"
-                    >
-                      <FileText className="h-3 w-3 mr-1" /> PDF
-                    </Button>
-                  </div>
-                </div>
-
-                {directory.isLoading || !previewPlan ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Computing planned assignments…
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap gap-2 text-[11px]">
-                      {(["A","B","C","D"] as const).map((s) => (
-                        <Badge key={s} variant="outline">Shift {s}: <strong className="ml-1">{previewPlan.summary[s]}</strong></Badge>
-                      ))}
-                      <Badge className="bg-primary/15 text-primary border-primary/30">Changing: {previewPlan.changed}</Badge>
-                      <Badge variant="outline">Unchanged: {previewPlan.kept}</Badge>
-                      <Badge variant="outline">New stubs: {previewPlan.created}</Badge>
-                    </div>
-                    {previewPlan.changed === 0 && previewPlan.created === 0 ? (
-                      <p className="text-[11px] text-muted-foreground italic">All staff already match this shift configuration.</p>
-                    ) : (
-                      <details className="text-xs">
-                        <summary className="cursor-pointer font-medium text-muted-foreground">
-                          View {previewPlan.changed + previewPlan.created} planned change{previewPlan.changed + previewPlan.created === 1 ? "" : "s"}
-                        </summary>
-                        <div className="rounded border mt-2 overflow-x-auto max-h-60">
-                          <Table className="min-w-[640px]">
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-16">Shift</TableHead>
-                                <TableHead>Staff</TableHead>
-                                <TableHead className="w-28">Staff ID</TableHead>
-                                <TableHead className="w-32">Current</TableHead>
-                                <TableHead className="w-32">Will become</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {previewPlan.matches
-                                .filter((m) => m.status === "new" || m.previous !== m.next)
-                                .slice(0, 200)
-                                .map((m, i) => (
-                                  <TableRow key={i}>
-                                    <TableCell className="text-[11px]"><Badge variant="outline">{m.shift}</Badge></TableCell>
-                                    <TableCell className="text-xs">{m.staff_name}</TableCell>
-                                    <TableCell className="text-[11px] font-mono">{m.staff_id ?? "—"}</TableCell>
-                                    <TableCell className="text-[11px]">
-                                      {m.status === "new" ? <span className="italic text-muted-foreground">new stub</span> : (m.previous ?? "—")}
-                                    </TableCell>
-                                    <TableCell className="text-[11px] font-medium">Shift {m.next}</TableCell>
-                                  </TableRow>
-                                ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </details>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
             <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
               <Button variant="outline" onClick={reset} disabled={committing}>
                 <XCircle className="h-4 w-4 mr-1" /> Discard
@@ -747,31 +429,19 @@ export default function DutyRosterImport() {
                       <TableCell className="text-xs">{i.committed_at ? new Date(i.committed_at).toLocaleString() : "—"}</TableCell>
                       <TableCell className="text-right">
                         {i.status === "committed" && (
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="sm" variant="outline"
-                              className="h-7 px-2 text-xs gap-1"
-                              disabled={deployingId === i.id}
-                              onClick={() => handleRedeploy(i.id)}
-                              title="Re-deploy A/B/C/D shift assignments using this import's effective date"
-                            >
-                              {deployingId === i.id
-                                ? <Loader2 className="h-3 w-3 animate-spin" />
-                                : <Rocket className="h-3 w-3" />}
-                              Deploy
-                            </Button>
-                            <Button
-                              size="sm" variant="outline"
-                              className="h-7 px-2 text-xs gap-1"
-                              onClick={() => setOverrideTarget({
-                                effective_date: i.effective_date,
-                                label: i.source_filename,
-                              })}
-                              title="Override individual staff shift assignments (audited)"
-                            >
-                              <Settings2 className="h-3 w-3" /> Override
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs gap-1"
+                            disabled={deployingId === i.id}
+                            onClick={() => handleRedeploy(i.id)}
+                            title="Re-deploy A/B/C/D shift assignments using this import's effective date"
+                          >
+                            {deployingId === i.id
+                              ? <Loader2 className="h-3 w-3 animate-spin" />
+                              : <Rocket className="h-3 w-3" />}
+                            Deploy
+                          </Button>
                         )}
                       </TableCell>
                     </TableRow>
@@ -782,15 +452,6 @@ export default function DutyRosterImport() {
           </div>
         </CardContent>
       </Card>
-
-      {overrideTarget && (
-        <DeployedAssignmentsDialog
-          open={!!overrideTarget}
-          onOpenChange={(o) => { if (!o) setOverrideTarget(null); }}
-          effectiveDate={overrideTarget.effective_date}
-          importLabel={overrideTarget.label}
-        />
-      )}
     </div>
   );
 }

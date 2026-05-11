@@ -1,11 +1,10 @@
 // Signs export metadata with HMAC-SHA256 using EXPORT_SIGNING_SECRET.
 // Auth-gated: caller must be a logged-in user. Returns a signature string.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cybernet-app",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 async function hmacSha256Hex(key: string, msg: string): Promise<string> {
@@ -19,11 +18,6 @@ async function hmacSha256Hex(key: string, msg: string): Promise<string> {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  // CSRF defence — verifies same-app origin + custom header for state-changing calls.
-  // Internal/service-role/cron callers bypass automatically (see _shared/csrf.ts).
-  const __csrf = assertCsrfSafe(req);
-  if (!__csrf.ok) return csrfDeniedResponse(corsHeaders, __csrf.reason);
 
   try {
     const auth = req.headers.get("Authorization") ?? "";

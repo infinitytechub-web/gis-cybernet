@@ -31,7 +31,6 @@ import { FirewallAlertSettings } from "@/components/settings/FirewallAlertSettin
 import { SecurityAuditPanel } from "@/components/settings/SecurityAuditPanel";
 import { HrmExportDlpPanel } from "@/components/settings/HrmExportDlpPanel";
 import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
-import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -126,7 +125,6 @@ export default function Settings() {
           <TabsTrigger value="security-audit" className="gap-1.5"><History className="h-4 w-4 text-emerald-600" /> Security Audit</TabsTrigger>
           <TabsTrigger value="hrm-dlp" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-700" /> HRM Export DLP</TabsTrigger>
           <TabsTrigger value="mfa-recovery" className="gap-1.5"><KeyRound className="h-4 w-4 text-amber-600" /> MFA Recovery</TabsTrigger>
-          <TabsTrigger value="security-updates" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-700" /> Security Updates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
@@ -166,7 +164,6 @@ export default function Settings() {
         <TabsContent value="security-audit"><SecurityAuditPanel /></TabsContent>
         <TabsContent value="hrm-dlp"><HrmExportDlpPanel /></TabsContent>
         <TabsContent value="mfa-recovery"><MfaRecoveryPanel /></TabsContent>
-        <TabsContent value="security-updates"><SecurityUpdatesPanel /></TabsContent>
       </Tabs>
     </div>
   );

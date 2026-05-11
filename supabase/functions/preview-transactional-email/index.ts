@@ -1,11 +1,10 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
-import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type, x-cybernet-app',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
 }
 
 // Renders all registered templates with their previewData.
@@ -15,11 +14,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
-
-  // CSRF defence — verifies same-app origin + custom header for state-changing calls.
-  // Internal/service-role/cron callers bypass automatically (see _shared/csrf.ts).
-  const __csrf = assertCsrfSafe(req);
-  if (!__csrf.ok) return csrfDeniedResponse(corsHeaders, __csrf.reason);
 
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
   if (!apiKey) {

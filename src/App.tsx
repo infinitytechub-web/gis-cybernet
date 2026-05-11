@@ -6,11 +6,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Layout } from "@/components/Layout";
 import { lazy, Suspense } from "react";
-// Layout is lazy — it pulls in the authenticated app shell (sidebar,
-// SystemAuditTray, notification bell, etc.) and its transitive deps. The
-// login page must not pay that cost.
-const Layout = lazy(() => import("@/components/Layout").then(m => ({ default: m.Layout })));
 import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
 import { IdleWarningDialog } from "@/components/IdleWarningDialog";
 
@@ -20,7 +17,6 @@ import Login from "./pages/Login";
 
 // Lazy-loaded (auth side-routes & error pages, rarely the entry)
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const AdminRecovery = lazy(() => import("./pages/AdminRecovery"));
 const ForcePasswordChange = lazy(() => import("./pages/ForcePasswordChange"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
@@ -65,7 +61,6 @@ const Misd = lazy(() => import("./pages/Misd"));
 const Ipse = lazy(() => import("./pages/Ipse"));
 const CommandVault = lazy(() => import("./pages/CommandVault"));
 const RecycleBin = lazy(() => import("./pages/RecycleBin"));
-const RetentionPolicy = lazy(() => import("./pages/RetentionPolicy"));
 const GpsAddresses = lazy(() => import("./pages/GpsAddresses"));
 const Interlink = lazy(() => import("./pages/Interlink"));
 const CommandsAdmin = lazy(() => import("./pages/CommandsAdmin"));
@@ -123,7 +118,6 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/admin-recovery" element={<AdminRecovery />} />
           <Route path="/change-password" element={<ProtectedRoute><ForcePasswordChange /></ProtectedRoute>} />
           <Route path="/2fa" element={<MfaGate />} />
           <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
@@ -191,7 +185,6 @@ function App() {
          <Route path="/gps-addresses" element={<Navigate to="/command-vault/gps" replace />} />
          <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />
           <Route path="/recycle-bin" element={<ProtectedRoute><Layout><RecycleBin /></Layout></ProtectedRoute>} />
-          <Route path="/announcements/retention" element={<ProtectedRoute><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
           <Route path="/interlink" element={<ProtectedRoute><Layout><Interlink /></Layout></ProtectedRoute>} />
           <Route path="/commands" element={<ProtectedRoute><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/command/:slug" element={<ProtectedRoute><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
