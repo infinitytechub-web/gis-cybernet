@@ -64,6 +64,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
   const location = useLocation();
   const [allUsers, setAllUsers] = useState<OnlineUser[]>([]);
   const [now, setNow] = useState<number>(Date.now());
+  const [lastSyncAt, setLastSyncAt] = useState<number>(Date.now());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const payloadRef = useRef<OnlineUser | null>(null);
 
