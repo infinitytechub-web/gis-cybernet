@@ -82,6 +82,7 @@ export function ExportMenu({
         toast.error("No data to export");
         return;
       }
+      const { exportReport, getFormatLabel } = await import("@/lib/export-utils");
       exportReport(fmt, data);
       toast.success(`${getFormatLabel(fmt)} downloaded`);
       onExported?.(fmt);
