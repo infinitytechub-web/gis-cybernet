@@ -244,6 +244,7 @@ export default function IpBlocks() {
                   <TableHead>Action</TableHead>
                   <TableHead>Admin</TableHead>
                   <TableHead>IP</TableHead>
+                  <TableHead>MAC</TableHead>
                   <TableHead>Fingerprint</TableHead>
                   <TableHead>Reason</TableHead>
                   <TableHead>Expiry</TableHead>
