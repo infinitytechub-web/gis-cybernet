@@ -3927,6 +3927,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           ip_address: string | null
+          mac_address: string | null
           notes: string | null
           performed_by: string | null
           performed_by_name: string | null
@@ -3941,6 +3942,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           ip_address?: string | null
+          mac_address?: string | null
           notes?: string | null
           performed_by?: string | null
           performed_by_name?: string | null
@@ -3955,6 +3957,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           ip_address?: string | null
+          mac_address?: string | null
           notes?: string | null
           performed_by?: string | null
           performed_by_name?: string | null
@@ -3980,6 +3983,7 @@ export type Database = {
           device_fingerprint: string | null
           id: string
           ip_address: string
+          mac_address: string | null
           notes: string | null
           reason: string
           unblocked_at: string | null
@@ -3995,6 +3999,7 @@ export type Database = {
           device_fingerprint?: string | null
           id?: string
           ip_address: string
+          mac_address?: string | null
           notes?: string | null
           reason?: string
           unblocked_at?: string | null
@@ -4010,6 +4015,7 @@ export type Database = {
           device_fingerprint?: string | null
           id?: string
           ip_address?: string
+          mac_address?: string | null
           notes?: string | null
           reason?: string
           unblocked_at?: string | null
@@ -9099,16 +9105,28 @@ export type Database = {
         Returns: Json
       }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
-      block_ip: {
-        Args: {
-          _duration_minutes?: number
-          _fingerprint?: string
-          _ip: string
-          _notes?: string
-          _reason?: string
-        }
-        Returns: string
-      }
+      block_ip:
+        | {
+            Args: {
+              _duration_minutes?: number
+              _fingerprint?: string
+              _ip: string
+              _notes?: string
+              _reason?: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _duration_minutes?: number
+              _fingerprint?: string
+              _ip: string
+              _mac?: string
+              _notes?: string
+              _reason?: string
+            }
+            Returns: string
+          }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
       can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_export_hrm: { Args: { _kind: string }; Returns: boolean }
@@ -9429,6 +9447,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
         Args: {
           _message: string
