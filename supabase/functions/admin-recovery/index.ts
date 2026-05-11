@@ -148,6 +148,19 @@ Deno.serve(async (req) => {
   // Sign out any active sessions for this user.
   await admin.auth.admin.signOut(profile.user_id).then(() => {}).catch(() => {});
 
+  // Clear lockout state so the admin can sign in immediately. Without this,
+  // a sole admin who is locked out has no way back in. Both actions are
+  // audited so the trail remains intact.
+  let lockoutCleared = false;
+  try {
+    await admin.rpc("clear_failed_login_attempts", { _staff_id: profile.staff_id });
+    const { error: unlockErr } = await admin
+      .from("profiles")
+      .update({ account_locked: false })
+      .eq("id", profile.id);
+    lockoutCleared = !unlockErr;
+  } catch { /* best-effort */ }
+
   await admin.from("system_audit_log").insert({
     action: "admin_recovery_succeeded",
     entity_type: "profiles",
@@ -157,6 +170,7 @@ Deno.serve(async (req) => {
       staff_id: profile.staff_id,
       target_name: `${profile.first_name} ${profile.last_name}`,
       method,
+      lockout_cleared: lockoutCleared,
       ip,
       ua,
     },
@@ -166,6 +180,9 @@ Deno.serve(async (req) => {
     ok: true,
     staff_id: profile.staff_id,
     must_change_password: true,
-    note: "Account lockout (if any) was NOT cleared. Use the admin unlock workflow if you remain locked out.",
+    lockout_cleared: lockoutCleared,
+    note: lockoutCleared
+      ? "Password reset and account lockout cleared. You can sign in now."
+      : "Password reset. Lockout state could not be auto-cleared — use the admin unlock workflow.",
   });
 });
