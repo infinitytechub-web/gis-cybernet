@@ -9323,10 +9323,12 @@ export type Database = {
         Returns: boolean
       }
       is_gps_hub_authorized: { Args: { _user_id: string }; Returns: boolean }
-      is_ip_blocked: {
-        Args: { _fingerprint?: string; _ip: string }
-        Returns: boolean
-      }
+      is_ip_blocked:
+        | { Args: { _fingerprint?: string; _ip: string }; Returns: boolean }
+        | {
+            Args: { _fingerprint?: string; _ip: string; _mac?: string }
+            Returns: boolean
+          }
       is_ipse_tier: { Args: { _user_id: string }; Returns: boolean }
       is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
       is_recyclable_table: { Args: { _table: string }; Returns: boolean }

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { getMyClientIp } from "@/lib/client-ip";
+import { getTrustedMac } from "@/lib/trusted-mac";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
@@ -75,13 +76,16 @@ export default function Login() {
 
       // Device fingerprint for block check
       const fingerprint = await getDeviceFingerprint();
+      // Trusted MAC, if a controlled context (kiosk/MDM/VPN agent) injected one.
+      const trustedMac = getTrustedMac();
 
-      // Block check (IP and/or device fingerprint)
-      if (clientIp || fingerprint) {
+      // Block check (IP, device fingerprint, and/or trusted MAC)
+      if (clientIp || fingerprint || trustedMac) {
         const { data: blocked } = await supabase.rpc("is_ip_blocked", {
           _ip: clientIp ?? "",
           _fingerprint: fingerprint || null,
-        });
+          _mac: trustedMac,
+        } as any);
         if (blocked === true) {
           toast({
             title: "Access Blocked",
