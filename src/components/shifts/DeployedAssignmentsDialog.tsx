@@ -83,8 +83,8 @@ export function DeployedAssignmentsDialog({ open, onOpenChange, effectiveDate, i
       if (reason.trim().length < 5) throw new Error("Reason must be at least 5 characters");
       const { data, error } = await supabase.rpc("override_shift_assignment", {
         _profile_id: editing.profile_id,
-        _shift_letter: newShift,
-        _start_date: overrideDate,
+        _new_shift_code: newShift,
+        _effective_date: overrideDate,
         _reason: reason.trim(),
       });
       if (error) throw error;
