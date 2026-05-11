@@ -1,15 +1,23 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ClipboardCheck, UserCheck, UserX, Users } from "lucide-react";
+import { ClipboardCheck, UserCheck, UserX, Users, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function AttendanceLogWidget() {
-  const today = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const isToday = dateStr === format(new Date(), "yyyy-MM-dd");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["attendance-log-widget", today],
+    queryKey: ["attendance-log-widget", dateStr],
     queryFn: async () => {
       const [profilesRes, attRes] = await Promise.all([
         supabase
@@ -19,7 +27,7 @@ export default function AttendanceLogWidget() {
         supabase
           .from("attendances")
           .select("profile_id, status")
-          .eq("date", today),
+          .eq("date", dateStr),
       ]);
       if (profilesRes.error) throw profilesRes.error;
       if (attRes.error) throw attRes.error;
@@ -65,11 +73,45 @@ export default function AttendanceLogWidget() {
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="text-sm flex flex-wrap items-center gap-2">
           <ClipboardCheck className="h-4 w-4 text-primary" />
-          Today's Attendance Log
+          {isToday ? "Today's Attendance Log" : `Attendance — ${format(selectedDate, "dd MMM yyyy")}`}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn("h-7 px-2 text-xs gap-1.5 ml-auto", !isToday && "border-primary text-primary")}
+              >
+                <CalendarIcon className="h-3 w-3" />
+                {format(selectedDate, "dd MMM")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => d && setSelectedDate(d)}
+                disabled={(d) => d > new Date()}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+              {!isToday && (
+                <div className="border-t p-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full text-xs"
+                    onClick={() => setSelectedDate(new Date())}
+                  >
+                    Reset to today
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
           {data && (
-            <Badge variant="outline" className="ml-auto text-[10px]">
+            <Badge variant="outline" className="text-[10px]">
               {data.totalPresent}/{data.totalActive} present
             </Badge>
           )}
