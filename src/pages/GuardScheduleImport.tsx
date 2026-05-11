@@ -239,6 +239,7 @@ function parseCsv(text: string, fallbackYear: number): ParseResult {
   return { rows, warnings, startDate: dates[0], endDate: dates[dates.length - 1] };
 }
 
+function parsePages(pages: string[], fallbackYear: number): ParseResult {
   const warnings: string[] = [];
   const rows: RawRow[] = [];
   const allDates = new Set<string>();
