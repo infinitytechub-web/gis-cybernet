@@ -443,19 +443,33 @@ export default function DutyRosterImport() {
                       <TableCell className="text-xs">{i.committed_at ? new Date(i.committed_at).toLocaleString() : "—"}</TableCell>
                       <TableCell className="text-right">
                         {i.status === "committed" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-xs gap-1"
-                            disabled={deployingId === i.id}
-                            onClick={() => handleRedeploy(i.id)}
-                            title="Re-deploy A/B/C/D shift assignments using this import's effective date"
-                          >
-                            {deployingId === i.id
-                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                              : <Rocket className="h-3 w-3" />}
-                            Deploy
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="sm" variant="outline" className="h-7 px-2 text-xs gap-1"
+                              onClick={() => setAuditForImport(i.id)}
+                              title="View audit trail of deployed/overridden assignments"
+                            >
+                              <History className="h-3 w-3" /> Audit
+                            </Button>
+                            <Button
+                              size="sm" variant="outline" className="h-7 px-2 text-xs gap-1"
+                              onClick={() => setOverrideForImport(i.id)}
+                              title="Override deployed shift assignments"
+                            >
+                              <Settings2 className="h-3 w-3" /> Override
+                            </Button>
+                            <Button
+                              size="sm" variant="outline" className="h-7 px-2 text-xs gap-1"
+                              disabled={deployingId === i.id}
+                              onClick={() => handleRedeploy(i.id)}
+                              title="Re-deploy A/B/C/D shift assignments using this import's effective date"
+                            >
+                              {deployingId === i.id
+                                ? <Loader2 className="h-3 w-3 animate-spin" />
+                                : <Rocket className="h-3 w-3" />}
+                              Deploy
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
