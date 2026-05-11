@@ -660,6 +660,17 @@ export function SharedFilesPanel() {
                             <Download className="h-3.5 w-3.5" />
                           </Button>
                           {isAdminOrSupervisor && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              title="Edit & re-share"
+                              onClick={() => openEdit(f)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {isAdminOrSupervisor && (
                             <FileAuditTrailDialog
                               fileId={f.id}
                               trigger={
