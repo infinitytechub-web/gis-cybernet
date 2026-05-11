@@ -43,6 +43,46 @@ export function SharedFilesPanel() {
   const [retention, setRetention] = useState<string>("default"); // default | 7 | 30 | 90 | 365 | never
   const [uploading, setUploading] = useState(false);
 
+  // Edit / re-share state
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editAudienceMode, setEditAudienceMode] = useState<"global" | "department" | "individual">("global");
+  const [editDeptId, setEditDeptId] = useState<string>("global");
+  const [editTargetUserId, setEditTargetUserId] = useState<string>("");
+  const [editRetention, setEditRetention] = useState<string>("default");
+  const [editReshare, setEditReshare] = useState<boolean>(true);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (f: any) => {
+    setEditing(f);
+    setEditTitle(f.title ?? "");
+    setEditDescription(f.description ?? "");
+    if (f.target_user_id) {
+      setEditAudienceMode("individual");
+      setEditTargetUserId(f.target_user_id);
+      setEditDeptId("global");
+    } else if (f.department_id) {
+      setEditAudienceMode("department");
+      setEditDeptId(f.department_id);
+      setEditTargetUserId("");
+    } else {
+      setEditAudienceMode("global");
+      setEditDeptId("global");
+      setEditTargetUserId("");
+    }
+    if (f.expires_at == null && f.retention_days == null) setEditRetention("default");
+    else if (f.expires_at == null) setEditRetention("never");
+    else if (f.retention_days && [7, 30, 90, 365].includes(f.retention_days)) setEditRetention(String(f.retention_days));
+    else setEditRetention("never");
+    setEditReshare(true);
+  };
+
+  const closeEdit = () => {
+    setEditing(null);
+    setSavingEdit(false);
+  };
+
   // Filters
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState<string>("all");
