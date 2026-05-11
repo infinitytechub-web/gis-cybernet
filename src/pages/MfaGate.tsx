@@ -240,16 +240,6 @@ export default function MfaGate() {
     navigate("/login", { replace: true });
   };
 
-  const handleCopySecret = async () => {
-    if (!secret) return;
-    try {
-      await navigator.clipboard.writeText(secret);
-      toast.success("Secret key copied");
-    } catch {
-      toast.error("Could not copy the secret key");
-    }
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
