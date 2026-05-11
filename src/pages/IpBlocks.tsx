@@ -29,11 +29,40 @@ export default function IpBlocks() {
   const [reason, setReason] = useState("Repeated failed login attempts");
   const [notes, setNotes] = useState("");
 
+  // Search + filter for both block list and audit log.
+  const [search, setSearch] = useState("");
+  const [scope, setScope] = useState<"all" | "mac" | "ip" | "fingerprint">("all");
+
   // Lightweight client-side check; server normalizes & validates definitively.
   const macLooksValid = (v: string) => {
     if (!v.trim()) return true;
     const hex = v.replace(/[^0-9a-fA-F]/g, "");
     return hex.length === 12;
+  };
+
+  // Build a haystack-aware match function. If the search term parses as a MAC,
+  // compare on its normalized canonical form so "aa-bb-cc-..." matches
+  // "AA:BB:CC:..." stored in the DB.
+  const buildMatcher = (term: string) => {
+    const t = term.trim().toLowerCase();
+    if (!t) return () => true;
+    const macForm = normalizeMac(term);
+    return (row: any) => {
+      const ip = (row.ip_address ?? "").toLowerCase();
+      const fp = (row.device_fingerprint ?? "").toLowerCase();
+      const mc = (row.mac_address ?? "").toLowerCase();
+      const reason = (row.reason ?? "").toLowerCase();
+      const notes = (row.notes ?? "").toLowerCase();
+      const macHit = macForm ? mc === macForm.toLowerCase() : mc.includes(t);
+      return ip.includes(t) || fp.includes(t) || macHit || reason.includes(t) || notes.includes(t);
+    };
+  };
+  const matcher = buildMatcher(search);
+  const scopeFilter = (row: any) => {
+    if (scope === "mac") return !!row.mac_address;
+    if (scope === "ip") return !!row.ip_address && !row.mac_address;
+    if (scope === "fingerprint") return !!row.device_fingerprint && !row.mac_address;
+    return true;
   };
 
   const { data: blocks = [], refetch } = useQuery({
