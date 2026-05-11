@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { getMyClientIp } from "@/lib/client-ip";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -22,10 +23,7 @@ export function useForcedSignoutWatcher() {
 
     const init = async () => {
       fpRef.current = await getDeviceFingerprint();
-      try {
-        const { data } = await supabase.functions.invoke("client-ip-info");
-        ipRef.current = (data as any)?.ip ?? null;
-      } catch { /* ignore */ }
+      ipRef.current = await getMyClientIp();
       void check();
     };
 
