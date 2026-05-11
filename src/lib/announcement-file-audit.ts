@@ -8,12 +8,9 @@ async function getClientIp(): Promise<string | null> {
   if (ipPromise) return ipPromise;
   ipPromise = (async () => {
     try {
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 2500);
-      const res = await fetch("https://api.ipify.org?format=json", { signal: ctl.signal });
-      clearTimeout(t);
-      const j = await res.json();
-      cachedIp = j?.ip ?? null;
+      const { data, error } = await supabase.functions.invoke("client-ip-info");
+      if (error) return null;
+      cachedIp = (data as any)?.ip ?? null;
       return cachedIp;
     } catch {
       return null;
