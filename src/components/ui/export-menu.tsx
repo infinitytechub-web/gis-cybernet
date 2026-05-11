@@ -7,7 +7,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, FileText, FileSpreadsheet, FileType } from "lucide-react";
 import { toast } from "sonner";
-import { exportReport, getFormatLabel, type ExportFormat } from "@/lib/export-utils";
+// Lazy-load the heavy export-utils module (pulls in jspdf + xlsx). Keeping
+// it out of the static graph means pages that merely render an ExportMenu
+// don't ship those libraries in their initial chunk — and crucially, eager
+// modules like Layout/SystemAuditTray no longer pull jspdf+xlsx into the
+// login bundle.
+import type { ExportFormat } from "@/lib/export-utils";
 
 type ExportPayload = {
   title: string;
