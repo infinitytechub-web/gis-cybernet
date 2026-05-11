@@ -202,17 +202,18 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
       const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${op.lat},${op.lng}`;
       const osmUrl = `https://www.openstreetmap.org/?mlat=${op.lat}&mlon=${op.lng}#map=18/${op.lat}/${op.lng}`;
 
+      const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c] as string));
       marker.bindPopup(`
         <div style="font-size:12px;min-width:200px">
-          <p style="font-weight:bold;text-transform:capitalize;margin:0 0 4px">${op.operation_type.replace(/_/g, " ")}</p>
-          <p style="margin:0;color:#666">${format(new Date(op.operation_date), "dd MMM yyyy")}</p>
-          <p style="margin:2px 0;color:#666">${op.location}</p>
-          <p style="margin:4px 0"><strong>${op.suspects_count}</strong> suspects · <strong style="color:#dc2626">${op.arrests_count}</strong> arrests</p>
+          <p style="font-weight:bold;text-transform:capitalize;margin:0 0 4px">${esc(op.operation_type.replace(/_/g, " "))}</p>
+          <p style="margin:0;color:#666">${esc(format(new Date(op.operation_date), "dd MMM yyyy"))}</p>
+          <p style="margin:2px 0;color:#666">${esc(op.location)}</p>
+          <p style="margin:4px 0"><strong>${esc(op.suspects_count)}</strong> suspects · <strong style="color:#dc2626">${esc(op.arrests_count)}</strong> arrests</p>
           <p style="margin:4px 0">
-            <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:${color}22;color:${color};text-transform:capitalize">${op.severity}</span>
-            <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:#e5e7eb;margin-left:4px;text-transform:capitalize">${op.status.replace(/_/g, " ")}</span>
+            <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:${color}22;color:${color};text-transform:capitalize">${esc(op.severity)}</span>
+            <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;background:#e5e7eb;margin-left:4px;text-transform:capitalize">${esc(op.status.replace(/_/g, " "))}</span>
           </p>
-          ${op.description ? `<p style="margin:4px 0;color:#888;font-size:11px">${op.description}</p>` : ""}
+          ${op.description ? `<p style="margin:4px 0;color:#888;font-size:11px">${esc(op.description)}</p>` : ""}
           <div style="margin-top:6px;padding-top:6px;border-top:1px solid #e5e7eb;display:flex;flex-wrap:wrap;gap:4px">
             <a href="${streetViewUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#1a73e8;color:#fff;text-decoration:none">🚶 Street View</a>
             <a href="${gmapsUrl}" target="_blank" rel="noopener" style="font-size:11px;padding:2px 6px;border-radius:4px;background:#0f9d58;color:#fff;text-decoration:none">📍 Google Maps</a>

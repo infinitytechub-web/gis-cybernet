@@ -1,5 +1,7 @@
-// Lightweight client-side IP geolocation with localStorage cache.
-// Uses ipapi.co's free, key-less endpoint. Results are approximate.
+// Lightweight IP geolocation with localStorage cache.
+// Lookups are proxied through the `client-ip-info` edge function so the browser
+// never sends staff IPs directly to third-party services.
+import { supabase } from "@/integrations/supabase/client";
 
 export interface IpGeo {
   ip: string;
@@ -54,15 +56,16 @@ export async function lookupIp(ip: string): Promise<IpGeo> {
 
   const p = (async (): Promise<IpGeo> => {
     try {
-      const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = await res.json();
+      const { data: j, error } = await supabase.functions.invoke("client-ip-info", {
+        body: { ip },
+      });
+      if (error || !j || (j as any).error) throw new Error(error?.message ?? "lookup failed");
       const geo: IpGeo = {
         ip,
-        country: j.country_name || undefined,
-        country_code: j.country_code || undefined,
-        city: j.city || undefined,
-        region: j.region || undefined,
+        country: (j as any).country || undefined,
+        country_code: (j as any).country_code || undefined,
+        city: (j as any).city || undefined,
+        region: (j as any).region || undefined,
         cachedAt: Date.now(),
       };
       const c = loadCache();

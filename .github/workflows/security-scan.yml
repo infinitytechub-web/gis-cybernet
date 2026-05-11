@@ -1,0 +1,216 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Weekly Monday 04:30 UTC sweep so dormant branches get re-checked.
+    - cron: "30 4 * * 1"
+
+# Cancel superseded runs on the same ref so PRs don't pile up.
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write   # so SARIF uploads land in the Security tab
+  pull-requests: read
+
+jobs:
+  # ───────────────────────────────────────────────────────────────────
+  # 1. Secrets leak scanning (gitleaks)
+  # ───────────────────────────────────────────────────────────────────
+  secrets-scan:
+    name: Secrets leak scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gitleaks needs full history for diff scans
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Fail the job on any leak (default behaviour, made explicit).
+          config-path: .gitleaks.toml
+
+  # ───────────────────────────────────────────────────────────────────
+  # 2. JavaScript/TypeScript SAST (XSS, dangerous patterns)
+  # ───────────────────────────────────────────────────────────────────
+  code-sast:
+    name: Static analysis (Semgrep + ESLint security)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install ESLint security plugins
+        run: bun add -d eslint-plugin-security eslint-plugin-no-unsanitized
+
+      - name: ESLint security rules
+        # Run against src/ only — Lovable repo has plenty of edge-function
+        # files that use different rule sets.
+        run: |
+          npx eslint \
+            --no-eslintrc \
+            --parser-options=ecmaVersion:2022,sourceType:module,ecmaFeatures:{jsx:true} \
+            --plugin security,no-unsanitized \
+            --rule '{
+              "security/detect-eval-with-expression": "error",
+              "security/detect-non-literal-fs-filename": "warn",
+              "security/detect-unsafe-regex": "warn",
+              "security/detect-buffer-noassert": "error",
+              "security/detect-child-process": "error",
+              "security/detect-pseudoRandomBytes": "error",
+              "no-unsanitized/method": "error",
+              "no-unsanitized/property": "error"
+            }' \
+            --ext .ts,.tsx,.js,.jsx \
+            src/ || EXIT=$?
+          # Treat warnings as informational; only error-level findings fail.
+          test -z "${EXIT:-}" || [ "${EXIT}" -lt 1 ]
+
+      - name: Semgrep (XSS, injection, common web bugs)
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/owasp-top-ten
+            p/javascript
+            p/typescript
+            p/react
+            p/xss
+            p/secrets
+
+  # ───────────────────────────────────────────────────────────────────
+  # 3. Supabase RLS / policy hygiene check
+  # ───────────────────────────────────────────────────────────────────
+  rls-policy-check:
+    name: Supabase RLS/policy hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint migrations for risky patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIGS="supabase/migrations"
+          if [ ! -d "$MIGS" ]; then
+            echo "No migrations directory — skipping."
+            exit 0
+          fi
+
+          fail=0
+          changed_files=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD -- "$MIGS" 2>/dev/null || true)
+          # Always scan all migrations on push to main / schedule; on PRs we
+          # focus on the diff but still re-validate the catalog as a whole.
+          targets=$(ls -1 "$MIGS"/*.sql 2>/dev/null || true)
+
+          if [ -z "$targets" ]; then
+            echo "No SQL migrations found."
+            exit 0
+          fi
+
+          echo "::group::Checking $(echo "$targets" | wc -l) migration files"
+
+          # 1) New CREATE TABLE statements must enable RLS in the same migration.
+          while IFS= read -r f; do
+            tables=$(grep -iEo 'CREATE TABLE[[:space:]]+(IF NOT EXISTS[[:space:]]+)?(public\.)?[a-zA-Z0-9_]+' "$f" \
+                       | awk '{print $NF}' | sed 's/^public\.//' | sort -u || true)
+            for t in $tables; do
+              if ! grep -iqE "ALTER TABLE[[:space:]]+(public\.)?${t}[[:space:]]+ENABLE ROW LEVEL SECURITY" "$f"; then
+                echo "::error file=$f::Table '$t' is created but RLS is not enabled in the same migration."
+                fail=1
+              fi
+            done
+          done <<< "$targets"
+
+          # 2) No policies with USING (true) / WITH CHECK (true) for write ops.
+          if grep -nEi --include="*.sql" -r \
+               "(FOR (INSERT|UPDATE|DELETE)[^;]*WITH CHECK[[:space:]]*\([[:space:]]*true[[:space:]]*\))|(FOR (UPDATE|DELETE)[^;]*USING[[:space:]]*\([[:space:]]*true[[:space:]]*\))" \
+               "$MIGS"; then
+            echo "::error::Permissive RLS policy (USING/WITH CHECK true) found on a write operation."
+            fail=1
+          fi
+
+          # 3) No SECURITY DEFINER functions without an explicit search_path.
+          while IFS= read -r f; do
+            # crude but effective: each SECURITY DEFINER block must mention SET search_path
+            sd_count=$(grep -ic "SECURITY DEFINER" "$f" || true)
+            sp_count=$(grep -ic "SET[[:space:]]\+search_path" "$f" || true)
+            if [ "$sd_count" -gt 0 ] && [ "$sp_count" -lt "$sd_count" ]; then
+              echo "::warning file=$f::SECURITY DEFINER function present without SET search_path (count: $sd_count def vs $sp_count search_path)."
+            fi
+          done <<< "$targets"
+
+          # 4) No GRANT ... TO PUBLIC on tables/functions in public schema.
+          if grep -nEi --include="*.sql" -r "GRANT[[:space:]]+[A-Z, ]+[[:space:]]+ON[[:space:]]+(TABLE|FUNCTION)?[[:space:]]*public\.[A-Za-z0-9_]+[[:space:]]+TO[[:space:]]+PUBLIC" "$MIGS"; then
+            echo "::error::Public GRANT detected — restrict to authenticated/service_role instead."
+            fail=1
+          fi
+
+          echo "::endgroup::"
+          exit $fail
+
+      - name: Setup Node (for firewall_rules policy guard)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: firewall_rules policy guard
+        # Fails if any effective policy on public.firewall_rules grants
+        # SELECT to non-command-tier roles (must require has_role(...,'admin')).
+        run: node scripts/check-firewall-rules-policy.mjs
+
+  # ───────────────────────────────────────────────────────────────────
+  # 4. Dependency vulnerabilities
+  # ───────────────────────────────────────────────────────────────────
+  deps-audit:
+    name: Dependency vulnerabilities (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: npm audit (high & critical only)
+        run: |
+          set +e
+          npm audit --omit=dev --audit-level=high
+          code=$?
+          # Don't fail the build on transient registry errors (code >= 2 is auth/network)
+          if [ "$code" -gt 1 ]; then
+            echo "::warning::npm audit returned $code (likely transient) — not failing the build."
+            exit 0
+          fi
+          exit $code
+
+  # ───────────────────────────────────────────────────────────────────
+  # 5. Subresource Integrity (SRI) on external CDN <script>/<link>
+  # ───────────────────────────────────────────────────────────────────
+  sri-check:
+    name: External script/style SRI + crossorigin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run SRI checker
+        run: node scripts/check-sri.mjs
+

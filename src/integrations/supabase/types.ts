@@ -1623,7 +1623,6 @@ export type Database = {
           committed_at: string | null
           created_at: string
           effective_date: string
-          effective_end_date: string | null
           id: string
           notes: string | null
           row_count: number
@@ -1636,7 +1635,6 @@ export type Database = {
           committed_at?: string | null
           created_at?: string
           effective_date: string
-          effective_end_date?: string | null
           id?: string
           notes?: string | null
           row_count?: number
@@ -1649,7 +1647,6 @@ export type Database = {
           committed_at?: string | null
           created_at?: string
           effective_date?: string
-          effective_end_date?: string | null
           id?: string
           notes?: string | null
           row_count?: number
@@ -7240,98 +7237,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shift_assignment_overrides: {
-        Row: {
-          action: string
-          created_at: string
-          effective_date: string
-          id: string
-          import_id: string | null
-          new_shift_id: string | null
-          performed_by: string | null
-          previous_shift_id: string | null
-          profile_id: string
-          reason: string | null
-          source: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          effective_date: string
-          id?: string
-          import_id?: string | null
-          new_shift_id?: string | null
-          performed_by?: string | null
-          previous_shift_id?: string | null
-          profile_id: string
-          reason?: string | null
-          source?: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          effective_date?: string
-          id?: string
-          import_id?: string | null
-          new_shift_id?: string | null
-          performed_by?: string | null
-          previous_shift_id?: string | null
-          profile_id?: string
-          reason?: string | null
-          source?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shift_assignment_overrides_import_id_fkey"
-            columns: ["import_id"]
-            isOneToOne: false
-            referencedRelation: "duty_roster_imports"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_assignment_overrides_new_shift_id_fkey"
-            columns: ["new_shift_id"]
-            isOneToOne: false
-            referencedRelation: "shifts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_assignment_overrides_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_assignment_overrides_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "staff_birthdays"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_assignment_overrides_previous_shift_id_fkey"
-            columns: ["previous_shift_id"]
-            isOneToOne: false
-            referencedRelation: "shifts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_assignment_overrides_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shift_assignment_overrides_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "staff_birthdays"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       shift_assignments: {
         Row: {
           created_at: string
@@ -9138,10 +9043,10 @@ export type Database = {
       }
       override_shift_assignment: {
         Args: {
-          _effective_date: string
-          _new_shift_code: string
           _profile_id: string
-          _reason?: string
+          _reason: string
+          _shift_letter: string
+          _start_date: string
         }
         Returns: Json
       }

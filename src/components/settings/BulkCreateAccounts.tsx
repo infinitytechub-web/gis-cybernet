@@ -20,6 +20,7 @@ interface CreatedAccount {
 export function BulkCreateAccounts() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
   const [results, setResults] = useState<CreatedAccount[] | null>(null);
   const [errors, setErrors] = useState<Array<{ staffId: string; error: string }>>([]);
   const [total, setTotal] = useState(0);
@@ -40,7 +41,7 @@ export function BulkCreateAccounts() {
     pollingRef.current = setInterval(async () => {
       const { data, error } = await supabase
         .from("processing_jobs")
-        .select("status, progress, total, result, error")
+        .select("status, progress, total, error")
         .eq("id", jobId)
         .single();
 
@@ -55,15 +56,22 @@ export function BulkCreateAccounts() {
         setJobStatus(null);
         setIsResetting(false);
 
-        const result = data.result as any;
-        setResults(result?.created ?? []);
-        setErrors(result?.errors ?? []);
-        setTotal(result?.total ?? 0);
+        // Fetch credentials via admin-only RPC that scrubs passwords from storage after read
+        const { data: result, error: rpcErr } = await supabase
+          .rpc("consume_processing_job_credentials", { p_job_id: jobId });
+        if (rpcErr) {
+          toast.error(rpcErr.message || "Failed to retrieve credentials");
+          return;
+        }
+        const r = result as any;
+        setResults(r?.created ?? []);
+        setErrors(r?.errors ?? []);
+        setTotal(r?.total ?? 0);
 
-        if (result?.created?.length > 0) {
-          toast.success(`${result.created.length} accounts regenerated successfully`);
+        if (r?.created?.length > 0) {
+          toast.success(`${r.created.length} accounts regenerated successfully`);
         } else {
-          toast.info(result?.message || "No accounts to regenerate");
+          toast.info(r?.message || "No accounts to regenerate");
         }
       } else if (data.status === "failed") {
         clearInterval(pollingRef.current!);
@@ -146,7 +154,29 @@ export function BulkCreateAccounts() {
     };
   };
 
-  const isAnyLoading = isLoading || isResetting;
+  const handleRepair = async () => {
+    setIsRepairing(true);
+    setResults(null);
+    setErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("repair-missing-auth");
+      if (error) throw error;
+      setResults(data.created ?? []);
+      setErrors(data.errors ?? []);
+      setTotal(data.total ?? 0);
+      if (data.created?.length > 0) {
+        toast.success(`${data.created.length} profile(s) repaired`);
+      } else {
+        toast.info("No profiles need repair");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Repair failed");
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
+  const isAnyLoading = isLoading || isResetting || isRepairing;
 
   return (
     <Card>
@@ -189,6 +219,27 @@ export function BulkCreateAccounts() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handleBulkCreate}>Create Accounts</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="secondary" disabled={isAnyLoading} className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  {isRepairing ? "Repairing..." : "Repair Missing Auth"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Repair profiles missing auth accounts?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Finds every profile marked login_enabled but with no linked auth user (any status). Reuses an existing matching auth user if available, otherwise creates a new one. Safe to run repeatedly.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRepair}>Repair Now</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

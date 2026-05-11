@@ -14,7 +14,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Megaphone, Plus, Globe, Building2, Trash2, AlertTriangle, Info, Bell, Edit, Power } from "lucide-react";
+import { Megaphone, Plus, Globe, Building2, Trash2, AlertTriangle, Info, Bell, Edit, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SharedFilesPanel } from "@/components/announcements/SharedFilesPanel";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -197,103 +199,120 @@ export default function Announcements() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">All Announcements</CardTitle>
-              <CardDescription>{filtered.length} announcement{filtered.length !== 1 ? "s" : ""}</CardDescription>
-            </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[130px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading...</div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No announcements found</div>
-          ) : (
-            <div className="rounded-lg border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead className="hidden sm:table-cell">Priority</TableHead>
-                    <TableHead className="hidden sm:table-cell">Audience</TableHead>
-                    <TableHead className="hidden md:table-cell">Date</TableHead>
-                    <TableHead className="text-center w-[70px]">Active</TableHead>
-                    <TableHead className="w-[90px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((a: any) => {
-                    const cfg = priorityConfig[a.priority] || priorityConfig.normal;
-                    const Icon = cfg.icon;
-                    return (
-                      <TableRow key={a.id} className={!a.is_active ? "opacity-50" : ""}>
-                        <TableCell>
-                          <div className="font-medium text-sm">{a.title}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{a.content}</div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge variant="outline" className={`gap-1 ${cfg.color}`}>
-                            <Icon className="h-3 w-3" />{cfg.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge variant="outline" className="gap-1 text-xs">
-                            {a.department_id ? (
-                              <><Building2 className="h-3 w-3" />{(a as any).departments?.name}</>
-                            ) : (
-                              <><Globe className="h-3 w-3" />All Staff</>
-                            )}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                          {format(new Date(a.created_at), "dd MMM yyyy")}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={a.is_active}
-                            onCheckedChange={(val) => toggleActiveMutation.mutate({ id: a.id, is_active: val })}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(a)}>
-                              <Edit className="h-3.5 w-3.5" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>Delete announcement?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this announcement. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(a.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
+      <Tabs defaultValue="announcements" className="w-full">
+        <TabsList>
+          <TabsTrigger value="announcements" className="gap-1.5">
+            <Megaphone className="h-3.5 w-3.5" /> Announcements
+          </TabsTrigger>
+          <TabsTrigger value="files" className="gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Shared Files
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="announcements" className="mt-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base">All Announcements</CardTitle>
+                  <CardDescription>{filtered.length} announcement{filtered.length !== 1 ? "s" : ""}</CardDescription>
+                </div>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-[130px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">No announcements found</div>
+              ) : (
+                <div className="rounded-lg border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead className="hidden sm:table-cell">Priority</TableHead>
+                        <TableHead className="hidden sm:table-cell">Audience</TableHead>
+                        <TableHead className="hidden md:table-cell">Date</TableHead>
+                        <TableHead className="text-center w-[70px]">Active</TableHead>
+                        <TableHead className="w-[90px]">Actions</TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((a: any) => {
+                        const cfg = priorityConfig[a.priority] || priorityConfig.normal;
+                        const Icon = cfg.icon;
+                        return (
+                          <TableRow key={a.id} className={!a.is_active ? "opacity-50" : ""}>
+                            <TableCell>
+                              <div className="font-medium text-sm">{a.title}</div>
+                              <div className="text-xs text-muted-foreground line-clamp-1 max-w-[200px]">{a.content}</div>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge variant="outline" className={`gap-1 ${cfg.color}`}>
+                                <Icon className="h-3 w-3" />{cfg.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge variant="outline" className="gap-1 text-xs">
+                                {a.department_id ? (
+                                  <><Building2 className="h-3 w-3" />{(a as any).departments?.name}</>
+                                ) : (
+                                  <><Globe className="h-3 w-3" />All Staff</>
+                                )}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                              {format(new Date(a.created_at), "dd MMM yyyy")}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Switch
+                                checked={a.is_active}
+                                onCheckedChange={(val) => toggleActiveMutation.mutate({ id: a.id, is_active: val })}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(a)}>
+                                  <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Delete announcement?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this announcement. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(a.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="files" className="mt-4">
+          <SharedFilesPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

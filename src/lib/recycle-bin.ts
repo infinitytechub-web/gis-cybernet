@@ -13,6 +13,7 @@ export type StoragePath = { bucket: string; path: string };
 
 export type RecyclableTable =
   | "announcements"
+  | "announcement_files"
   | "holidays"
   | "departments"
   | "staff_documents"

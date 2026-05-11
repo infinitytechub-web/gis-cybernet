@@ -35,6 +35,7 @@ import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
 import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
+import StaffAppraisalsWidget from "@/components/dashboard/StaffAppraisalsWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -243,9 +244,18 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-secondary">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Ghana Immigration Service - Cybernet</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-secondary">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Ghana Immigration Service - Cybernet</p>
+        </div>
+        <Badge
+          variant="outline"
+          className="font-mono text-[10px] sm:text-xs whitespace-nowrap"
+          title={`Built ${__APP_BUILD_TIME__}`}
+        >
+          Build {__APP_BUILD_ID__}
+        </Badge>
       </div>
 
       {/* Summary Cards */}
@@ -318,6 +328,7 @@ export default function Dashboard() {
           {isAdmin && <SystemAuditPanel />}
           <InterlinkWidget />
           {isAdminOrSupervisor && <CommandRosterWidget />}
+          {isAdminOrSupervisor && <StaffAppraisalsWidget />}
           <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
         </div>
       )}

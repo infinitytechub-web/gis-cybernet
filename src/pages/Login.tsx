@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Eye, EyeOff } from "lucide-react";
+import { Shield, Users, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 
-import gisLogo from "@/assets/gis-logo-192.webp";
+// Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
+const gisLogo = "/gis-logo-192.webp";
 
 export default function Login() {
   const [staffId, setStaffId] = useState("");
@@ -21,7 +23,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [, setActiveTab] = useState("staff");
-  const { signIn } = useAuth();
+  const [mfaStep, setMfaStep] = useState<null | "totp">(null);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
+  const { signIn, signOut, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,6 +43,12 @@ export default function Login() {
     });
     return () => cic(handle);
   }, []);
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,8 +72,8 @@ export default function Login() {
       // Best-effort client IP lookup (used by admin alert trigger)
       let clientIp: string | null = null;
       try {
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        if (ipRes.ok) clientIp = (await ipRes.json())?.ip ?? null;
+        const { data } = await supabase.functions.invoke("client-ip-info");
+        clientIp = (data as any)?.ip ?? null;
       } catch { /* ignore network errors */ }
 
       // Device fingerprint for block check
@@ -85,11 +96,22 @@ export default function Login() {
         }
       }
 
-      // Look up the auth email from the Staff/Admin ID
-      const { data: emailData, error: emailErr } = await supabase.rpc("get_email_by_staff_id", { _staff_id: trimmedId });
-      if (emailErr || !emailData) {
-        // Record as failed attempt to prevent enumeration timing attacks
-        await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
+      // Look up the auth email from the Staff/Admin ID via the hardened edge
+      // function (rate-limited, audited, no direct anon DB access).
+      const { data: lookupData, error: lookupErr } = await supabase.functions.invoke(
+        "resolve-staff-email",
+        { body: { staff_id: trimmedId } },
+      );
+      const emailData = (lookupData as { email?: string } | null)?.email ?? null;
+      if (lookupErr || !emailData) {
+        // record_failed_login already logged inside the edge function — no
+        // need to double-log here. Surface a toast so the user isn't stuck
+        // staring at a silent form.
+        toast({
+          title: "Login Failed",
+          description: "Invalid Staff/Admin ID or password. Please check the ID and try again.",
+          variant: "destructive",
+        });
         throw new Error("Invalid ID or password");
       }
 
@@ -97,7 +119,28 @@ export default function Login() {
         await signIn(emailData as string, password);
         // Clear failed attempts on success
         await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
-        navigate("/");
+
+        // Admins are required to complete 2FA after primary authentication.
+        // Non-admins continue straight to the app shell.
+        const { data: roleRows, error: roleErr } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+          .eq("role", "admin");
+
+        // If the admin was issued a temporary password (e.g. via recovery),
+        // force them through the password change first so they aren't blocked
+        // by the MFA enrolment gate before they can rotate the temp secret.
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        const mustChangePw = freshUser?.user_metadata?.must_change_password === true;
+
+        if (mustChangePw) {
+          navigate("/change-password", { replace: true });
+        } else if (!roleErr && (roleRows?.length ?? 0) > 0) {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
       } catch (signInErr) {
         // Record failed attempt server-side
         const { data: result } = await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
@@ -124,6 +167,61 @@ export default function Login() {
     }
   }, [staffId, password, signIn, navigate, toast]);
 
+  const handleVerifyOtp = useCallback(async () => {
+    if (!mfaFactorId || otp.length !== 6) return;
+    setIsLoading(true);
+    // Resolve audit metadata in parallel
+    const trimmedId = staffId.trim() || null;
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+    const fpPromise = getDeviceFingerprint().catch(() => null);
+    const ipPromise = supabase.functions.invoke("client-ip-info")
+      .then(({ data }) => (data as any)?.ip ?? null)
+      .catch(() => null);
+    try {
+      const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+      if (cErr) throw cErr;
+      const { error: vErr } = await supabase.auth.mfa.verify({
+        factorId: mfaFactorId, challengeId: ch.id, code: otp,
+      });
+      if (vErr) throw vErr;
+      // Audit success (best-effort)
+      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
+      void supabase.rpc("record_mfa_challenge", {
+        _outcome: "success",
+        _factor_id: mfaFactorId,
+        _staff_id: trimmedId,
+        _ip_address: ip,
+        _device_fingerprint: fp,
+        _user_agent: ua,
+      });
+      navigate("/");
+    } catch (e: any) {
+      const reason = e?.message || "Invalid code";
+      const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
+      void supabase.rpc("record_mfa_challenge", {
+        _outcome: "failure",
+        _failure_reason: reason,
+        _factor_id: mfaFactorId,
+        _staff_id: trimmedId,
+        _ip_address: ip,
+        _device_fingerprint: fp,
+        _user_agent: ua,
+      });
+      toast({ title: "Invalid code", description: reason, variant: "destructive" });
+      setOtp("");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mfaFactorId, otp, staffId, navigate, toast]);
+
+  const handleCancelMfa = useCallback(async () => {
+    try { await signOut(); } catch { /* ignore */ }
+    setMfaStep(null);
+    setMfaFactorId(null);
+    setOtp("");
+    setPassword("");
+  }, [signOut]);
+
   const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string) => (
     <form onSubmit={handleLogin} className="space-y-4">
       <div className="space-y-2">
@@ -144,8 +242,13 @@ export default function Login() {
       <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading}>
         {isLoading ? "Signing in..." : (buttonText || "Sign In")}
       </Button>
-      <div className="text-center">
+      <div className="text-center space-y-1">
         <ForgotPasswordDialog />
+        <div>
+          <a href="/admin-recovery" className="text-[11px] text-muted-foreground hover:text-primary hover:underline">
+            Administrator account locked? Use Admin Recovery
+          </a>
+        </div>
       </div>
     </form>
   );
@@ -163,6 +266,37 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent>
+          {mfaStep === "totp" ? (
+            <div className="space-y-4">
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="bg-destructive/10 p-2.5 rounded-full">
+                  <Shield className="h-6 w-6 text-destructive" />
+                </div>
+                <h2 className="text-base font-semibold text-secondary">Two-Factor Authentication</h2>
+                <p className="text-xs text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app to finish signing in.
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={otp} onChange={setOtp} autoFocus>
+                  <InputOTPGroup>
+                    {[0,1,2,3,4,5].map((i) => <InputOTPSlot key={i} index={i} />)}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <Button onClick={handleVerifyOtp} disabled={isLoading || otp.length !== 6} className="w-full bg-secondary hover:bg-secondary/90">
+                {isLoading ? "Verifying…" : "Verify & Sign In"}
+              </Button>
+              <div className="flex items-center justify-between">
+                <Button type="button" variant="ghost" size="sm" className="gap-1 text-xs" onClick={handleCancelMfa}>
+                  <ArrowLeft className="h-3 w-3" /> Back
+                </Button>
+                <Button type="button" variant="link" size="sm" className="gap-1 text-xs" onClick={() => navigate("/mfa-gate", { state: { from: { pathname: "/" } } })}>
+                  <KeyRound className="h-3 w-3" /> Lost your authenticator?
+                </Button>
+              </div>
+            </div>
+          ) : (
           <Tabs defaultValue="staff" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="staff" className="gap-2"><Users className="h-4 w-4" /> Staff</TabsTrigger>
@@ -175,6 +309,7 @@ export default function Login() {
               {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary hover:bg-secondary/90", "Admin Sign In")}
             </TabsContent>
           </Tabs>
+          )}
           <p className="text-xs text-center text-muted-foreground mt-6">
             Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026
           </p>

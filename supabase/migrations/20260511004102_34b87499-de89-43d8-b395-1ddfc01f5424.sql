@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.clear_failed_login_attempts(text) FROM anon;
