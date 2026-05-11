@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Input } from "@/components/ui/input";
-import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft } from "lucide-react";
+import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import QRCode from "qrcode";
 
 /**
  * Mandatory 2FA gate for system administrators.
@@ -30,6 +31,7 @@ export default function MfaGate() {
   const [code, setCode] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!user || !isAdmin) return;
@@ -62,6 +64,18 @@ export default function MfaGate() {
       }
     })();
   }, [user, isAdmin, navigate, from]);
+
+  useEffect(() => {
+    if (!qrCanvasRef.current || !qrUri || phase !== "verify-enrol") return;
+    QRCode.toCanvas(qrCanvasRef.current, qrUri, {
+      width: 200,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#111111", light: "#ffffff" },
+    }).catch(() => {
+      toast.error("Could not render QR code. Use the manual key instead.");
+    });
+  }, [phase, qrUri]);
 
   if (authLoading) {
     return (
@@ -182,6 +196,16 @@ export default function MfaGate() {
     navigate("/login", { replace: true });
   };
 
+  const handleCopySecret = async () => {
+    if (!secret) return;
+    try {
+      await navigator.clipboard.writeText(secret);
+      toast.success("Secret key copied");
+    } catch {
+      toast.error("Could not copy the secret key");
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
@@ -220,15 +244,24 @@ export default function MfaGate() {
                 Scan this QR code with your authenticator app, then enter the 6-digit code below.
               </p>
               <div className="bg-white p-4 rounded-lg flex justify-center">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUri)}`}
-                  alt="2FA QR Code" width={200} height={200}
+                <canvas
+                  ref={qrCanvasRef}
+                  width={200}
+                  height={200}
+                  aria-label="2FA QR code"
+                  className="h-[200px] w-[200px]"
                 />
               </div>
               {secret && (
-                <p className="text-center text-xs text-muted-foreground">
-                  Or enter this key manually: <code className="bg-muted px-1.5 py-0.5 rounded select-all">{secret}</code>
-                </p>
+                <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
+                  <p className="text-center text-xs text-muted-foreground">Manual setup key</p>
+                  <div className="flex items-center gap-2">
+                    <Input value={secret} readOnly className="font-mono text-xs tracking-[0.18em]" aria-label="Manual setup key" />
+                    <Button type="button" variant="outline" size="icon" onClick={handleCopySecret} aria-label="Copy manual setup key">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
               <div>
                 <Label className="text-xs">6-digit code from your app</Label>
