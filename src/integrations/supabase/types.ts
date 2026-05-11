@@ -174,6 +174,7 @@ export type Database = {
           sha256: string | null
           size_bytes: number
           storage_path: string
+          target_user_id: string | null
           title: string
           updated_at: string
           uploaded_by: string
@@ -194,6 +195,7 @@ export type Database = {
           sha256?: string | null
           size_bytes: number
           storage_path: string
+          target_user_id?: string | null
           title: string
           updated_at?: string
           uploaded_by: string
@@ -214,6 +216,7 @@ export type Database = {
           sha256?: string | null
           size_bytes?: number
           storage_path?: string
+          target_user_id?: string | null
           title?: string
           updated_at?: string
           uploaded_by?: string
