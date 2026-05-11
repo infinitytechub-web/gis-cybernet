@@ -880,6 +880,8 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
           </div>
         </div>
 
+        <BulkAssignmentsPanel scheduleId={scheduleId} disabled={disabled} />
+
         {conflicts.length > 0 && !resolveOpen && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
             <div className="flex items-center justify-between gap-2">
