@@ -173,6 +173,10 @@ export function SharedFilesPanel() {
 
   const upload = async () => {
     if (!file || !title.trim() || !user) return;
+    if (audienceMode === "individual" && !targetUserId) {
+      toast.error("Select a staff member to share with");
+      return;
+    }
     setUploading(true);
     try {
       const { path, sha, verdict } = await uploadSecureFile(file, { maxMb: 25 });
@@ -185,10 +189,14 @@ export function SharedFilesPanel() {
         retention_days = null;
         expires_at = null;
       }
-      const { data: inserted, error } = await supabase.from("announcement_files").insert({
+      const resolvedDept =
+        audienceMode === "department" && deptId !== "global" ? deptId : null;
+      const resolvedTarget = audienceMode === "individual" ? targetUserId : null;
+      const { data: inserted, error } = await (supabase.from("announcement_files") as any).insert({
         title: title.trim(),
         description: description.trim() || null,
-        department_id: deptId === "global" ? null : deptId,
+        department_id: resolvedDept,
+        target_user_id: resolvedTarget,
         storage_path: path,
         filename: file.name,
         size_bytes: file.size,
@@ -204,8 +212,9 @@ export function SharedFilesPanel() {
         title: title.trim(),
         filename: file.name,
         size_bytes: file.size,
-        audience: deptId === "global" ? "global" : "department",
-        department_id: deptId === "global" ? null : deptId,
+        audience: audienceMode,
+        department_id: resolvedDept,
+        target_user_id: resolvedTarget,
         retention_days,
       });
       toast.success("File shared");
