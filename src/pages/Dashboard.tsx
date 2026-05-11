@@ -36,6 +36,7 @@ import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
 import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
 import StaffAppraisalsWidget from "@/components/dashboard/StaffAppraisalsWidget";
+import AttendanceLogWidget from "@/components/dashboard/AttendanceLogWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -341,6 +342,7 @@ export default function Dashboard() {
         </div>
 
         <DailyOccurrencesWidget />
+        <AttendanceLogWidget />
         <ProcessingQueueWidget />
         <FrontDeskQueueWidget />
         <LowStockWidget />
