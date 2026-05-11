@@ -69,18 +69,20 @@ export default function IpBlocks() {
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!ip.trim()) throw new Error("IP address is required");
+      if (!macLooksValid(mac)) throw new Error("MAC address must be 12 hex characters (e.g. AA:BB:CC:DD:EE:FF)");
       const { error } = await supabase.rpc("block_ip", {
         _ip: ip.trim(),
         _fingerprint: fingerprint.trim() || null,
+        _mac: mac.trim() || null,
         _duration_minutes: duration > 0 ? duration : null,
         _reason: reason || "Manual block",
         _notes: notes || null,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       toast({ title: "IP blocked", description: ip });
-      setIp(""); setFingerprint(""); setNotes("");
+      setIp(""); setFingerprint(""); setMac(""); setNotes("");
       qc.invalidateQueries({ queryKey: ["ip_blocks"] });
       qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
