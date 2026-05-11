@@ -119,7 +119,19 @@ export default function Login() {
         // Clear failed attempts on success
         await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
 
-        navigate("/");
+        // Admins are required to complete 2FA after primary authentication.
+        // Non-admins continue straight to the app shell.
+        const { data: roleRows, error: roleErr } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
+          .eq("role", "admin");
+
+        if (!roleErr && (roleRows?.length ?? 0) > 0) {
+          navigate("/2fa", { replace: true, state: { from: { pathname: "/dashboard" } } });
+        } else {
+          navigate("/", { replace: true });
+        }
       } catch (signInErr) {
         // Record failed attempt server-side
         const { data: result } = await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
