@@ -27,10 +27,16 @@ const ALLOWED_ROLES = new Set([
  * Online Now panel into view.
  */
 export function OnlineNowBadge() {
-  const { role } = useAuth();
-  const { onlineCount, windowMinutes } = useOnlineUsers();
+  const { role, user } = useAuth();
+  const { onlineCount, onlineUsers, windowMinutes } = useOnlineUsers();
 
   if (!role || !ALLOWED_ROLES.has(role)) return null;
+
+  // Other staff = everyone online besides the current user.
+  const otherStaffCount = user
+    ? onlineUsers.filter((u) => u.userId !== user.id).length
+    : onlineCount;
+  const hasOthers = otherStaffCount > 0;
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -38,12 +44,14 @@ export function OnlineNowBadge() {
         <TooltipTrigger asChild>
           <Link
             to="/dashboard#online-now"
-            aria-label={`${onlineCount} users online now`}
+            aria-label={`${onlineCount} users online now${hasOthers ? `, including ${otherStaffCount} other staff` : ""}`}
             className="inline-flex items-center"
           >
             <Badge
               variant="outline"
-              className="gap-1.5 px-2 py-0.5 text-[11px] font-medium border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition-colors"
+              className={`gap-1.5 px-2 py-0.5 text-[11px] font-medium border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition-colors ${
+                hasOthers ? "animate-pulse ring-2 ring-emerald-400/60 dark:ring-emerald-500/50 shadow-[0_0_8px_hsl(152_70%_45%/0.5)]" : ""
+              }`}
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
@@ -51,13 +59,25 @@ export function OnlineNowBadge() {
               </span>
               <span className="tabular-nums">{onlineCount}</span>
               <span className="hidden md:inline">online</span>
+              {hasOthers && (
+                <span className="ml-0.5 inline-flex items-center justify-center min-w-[1rem] h-4 px-1 rounded-full bg-emerald-500 text-[10px] font-semibold text-white tabular-nums animate-pulse">
+                  +{otherStaffCount}
+                </span>
+              )}
             </Badge>
           </Link>
         </TooltipTrigger>
         <TooltipContent side="bottom">
-          <p className="text-xs">
-            {onlineCount} user{onlineCount !== 1 ? "s" : ""} active in the last {windowMinutes} min
-          </p>
+          <div className="text-xs space-y-0.5">
+            <p>
+              {onlineCount} user{onlineCount !== 1 ? "s" : ""} active in the last {windowMinutes} min
+            </p>
+            {hasOthers && (
+              <p className="text-emerald-600 dark:text-emerald-400 font-medium">
+                {otherStaffCount} other staff online — click to view
+              </p>
+            )}
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
