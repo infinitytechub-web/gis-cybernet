@@ -20,6 +20,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  build: {
+    // Disable automatic <link rel="modulepreload"> for async chunks so the
+    // Login page doesn't eagerly fetch Dashboard + its dependencies (recharts,
+    // leaflet, etc.). Lazy routes will still load on demand via dynamic import.
+    modulePreload: { polyfill: true, resolveDependencies: () => [] },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
