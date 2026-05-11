@@ -130,6 +130,8 @@ function AuthenticatedExtras() {
     </Suspense>
   );
 }
+
+function App() {
   return (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -139,7 +141,7 @@ function AuthenticatedExtras() {
       <BrowserRouter>
         <AuthProvider>
         <ForcedSignoutMount />
-        <IdleWarningDialog />
+        <AuthenticatedExtras />
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
