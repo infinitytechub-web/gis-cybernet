@@ -116,7 +116,7 @@ export default function OnlineNowPanel() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div
-                          className={`flex items-center gap-2 rounded-md border px-2 py-2 cursor-help ${
+                          className={`flex items-center gap-2 rounded-md border px-2 py-2 cursor-help transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-1 ${
                             isNightGuard
                               ? "bg-amber-100/60 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700"
                               : "bg-background border-border"
