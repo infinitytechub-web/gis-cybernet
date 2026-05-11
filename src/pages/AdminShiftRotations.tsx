@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   RotateCcw,
   Pencil,
+  ListPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -879,6 +880,8 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
           </div>
         </div>
 
+        <BulkAssignmentsPanel scheduleId={scheduleId} disabled={disabled} />
+
         {conflicts.length > 0 && !resolveOpen && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
             <div className="flex items-center justify-between gap-2">
@@ -1082,5 +1085,399 @@ function AuditPanel({ scheduleId }: { scheduleId: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/* ───────────────────── Bulk Assignments Panel ───────────────────── */
+
+type StagedRow = {
+  key: string;
+  scope_type: ScopeType;
+  scope_value: string;
+  start_date: string;
+  end_date: string;
+  priority: number;
+  conflicts?: any[];
+  conflictsChecked?: boolean;
+};
+
+type BulkPolicy = "override_priority" | "replace" | "command_tier_exception" | "skip_conflicting";
+
+const BULK_POLICY_OPTIONS: { v: BulkPolicy; t: string; d: string }[] = [
+  {
+    v: "override_priority",
+    t: "Override with higher priority",
+    d: "Insert each row with priority bumped above its conflicts. Resolver picks the most-specific, then highest-priority assignment.",
+  },
+  {
+    v: "replace",
+    t: "Replace conflicting assignments",
+    d: "Delete every overlapping assignment first, then insert the staged rows.",
+  },
+  {
+    v: "command_tier_exception",
+    t: "Apply command-tier exception",
+    d: "Insert with bumped priority and ensure command-tier roles are excluded from org-wide rotations.",
+  },
+  {
+    v: "skip_conflicting",
+    t: "Skip rows with conflicts",
+    d: "Insert only the staged rows that have zero conflicts. Conflicting rows stay in the staging list for review.",
+  },
+];
+
+function newStagedRow(): StagedRow {
+  return {
+    key: crypto.randomUUID(),
+    scope_type: "org",
+    scope_value: "",
+    start_date: format(new Date(), "yyyy-MM-dd"),
+    end_date: "",
+    priority: 0,
+  };
+}
+
+function BulkAssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabled: boolean }) {
+  const qc = useQueryClient();
+  const [staged, setStaged] = useState<StagedRow[]>([]);
+  const [policy, setPolicy] = useState<BulkPolicy>("override_priority");
+  const [policyNotes, setPolicyNotes] = useState("");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [running, setRunning] = useState(false);
+
+  const totalConflicts = useMemo(
+    () => staged.reduce((acc, r) => acc + (r.conflicts?.length ?? 0), 0),
+    [staged],
+  );
+  const checkedAll = staged.length > 0 && staged.every((r) => r.conflictsChecked);
+  const conflictingRows = staged.filter((r) => (r.conflicts?.length ?? 0) > 0).length;
+
+  function patch(key: string, updates: Partial<StagedRow>) {
+    setStaged((prev) =>
+      prev.map((r) => (r.key === key ? { ...r, ...updates, conflictsChecked: false, conflicts: undefined } : r)),
+    );
+  }
+
+  async function checkAllConflicts() {
+    setRunning(true);
+    try {
+      const next: StagedRow[] = [];
+      for (const r of staged) {
+        const { data, error } = await supabase.rpc("detect_rotation_conflicts" as any, {
+          _scope_type: r.scope_type,
+          _scope_value: r.scope_type === "org" ? null : r.scope_value || null,
+          _start_date: r.start_date,
+          _end_date: r.end_date || null,
+          _exclude_assignment_id: null,
+        } as any);
+        if (error) {
+          toast.error(`Conflict check failed: ${error.message}`);
+          next.push({ ...r, conflicts: [], conflictsChecked: true });
+          continue;
+        }
+        next.push({ ...r, conflicts: (data as any[]) ?? [], conflictsChecked: true });
+      }
+      setStaged(next);
+      const total = next.reduce((acc, r) => acc + (r.conflicts?.length ?? 0), 0);
+      toast.success(total === 0 ? "No conflicts in any staged row." : `${total} conflict(s) across ${next.filter((r) => (r.conflicts?.length ?? 0) > 0).length} row(s).`);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  /** Apply the selected policy across every staged row in one transaction-ish loop. */
+  async function applyBulk() {
+    setRunning(true);
+    let succeeded = 0;
+    let skipped = 0;
+    const auditDiffs: Record<string, unknown>[] = [];
+
+    try {
+      // Pre-step: command-tier exclusions (only needed once).
+      if (policy === "command_tier_exception") {
+        const commandRoles = ["admin", "oic", "2ic", "staff_officer", "supervisor"];
+        const { error: excErr } = await supabase
+          .from("shift_rotation_exclusions" as any)
+          .upsert(
+            commandRoles.map((r) => ({
+              role: r,
+              reason: `Auto-added via bulk conflict resolution on schedule ${scheduleId}`,
+            })),
+            { onConflict: "role", ignoreDuplicates: true } as any,
+          );
+        if (excErr) throw excErr;
+      }
+
+      for (const r of staged) {
+        const conflictIds = (r.conflicts ?? []).map((c: any) => c.assignment_id).filter(Boolean);
+        const hasConflict = conflictIds.length > 0;
+
+        if (policy === "skip_conflicting" && hasConflict) {
+          skipped += 1;
+          continue;
+        }
+
+        let insertPriority = r.priority;
+
+        if (hasConflict && policy === "replace") {
+          const { error: delErr } = await supabase
+            .from("shift_rotation_assignments" as any)
+            .delete()
+            .in("id", conflictIds);
+          if (delErr) throw delErr;
+        } else if (hasConflict && (policy === "override_priority" || policy === "command_tier_exception")) {
+          const { data: peers, error: peerErr } = await supabase
+            .from("shift_rotation_assignments" as any)
+            .select("priority")
+            .in("id", conflictIds);
+          if (peerErr) throw peerErr;
+          const maxP = Math.max(0, ...((peers as any[]) ?? []).map((p) => Number(p.priority) || 0));
+          insertPriority = Math.max(r.priority, maxP + 1);
+        }
+
+        const { error } = await supabase.from("shift_rotation_assignments" as any).insert({
+          schedule_id: scheduleId,
+          scope_type: r.scope_type,
+          scope_value: r.scope_type === "org" ? null : r.scope_value.trim() || null,
+          start_date: r.start_date,
+          end_date: r.end_date || null,
+          priority: insertPriority,
+          notes: policyNotes || null,
+        } as any);
+        if (error) throw error;
+
+        succeeded += 1;
+        auditDiffs.push({
+          scope_type: r.scope_type,
+          scope_value: r.scope_type === "org" ? null : r.scope_value.trim() || null,
+          start_date: r.start_date,
+          end_date: r.end_date || null,
+          conflict_ids: conflictIds,
+          resolved_priority: insertPriority,
+        });
+      }
+
+      // Single audit row covering the whole batch.
+      await supabase.from("shift_rotation_deploy_audit" as any).insert({
+        schedule_id: scheduleId,
+        action: `bulk_assignment_${policy}`,
+        diff: { policy, total: staged.length, succeeded, skipped, rows: auditDiffs } as any,
+        notes: policyNotes || null,
+      } as any);
+
+      toast.success(`Bulk applied: ${succeeded} inserted${skipped ? `, ${skipped} skipped` : ""}.`);
+      setStaged((prev) => (policy === "skip_conflicting" ? prev.filter((r) => (r.conflicts?.length ?? 0) > 0) : []));
+      setPolicyNotes("");
+      setBulkOpen(false);
+      qc.invalidateQueries({ queryKey: ["rotation-assignments", scheduleId] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Bulk apply failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <div className="rounded-md border bg-muted/20 p-3 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium flex items-center gap-1.5">
+            <ListPlus className="h-4 w-4 text-primary" /> Bulk add ranges
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Stage multiple scope/date ranges, check conflicts in one pass, then apply a single override policy.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setStaged((p) => [...p, newStagedRow()])}
+          className="gap-1.5"
+        >
+          <Plus className="h-4 w-4" /> Add row
+        </Button>
+      </div>
+
+      {staged.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-2">
+          No rows staged. Click "Add row" to stage one.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table className="min-w-[700px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Scope</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Start</TableHead>
+                <TableHead>End</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Conflicts</TableHead>
+                <TableHead className="w-12" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {staged.map((r) => (
+                <TableRow key={r.key}>
+                  <TableCell>
+                    <Select
+                      value={r.scope_type}
+                      onValueChange={(v) => patch(r.key, { scope_type: v as ScopeType, scope_value: v === "org" ? "" : r.scope_value })}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="org">Organisation</SelectItem>
+                        <SelectItem value="department">Department</SelectItem>
+                        <SelectItem value="role">Role</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      className="h-8 text-xs"
+                      value={r.scope_value}
+                      disabled={r.scope_type === "org"}
+                      onChange={(e) => patch(r.key, { scope_value: e.target.value })}
+                      placeholder={r.scope_type === "org" ? "—" : r.scope_type}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      className="h-8 text-xs"
+                      value={r.start_date}
+                      onChange={(e) => patch(r.key, { start_date: e.target.value })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="date"
+                      className="h-8 text-xs"
+                      value={r.end_date}
+                      onChange={(e) => patch(r.key, { end_date: e.target.value })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      min={0}
+                      className="h-8 text-xs w-16"
+                      value={r.priority}
+                      onChange={(e) => patch(r.key, { priority: Number(e.target.value) || 0 })}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {!r.conflictsChecked ? (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    ) : (r.conflicts?.length ?? 0) === 0 ? (
+                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/40">
+                        clear
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/40">
+                        {r.conflicts!.length}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive"
+                      onClick={() => setStaged((prev) => prev.filter((x) => x.key !== r.key))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {staged.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs text-muted-foreground">
+            {checkedAll
+              ? `${conflictingRows} of ${staged.length} row(s) have conflicts (${totalConflicts} total).`
+              : "Conflicts not yet checked for all rows."}
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={checkAllConflicts} disabled={disabled || running}>
+              {running ? "Checking…" : "Check all"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setBulkOpen(true)}
+              disabled={disabled || running || !checkedAll}
+              className="gap-1.5"
+            >
+              <ListPlus className="h-4 w-4" /> Resolve & commit all
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <AlertDialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" /> Bulk-resolve {staged.length} staged row(s)
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {totalConflicts > 0
+                ? `${totalConflicts} overlapping published assignment(s) detected across ${conflictingRows} row(s). The chosen policy will be applied to every staged row.`
+                : "No conflicts detected — staged rows will be inserted as-is."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 text-sm">
+            <div className="space-y-2">
+              <Label className="text-xs">Override policy</Label>
+              {BULK_POLICY_OPTIONS.map((opt) => (
+                <label
+                  key={opt.v}
+                  className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer transition-colors ${
+                    policy === opt.v ? "border-primary bg-accent/40" : "hover:bg-accent/20"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="bulk-policy"
+                    className="mt-0.5"
+                    checked={policy === opt.v}
+                    onChange={() => setPolicy(opt.v)}
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{opt.t}</div>
+                    <div className="text-xs text-muted-foreground">{opt.d}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="bulk-policy-notes" className="text-xs">Audit note (optional)</Label>
+              <Textarea
+                id="bulk-policy-notes"
+                rows={2}
+                value={policyNotes}
+                onChange={(e) => setPolicyNotes(e.target.value)}
+                placeholder="Why are you applying this override across all rows?"
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBulkOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogAction onClick={applyBulk} disabled={running}>
+              {running ? "Applying…" : "Apply to all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
