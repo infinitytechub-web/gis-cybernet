@@ -20,7 +20,7 @@ Deno.serve(async () => {
 
   // Clear lockout
   await admin.from("profiles").update({ account_locked: false }).eq("user_id", userId);
-  await admin.rpc("admin_reset_failed_attempts", { _staff_id: "GIS-ASC-0007" }).catch(() => {});
+  try { await admin.rpc("admin_reset_failed_attempts", { _staff_id: "GIS-ASC-0007" }); } catch {}
 
   return new Response(JSON.stringify({ ok: true, password: newPassword }), {
     headers: { "Content-Type": "application/json" },
