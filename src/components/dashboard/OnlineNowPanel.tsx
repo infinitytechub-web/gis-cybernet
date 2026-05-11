@@ -134,7 +134,11 @@ export default function OnlineNowPanel() {
           <p className="text-sm text-muted-foreground">No users currently online</p>
         ) : (
           <ScrollArea className="max-h-[260px]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className={
+              showDetails
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                : "flex flex-wrap gap-1.5"
+            }>
               {onlineUsers.map((u) => {
                 const isNightGuard = u.department?.toLowerCase().includes("night guard");
                 let onlineFor = "";
@@ -146,55 +150,61 @@ export default function OnlineNowPanel() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div
-                          className={`flex items-center gap-2 rounded-md border px-2 py-2 cursor-help transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-1 ${
+                          className={`${
+                            showDetails ? "flex items-center gap-2 px-2 py-2" : "inline-flex items-center justify-center p-1"
+                          } rounded-md border cursor-help transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-1 ${
                             isNightGuard
                               ? "bg-amber-100/60 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700"
                               : "bg-background border-border"
                           }`}
                         >
-                          <Avatar className="h-9 w-9">
+                          <Avatar className={showDetails ? "h-9 w-9" : "h-8 w-8"}>
                             {u.photoUrl ? <AvatarImage src={u.photoUrl} alt={`${u.firstName} ${u.lastName}`} /> : null}
                             <AvatarFallback className="text-xs bg-primary/10 text-primary">
                               {u.firstName?.[0]}
                               {u.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1 min-w-0">
-                              <span className="text-xs font-semibold truncate">
-                                {u.firstName} {u.lastName}
-                              </span>
-                              {isNightGuard && (
-                                <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
-                              <span className="truncate font-medium">{u.staffId}</span>
-                              {u.rank && (
-                                <>
-                                  <span>·</span>
-                                  <span className="truncate">{u.rank}</span>
-                                </>
-                              )}
-                            </div>
-                            {u.department && (
-                              <div className="text-[10px] text-muted-foreground truncate">{u.department}</div>
-                            )}
-                            <div className="flex items-center gap-2 text-[10px] mt-0.5">
-                              {u.currentPage && (
-                                <span className="inline-flex items-center gap-0.5 text-primary">
-                                  <MapPin className="h-2.5 w-2.5" />
-                                  {u.currentPage}
+                          {showDetails && (
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <span className="text-xs font-semibold truncate">
+                                  {u.firstName} {u.lastName}
                                 </span>
+                                {isNightGuard && (
+                                  <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                                <span className="truncate font-medium">{u.staffId}</span>
+                                {u.rank && (
+                                  <>
+                                    <span>·</span>
+                                    <span className="truncate">{u.rank}</span>
+                                  </>
+                                )}
+                              </div>
+                              {u.department && (
+                                <div className="text-[10px] text-muted-foreground truncate font-medium">
+                                  {u.department}
+                                </div>
                               )}
-                              {onlineFor && (
-                                <span className="inline-flex items-center gap-0.5 text-muted-foreground">
-                                  <Clock className="h-2.5 w-2.5" />
-                                  {onlineFor}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2 text-[10px] mt-0.5">
+                                {u.currentPage && (
+                                  <span className="inline-flex items-center gap-0.5 text-primary">
+                                    <MapPin className="h-2.5 w-2.5" />
+                                    {u.currentPage}
+                                  </span>
+                                )}
+                                {onlineFor && (
+                                  <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+                                    <Clock className="h-2.5 w-2.5" />
+                                    {onlineFor}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
