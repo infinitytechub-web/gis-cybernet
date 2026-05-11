@@ -315,6 +315,54 @@ export default function MfaGate() {
                   <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
                   Regenerate code
                 </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="ml-2 text-xs gap-1"
+                  onClick={() => setPhase("enroll-help")}
+                  disabled={busy}
+                >
+                  <ShieldAlert className="h-3 w-3" />
+                  Can't scan the QR?
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {phase === "enroll-help" && (
+            <div className="space-y-4">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">The setup secret is hidden by design.</p>
+                <p>
+                  Showing the raw key in chat or on screen would let anyone glancing at this device
+                  enrol their own authenticator. Pick one of the safe options below instead.
+                </p>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
+                <li>Open your authenticator app on a phone and tap <strong>Scan QR code</strong>, then point the camera at the QR on the previous screen.</li>
+                <li>If you previously enrolled and saved recovery codes, use one of them — it will let you re-enrol cleanly.</li>
+                <li>If neither option works, sign out and ask another administrator to reset your 2FA from the Admin Settings page.</li>
+              </ul>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPhase("verify-enrol")}
+                  disabled={busy || !qrUri}
+                  className="w-full gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to QR code
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => { setRecoveryCode(""); setPhase("recovery"); }}
+                  disabled={busy}
+                  className="w-full gap-2"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  Use a recovery code
+                </Button>
               </div>
             </div>
           )}
