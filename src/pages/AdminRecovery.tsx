@@ -93,7 +93,7 @@ export default function AdminRecovery() {
             <AlertTitle className="text-sm">Administrator only</AlertTitle>
             <AlertDescription className="text-xs">
               Every attempt is recorded with your IP and device. Misuse will trigger a security review.
-              This flow does <strong>not</strong> clear an account lockout — it only resets the password.
+              On success, the account lockout (if any) is cleared so you can sign in immediately.
             </AlertDescription>
           </Alert>
 
