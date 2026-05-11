@@ -64,7 +64,7 @@ type AssignmentRow = {
 export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staffId, roles, departmentId }: Props) {
   const [cursor, setCursor] = useState<Date>(() => new Date());
   const myGroup = (staffGroup?.toUpperCase() ?? null) as ShiftGroup | string | null;
-  const { config, groupForDate } = useShiftRotationConfig({ roles, departmentId });
+  const { config, groupForDate } = useShiftRotationConfig({ roles, departmentId, profileId });
 
   const monthStart = startOfMonth(cursor);
   const monthEnd = endOfMonth(cursor);
