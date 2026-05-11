@@ -139,9 +139,13 @@ export default function DutyRosterImport() {
   const [file, setFile] = useState<File | null>(null);
   const [parsed, setParsed] = useState<ParseResult | null>(null);
   const [effectiveDate, setEffectiveDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [effectiveEndDate, setEffectiveEndDate] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [committing, setCommitting] = useState(false);
   const [deployingId, setDeployingId] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [overrideForImport, setOverrideForImport] = useState<string | null>(null);
+  const [auditForImport, setAuditForImport] = useState<string | null>(null);
 
   const handleRedeploy = async (importId: string) => {
     setDeployingId(importId);
