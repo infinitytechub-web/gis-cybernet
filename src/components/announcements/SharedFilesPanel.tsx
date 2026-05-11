@@ -211,7 +211,18 @@ export function SharedFilesPanel() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const upload = async () => {
+  // Compute SHA-256 of the selected file (matches the hash uploadSecureFile uses)
+  const computeSha256 = async (f: File): Promise<string> => {
+    const buf = await f.arrayBuffer();
+    const h = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  // Duplicate-detection state
+  const [duplicateMatches, setDuplicateMatches] = useState<any[] | null>(null);
+  const [pendingSha, setPendingSha] = useState<string | null>(null);
+
+  const upload = async (opts: { skipDuplicateCheck?: boolean } = {}) => {
     if (!file || !title.trim() || !user) return;
     if (audienceMode === "individual" && !targetUserId) {
       toast.error("Select a staff member to share with");
@@ -219,7 +230,26 @@ export function SharedFilesPanel() {
     }
     setUploading(true);
     try {
-      const { path, sha, verdict } = await uploadSecureFile(file, { maxMb: 25 });
+      // 1) Hash locally and look for duplicates (same filename + checksum) before
+      //    uploading to storage, so we don't waste bandwidth or quota on a re-share.
+      const sha = pendingSha ?? (await computeSha256(file));
+      if (!opts.skipDuplicateCheck) {
+        const { data: matches } = await supabase
+          .from("announcement_files")
+          .select("id, title, filename, created_at, is_active, department_id, target_user_id, uploaded_by, departments(name)")
+          .eq("sha256", sha)
+          .eq("filename", file.name)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        if (matches && matches.length > 0) {
+          setPendingSha(sha);
+          setDuplicateMatches(matches);
+          setUploading(false);
+          return;
+        }
+      }
+
+      const { path, verdict } = await uploadSecureFile(file, { maxMb: 25 });
       let expires_at: string | null = null;
       let retention_days: number | null = null;
       if (retention !== "default" && retention !== "never") {
@@ -256,9 +286,12 @@ export function SharedFilesPanel() {
         department_id: resolvedDept,
         target_user_id: resolvedTarget,
         retention_days,
+        duplicate_override: !!opts.skipDuplicateCheck,
       });
-      toast.success("File shared");
+      toast.success(opts.skipDuplicateCheck ? "Duplicate file re-shared" : "File shared");
       qc.invalidateQueries({ queryKey: ["announcement-files"] });
+      setDuplicateMatches(null);
+      setPendingSha(null);
       reset();
       setOpen(false);
     } catch (e: any) {
@@ -480,7 +513,7 @@ export function SharedFilesPanel() {
                 </div>
                 <Button
                   className="w-full gap-1.5"
-                  onClick={upload}
+                  onClick={() => upload()}
                   disabled={!file || !title.trim() || uploading || (audienceMode === "individual" && !targetUserId) || (audienceMode === "department" && (deptId === "global" || !deptId))}
                 >
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
@@ -812,6 +845,54 @@ export function SharedFilesPanel() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!duplicateMatches}
+        onOpenChange={(v) => { if (!v) { setDuplicateMatches(null); setPendingSha(null); } }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Possible duplicate file</AlertDialogTitle>
+            <AlertDialogDescription>
+              A file with the same name <strong>and</strong> identical contents (SHA-256 checksum) has
+              already been shared. Re-sharing will create a second copy.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {duplicateMatches && duplicateMatches.length > 0 && (
+            <div className="rounded-md border bg-muted/40 divide-y max-h-56 overflow-y-auto text-xs">
+              {duplicateMatches.map((m: any) => (
+                <div key={m.id} className="px-3 py-2">
+                  <div className="font-medium text-foreground truncate">{m.title}</div>
+                  <div className="text-muted-foreground truncate">{m.filename}</div>
+                  <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
+                    <span>Shared {format(new Date(m.created_at), "dd MMM yyyy")}</span>
+                    <span>·</span>
+                    <span>
+                      {m.target_user_id
+                        ? "Individual"
+                        : m.department_id
+                        ? (m.departments?.name ?? "Department")
+                        : "All Staff"}
+                    </span>
+                    <span>·</span>
+                    <span>{m.is_active ? "Active" : "Inactive"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => { setDuplicateMatches(null); setPendingSha(null); }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => upload({ skipDuplicateCheck: true })}>
+              Share anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
