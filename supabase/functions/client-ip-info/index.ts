@@ -70,6 +70,13 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Third-party geolocation requires authentication
+    if (!isAuthenticated) {
+      return new Response(JSON.stringify({ ip: myIp }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!IP_RE.test(target)) {
       return new Response(JSON.stringify({ error: "invalid ip" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
