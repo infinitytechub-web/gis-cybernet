@@ -51,6 +51,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ThemeToggle />
               {/* Primary tiles always visible */}
               {isAdmin && <SystemAuditTray />}
+              {/* Live presence chip — visible to admin & full command tier */}
+              <OnlineNowBadge />
               <NotificationBell />
               <HeaderProfileDropdown />
               {/* Overflow tile — collapses 3+ secondary icons into a dropdown grid
@@ -58,8 +60,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <HeaderOverflowMenu label="More tools">
                 <HeaderRoleSwitcher />
                 <HeaderCommandSwitcher />
-                <OnlineNowBadge />
-                
               </HeaderOverflowMenu>
             </div>
             {/* Compact date & clock row for mobile */}
