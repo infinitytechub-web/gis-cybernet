@@ -319,7 +319,15 @@ export default function IpBlocks() {
           <CardTitle className="text-base flex items-center gap-2">
             <ScrollText className="h-4 w-4 text-amber-700" />
             Block / Unblock Audit Log
-            <Badge variant="secondary" className="ml-1">{audit.length}</Badge>
+            <Badge variant="secondary" className="ml-1">
+              {(() => {
+                const filtered = audit.filter(scopeFilter).filter(matcher);
+                return filtered.length === audit.length ? audit.length : `${filtered.length}/${audit.length}`;
+              })()}
+            </Badge>
+            <span className="text-xs text-muted-foreground font-normal ml-auto">
+              Filtered by the search above
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
