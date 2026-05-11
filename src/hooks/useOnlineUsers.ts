@@ -56,13 +56,15 @@ export const DEFAULT_ONLINE_WINDOW_MINUTES = 5;
 // Heartbeat cadence — must be < window so users don't drop out unexpectedly.
 const HEARTBEAT_INTERVAL_MS = 60_000;
 // How often we re-evaluate the staleness filter on the client.
-const PRUNE_INTERVAL_MS = 30_000;
+// Lowered so the visible countdown ticks smoothly and stale users drop quickly.
+const PRUNE_INTERVAL_MS = 10_000;
 
 export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MINUTES) {
   const { user } = useAuth();
   const location = useLocation();
   const [allUsers, setAllUsers] = useState<OnlineUser[]>([]);
   const [now, setNow] = useState<number>(Date.now());
+  const [lastSyncAt, setLastSyncAt] = useState<number>(Date.now());
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const payloadRef = useRef<OnlineUser | null>(null);
 
@@ -116,6 +118,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
             }
           }
           setAllUsers(users);
+          setLastSyncAt(Date.now());
         })
         .subscribe(async (status) => {
           if (status === "SUBSCRIBED" && !cancelled && payloadRef.current) {
@@ -225,5 +228,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
     onlineUsers,
     onlineCount: onlineUsers.length,
     windowMinutes,
+    lastSyncAt,
+    refreshIntervalMs: PRUNE_INTERVAL_MS,
   };
 }
