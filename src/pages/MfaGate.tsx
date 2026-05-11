@@ -286,17 +286,10 @@ export default function MfaGate() {
                   className="h-[200px] w-[200px]"
                 />
               </div>
-              {secret && (
-                <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
-                  <p className="text-center text-xs text-muted-foreground">Manual setup key</p>
-                  <div className="flex items-center gap-2">
-                    <Input value={secret} readOnly className="font-mono text-xs tracking-[0.18em]" aria-label="Manual setup key" />
-                    <Button type="button" variant="outline" size="icon" onClick={handleCopySecret} aria-label="Copy manual setup key">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <p className="rounded-md border border-border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                For your protection, the secret key is never displayed. Scan the QR code above with
+                Google Authenticator, Authy, or 1Password to enrol this device.
+              </p>
               <div>
                 <Label className="text-xs">6-digit code from your app</Label>
                 <div className="flex justify-center mt-2">
