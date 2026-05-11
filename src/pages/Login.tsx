@@ -13,6 +13,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { getMyClientIp } from "@/lib/client-ip";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
@@ -69,12 +70,8 @@ export default function Login() {
         return;
       }
 
-      // Best-effort client IP lookup (used by admin alert trigger)
-      let clientIp: string | null = null;
-      try {
-        const { data } = await supabase.functions.invoke("client-ip-info");
-        clientIp = (data as any)?.ip ?? null;
-      } catch { /* ignore network errors */ }
+      // Best-effort client IP lookup (cached per session — used by admin alert trigger)
+      const clientIp: string | null = await getMyClientIp();
 
       // Device fingerprint for block check
       const fingerprint = await getDeviceFingerprint();
@@ -174,9 +171,7 @@ export default function Login() {
     const trimmedId = staffId.trim() || null;
     const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
     const fpPromise = getDeviceFingerprint().catch(() => null);
-    const ipPromise = supabase.functions.invoke("client-ip-info")
-      .then(({ data }) => (data as any)?.ip ?? null)
-      .catch(() => null);
+    const ipPromise = getMyClientIp();
     try {
       const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
       if (cErr) throw cErr;

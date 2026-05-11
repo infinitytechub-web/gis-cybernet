@@ -1,23 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-let cachedIp: string | null = null;
-let ipPromise: Promise<string | null> | null = null;
-
-async function getClientIp(): Promise<string | null> {
-  if (cachedIp) return cachedIp;
-  if (ipPromise) return ipPromise;
-  ipPromise = (async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("client-ip-info");
-      if (error) return null;
-      cachedIp = (data as any)?.ip ?? null;
-      return cachedIp;
-    } catch {
-      return null;
-    }
-  })();
-  return ipPromise;
-}
+import { getMyClientIp as getClientIp } from "@/lib/client-ip";
 
 export type FileAuditAction = "upload" | "download" | "preview" | "permission_change" | "delete";
 

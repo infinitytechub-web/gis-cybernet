@@ -14,8 +14,14 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div
+        className="flex min-h-screen items-center justify-center bg-background"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true" />
+        <span className="sr-only">Loading, please wait…</span>
       </div>
     );
   }

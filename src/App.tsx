@@ -12,7 +12,12 @@ import { lazy, Suspense } from "react";
 // login page must not pay that cost.
 const Layout = lazy(() => import("@/components/Layout").then(m => ({ default: m.Layout })));
 import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
-import { IdleWarningDialog } from "@/components/IdleWarningDialog";
+import { useAuth } from "@/hooks/useAuth";
+// IdleWarningDialog pulls in Radix AlertDialog + Progress. Defer it until a
+// user is actually signed in — the unauthenticated /login route never needs it.
+const IdleWarningDialog = lazy(() =>
+  import("@/components/IdleWarningDialog").then(m => ({ default: m.IdleWarningDialog }))
+);
 
 // Eagerly loaded (entry/LCP page only)
 import Index from "./pages/Index";
@@ -98,8 +103,14 @@ const queryClient = new QueryClient();
 
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    <div
+      className="flex items-center justify-center min-h-[50vh]"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true" />
+      <span className="sr-only">Loading page…</span>
     </div>
   );
 }
@@ -107,6 +118,17 @@ function PageLoader() {
 function ForcedSignoutMount() {
   useForcedSignoutWatcher();
   return null;
+}
+
+/** Mount idle-timeout dialog only when a user is signed in. */
+function AuthenticatedExtras() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return (
+    <Suspense fallback={null}>
+      <IdleWarningDialog />
+    </Suspense>
+  );
 }
 
 function App() {
@@ -119,7 +141,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
         <ForcedSignoutMount />
-        <IdleWarningDialog />
+        <AuthenticatedExtras />
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />

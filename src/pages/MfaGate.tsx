@@ -11,6 +11,7 @@ import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, RefreshCw, ShieldAlert
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import QRCode from "qrcode";
+import { getMyClientIp } from "@/lib/client-ip";
 
 /**
  * Mandatory 2FA gate for system administrators.
@@ -166,9 +167,7 @@ export default function MfaGate() {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
     const { getDeviceFingerprint } = await import("@/lib/device-fingerprint");
     const fpPromise = getDeviceFingerprint().catch(() => null);
-    const ipPromise = supabase.functions.invoke("client-ip-info")
-      .then(({ data }) => (data as any)?.ip ?? null)
-      .catch(() => null);
+    const ipPromise = getMyClientIp();
     try {
       const { data: ch, error: cErr } = await supabase.auth.mfa.challenge({ factorId });
       if (cErr) throw cErr;

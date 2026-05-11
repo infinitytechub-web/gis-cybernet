@@ -28,6 +28,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
@@ -65,7 +71,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {clock.toLocaleTimeString()}
             </div>
           </header>
-          <main className="flex-1 min-w-0 max-w-full p-3 md:p-6 overflow-x-hidden overflow-y-auto pb-20 lg:pb-6 scroll-smooth-gpu">
+          <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 max-w-full p-3 md:p-6 overflow-x-hidden overflow-y-auto pb-20 lg:pb-6 scroll-smooth-gpu">
             <WelcomeBanner />
             {children}
           </main>
