@@ -12,6 +12,13 @@ const ALLOWED_ROLES = new Set([
   "chief_staff_officer",
   "staff_officer",
   "supervisor",
+  "deputy_supervisor",
+  "ipse_supervisor",
+  "ipse_deputy_supervisor",
+  "shift_supervisor",
+  "deputy_shift_supervisor",
+  "shift_leader",
+  "deputy_shift_leader",
 ]);
 
 /**
