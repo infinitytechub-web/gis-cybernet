@@ -34,25 +34,23 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    // Require an authenticated Supabase user. Prevents the function from being
-    // used as an open IP-lookup relay against ipapi.co's rate limits.
+    // Auth is optional: the login page calls this pre-session to capture the
+    // caller's IP. Third-party geolocation lookups (target IP supplied) still
+    // require an authenticated user to prevent the function from being used as
+    // an open relay against ipapi.co's rate limits.
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claims?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let isAuthenticated = false;
+    if (authHeader.startsWith("Bearer ")) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+        const token = authHeader.replace("Bearer ", "");
+        const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
+        if (!claimsError && claims?.claims) isAuthenticated = true;
+      } catch { /* treat as unauthenticated */ }
     }
 
     const url = new URL(req.url);
@@ -67,6 +65,13 @@ Deno.serve(async (req) => {
 
     // No target → just return caller's IP
     if (!target) {
+      return new Response(JSON.stringify({ ip: myIp }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Third-party geolocation requires authentication
+    if (!isAuthenticated) {
       return new Response(JSON.stringify({ ip: myIp }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
