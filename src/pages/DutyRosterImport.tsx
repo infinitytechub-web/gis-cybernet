@@ -213,6 +213,7 @@ export default function DutyRosterImport() {
         .from("duty_roster_imports")
         .insert({
           effective_date: effectiveDate,
+          effective_end_date: effectiveEndDate || null,
           source_filename: file.name,
           row_count: parsed.rows.length,
           status: "preview",
