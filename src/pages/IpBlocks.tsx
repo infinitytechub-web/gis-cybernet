@@ -22,9 +22,17 @@ export default function IpBlocks() {
 
   const [ip, setIp] = useState("");
   const [fingerprint, setFingerprint] = useState("");
+  const [mac, setMac] = useState("");
   const [duration, setDuration] = useState<number>(60);
   const [reason, setReason] = useState("Repeated failed login attempts");
   const [notes, setNotes] = useState("");
+
+  // Lightweight client-side check; server normalizes & validates definitively.
+  const macLooksValid = (v: string) => {
+    if (!v.trim()) return true;
+    const hex = v.replace(/[^0-9a-fA-F]/g, "");
+    return hex.length === 12;
+  };
 
   const { data: blocks = [], refetch } = useQuery({
     queryKey: ["ip_blocks"],
