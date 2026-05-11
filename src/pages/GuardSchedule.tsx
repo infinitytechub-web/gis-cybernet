@@ -309,57 +309,16 @@ export default function GuardSchedule() {
               {days.slice(0, 31).map((d) => (
                 <TabsContent key={d} value={d} className="mt-3 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {SHIFTS.map((s) => {
-                      const items = byDayShift.get(`${d}|${s}`) ?? [];
-                      return (
-                        <Card key={s} className="border">
-                          <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-sm">{shiftLabelFor(s)}</CardTitle>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-[10px]">{items.length} on duty</Badge>
-                              <AddPersonPopover scheduleId={activeId!} date={d} shift={s} />
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-0">
-                            <div className="rounded-md border-t overflow-x-auto">
-                              <Table className="min-w-[500px]">
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className="w-12 text-xs">S/N</TableHead>
-                                    <TableHead className="text-xs">Rank</TableHead>
-                                    <TableHead className="text-xs">Name</TableHead>
-                                    <TableHead className="text-xs">Position</TableHead>
-                                    <TableHead className="w-10"></TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {items.length === 0 ? (
-                                    <TableRow>
-                                      <TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-4">
-                                        No personnel — click + to add
-                                      </TableCell>
-                                    </TableRow>
-                                  ) : items.map((a) => (
-                                    <TableRow key={a.id}>
-                                      <TableCell className="font-mono text-xs">{a.serial_no ?? "—"}</TableCell>
-                                      <TableCell className="text-xs">{a.rank_text}</TableCell>
-                                      <TableCell className="text-xs font-medium">{a.name_text}</TableCell>
-                                      <TableCell className="text-xs text-muted-foreground">{a.position_label ?? "—"}</TableCell>
-                                      <TableCell>
-                                        <Button size="icon" variant="ghost" className="h-7 w-7"
-                                          onClick={() => handleRemoveAssignment(a.id)}>
-                                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                                        </Button>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
+                    {SHIFTS.map((s) => (
+                      <DayShiftCard
+                        key={s}
+                        scheduleId={activeId!}
+                        date={d}
+                        shift={s}
+                        label={shiftLabelFor(s)}
+                        items={byDayShift.get(`${d}|${s}`) ?? []}
+                      />
+                    ))}
                   </div>
                 </TabsContent>
               ))}
