@@ -619,7 +619,13 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
   const [scopeValue, setScopeValue] = useState("");
   const [start, setStart] = useState(format(new Date(), "yyyy-MM-dd"));
   const [end, setEnd] = useState("");
+  const [priority, setPriority] = useState<number>(0);
   const [conflicts, setConflicts] = useState<any[]>([]);
+  const [resolveOpen, setResolveOpen] = useState(false);
+  const [policy, setPolicy] = useState<
+    "cancel" | "override_priority" | "replace" | "command_tier_exception"
+  >("override_priority");
+  const [policyNotes, setPolicyNotes] = useState("");
 
   const assignmentsQuery = useQuery({
     queryKey: ["rotation-assignments", scheduleId],
@@ -634,7 +640,7 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
     },
   });
 
-  const checkConflicts = async () => {
+  const checkConflicts = async (): Promise<any[]> => {
     const { data, error } = await supabase.rpc("detect_rotation_conflicts" as any, {
       _scope_type: scopeType,
       _scope_value: scopeType === "org" ? null : scopeValue || null,
@@ -644,20 +650,121 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
     } as any);
     if (error) {
       toast.error(error.message);
-      return;
+      return [];
     }
-    setConflicts((data as any[]) ?? []);
-    if (!data || (data as any[]).length === 0) toast.success("No conflicts found.");
+    const list = ((data as any[]) ?? []);
+    setConflicts(list);
+    return list;
   };
 
-  const addMutation = useMutation({
+  /** Insert the assignment using the chosen override policy. */
+  const resolveAndAddMutation = useMutation({
     mutationFn: async () => {
+      if (policy === "cancel") return;
+
+      let insertPriority = priority;
+      const auditDiff: Record<string, unknown> = {
+        scope_type: scopeType,
+        scope_value: scopeType === "org" ? null : scopeValue.trim() || null,
+        start_date: start,
+        end_date: end || null,
+        policy,
+        notes: policyNotes || null,
+        conflict_ids: conflicts.map((c) => c.assignment_id),
+      };
+
+      if (policy === "replace") {
+        // Delete each conflicting assignment first; resolver then sees only ours.
+        const ids = conflicts.map((c) => c.assignment_id).filter(Boolean);
+        if (ids.length) {
+          const { error: delErr } = await supabase
+            .from("shift_rotation_assignments" as any)
+            .delete()
+            .in("id", ids);
+          if (delErr) throw delErr;
+        }
+      } else if (policy === "override_priority") {
+        // Bump above the highest existing priority among conflicts.
+        const { data: peers, error: peerErr } = await supabase
+          .from("shift_rotation_assignments" as any)
+          .select("priority")
+          .in("id", conflicts.map((c) => c.assignment_id));
+        if (peerErr) throw peerErr;
+        const maxP = Math.max(0, ...((peers as any[]) ?? []).map((p) => Number(p.priority) || 0));
+        insertPriority = Math.max(priority, maxP + 1);
+        auditDiff.resolved_priority = insertPriority;
+      } else if (policy === "command_tier_exception") {
+        // Ensure command-tier roles are excluded from org-wide assignments so this
+        // deployment doesn't sweep them in alongside the conflicting one.
+        const commandRoles = ["admin", "oic", "2ic", "staff_officer", "supervisor"];
+        const { error: excErr } = await supabase
+          .from("shift_rotation_exclusions" as any)
+          .upsert(
+            commandRoles.map((r) => ({
+              role: r,
+              reason: `Auto-added via conflict resolution on schedule ${scheduleId}`,
+            })),
+            { onConflict: "role", ignoreDuplicates: true } as any,
+          );
+        if (excErr) throw excErr;
+        // Still bump priority so this row wins where it does apply.
+        insertPriority = Math.max(priority, 1);
+        auditDiff.command_tier_excluded_roles = commandRoles;
+        auditDiff.resolved_priority = insertPriority;
+      }
+
       const { error } = await supabase.from("shift_rotation_assignments" as any).insert({
         schedule_id: scheduleId,
         scope_type: scopeType,
         scope_value: scopeType === "org" ? null : scopeValue.trim() || null,
         start_date: start,
         end_date: end || null,
+        priority: insertPriority,
+        notes: policyNotes || null,
+      } as any);
+      if (error) throw error;
+
+      // Audit the resolution.
+      await supabase.from("shift_rotation_deploy_audit" as any).insert({
+        schedule_id: scheduleId,
+        action: `assignment_added_${policy}`,
+        diff: auditDiff as any,
+        notes: policyNotes || null,
+      } as any);
+    },
+    onSuccess: () => {
+      if (policy === "cancel") {
+        toast.message("Insertion cancelled");
+      } else {
+        toast.success("Assignment added — conflict resolved");
+      }
+      setScopeValue("");
+      setEnd("");
+      setPriority(0);
+      setPolicyNotes("");
+      setConflicts([]);
+      setResolveOpen(false);
+      qc.invalidateQueries({ queryKey: ["rotation-assignments", scheduleId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Resolution failed"),
+  });
+
+  /** Direct-add path used when there are no conflicts. */
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const list = await checkConflicts();
+      if (list.length > 0) {
+        // Defer to the resolution dialog; do not insert yet.
+        setResolveOpen(true);
+        throw new Error("__deferred__");
+      }
+      const { error } = await supabase.from("shift_rotation_assignments" as any).insert({
+        schedule_id: scheduleId,
+        scope_type: scopeType,
+        scope_value: scopeType === "org" ? null : scopeValue.trim() || null,
+        start_date: start,
+        end_date: end || null,
+        priority,
       } as any);
       if (error) throw error;
     },
@@ -665,10 +772,14 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
       toast.success("Assignment added");
       setScopeValue("");
       setEnd("");
+      setPriority(0);
       setConflicts([]);
       qc.invalidateQueries({ queryKey: ["rotation-assignments", scheduleId] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Add failed"),
+    onError: (e: any) => {
+      if (e?.message === "__deferred__") return; // dialog opened
+      toast.error(e?.message ?? "Add failed");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -700,7 +811,7 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-5 gap-2 items-end">
+        <div className="grid md:grid-cols-6 gap-2 items-end">
           <div className="space-y-1">
             <Label className="text-xs">Scope</Label>
             <Select value={scopeType} onValueChange={(v) => setScopeType(v as ScopeType)}>
@@ -738,15 +849,24 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
             <Label className="text-xs">End (optional)</Label>
             <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Priority</Label>
+            <Input
+              type="number"
+              min={0}
+              value={priority}
+              onChange={(e) => setPriority(Number(e.target.value) || 0)}
+            />
+          </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={checkConflicts}
+              onClick={() => checkConflicts()}
               disabled={disabled}
               className="flex-1"
             >
-              Check conflicts
+              Check
             </Button>
             <Button
               size="sm"
@@ -759,10 +879,15 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
           </div>
         </div>
 
-        {conflicts.length > 0 && (
+        {conflicts.length > 0 && !resolveOpen && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-              <AlertTriangle className="h-4 w-4" /> {conflicts.length} overlapping published assignment(s)
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+                <AlertTriangle className="h-4 w-4" /> {conflicts.length} overlapping published assignment(s)
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setResolveOpen(true)}>
+                Resolve…
+              </Button>
             </div>
             <ul className="mt-2 text-xs text-muted-foreground space-y-0.5">
               {conflicts.map((c: any) => (
@@ -782,13 +907,14 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
                 <TableHead>Value</TableHead>
                 <TableHead>Start</TableHead>
                 <TableHead>End</TableHead>
+                <TableHead>Priority</TableHead>
                 <TableHead className="w-16"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-6">
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">
                     No assignments yet.
                   </TableCell>
                 </TableRow>
@@ -799,6 +925,7 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
                     <TableCell className="font-mono text-xs">{r.scope_value ?? "—"}</TableCell>
                     <TableCell>{r.start_date}</TableCell>
                     <TableCell>{r.end_date ?? <span className="text-muted-foreground">open</span>}</TableCell>
+                    <TableCell className="tabular-nums">{r.priority}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -816,6 +943,97 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
           </Table>
         </div>
       </CardContent>
+
+      {/* ───────────── Resolution dialog ───────────── */}
+      <AlertDialog open={resolveOpen} onOpenChange={setResolveOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" /> Resolve {conflicts.length} conflict(s)
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              The new assignment overlaps with existing published assignments for this scope.
+              Choose how the resolver should handle the overlap.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 text-sm">
+            <div className="rounded-md border bg-muted/30 p-2 text-xs space-y-0.5 max-h-32 overflow-y-auto">
+              {conflicts.map((c: any) => (
+                <div key={c.assignment_id} className="font-mono">
+                  {c.schedule_name} · {c.start_date} → {c.end_date ?? "open"}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Override policy</Label>
+              {[
+                {
+                  v: "override_priority",
+                  t: "Override with higher priority",
+                  d: "Insert this assignment with priority bumped above all conflicts. Resolver picks the most-specific, then highest-priority assignment per day.",
+                },
+                {
+                  v: "replace",
+                  t: "Replace conflicting assignments",
+                  d: "Delete the overlapping assignments, then insert this one. Use when this rotation supersedes the previous one.",
+                },
+                {
+                  v: "command_tier_exception",
+                  t: "Apply command-tier exception",
+                  d: "Insert with bumped priority and ensure command-tier roles (admin, OIC, 2IC, Staff Officer, Supervisor) are excluded from org-wide rotations.",
+                },
+                {
+                  v: "cancel",
+                  t: "Cancel",
+                  d: "Don't insert anything. Adjust the date range or scope and try again.",
+                },
+              ].map((opt) => (
+                <label
+                  key={opt.v}
+                  className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer transition-colors ${
+                    policy === opt.v ? "border-primary bg-accent/40" : "hover:bg-accent/20"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="policy"
+                    className="mt-0.5"
+                    checked={policy === opt.v}
+                    onChange={() => setPolicy(opt.v as typeof policy)}
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{opt.t}</div>
+                    <div className="text-xs text-muted-foreground">{opt.d}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="policy-notes" className="text-xs">Audit note (optional)</Label>
+              <Textarea
+                id="policy-notes"
+                rows={2}
+                value={policyNotes}
+                onChange={(e) => setPolicyNotes(e.target.value)}
+                placeholder="Why are you applying this override?"
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setResolveOpen(false)}>Close</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resolveAndAddMutation.mutate()}
+              disabled={resolveAndAddMutation.isPending}
+            >
+              {resolveAndAddMutation.isPending ? "Applying…" : "Apply policy"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
