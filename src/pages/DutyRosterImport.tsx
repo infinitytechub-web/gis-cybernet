@@ -480,6 +480,373 @@ export default function DutyRosterImport() {
           </div>
         </CardContent>
       </Card>
+
+      <SchedulePreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        rows={parsed?.rows ?? []}
+        counts={counts}
+        effectiveDate={effectiveDate}
+        effectiveEndDate={effectiveEndDate}
+        committing={committing}
+        onConfirm={() => { setPreviewOpen(false); handleCommit(); }}
+      />
+
+      <OverrideAssignmentsDialog
+        importId={overrideForImport}
+        onOpenChange={(open) => { if (!open) setOverrideForImport(null); }}
+      />
+
+      <DeploymentAuditDialog
+        importId={auditForImport}
+        onOpenChange={(open) => { if (!open) setAuditForImport(null); }}
+      />
     </div>
+  );
+}
+
+// ───────────────────────── Schedule Preview Dialog ─────────────────────────
+function SchedulePreviewDialog({
+  open, onOpenChange, rows, counts, effectiveDate, effectiveEndDate, committing, onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  rows: Row[];
+  counts: Record<string, number>;
+  effectiveDate: string;
+  effectiveEndDate: string;
+  committing: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarRange className="h-5 w-5 text-primary" /> Schedule preview
+          </DialogTitle>
+          <DialogDescription>
+            Computed A/B/C/D shift assignments for{" "}
+            <strong>{effectiveDate || "—"}</strong>
+            {effectiveEndDate ? <> through <strong>{effectiveEndDate}</strong></> : <> (open-ended)</>}.
+            Confirm to commit and auto-deploy. Unmatched names will queue for approval.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {SHIFTS.map((s) => (
+            <div key={s} className="rounded-md border p-3 text-center">
+              <div className="text-[10px] uppercase text-muted-foreground">Shift {s}</div>
+              <div className="text-2xl font-bold">{counts[s] ?? 0}</div>
+            </div>
+          ))}
+        </div>
+
+        <Tabs defaultValue="A" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-4">
+            {SHIFTS.map((s) => (
+              <TabsTrigger key={s} value={s} className="text-xs">Shift {s}</TabsTrigger>
+            ))}
+          </TabsList>
+          {SHIFTS.map((s) => (
+            <TabsContent key={s} value={s} className="mt-2">
+              <div className="rounded-lg border max-h-64 overflow-auto">
+                <Table className="min-w-[500px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">S/N</TableHead>
+                      <TableHead className="w-24">Rank</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="w-24">Unit</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.filter((r) => r.shift === s).map((r) => (
+                      <TableRow key={`${s}-${r.serial_no}-${r.name}`}>
+                        <TableCell className="text-xs font-mono">{r.serial_no}</TableCell>
+                        <TableCell className="text-xs">{r.rank}</TableCell>
+                        <TableCell className="text-xs font-medium">{r.name}</TableCell>
+                        <TableCell className="text-xs">{r.unit}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={committing}>Back</Button>
+          <Button onClick={onConfirm} disabled={committing}>
+            <CheckCircle2 className="h-4 w-4 mr-1" />
+            {committing ? "Saving…" : "Confirm & commit"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ───────────────────────── Override Dialog ─────────────────────────
+function OverrideAssignmentsDialog({
+  importId, onOpenChange,
+}: { importId: string | null; onOpenChange: (v: boolean) => void }) {
+  const open = !!importId;
+  const qc = useQueryClient();
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+  const sb: any = supabase;
+  const matches = useQuery({
+    queryKey: ["import-deployed-staff", importId],
+    enabled: open,
+    queryFn: async () => {
+      const { data: imp } = await sb.from("duty_roster_imports")
+        .select("effective_date").eq("id", importId).maybeSingle();
+      const { data, error } = await sb
+        .from("pending_staff_matches")
+        .select("matched_profile_id, shift, name_text, rank_text")
+        .eq("import_id", importId)
+        .not("matched_profile_id", "is", null)
+        .in("shift", ["A", "B", "C", "D"]);
+      if (error) throw error;
+      const profileIds = Array.from(new Set((data ?? []).map((d: any) => d.matched_profile_id)));
+      const { data: assignments } = profileIds.length
+        ? await sb.from("shift_assignments")
+            .select("profile_id, shift_id, start_date, end_date, shifts(name)")
+            .in("profile_id", profileIds)
+        : { data: [] };
+      const eff = imp?.effective_date as string | undefined;
+      const currentByProfile = new Map<string, string>();
+      (assignments ?? []).forEach((a: any) => {
+        if (eff && a.start_date <= eff && (!a.end_date || a.end_date >= eff)) {
+          const code = (a.shifts?.name ?? "").replace(/^SHIFT\s+/i, "").trim().toUpperCase();
+          currentByProfile.set(a.profile_id, code);
+        }
+      });
+      return (data ?? []).map((d: any) => ({
+        profile_id: d.matched_profile_id,
+        deployed_shift: d.shift,
+        current_shift: currentByProfile.get(d.matched_profile_id) ?? "—",
+        name: d.name_text,
+        rank: d.rank_text,
+      }));
+    },
+  });
+
+  const apply = async (profileId: string, newShift: string) => {
+    setSavingId(profileId);
+    try {
+      const { data: imp } = await sb.from("duty_roster_imports")
+        .select("effective_date").eq("id", importId).maybeSingle();
+      const { error } = await sb.rpc("override_shift_assignment", {
+        _profile_id: profileId,
+        _new_shift_code: newShift,
+        _effective_date: imp?.effective_date ?? new Date().toISOString().slice(0, 10),
+        _reason: reason || null,
+      });
+      if (error) throw error;
+      toast.success(`Updated assignment to ${newShift === "REMOVE" ? "removed" : "Shift " + newShift}`);
+      qc.invalidateQueries({ queryKey: ["import-deployed-staff", importId] });
+      qc.invalidateQueries({ queryKey: ["import-audit", importId] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Override failed");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5 text-primary" /> Override deployed assignments
+          </DialogTitle>
+          <DialogDescription>
+            Reassign individual staff to a different shift (A/B/C/D) or remove them.
+            Every change is recorded to the audit trail.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div>
+          <Label htmlFor="ovreason" className="text-xs">Reason (recorded with each change)</Label>
+          <Input id="ovreason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Reassigned to cover leave" />
+        </div>
+
+        <div className="rounded-lg border max-h-[420px] overflow-auto">
+          <Table className="min-w-[600px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Staff</TableHead>
+                <TableHead className="w-24">Deployed</TableHead>
+                <TableHead className="w-24">Current</TableHead>
+                <TableHead className="w-40">Reassign to…</TableHead>
+                <TableHead className="w-24 text-right">Apply</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {matches.isLoading ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
+              ) : (matches.data ?? []).length === 0 ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No deployed staff in this import</TableCell></TableRow>
+              ) : (
+                (matches.data ?? []).map((r: any) => (
+                  <TableRow key={r.profile_id}>
+                    <TableCell className="text-xs">
+                      <div className="font-medium">{r.name}</div>
+                      <div className="text-muted-foreground">{r.rank}</div>
+                    </TableCell>
+                    <TableCell><Badge variant="outline" className="text-xs">{r.deployed_shift}</Badge></TableCell>
+                    <TableCell><Badge variant={r.current_shift === r.deployed_shift ? "default" : "secondary"} className="text-xs">{r.current_shift}</Badge></TableCell>
+                    <TableCell>
+                      <Select value={drafts[r.profile_id] ?? ""} onValueChange={(v) => setDrafts((d) => ({ ...d, [r.profile_id]: v }))}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Choose…" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">Shift A</SelectItem>
+                          <SelectItem value="B">Shift B</SelectItem>
+                          <SelectItem value="C">Shift C</SelectItem>
+                          <SelectItem value="D">Shift D</SelectItem>
+                          <SelectItem value="REMOVE">Remove from shift</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm" variant="outline" className="h-7 px-2 text-xs"
+                        disabled={savingId === r.profile_id || !drafts[r.profile_id]}
+                        onClick={() => apply(r.profile_id, drafts[r.profile_id]!)}
+                      >
+                        {savingId === r.profile_id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ───────────────────────── Audit Dialog ─────────────────────────
+function DeploymentAuditDialog({
+  importId, onOpenChange,
+}: { importId: string | null; onOpenChange: (v: boolean) => void }) {
+  const open = !!importId;
+  const sb: any = supabase;
+  const audit = useQuery({
+    queryKey: ["import-audit", importId],
+    enabled: open,
+    queryFn: async () => {
+      // Fetch deployment audits for this import…
+      const { data: deploy } = await sb
+        .from("shift_assignment_overrides")
+        .select("id, profile_id, action, effective_date, reason, source, created_at, performed_by, previous_shift_id, new_shift_id")
+        .eq("import_id", importId)
+        .order("created_at", { ascending: false });
+      // …plus recent admin overrides for the same staff
+      const profileIds = Array.from(new Set((deploy ?? []).map((d: any) => d.profile_id)));
+      const { data: overrides } = profileIds.length
+        ? await sb.from("shift_assignment_overrides")
+            .select("id, profile_id, action, effective_date, reason, source, created_at, performed_by, previous_shift_id, new_shift_id")
+            .in("profile_id", profileIds)
+            .eq("source", "admin_override")
+            .order("created_at", { ascending: false })
+            .limit(200)
+        : { data: [] };
+      const all = [...(deploy ?? []), ...(overrides ?? [])];
+      const seen = new Set<string>();
+      const unique = all.filter((r: any) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
+      const allProfileIds = Array.from(new Set(unique.map((r: any) => r.profile_id)));
+      const performerIds = Array.from(new Set(unique.map((r: any) => r.performed_by).filter(Boolean)));
+      const shiftIds = Array.from(new Set(unique.flatMap((r: any) => [r.previous_shift_id, r.new_shift_id]).filter(Boolean)));
+      const [{ data: profs }, { data: performers }, { data: shifts }] = await Promise.all([
+        allProfileIds.length ? sb.from("profiles").select("id, first_name, last_name").in("id", allProfileIds) : Promise.resolve({ data: [] }),
+        performerIds.length ? sb.from("profiles").select("id, first_name, last_name").in("id", performerIds) : Promise.resolve({ data: [] }),
+        shiftIds.length ? sb.from("shifts").select("id, name").in("id", shiftIds) : Promise.resolve({ data: [] }),
+      ]);
+      const pmap = new Map((profs ?? []).map((p: any) => [p.id, `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim()]));
+      const permap = new Map((performers ?? []).map((p: any) => [p.id, `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim()]));
+      const smap = new Map((shifts ?? []).map((s: any) => [s.id, (s.name as string).replace(/^SHIFT\s+/i, "")]));
+      return unique
+        .sort((a: any, b: any) => (a.created_at < b.created_at ? 1 : -1))
+        .map((r: any) => ({
+          ...r,
+          staff: pmap.get(r.profile_id) ?? "—",
+          performer: r.performed_by ? (permap.get(r.performed_by) ?? "—") : "system",
+          prev: r.previous_shift_id ? smap.get(r.previous_shift_id) ?? "?" : "—",
+          next: r.new_shift_id ? smap.get(r.new_shift_id) ?? "?" : "—",
+        }));
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-primary" /> Assignment audit trail
+          </DialogTitle>
+          <DialogDescription>
+            All deployments and admin overrides linked to this import or the affected staff.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-lg border max-h-[460px] overflow-auto">
+          <Table className="min-w-[700px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-40">When</TableHead>
+                <TableHead>Staff</TableHead>
+                <TableHead className="w-28">Action</TableHead>
+                <TableHead className="w-28">From → To</TableHead>
+                <TableHead className="w-32">Effective</TableHead>
+                <TableHead>By / Source</TableHead>
+                <TableHead>Reason</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {audit.isLoading ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Loading…</TableCell></TableRow>
+              ) : (audit.data ?? []).length === 0 ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No audit entries yet</TableCell></TableRow>
+              ) : (
+                (audit.data ?? []).map((r: any) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-xs">{new Date(r.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-xs font-medium">{r.staff}</TableCell>
+                    <TableCell>
+                      <Badge variant={r.action === "remove" ? "destructive" : r.action === "assign" ? "default" : "secondary"} className="text-xs">
+                        {r.action}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs font-mono">{r.prev} → {r.next}</TableCell>
+                    <TableCell className="text-xs">{r.effective_date}</TableCell>
+                    <TableCell className="text-xs">
+                      <div>{r.performer}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.source}</div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{r.reason ?? "—"}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
