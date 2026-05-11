@@ -76,13 +76,16 @@ export default function Login() {
 
       // Device fingerprint for block check
       const fingerprint = await getDeviceFingerprint();
+      // Trusted MAC, if a controlled context (kiosk/MDM/VPN agent) injected one.
+      const trustedMac = getTrustedMac();
 
-      // Block check (IP and/or device fingerprint)
-      if (clientIp || fingerprint) {
+      // Block check (IP, device fingerprint, and/or trusted MAC)
+      if (clientIp || fingerprint || trustedMac) {
         const { data: blocked } = await supabase.rpc("is_ip_blocked", {
           _ip: clientIp ?? "",
           _fingerprint: fingerprint || null,
-        });
+          _mac: trustedMac,
+        } as any);
         if (blocked === true) {
           toast({
             title: "Access Blocked",
