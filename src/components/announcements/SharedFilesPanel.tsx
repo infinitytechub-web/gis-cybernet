@@ -314,16 +314,41 @@ export function SharedFilesPanel() {
                   <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Audience</Label>
-                  <Select value={deptId} onValueChange={setDeptId}>
+                  <Label className="text-xs">Share File Audience</Label>
+                  <Select
+                    value={audienceMode}
+                    onValueChange={(v: "global" | "department" | "individual") => {
+                      setAudienceMode(v);
+                      if (v === "global") { setDeptId("global"); setTargetUserId(""); }
+                      if (v === "department") setTargetUserId("");
+                      if (v === "individual") setDeptId("global");
+                    }}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="global">All Staff</SelectItem>
-                      {departments.map((d) => (
-                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                      ))}
+                      <SelectItem value="department">Specific Department</SelectItem>
+                      <SelectItem value="individual">Individual Staff Member</SelectItem>
                     </SelectContent>
                   </Select>
+                  {audienceMode === "department" && (
+                    <Select value={deptId === "global" ? "" : deptId} onValueChange={setDeptId}>
+                      <SelectTrigger><SelectValue placeholder="Select a department…" /></SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {audienceMode === "individual" && (
+                    <StaffCombobox
+                      staff={staffList}
+                      value={targetUserId}
+                      onValueChange={setTargetUserId}
+                      placeholder="Search staff by name or ID…"
+                    />
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">File (max 25 MB)</Label>
