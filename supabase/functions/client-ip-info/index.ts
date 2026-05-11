@@ -34,25 +34,21 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    // Require an authenticated Supabase user. Prevents the function from being
-    // used as an open IP-lookup relay against ipapi.co's rate limits.
+    // Auth is OPTIONAL for the "what's my IP" path so the login screen can call
+    // this before a session exists. We only require an authenticated user when
+    // the caller asks us to proxy a geolocation lookup for an arbitrary IP
+    // (the actual ipapi.co rate-limit abuse vector).
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claims?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let isAuthed = false;
+    if (authHeader.startsWith("Bearer ")) {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const token = authHeader.replace("Bearer ", "");
+      const { data: claims } = await supabase.auth.getClaims(token);
+      isAuthed = !!claims?.claims;
     }
 
     const url = new URL(req.url);
@@ -65,10 +61,17 @@ Deno.serve(async (req) => {
 
     const myIp = pickClientIp(req);
 
-    // No target → just return caller's IP
+    // No target → just return caller's IP (no auth needed)
     if (!target) {
       return new Response(JSON.stringify({ ip: myIp }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Geolocation proxy requires auth.
+    if (!isAuthed) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
