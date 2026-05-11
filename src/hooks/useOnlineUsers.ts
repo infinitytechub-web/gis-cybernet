@@ -202,13 +202,13 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
 
   // Update presence when route changes (counts as activity).
   useEffect(() => {
-    if (!user || !channelRef.current || !payloadRef.current) return;
-    payloadRef.current = {
-      ...payloadRef.current,
+    if (!user || !sharedChannel || !sharedPayload) return;
+    sharedPayload = {
+      ...sharedPayload,
       currentPage: labelForPath(location.pathname),
       lastActiveAt: new Date().toISOString(),
     };
-    channelRef.current.track(payloadRef.current);
+    sharedChannel.track(sharedPayload);
   }, [location.pathname, user]);
 
   // Periodically advance "now" so the staleness filter re-evaluates even
