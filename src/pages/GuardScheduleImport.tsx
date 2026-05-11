@@ -119,7 +119,126 @@ function parseDateToken(tok: string, fallbackYear: number): string | null {
   return isoDate(year, month, day);
 }
 
-function parsePages(pages: string[], fallbackYear: number): ParseResult {
+// ----- CSV parser & structural validation -----
+// Required headers: date, name, serial_no (or s/n), and one of {shift, period}.
+// Shift values must be A/B/C/D. Each shift has fixed duty hours (see SHIFT_PERIOD_INFO),
+// notably Shift D = Operational (24/7).
+const CSV_HEADER_ALIASES: Record<string, string> = {
+  "date": "date", "duty_date": "date", "duty date": "date",
+  "name": "name", "officer": "name", "officer name": "name", "personnel": "name",
+  "serial_no": "serial_no", "serial": "serial_no", "s/n": "serial_no", "sn": "serial_no", "no": "serial_no",
+  "rank": "rank",
+  "group": "group", "shift_group": "group", "duty_group": "group",
+  "period": "period", "tour": "period",
+  "shift": "shift", "shift_letter": "shift", "shift_code": "shift",
+};
+
+function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else cur += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ",") { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out.map((s) => s.trim());
+}
+
+function parseCsv(text: string, fallbackYear: number): ParseResult {
+  const warnings: string[] = [];
+  const rows: RawRow[] = [];
+  const cleaned = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const lines = cleaned.split("\n").filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return { rows, warnings: ["CSV is empty"] };
+
+  const headerCells = splitCsvLine(lines[0]).map((h) => h.toLowerCase().replace(/[\.\-]/g, "_"));
+  const colMap: Record<string, number> = {};
+  headerCells.forEach((h, idx) => {
+    const canon = CSV_HEADER_ALIASES[h] ?? CSV_HEADER_ALIASES[h.replace(/_/g, " ")];
+    if (canon && colMap[canon] === undefined) colMap[canon] = idx;
+  });
+
+  const missingRequired: string[] = [];
+  if (colMap.date === undefined) missingRequired.push("date");
+  if (colMap.name === undefined) missingRequired.push("name");
+  if (colMap.serial_no === undefined) missingRequired.push("serial_no (or S/N)");
+  if (colMap.shift === undefined && colMap.period === undefined) missingRequired.push("shift OR period");
+  if (missingRequired.length) {
+    warnings.push(
+      `CSV header is missing required column(s): ${missingRequired.join(", ")}. ` +
+      `Detected headers: ${headerCells.join(" | ") || "(none)"}.`,
+    );
+    return { rows, warnings };
+  }
+
+  const dates: string[] = [];
+  for (let li = 1; li < lines.length; li++) {
+    const cells = splitCsvLine(lines[li]);
+    const get = (k: string) => (colMap[k] !== undefined ? cells[colMap[k]] ?? "" : "");
+    const sourceLine = li + 1;
+
+    const dateRaw = get("date").trim();
+    const name = get("name").trim();
+    const snRaw = get("serial_no").trim();
+    const rank = get("rank").trim();
+    const group = get("group").trim();
+    const periodRaw = get("period").trim().toUpperCase();
+    const shiftRaw = get("shift").trim().toUpperCase();
+
+    if (!dateRaw && !name && !snRaw) continue;
+
+    let date = "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) date = dateRaw;
+    else {
+      const parsed = parseDateToken(dateRaw, fallbackYear);
+      if (parsed) date = parsed;
+    }
+    if (!date) { warnings.push(`Line ${sourceLine}: invalid or unparseable date "${dateRaw}"`); continue; }
+
+    let period: Period | undefined;
+    if (periodRaw === "DAY" || periodRaw === "NIGHT") period = periodRaw as Period;
+
+    let shift: Shift | undefined;
+    if (shiftRaw) {
+      if (!/^[ABCD]$/.test(shiftRaw)) {
+        warnings.push(`Line ${sourceLine}: invalid shift "${shiftRaw}" — must be A, B, C, or D`);
+        continue;
+      }
+      shift = shiftRaw as Shift;
+      // Cross-check shift ↔ period when both supplied (D = Operational 24/7 → matches either).
+      if (period && shift !== "D") {
+        const expectedPeriod: Period = shift === "C" ? "NIGHT" : "DAY";
+        if (period !== expectedPeriod) {
+          warnings.push(
+            `Line ${sourceLine}: shift ${shift} (${SHIFT_PERIOD_INFO[shift].label}, ${SHIFT_PERIOD_INFO[shift].start}–${SHIFT_PERIOD_INFO[shift].end}) does not match period "${period}"`,
+          );
+        }
+      }
+      if (!period) period = shift === "C" ? "NIGHT" : shift === "D" ? "NIGHT" : "DAY";
+    }
+    if (!period) { warnings.push(`Line ${sourceLine}: missing both shift and period`); continue; }
+
+    const sn = parseInt(snRaw.replace(/[^0-9]/g, ""), 10);
+    if (!Number.isFinite(sn) || sn <= 0) { warnings.push(`Line ${sourceLine}: invalid serial number "${snRaw}"`); continue; }
+    if (!name || name.length < 2) { warnings.push(`Line ${sourceLine}: missing or too-short name`); continue; }
+
+    rows.push({ group, date, period, serial_no: sn, rank, name, shift, source_line: sourceLine });
+    dates.push(date);
+  }
+
+  dates.sort();
+  return { rows, warnings, startDate: dates[0], endDate: dates[dates.length - 1] };
+}
+
   const warnings: string[] = [];
   const rows: RawRow[] = [];
   const allDates = new Set<string>();
