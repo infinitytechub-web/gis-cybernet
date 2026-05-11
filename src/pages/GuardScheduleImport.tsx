@@ -794,18 +794,39 @@ export default function GuardScheduleImport() {
   const handleFile = async (f: File) => {
     setFile(f); setParsed(null); setParsing(true);
     try {
-      if (!/\.pdf$/i.test(f.name)) {
-        toast.error("Please upload a PDF file");
+      const isCsv = /\.csv$/i.test(f.name) || f.type === "text/csv";
+      const isPdf = /\.pdf$/i.test(f.name) || f.type === "application/pdf";
+      if (!isCsv && !isPdf) {
+        toast.error("Please upload a PDF or CSV file");
         return;
       }
-      const pages = await extractPdfText(f);
-      const result = parsePages(pages, fallbackYear);
+      let result: ParseResult;
+      if (isCsv) {
+        if (f.size > 5 * 1024 * 1024) { toast.error("CSV too large (max 5 MB)"); return; }
+        const text = await f.text();
+        result = parseCsv(text, fallbackYear);
+        if (!name) setName(f.name.replace(/\.csv$/i, "").replace(/[_-]+/g, " "));
+        const structuralIssues = result.warnings.length;
+        if (result.rows.length === 0) {
+          toast.error(structuralIssues
+            ? `CSV rejected: ${structuralIssues} structural issue(s) — see warnings`
+            : "No personnel rows could be parsed");
+        } else {
+          toast.success(
+            `Parsed ${result.rows.length} CSV row(s)` +
+            (structuralIssues ? ` — ${structuralIssues} warning(s)` : ""),
+          );
+        }
+      } else {
+        const pages = await extractPdfText(f);
+        result = parsePages(pages, fallbackYear);
+        if (!name) setName(f.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " "));
+        if (result.rows.length === 0) toast.error("No personnel rows could be parsed");
+        else toast.success(`Parsed ${result.rows.length} entries from ${pages.length} page(s)`);
+      }
       setParsed(result);
-      if (!name) setName(f.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " "));
-      if (result.rows.length === 0) toast.error("No personnel rows could be parsed");
-      else toast.success(`Parsed ${result.rows.length} entries from ${pages.length} page(s)`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to read PDF");
+      toast.error(e?.message ?? "Failed to read file");
     } finally {
       setParsing(false);
     }
