@@ -82,7 +82,8 @@ export async function scanFile(file: File): Promise<FirewallVerdict> {
     sniffed.ext !== declaredExt &&
     // tolerate jpg/jpeg + zip/jar twins
     !(sniffed.ext === "jpg" && declaredExt === "jpeg") &&
-    !(sniffed.ext === "zip" && declaredExt === "jar");
+    // OOXML (Office 2007+) and other modern container formats are ZIPs under the hood
+    !(sniffed.ext === "zip" && ["jar", "docx", "xlsx", "pptx", "docm", "xlsm", "pptm", "odt", "ods", "odp", "epub", "apk"].includes(declaredExt));
 
   const { data, error } = await supabase.rpc("firewall_evaluate_file", {
     _filename: file.name,
