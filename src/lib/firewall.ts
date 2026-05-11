@@ -85,9 +85,17 @@ export async function scanFile(file: File): Promise<FirewallVerdict> {
     // OOXML (Office 2007+) and other modern container formats are ZIPs under the hood
     !(sniffed.ext === "zip" && ["jar", "docx", "xlsx", "pptx", "docm", "xlsm", "pptm", "odt", "ods", "odp", "epub", "apk"].includes(declaredExt));
 
+  // Prefer the browser-supplied MIME for known-safe document types so the
+  // server doesn't see a generic "application/zip" for OOXML (.docx/.xlsx/.pptx)
+  // and apply a zip-blocking rule.
+  const OOXML_EXTS = ["docx","xlsx","pptx","docm","xlsm","pptm","odt","ods","odp"];
+  const effectiveMime =
+    OOXML_EXTS.includes(declaredExt) && file.type
+      ? file.type
+      : (sniffed.mime ?? file.type ?? "application/octet-stream");
   const { data, error } = await supabase.rpc("firewall_evaluate_file", {
     _filename: file.name,
-    _mime: sniffed.mime ?? file.type ?? "application/octet-stream",
+    _mime: effectiveMime,
     _size_bytes: file.size,
   });
   if (error) {
