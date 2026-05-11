@@ -7690,6 +7690,56 @@ export type Database = {
           },
         ]
       }
+      shift_rotation_assignments: {
+        Row: {
+          created_at: string
+          created_by: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          priority: number
+          schedule_id: string
+          scope_type: Database["public"]["Enums"]["shift_rotation_scope"]
+          scope_value: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: number
+          schedule_id: string
+          scope_type: Database["public"]["Enums"]["shift_rotation_scope"]
+          scope_value?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: number
+          schedule_id?: string
+          scope_type?: Database["public"]["Enums"]["shift_rotation_scope"]
+          scope_value?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_rotation_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "shift_rotation_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_rotation_config: {
         Row: {
           anchor_date: string
@@ -7753,6 +7803,98 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_rotation_deploy_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          diff: Json
+          id: string
+          notes: string | null
+          schedule_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string
+          created_at?: string
+          diff?: Json
+          id?: string
+          notes?: string | null
+          schedule_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          diff?: Json
+          id?: string
+          notes?: string | null
+          schedule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_rotation_deploy_audit_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "shift_rotation_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_rotation_exclusions: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
+      shift_rotation_individual_overrides: {
+        Row: {
+          created_at: string
+          created_by: string
+          group_letter: string
+          id: string
+          override_date: string
+          profile_id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          group_letter: string
+          id?: string
+          override_date: string
+          profile_id: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          group_letter?: string
+          id?: string
+          override_date?: string
+          profile_id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shift_rotation_overrides: {
         Row: {
           anchor_date: string
@@ -7794,6 +7936,68 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      shift_rotation_schedules: {
+        Row: {
+          anchor_date: string
+          created_at: string
+          created_by: string
+          cycle_length: number | null
+          description: string | null
+          id: string
+          name: string
+          parent_schedule_id: string | null
+          pattern: string[]
+          published_at: string | null
+          published_by: string | null
+          status: Database["public"]["Enums"]["shift_rotation_status"]
+          timezone: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          anchor_date: string
+          created_at?: string
+          created_by?: string
+          cycle_length?: number | null
+          description?: string | null
+          id?: string
+          name: string
+          parent_schedule_id?: string | null
+          pattern: string[]
+          published_at?: string | null
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["shift_rotation_status"]
+          timezone?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          anchor_date?: string
+          created_at?: string
+          created_by?: string
+          cycle_length?: number | null
+          description?: string | null
+          id?: string
+          name?: string
+          parent_schedule_id?: string | null
+          pattern?: string[]
+          published_at?: string | null
+          published_by?: string | null
+          status?: Database["public"]["Enums"]["shift_rotation_status"]
+          timezone?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_rotation_schedules_parent_schedule_id_fkey"
+            columns: ["parent_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "shift_rotation_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shift_window_override_audit: {
         Row: {
@@ -8941,6 +9145,22 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      detect_rotation_conflicts: {
+        Args: {
+          _end_date: string
+          _exclude_assignment_id?: string
+          _scope_type: Database["public"]["Enums"]["shift_rotation_scope"]
+          _scope_value: string
+          _start_date: string
+        }
+        Returns: {
+          assignment_id: string
+          end_date: string
+          schedule_id: string
+          schedule_name: string
+          start_date: string
+        }[]
+      }
       empty_recycle_bin: { Args: never; Returns: Json }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
@@ -9502,6 +9722,8 @@ export type Database = {
       presence_event_type: "heartbeat" | "prune"
       scheduled_delivery_status: "pending" | "sent" | "failed" | "cancelled"
       shift_pattern: "8h" | "12h" | "custom"
+      shift_rotation_scope: "org" | "department" | "role" | "staff"
+      shift_rotation_status: "draft" | "published" | "archived"
       staff_status: "active" | "inactive" | "study_leave" | "transferred"
       transfer_type: "posting" | "transfer"
     }
@@ -9696,6 +9918,8 @@ export const Constants = {
       presence_event_type: ["heartbeat", "prune"],
       scheduled_delivery_status: ["pending", "sent", "failed", "cancelled"],
       shift_pattern: ["8h", "12h", "custom"],
+      shift_rotation_scope: ["org", "department", "role", "staff"],
+      shift_rotation_status: ["draft", "published", "archived"],
       staff_status: ["active", "inactive", "study_leave", "transferred"],
       transfer_type: ["posting", "transfer"],
     },

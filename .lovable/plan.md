@@ -1,47 +1,88 @@
-# Dashboard & Admin Improvements — Phased Plan
+# SPEC-1 — Flexible Shift Rotation Calendar
 
-This is a large multi-area initiative. I'll deliver it in 5 phases so each is reviewable and the app stays stable between steps. Approve the plan and I'll start executing phase 1; I'll pause briefly between phases so you can verify.
+The current system already has a singleton `shift_rotation_config` (anchor + pattern), per-role/department `shift_rotation_overrides`, and a derived "My Shift Tracker". This plan extends those primitives into the full spec without breaking existing rotations.
+
+Delivered in 5 phases so each is reviewable and the app stays stable between steps.
 
 ---
 
-## Phase 1 — Cleanup
-- Audit dashboard, admin settings, and announcement modules for unused routes, dead components, and stale edge function imports.
-- Remove orphaned files and unused API calls; trim `App.tsx` routes accordingly.
-- Outcome: smaller surface area before adding new features.
+## Phase 1 — Schema foundation (Must-Have)
 
-## Phase 2 — Dashboard Enhancements
-- **Gender Distribution Widget**: a compact card (Male / Female / Other-Unspecified / Total) — reuse existing `GenderStatisticsWidget` data query but render a slim summary version on the main dashboard.
-- **Online Staff Widget**: leverage existing `useOnlineUsers` hook; render avatars with hover tooltip showing Online ID, Name, Department.
-- **Attendance Log Widget**: new card combining gender split + per-department present/absent counts + totals (queries `attendance_logs` for today).
-- **Duty Roster filter**: in the dashboard's roster view, filter to staff whose shift matches the currently active window; hide off-duty entries.
+New tables (all RLS-protected, command-tier write, staff read where relevant):
 
-## Phase 3 — File Sharing System
-- **Staff selector UX**: in `SharedFilesPanel` add a scrollable list, search input, and multi-select checkboxes with "select all in results".
-- **Scheduled delivery schema** (new migration):
-  - `scheduled_file_deliveries` (id, file_path, sender_id, scheduled_for, status enum pending|sent|failed, error, created_at)
-  - `scheduled_file_recipients` (delivery_id, recipient_user_id)
-  - RLS: sender + admins can read/write their own; only the dispatcher edge function (service role) can update status.
-- **Edge function** `dispatch-scheduled-files`: picks rows where `scheduled_for <= now()` and `status = pending`, fans out notifications + announcement file shares, marks sent/failed with error message.
-- **Cron**: pg_cron every minute invoking the function (using `supabase--insert`, not migrations, since URL/anon-key are user-specific).
-- **Admin UI**: new "Scheduled Deliveries" tab listing pending/sent/failed with retry on failed.
+- `shift_rotation_schedules` — named, versioned rotation definitions
+  - name, description, anchor_date, pattern (text[]), cycle_length (generated), timezone, status (`draft|published|archived`), version, published_at, published_by
+- `shift_rotation_assignments` — assigns a schedule to a date range and a scope
+  - schedule_id, scope_type (`org|department|role|staff`), scope_value, start_date, end_date, priority
+- `shift_rotation_individual_overrides` — per-staff manual overrides
+  - profile_id, date, group_letter, reason, created_by
+- `shift_rotation_deploy_audit` — every publish/edit/rollback event with full diff
+- `shift_rotation_exclusions` — command-tier roles auto-excluded from org-wide deployments (seeded with admin/oic/2ic/staff_officer/supervisor)
 
-## Phase 4 — Shift-per-Day CRUD
-- Add working action buttons to the shift-per-day table: search input, row checkboxes for bulk select, edit dialog (assign/reassign staff, change shift), delete with confirm.
-- Wire to existing `duty_roster_entries` table; respect command-tier RBAC.
+Triggers:
+- Block edits to `published` schedules (force new version)
+- Auto-bump `version` on publish
+- Conflict detection function `detect_rotation_conflicts(scope, range)` returning overlapping assignments
 
-## Phase 5 — Stability Fixes
-- **Admin Settings non-2xx**: reproduce the failing edge function call (likely `system-backup`, `email-domain-recheck`, or `bulk-create-accounts` — confirm via logs), fix CORS / payload / auth header issues, return JSON error bodies.
-- **Email Test "Failure to send a request"**: usually CORS preflight or a missing `Authorization` header on `send-transactional-email`. Verify `corsHeaders` cover `authorization, content-type, apikey`, and the function returns CORS on every error path. Add a clearer toast surfacing the underlying error.
-- **Centralized logging**: small helper `src/lib/edge-log.ts` that wraps `supabase.functions.invoke`, captures errors to console + a new `client_error_log` table (admin-readable) so future failures are diagnosable in one place.
+Keep existing `shift_rotation_config` and `shift_rotation_overrides` as the legacy fallback so today's tracker keeps working during migration.
+
+## Phase 2 — Admin scheduling UI
+
+New page `/admin/shift-rotations` (command-tier only):
+
+- List of schedules with status badges (Draft / Published / Archived) and version
+- Schedule editor:
+  - Anchor date picker, pattern builder (chips A/B/C/D + add/remove), cycle length auto-derived, timezone selector (default Africa/Accra)
+  - Date-range assignment table (scope picker: Organization / Department / Role / Staff)
+  - 28-day live preview grid showing generated groups
+  - Conflict warnings banner (calls `detect_rotation_conflicts`)
+- Publish flow: confirm dialog → writes audit row → marks published → invalidates tracker queries
+- Rollback: clones previous version into new draft
+
+Reuses `ShiftRotationSettings` styling and `useShiftRotationConfig` patterns.
+
+## Phase 3 — Resolver + My Shift Tracker integration
+
+New helper `resolveShiftForDate(profile, date)` with this precedence:
+1. Individual override
+2. Most-specific published assignment (staff > role > department > org)
+3. Legacy `shift_rotation_overrides` / `shift_rotation_config` fallback
+
+- Extend `useShiftRotationConfig` to accept `profileId` and call the resolver
+- `MyShiftTracker.tsx` renders resolved groups; shows source badge ("Org schedule v3", "Manual override", etc.)
+- Exclude command-tier roles from org-wide assignments via `shift_rotation_exclusions`
+- Realtime: subscribe to `shift_rotation_schedules` + `shift_rotation_assignments` + `shift_rotation_individual_overrides`
+
+## Phase 4 — Notifications, audit & bulk tools (Should-Have)
+
+- Notification fan-out on publish (uses existing `notifications` table + `role-based-notifier` edge function)
+- Audit log viewer at `/admin/shift-rotations/audit` (filter by schedule, actor, date)
+- Bulk reassignment dialog: pick staff list → assign to schedule or set individual overrides for a date range
+- CSV export of generated calendar per schedule (reuses `download-utils.ts`)
+
+## Phase 5 — Polish & nice-to-haves (Could-Have, opt-in)
+
+- Drag-and-drop on the preview grid to create individual overrides inline
+- Mobile-friendly admin view (stacked cards under `md`)
+- Optional Lovable-AI rotation recommender that suggests patterns from past coverage gaps (gated behind a feature flag)
 
 ---
 
 ## Technical notes
-- No business-logic changes outside what each phase explicitly requires.
-- All new tables get RLS; uses existing `has_role` security-definer helper.
-- New widgets follow the existing dashboard card style (semantic tokens only).
-- Cron job creation uses `supabase--insert` (per project convention), not the migration tool.
-- I'll verify each phase by checking the build output and, for the stability fixes, by hitting the edge functions and reading logs.
+
+- All new tables: RLS using existing `has_role` / `is_command_tier` helpers
+- No edits to `auth/storage/realtime` schemas
+- No CHECK constraints on time-based fields — use validation triggers
+- New code uses semantic Tailwind tokens only
+- Realtime via `postgres_changes` invalidating React Query keys
+- Timezone stored on schedule; resolver converts using `date-fns-tz` (already a transitive dep — confirm before phase 3)
 
 ## Suggested checkpoint
-After Phase 2 (dashboard widgets visible) — quick visual confirmation before I touch the schema in Phase 3.
+
+After **Phase 2** (admin can build & preview a schedule but nothing is wired into the tracker yet) — quick visual confirmation before the resolver swap in Phase 3.
+
+## Out of scope (call out for later)
+
+- Hard integration with attendance/payroll
+- Cross-command schedule sharing
+- Public REST API for third-party schedulers

@@ -156,6 +156,23 @@ export default function Settings() {
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
         <TabsContent value="rotation" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Flexible Shift Rotation Calendar</CardTitle>
+              <CardDescription>
+                The new admin workspace lets you build versioned, scope-aware rotation schedules and
+                publish them organisation-wide.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link
+                to="/admin/shift-rotations"
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                Open Shift Rotations workspace →
+              </Link>
+            </CardContent>
+          </Card>
           <ShiftRotationSettings />
           <ShiftRotationOverrides />
         </TabsContent>
