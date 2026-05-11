@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export default function ForcePasswordChange() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +48,8 @@ export default function ForcePasswordChange() {
       if (metaErr) throw metaErr;
 
       toast.success("Password updated! Welcome to GIS HRM.");
-      navigate("/dashboard", { replace: true });
+      // Admins must still complete the MFA gate before reaching the dashboard.
+      navigate(isAdmin ? "/2fa" : "/dashboard", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Failed to update password");
     } finally {

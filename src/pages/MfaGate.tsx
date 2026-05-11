@@ -33,6 +33,13 @@ export default function MfaGate() {
 
   useEffect(() => {
     if (!user || !isAdmin) return;
+    // If the admin still owes a password change (e.g. recovery temp password),
+    // route them through the change-password flow before the MFA gate so they
+    // can rotate the secret first.
+    if ((user as any)?.user_metadata?.must_change_password === true) {
+      navigate("/change-password", { replace: true });
+      return;
+    }
     (async () => {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.currentLevel === "aal2") {

@@ -128,8 +128,20 @@ export default function Login() {
           .eq("user_id", (await supabase.auth.getUser()).data.user?.id ?? "")
           .eq("role", "admin");
 
+        // If the admin was issued a temporary password (e.g. via recovery),
+        // force them through the password change first so they aren't blocked
+        // by the MFA enrolment gate before they can rotate the temp secret.
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        const mustChangePw = freshUser?.user_metadata?.must_change_password === true;
+
         if (!roleErr && (roleRows?.length ?? 0) > 0) {
-          navigate("/2fa", { replace: true, state: { from: { pathname: "/dashboard" } } });
+          if (mustChangePw) {
+            navigate("/change-password", { replace: true });
+          } else {
+            navigate("/2fa", { replace: true, state: { from: { pathname: "/dashboard" } } });
+          }
+        } else if (mustChangePw) {
+          navigate("/change-password", { replace: true });
         } else {
           navigate("/", { replace: true });
         }
