@@ -22,9 +22,17 @@ export default function IpBlocks() {
 
   const [ip, setIp] = useState("");
   const [fingerprint, setFingerprint] = useState("");
+  const [mac, setMac] = useState("");
   const [duration, setDuration] = useState<number>(60);
   const [reason, setReason] = useState("Repeated failed login attempts");
   const [notes, setNotes] = useState("");
+
+  // Lightweight client-side check; server normalizes & validates definitively.
+  const macLooksValid = (v: string) => {
+    if (!v.trim()) return true;
+    const hex = v.replace(/[^0-9a-fA-F]/g, "");
+    return hex.length === 12;
+  };
 
   const { data: blocks = [], refetch } = useQuery({
     queryKey: ["ip_blocks"],
@@ -61,18 +69,20 @@ export default function IpBlocks() {
   const blockMutation = useMutation({
     mutationFn: async () => {
       if (!ip.trim()) throw new Error("IP address is required");
+      if (!macLooksValid(mac)) throw new Error("MAC address must be 12 hex characters (e.g. AA:BB:CC:DD:EE:FF)");
       const { error } = await supabase.rpc("block_ip", {
         _ip: ip.trim(),
         _fingerprint: fingerprint.trim() || null,
+        _mac: mac.trim() || null,
         _duration_minutes: duration > 0 ? duration : null,
         _reason: reason || "Manual block",
         _notes: notes || null,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
       toast({ title: "IP blocked", description: ip });
-      setIp(""); setFingerprint(""); setNotes("");
+      setIp(""); setFingerprint(""); setMac(""); setNotes("");
       qc.invalidateQueries({ queryKey: ["ip_blocks"] });
       qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
@@ -115,6 +125,18 @@ export default function IpBlocks() {
             <Label>Device Fingerprint (optional)</Label>
             <Input value={fingerprint} onChange={(e) => setFingerprint(e.target.value)} placeholder="SHA-256 hash" />
           </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>MAC Address (optional)</Label>
+            <Input
+              value={mac}
+              onChange={(e) => setMac(e.target.value)}
+              placeholder="e.g. AA:BB:CC:DD:EE:FF"
+              className={!macLooksValid(mac) ? "border-destructive" : ""}
+            />
+            <p className="text-xs text-muted-foreground">
+              Accepts colons, hyphens, dots, or no separator. Normalized to <code>AA:BB:CC:DD:EE:FF</code>.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label>Duration (minutes, 0 = permanent)</Label>
             <Input type="number" min={0} value={duration} onChange={(e) => setDuration(parseInt(e.target.value || "0", 10))} />
@@ -147,6 +169,7 @@ export default function IpBlocks() {
               <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>IP</TableHead>
+                <TableHead>MAC</TableHead>
                 <TableHead>Fingerprint</TableHead>
                 <TableHead>Reason</TableHead>
                 <TableHead>Blocked</TableHead>
@@ -167,6 +190,7 @@ export default function IpBlocks() {
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{b.ip_address}</TableCell>
+                    <TableCell className="font-mono text-xs">{b.mac_address || "—"}</TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={b.device_fingerprint || ""}>
                       {b.device_fingerprint || "—"}
                     </TableCell>
@@ -195,7 +219,7 @@ export default function IpBlocks() {
                 );
               })}
               {blocks.length === 0 && (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No blocks yet.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No blocks yet.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -220,6 +244,7 @@ export default function IpBlocks() {
                   <TableHead>Action</TableHead>
                   <TableHead>Admin</TableHead>
                   <TableHead>IP</TableHead>
+                  <TableHead>MAC</TableHead>
                   <TableHead>Fingerprint</TableHead>
                   <TableHead>Reason</TableHead>
                   <TableHead>Expiry</TableHead>
@@ -240,6 +265,7 @@ export default function IpBlocks() {
                       {a.performed_by_name ?? <span className="font-mono text-muted-foreground">{(a.performed_by ?? "—").slice(0, 8)}</span>}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{a.ip_address ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{a.mac_address ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={a.device_fingerprint || ""}>
                       {a.device_fingerprint || "—"}
                     </TableCell>
@@ -254,7 +280,7 @@ export default function IpBlocks() {
                   </TableRow>
                 ))}
                 {audit.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No audit entries yet.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No audit entries yet.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
