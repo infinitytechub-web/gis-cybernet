@@ -1,63 +1,76 @@
-## Goal
+# Substantive Security Findings — Prioritized Fix Plan
 
-On the Guard Schedule Import page, add a "Preset Mismatch Diff" panel that shows, per row, exactly which value failed preset validation (rank / group / serial range / serial format) alongside the expected preset values — so the user can audit and fix issues before exporting or committing.
+All 335 scan items are warnings; 325 are advisory "SECURITY DEFINER callable by anon/authenticated" notes that are intentional (RPC-based RBAC). The 10 below are real, fixable issues.
 
-## What the user will see
+---
 
-A new collapsible card in Step 5 (Validation), shown only when the active preset has `allowedRanks`, `allowedGroups`, `serialFormat`, or `serialMin/Max` configured AND there is at least one preset-mismatch error.
+## P0 — Audit forgery (HIGH impact)
 
-```text
-Preset Mismatch Diff (12 rows)            [Filter: All | Rank | Group | Serial]
------------------------------------------------------------------------------
-Row  Name              Field   Got                Expected                  
-3    DOE J             rank    "SARGE" -> SGT?    one of: DCO, ACI, CI, ...
-7    KAY M             group   "GRP A"            one of: GROUP A..D
-11   SMITH P           serial  41234              range [10000, 39999]
-14   AYI K             serial  "ABC12"            format ^[0-9]{4,5}$
+### 1. `medical_appointment_audit` INSERT policy is forgeable
+**Problem:** Policy `"System inserts appointment audit"` has `WITH CHECK (auth.uid() IS NOT NULL)`, so any signed-in user can fabricate audit rows for appointments they don't own.
+
+**Fix:** Drop the broad INSERT policy and replace with a service-role-only policy. Audit rows should only be inserted by the existing SECURITY DEFINER trigger function (which runs as definer and bypasses RLS).
+
+```sql
+DROP POLICY "System inserts appointment audit" ON public.medical_appointment_audit;
+CREATE POLICY "Only service role inserts appointment audit"
+  ON public.medical_appointment_audit FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.role() = 'service_role');
 ```
 
-- Field column color-codes the diff (red strike-through on Got, green on Expected).
-- Header chips toggle filters by mismatch field.
-- Footer shows counts: `Ranks: 4 · Groups: 1 · Serial range: 5 · Serial format: 2`.
-- "Copy diff as CSV" button (Row, Name, Serial, Field, Got, Expected) for offline review.
-- Card is gated behind the existing `blockedByErrors` flow — purely informational, doesn't change gating logic.
+---
 
-## Implementation
+## P1 — Permissive write policy
 
-### 1. Extend `RowIssue` with diff metadata
-In `src/pages/GuardScheduleImport.tsx`:
+### 2. `inventory_audit_schedules` UPDATE — `WITH CHECK (true)`
+**Problem:** UPDATE policy `audit_sched_update` correctly gates `USING` on command-tier + storekeeper, but `WITH CHECK` is `true`, meaning a row can be mutated to any values (including reassigning ownership).
 
-- Add optional `got?: string` and `expected?: string` fields to `RowIssue`.
-- Add `kind?: "preset_rank" | "preset_group" | "serial_range" | "serial_format"` so we can filter without parsing messages.
+**Fix:** Mirror the USING expression in WITH CHECK.
 
-### 2. Populate diff fields inside `validateRows`
-For the four existing preset-mismatch branches (lines 410, 426, 437, 451), set:
+```sql
+ALTER POLICY audit_sched_update ON public.inventory_audit_schedules
+  WITH CHECK (
+    has_role(auth.uid(),'admin'::app_role)
+    OR has_role(auth.uid(),'oic'::app_role)
+    OR has_role(auth.uid(),'2ic'::app_role)
+    OR has_role(auth.uid(),'storekeeper'::app_role)
+  );
+```
 
-- `kind`, `got` (raw value), `expected` (e.g. `"GROUP A | GROUP B | GROUP C | GROUP D"` or `"range [min, max]"` or the regex source).
-- For rank: also include nearest alias suggestion using a simple Levenshtein over `Object.keys(tpl.rankAliases ?? {})` ∪ `allowedRanks` to power the `-> SGT?` hint.
+---
 
-### 3. New `PresetDiffPanel` component (inline in same file)
-- Props: `issues: RowIssue[]`, `template: MappingTemplate`.
-- Filters issues to those with a `kind` starting with `preset_` or `serial_`.
-- Local state for active filter chip (`all | rank | group | serial`).
-- Renders shadcn `Card` + `Table` (Row #, Name, Serial, Field, Got, Expected) with max-height ~400px and `overflow-y-auto`.
-- "Copy as CSV" uses `src/lib/download-utils.ts` patterns; trigger downloads `preset-mismatch-diff.csv`.
+## P2 — Mutable `search_path` on 8 functions
 
-### 4. Wire into Step 5 validation card
-- Render `<PresetDiffPanel>` directly under the existing issue summary, only when `validation && diffIssues.length > 0`.
-- No changes to `guardValidation` / export / commit gating — diff view is read-only.
+**Problem:** A SECURITY DEFINER function without a pinned `search_path` can be hijacked via shadowing in a malicious schema. Affected:
 
-### 5. Minor copy update
-Adjust the existing toast/summary text to mention "See Preset Mismatch Diff for per-row details" when preset errors exist.
+1. `block_security_audit_mutation`
+2. `block_threshold_audit_mutation`
+3. `compute_interlink_next_run`
+4. `delete_email`
+5. `enqueue_email`
+6. `move_to_dlq`
+7. `read_email_batch`
+8. `set_interlink_schedule_next_run`
 
-## Files touched
+**Fix:** Add `SET search_path = public, pg_temp` to each via `ALTER FUNCTION`. No body changes required.
 
-- `src/pages/GuardScheduleImport.tsx` — type extension, `validateRows` enrichment, new `PresetDiffPanel` component, render in Step 5.
+```sql
+ALTER FUNCTION public.block_security_audit_mutation()    SET search_path = public, pg_temp;
+ALTER FUNCTION public.block_threshold_audit_mutation()   SET search_path = public, pg_temp;
+ALTER FUNCTION public.compute_interlink_next_run(...)    SET search_path = public, pg_temp;
+ALTER FUNCTION public.delete_email(...)                  SET search_path = public, pg_temp;
+ALTER FUNCTION public.enqueue_email(...)                 SET search_path = public, pg_temp;
+ALTER FUNCTION public.move_to_dlq(...)                   SET search_path = public, pg_temp;
+ALTER FUNCTION public.read_email_batch(...)              SET search_path = public, pg_temp;
+ALTER FUNCTION public.set_interlink_schedule_next_run()  SET search_path = public, pg_temp;
+```
+(Exact argument signatures resolved at migration time via `pg_get_function_identity_arguments`.)
 
-No DB, edge function, route, or sidebar changes. No other files affected.
+---
 
-## Out of scope
+## Execution
 
-- Auto-fix / inline edit of mismatched rows (could be a follow-up).
-- Persisting diff snapshots to the database.
-- Changes to Bulk Staff Import (separate flow).
+One migration containing all three sections in P0 → P1 → P2 order. No application code changes; the SECURITY DEFINER triggers that write `medical_appointment_audit` already bypass RLS, so step 1 won't break the medical workflow. Step 2 only tightens UPDATE — current authorized callers already satisfy the same expression. Step 3 is metadata-only.
+
+After applying, re-run the security scan; expected residual = 325 advisory SECURITY DEFINER warnings (intentional RPC pattern).
