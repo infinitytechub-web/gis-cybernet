@@ -169,6 +169,7 @@ export default function IpBlocks() {
               <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>IP</TableHead>
+                <TableHead>MAC</TableHead>
                 <TableHead>Fingerprint</TableHead>
                 <TableHead>Reason</TableHead>
                 <TableHead>Blocked</TableHead>
