@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Settings2 } from "lucide-react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
@@ -25,14 +28,47 @@ const ALLOWED_ROLES = new Set([
   "deputy_shift_leader",
 ]);
 
-// Roles allowed to receive the "new staff online" alert. Admin only — keeps
-// the chime out of regular command-tier users' workflow.
+// Roles allowed to receive the "new staff online" alert. Deputy admins are
+// provisioned with the `admin` app_role, so this single entry covers both.
 const ALERT_ROLES = new Set(["admin"]);
-const MUTE_KEY = "online-now.alert-muted";
+
+// Per-device preference keys (localStorage). Each channel can be toggled
+// independently from the badge's settings popover.
+const PREFS_KEY = "online-now.alert-prefs.v1";
+// Legacy single-mute key — migrated into PREFS_KEY on first read.
+const LEGACY_MUTE_KEY = "online-now.alert-muted";
+
+interface AlertPrefs {
+  chime: boolean;
+  toast: boolean;
+  flash: boolean;
+}
+
+const DEFAULT_PREFS: AlertPrefs = { chime: true, toast: true, flash: true };
+
+function loadPrefs(): AlertPrefs {
+  if (typeof window === "undefined") return DEFAULT_PREFS;
+  try {
+    const raw = window.localStorage.getItem(PREFS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AlertPrefs>;
+      return { ...DEFAULT_PREFS, ...parsed };
+    }
+    // Migrate legacy mute flag → chime off.
+    const legacy = window.localStorage.getItem(LEGACY_MUTE_KEY);
+    if (legacy === "1") return { ...DEFAULT_PREFS, chime: false };
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_PREFS;
+}
+
+function savePrefs(p: AlertPrefs) {
+  try { window.localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+}
 
 /**
  * Plays a soft two-tone chime via Web Audio. ~250ms total, low volume.
- * No external assets required and respects the user's mute preference.
  */
 function playJoinChime() {
   try {
@@ -64,23 +100,18 @@ function playJoinChime() {
 }
 
 /**
- * Compact live-presence badge surfaced in the app header.
- * Visible only to the command tier; clicking it scrolls the dashboard
- * Online Now panel into view. Admins additionally hear a soft chime + see
- * a brief flash whenever the count of *other* online staff increases.
+ * Compact live-presence badge surfaced in the app header. Visible to the
+ * command tier; admins (incl. deputy admins) get configurable chime/toast/
+ * flash alerts on new staff sign-ins, controlled per device.
  */
 export function OnlineNowBadge() {
   const { role, user } = useAuth();
   const { onlineCount, onlineUsers, windowMinutes } = useOnlineUsers();
   const [flash, setFlash] = useState(false);
-  const [muted, setMuted] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(MUTE_KEY) === "1";
-  });
+  const [prefs, setPrefs] = useState<AlertPrefs>(() => loadPrefs());
   const prevOtherIdsRef = useRef<Set<string> | null>(null);
   const initializedRef = useRef(false);
 
-  // Other staff = everyone online besides the current user.
   const otherIds = user
     ? onlineUsers.filter((u) => u.userId !== user.id).map((u) => u.userId)
     : onlineUsers.map((u) => u.userId);
@@ -88,15 +119,19 @@ export function OnlineNowBadge() {
   const hasOthers = otherStaffCount > 0;
   const isAdmin = role === "admin" || ALERT_ROLES.has(role ?? "");
 
-  // Detect new staff joining (admin / deputy-admin alert).
-  // Note: deputy admins are provisioned with the `admin` app_role, so the
-  // single "admin" check covers both System Administrators and Deputy Admins.
+  const updatePref = (key: keyof AlertPrefs, value: boolean) => {
+    setPrefs((prev) => {
+      const next = { ...prev, [key]: value };
+      savePrefs(next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     const currentSet = new Set(otherIds);
     const prev = prevOtherIdsRef.current;
     prevOtherIdsRef.current = currentSet;
 
-    // Skip the first render so existing online users don't trigger a chime.
     if (!initializedRef.current) {
       initializedRef.current = true;
       return;
@@ -108,32 +143,32 @@ export function OnlineNowBadge() {
     );
     if (newcomers.length === 0) return;
 
-    setFlash(true);
-    const t = setTimeout(() => setFlash(false), 1500);
-    if (!muted) playJoinChime();
-
-    // Toast so admins get an explicit notification, not just chime+flash.
-    const first = newcomers[0];
-    const name = `${first.rank ? first.rank + " " : ""}${first.firstName} ${first.lastName}`.trim();
-    const extra = newcomers.length > 1 ? ` and ${newcomers.length - 1} other${newcomers.length > 2 ? "s" : ""}` : "";
-    toast({
-      title: "Staff online",
-      description: `${name}${extra} just signed in${first.department ? ` — ${first.department}` : ""}.`,
-    });
-    return () => clearTimeout(t);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (prefs.flash) {
+      setFlash(true);
+      timer = setTimeout(() => setFlash(false), 1500);
+    }
+    if (prefs.chime) playJoinChime();
+    if (prefs.toast) {
+      const first = newcomers[0];
+      const name = `${first.rank ? first.rank + " " : ""}${first.firstName} ${first.lastName}`.trim();
+      const extra = newcomers.length > 1 ? ` and ${newcomers.length - 1} other${newcomers.length > 2 ? "s" : ""}` : "";
+      toast({
+        title: "Staff online",
+        description: `${name}${extra} just signed in${first.department ? ` — ${first.department}` : ""}.`,
+      });
+    }
+    return () => { if (timer) clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [otherIds.join("|"), isAdmin, muted]);
+  }, [otherIds.join("|"), isAdmin, prefs.chime, prefs.toast, prefs.flash]);
 
   if (!role || !ALLOWED_ROLES.has(role)) return null;
 
-  const toggleMute = (e: React.MouseEvent) => {
+  const allOff = !prefs.chime && !prefs.toast && !prefs.flash;
+  const toggleChime = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setMuted((m) => {
-      const next = !m;
-      try { window.localStorage.setItem(MUTE_KEY, next ? "1" : "0"); } catch { /* ignore */ }
-      return next;
-    });
+    updatePref("chime", !prefs.chime);
   };
 
   return (
@@ -180,14 +215,18 @@ export function OnlineNowBadge() {
               )}
               {isAdmin && (
                 <p className="text-muted-foreground">
-                  Admin alert: {muted ? "muted" : "chime + flash on new logins"}
+                  Alerts: {allOff ? "all off" : [
+                    prefs.chime && "chime",
+                    prefs.toast && "toast",
+                    prefs.flash && "flash",
+                  ].filter(Boolean).join(" + ")}
                 </p>
               )}
             </div>
           </TooltipContent>
         </Tooltip>
 
-        {/* Admin-only mute toggle — keeps chime opt-out one click away. */}
+        {/* Admin-only quick mute toggle — flips the chime channel only. */}
         {isAdmin && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -195,17 +234,106 @@ export function OnlineNowBadge() {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40"
-                onClick={toggleMute}
-                aria-label={muted ? "Unmute online-staff alert" : "Mute online-staff alert"}
-                aria-pressed={muted}
+                onClick={toggleChime}
+                aria-label={prefs.chime ? "Mute online-staff chime" : "Unmute online-staff chime"}
+                aria-pressed={!prefs.chime}
               >
-                {muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                {prefs.chime ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p className="text-xs">{muted ? "Alerts muted" : "Mute alerts"}</p>
+              <p className="text-xs">{prefs.chime ? "Mute chime" : "Unmute chime"}</p>
             </TooltipContent>
           </Tooltip>
+        )}
+
+        {/* Admin-only settings popover — per-device control of each alert channel. */}
+        {isAdmin && (
+          <Popover>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40"
+                    aria-label="Notification settings"
+                  >
+                    <Settings2 className="h-3.5 w-3.5" />
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">Notification settings</p>
+              </TooltipContent>
+            </Tooltip>
+            <PopoverContent align="end" className="w-72">
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-sm font-semibold">Online-staff alerts</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Saved on this device only.
+                  </p>
+                </div>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="alert-chime" className="text-sm">Chime</Label>
+                      <p className="text-[11px] text-muted-foreground">Soft two-tone audio cue.</p>
+                    </div>
+                    <Switch
+                      id="alert-chime"
+                      checked={prefs.chime}
+                      onCheckedChange={(v) => updatePref("chime", v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="alert-toast" className="text-sm">Toast</Label>
+                      <p className="text-[11px] text-muted-foreground">Pop-up with name &amp; department.</p>
+                    </div>
+                    <Switch
+                      id="alert-toast"
+                      checked={prefs.toast}
+                      onCheckedChange={(v) => updatePref("toast", v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="alert-flash" className="text-sm">Flash</Label>
+                      <p className="text-[11px] text-muted-foreground">Green pulse around the badge.</p>
+                    </div>
+                    <Switch
+                      id="alert-flash"
+                      checked={prefs.flash}
+                      onCheckedChange={(v) => updatePref("flash", v)}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => { setPrefs(DEFAULT_PREFS); savePrefs(DEFAULT_PREFS); }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      const off: AlertPrefs = { chime: false, toast: false, flash: false };
+                      setPrefs(off); savePrefs(off);
+                    }}
+                  >
+                    Mute all
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
     </TooltipProvider>
