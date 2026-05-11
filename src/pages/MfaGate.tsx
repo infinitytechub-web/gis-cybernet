@@ -24,7 +24,7 @@ export default function MfaGate() {
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname ?? "/dashboard";
 
-  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "recovery">("loading");
+  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "enroll-help" | "recovery">("loading");
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrUri, setQrUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
