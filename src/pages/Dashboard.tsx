@@ -325,7 +325,7 @@ export default function Dashboard() {
           <LiveGpsMapWidget />
           {isAdmin && <SecurityThreatsWidget />}
           {isAdmin && <SystemHealthCheckWidget />}
-          {isAdmin && <SystemAuditPanel />}
+          
           <InterlinkWidget />
           {isAdminOrSupervisor && <CommandRosterWidget />}
           {isAdminOrSupervisor && <StaffAppraisalsWidget />}
