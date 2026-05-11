@@ -118,6 +118,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
             }
           }
           setAllUsers(users);
+          setLastSyncAt(Date.now());
         })
         .subscribe(async (status) => {
           if (status === "SUBSCRIBED" && !cancelled && payloadRef.current) {
