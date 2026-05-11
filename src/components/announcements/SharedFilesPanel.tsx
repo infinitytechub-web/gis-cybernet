@@ -845,6 +845,54 @@ export function SharedFilesPanel() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!duplicateMatches}
+        onOpenChange={(v) => { if (!v) { setDuplicateMatches(null); setPendingSha(null); } }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Possible duplicate file</AlertDialogTitle>
+            <AlertDialogDescription>
+              A file with the same name <strong>and</strong> identical contents (SHA-256 checksum) has
+              already been shared. Re-sharing will create a second copy.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {duplicateMatches && duplicateMatches.length > 0 && (
+            <div className="rounded-md border bg-muted/40 divide-y max-h-56 overflow-y-auto text-xs">
+              {duplicateMatches.map((m: any) => (
+                <div key={m.id} className="px-3 py-2">
+                  <div className="font-medium text-foreground truncate">{m.title}</div>
+                  <div className="text-muted-foreground truncate">{m.filename}</div>
+                  <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
+                    <span>Shared {format(new Date(m.created_at), "dd MMM yyyy")}</span>
+                    <span>·</span>
+                    <span>
+                      {m.target_user_id
+                        ? "Individual"
+                        : m.department_id
+                        ? (m.departments?.name ?? "Department")
+                        : "All Staff"}
+                    </span>
+                    <span>·</span>
+                    <span>{m.is_active ? "Active" : "Inactive"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => { setDuplicateMatches(null); setPendingSha(null); }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => upload({ skipDuplicateCheck: true })}>
+              Share anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
