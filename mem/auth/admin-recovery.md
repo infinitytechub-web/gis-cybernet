@@ -1,6 +1,6 @@
 ---
 name: Admin Recovery
-description: In-app self-service password reset for admins via /admin-recovery. Two methods (server-side passphrase ADMIN_RECOVERY_PASSPHRASE secret, or unused MFA backup code). Edge function admin-recovery (verify_jwt false, CSRF-checked, 8s sleep on failure). Forces must_change_password=true after reset. DOES NOT clear account_locked or failed_login_attempts — user must use admin unlock workflow if locked. Second-admin shortcut already exists in AdminAccountActions via admin-reset-password. Linked from Login page.
+description: In-app self-service password reset for admins via /admin-recovery. Two methods (server-side passphrase ADMIN_RECOVERY_PASSPHRASE secret, or unused MFA backup code). Edge function admin-recovery (verify_jwt false, CSRF-checked, 8s sleep on failure). Forces must_change_password=true after reset. ALSO clears account_locked and failed_login_attempts on success so a sole locked-out admin can recover (audited). Second-admin shortcut already exists in AdminAccountActions via admin-reset-password. Linked from Login page.
 type: feature
 ---
 
@@ -17,7 +17,7 @@ type: feature
 - Audit: every attempt (success/fail/denied) inserted into `system_audit_log` with action `admin_recovery_*`, plus `mfa.admin_recovery_backup_code_*` events from the RPC.
 - Target must have `admin` role in `user_roles` — non-admin staff IDs are rejected.
 - Active sessions for the target user are signed out after a successful reset.
-- Lockout state is preserved by design — admin unlock workflow remains the only way to clear `account_locked`.
+- Lockout state is cleared automatically on successful recovery (logged with `lockout_cleared` flag in system_audit_log) so the admin can sign in immediately.
 
 ## Password policy
 12+ chars, mixed case, digit, symbol. Enforced server-side and client-side (PasswordStrength score ≥ 4).
