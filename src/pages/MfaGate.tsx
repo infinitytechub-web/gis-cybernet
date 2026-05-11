@@ -320,6 +320,19 @@ export default function MfaGate() {
               <Button onClick={handleVerify} disabled={busy || code.length !== 6} className="w-full">
                 {busy ? "Verifying…" : "Confirm & continue"}
               </Button>
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs gap-1 text-muted-foreground"
+                  onClick={handleRegenerate}
+                  disabled={busy}
+                >
+                  <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
+                  Regenerate code
+                </Button>
+              </div>
             </div>
           )}
 
