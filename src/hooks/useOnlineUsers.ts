@@ -59,35 +59,102 @@ const HEARTBEAT_INTERVAL_MS = 60_000;
 // Lowered so the visible countdown ticks smoothly and stale users drop quickly.
 const PRUNE_INTERVAL_MS = 10_000;
 
+// ----- Module-level singleton -----
+// Multiple components mount this hook simultaneously (header badge + dashboard
+// panel). Supabase Realtime forbids adding `.on()` listeners after a channel
+// has subscribed, so we share ONE channel + presence subscription across all
+// hook instances and fan-out updates via a Set of subscribers.
+type Subscriber = (users: OnlineUser[], syncedAt: number) => void;
+const subscribers = new Set<Subscriber>();
+let sharedChannel: ReturnType<typeof supabase.channel> | null = null;
+let sharedUsers: OnlineUser[] = [];
+let sharedSyncedAt: number = Date.now();
+let sharedUserId: string | null = null;
+let sharedPayload: OnlineUser | null = null;
+let refCount = 0;
+
+function notifySubscribers() {
+  subscribers.forEach((cb) => {
+    try { cb(sharedUsers, sharedSyncedAt); } catch { /* ignore */ }
+  });
+}
+
+function ensureChannel(userId: string) {
+  if (sharedChannel && sharedUserId === userId) return sharedChannel;
+  if (sharedChannel) {
+    try { sharedChannel.untrack(); supabase.removeChannel(sharedChannel); } catch { /* ignore */ }
+    sharedChannel = null;
+  }
+  sharedUserId = userId;
+  const ch = supabase.channel("online-users-global", {
+    config: { presence: { key: userId } },
+  });
+  ch.on("presence", { event: "sync" }, () => {
+    const state = ch.presenceState<OnlineUser>();
+    const users: OnlineUser[] = [];
+    for (const key of Object.keys(state)) {
+      const presences = state[key];
+      if (presences && presences.length > 0) {
+        users.push(presences[0] as unknown as OnlineUser);
+      }
+    }
+    sharedUsers = users;
+    sharedSyncedAt = Date.now();
+    notifySubscribers();
+  });
+  ch.subscribe(async (status) => {
+    if (status === "SUBSCRIBED" && sharedPayload && sharedChannel === ch) {
+      await ch.track(sharedPayload);
+      void supabase.from("presence_events").insert({
+        user_id: userId,
+        event_type: "heartbeat",
+        current_page: sharedPayload.currentPage,
+        last_active_at: sharedPayload.lastActiveAt,
+        details: { phase: "subscribed" },
+      });
+    }
+  });
+  sharedChannel = ch;
+  return ch;
+}
+
 export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MINUTES) {
   const { user } = useAuth();
   const location = useLocation();
-  const [allUsers, setAllUsers] = useState<OnlineUser[]>([]);
+  const [allUsers, setAllUsers] = useState<OnlineUser[]>(sharedUsers);
   const [now, setNow] = useState<number>(Date.now());
-  const [lastSyncAt, setLastSyncAt] = useState<number>(Date.now());
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const payloadRef = useRef<OnlineUser | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<number>(sharedSyncedAt);
 
+  // Subscribe this component to shared presence updates.
+  useEffect(() => {
+    const cb: Subscriber = (users, syncedAt) => {
+      setAllUsers(users);
+      setLastSyncAt(syncedAt);
+    };
+    subscribers.add(cb);
+    return () => { subscribers.delete(cb); };
+  }, []);
+
+  // Manage the singleton channel + heartbeat lifecycle.
   useEffect(() => {
     if (!user) return;
-
     let cancelled = false;
     let heartbeat: ReturnType<typeof setInterval> | null = null;
+    refCount += 1;
 
-    const setup = async () => {
+    (async () => {
       const { data: profile } = await supabase
         .from("profiles")
         .select("first_name, last_name, staff_id, photo_url, department_id, rank_id, departments:department_id(name), ranks:rank_id(name)")
         .eq("user_id", user.id)
         .maybeSingle();
-
       if (cancelled) return;
 
       const deptName = (profile as any)?.departments?.name ?? "";
       const rankName = (profile as any)?.ranks?.name ?? "";
       const nowIso = new Date().toISOString();
 
-      payloadRef.current = {
+      sharedPayload = {
         userId: user.id,
         firstName: profile?.first_name ?? "Unknown",
         lastName: profile?.last_name ?? "",
@@ -100,79 +167,35 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
         lastActiveAt: nowIso,
       };
 
-      // Shared channel name so all signed-in users join the same presence room.
-      const ch = supabase.channel("online-users-global", {
-        config: { presence: { key: user.id } },
-      });
-      channelRef.current = ch;
+      const ch = ensureChannel(user.id);
+      // If channel already subscribed (other instance set it up), re-track now.
+      try { await ch.track(sharedPayload); } catch { /* ignore */ }
 
-      ch
-        .on("presence", { event: "sync" }, () => {
-          if (cancelled) return;
-          const state = ch.presenceState<OnlineUser>();
-          const users: OnlineUser[] = [];
-          for (const key of Object.keys(state)) {
-            const presences = state[key];
-            if (presences && presences.length > 0) {
-              users.push(presences[0] as unknown as OnlineUser);
-            }
-          }
-          setAllUsers(users);
-          setLastSyncAt(Date.now());
-        })
-        .subscribe(async (status) => {
-          if (status === "SUBSCRIBED" && !cancelled && payloadRef.current) {
-            await ch.track(payloadRef.current);
-            // First heartbeat row + opportunistic purge of old events
-            void supabase.from("presence_events").insert({
-              user_id: user.id,
-              event_type: "heartbeat",
-              current_page: payloadRef.current.currentPage,
-              last_active_at: payloadRef.current.lastActiveAt,
-              window_minutes: windowMinutes,
-              details: { phase: "subscribed" },
-            });
-            {
-              const stored = typeof window !== "undefined"
-                ? Number(window.localStorage.getItem("presence_events.retention_days"))
-                : NaN;
-              const retentionDays = Number.isFinite(stored) && stored >= 1 && stored <= 365 ? stored : 7;
-              void supabase.rpc("purge_old_presence_events", { _retention_days: retentionDays });
-            }
-
-            // Heartbeat: refresh lastActiveAt so we're not pruned as stale.
-            heartbeat = setInterval(() => {
-              if (!payloadRef.current || !channelRef.current) return;
-              const nowIso = new Date().toISOString();
-              payloadRef.current = {
-                ...payloadRef.current,
-                lastActiveAt: nowIso,
-              };
-              channelRef.current.track(payloadRef.current);
-              void supabase.from("presence_events").insert({
-                user_id: user.id,
-                event_type: "heartbeat",
-                current_page: payloadRef.current.currentPage,
-                last_active_at: nowIso,
-                window_minutes: windowMinutes,
-              });
-            }, HEARTBEAT_INTERVAL_MS);
-          }
+      heartbeat = setInterval(() => {
+        if (!sharedPayload || !sharedChannel) return;
+        const iso = new Date().toISOString();
+        sharedPayload = { ...sharedPayload, lastActiveAt: iso };
+        sharedChannel.track(sharedPayload);
+        void supabase.from("presence_events").insert({
+          user_id: user.id,
+          event_type: "heartbeat",
+          current_page: sharedPayload.currentPage,
+          last_active_at: iso,
         });
-    };
-
-    setup();
+      }, HEARTBEAT_INTERVAL_MS);
+    })();
 
     return () => {
       cancelled = true;
       if (heartbeat) clearInterval(heartbeat);
-      const ch = channelRef.current;
-      if (ch) {
-        ch.untrack();
-        supabase.removeChannel(ch);
+      refCount = Math.max(0, refCount - 1);
+      // Only tear the shared channel down when no consumers remain.
+      if (refCount === 0 && sharedChannel) {
+        try { sharedChannel.untrack(); supabase.removeChannel(sharedChannel); } catch { /* ignore */ }
+        sharedChannel = null;
+        sharedUserId = null;
+        sharedPayload = null;
       }
-      channelRef.current = null;
-      payloadRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
