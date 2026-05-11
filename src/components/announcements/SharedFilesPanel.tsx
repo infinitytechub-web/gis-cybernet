@@ -513,7 +513,7 @@ export function SharedFilesPanel() {
                 </div>
                 <Button
                   className="w-full gap-1.5"
-                  onClick={upload}
+                  onClick={() => upload()}
                   disabled={!file || !title.trim() || uploading || (audienceMode === "individual" && !targetUserId) || (audienceMode === "department" && (deptId === "global" || !deptId))}
                 >
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
