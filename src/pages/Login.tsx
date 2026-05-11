@@ -217,24 +217,34 @@ export default function Login() {
     setPassword("");
   }, [signOut]);
 
-  const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string) => (
-    <form onSubmit={handleLogin} className="space-y-4">
+  const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string, mode: "staff" | "admin" = "staff") => {
+    const idFieldId = `login-${mode}-id`;
+    const pwFieldId = `login-${mode}-password`;
+    return (
+    <form onSubmit={handleLogin} className="space-y-4" aria-label={`${mode === "admin" ? "Administrator" : "Staff"} sign-in form`}>
       <div className="space-y-2">
-        <Label>{idLabel}</Label>
-        <Input placeholder={idPlaceholder} value={staffId} onChange={(e) => setStaffId(e.target.value)} required autoComplete="username" />
+        <Label htmlFor={idFieldId}>{idLabel}</Label>
+        <Input id={idFieldId} placeholder={idPlaceholder} value={staffId} onChange={(e) => setStaffId(e.target.value)} required autoComplete="username" />
       </div>
       <div className="space-y-2">
-        <Label>Password</Label>
+        <Label htmlFor={pwFieldId}>Password</Label>
         <div className="relative">
-          <Input type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" autoComplete="current-password" />
-          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          <Input id={pwFieldId} type={showPassword ? "text" : "password"} placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pr-10" autoComplete="current-password" />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
           </button>
         </div>
         <PasswordStrength password={password} />
       </div>
 
-      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading}>
+      <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading} aria-busy={isLoading}>
         {isLoading ? "Signing in..." : (buttonText || "Sign In")}
       </Button>
       <div className="text-center space-y-1">
@@ -246,7 +256,8 @@ export default function Login() {
         </div>
       </div>
     </form>
-  );
+    );
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
@@ -298,10 +309,10 @@ export default function Login() {
               <TabsTrigger value="admin" className="gap-2"><Shield className="h-4 w-4" /> Admin</TabsTrigger>
             </TabsList>
             <TabsContent value="staff">
-              {renderLoginForm("Staff / Service ID", "Enter your Staff ID")}
+              {renderLoginForm("Staff / Service ID", "Enter your Staff ID", undefined, undefined, "staff")}
             </TabsContent>
             <TabsContent value="admin">
-              {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary hover:bg-secondary/90", "Admin Sign In")}
+              {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary hover:bg-secondary/90", "Admin Sign In", "admin")}
             </TabsContent>
           </Tabs>
           )}
