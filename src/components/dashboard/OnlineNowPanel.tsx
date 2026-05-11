@@ -36,6 +36,17 @@ export default function OnlineNowPanel() {
   const { onlineUsers, onlineCount, windowMinutes, lastSyncAt, refreshIntervalMs } = useOnlineUsers();
   const [tick, setTick] = useState(Date.now());
   const [spinning, setSpinning] = useState(false);
+  const [showDetails, setShowDetails] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem(SHOW_DETAILS_KEY);
+    return stored === null ? true : stored === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(SHOW_DETAILS_KEY, showDetails ? "1" : "0");
+    }
+  }, [showDetails]);
 
   // 1s ticker drives the visible countdown.
   useEffect(() => {
