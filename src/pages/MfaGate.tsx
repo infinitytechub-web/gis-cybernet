@@ -33,6 +33,22 @@ export default function MfaGate() {
   const [busy, setBusy] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  const cleanupUnverifiedFactors = async (): Promise<number> => {
+    let removed = 0;
+    try {
+      const { data } = await supabase.auth.mfa.listFactors();
+      for (const f of data?.totp ?? []) {
+        if (f.status !== "verified") {
+          try {
+            await supabase.auth.mfa.unenroll({ factorId: f.id });
+            removed += 1;
+          } catch { /* best effort */ }
+        }
+      }
+    } catch { /* best effort */ }
+    return removed;
+  };
+
   useEffect(() => {
     if (!user || !isAdmin) return;
     // If the admin still owes a password change (e.g. recovery temp password),
@@ -54,12 +70,7 @@ export default function MfaGate() {
         setFactorId(verifiedTotp.id);
         setPhase("verify");
       } else {
-        // Clean up stale unverified factors before enrolling fresh
-        for (const f of data?.totp ?? []) {
-          if (f.status !== "verified") {
-            try { await supabase.auth.mfa.unenroll({ factorId: f.id }); } catch {}
-          }
-        }
+        await cleanupUnverifiedFactors();
         setPhase("enroll");
       }
     })();
