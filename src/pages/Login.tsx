@@ -14,7 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 
-import gisLogo from "@/assets/gis-logo-192.webp";
+// Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
+const gisLogo = "/gis-logo-192.webp";
 
 export default function Login() {
   const [staffId, setStaffId] = useState("");
