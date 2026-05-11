@@ -346,7 +346,18 @@ export default function IpBlocks() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {audit.map((a: any) => (
+                {(() => {
+                  const rows = audit.filter(scopeFilter).filter(matcher);
+                  if (rows.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                          {audit.length === 0 ? "No audit entries yet." : "No entries match your search."}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  return rows.map((a: any) => (
                   <TableRow key={a.id}>
                     <TableCell className="text-xs whitespace-nowrap">
                       {format(new Date(a.created_at), "dd MMM yyyy HH:mm:ss")}
@@ -360,7 +371,14 @@ export default function IpBlocks() {
                       {a.performed_by_name ?? <span className="font-mono text-muted-foreground">{(a.performed_by ?? "—").slice(0, 8)}</span>}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{a.ip_address ?? "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">{a.mac_address ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {a.mac_address ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Cpu className="h-3 w-3 text-muted-foreground" />
+                          {a.mac_address}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell className="font-mono text-xs max-w-[140px] truncate" title={a.device_fingerprint || ""}>
                       {a.device_fingerprint || "—"}
                     </TableCell>
@@ -373,10 +391,8 @@ export default function IpBlocks() {
                           : "—"}
                     </TableCell>
                   </TableRow>
-                ))}
-                {audit.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No audit entries yet.</TableCell></TableRow>
-                )}
+                  ));
+                })()}
               </TableBody>
             </Table>
           </div>
