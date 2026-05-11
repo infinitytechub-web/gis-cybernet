@@ -125,6 +125,18 @@ export default function IpBlocks() {
             <Label>Device Fingerprint (optional)</Label>
             <Input value={fingerprint} onChange={(e) => setFingerprint(e.target.value)} placeholder="SHA-256 hash" />
           </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>MAC Address (optional)</Label>
+            <Input
+              value={mac}
+              onChange={(e) => setMac(e.target.value)}
+              placeholder="e.g. AA:BB:CC:DD:EE:FF"
+              className={!macLooksValid(mac) ? "border-destructive" : ""}
+            />
+            <p className="text-xs text-muted-foreground">
+              Accepts colons, hyphens, dots, or no separator. Normalized to <code>AA:BB:CC:DD:EE:FF</code>.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label>Duration (minutes, 0 = permanent)</Label>
             <Input type="number" min={0} value={duration} onChange={(e) => setDuration(parseInt(e.target.value || "0", 10))} />
