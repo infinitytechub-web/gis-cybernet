@@ -24,7 +24,7 @@ const SHIFT_HOURS: Record<string, string> = {
   A: "06:00 – 14:00",
   B: "14:00 – 22:00",
   C: "22:00 – 06:00",
-  D: "Reserve / Off",
+  D: "Operational (24/7)",
 };
 
 function rowsForExport(assignments: Assignment[]) {
