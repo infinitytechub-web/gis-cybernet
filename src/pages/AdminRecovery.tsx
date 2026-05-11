@@ -66,7 +66,7 @@ export default function AdminRecovery() {
             </p>
             <Alert variant="default" className="text-left">
               <AlertDescription className="text-xs">
-                If your account is still locked, ask another administrator to unlock it via the Staff Directory.
+                Your account lockout (if any) was cleared automatically. You can sign in immediately with your new password.
               </AlertDescription>
             </Alert>
             <Button onClick={() => navigate("/login")} className="w-full">Go to Login</Button>
