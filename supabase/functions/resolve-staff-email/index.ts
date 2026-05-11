@@ -8,7 +8,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "Content-Type, Authorization, authorization, x-client-info, apikey, content-type, x-cybernet-app",
 };
 
 const RATE_WINDOW_MS = 5 * 60 * 1000;

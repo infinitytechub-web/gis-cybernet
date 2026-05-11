@@ -6,11 +6,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { lazy, Suspense } from "react";
 // Layout is lazy — it pulls in the authenticated app shell (sidebar,
 // SystemAuditTray, notification bell, etc.) and its transitive deps. The
 // login page must not pay that cost.
 const Layout = lazy(() => import("@/components/Layout").then(m => ({ default: m.Layout })));
-import { lazy, Suspense } from "react";
 import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
 import { IdleWarningDialog } from "@/components/IdleWarningDialog";
 
