@@ -941,7 +941,7 @@ export default function GuardScheduleImport() {
             <input
               ref={fileRef}
               type="file"
-              accept=".pdf,application/pdf"
+              accept=".pdf,application/pdf,.csv,text/csv"
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
             />
