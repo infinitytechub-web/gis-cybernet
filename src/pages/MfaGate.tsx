@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Input } from "@/components/ui/input";
-import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, Copy, RefreshCw } from "lucide-react";
+import { Shield, Smartphone, LogOut, KeyRound, ArrowLeft, RefreshCw, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import QRCode from "qrcode";
@@ -24,7 +24,7 @@ export default function MfaGate() {
   const location = useLocation();
   const from = (location.state as any)?.from?.pathname ?? "/dashboard";
 
-  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "recovery">("loading");
+  const [phase, setPhase] = useState<"loading" | "verify" | "enroll" | "verify-enrol" | "enroll-help" | "recovery">("loading");
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrUri, setQrUri] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
@@ -240,16 +240,6 @@ export default function MfaGate() {
     navigate("/login", { replace: true });
   };
 
-  const handleCopySecret = async () => {
-    if (!secret) return;
-    try {
-      await navigator.clipboard.writeText(secret);
-      toast.success("Secret key copied");
-    } catch {
-      toast.error("Could not copy the secret key");
-    }
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
@@ -296,17 +286,10 @@ export default function MfaGate() {
                   className="h-[200px] w-[200px]"
                 />
               </div>
-              {secret && (
-                <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
-                  <p className="text-center text-xs text-muted-foreground">Manual setup key</p>
-                  <div className="flex items-center gap-2">
-                    <Input value={secret} readOnly className="font-mono text-xs tracking-[0.18em]" aria-label="Manual setup key" />
-                    <Button type="button" variant="outline" size="icon" onClick={handleCopySecret} aria-label="Copy manual setup key">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <p className="rounded-md border border-border bg-muted/40 p-3 text-center text-xs text-muted-foreground">
+                For your protection, the secret key is never displayed. Scan the QR code above with
+                Google Authenticator, Authy, or 1Password to enrol this device.
+              </p>
               <div>
                 <Label className="text-xs">6-digit code from your app</Label>
                 <div className="flex justify-center mt-2">
@@ -331,6 +314,54 @@ export default function MfaGate() {
                 >
                   <RefreshCw className={`h-3 w-3 ${busy ? "animate-spin" : ""}`} />
                   Regenerate code
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="ml-2 text-xs gap-1"
+                  onClick={() => setPhase("enroll-help")}
+                  disabled={busy}
+                >
+                  <ShieldAlert className="h-3 w-3" />
+                  Can't scan the QR?
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {phase === "enroll-help" && (
+            <div className="space-y-4">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">The setup secret is hidden by design.</p>
+                <p>
+                  Showing the raw key in chat or on screen would let anyone glancing at this device
+                  enrol their own authenticator. Pick one of the safe options below instead.
+                </p>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
+                <li>Open your authenticator app on a phone and tap <strong>Scan QR code</strong>, then point the camera at the QR on the previous screen.</li>
+                <li>If you previously enrolled and saved recovery codes, use one of them — it will let you re-enrol cleanly.</li>
+                <li>If neither option works, sign out and ask another administrator to reset your 2FA from the Admin Settings page.</li>
+              </ul>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPhase("verify-enrol")}
+                  disabled={busy || !qrUri}
+                  className="w-full gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to QR code
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => { setRecoveryCode(""); setPhase("recovery"); }}
+                  disabled={busy}
+                  className="w-full gap-2"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  Use a recovery code
                 </Button>
               </div>
             </div>
