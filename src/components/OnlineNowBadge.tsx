@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Volume2, VolumeX } from "lucide-react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 const ALLOWED_ROLES = new Set([
   "admin",
@@ -87,7 +88,9 @@ export function OnlineNowBadge() {
   const hasOthers = otherStaffCount > 0;
   const isAdmin = role === "admin" || ALERT_ROLES.has(role ?? "");
 
-  // Detect new staff joining (admin-only alert).
+  // Detect new staff joining (admin / deputy-admin alert).
+  // Note: deputy admins are provisioned with the `admin` app_role, so the
+  // single "admin" check covers both System Administrators and Deputy Admins.
   useEffect(() => {
     const currentSet = new Set(otherIds);
     const prev = prevOtherIdsRef.current;
@@ -100,15 +103,23 @@ export function OnlineNowBadge() {
     }
     if (!isAdmin || !prev) return;
 
-    let newcomer = false;
-    currentSet.forEach((id) => {
-      if (!prev.has(id)) newcomer = true;
-    });
-    if (!newcomer) return;
+    const newcomers = onlineUsers.filter(
+      (u) => u.userId !== user?.id && !prev.has(u.userId),
+    );
+    if (newcomers.length === 0) return;
 
     setFlash(true);
     const t = setTimeout(() => setFlash(false), 1500);
     if (!muted) playJoinChime();
+
+    // Toast so admins get an explicit notification, not just chime+flash.
+    const first = newcomers[0];
+    const name = `${first.rank ? first.rank + " " : ""}${first.firstName} ${first.lastName}`.trim();
+    const extra = newcomers.length > 1 ? ` and ${newcomers.length - 1} other${newcomers.length > 2 ? "s" : ""}` : "";
+    toast({
+      title: "Staff online",
+      description: `${name}${extra} just signed in${first.department ? ` — ${first.department}` : ""}.`,
+    });
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otherIds.join("|"), isAdmin, muted]);
