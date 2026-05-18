@@ -141,11 +141,7 @@ export default function TwoFactorSetup() {
             <div className="text-center">
               <p className="text-sm font-medium mb-2">Scan this QR code with your authenticator app</p>
               <div className="bg-white p-4 rounded-lg inline-block">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUri)}`}
-                  alt="QR Code"
-                  className="w-48 h-48"
-                />
+                <canvas ref={qrCanvasRef} className="w-48 h-48" aria-label="TOTP enrollment QR code" />
               </div>
             </div>
             {secret && (
