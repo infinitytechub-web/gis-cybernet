@@ -72,7 +72,22 @@ export function AdminAccountActions({ profileId, staffId, fullName, accountLocke
       const { data, error } = await supabase.functions.invoke("admin-reset-password", {
         body: { profile_id: profileId },
       });
-      if (error) throw error;
+      // FunctionsHttpError hides the real server message inside `context`.
+      // Extract it so admins see "Forbidden: admin role required" etc.
+      if (error) {
+        let serverMessage: string | undefined;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx && typeof ctx.json === "function") {
+            const body = await ctx.json();
+            serverMessage = body?.error || body?.reason;
+          } else if (ctx && typeof ctx.text === "function") {
+            const text = await ctx.text();
+            try { serverMessage = JSON.parse(text)?.error; } catch { serverMessage = text; }
+          }
+        } catch { /* ignore parse errors */ }
+        throw new Error(serverMessage || error.message || "Failed to reset password");
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
       setResult(data as ResetResult);
       queryClient.invalidateQueries({ queryKey: ["staff"] });
