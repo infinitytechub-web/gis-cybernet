@@ -23,6 +23,13 @@ export default function TwoFactorSetup() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (qrUri && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, qrUri, { width: 192, margin: 1, errorCorrectionLevel: "M" }).catch(() => {});
+    }
+  }, [qrUri]);
 
   useEffect(() => {
     checkFactors();
