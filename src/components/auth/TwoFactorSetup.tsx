@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,13 @@ export default function TwoFactorSetup() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (qrUri && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, qrUri, { width: 192, margin: 1, errorCorrectionLevel: "M" }).catch(() => {});
+    }
+  }, [qrUri]);
 
   useEffect(() => {
     checkFactors();
@@ -133,11 +141,7 @@ export default function TwoFactorSetup() {
             <div className="text-center">
               <p className="text-sm font-medium mb-2">Scan this QR code with your authenticator app</p>
               <div className="bg-white p-4 rounded-lg inline-block">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUri)}`}
-                  alt="QR Code"
-                  className="w-48 h-48"
-                />
+                <canvas ref={qrCanvasRef} className="w-48 h-48" aria-label="TOTP enrollment QR code" />
               </div>
             </div>
             {secret && (
