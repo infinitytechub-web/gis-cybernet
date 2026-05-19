@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";

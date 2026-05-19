@@ -1,3 +1,4 @@
+// csrf-classification: public webhook: signed unsubscribe token in URL, no auth
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {

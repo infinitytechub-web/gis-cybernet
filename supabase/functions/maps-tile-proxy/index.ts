@@ -1,3 +1,4 @@
+// csrf-classification: public proxy: read-only Google tiles, audited via map_access_audit
 // Server-side proxy for Google Maps raster tiles.
 // Keeps GOOGLE_MAPS_API_KEY off the client. Auth-gated; rate-limited per user.
 import { createClient } from "npm:@supabase/supabase-js@2";

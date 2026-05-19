@@ -1,3 +1,4 @@
+// csrf-classification: user-callable: relies on auth header + admin role check; CSRF guard recommended (TODO)
 // Attendance Compliance Report — generates weekly/monthly compliance summary
 // and emails it as a PDF attachment via the Resend connector. Designed to be
 // invoked manually from the Reports UI ("Send now") and from a pg_cron job.

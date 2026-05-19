@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.2";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.3";

@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 // supabase/functions/refresh-threat-feeds/index.ts
 // Daily-scheduled job: pull external threat lists into firewall_threat_entries.
 // No API keys required — sources are public text feeds.

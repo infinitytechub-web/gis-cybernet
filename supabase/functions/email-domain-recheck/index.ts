@@ -1,3 +1,4 @@
+// csrf-classification: admin-only: protected by service-role + role check (TODO: add CSRF guard)
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
 

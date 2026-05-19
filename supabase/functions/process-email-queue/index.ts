@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
