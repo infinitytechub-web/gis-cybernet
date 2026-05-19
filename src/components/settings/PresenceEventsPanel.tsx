@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2, LogIn, LogOut } from "lucide-react";
+import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2, LogIn, LogOut, Download, Radio } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { downloadCSVString } from "@/lib/download-utils";
 
 const RETENTION_STORAGE_KEY = "presence_events.retention_days";
 const DEFAULT_RETENTION_DAYS = 7;
@@ -97,6 +98,28 @@ export function PresenceEventsPanel() {
     refetchInterval: 30_000,
   });
 
+  const queryClient = useQueryClient();
+  const [liveCount, setLiveCount] = useState(0);
+
+  // Realtime: instant updates when any presence event is inserted.
+  // Admins-only RLS already restricts visibility to admins.
+  useEffect(() => {
+    const ch = supabase
+      .channel("presence-events-admin-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "presence_events" },
+        () => {
+          setLiveCount((n) => n + 1);
+          queryClient.invalidateQueries({ queryKey: ["presence-events"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [queryClient]);
+
   // Resolve user profiles for display
   const userIds = useMemo(() => Array.from(new Set(events.map((e) => e.user_id))), [events]);
   const { data: profiles = [] } = useQuery({
@@ -151,6 +174,52 @@ export function PresenceEventsPanel() {
     return { heartbeats, prunes, onlines, offlines, uniqueUsers: users.size, total: filtered.length };
   }, [filtered]);
 
+  const escapeCsv = (v: unknown): string => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const exportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error("No events match the current filters — nothing to export.");
+      return;
+    }
+    const header = [
+      "event_time",
+      "event_type",
+      "user_id",
+      "staff_id",
+      "first_name",
+      "last_name",
+      "current_page",
+      "last_active_at",
+      "pruned_at",
+      "window_minutes",
+      "details",
+    ];
+    const rows = filtered.map((e) => {
+      const p = profileMap.get(e.user_id);
+      return [
+        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+        e.event_type,
+        e.user_id,
+        p?.staff_id ?? "",
+        p?.first_name ?? "",
+        p?.last_name ?? "",
+        e.current_page ?? "",
+        e.last_active_at ? format(new Date(e.last_active_at), "yyyy-MM-dd HH:mm:ss") : "",
+        e.pruned_at ? format(new Date(e.pruned_at), "yyyy-MM-dd HH:mm:ss") : "",
+        e.window_minutes ?? "",
+        e.details ? JSON.stringify(e.details) : "",
+      ].map(escapeCsv).join(",");
+    });
+    const csv = [header.join(","), ...rows].join("\r\n");
+    const stamp = format(new Date(), "yyyyMMdd-HHmmss");
+    downloadCSVString(csv, `presence-activity-log-${stamp}.csv`);
+    toast.success(`Exported ${filtered.length} presence event${filtered.length === 1 ? "" : "s"}.`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -158,10 +227,22 @@ export function PresenceEventsPanel() {
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-4 w-4 text-primary" /> Presence Event Log
+              <Badge
+                variant="outline"
+                className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+                title={liveCount > 0 ? `${liveCount} live event${liveCount === 1 ? "" : "s"} received` : "Subscribed to live updates"}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span aria-hidden="true" className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                  <span aria-hidden="true" className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <Radio className="h-3 w-3" aria-hidden="true" />
+                Live
+              </Badge>
             </CardTitle>
             <CardDescription>
               Online, offline, heartbeat and prune events recorded per user — full activity log for the
-              "Online Now" panel. Rows older than the retention window below are auto-purged.
+              "Online Now" panel. Updates stream in real time; rows older than the retention window are auto-purged.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -173,6 +254,16 @@ export function PresenceEventsPanel() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCsv}
+              disabled={filtered.length === 0}
+              className="gap-1.5"
+              aria-label="Export filtered presence events as CSV"
+            >
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </Button>
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5">
               <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Refresh
             </Button>

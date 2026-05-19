@@ -77,6 +77,14 @@ export default function OnlineNowPanel() {
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
           </span>
           Online Now — Live Presence
+          <Badge
+            variant="outline"
+            className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 text-[10px] py-0 px-1.5"
+            title="Streaming live via Realtime — no refresh needed"
+          >
+            <span aria-hidden="true" className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            Live
+          </Badge>
           <span className="text-[10px] font-normal text-muted-foreground">
             (active in last {windowMinutes} min)
           </span>
