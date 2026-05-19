@@ -1,0 +1,13 @@
+name = "cybernet-security-headers"
+main = "worker-security-headers.js"
+compatibility_date = "2024-11-01"
+
+# Replace `yourdomain.com` with your zone after `wrangler deploy`.
+# Routes can also be bound in the dashboard (Workers & Pages → Triggers).
+# [[routes]]
+# pattern = "yourdomain.com/*"
+# zone_name = "yourdomain.com"
+#
+# [[routes]]
+# pattern = "www.yourdomain.com/*"
+# zone_name = "yourdomain.com"
