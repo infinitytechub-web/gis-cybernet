@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2, LogIn, LogOut } from "lucide-react";
+import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2, LogIn, LogOut, Download, Radio } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { downloadCSVString } from "@/lib/download-utils";
 
 const RETENTION_STORAGE_KEY = "presence_events.retention_days";
 const DEFAULT_RETENTION_DAYS = 7;
