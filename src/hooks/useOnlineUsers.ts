@@ -270,9 +270,15 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
 
   // Apply expiry window: only show users whose last activity is within window.
   const cutoff = now - windowMinutes * 60_000;
+  // "Recently offline" = past the live window but still tracked in presence
+  // state. Useful for the admin panel which shows a grey dot for them.
   const onlineUsers = allUsers.filter((u) => {
     const last = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : new Date(u.onlineSince).getTime();
     return last >= cutoff;
+  });
+  const recentlyOfflineUsers = allUsers.filter((u) => {
+    const last = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : new Date(u.onlineSince).getTime();
+    return last < cutoff;
   });
 
   // Log a prune event when this user transitions from "in-window" to "stale".
@@ -299,6 +305,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
 
   return {
     onlineUsers,
+    recentlyOfflineUsers,
     onlineCount: onlineUsers.length,
     windowMinutes,
     lastSyncAt,
