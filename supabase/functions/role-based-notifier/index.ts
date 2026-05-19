@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 // Daily role-based notification dispatcher.
 // Sends in-app notifications for:
 //  - Upcoming holidays (next 7 days) → all authenticated users

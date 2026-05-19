@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 // supabase/functions/firewall-alert-dispatcher/index.ts
 // Polls recent unprocessed high-severity firewall events and sends an email
 // digest to all admins via the existing email queue. Safe to run every 1-5 min.

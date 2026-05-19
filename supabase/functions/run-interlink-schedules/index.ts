@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 // Interlink scheduled dispatch runner.
 // Invoked by pg_cron every minute. For every active schedule whose
 // next_run_at <= now() it creates a DRAFT interlink_dispatches row in the

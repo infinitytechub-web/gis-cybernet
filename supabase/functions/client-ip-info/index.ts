@@ -1,3 +1,4 @@
+// csrf-classification: public read-only: returns caller IP only, no state change
 // Server-side IP discovery + geolocation proxy.
 // Keeps client IPs from being sent directly to third-party services from the browser.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";

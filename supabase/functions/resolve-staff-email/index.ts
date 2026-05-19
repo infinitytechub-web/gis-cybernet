@@ -1,3 +1,4 @@
+// csrf-classification: pre-login public: IP rate-limited + audited, CSRF N/A (unauth flow)
 // Hardened Staff-ID → email resolver. Replaces direct anon access to the
 // `get_email_by_staff_id` RPC. Adds:
 //   - In-memory + DB-backed per-IP rate limiting (max 10 lookups / 5 min)

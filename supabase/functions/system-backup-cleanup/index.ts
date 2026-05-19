@@ -1,3 +1,4 @@
+// csrf-classification: admin POST: validates user JWT + admin role (TODO: add CSRF guard for defence-in-depth)
 // Admin-triggered backup audit cleanup. Calls the SECURITY DEFINER pruner.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 

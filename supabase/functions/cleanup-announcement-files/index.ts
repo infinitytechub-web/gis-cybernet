@@ -1,3 +1,4 @@
+// csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 // Scheduled / manual cleanup of expired announcement files.
 // Uses service role to apply default retention to legacy rows and to deactivate
 // or soft-delete any file whose expires_at has passed.
