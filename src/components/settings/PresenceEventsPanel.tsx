@@ -17,7 +17,7 @@ const DEFAULT_RETENTION_DAYS = 7;
 interface PresenceEventRow {
   id: string;
   user_id: string;
-  event_type: "heartbeat" | "prune";
+  event_type: "heartbeat" | "prune" | "online" | "offline";
   current_page: string | null;
   last_active_at: string;
   pruned_at: string | null;
