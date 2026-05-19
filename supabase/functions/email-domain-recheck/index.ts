@@ -50,6 +50,11 @@ async function fetchLovableStatus(token: string): Promise<{ status: string; raw:
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // CSRF defence-in-depth: internal/cron callers pass through automatically.
+  const csrf = assertCsrfSafe(req);
+  if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
+
   if (!isInternalCaller(req)) return unauthorizedResponse(corsHeaders);
 
 
