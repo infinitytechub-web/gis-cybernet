@@ -1,6 +1,8 @@
-// csrf-classification: admin-only: protected by service-role + role check (TODO: add CSRF guard)
+// csrf-classification: dual-class — (a) admin POST from Email Settings UI (CSRF-guarded),
+//                       (b) pg_cron heartbeat re-checking Lovable email domain status (bypassed via x-internal-caller / service-role / x-cron-secret).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
