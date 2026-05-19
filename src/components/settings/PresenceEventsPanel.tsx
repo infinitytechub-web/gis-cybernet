@@ -174,6 +174,52 @@ export function PresenceEventsPanel() {
     return { heartbeats, prunes, onlines, offlines, uniqueUsers: users.size, total: filtered.length };
   }, [filtered]);
 
+  const escapeCsv = (v: unknown): string => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const exportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error("No events match the current filters — nothing to export.");
+      return;
+    }
+    const header = [
+      "event_time",
+      "event_type",
+      "user_id",
+      "staff_id",
+      "first_name",
+      "last_name",
+      "current_page",
+      "last_active_at",
+      "pruned_at",
+      "window_minutes",
+      "details",
+    ];
+    const rows = filtered.map((e) => {
+      const p = profileMap.get(e.user_id);
+      return [
+        format(new Date(e.created_at), "yyyy-MM-dd HH:mm:ss"),
+        e.event_type,
+        e.user_id,
+        p?.staff_id ?? "",
+        p?.first_name ?? "",
+        p?.last_name ?? "",
+        e.current_page ?? "",
+        e.last_active_at ? format(new Date(e.last_active_at), "yyyy-MM-dd HH:mm:ss") : "",
+        e.pruned_at ? format(new Date(e.pruned_at), "yyyy-MM-dd HH:mm:ss") : "",
+        e.window_minutes ?? "",
+        e.details ? JSON.stringify(e.details) : "",
+      ].map(escapeCsv).join(",");
+    });
+    const csv = [header.join(","), ...rows].join("\r\n");
+    const stamp = format(new Date(), "yyyyMMdd-HHmmss");
+    downloadCSVString(csv, `presence-activity-log-${stamp}.csv`);
+    toast.success(`Exported ${filtered.length} presence event${filtered.length === 1 ? "" : "s"}.`);
+  };
+
   return (
     <Card>
       <CardHeader>
