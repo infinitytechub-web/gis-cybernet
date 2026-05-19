@@ -120,6 +120,7 @@ export default function Interlink() {
           <TabsTrigger value="recipients" className="gap-1.5"><Users className="h-4 w-4" />Recipients</TabsTrigger>
           <TabsTrigger value="audit" className="gap-1.5"><ScrollText className="h-4 w-4" />Audit Trail</TabsTrigger>
           <TabsTrigger value="analytics" className="gap-1.5"><BarChart3 className="h-4 w-4" />Analytics</TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-1.5"><KeyRound className="h-4 w-4" />Permissions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="compose" className="mt-4"><ComposeTab userId={user?.id ?? ""} /></TabsContent>
@@ -132,6 +133,7 @@ export default function Interlink() {
           <AuditTab />
         </TabsContent>
         <TabsContent value="analytics" className="mt-4"><AnalyticsTab /></TabsContent>
+        <TabsContent value="permissions" className="mt-4"><InterlinkPermissionsMatrix /></TabsContent>
       </Tabs>
     </div>
   );
