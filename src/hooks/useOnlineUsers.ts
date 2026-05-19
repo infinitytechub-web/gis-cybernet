@@ -215,12 +215,32 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
       }, HEARTBEAT_INTERVAL_MS);
     })();
 
+    const onBeforeUnload = () => {
+      if (!sharedPayload) return;
+      emitOfflineBeacon(user.id, sharedPayload.currentPage, sharedPayload.lastActiveAt);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onBeforeUnload);
+
     return () => {
       cancelled = true;
       if (heartbeat) clearInterval(heartbeat);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onBeforeUnload);
       refCount = Math.max(0, refCount - 1);
       // Only tear the shared channel down when no consumers remain.
       if (refCount === 0 && sharedChannel) {
+        // Best-effort explicit offline event when the last consumer unmounts
+        // (e.g. user signs out without closing the tab).
+        if (sharedPayload) {
+          void supabase.from("presence_events").insert({
+            user_id: user.id,
+            event_type: "offline",
+            current_page: sharedPayload.currentPage,
+            last_active_at: sharedPayload.lastActiveAt,
+            details: { phase: "unmount" },
+          });
+        }
         try { sharedChannel.untrack(); supabase.removeChannel(sharedChannel); } catch { /* ignore */ }
         sharedChannel = null;
         sharedUserId = null;
