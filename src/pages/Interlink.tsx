@@ -20,7 +20,7 @@ import { format } from "date-fns";
 import {
   Network, Send, Users, ScrollText, BarChart3, Plus, Trash2, FileText, AlertTriangle,
   CheckCircle2, Mail, Building2, Globe, Lock, Globe2, Loader2, Download, RefreshCw,
-  FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck, MailCheck, History
+  FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck, MailCheck, History, KeyRound
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
