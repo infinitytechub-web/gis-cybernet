@@ -145,18 +145,104 @@ export default function OnlineNowPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-emerald-200/60 dark:border-emerald-800/60">
+            <div className="flex items-center gap-1.5">
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[11px] text-muted-foreground">Filters:</span>
+            </div>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+              <SelectTrigger className="h-7 w-[120px] text-[11px]" aria-label="Status filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All status</SelectItem>
+                <SelectItem value="online">Online only</SelectItem>
+                <SelectItem value="offline">Offline only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={lastActiveWithin} onValueChange={setLastActiveWithin}>
+              <SelectTrigger className="h-7 w-[150px] text-[11px]" aria-label="Last active time range">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any time</SelectItem>
+                <SelectItem value="1">Last 1 min</SelectItem>
+                <SelectItem value="5">Last 5 min</SelectItem>
+                <SelectItem value="15">Last 15 min</SelectItem>
+                <SelectItem value="30">Last 30 min</SelectItem>
+                <SelectItem value="60">Last 60 min</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={staffSearch}
+                onChange={(e) => setStaffSearch(e.target.value)}
+                placeholder="Search name, Staff ID, rank, department…"
+                className="h-7 pl-7 pr-7 text-[11px]"
+                aria-label="Search staff"
+              />
+              {staffSearch && (
+                <button
+                  type="button"
+                  onClick={() => setStaffSearch("")}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            {(statusFilter !== "all" || lastActiveWithin !== "any" || staffSearch) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[10px]"
+                onClick={() => { setStatusFilter("all"); setLastActiveWithin("any"); setStaffSearch(""); }}
+              >
+                Reset
+              </Button>
+            )}
+          </div>
+        )}
         {(() => {
           // Admins see the full roster (online + recently offline w/ grey dot).
           // Non-admins see only currently-online users.
-          const list = isAdmin
+          const baseList = isAdmin
             ? [
                 ...onlineUsers.map((u) => ({ ...u, isOnline: true as const })),
                 ...recentlyOfflineUsers.map((u) => ({ ...u, isOnline: false as const })),
               ]
             : onlineUsers.map((u) => ({ ...u, isOnline: true as const }));
 
+          const q = staffSearch.trim().toLowerCase();
+          const cutoffMs = lastActiveWithin === "any" ? 0 : Number(lastActiveWithin) * 60_000;
+          const now = Date.now();
+          const list = baseList.filter((u) => {
+            if (isAdmin) {
+              if (statusFilter === "online" && !u.isOnline) return false;
+              if (statusFilter === "offline" && u.isOnline) return false;
+              if (cutoffMs > 0) {
+                const t = new Date(u.lastActiveAt ?? u.onlineSince).getTime();
+                if (!Number.isFinite(t) || now - t > cutoffMs) return false;
+              }
+              if (q) {
+                const hay = `${u.firstName ?? ""} ${u.lastName ?? ""} ${u.staffId ?? ""} ${u.rank ?? ""} ${u.department ?? ""}`.toLowerCase();
+                if (!hay.includes(q)) return false;
+              }
+            }
+            return true;
+          });
+
           if (list.length === 0) {
-            return <p className="text-sm text-muted-foreground">No users currently online</p>;
+            return (
+              <p className="text-sm text-muted-foreground">
+                {isAdmin && (statusFilter !== "all" || lastActiveWithin !== "any" || staffSearch)
+                  ? "No users match the current filters."
+                  : "No users currently online"}
+              </p>
+            );
           }
           return (
             <ScrollArea className="max-h-[260px]">
