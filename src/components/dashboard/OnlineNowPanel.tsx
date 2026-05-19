@@ -44,6 +44,10 @@ export default function OnlineNowPanel() {
     const stored = window.localStorage.getItem(SHOW_DETAILS_KEY);
     return stored === null ? true : stored === "1";
   });
+  // Admin-only filters: narrow the visible heads before scanning/exporting.
+  const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
+  const [lastActiveWithin, setLastActiveWithin] = useState<string>("any"); // minutes or "any"
+  const [staffSearch, setStaffSearch] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
