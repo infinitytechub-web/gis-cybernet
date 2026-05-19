@@ -216,8 +216,10 @@ export function PresenceEventsPanel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Tile label="Total events" value={stats.total} />
+          <Tile label="Online" value={stats.onlines} />
+          <Tile label="Offline" value={stats.offlines} />
           <Tile label="Heartbeats" value={stats.heartbeats} />
           <Tile label="Prunes" value={stats.prunes} />
           <Tile label="Unique users" value={stats.uniqueUsers} />
@@ -232,6 +234,8 @@ export function PresenceEventsPanel() {
             <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All events</SelectItem>
+              <SelectItem value="online">Online only</SelectItem>
+              <SelectItem value="offline">Offline only</SelectItem>
               <SelectItem value="heartbeat">Heartbeats only</SelectItem>
               <SelectItem value="prune">Prunes only</SelectItem>
             </SelectContent>
