@@ -33,7 +33,8 @@ const ALLOWED_ROLES = [
 
 export default function OnlineNowPanel() {
   const { role } = useAuth();
-  const { onlineUsers, onlineCount, windowMinutes, lastSyncAt, refreshIntervalMs } = useOnlineUsers();
+  const { onlineUsers, recentlyOfflineUsers, onlineCount, windowMinutes, lastSyncAt, refreshIntervalMs } = useOnlineUsers();
+  const isAdmin = role === "admin";
   const [tick, setTick] = useState(Date.now());
   const [spinning, setSpinning] = useState(false);
   const [showDetails, setShowDetails] = useState<boolean>(() => {
