@@ -285,7 +285,15 @@ export function PresenceEventsPanel() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {e.event_type === "heartbeat" ? (
+                        {e.event_type === "online" ? (
+                          <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
+                            <LogIn className="h-3 w-3" /> Online
+                          </Badge>
+                        ) : e.event_type === "offline" ? (
+                          <Badge variant="outline" className="gap-1 border-muted-foreground/30 text-muted-foreground">
+                            <LogOut className="h-3 w-3" /> Offline
+                          </Badge>
+                        ) : e.event_type === "heartbeat" ? (
                           <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
                             <Heart className="h-3 w-3" /> Heartbeat
                           </Badge>
