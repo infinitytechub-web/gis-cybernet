@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2 } from "lucide-react";
+import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2, LogIn, LogOut } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -17,7 +17,7 @@ const DEFAULT_RETENTION_DAYS = 7;
 interface PresenceEventRow {
   id: string;
   user_id: string;
-  event_type: "heartbeat" | "prune";
+  event_type: "heartbeat" | "prune" | "online" | "offline";
   current_page: string | null;
   last_active_at: string;
   pruned_at: string | null;
@@ -138,13 +138,17 @@ export function PresenceEventsPanel() {
   const stats = useMemo(() => {
     let heartbeats = 0;
     let prunes = 0;
+    let onlines = 0;
+    let offlines = 0;
     const users = new Set<string>();
     filtered.forEach((e) => {
       users.add(e.user_id);
       if (e.event_type === "heartbeat") heartbeats++;
-      else prunes++;
+      else if (e.event_type === "prune") prunes++;
+      else if (e.event_type === "online") onlines++;
+      else if (e.event_type === "offline") offlines++;
     });
-    return { heartbeats, prunes, uniqueUsers: users.size, total: filtered.length };
+    return { heartbeats, prunes, onlines, offlines, uniqueUsers: users.size, total: filtered.length };
   }, [filtered]);
 
   return (
@@ -156,8 +160,8 @@ export function PresenceEventsPanel() {
               <Activity className="h-4 w-4 text-primary" /> Presence Event Log
             </CardTitle>
             <CardDescription>
-              Heartbeat and prune events recorded per user (admin troubleshooting for the “Online Now” panel).
-              Rows older than the retention window below are auto-purged.
+              Online, offline, heartbeat and prune events recorded per user — full activity log for the
+              "Online Now" panel. Rows older than the retention window below are auto-purged.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -212,8 +216,10 @@ export function PresenceEventsPanel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <Tile label="Total events" value={stats.total} />
+          <Tile label="Online" value={stats.onlines} />
+          <Tile label="Offline" value={stats.offlines} />
           <Tile label="Heartbeats" value={stats.heartbeats} />
           <Tile label="Prunes" value={stats.prunes} />
           <Tile label="Unique users" value={stats.uniqueUsers} />
@@ -228,6 +234,8 @@ export function PresenceEventsPanel() {
             <SelectTrigger className="w-[180px] h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>All events</SelectItem>
+              <SelectItem value="online">Online only</SelectItem>
+              <SelectItem value="offline">Offline only</SelectItem>
               <SelectItem value="heartbeat">Heartbeats only</SelectItem>
               <SelectItem value="prune">Prunes only</SelectItem>
             </SelectContent>
@@ -277,7 +285,15 @@ export function PresenceEventsPanel() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {e.event_type === "heartbeat" ? (
+                        {e.event_type === "online" ? (
+                          <Badge variant="outline" className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
+                            <LogIn className="h-3 w-3" /> Online
+                          </Badge>
+                        ) : e.event_type === "offline" ? (
+                          <Badge variant="outline" className="gap-1 border-muted-foreground/30 text-muted-foreground">
+                            <LogOut className="h-3 w-3" /> Offline
+                          </Badge>
+                        ) : e.event_type === "heartbeat" ? (
                           <Badge variant="outline" className="gap-1 border-emerald-500/30 text-emerald-700 dark:text-emerald-300">
                             <Heart className="h-3 w-3" /> Heartbeat
                           </Badge>

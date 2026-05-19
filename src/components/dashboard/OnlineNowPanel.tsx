@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, MapPin, Clock, RefreshCw } from "lucide-react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNowStrict, format } from "date-fns";
 
 const SHOW_DETAILS_KEY = "online-now.show-details";
 
@@ -33,7 +33,8 @@ const ALLOWED_ROLES = [
 
 export default function OnlineNowPanel() {
   const { role } = useAuth();
-  const { onlineUsers, onlineCount, windowMinutes, lastSyncAt, refreshIntervalMs } = useOnlineUsers();
+  const { onlineUsers, recentlyOfflineUsers, onlineCount, windowMinutes, lastSyncAt, refreshIntervalMs } = useOnlineUsers();
+  const isAdmin = role === "admin";
   const [tick, setTick] = useState(Date.now());
   const [spinning, setSpinning] = useState(false);
   const [showDetails, setShowDetails] = useState<boolean>(() => {
@@ -130,121 +131,179 @@ export default function OnlineNowPanel() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {onlineCount === 0 ? (
-          <p className="text-sm text-muted-foreground">No users currently online</p>
-        ) : (
-          <ScrollArea className="max-h-[260px]">
-            <div className={
-              showDetails
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
-                : "flex flex-wrap gap-1.5"
-            }>
-              {onlineUsers.map((u) => {
-                const isNightGuard = u.department?.toLowerCase().includes("night guard");
-                let onlineFor = "";
-                try {
-                  onlineFor = formatDistanceToNowStrict(new Date(u.onlineSince), { addSuffix: false });
-                } catch { /* ignore */ }
-                return (
-                  <TooltipProvider key={u.userId} delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={`${
-                            showDetails ? "flex items-center gap-2 px-2 py-2" : "inline-flex items-center justify-center p-1"
-                          } rounded-md border cursor-help transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-1 ${
-                            isNightGuard
-                              ? "bg-amber-100/60 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700"
-                              : "bg-background border-border"
-                          }`}
-                        >
-                          <div className="relative shrink-0">
-                            <Avatar className={showDetails ? "h-9 w-9" : "h-8 w-8"}>
-                              {u.photoUrl ? <AvatarImage src={u.photoUrl} alt={`${u.firstName} ${u.lastName}`} /> : null}
-                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {u.firstName?.[0]}
-                                {u.lastName?.[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span
-                              className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5"
-                              aria-label="Online"
-                              title="Online"
-                            >
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success ring-2 ring-background" />
-                            </span>
-                          </div>
-                          {showDetails && (
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1 min-w-0">
-                                <span className="text-xs font-semibold truncate">
-                                  {u.firstName} {u.lastName}
+        {(() => {
+          // Admins see the full roster (online + recently offline w/ grey dot).
+          // Non-admins see only currently-online users.
+          const list = isAdmin
+            ? [
+                ...onlineUsers.map((u) => ({ ...u, isOnline: true as const })),
+                ...recentlyOfflineUsers.map((u) => ({ ...u, isOnline: false as const })),
+              ]
+            : onlineUsers.map((u) => ({ ...u, isOnline: true as const }));
+
+          if (list.length === 0) {
+            return <p className="text-sm text-muted-foreground">No users currently online</p>;
+          }
+          return (
+            <ScrollArea className="max-h-[260px]">
+              <div className={
+                showDetails
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                  : "flex flex-wrap gap-1.5"
+              }>
+                {list.map((u) => {
+                  const isNightGuard = u.department?.toLowerCase().includes("night guard");
+                  let onlineFor = "";
+                  try {
+                    onlineFor = formatDistanceToNowStrict(new Date(u.onlineSince), { addSuffix: false });
+                  } catch { /* ignore */ }
+                  let lastActiveRelative = "";
+                  let lastActiveExact = "";
+                  try {
+                    const lastDate = new Date(u.lastActiveAt ?? u.onlineSince);
+                    lastActiveRelative = formatDistanceToNowStrict(lastDate, { addSuffix: true });
+                    lastActiveExact = format(lastDate, "PPpp");
+                  } catch { /* ignore */ }
+                  const statusLabel = u.isOnline ? "Online" : "Offline";
+                  const a11yLabel =
+                    `${u.firstName} ${u.lastName}, ${u.staffId}` +
+                    `${u.rank ? `, ${u.rank}` : ""}` +
+                    `${u.department ? `, ${u.department}` : ""}` +
+                    `. ${statusLabel}. Last active ${lastActiveRelative || "unknown"}.`;
+                  return (
+                    <TooltipProvider key={u.userId} delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label={a11yLabel}
+                            className={`${
+                              showDetails ? "flex items-center gap-2 px-2 py-2" : "inline-flex items-center justify-center p-1"
+                            } rounded-md border transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                              !u.isOnline
+                                ? "bg-muted/40 border-border opacity-70"
+                                : isNightGuard
+                                  ? "bg-amber-100/60 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700"
+                                  : "bg-background border-border"
+                            }`}
+                          >
+                            <div className="relative shrink-0">
+                              <Avatar className={`${showDetails ? "h-9 w-9" : "h-8 w-8"} ${!u.isOnline ? "grayscale" : ""}`}>
+                                {u.photoUrl ? <AvatarImage src={u.photoUrl} alt="" /> : null}
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {u.firstName?.[0]}
+                                  {u.lastName?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              {u.isOnline ? (
+                                <span
+                                  className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5"
+                                  role="status"
+                                  aria-label={`${u.firstName} ${u.lastName} is online`}
+                                  title="Online"
+                                >
+                                  <span aria-hidden="true" className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                                  <span aria-hidden="true" className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success ring-2 ring-background" />
                                 </span>
-                                {isNightGuard && (
-                                  <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
-                                <span className="truncate font-medium">{u.staffId}</span>
-                                {u.rank && (
-                                  <>
-                                    <span>·</span>
-                                    <span className="truncate">{u.rank}</span>
-                                  </>
-                                )}
-                              </div>
-                              {u.department && (
-                                <div className="text-[10px] text-muted-foreground truncate font-medium">
-                                  {u.department}
-                                </div>
+                              ) : (
+                                <span
+                                  className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5"
+                                  role="status"
+                                  aria-label={`${u.firstName} ${u.lastName} is offline`}
+                                  title="Offline"
+                                >
+                                  <span aria-hidden="true" className="relative inline-flex rounded-full h-2.5 w-2.5 bg-muted-foreground/70 ring-2 ring-background" />
+                                </span>
                               )}
-                              <div className="flex items-center gap-2 text-[10px] mt-0.5">
-                                {u.currentPage && (
-                                  <span className="inline-flex items-center gap-0.5 text-primary">
-                                    <MapPin className="h-2.5 w-2.5" />
-                                    {u.currentPage}
+                            </div>
+                            {showDetails && (
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <span className="text-xs font-semibold truncate">
+                                    {u.firstName} {u.lastName}
                                   </span>
+                                  {isNightGuard && (
+                                    <Shield className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                                  <span className="truncate font-medium">{u.staffId}</span>
+                                  {u.rank && (
+                                    <>
+                                      <span aria-hidden="true">·</span>
+                                      <span className="truncate">{u.rank}</span>
+                                    </>
+                                  )}
+                                </div>
+                                {u.department && (
+                                  <div className="text-[10px] text-muted-foreground truncate font-medium">
+                                    {u.department}
+                                  </div>
                                 )}
-                                {onlineFor && (
-                                  <span className="inline-flex items-center gap-0.5 text-muted-foreground">
-                                    <Clock className="h-2.5 w-2.5" />
-                                    {onlineFor}
-                                  </span>
+                                <div className="flex items-center gap-2 text-[10px] mt-0.5 flex-wrap">
+                                  {u.isOnline && u.currentPage && (
+                                    <span className="inline-flex items-center gap-0.5 text-primary">
+                                      <MapPin className="h-2.5 w-2.5" aria-hidden="true" />
+                                      {u.currentPage}
+                                    </span>
+                                  )}
+                                  {u.isOnline && onlineFor && (
+                                    <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+                                      <Clock className="h-2.5 w-2.5" aria-hidden="true" />
+                                      {onlineFor}
+                                    </span>
+                                  )}
+                                </div>
+                                {isAdmin && lastActiveRelative && (
+                                  <div
+                                    className="text-[10px] text-muted-foreground mt-0.5"
+                                    title={lastActiveExact}
+                                  >
+                                    Last active {lastActiveRelative}
+                                  </div>
                                 )}
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <div className="space-y-1 text-xs">
-                          <div className="font-semibold">{u.firstName} {u.lastName}</div>
-                          <div className="text-muted-foreground">
-                            <span className="font-medium">Online ID:</span> {u.staffId}
+                            )}
                           </div>
-                          <div className="font-mono text-[10px] text-muted-foreground" title={u.userId}>
-                            UID: {u.userId.slice(0, 8)}…{u.userId.slice(-4)}
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <div className="space-y-1 text-xs">
+                            <div className="font-semibold">{u.firstName} {u.lastName}</div>
+                            <div className="text-muted-foreground">
+                              <span className="font-medium">Status:</span> {statusLabel}
+                            </div>
+                            <div className="text-muted-foreground">
+                              <span className="font-medium">Online ID:</span> {u.staffId}
+                            </div>
+                            <div className="font-mono text-[10px] text-muted-foreground" title={u.userId}>
+                              UID: {u.userId.slice(0, 8)}…{u.userId.slice(-4)}
+                            </div>
+                            {u.department && (
+                              <div className="text-muted-foreground">
+                                <span className="font-medium">Department:</span> {u.department}
+                              </div>
+                            )}
+                            {u.rank && (
+                              <div className="text-muted-foreground">
+                                <span className="font-medium">Rank:</span> {u.rank}
+                              </div>
+                            )}
+                            {lastActiveRelative && (
+                              <div className="text-muted-foreground">
+                                <span className="font-medium">Last active:</span> {lastActiveRelative}
+                              </div>
+                            )}
                           </div>
-                          {u.department && (
-                            <div className="text-muted-foreground">
-                              <span className="font-medium">Department:</span> {u.department}
-                            </div>
-                          )}
-                          {u.rank && (
-                            <div className="text-muted-foreground">
-                              <span className="font-medium">Rank:</span> {u.rank}
-                            </div>
-                          )}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          );
+        })()}
       </CardContent>
     </Card>
   );

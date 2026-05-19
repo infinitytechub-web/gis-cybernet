@@ -107,7 +107,7 @@ function ensureChannel(userId: string) {
       await ch.track(sharedPayload);
       void supabase.from("presence_events").insert({
         user_id: userId,
-        event_type: "heartbeat",
+        event_type: "online",
         current_page: sharedPayload.currentPage,
         last_active_at: sharedPayload.lastActiveAt,
         details: { phase: "subscribed" },
@@ -116,6 +116,36 @@ function ensureChannel(userId: string) {
   });
   sharedChannel = ch;
   return ch;
+}
+
+// Best-effort offline event on tab close/navigation. Uses sendBeacon when
+// available so the request survives unload.
+function emitOfflineBeacon(userId: string, page: string, lastActiveAt: string) {
+  try {
+    const env = (import.meta as any).env ?? {};
+    const base = env.VITE_SUPABASE_URL as string | undefined;
+    const anonKey = env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+    if (!base || !anonKey) return;
+    const body = JSON.stringify({
+      user_id: userId,
+      event_type: "offline",
+      current_page: page,
+      last_active_at: lastActiveAt,
+      details: { phase: "unload" },
+    });
+    const url = `${base}/rest/v1/presence_events?apikey=${encodeURIComponent(anonKey)}`;
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(url, blob);
+      return;
+    }
+    void fetch(url, {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", apikey: anonKey },
+      body,
+    });
+  } catch { /* ignore */ }
 }
 
 export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MINUTES) {
@@ -185,12 +215,32 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
       }, HEARTBEAT_INTERVAL_MS);
     })();
 
+    const onBeforeUnload = () => {
+      if (!sharedPayload) return;
+      emitOfflineBeacon(user.id, sharedPayload.currentPage, sharedPayload.lastActiveAt);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onBeforeUnload);
+
     return () => {
       cancelled = true;
       if (heartbeat) clearInterval(heartbeat);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onBeforeUnload);
       refCount = Math.max(0, refCount - 1);
       // Only tear the shared channel down when no consumers remain.
       if (refCount === 0 && sharedChannel) {
+        // Best-effort explicit offline event when the last consumer unmounts
+        // (e.g. user signs out without closing the tab).
+        if (sharedPayload) {
+          void supabase.from("presence_events").insert({
+            user_id: user.id,
+            event_type: "offline",
+            current_page: sharedPayload.currentPage,
+            last_active_at: sharedPayload.lastActiveAt,
+            details: { phase: "unmount" },
+          });
+        }
         try { sharedChannel.untrack(); supabase.removeChannel(sharedChannel); } catch { /* ignore */ }
         sharedChannel = null;
         sharedUserId = null;
@@ -220,9 +270,15 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
 
   // Apply expiry window: only show users whose last activity is within window.
   const cutoff = now - windowMinutes * 60_000;
+  // "Recently offline" = past the live window but still tracked in presence
+  // state. Useful for the admin panel which shows a grey dot for them.
   const onlineUsers = allUsers.filter((u) => {
     const last = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : new Date(u.onlineSince).getTime();
     return last >= cutoff;
+  });
+  const recentlyOfflineUsers = allUsers.filter((u) => {
+    const last = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : new Date(u.onlineSince).getTime();
+    return last < cutoff;
   });
 
   // Log a prune event when this user transitions from "in-window" to "stale".
@@ -249,6 +305,7 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
 
   return {
     onlineUsers,
+    recentlyOfflineUsers,
     onlineCount: onlineUsers.length,
     windowMinutes,
     lastSyncAt,
