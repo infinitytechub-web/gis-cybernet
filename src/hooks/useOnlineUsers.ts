@@ -107,7 +107,7 @@ function ensureChannel(userId: string) {
       await ch.track(sharedPayload);
       void supabase.from("presence_events").insert({
         user_id: userId,
-        event_type: "heartbeat",
+        event_type: "online",
         current_page: sharedPayload.currentPage,
         last_active_at: sharedPayload.lastActiveAt,
         details: { phase: "subscribed" },
@@ -116,6 +116,36 @@ function ensureChannel(userId: string) {
   });
   sharedChannel = ch;
   return ch;
+}
+
+// Best-effort offline event on tab close/navigation. Uses sendBeacon when
+// available so the request survives unload.
+function emitOfflineBeacon(userId: string, page: string, lastActiveAt: string) {
+  try {
+    const env = (import.meta as any).env ?? {};
+    const base = env.VITE_SUPABASE_URL as string | undefined;
+    const anonKey = env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+    if (!base || !anonKey) return;
+    const body = JSON.stringify({
+      user_id: userId,
+      event_type: "offline",
+      current_page: page,
+      last_active_at: lastActiveAt,
+      details: { phase: "unload" },
+    });
+    const url = `${base}/rest/v1/presence_events?apikey=${encodeURIComponent(anonKey)}`;
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(url, blob);
+      return;
+    }
+    void fetch(url, {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", apikey: anonKey },
+      body,
+    });
+  } catch { /* ignore */ }
 }
 
 export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MINUTES) {
