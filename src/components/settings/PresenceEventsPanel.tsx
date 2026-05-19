@@ -160,8 +160,8 @@ export function PresenceEventsPanel() {
               <Activity className="h-4 w-4 text-primary" /> Presence Event Log
             </CardTitle>
             <CardDescription>
-              Heartbeat and prune events recorded per user (admin troubleshooting for the “Online Now” panel).
-              Rows older than the retention window below are auto-purged.
+              Online, offline, heartbeat and prune events recorded per user — full activity log for the
+              "Online Now" panel. Rows older than the retention window below are auto-purged.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
