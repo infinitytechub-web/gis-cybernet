@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2 } from "lucide-react";
+import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, Settings2, LogIn, LogOut } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
