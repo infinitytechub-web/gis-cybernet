@@ -76,6 +76,10 @@ function isValidEmail(v: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // CSRF defence-in-depth: internal/cron callers are auto-allowed by the helper.
+  const csrf = assertCsrfSafe(req);
+  if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
+
   try {
     const body = (await req.json().catch(() => ({}))) as Body;
     if (!body?.period || !["weekly", "monthly"].includes(body.period)) {
