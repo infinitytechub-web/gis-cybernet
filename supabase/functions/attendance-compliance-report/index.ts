@@ -1,4 +1,5 @@
-// csrf-classification: user-callable: relies on auth header + admin role check; CSRF guard recommended (TODO)
+// csrf-classification: dual-class — (a) browser POST from admin UI "Send now" button (CSRF-guarded),
+//                       (b) internal pg_cron / service-role caller (bypassed by assertCsrfSafe via x-internal-caller / service-role JWT).
 // Attendance Compliance Report — generates weekly/monthly compliance summary
 // and emails it as a PDF attachment via the Resend connector. Designed to be
 // invoked manually from the Reports UI ("Send now") and from a pg_cron job.
@@ -7,6 +8,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
 import { isInternalCaller } from "../_shared/cron-auth.ts";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,6 +75,10 @@ function isValidEmail(v: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // CSRF defence-in-depth: internal/cron callers are auto-allowed by the helper.
+  const csrf = assertCsrfSafe(req);
+  if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
 
   try {
     const body = (await req.json().catch(() => ({}))) as Body;

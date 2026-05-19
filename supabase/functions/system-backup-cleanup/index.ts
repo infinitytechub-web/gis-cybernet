@@ -1,6 +1,8 @@
-// csrf-classification: admin POST: validates user JWT + admin role (TODO: add CSRF guard for defence-in-depth)
+// csrf-classification: admin browser POST — invoked from the Admin > Backups panel "Prune audit" button.
+//                       Requires authenticated admin user JWT + CSRF guard. No cron caller (cleanup is manual).
 // Admin-triggered backup audit cleanup. Calls the SECURITY DEFINER pruner.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +12,9 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const csrf = assertCsrfSafe(req);
+  if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

@@ -1,6 +1,8 @@
-// csrf-classification: admin-only: protected by service-role + role check (TODO: add CSRF guard)
+// csrf-classification: dual-class — (a) admin POST from Email Settings UI (CSRF-guarded),
+//                       (b) pg_cron heartbeat re-checking Lovable email domain status (bypassed via x-internal-caller / service-role / x-cron-secret).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,6 +50,11 @@ async function fetchLovableStatus(token: string): Promise<{ status: string; raw:
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  // CSRF defence-in-depth: internal/cron callers pass through automatically.
+  const csrf = assertCsrfSafe(req);
+  if (!csrf.ok) return csrfDeniedResponse(corsHeaders, csrf.reason);
+
   if (!isInternalCaller(req)) return unauthorizedResponse(corsHeaders);
 
 
