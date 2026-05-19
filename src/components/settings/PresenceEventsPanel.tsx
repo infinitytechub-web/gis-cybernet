@@ -98,6 +98,28 @@ export function PresenceEventsPanel() {
     refetchInterval: 30_000,
   });
 
+  const queryClient = useQueryClient();
+  const [liveCount, setLiveCount] = useState(0);
+
+  // Realtime: instant updates when any presence event is inserted.
+  // Admins-only RLS already restricts visibility to admins.
+  useEffect(() => {
+    const ch = supabase
+      .channel("presence-events-admin-live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "presence_events" },
+        () => {
+          setLiveCount((n) => n + 1);
+          queryClient.invalidateQueries({ queryKey: ["presence-events"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [queryClient]);
+
   // Resolve user profiles for display
   const userIds = useMemo(() => Array.from(new Set(events.map((e) => e.user_id))), [events]);
   const { data: profiles = [] } = useQuery({
