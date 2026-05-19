@@ -138,13 +138,17 @@ export function PresenceEventsPanel() {
   const stats = useMemo(() => {
     let heartbeats = 0;
     let prunes = 0;
+    let onlines = 0;
+    let offlines = 0;
     const users = new Set<string>();
     filtered.forEach((e) => {
       users.add(e.user_id);
       if (e.event_type === "heartbeat") heartbeats++;
-      else prunes++;
+      else if (e.event_type === "prune") prunes++;
+      else if (e.event_type === "online") onlines++;
+      else if (e.event_type === "offline") offlines++;
     });
-    return { heartbeats, prunes, uniqueUsers: users.size, total: filtered.length };
+    return { heartbeats, prunes, onlines, offlines, uniqueUsers: users.size, total: filtered.length };
   }, [filtered]);
 
   return (
