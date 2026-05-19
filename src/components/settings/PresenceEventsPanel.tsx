@@ -227,10 +227,22 @@ export function PresenceEventsPanel() {
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-4 w-4 text-primary" /> Presence Event Log
+              <Badge
+                variant="outline"
+                className="gap-1 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+                title={liveCount > 0 ? `${liveCount} live event${liveCount === 1 ? "" : "s"} received` : "Subscribed to live updates"}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span aria-hidden="true" className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                  <span aria-hidden="true" className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <Radio className="h-3 w-3" aria-hidden="true" />
+                Live
+              </Badge>
             </CardTitle>
             <CardDescription>
               Online, offline, heartbeat and prune events recorded per user — full activity log for the
-              "Online Now" panel. Rows older than the retention window below are auto-purged.
+              "Online Now" panel. Updates stream in real time; rows older than the retention window are auto-purged.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -242,6 +254,16 @@ export function PresenceEventsPanel() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportCsv}
+              disabled={filtered.length === 0}
+              className="gap-1.5"
+              aria-label="Export filtered presence events as CSV"
+            >
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </Button>
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5">
               <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} /> Refresh
             </Button>
