@@ -158,13 +158,23 @@ export default function OnlineNowPanel() {
                               : "bg-background border-border"
                           }`}
                         >
-                          <Avatar className={showDetails ? "h-9 w-9" : "h-8 w-8"}>
-                            {u.photoUrl ? <AvatarImage src={u.photoUrl} alt={`${u.firstName} ${u.lastName}`} /> : null}
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {u.firstName?.[0]}
-                              {u.lastName?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="relative shrink-0">
+                            <Avatar className={showDetails ? "h-9 w-9" : "h-8 w-8"}>
+                              {u.photoUrl ? <AvatarImage src={u.photoUrl} alt={`${u.firstName} ${u.lastName}`} /> : null}
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {u.firstName?.[0]}
+                                {u.lastName?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span
+                              className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5"
+                              aria-label="Online"
+                              title="Online"
+                            >
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success ring-2 ring-background" />
+                            </span>
+                          </div>
                           {showDetails && (
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1 min-w-0">
