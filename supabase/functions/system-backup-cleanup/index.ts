@@ -1,6 +1,8 @@
-// csrf-classification: admin POST: validates user JWT + admin role (TODO: add CSRF guard for defence-in-depth)
+// csrf-classification: admin browser POST — invoked from the Admin > Backups panel "Prune audit" button.
+//                       Requires authenticated admin user JWT + CSRF guard. No cron caller (cleanup is manual).
 // Admin-triggered backup audit cleanup. Calls the SECURITY DEFINER pruner.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
