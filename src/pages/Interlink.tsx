@@ -23,6 +23,7 @@ import {
   FileSpreadsheet, FileType, Sparkles, CalendarClock, FileCog, ShieldCheck, MailCheck, History, KeyRound
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
+import { InterlinkPermissionsMatrix } from "@/components/interlink/InterlinkPermissionsMatrix";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
   INTERLINK_LABELS,
