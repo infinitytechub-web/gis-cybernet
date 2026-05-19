@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, MapPin, Clock, RefreshCw } from "lucide-react";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 import { useAuth } from "@/hooks/useAuth";
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNowStrict, format } from "date-fns";
 
 const SHOW_DETAILS_KEY = "online-now.show-details";
 
