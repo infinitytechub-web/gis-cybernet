@@ -9740,7 +9740,7 @@ export type Database = {
         | "waf_pattern"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
-      presence_event_type: "heartbeat" | "prune"
+      presence_event_type: "heartbeat" | "prune" | "online" | "offline"
       scheduled_delivery_status: "pending" | "sent" | "failed" | "cancelled"
       shift_pattern: "8h" | "12h" | "custom"
       shift_rotation_scope: "org" | "department" | "role" | "staff"
@@ -9936,7 +9936,7 @@ export const Constants = {
       ],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
-      presence_event_type: ["heartbeat", "prune"],
+      presence_event_type: ["heartbeat", "prune", "online", "offline"],
       scheduled_delivery_status: ["pending", "sent", "failed", "cancelled"],
       shift_pattern: ["8h", "12h", "custom"],
       shift_rotation_scope: ["org", "department", "role", "staff"],
