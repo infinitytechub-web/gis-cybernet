@@ -462,7 +462,24 @@ function BackupSnapshotsPanel() {
 
   const handleUpload = async (file: File) => {
     try {
-      const text = await file.text();
+      const lower = file.name.toLowerCase();
+      // Friendly rejection for formats the upsert-by-PK restore path can't safely consume
+      if (lower.endsWith(".sql") || lower.endsWith(".csv") || lower.endsWith(".xlsx") || lower.endsWith(".zip")) {
+        toast.error(`${lower.split(".").pop()?.toUpperCase()} restore is not supported — please upload a .json or .json.gz backup.`);
+        return;
+      }
+      let text: string;
+      if (lower.endsWith(".gz")) {
+        // Browser-native gzip decode
+        const ds = new DecompressionStream("gzip");
+        const stream = file.stream().pipeThrough(ds);
+        text = await new Response(stream).text();
+      } else if (lower.endsWith(".json")) {
+        text = await file.text();
+      } else {
+        toast.error("Unsupported file type. Upload a .json or .json.gz backup.");
+        return;
+      }
       const json = JSON.parse(text);
       const meta = json?._meta;
       const tables: string[] = Array.isArray(meta?.tables) ? meta.tables : Object.keys(json).filter((k) => k !== "_meta");
