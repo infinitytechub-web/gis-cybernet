@@ -83,6 +83,7 @@ export function AppSettings() {
           enforce_password_change: enforcePasswordChange,
           min_password_length: minPasswordLength,
           allow_self_registration: allowSelfRegistration,
+          enable_system_health_widget: enableHealthWidget,
         })
         .eq("id", settings.id);
       if (error) throw error;
