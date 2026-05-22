@@ -670,7 +670,9 @@ export type Database = {
       attendances: {
         Row: {
           check_in: string | null
+          check_in_ip: unknown
           check_out: string | null
+          check_out_ip: unknown
           created_at: string
           date: string
           id: string
@@ -681,7 +683,9 @@ export type Database = {
         }
         Insert: {
           check_in?: string | null
+          check_in_ip?: unknown
           check_out?: string | null
+          check_out_ip?: unknown
           created_at?: string
           date?: string
           id?: string
@@ -692,7 +696,9 @@ export type Database = {
         }
         Update: {
           check_in?: string | null
+          check_in_ip?: unknown
           check_out?: string | null
+          check_out_ip?: unknown
           created_at?: string
           date?: string
           id?: string
