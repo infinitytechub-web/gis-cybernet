@@ -44,7 +44,7 @@ export default function BirthdayWidget() {
     return birthdays.map((b) => {
       const next = setYear(new Date(today.getFullYear(), b.bday_month - 1, b.bday_day), today.getFullYear());
       const days = differenceInCalendarDays(next, today);
-      return { ...b, daysAway: days, isToday: days === 0, isHeadsUp: days > 0 && days <= 3 };
+      return { ...b, daysAway: days, isToday: days === 0, isHeadsUp: days > 0 && days <= 14 };
     });
   }, [birthdays, today]);
 
