@@ -114,23 +114,62 @@ export function BulkCreateAccounts() {
     setErrors([]);
     try {
       const { data, error } = await supabase.functions.invoke("bulk-create-accounts");
-      if (error) throw error;
+      if (error) {
+        const msg = await extractEdgeFunctionError(error, "Failed to create accounts");
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       setResults(data.created ?? []);
       setErrors(data.errors ?? []);
       setTotal(data.total ?? 0);
 
-      if (data.created?.length > 0) {
-        toast.success(`${data.created.length} accounts created successfully`);
+      const createdCount = data.created?.length ?? 0;
+      const errorCount = data.errors?.length ?? 0;
+      if (createdCount > 0 && errorCount > 0) {
+        toast.warning(`${createdCount} accounts created, ${errorCount} failed — review the errors list.`);
+      } else if (createdCount > 0) {
+        toast.success(`${createdCount} accounts created successfully`);
+      } else if (errorCount > 0) {
+        toast.error(`No accounts created — ${errorCount} errors occurred.`);
       } else {
         toast.info(data.message || "No new accounts to create");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to create accounts");
+      toast.error(err?.message || "Failed to create accounts");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleResetAndCreate = async () => {
+    setIsResetting(true);
+    setResults(null);
+    setErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-and-create-accounts");
+      if (error) {
+        const msg = await extractEdgeFunctionError(error, "Failed to reset and create accounts");
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
+
+      if (data.job_id) {
+        // Background job mode — poll for results
+        pollJob(data.job_id);
+      } else {
+        // Legacy direct response
+        setResults(data.created ?? []);
+        setErrors(data.errors ?? []);
+        setTotal(data.total ?? 0);
+        setIsResetting(false);
+
+        if (data.created?.length > 0) {
+          toast.success(`${data.created.length} accounts regenerated successfully`);
+        } else {
+          toast.info(data.message || "No accounts to regenerate");
+        }
+      }
 
   const handleResetAndCreate = async () => {
     setIsResetting(true);
