@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { extractEdgeFunctionError } from "@/lib/edge-function-error";
 
 interface CreatedAccount {
   staffId: string;
@@ -37,6 +38,7 @@ export function BulkCreateAccounts() {
   const pollJob = (jobId: string) => {
     setJobStatus("processing");
     setJobProgress(0);
+    let consecutivePollErrors = 0;
 
     pollingRef.current = setInterval(async () => {
       const { data, error } = await supabase
@@ -45,7 +47,23 @@ export function BulkCreateAccounts() {
         .eq("id", jobId)
         .single();
 
-      if (error || !data) return;
+      if (error || !data) {
+        consecutivePollErrors += 1;
+        // Tolerate transient network blips, but bail out after ~30s of failures
+        if (consecutivePollErrors >= 10) {
+          clearInterval(pollingRef.current!);
+          pollingRef.current = null;
+          setJobStatus(null);
+          setIsResetting(false);
+          toast.error(
+            error?.message
+              ? `Lost connection to job status: ${error.message}`
+              : "Lost connection to job status. Please refresh and check the audit log."
+          );
+        }
+        return;
+      }
+      consecutivePollErrors = 0;
 
       setJobProgress(data.progress ?? 0);
       setTotal(data.total ?? 0);
@@ -60,7 +78,7 @@ export function BulkCreateAccounts() {
         const { data: result, error: rpcErr } = await supabase
           .rpc("consume_processing_job_credentials", { p_job_id: jobId });
         if (rpcErr) {
-          toast.error(rpcErr.message || "Failed to retrieve credentials");
+          toast.error(rpcErr.message || "Failed to retrieve credentials. They may have already been consumed — check the audit log.");
           return;
         }
         const r = result as any;
@@ -69,7 +87,14 @@ export function BulkCreateAccounts() {
         setTotal(r?.total ?? 0);
 
         if (r?.created?.length > 0) {
-          toast.success(`${r.created.length} accounts regenerated successfully`);
+          const errCount = r?.errors?.length ?? 0;
+          if (errCount > 0) {
+            toast.warning(`${r.created.length} accounts regenerated, ${errCount} failed — review the errors list.`);
+          } else {
+            toast.success(`${r.created.length} accounts regenerated successfully`);
+          }
+        } else if (r?.errors?.length > 0) {
+          toast.error(`Job finished with ${r.errors.length} errors and no accounts created.`);
         } else {
           toast.info(r?.message || "No accounts to regenerate");
         }
@@ -78,7 +103,7 @@ export function BulkCreateAccounts() {
         pollingRef.current = null;
         setJobStatus(null);
         setIsResetting(false);
-        toast.error(data.error || "Job failed");
+        toast.error(data.error || "Reset job failed. Check the audit log for details.");
       }
     }, 3000);
   };
@@ -89,19 +114,29 @@ export function BulkCreateAccounts() {
     setErrors([]);
     try {
       const { data, error } = await supabase.functions.invoke("bulk-create-accounts");
-      if (error) throw error;
+      if (error) {
+        const msg = await extractEdgeFunctionError(error, "Failed to create accounts");
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       setResults(data.created ?? []);
       setErrors(data.errors ?? []);
       setTotal(data.total ?? 0);
 
-      if (data.created?.length > 0) {
-        toast.success(`${data.created.length} accounts created successfully`);
+      const createdCount = data.created?.length ?? 0;
+      const errorCount = data.errors?.length ?? 0;
+      if (createdCount > 0 && errorCount > 0) {
+        toast.warning(`${createdCount} accounts created, ${errorCount} failed — review the errors list.`);
+      } else if (createdCount > 0) {
+        toast.success(`${createdCount} accounts created successfully`);
+      } else if (errorCount > 0) {
+        toast.error(`No accounts created — ${errorCount} errors occurred.`);
       } else {
         toast.info(data.message || "No new accounts to create");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to create accounts");
+      toast.error(err?.message || "Failed to create accounts");
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +148,11 @@ export function BulkCreateAccounts() {
     setErrors([]);
     try {
       const { data, error } = await supabase.functions.invoke("reset-and-create-accounts");
-      if (error) throw error;
+      if (error) {
+        const msg = await extractEdgeFunctionError(error, "Failed to reset and create accounts");
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       if (data.job_id) {
         // Background job mode — poll for results
@@ -132,15 +171,19 @@ export function BulkCreateAccounts() {
         }
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to reset and create accounts");
+      toast.error(err?.message || "Failed to reset and create accounts");
       setIsResetting(false);
     }
   };
 
-  const copyCredentials = (account: CreatedAccount) => {
+  const copyCredentials = async (account: CreatedAccount) => {
     const text = `Username: ${account.username}\nPassword: ${account.password}`;
-    navigator.clipboard.writeText(text);
-    toast.success(`Credentials copied for ${account.name}`);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`Credentials copied for ${account.name}`);
+    } catch {
+      toast.error("Clipboard blocked — select the password text and copy manually.");
+    }
   };
 
   const getCredentialsExportData = () => {
@@ -160,17 +203,27 @@ export function BulkCreateAccounts() {
     setErrors([]);
     try {
       const { data, error } = await supabase.functions.invoke("repair-missing-auth");
-      if (error) throw error;
+      if (error) {
+        const msg = await extractEdgeFunctionError(error, "Repair failed");
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
       setResults(data.created ?? []);
       setErrors(data.errors ?? []);
       setTotal(data.total ?? 0);
-      if (data.created?.length > 0) {
-        toast.success(`${data.created.length} profile(s) repaired`);
+      const createdCount = data.created?.length ?? 0;
+      const errorCount = data.errors?.length ?? 0;
+      if (createdCount > 0 && errorCount > 0) {
+        toast.warning(`${createdCount} profile(s) repaired, ${errorCount} failed.`);
+      } else if (createdCount > 0) {
+        toast.success(`${createdCount} profile(s) repaired`);
+      } else if (errorCount > 0) {
+        toast.error(`Repair finished with ${errorCount} errors and no successes.`);
       } else {
         toast.info("No profiles need repair");
       }
     } catch (err: any) {
-      toast.error(err.message || "Repair failed");
+      toast.error(err?.message || "Repair failed");
     } finally {
       setIsRepairing(false);
     }
