@@ -11,7 +11,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldOff, Ban, Clock, ScrollText, Search, Cpu, X } from "lucide-react";
+import { ShieldOff, Ban, Clock, ScrollText, Search, Cpu, X, Pencil, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { normalizeMac } from "@/lib/trusted-mac";
 import { formatDistanceToNow, format } from "date-fns";
@@ -131,6 +143,51 @@ export default function IpBlocks() {
       qc.invalidateQueries({ queryKey: ["ip_block_audit"] });
     },
     onError: (e: any) => toast({ title: "Unblock failed", description: e.message, variant: "destructive" }),
+  });
+
+  // Edit metadata (reason / notes / blocked_until) on an existing block.
+  const [editing, setEditing] = useState<any>(null);
+  const [editReason, setEditReason] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editUntil, setEditUntil] = useState<string>(""); // datetime-local value or ""
+
+  const openEdit = (b: any) => {
+    setEditing(b);
+    setEditReason(b.reason ?? "");
+    setEditNotes(b.notes ?? "");
+    setEditUntil(b.blocked_until ? new Date(b.blocked_until).toISOString().slice(0, 16) : "");
+  };
+
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const patch = {
+        reason: editReason || "Manual block",
+        notes: editNotes || null,
+        blocked_until: editUntil ? new Date(editUntil).toISOString() : null,
+      };
+      const { error } = await supabase.from("ip_blocks").update(patch as any).eq("id", editing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Block updated" });
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+    },
+    onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+  });
+
+  // Permanently delete a block record (admin clean-up; preferred for inactive entries).
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ip_blocks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Entry deleted" });
+      qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+    },
+    onError: (e: any) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
   });
 
   if (loading) return <div className="p-6">Loading…</div>;
@@ -298,11 +355,50 @@ export default function IpBlocks() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {active && (
-                        <Button size="sm" variant="outline" onClick={() => unblockMutation.mutate(b.id)}>
-                          <ShieldOff className="h-4 w-4 mr-1" /> Unblock
+                      <div className="inline-flex items-center gap-1 justify-end">
+                        {active && (
+                          <Button size="sm" variant="outline" onClick={() => unblockMutation.mutate(b.id)}>
+                            <ShieldOff className="h-4 w-4 mr-1" /> Unblock
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="Edit block"
+                          onClick={() => openEdit(b)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                      )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive"
+                              title="Delete entry permanently"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this block entry?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Permanently removes the record for{" "}
+                                <span className="font-mono">{b.ip_address}</span>. If the block is
+                                still active, prefer Unblock — deletion does not write an audit row.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(b.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -398,6 +494,43 @@ export default function IpBlocks() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit block</DialogTitle>
+            <DialogDescription>
+              Update the reason, notes or expiry for{" "}
+              <span className="font-mono">{editing?.ip_address}</span>. IP, MAC and fingerprint
+              cannot be changed — delete and re-create the entry instead.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Reason</Label>
+              <Input value={editReason} onChange={(e) => setEditReason(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea rows={2} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Unblock at (leave empty for permanent)</Label>
+              <Input
+                type="datetime-local"
+                value={editUntil}
+                onChange={(e) => setEditUntil(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button onClick={() => editMutation.mutate()} disabled={editMutation.isPending}>
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
