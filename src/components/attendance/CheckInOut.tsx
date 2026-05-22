@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
 import { SyncHistoryLog } from "./SyncHistoryLog";
+import { getMyClientIp } from "@/lib/client-ip";
 
 export function CheckInOut() {
   const { user } = useAuth();
