@@ -117,6 +117,10 @@ export function AdminAttendanceLog() {
       r.profiles?.shift_group ?? "",
       r.check_in ? format(new Date(r.check_in), "HH:mm") : "",
       r.check_out ? format(new Date(r.check_out), "HH:mm") : "",
+      r.check_in_ip ?? "",
+      r.check_in_address ?? "",
+      r.check_out_ip ?? "",
+      r.check_out_address ?? "",
       r.status,
       r.notes ?? "",
     ]);
