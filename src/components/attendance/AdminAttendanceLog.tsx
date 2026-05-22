@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Search, Plus, Users, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, Plus, Users, Clock, AlertTriangle, CheckCircle2, MapPin, Globe } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { ExportMenu } from "@/components/ui/export-menu";
