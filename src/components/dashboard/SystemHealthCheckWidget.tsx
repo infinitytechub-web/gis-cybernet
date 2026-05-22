@@ -151,7 +151,7 @@ export default function SystemHealthCheckWidget() {
       : <Badge className="bg-red-100 text-red-800 border-red-200">Action needed</Badge>;
 
   return (
-    <Card className="border-border/50">
+    <Card ref={cardRef} className="border-border/50">
       <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Gauge className="h-4 w-4 text-primary" />
