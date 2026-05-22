@@ -46,6 +46,7 @@ export function AppSettings() {
   const [enforcePasswordChange, setEnforcePasswordChange] = useState(true);
   const [minPasswordLength, setMinPasswordLength] = useState(8);
   const [allowSelfRegistration, setAllowSelfRegistration] = useState(false);
+  const [enableHealthWidget, setEnableHealthWidget] = useState(true);
 
   useEffect(() => {
     if (settings) {
@@ -56,6 +57,7 @@ export function AppSettings() {
       setEnforcePasswordChange(settings.enforce_password_change);
       setMinPasswordLength(settings.min_password_length);
       setAllowSelfRegistration(settings.allow_self_registration);
+      setEnableHealthWidget(settings.enable_system_health_widget ?? true);
     }
   }, [settings]);
 
