@@ -225,7 +225,7 @@ function ScheduleDialog({
       return toast.error("Retention days must be 1–3650, or blank");
     }
     setSaving(true);
-    const payload = {
+    const payload: any = {
       name: name.trim(),
       frequency,
       tables_included: Array.from(tables),
@@ -237,7 +237,7 @@ function ScheduleDialog({
       ({ error } = await supabase.from("system_backup_schedules").update(payload).eq("id", existing.id));
     } else {
       const { data: u } = await supabase.auth.getUser();
-      ({ error } = await supabase.from("system_backup_schedules").insert({ ...payload, created_by: u.user?.id }));
+      ({ error } = await supabase.from("system_backup_schedules").insert({ ...payload, created_by: u.user?.id } as any));
     }
     setSaving(false);
     if (error) return toast.error(error.message);
