@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { extractEdgeFunctionError } from "@/lib/edge-function-error";
 
 interface CreatedAccount {
   staffId: string;
