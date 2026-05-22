@@ -183,7 +183,7 @@ export default function SystemHealthCheckWidget() {
           <Metric icon={Cpu} label="JS heap" value={perf.jsHeapMb !== null ? `${perf.jsHeapMb} MB` : "—"} />
           <Metric icon={Activity} label="FPS" value={perf.fps !== null ? `${perf.fps}` : "…"} />
           <Metric icon={Activity} label="DOM nodes" value={perf.domNodes.toLocaleString()} />
-          <Metric icon={Activity} label="Long tasks" value={perf.longTasks.toLocaleString()} />
+          <Metric icon={Activity} label="Long tasks" value={`${perf.longTasks >= LONG_TASK_CAP ? "99+" : perf.longTasks.toLocaleString()}`} />
           <Metric icon={Activity} label="Page load" value={perf.navMs !== null ? `${perf.navMs} ms` : "—"} />
           <Metric icon={ShieldAlert} label="Incidents 24h" value={`${errorCounts?.incidents ?? 0}`} />
         </div>
