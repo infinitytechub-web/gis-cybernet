@@ -93,6 +93,18 @@ export default function Dashboard() {
     },
   });
 
+  const { data: healthWidgetEnabled = true } = useQuery({
+    queryKey: ["app-settings-health-widget"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("enable_system_health_widget")
+        .limit(1)
+        .maybeSingle();
+      return (data as any)?.enable_system_health_widget ?? true;
+    },
+  });
+
   const { data: upcomingHolidays = [] } = useQuery({
     queryKey: ["upcoming-holidays-list"],
     queryFn: async () => {
@@ -325,7 +337,7 @@ export default function Dashboard() {
 
           <LiveGpsMapWidget />
           {isAdmin && <SecurityThreatsWidget />}
-          {isAdmin && <SystemHealthCheckWidget />}
+          {isAdmin && healthWidgetEnabled && <SystemHealthCheckWidget />}
           
           <InterlinkWidget />
           

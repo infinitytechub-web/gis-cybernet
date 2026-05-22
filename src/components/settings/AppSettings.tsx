@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Settings2, Shield, Clock, Globe, Loader2 } from "lucide-react";
+import { Settings2, Shield, Clock, Globe, Loader2, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ interface AppSettingsRow {
   enforce_password_change: boolean;
   min_password_length: number;
   allow_self_registration: boolean;
+  enable_system_health_widget: boolean;
 }
 
 export function AppSettings() {
@@ -45,6 +46,7 @@ export function AppSettings() {
   const [enforcePasswordChange, setEnforcePasswordChange] = useState(true);
   const [minPasswordLength, setMinPasswordLength] = useState(8);
   const [allowSelfRegistration, setAllowSelfRegistration] = useState(false);
+  const [enableHealthWidget, setEnableHealthWidget] = useState(true);
 
   useEffect(() => {
     if (settings) {
@@ -55,6 +57,7 @@ export function AppSettings() {
       setEnforcePasswordChange(settings.enforce_password_change);
       setMinPasswordLength(settings.min_password_length);
       setAllowSelfRegistration(settings.allow_self_registration);
+      setEnableHealthWidget(settings.enable_system_health_widget ?? true);
     }
   }, [settings]);
 
@@ -80,6 +83,7 @@ export function AppSettings() {
           enforce_password_change: enforcePasswordChange,
           min_password_length: minPasswordLength,
           allow_self_registration: allowSelfRegistration,
+          enable_system_health_widget: enableHealthWidget,
         })
         .eq("id", settings.id);
       if (error) throw error;
@@ -176,6 +180,26 @@ export function AppSettings() {
               <Input id="auto-logout-warn" type="number" min={5} max={300} value={autoLogoutWarn} onChange={(e) => setAutoLogoutWarn(Number(e.target.value))} />
               <p className="text-xs text-muted-foreground">A toast appears this many seconds before the session ends.</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Telemetry */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><Activity className="h-4 w-4 text-chart-2" /> Telemetry & Diagnostics</CardTitle>
+          <CardDescription>Control the System Health widget and heavy in-browser telemetry collection.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">System Health Widget</p>
+              <p className="text-xs text-muted-foreground">
+                When off, the admin dashboard widget is hidden and its FPS sampling, long-task observer,
+                heap/DOM snapshots, and backend error polling stop completely.
+              </p>
+            </div>
+            <Switch checked={enableHealthWidget} onCheckedChange={setEnableHealthWidget} />
           </div>
         </CardContent>
       </Card>
