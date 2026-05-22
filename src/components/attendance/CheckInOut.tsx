@@ -129,13 +129,17 @@ export function CheckInOut() {
   const checkInMutation = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
+      // Best-effort public IP capture — never block check-in on failure
+      let ip: string | null = null;
+      try { ip = await getMyClientIp(); } catch { ip = null; }
       const { error } = await supabase.from("attendances").insert({
         profile_id: profile!.id,
         date: today,
         check_in: now,
         status: "present",
         notes: notes || null,
-      });
+        ...(ip ? { check_in_ip: ip } : {}),
+      } as any);
       if (error) throw error;
       return now;
     },
@@ -152,9 +156,15 @@ export function CheckInOut() {
   const checkOutMutation = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
+      let ip: string | null = null;
+      try { ip = await getMyClientIp(); } catch { ip = null; }
       const { error } = await supabase
         .from("attendances")
-        .update({ check_out: now, notes: notes || todayRecord?.notes || null })
+        .update({
+          check_out: now,
+          notes: notes || todayRecord?.notes || null,
+          ...(ip ? { check_out_ip: ip } : {}),
+        } as any)
         .eq("id", todayRecord!.id);
       if (error) throw error;
       return now;
