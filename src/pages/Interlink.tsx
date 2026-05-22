@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { InterlinkPermissionsMatrix } from "@/components/interlink/InterlinkPermissionsMatrix";
+import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
   INTERLINK_LABELS,
@@ -108,6 +109,12 @@ export default function Interlink() {
             <Badge className="bg-white/20 text-white border-white/30 backdrop-blur">Audited</Badge>
             <Badge className="bg-white/20 text-white border-white/30 backdrop-blur">Realtime</Badge>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1">
+          <BirthdayWidget />
         </div>
       </div>
 
