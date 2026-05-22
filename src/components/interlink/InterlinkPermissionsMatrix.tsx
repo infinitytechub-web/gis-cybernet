@@ -1,4 +1,5 @@
-import { Eye, ShieldCheck, Download, Upload, Check, X, KeyRound, Printer } from "lucide-react";
+import { Eye, ShieldCheck, Download, Upload, Check, X, KeyRound, Printer, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
