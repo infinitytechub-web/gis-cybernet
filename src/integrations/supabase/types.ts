@@ -289,6 +289,7 @@ export type Database = {
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
           created_at: string
+          enable_system_health_widget: boolean
           enforce_password_change: boolean
           id: string
           mfa_required_roles: string[]
@@ -310,6 +311,7 @@ export type Database = {
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           created_at?: string
+          enable_system_health_widget?: boolean
           enforce_password_change?: boolean
           id?: string
           mfa_required_roles?: string[]
@@ -331,6 +333,7 @@ export type Database = {
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           created_at?: string
+          enable_system_health_widget?: boolean
           enforce_password_change?: boolean
           id?: string
           mfa_required_roles?: string[]
