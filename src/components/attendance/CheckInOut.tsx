@@ -232,12 +232,38 @@ export function CheckInOut() {
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_in ? format(new Date(todayRecord.check_in), "HH:mm:ss") : "—"}
             </div>
+            {(todayRecord as any)?.check_in_ip && (
+              <div className="mt-1 text-[10px] font-mono text-muted-foreground">
+                IP {(todayRecord as any).check_in_ip}
+              </div>
+            )}
+            {(todayRecord as any)?.check_in_address && (
+              <div className="mt-1 flex items-start justify-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                <span className="truncate" title={(todayRecord as any).check_in_address}>
+                  {(todayRecord as any).check_in_address}
+                </span>
+              </div>
+            )}
           </div>
           <div className="rounded-lg bg-muted p-3 text-center">
             <div className="text-xs text-muted-foreground mb-1">Check Out</div>
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_out ? format(new Date(todayRecord.check_out), "HH:mm:ss") : "—"}
             </div>
+            {(todayRecord as any)?.check_out_ip && (
+              <div className="mt-1 text-[10px] font-mono text-muted-foreground">
+                IP {(todayRecord as any).check_out_ip}
+              </div>
+            )}
+            {(todayRecord as any)?.check_out_address && (
+              <div className="mt-1 flex items-start justify-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                <span className="truncate" title={(todayRecord as any).check_out_address}>
+                  {(todayRecord as any).check_out_address}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
