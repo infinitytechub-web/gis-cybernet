@@ -70,30 +70,25 @@ export function AdminAccountActions({ profileId, staffId, fullName, accountLocke
     setResetting(true);
     setConfirmReset(false);
     try {
+      if (!hasUserId) {
+        throw new Error("This staff member has no login account yet — create one before resetting the password.");
+      }
       const { data, error } = await supabase.functions.invoke("admin-reset-password", {
         body: { profile_id: profileId },
       });
-      // FunctionsHttpError hides the real server message inside `context`.
-      // Extract it so admins see "Forbidden: admin role required" etc.
       if (error) {
-        let serverMessage: string | undefined;
-        try {
-          const ctx: any = (error as any).context;
-          if (ctx && typeof ctx.json === "function") {
-            const body = await ctx.json();
-            serverMessage = body?.error || body?.reason;
-          } else if (ctx && typeof ctx.text === "function") {
-            const text = await ctx.text();
-            try { serverMessage = JSON.parse(text)?.error; } catch { serverMessage = text; }
-          }
-        } catch { /* ignore parse errors */ }
-        throw new Error(serverMessage || error.message || "Failed to reset password");
+        const msg = await extractEdgeFunctionError(error, "Failed to reset password");
+        throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (!(data as any)?.temporary_password) {
+        throw new Error("Server did not return a temporary password. Please try again or check the audit log.");
+      }
       setResult(data as ResetResult);
+      toast.success(`Temporary password generated for ${fullName}`);
       queryClient.invalidateQueries({ queryKey: ["staff"] });
     } catch (e: any) {
-      toast.error(e.message ?? "Failed to reset password");
+      toast.error(e?.message ?? "Failed to reset password");
     } finally {
       setResetting(false);
     }
