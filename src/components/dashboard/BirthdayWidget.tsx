@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cake, PartyPopper } from "lucide-react";
+import { Cake, PartyPopper, BellRing } from "lucide-react";
 import { format, differenceInCalendarDays, setYear } from "date-fns";
 
 type Bday = {
