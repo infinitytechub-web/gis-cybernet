@@ -170,31 +170,6 @@ export function BulkCreateAccounts() {
           toast.info(data.message || "No accounts to regenerate");
         }
       }
-
-  const handleResetAndCreate = async () => {
-    setIsResetting(true);
-    setResults(null);
-    setErrors([]);
-    try {
-      const { data, error } = await supabase.functions.invoke("reset-and-create-accounts");
-      if (error) throw error;
-
-      if (data.job_id) {
-        // Background job mode — poll for results
-        pollJob(data.job_id);
-      } else {
-        // Legacy direct response
-        setResults(data.created ?? []);
-        setErrors(data.errors ?? []);
-        setTotal(data.total ?? 0);
-        setIsResetting(false);
-
-        if (data.created?.length > 0) {
-          toast.success(`${data.created.length} accounts regenerated successfully`);
-        } else {
-          toast.info(data.message || "No accounts to regenerate");
-        }
-      }
     } catch (err: any) {
       toast.error(err?.message || "Failed to reset and create accounts");
       setIsResetting(false);
