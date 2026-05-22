@@ -77,20 +77,34 @@ function useClientPerf(refreshKey: number, isVisible: boolean): ClientPerf {
 
 export default function SystemHealthCheckWidget() {
   const { isAdmin } = useAuth();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(1);
   const [autoRefreshAt, setAutoRefreshAt] = useState<Date>(new Date());
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Auto-refresh ticker
+  // IntersectionObserver: only run heavy work when card is visible
   useEffect(() => {
-    if (!isAdmin) return;
+    const el = cardRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 1 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Auto-refresh ticker — only when visible
+  useEffect(() => {
+    if (!isAdmin || !isVisible) return;
     const id = setInterval(() => {
       setRefreshKey((k) => k + 1);
       setAutoRefreshAt(new Date());
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [isAdmin]);
+  }, [isAdmin, isVisible]);
 
-  const perf = useClientPerf(refreshKey);
+  const perf = useClientPerf(refreshKey, isVisible);
 
   // Backend error signals — last 24h
   const since = useMemo(() => {
