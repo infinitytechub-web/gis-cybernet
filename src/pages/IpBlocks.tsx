@@ -494,6 +494,43 @@ export default function IpBlocks() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit block</DialogTitle>
+            <DialogDescription>
+              Update the reason, notes or expiry for{" "}
+              <span className="font-mono">{editing?.ip_address}</span>. IP, MAC and fingerprint
+              cannot be changed — delete and re-create the entry instead.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Reason</Label>
+              <Input value={editReason} onChange={(e) => setEditReason(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea rows={2} value={editNotes} onChange={(e) => setEditNotes(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Unblock at (leave empty for permanent)</Label>
+              <Input
+                type="datetime-local"
+                value={editUntil}
+                onChange={(e) => setEditUntil(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button onClick={() => editMutation.mutate()} disabled={editMutation.isPending}>
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
