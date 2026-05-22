@@ -112,6 +112,12 @@ export default function Interlink() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1">
+          <BirthdayWidget />
+        </div>
+      </div>
+
       <Tabs value={tab} onValueChange={(v) => setSearchParams({ tab: v })}>
         <TabsList className="flex flex-wrap h-auto w-full md:w-auto">
           <TabsTrigger value="compose" className="gap-1.5"><Send className="h-4 w-4" />Compose</TabsTrigger>
