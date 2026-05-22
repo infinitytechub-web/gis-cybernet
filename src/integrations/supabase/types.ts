@@ -8517,6 +8517,7 @@ export type Database = {
           id: string
           ip_address: string | null
           row_counts: Json
+          schedule_id: string | null
           status: string
           tables_exported: string[]
           tables_requested: string[]
@@ -8532,6 +8533,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           row_counts?: Json
+          schedule_id?: string | null
           status?: string
           tables_exported?: string[]
           tables_requested: string[]
@@ -8547,6 +8549,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           row_counts?: Json
+          schedule_id?: string | null
           status?: string
           tables_exported?: string[]
           tables_requested?: string[]
@@ -8554,7 +8557,15 @@ export type Database = {
           user_agent?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "system_backup_audit_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "system_backup_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_backup_restore_audit: {
         Row: {
@@ -8615,6 +8626,54 @@ export type Database = {
           },
         ]
       }
+      system_backup_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          frequency: Database["public"]["Enums"]["backup_frequency"]
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          last_run_error: string | null
+          last_run_status: string | null
+          name: string
+          next_run_at: string
+          retention_days: number | null
+          tables_included: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          frequency: Database["public"]["Enums"]["backup_frequency"]
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_run_error?: string | null
+          last_run_status?: string | null
+          name: string
+          next_run_at?: string
+          retention_days?: number | null
+          tables_included?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          frequency?: Database["public"]["Enums"]["backup_frequency"]
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          last_run_error?: string | null
+          last_run_status?: string | null
+          name?: string
+          next_run_at?: string
+          retention_days?: number | null
+          tables_included?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_backup_settings: {
         Row: {
           cleanup_enabled: boolean
@@ -8656,6 +8715,7 @@ export type Database = {
           id: string
           notes: string | null
           row_counts: Json
+          schedule_id: string | null
           source: string
           storage_path: string
           tables_included: string[]
@@ -8671,6 +8731,7 @@ export type Database = {
           id?: string
           notes?: string | null
           row_counts?: Json
+          schedule_id?: string | null
           source?: string
           storage_path: string
           tables_included?: string[]
@@ -8686,6 +8747,7 @@ export type Database = {
           id?: string
           notes?: string | null
           row_counts?: Json
+          schedule_id?: string | null
           source?: string
           storage_path?: string
           tables_included?: string[]
@@ -8697,6 +8759,13 @@ export type Database = {
             columns: ["audit_id"]
             isOneToOne: false
             referencedRelation: "system_backup_audit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_backup_snapshots_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "system_backup_schedules"
             referencedColumns: ["id"]
           },
         ]
@@ -9147,6 +9216,16 @@ export type Database = {
         Returns: boolean
       }
       can_use_recycle_bin: { Args: { _user_id: string }; Returns: boolean }
+      claim_due_backup_schedules: {
+        Args: never
+        Returns: {
+          frequency: Database["public"]["Enums"]["backup_frequency"]
+          id: string
+          name: string
+          retention_days: number
+          tables_included: string[]
+        }[]
+      }
       clear_failed_login_attempts: {
         Args: { _staff_id: string }
         Returns: undefined
@@ -9158,6 +9237,13 @@ export type Database = {
           _frequency: string
           _from?: string
           _run_time: string
+        }
+        Returns: string
+      }
+      compute_next_backup_run: {
+        Args: {
+          _frequency: Database["public"]["Enums"]["backup_frequency"]
+          _from: string
         }
         Returns: string
       }
@@ -9439,6 +9525,10 @@ export type Database = {
         Args: { _context?: Json; _entity_id: string; _entity_type: string }
         Returns: undefined
       }
+      mark_backup_schedule_ran: {
+        Args: { _error: string; _schedule_id: string; _status: string }
+        Returns: undefined
+      }
       mfa_consume_backup_code: { Args: { _code: string }; Returns: boolean }
       mfa_generate_backup_codes: {
         Args: never
@@ -9483,6 +9573,10 @@ export type Database = {
           _reason?: string
         }
         Returns: Json
+      }
+      prune_backup_schedule_history: {
+        Args: { _schedule_id: string }
+        Returns: number
       }
       prune_system_backup_audit: { Args: never; Returns: Json }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
@@ -9730,6 +9824,13 @@ export type Database = {
         | "punctuality_attendance"
       appraisal_status: "draft" | "submitted" | "acknowledged"
       attendance_status: "present" | "late" | "absent" | "excused"
+      backup_frequency:
+        | "hourly"
+        | "daily"
+        | "weekly"
+        | "monthly"
+        | "quarterly"
+        | "annually"
       firewall_action: "allow" | "warn" | "quarantine" | "block"
       firewall_event_layer: "file" | "url" | "auth" | "waf"
       firewall_quarantine_status: "pending" | "released" | "blocked" | "expired"
@@ -9925,6 +10026,14 @@ export const Constants = {
       ],
       appraisal_status: ["draft", "submitted", "acknowledged"],
       attendance_status: ["present", "late", "absent", "excused"],
+      backup_frequency: [
+        "hourly",
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "annually",
+      ],
       firewall_action: ["allow", "warn", "quarantine", "block"],
       firewall_event_layer: ["file", "url", "auth", "waf"],
       firewall_quarantine_status: ["pending", "released", "blocked", "expired"],
