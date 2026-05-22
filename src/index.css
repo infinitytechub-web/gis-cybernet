@@ -138,6 +138,77 @@ body {
   }
 }
 
+/* ─── 3D Heading System (system-wide) ────────────────────────────────── */
+.heading-3d {
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: hsl(var(--foreground));
+  background-image: linear-gradient(
+    180deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--foreground) / 0.78) 55%,
+    hsl(var(--primary) / 0.85) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow:
+    0 1px 0 hsl(0 0% 100% / 0.12),
+    0 2px 1px hsl(0 0% 0% / 0.18),
+    0 6px 14px hsl(var(--primary) / 0.18);
+  filter: drop-shadow(0 1px 0 hsl(0 0% 0% / 0.15));
+  transform: translateZ(0);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 220ms ease,
+    text-shadow 220ms ease;
+}
+.heading-3d:hover {
+  transform: translateY(-1px) scale(1.01);
+  filter: drop-shadow(0 4px 8px hsl(var(--primary) / 0.35));
+  text-shadow:
+    0 1px 0 hsl(0 0% 100% / 0.18),
+    0 3px 2px hsl(0 0% 0% / 0.22),
+    0 10px 22px hsl(var(--primary) / 0.32);
+}
+.heading-3d-sm { font-size: 0.95rem; line-height: 1.2; }
+.heading-3d-md { font-size: 1.25rem; line-height: 1.25; }
+.heading-3d-lg { font-size: 1.875rem; line-height: 1.15; }
+.heading-3d-xl { font-size: 2.5rem; line-height: 1.1; }
+
+/* Subtle accent bar variant for section headers */
+.heading-3d-bar {
+  position: relative;
+  padding-left: 0.6rem;
+}
+.heading-3d-bar::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 12%; bottom: 12%;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--secondary)));
+  box-shadow: 0 0 8px hsl(var(--primary) / 0.5);
+}
+
+/* Lift table headers with the same depth language */
+thead th {
+  background-image: linear-gradient(
+    180deg,
+    hsl(var(--muted) / 0.85) 0%,
+    hsl(var(--muted) / 0.55) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 hsl(0 0% 100% / 0.12),
+    inset 0 -1px 0 hsl(0 0% 0% / 0.18);
+  text-shadow: 0 1px 0 hsl(0 0% 100% / 0.25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heading-3d { transition: none; transform: none !important; }
+}
+
 /* ─── 3D Sidebar Menu Effect ─────────────────────────────────────────── */
 [data-sidebar="menu-button"],
 [data-sidebar="menu-sub-button"] {
