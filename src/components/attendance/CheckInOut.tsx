@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { LogIn, LogOut, Clock, CheckCircle2 } from "lucide-react";
+import { LogIn, LogOut, Clock, CheckCircle2, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
 import { SyncHistoryLog } from "./SyncHistoryLog";
 import { getMyClientIp } from "@/lib/client-ip";
+import { captureDigitalAddress } from "@/lib/digital-address";
 
 export function CheckInOut() {
   const { user } = useAuth();
