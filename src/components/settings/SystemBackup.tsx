@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { downloadBlob } from "@/lib/download-utils";
 import { format } from "date-fns";
+import { BackupSchedulesPanel } from "./BackupSchedulesPanel";
 
 /**
  * Quick System Backup — admin-only.
