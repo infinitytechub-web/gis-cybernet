@@ -247,7 +247,7 @@ export function AdminAttendanceLog() {
           getData={() => ({
             title: `Attendance Log — ${format(new Date(selectedDate + "T00:00"), "PPP")}`,
             filename: `attendance-${selectedDate}`,
-            headers: ["Staff ID", "Name", "Shift", "Check In", "Check Out", "Status", "Notes"],
+            headers: ["Staff ID", "Name", "Shift", "Check In", "Check Out", "Check-In IP", "Check-In Address", "Check-Out IP", "Check-Out Address", "Status", "Notes"],
             rows: buildExportRows(),
             subtitle: `Total ${total} | Present ${present} | Late ${late} | Absent ${absent}`,
           })}
