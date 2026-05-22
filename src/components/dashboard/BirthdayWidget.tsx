@@ -142,8 +142,8 @@ function BirthdayRow({
     variant === "headsup" ? (
       <span
         className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
-        title="Birthday in 3 days or less"
-        aria-label="Birthday in 3 days or less"
+        title="Birthday in 2 weeks or less"
+        aria-label="Birthday in 2 weeks or less"
       />
     ) : null;
 
