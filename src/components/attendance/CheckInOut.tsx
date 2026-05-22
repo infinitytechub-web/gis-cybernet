@@ -163,12 +163,16 @@ export function CheckInOut() {
       const now = new Date().toISOString();
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
+      const loc = await captureDigitalAddress();
       const { error } = await supabase
         .from("attendances")
         .update({
           check_out: now,
           notes: notes || todayRecord?.notes || null,
           ...(ip ? { check_out_ip: ip } : {}),
+          ...(loc.lat != null ? { check_out_lat: loc.lat } : {}),
+          ...(loc.lng != null ? { check_out_lng: loc.lng } : {}),
+          ...(loc.address ? { check_out_address: loc.address } : {}),
         } as any)
         .eq("id", todayRecord!.id);
       if (error) throw error;
