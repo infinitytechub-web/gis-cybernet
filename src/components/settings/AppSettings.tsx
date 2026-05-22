@@ -184,6 +184,26 @@ export function AppSettings() {
         </CardContent>
       </Card>
 
+      {/* Telemetry */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><Activity className="h-4 w-4 text-chart-2" /> Telemetry & Diagnostics</CardTitle>
+          <CardDescription>Control the System Health widget and heavy in-browser telemetry collection.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">System Health Widget</p>
+              <p className="text-xs text-muted-foreground">
+                When off, the admin dashboard widget is hidden and its FPS sampling, long-task observer,
+                heap/DOM snapshots, and backend error polling stop completely.
+              </p>
+            </div>
+            <Switch checked={enableHealthWidget} onCheckedChange={setEnableHealthWidget} />
+          </div>
+        </CardContent>
+      </Card>
+
       <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2 bg-primary hover:bg-primary/90">
         {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings2 className="h-4 w-4 text-primary-foreground" />}
         {saveMutation.isPending ? "Saving..." : "Save Settings"}
