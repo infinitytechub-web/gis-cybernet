@@ -203,17 +203,27 @@ export function BulkCreateAccounts() {
     setErrors([]);
     try {
       const { data, error } = await supabase.functions.invoke("repair-missing-auth");
-      if (error) throw error;
+      if (error) {
+        const msg = await extractEdgeFunctionError(error, "Repair failed");
+        throw new Error(msg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
       setResults(data.created ?? []);
       setErrors(data.errors ?? []);
       setTotal(data.total ?? 0);
-      if (data.created?.length > 0) {
-        toast.success(`${data.created.length} profile(s) repaired`);
+      const createdCount = data.created?.length ?? 0;
+      const errorCount = data.errors?.length ?? 0;
+      if (createdCount > 0 && errorCount > 0) {
+        toast.warning(`${createdCount} profile(s) repaired, ${errorCount} failed.`);
+      } else if (createdCount > 0) {
+        toast.success(`${createdCount} profile(s) repaired`);
+      } else if (errorCount > 0) {
+        toast.error(`Repair finished with ${errorCount} errors and no successes.`);
       } else {
         toast.info("No profiles need repair");
       }
     } catch (err: any) {
-      toast.error(err.message || "Repair failed");
+      toast.error(err?.message || "Repair failed");
     } finally {
       setIsRepairing(false);
     }
