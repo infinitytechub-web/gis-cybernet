@@ -7,6 +7,7 @@ import { Unlock, KeyRound, MoreVertical, Copy, Check, AlertTriangle } from "luci
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { UnlockAccountDialog } from "@/components/staff/UnlockAccountDialog";
+import { extractEdgeFunctionError } from "@/lib/edge-function-error";
 
 interface AdminAccountActionsProps {
   profileId: string;
