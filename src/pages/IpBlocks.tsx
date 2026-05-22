@@ -145,6 +145,51 @@ export default function IpBlocks() {
     onError: (e: any) => toast({ title: "Unblock failed", description: e.message, variant: "destructive" }),
   });
 
+  // Edit metadata (reason / notes / blocked_until) on an existing block.
+  const [editing, setEditing] = useState<any>(null);
+  const [editReason, setEditReason] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editUntil, setEditUntil] = useState<string>(""); // datetime-local value or ""
+
+  const openEdit = (b: any) => {
+    setEditing(b);
+    setEditReason(b.reason ?? "");
+    setEditNotes(b.notes ?? "");
+    setEditUntil(b.blocked_until ? new Date(b.blocked_until).toISOString().slice(0, 16) : "");
+  };
+
+  const editMutation = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const patch: Record<string, any> = {
+        reason: editReason || "Manual block",
+        notes: editNotes || null,
+        blocked_until: editUntil ? new Date(editUntil).toISOString() : null,
+      };
+      const { error } = await supabase.from("ip_blocks").update(patch).eq("id", editing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Block updated" });
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+    },
+    onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
+  });
+
+  // Permanently delete a block record (admin clean-up; preferred for inactive entries).
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ip_blocks").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Entry deleted" });
+      qc.invalidateQueries({ queryKey: ["ip_blocks"] });
+    },
+    onError: (e: any) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
+  });
+
   if (loading) return <div className="p-6">Loading…</div>;
   if (!isAdmin) return <Navigate to="/" replace />;
 
