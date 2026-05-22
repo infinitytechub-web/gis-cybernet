@@ -127,7 +127,7 @@ export default function SystemHealthCheckWidget() {
         errors: (incidents.error ? 1 : 0) + (failedLogins.error ? 1 : 0) + (deletes.error ? 1 : 0),
       };
     },
-    refetchInterval: POLL_MS,
+    refetchInterval: isVisible ? POLL_MS : false,
   });
 
   if (!isAdmin) return null;
