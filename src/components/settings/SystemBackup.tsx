@@ -154,6 +154,7 @@ export function SystemBackup() {
         </CardContent>
       </Card>
 
+      <BackupSchedulesPanel />
       <BackupRetentionSettings />
       <BackupSnapshotsPanel />
       <BackupAuditPanel />
