@@ -670,9 +670,15 @@ export type Database = {
       attendances: {
         Row: {
           check_in: string | null
+          check_in_address: string | null
           check_in_ip: unknown
+          check_in_lat: number | null
+          check_in_lng: number | null
           check_out: string | null
+          check_out_address: string | null
           check_out_ip: unknown
+          check_out_lat: number | null
+          check_out_lng: number | null
           created_at: string
           date: string
           id: string
@@ -683,9 +689,15 @@ export type Database = {
         }
         Insert: {
           check_in?: string | null
+          check_in_address?: string | null
           check_in_ip?: unknown
+          check_in_lat?: number | null
+          check_in_lng?: number | null
           check_out?: string | null
+          check_out_address?: string | null
           check_out_ip?: unknown
+          check_out_lat?: number | null
+          check_out_lng?: number | null
           created_at?: string
           date?: string
           id?: string
@@ -696,9 +708,15 @@ export type Database = {
         }
         Update: {
           check_in?: string | null
+          check_in_address?: string | null
           check_in_ip?: unknown
+          check_in_lat?: number | null
+          check_in_lng?: number | null
           check_out?: string | null
+          check_out_address?: string | null
           check_out_ip?: unknown
+          check_out_lat?: number | null
+          check_out_lng?: number | null
           created_at?: string
           date?: string
           id?: string

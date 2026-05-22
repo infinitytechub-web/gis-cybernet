@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { LogIn, LogOut, Clock, CheckCircle2 } from "lucide-react";
+import { LogIn, LogOut, Clock, CheckCircle2, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
 import { SyncHistoryLog } from "./SyncHistoryLog";
 import { getMyClientIp } from "@/lib/client-ip";
+import { captureDigitalAddress } from "@/lib/digital-address";
 
 export function CheckInOut() {
   const { user } = useAuth();
@@ -129,9 +130,10 @@ export function CheckInOut() {
   const checkInMutation = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
-      // Best-effort public IP capture — never block check-in on failure
+      // Best-effort public IP + digital address capture — never block check-in on failure
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
+      const loc = await captureDigitalAddress();
       const { error } = await supabase.from("attendances").insert({
         profile_id: profile!.id,
         date: today,
@@ -139,6 +141,9 @@ export function CheckInOut() {
         status: "present",
         notes: notes || null,
         ...(ip ? { check_in_ip: ip } : {}),
+        ...(loc.lat != null ? { check_in_lat: loc.lat } : {}),
+        ...(loc.lng != null ? { check_in_lng: loc.lng } : {}),
+        ...(loc.address ? { check_in_address: loc.address } : {}),
       } as any);
       if (error) throw error;
       return now;
@@ -158,12 +163,16 @@ export function CheckInOut() {
       const now = new Date().toISOString();
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
+      const loc = await captureDigitalAddress();
       const { error } = await supabase
         .from("attendances")
         .update({
           check_out: now,
           notes: notes || todayRecord?.notes || null,
           ...(ip ? { check_out_ip: ip } : {}),
+          ...(loc.lat != null ? { check_out_lat: loc.lat } : {}),
+          ...(loc.lng != null ? { check_out_lng: loc.lng } : {}),
+          ...(loc.address ? { check_out_address: loc.address } : {}),
         } as any)
         .eq("id", todayRecord!.id);
       if (error) throw error;
@@ -223,12 +232,38 @@ export function CheckInOut() {
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_in ? format(new Date(todayRecord.check_in), "HH:mm:ss") : "—"}
             </div>
+            {(todayRecord as any)?.check_in_ip && (
+              <div className="mt-1 text-[10px] font-mono text-muted-foreground">
+                IP {(todayRecord as any).check_in_ip}
+              </div>
+            )}
+            {(todayRecord as any)?.check_in_address && (
+              <div className="mt-1 flex items-start justify-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                <span className="truncate" title={(todayRecord as any).check_in_address}>
+                  {(todayRecord as any).check_in_address}
+                </span>
+              </div>
+            )}
           </div>
           <div className="rounded-lg bg-muted p-3 text-center">
             <div className="text-xs text-muted-foreground mb-1">Check Out</div>
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_out ? format(new Date(todayRecord.check_out), "HH:mm:ss") : "—"}
             </div>
+            {(todayRecord as any)?.check_out_ip && (
+              <div className="mt-1 text-[10px] font-mono text-muted-foreground">
+                IP {(todayRecord as any).check_out_ip}
+              </div>
+            )}
+            {(todayRecord as any)?.check_out_address && (
+              <div className="mt-1 flex items-start justify-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                <span className="truncate" title={(todayRecord as any).check_out_address}>
+                  {(todayRecord as any).check_out_address}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
