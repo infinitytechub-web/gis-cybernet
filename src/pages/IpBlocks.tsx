@@ -355,11 +355,50 @@ export default function IpBlocks() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {active && (
-                        <Button size="sm" variant="outline" onClick={() => unblockMutation.mutate(b.id)}>
-                          <ShieldOff className="h-4 w-4 mr-1" /> Unblock
+                      <div className="inline-flex items-center gap-1 justify-end">
+                        {active && (
+                          <Button size="sm" variant="outline" onClick={() => unblockMutation.mutate(b.id)}>
+                            <ShieldOff className="h-4 w-4 mr-1" /> Unblock
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          title="Edit block"
+                          onClick={() => openEdit(b)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                      )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive"
+                              title="Delete entry permanently"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete this block entry?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Permanently removes the record for{" "}
+                                <span className="font-mono">{b.ip_address}</span>. If the block is
+                                still active, prefer Unblock — deletion does not write an audit row.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(b.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
