@@ -20,6 +20,7 @@ interface AppSettingsRow {
   enforce_password_change: boolean;
   min_password_length: number;
   allow_self_registration: boolean;
+  enable_system_health_widget: boolean;
 }
 
 export function AppSettings() {
