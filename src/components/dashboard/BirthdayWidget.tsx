@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cake, PartyPopper } from "lucide-react";
+import { Cake, PartyPopper, BellRing } from "lucide-react";
 import { format, differenceInCalendarDays, setYear } from "date-fns";
 
 type Bday = {
@@ -19,7 +19,8 @@ type Bday = {
 /**
  * Birthday calendar widget — shows staff with birthdays this month.
  * Today's birthdays get a celebratory ring; staff celebrating within the
- * next 3 days get a green pulse "Heads-up" alert indicator.
+ * next 14 days (two weeks) get a green pulse "Heads-up" alert indicator
+ * and a banner alert appears at the top of the card.
  */
 export default function BirthdayWidget() {
   const today = new Date();
@@ -43,7 +44,7 @@ export default function BirthdayWidget() {
     return birthdays.map((b) => {
       const next = setYear(new Date(today.getFullYear(), b.bday_month - 1, b.bday_day), today.getFullYear());
       const days = differenceInCalendarDays(next, today);
-      return { ...b, daysAway: days, isToday: days === 0, isHeadsUp: days > 0 && days <= 3 };
+      return { ...b, daysAway: days, isToday: days === 0, isHeadsUp: days > 0 && days <= 14 };
     });
   }, [birthdays, today]);
 
@@ -76,6 +77,18 @@ export default function BirthdayWidget() {
           <div className="text-xs text-muted-foreground">No birthdays recorded for this month.</div>
         ) : (
           <>
+            {enriched.filter((b) => b.isHeadsUp).length > 0 && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1.5 text-[11px] text-emerald-800 dark:text-emerald-200"
+              >
+                <BellRing className="h-3.5 w-3.5 mt-0.5 animate-pulse" />
+                <span>
+                  <strong>{enriched.filter((b) => b.isHeadsUp).length}</strong> birthday
+                  {enriched.filter((b) => b.isHeadsUp).length === 1 ? "" : "s"} coming up in the next 2 weeks — prepare in advance.
+                </span>
+              </div>
+            )}
             {todays.length > 0 && (
               <div className="space-y-1.5">
                 <div className="text-xs font-semibold text-pink-700 dark:text-pink-300 flex items-center gap-1">
@@ -129,8 +142,8 @@ function BirthdayRow({
     variant === "headsup" ? (
       <span
         className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"
-        title="Birthday in 3 days or less"
-        aria-label="Birthday in 3 days or less"
+        title="Birthday in 2 weeks or less"
+        aria-label="Birthday in 2 weeks or less"
       />
     ) : null;
 
