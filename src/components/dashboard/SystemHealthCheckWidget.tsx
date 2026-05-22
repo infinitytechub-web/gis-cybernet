@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 const POLL_MS = 60_000; // 1 minute
+const LONG_TASK_CAP = 99;
 
 interface ClientPerf {
   jsHeapMb: number | null;
@@ -18,19 +19,19 @@ interface ClientPerf {
   fps: number | null;
 }
 
-function useClientPerf(refreshKey: number): ClientPerf {
+function useClientPerf(refreshKey: number, isVisible: boolean): ClientPerf {
   const [perf, setPerf] = useState<ClientPerf>({
     jsHeapMb: null, domNodes: 0, longTasks: 0, navMs: null, fps: null,
   });
 
-  // Long task observer (cumulative)
+  // Long task observer (cumulative, capped)
   useEffect(() => {
     if (typeof PerformanceObserver === "undefined") return;
     let count = 0;
     let obs: PerformanceObserver | null = null;
     try {
       obs = new PerformanceObserver((list) => {
-        count += list.getEntries().length;
+        count = Math.min(LONG_TASK_CAP, count + list.getEntries().length);
         setPerf((p) => ({ ...p, longTasks: count }));
       });
       obs.observe({ type: "longtask", buffered: true });
@@ -38,8 +39,9 @@ function useClientPerf(refreshKey: number): ClientPerf {
     return () => obs?.disconnect();
   }, []);
 
-  // FPS sample (~1s) on each refresh
+  // FPS sample (~1s) on each refresh — only when visible
   useEffect(() => {
+    if (!isVisible) return;
     let frames = 0;
     let raf = 0;
     const start = performance.now();
@@ -53,10 +55,11 @@ function useClientPerf(refreshKey: number): ClientPerf {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [refreshKey]);
+  }, [refreshKey, isVisible]);
 
   // Heap + DOM + nav timing snapshot
   useEffect(() => {
+    if (!isVisible) return;
     const heap = (performance as any).memory?.usedJSHeapSize;
     const domNodes = document.getElementsByTagName("*").length;
     const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
@@ -67,7 +70,7 @@ function useClientPerf(refreshKey: number): ClientPerf {
       domNodes,
       navMs,
     }));
-  }, [refreshKey]);
+  }, [refreshKey, isVisible]);
 
   return perf;
 }
