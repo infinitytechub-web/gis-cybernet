@@ -130,9 +130,10 @@ export function CheckInOut() {
   const checkInMutation = useMutation({
     mutationFn: async () => {
       const now = new Date().toISOString();
-      // Best-effort public IP capture — never block check-in on failure
+      // Best-effort public IP + digital address capture — never block check-in on failure
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
+      const loc = await captureDigitalAddress();
       const { error } = await supabase.from("attendances").insert({
         profile_id: profile!.id,
         date: today,
@@ -140,6 +141,9 @@ export function CheckInOut() {
         status: "present",
         notes: notes || null,
         ...(ip ? { check_in_ip: ip } : {}),
+        ...(loc.lat != null ? { check_in_lat: loc.lat } : {}),
+        ...(loc.lng != null ? { check_in_lng: loc.lng } : {}),
+        ...(loc.address ? { check_in_address: loc.address } : {}),
       } as any);
       if (error) throw error;
       return now;
