@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { Search, Plus, Users, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Search, Plus, Users, Clock, AlertTriangle, CheckCircle2, MapPin, Globe } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { ExportMenu } from "@/components/ui/export-menu";
@@ -117,6 +117,10 @@ export function AdminAttendanceLog() {
       r.profiles?.shift_group ?? "",
       r.check_in ? format(new Date(r.check_in), "HH:mm") : "",
       r.check_out ? format(new Date(r.check_out), "HH:mm") : "",
+      r.check_in_ip ?? "",
+      r.check_in_address ?? "",
+      r.check_out_ip ?? "",
+      r.check_out_address ?? "",
       r.status,
       r.notes ?? "",
     ]);
@@ -243,7 +247,7 @@ export function AdminAttendanceLog() {
           getData={() => ({
             title: `Attendance Log — ${format(new Date(selectedDate + "T00:00"), "PPP")}`,
             filename: `attendance-${selectedDate}`,
-            headers: ["Staff ID", "Name", "Shift", "Check In", "Check Out", "Status", "Notes"],
+            headers: ["Staff ID", "Name", "Shift", "Check In", "Check Out", "Check-In IP", "Check-In Address", "Check-Out IP", "Check-Out Address", "Status", "Notes"],
             rows: buildExportRows(),
             subtitle: `Total ${total} | Present ${present} | Late ${late} | Absent ${absent}`,
           })}
@@ -255,7 +259,7 @@ export function AdminAttendanceLog() {
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
         <div className="rounded-lg border overflow-auto">
-          <Table>
+          <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Staff ID</TableHead>
@@ -263,6 +267,7 @@ export function AdminAttendanceLog() {
                 <TableHead className="hidden sm:table-cell">Shift</TableHead>
                 <TableHead>Check In</TableHead>
                 <TableHead>Check Out</TableHead>
+                <TableHead className="hidden lg:table-cell">Location</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Notes</TableHead>
               </TableRow>
@@ -270,7 +275,7 @@ export function AdminAttendanceLog() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     No attendance records for {format(new Date(selectedDate + "T00:00"), "PPP")}
                   </TableCell>
                 </TableRow>
@@ -282,6 +287,37 @@ export function AdminAttendanceLog() {
                     <TableCell className="hidden sm:table-cell">{r.profiles?.shift_group ?? "—"}</TableCell>
                     <TableCell>{r.check_in ? format(new Date(r.check_in), "HH:mm") : "—"}</TableCell>
                     <TableCell>{r.check_out ? format(new Date(r.check_out), "HH:mm") : "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground max-w-[260px]">
+                      {(r.check_in_ip || r.check_in_address) && (
+                        <div className="space-y-0.5">
+                          <div className="font-medium text-foreground/80 text-[10px] uppercase">In</div>
+                          {r.check_in_ip && (
+                            <div className="flex items-center gap-1 font-mono"><Globe className="h-3 w-3" />{r.check_in_ip}</div>
+                          )}
+                          {r.check_in_address && (
+                            <div className="flex items-start gap-1" title={r.check_in_address}>
+                              <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                              <span className="truncate">{r.check_in_address}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {(r.check_out_ip || r.check_out_address) && (
+                        <div className="space-y-0.5 mt-1 pt-1 border-t border-border/50">
+                          <div className="font-medium text-foreground/80 text-[10px] uppercase">Out</div>
+                          {r.check_out_ip && (
+                            <div className="flex items-center gap-1 font-mono"><Globe className="h-3 w-3" />{r.check_out_ip}</div>
+                          )}
+                          {r.check_out_address && (
+                            <div className="flex items-start gap-1" title={r.check_out_address}>
+                              <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                              <span className="truncate">{r.check_out_address}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {!r.check_in_ip && !r.check_in_address && !r.check_out_ip && !r.check_out_address && "—"}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge>
                     </TableCell>
