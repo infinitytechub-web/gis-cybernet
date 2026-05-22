@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { exportReport, ExportFormat } from "@/lib/export-utils";
 import { InterlinkPermissionsMatrix } from "@/components/interlink/InterlinkPermissionsMatrix";
+import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import { exportDispatchesCSV, exportDispatchesXLSX, exportDispatchesPDF, exportDispatchesJSON } from "@/lib/interlink-export";
 import {
   INTERLINK_LABELS,
