@@ -196,15 +196,19 @@ export function BulkCreateAccounts() {
         }
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to reset and create accounts");
+      toast.error(err?.message || "Failed to reset and create accounts");
       setIsResetting(false);
     }
   };
 
-  const copyCredentials = (account: CreatedAccount) => {
+  const copyCredentials = async (account: CreatedAccount) => {
     const text = `Username: ${account.username}\nPassword: ${account.password}`;
-    navigator.clipboard.writeText(text);
-    toast.success(`Credentials copied for ${account.name}`);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`Credentials copied for ${account.name}`);
+    } catch {
+      toast.error("Clipboard blocked — select the password text and copy manually.");
+    }
   };
 
   const getCredentialsExportData = () => {
