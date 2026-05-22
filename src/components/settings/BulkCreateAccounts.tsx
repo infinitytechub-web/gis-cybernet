@@ -38,6 +38,7 @@ export function BulkCreateAccounts() {
   const pollJob = (jobId: string) => {
     setJobStatus("processing");
     setJobProgress(0);
+    let consecutivePollErrors = 0;
 
     pollingRef.current = setInterval(async () => {
       const { data, error } = await supabase
@@ -46,7 +47,23 @@ export function BulkCreateAccounts() {
         .eq("id", jobId)
         .single();
 
-      if (error || !data) return;
+      if (error || !data) {
+        consecutivePollErrors += 1;
+        // Tolerate transient network blips, but bail out after ~30s of failures
+        if (consecutivePollErrors >= 10) {
+          clearInterval(pollingRef.current!);
+          pollingRef.current = null;
+          setJobStatus(null);
+          setIsResetting(false);
+          toast.error(
+            error?.message
+              ? `Lost connection to job status: ${error.message}`
+              : "Lost connection to job status. Please refresh and check the audit log."
+          );
+        }
+        return;
+      }
+      consecutivePollErrors = 0;
 
       setJobProgress(data.progress ?? 0);
       setTotal(data.total ?? 0);
@@ -61,7 +78,7 @@ export function BulkCreateAccounts() {
         const { data: result, error: rpcErr } = await supabase
           .rpc("consume_processing_job_credentials", { p_job_id: jobId });
         if (rpcErr) {
-          toast.error(rpcErr.message || "Failed to retrieve credentials");
+          toast.error(rpcErr.message || "Failed to retrieve credentials. They may have already been consumed — check the audit log.");
           return;
         }
         const r = result as any;
@@ -70,7 +87,14 @@ export function BulkCreateAccounts() {
         setTotal(r?.total ?? 0);
 
         if (r?.created?.length > 0) {
-          toast.success(`${r.created.length} accounts regenerated successfully`);
+          const errCount = r?.errors?.length ?? 0;
+          if (errCount > 0) {
+            toast.warning(`${r.created.length} accounts regenerated, ${errCount} failed — review the errors list.`);
+          } else {
+            toast.success(`${r.created.length} accounts regenerated successfully`);
+          }
+        } else if (r?.errors?.length > 0) {
+          toast.error(`Job finished with ${r.errors.length} errors and no accounts created.`);
         } else {
           toast.info(r?.message || "No accounts to regenerate");
         }
@@ -79,7 +103,7 @@ export function BulkCreateAccounts() {
         pollingRef.current = null;
         setJobStatus(null);
         setIsResetting(false);
-        toast.error(data.error || "Job failed");
+        toast.error(data.error || "Reset job failed. Check the audit log for details.");
       }
     }, 3000);
   };
