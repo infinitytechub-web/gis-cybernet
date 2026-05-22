@@ -1,4 +1,5 @@
-import { Eye, ShieldCheck, Download, Upload, Check, X, KeyRound, Printer } from "lucide-react";
+import { Eye, ShieldCheck, Download, Upload, Check, X, KeyRound, Printer, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +111,20 @@ function cell(a?: Access) {
 }
 
 export function InterlinkPermissionsMatrix() {
+  const { isAdminOrSupervisor } = useAuth();
+
+  if (!isAdminOrSupervisor) {
+    return (
+      <Alert className="border-destructive/40 bg-destructive/5">
+        <Lock className="h-4 w-4 text-destructive" />
+        <AlertTitle className="text-sm">Access Denied</AlertTitle>
+        <AlertDescription className="text-xs">
+          This permissions matrix is restricted to command-tier roles. Contact your supervisor if you believe this is an error.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="space-y-4 interlink-perm-print-area">
       <div className="flex items-center justify-between gap-3 flex-wrap">
