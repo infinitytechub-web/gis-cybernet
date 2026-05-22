@@ -161,12 +161,12 @@ export default function IpBlocks() {
   const editMutation = useMutation({
     mutationFn: async () => {
       if (!editing) return;
-      const patch: Record<string, any> = {
+      const patch = {
         reason: editReason || "Manual block",
         notes: editNotes || null,
         blocked_until: editUntil ? new Date(editUntil).toISOString() : null,
       };
-      const { error } = await supabase.from("ip_blocks").update(patch).eq("id", editing.id);
+      const { error } = await supabase.from("ip_blocks").update(patch as any).eq("id", editing.id);
       if (error) throw error;
     },
     onSuccess: () => {
