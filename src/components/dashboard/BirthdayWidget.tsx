@@ -19,7 +19,8 @@ type Bday = {
 /**
  * Birthday calendar widget — shows staff with birthdays this month.
  * Today's birthdays get a celebratory ring; staff celebrating within the
- * next 3 days get a green pulse "Heads-up" alert indicator.
+ * next 14 days (two weeks) get a green pulse "Heads-up" alert indicator
+ * and a banner alert appears at the top of the card.
  */
 export default function BirthdayWidget() {
   const today = new Date();
