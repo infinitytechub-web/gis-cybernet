@@ -556,7 +556,7 @@ function BackupSnapshotsPanel() {
             Upload backup file…
             <input
               type="file"
-              accept="application/json"
+              accept=".json,.gz,application/json,application/gzip"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
