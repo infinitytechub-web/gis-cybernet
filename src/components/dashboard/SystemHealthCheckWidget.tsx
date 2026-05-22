@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 const POLL_MS = 60_000; // 1 minute
+const LONG_TASK_CAP = 99;
 
 interface ClientPerf {
   jsHeapMb: number | null;
@@ -18,19 +19,19 @@ interface ClientPerf {
   fps: number | null;
 }
 
-function useClientPerf(refreshKey: number): ClientPerf {
+function useClientPerf(refreshKey: number, isVisible: boolean): ClientPerf {
   const [perf, setPerf] = useState<ClientPerf>({
     jsHeapMb: null, domNodes: 0, longTasks: 0, navMs: null, fps: null,
   });
 
-  // Long task observer (cumulative)
+  // Long task observer (cumulative, capped)
   useEffect(() => {
     if (typeof PerformanceObserver === "undefined") return;
     let count = 0;
     let obs: PerformanceObserver | null = null;
     try {
       obs = new PerformanceObserver((list) => {
-        count += list.getEntries().length;
+        count = Math.min(LONG_TASK_CAP, count + list.getEntries().length);
         setPerf((p) => ({ ...p, longTasks: count }));
       });
       obs.observe({ type: "longtask", buffered: true });
@@ -38,8 +39,9 @@ function useClientPerf(refreshKey: number): ClientPerf {
     return () => obs?.disconnect();
   }, []);
 
-  // FPS sample (~1s) on each refresh
+  // FPS sample (~1s) on each refresh — only when visible
   useEffect(() => {
+    if (!isVisible) return;
     let frames = 0;
     let raf = 0;
     const start = performance.now();
@@ -53,10 +55,11 @@ function useClientPerf(refreshKey: number): ClientPerf {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [refreshKey]);
+  }, [refreshKey, isVisible]);
 
   // Heap + DOM + nav timing snapshot
   useEffect(() => {
+    if (!isVisible) return;
     const heap = (performance as any).memory?.usedJSHeapSize;
     const domNodes = document.getElementsByTagName("*").length;
     const navEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
@@ -67,27 +70,41 @@ function useClientPerf(refreshKey: number): ClientPerf {
       domNodes,
       navMs,
     }));
-  }, [refreshKey]);
+  }, [refreshKey, isVisible]);
 
   return perf;
 }
 
 export default function SystemHealthCheckWidget() {
   const { isAdmin } = useAuth();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(1);
   const [autoRefreshAt, setAutoRefreshAt] = useState<Date>(new Date());
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // Auto-refresh ticker
+  // IntersectionObserver: only run heavy work when card is visible
   useEffect(() => {
-    if (!isAdmin) return;
+    const el = cardRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 1 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Auto-refresh ticker — only when visible
+  useEffect(() => {
+    if (!isAdmin || !isVisible) return;
     const id = setInterval(() => {
       setRefreshKey((k) => k + 1);
       setAutoRefreshAt(new Date());
     }, POLL_MS);
     return () => clearInterval(id);
-  }, [isAdmin]);
+  }, [isAdmin, isVisible]);
 
-  const perf = useClientPerf(refreshKey);
+  const perf = useClientPerf(refreshKey, isVisible);
 
   // Backend error signals — last 24h
   const since = useMemo(() => {
@@ -110,7 +127,7 @@ export default function SystemHealthCheckWidget() {
         errors: (incidents.error ? 1 : 0) + (failedLogins.error ? 1 : 0) + (deletes.error ? 1 : 0),
       };
     },
-    refetchInterval: POLL_MS,
+    refetchInterval: isVisible ? POLL_MS : false,
   });
 
   if (!isAdmin) return null;
@@ -134,7 +151,7 @@ export default function SystemHealthCheckWidget() {
       : <Badge className="bg-red-100 text-red-800 border-red-200">Action needed</Badge>;
 
   return (
-    <Card className="border-border/50">
+    <Card ref={cardRef} className="border-border/50">
       <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Gauge className="h-4 w-4 text-primary" />
@@ -166,7 +183,7 @@ export default function SystemHealthCheckWidget() {
           <Metric icon={Cpu} label="JS heap" value={perf.jsHeapMb !== null ? `${perf.jsHeapMb} MB` : "—"} />
           <Metric icon={Activity} label="FPS" value={perf.fps !== null ? `${perf.fps}` : "…"} />
           <Metric icon={Activity} label="DOM nodes" value={perf.domNodes.toLocaleString()} />
-          <Metric icon={Activity} label="Long tasks" value={perf.longTasks.toLocaleString()} />
+          <Metric icon={Activity} label="Long tasks" value={`${perf.longTasks >= LONG_TASK_CAP ? "99+" : perf.longTasks.toLocaleString()}`} />
           <Metric icon={Activity} label="Page load" value={perf.navMs !== null ? `${perf.navMs} ms` : "—"} />
           <Metric icon={ShieldAlert} label="Incidents 24h" value={`${errorCounts?.incidents ?? 0}`} />
         </div>
