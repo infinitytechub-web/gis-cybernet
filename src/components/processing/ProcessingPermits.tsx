@@ -88,6 +88,11 @@ export default function ProcessingPermits() {
       };
       if (form.fee_charged !== "") payload.fee_charged = Number(form.fee_charged);
       payload.processing_checklist = form.checklist;
+      payload.ecowas_id_number = form.ecowas_id_number || null;
+      payload.biometrics_captured = form.biometrics_captured;
+      payload.yellow_fever_cert = form.yellow_fever_cert;
+      payload.police_clearance = form.police_clearance;
+      payload.medical_clearance = form.medical_clearance;
       const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
       if (error) throw error;
 
@@ -115,21 +120,40 @@ export default function ProcessingPermits() {
   });
 
   const openReview = (p: any) => {
-    setForm({ status: p.status, notes: p.notes || "", fee_charged: p.fee_charged != null ? String(p.fee_charged) : "", checklist: (p.processing_checklist as Record<string, boolean>) || {} });
+    setForm({
+      status: p.status,
+      notes: p.notes || "",
+      fee_charged: p.fee_charged != null ? String(p.fee_charged) : "",
+      checklist: (p.processing_checklist as Record<string, boolean>) || {},
+      ecowas_id_number: p.ecowas_id_number || "",
+      biometrics_captured: !!p.biometrics_captured,
+      yellow_fever_cert: !!p.yellow_fever_cert,
+      police_clearance: !!p.police_clearance,
+      medical_clearance: !!p.medical_clearance,
+    });
     setEditId(p.id);
     setReviewItem(p);
     setOpen(true);
   };
+
+  const catOf = (p: any) => p.applicant_category || (isEcowasNationality(p.nationality) ? "ecowas" : "non_ecowas");
 
   const filtered = permits.filter((p: any) => {
     const term = search.toLowerCase();
     const matchSearch = !term || p.applicant_name?.toLowerCase().includes(term) || p.passport_number?.toLowerCase().includes(term) || p.application_reference?.toLowerCase().includes(term);
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
     const matchType = typeFilter === "all" || p.permit_type === typeFilter;
-    return matchSearch && matchStatus && matchType;
+    const matchCat = category === "all" || catOf(p) === category;
+    return matchSearch && matchStatus && matchType && matchCat;
   });
 
-  const hasActive = !!search || statusFilter !== "all" || typeFilter !== "all";
+  const catCounts = {
+    all: permits.length,
+    ecowas: permits.filter((p: any) => catOf(p) === "ecowas").length,
+    non_ecowas: permits.filter((p: any) => catOf(p) === "non_ecowas").length,
+  };
+
+  const hasActive = !!search || statusFilter !== "all" || typeFilter !== "all" || category !== "all";
 
   return (
     <div className="space-y-4 mt-4">
