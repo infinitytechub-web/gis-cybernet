@@ -7,24 +7,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight, Download } from "lucide-react";
+import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight, Download, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 import { generatePostingLetter, downloadPdf } from "@/lib/branded-letter-pdf";
 
 export function PostingApprovalQueue() {
-  const { user } = useAuth();
+  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
+  const canManage = isAdmin || isAdminOrSupervisor;
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [comments, setComments] = useState("");
+  const [editRecord, setEditRecord] = useState<any>(null);
+  const [editEffectiveDate, setEditEffectiveDate] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
+  const [deleteRecord, setDeleteRecord] = useState<any>(null);
 
   const { data: adminProfile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -83,6 +89,35 @@ export function PostingApprovalQueue() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ id, effective_date, remarks }: { id: string; effective_date: string; remarks: string }) => {
+      const { error } = await supabase
+        .from("postings_transfers")
+        .update({ effective_date, remarks: remarks || null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      setEditRecord(null);
+      toast.success("Record updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("postings_transfers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      setDeleteRecord(null);
+      toast.success("Record deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const filtered = records.filter((r: any) => {
     const name = `${r.profiles?.last_name} ${r.profiles?.first_name} ${r.profiles?.staff_id}`.toLowerCase();
     return !search || name.includes(search.toLowerCase());
@@ -111,16 +146,16 @@ export function PostingApprovalQueue() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
+
+      <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="pending">Reviewing</TabsTrigger>
+          <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
@@ -184,6 +219,31 @@ export function PostingApprovalQueue() {
                             <Download className="h-4 w-4" />
                           </Button>
                         )}
+                        {canManage && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Edit"
+                              onClick={() => {
+                                setEditRecord(r);
+                                setEditEffectiveDate(r.effective_date);
+                                setEditRemarks(r.remarks ?? "");
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Delete"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteRecord(r)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -229,6 +289,69 @@ export function PostingApprovalQueue() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Posting/Transfer</DialogTitle></DialogHeader>
+          {editRecord && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                {editRecord.profiles?.last_name}, {editRecord.profiles?.first_name} — {editRecord.profiles?.staff_id}
+              </div>
+              <div>
+                <Label htmlFor="edit-effective">Effective Date</Label>
+                <Input
+                  id="edit-effective"
+                  type="date"
+                  value={editEffectiveDate}
+                  onChange={(e) => setEditEffectiveDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-remarks">Remarks</Label>
+                <Textarea
+                  id="edit-remarks"
+                  rows={3}
+                  value={editRemarks}
+                  onChange={(e) => setEditRemarks(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditRecord(null)}>Cancel</Button>
+                <Button
+                  onClick={() => editMutation.mutate({ id: editRecord.id, effective_date: editEffectiveDate, remarks: editRemarks })}
+                  disabled={editMutation.isPending || !editEffectiveDate}
+                >
+                  Save changes
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteRecord} onOpenChange={(open) => { if (!open) setDeleteRecord(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete posting/transfer record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the {deleteRecord?.type} request for{" "}
+              <span className="font-medium">{deleteRecord?.profiles?.last_name}, {deleteRecord?.profiles?.first_name}</span>.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); if (deleteRecord) deleteMutation.mutate(deleteRecord.id); }}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
