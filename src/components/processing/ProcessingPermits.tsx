@@ -278,7 +278,7 @@ export default function ProcessingPermits() {
               : filtered.map((p: any) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs">{p.application_reference || "—"}</TableCell>
-                  <TableCell className="font-medium">{p.applicant_name}</TableCell>
+                  <TableCell className="font-medium"><div className="flex flex-col gap-0.5">{p.applicant_name}{categoryBadge(catOf(p))}</div></TableCell>
                   <TableCell>{p.passport_number}</TableCell>
                   <TableCell><Badge variant="outline">{permitTypeLabel(p.permit_type)}</Badge></TableCell>
                   <TableCell>{statusBadge(p.status)}</TableCell>
