@@ -228,6 +228,20 @@ export default function ProcessingPermits() {
           {reviewItem && <ApplicationDocuments recordType="permit" recordId={reviewItem.id} permitType={reviewItem.permit_type} readOnly />}
           <ProcessingChecklist items={PERMIT_CHECKLIST} value={form.checklist} onChange={(c) => setForm({ ...form, checklist: c })} />
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
+            <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">GIS Standard Fields</div>
+              {reviewItem && catOf(reviewItem) === "ecowas" && (
+                <div><Label>ECOWAS ID / Travel Cert No.</Label>
+                  <Input value={form.ecowas_id_number} onChange={(e) => setForm({ ...form, ecowas_id_number: e.target.value })} />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <label className="flex items-center gap-2"><Checkbox checked={form.biometrics_captured} onCheckedChange={(v) => setForm({ ...form, biometrics_captured: !!v })} /> Biometrics captured</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.yellow_fever_cert} onCheckedChange={(v) => setForm({ ...form, yellow_fever_cert: !!v })} /> Yellow fever certificate</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.police_clearance} onCheckedChange={(v) => setForm({ ...form, police_clearance: !!v })} /> Police clearance</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.medical_clearance} onCheckedChange={(v) => setForm({ ...form, medical_clearance: !!v })} /> Medical clearance</label>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Update Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
