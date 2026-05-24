@@ -269,7 +269,7 @@ export default function ProcessingVisaExtensions() {
               <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No extensions pending processing</TableCell></TableRow>
             ) : filtered.map((ext: any) => (
               <TableRow key={ext.id}>
-                <TableCell className="font-medium">{ext.applicant_name}</TableCell>
+                <TableCell className="font-medium"><div className="flex flex-col gap-0.5">{ext.applicant_name}{categoryBadge(catOf(ext))}</div></TableCell>
                 <TableCell>{ext.passport_number}</TableCell>
                 <TableCell>{format(new Date(ext.current_visa_expiry), "dd MMM yyyy")}</TableCell>
                 <TableCell>{format(new Date(ext.requested_extension_date), "dd MMM yyyy")}</TableCell>
