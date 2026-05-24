@@ -75,6 +75,7 @@ export default function Staff() {
   const [staffCategory, setStaffCategory] = useState<string>("");
   const [office, setOffice] = useState<string>("");
   const [dateOfBirth, setDateOfBirth] = useState<string>("");
+  const [dateJoinedService, setDateJoinedService] = useState<string>("");
   const [maritalStatus, setMaritalStatus] = useState<string>("");
 
   const { data: staff = [], isLoading } = useQuery({
@@ -134,6 +135,7 @@ export default function Staff() {
     setTrainingDesignation("");
     setStaffCategory("");
     setDateOfBirth("");
+    setDateJoinedService("");
     setMaritalStatus("");
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -183,6 +185,7 @@ export default function Staff() {
     setStaffCategory(s.staff_category || "");
     setOffice(s.office || "");
     setDateOfBirth(s.date_of_birth || "");
+    setDateJoinedService((s as any).date_joined_service || "");
     setMaritalStatus(s.marital_status || "");
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
@@ -265,6 +268,7 @@ export default function Staff() {
         staff_category: staffCategory || null,
         office: office || null,
         date_of_birth: dateOfBirth || null,
+        date_joined_service: dateJoinedService || null,
         marital_status: maritalStatus || null,
       };
 
@@ -753,6 +757,15 @@ export default function Staff() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Date Joined Service</Label>
+                <Input
+                  type="date"
+                  value={dateJoinedService}
+                  onChange={(e) => setDateJoinedService(e.target.value)}
+                  max={format(new Date(), "yyyy-MM-dd")}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
