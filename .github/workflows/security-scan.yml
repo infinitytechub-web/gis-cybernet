@@ -129,7 +129,18 @@ jobs:
           done <<< "$targets"
 
           # 2) No policies with USING (true) / WITH CHECK (true) for write ops.
-          if grep -nEi --include="*.sql" -r \
+          # Historical migrations superseded by a tightened follow-up are
+          # listed in .security-rls-allowlist (one path per line).
+          ALLOWLIST=".security-rls-allowlist"
+          EXCLUDES=()
+          if [ -f "$ALLOWLIST" ]; then
+            while IFS= read -r line; do
+              [ -z "$line" ] && continue
+              case "$line" in \#*) continue ;; esac
+              EXCLUDES+=(--exclude="$(basename "$line")")
+            done < "$ALLOWLIST"
+          fi
+          if grep -nEi --include="*.sql" "${EXCLUDES[@]}" -r \
                "(FOR (INSERT|UPDATE|DELETE)[^;]*WITH CHECK[[:space:]]*\([[:space:]]*true[[:space:]]*\))|(FOR (UPDATE|DELETE)[^;]*USING[[:space:]]*\([[:space:]]*true[[:space:]]*\))" \
                "$MIGS"; then
             echo "::error::Permissive RLS policy (USING/WITH CHECK true) found on a write operation."
