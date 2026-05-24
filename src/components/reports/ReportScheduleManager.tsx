@@ -62,20 +62,40 @@ export default function ReportScheduleManager() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("report_schedules").insert({
-        report_type: newType,
+      const types = Array.from(selectedTypes);
+      if (types.length === 0) throw new Error("Select at least one report type");
+      const rows = types.map((t) => ({
+        report_type: t,
         frequency: newFreq,
         enabled: true,
         created_by: user!.id,
-      });
+      }));
+      const { error } = await supabase.from("report_schedules").insert(rows);
       if (error) {
-        if (error.code === "23505") throw new Error("This schedule already exists");
+        if (error.code === "23505") throw new Error("One or more of these schedules already exist");
         throw error;
       }
+      return types.length;
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ["report-schedules"] });
+      toast.success(`${count} schedule${count > 1 ? "s" : ""} created`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (vals: { id: string; report_type: ScheduleReportType; frequency: ScheduleFrequency }) => {
+      const { error } = await supabase
+        .from("report_schedules")
+        .update({ report_type: vals.report_type, frequency: vals.frequency })
+        .eq("id", vals.id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["report-schedules"] });
-      toast.success("Schedule created");
+      toast.success("Schedule updated");
+      setEditing(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
