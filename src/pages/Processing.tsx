@@ -17,10 +17,21 @@ import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExte
 import ProcessingPermits from "@/components/processing/ProcessingPermits";
 import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
+import { CountryCombobox } from "@/components/ui/country-combobox";
+import { Checkbox } from "@/components/ui/checkbox";
+import { isEcowasNationality } from "@/lib/countries";
+import { categoryBadge } from "@/components/processing/CategoryTabs";
 
 const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
 const APPROVALS_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
 const VISA_TYPES = ["tourist", "business", "work", "transit", "student", "diplomatic"];
+const VISA_CLASSES = [
+  { value: "single_entry", label: "Single Entry" },
+  { value: "multiple_entry", label: "Multiple Entry" },
+  { value: "transit", label: "Transit" },
+  { value: "emergency", label: "Emergency Entry" },
+  { value: "ecowas_residence", label: "ECOWAS Residence" },
+];
 
 export default function Processing() {
   const { role, user } = useAuth();
@@ -31,8 +42,15 @@ export default function Processing() {
   const [newOpen, setNewOpen] = useState(false);
   const [form, setForm] = useState({
     applicant_name: "", passport_number: "", nationality: "",
-    visa_type: "tourist", entry_date: "", exit_date: "", purpose: "",
+    visa_type: "tourist", visa_class: "", entry_date: "", exit_date: "",
+    duration_of_stay_days: "", ecowas_id_number: "",
+    letter_of_invitation: false, biometrics_captured: false, yellow_fever_cert: false,
+    purpose: "",
   });
+
+  const derivedCategory: "ecowas" | "non_ecowas" | null = form.nationality
+    ? (isEcowasNationality(form.nationality) ? "ecowas" : "non_ecowas")
+    : null;
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -52,10 +70,39 @@ export default function Processing() {
       if (error) throw error;
     },
     onSuccess: () => {
+  const createApplication = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        applicant_name: form.applicant_name,
+        passport_number: form.passport_number,
+        nationality: form.nationality,
+        visa_type: form.visa_type,
+        visa_class: form.visa_class || null,
+        entry_date: form.entry_date || null,
+        exit_date: form.exit_date || null,
+        duration_of_stay_days: form.duration_of_stay_days ? Number(form.duration_of_stay_days) : null,
+        ecowas_id_number: form.ecowas_id_number || null,
+        letter_of_invitation: form.letter_of_invitation,
+        biometrics_captured: form.biometrics_captured,
+        yellow_fever_cert: form.yellow_fever_cert,
+        purpose: form.purpose,
+        status: "submitted",
+        processed_by: user?.id,
+      };
+      const { error } = await (supabase as any).from("visa_applications").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["visa-applications"] });
       qc.invalidateQueries({ queryKey: ["processing-visa-applications"] });
       toast.success("Application created");
-      setForm({ applicant_name: "", passport_number: "", nationality: "", visa_type: "tourist", entry_date: "", exit_date: "", purpose: "" });
+      setForm({
+        applicant_name: "", passport_number: "", nationality: "",
+        visa_type: "tourist", visa_class: "", entry_date: "", exit_date: "",
+        duration_of_stay_days: "", ecowas_id_number: "",
+        letter_of_invitation: false, biometrics_captured: false, yellow_fever_cert: false,
+        purpose: "",
+      });
       setNewOpen(false);
       setActiveTab("visa");
     },
