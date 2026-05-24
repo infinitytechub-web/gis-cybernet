@@ -51,6 +51,7 @@ const ShiftConnections = lazy(() => import("./pages/ShiftConnections"));
 const LeaveRequests = lazy(() => import("./pages/LeaveRequests"));
 const Holidays = lazy(() => import("./pages/Holidays"));
 const PostingsTransfers = lazy(() => import("./pages/PostingsTransfers"));
+const PostingsHistory = lazy(() => import("./pages/PostingsHistory"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Announcements = lazy(() => import("./pages/Announcements"));
@@ -180,6 +181,7 @@ function App() {
           <Route path="/leave" element={<ProtectedRoute><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute><Layout><Holidays /></Layout></ProtectedRoute>} />
           <Route path="/postings" element={<ProtectedRoute><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />
+          <Route path="/postings/history" element={<ProtectedRoute><Layout><PostingsHistory /></Layout></ProtectedRoute>} />
           <Route path="/compliance" element={<ProtectedRoute><Layout><Compliance /></Layout></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
           <Route path="/announcements" element={<ProtectedRoute><Layout><Announcements /></Layout></ProtectedRoute>} />

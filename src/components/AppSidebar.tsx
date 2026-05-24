@@ -47,6 +47,7 @@ const workforceItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
   { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400" },
+  { title: "Transfer History", url: "/postings/history", icon: ArrowRightLeft, iconColor: "text-violet-700 dark:text-violet-300" },
   { title: "Staff Appraisals", url: "/appraisals", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
 ];
 
