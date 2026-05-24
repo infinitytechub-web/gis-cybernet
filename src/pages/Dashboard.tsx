@@ -37,6 +37,7 @@ import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidge
 import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
 import StaffAppraisalsWidget from "@/components/dashboard/StaffAppraisalsWidget";
 import AttendanceLogWidget from "@/components/dashboard/AttendanceLogWidget";
+import PostingsTransfersWidget from "@/components/dashboard/PostingsTransfersWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
