@@ -161,8 +161,9 @@ export default function PostingsTransfersWidget() {
   const doPrint = () => {
     const w = window.open("", "_blank");
     if (!w) return;
+    const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     const style = `body{font-family:system-ui;padding:24px}h1{font-size:18px;margin:0 0 16px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px;text-align:left}th{background:#f5f5f5}`;
-    w.document.write(`<html><head><title>Postings & Transfers</title><style>${style}</style></head><body><h1>Staff Transfer & Postings Register</h1><table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${exportRows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`);
+    w.document.write(`<html><head><title>Postings &amp; Transfers</title><style>${style}</style></head><body><h1>Staff Transfer &amp; Postings Register</h1><table><thead><tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${exportRows.map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`);
     w.document.close();
     w.focus();
     w.print();
