@@ -247,8 +247,4 @@ export default function PostingsTransfersWidget() {
     </Card>
   );
 }
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+
