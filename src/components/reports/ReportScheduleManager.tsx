@@ -311,10 +311,10 @@ export default function ReportScheduleManager() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          Scheduled reports are auto-generated as CSV files and saved to Uploaded Reports. Email delivery requires email domain setup.
+          ​
         </p>
         <p className="text-xs text-muted-foreground">
-          Scheduled reports are auto-generated as CSV files and saved to Uploaded Reports. Email delivery requires email domain setup.
+          ​
         </p>
       </CardContent>
 
