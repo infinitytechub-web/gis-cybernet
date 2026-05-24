@@ -59,7 +59,7 @@ export default function InterlinkWidget() {
         <CardTitle className="text-sm flex items-center gap-2">
           <Network className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           {branding.nav}
-          <Badge variant="outline" className="ml-2 text-[10px] bg-gradient-to-r from-indigo-500 to-violet-500 text-white border-0">
+          <Badge variant="outline" className="ml-2 text-[10px] bg-gradient-to-r from-indigo-500 to-violet-500 text-white border-0 bg-green-600">
             Command tier
           </Badge>
           <Button
