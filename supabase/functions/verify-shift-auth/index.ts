@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("verify-shift-auth error:", msg);
     return new Response(
-      JSON.stringify({ verified: false, reason: msg }),
+      JSON.stringify({ verified: false, reason: "An internal error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
