@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { downloadBlob } from "@/lib/download-utils";
+import { openPrintWindow } from "@/lib/safe-print";
 import { format as fmtDate } from "date-fns";
 import { toast } from "sonner";
 
