@@ -219,6 +219,31 @@ export function PostingApprovalQueue() {
                             <Download className="h-4 w-4" />
                           </Button>
                         )}
+                        {canManage && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Edit"
+                              onClick={() => {
+                                setEditRecord(r);
+                                setEditEffectiveDate(r.effective_date);
+                                setEditRemarks(r.remarks ?? "");
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Delete"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteRecord(r)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
