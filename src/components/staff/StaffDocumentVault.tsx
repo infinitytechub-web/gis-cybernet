@@ -266,7 +266,9 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
                         {d.file_path && (
                           <>
                             <Button size="icon" variant="ghost" onClick={() => viewDoc(d)} title="View"><Eye className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="ghost" onClick={() => downloadDoc(d)} title="Download"><Download className="h-4 w-4" /></Button>
+                            {canManage && (
+                              <Button size="icon" variant="ghost" onClick={() => downloadDoc(d)} title="Download"><Download className="h-4 w-4" /></Button>
+                            )}
                           </>
                         )}
                         {canManage && (

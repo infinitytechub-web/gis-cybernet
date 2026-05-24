@@ -7,9 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Play, CalendarClock, Users, CalendarCheck, CalendarOff, Plus, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Clock, Play, CalendarClock, Users, CalendarCheck, CalendarOff, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -33,9 +35,18 @@ const FREQUENCY_CONFIG: Record<ScheduleFrequency, { label: string; badge: string
 export default function ReportScheduleManager() {
   const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
-  const [newType, setNewType] = useState<ScheduleReportType>("staff");
+  const [selectedTypes, setSelectedTypes] = useState<Set<ScheduleReportType>>(new Set(["staff"]));
   const [newFreq, setNewFreq] = useState<ScheduleFrequency>("daily");
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; report_type: ScheduleReportType; frequency: ScheduleFrequency } | null>(null);
+
+  const toggleType = (t: ScheduleReportType) => {
+    setSelectedTypes((prev) => {
+      const n = new Set(prev);
+      n.has(t) ? n.delete(t) : n.add(t);
+      return n;
+    });
+  };
 
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ["report-schedules"],
@@ -51,20 +62,40 @@ export default function ReportScheduleManager() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("report_schedules").insert({
-        report_type: newType,
+      const types = Array.from(selectedTypes);
+      if (types.length === 0) throw new Error("Select at least one report type");
+      const rows = types.map((t) => ({
+        report_type: t,
         frequency: newFreq,
         enabled: true,
         created_by: user!.id,
-      });
+      }));
+      const { error } = await supabase.from("report_schedules").insert(rows);
       if (error) {
-        if (error.code === "23505") throw new Error("This schedule already exists");
+        if (error.code === "23505") throw new Error("One or more of these schedules already exist");
         throw error;
       }
+      return types.length;
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ["report-schedules"] });
+      toast.success(`${count} schedule${count > 1 ? "s" : ""} created`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (vals: { id: string; report_type: ScheduleReportType; frequency: ScheduleFrequency }) => {
+      const { error } = await supabase
+        .from("report_schedules")
+        .update({ report_type: vals.report_type, frequency: vals.frequency })
+        .eq("id", vals.id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["report-schedules"] });
-      toast.success("Schedule created");
+      toast.success("Schedule updated");
+      setEditing(null);
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -129,39 +160,44 @@ export default function ReportScheduleManager() {
       <CardContent className="space-y-4">
         {/* Add new schedule - admin only */}
         {isAdmin && (
-          <div className="flex flex-wrap gap-2 items-end p-3 rounded-lg border border-dashed border-border/60 bg-muted/30">
-            <div className="flex-1 min-w-[120px]">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Report Type</label>
-              <Select value={newType} onValueChange={(v) => setNewType(v as ScheduleReportType)}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="staff">Staff Summary</SelectItem>
-                  <SelectItem value="attendance">Attendance</SelectItem>
-                  <SelectItem value="leave">Leave/Pass</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-3 p-3 rounded-lg border border-dashed border-border/60 bg-muted/30">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Report Types (composite — pick one or more)</label>
+              <div className="flex flex-wrap gap-3">
+                {(["staff", "attendance", "leave"] as ScheduleReportType[]).map((t) => {
+                  const cfg = REPORT_TYPE_CONFIG[t];
+                  return (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox checked={selectedTypes.has(t)} onCheckedChange={() => toggleType(t)} />
+                      <span>{cfg.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex-1 min-w-[120px]">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequency</label>
-              <Select value={newFreq} onValueChange={(v) => setNewFreq(v as ScheduleFrequency)}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="annually">Annually</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[140px]">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequency</label>
+                <Select value={newFreq} onValueChange={(v) => setNewFreq(v as ScheduleFrequency)}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                size="sm"
+                className="gap-1"
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending || selectedTypes.size === 0}
+              >
+                <Plus className="h-4 w-4" /> Add {selectedTypes.size > 1 ? `${selectedTypes.size} Schedules` : "Schedule"}
+              </Button>
             </div>
-            <Button
-              size="sm"
-              className="gap-1"
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
-            >
-              <Plus className="h-4 w-4" /> Add Schedule
-            </Button>
           </div>
         )}
 
@@ -247,11 +283,21 @@ export default function ReportScheduleManager() {
                             </Button>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Edit"
+                              onClick={() => setEditing({ id: s.id, report_type: s.report_type, frequency: s.frequency })}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              title="Delete"
                               onClick={() => deleteMutation.mutate(s.id)}
                             >
-                              Remove
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
@@ -267,7 +313,62 @@ export default function ReportScheduleManager() {
         <p className="text-xs text-muted-foreground">
           Scheduled reports are auto-generated as CSV files and saved to Uploaded Reports. Email delivery requires email domain setup.
         </p>
+        <p className="text-xs text-muted-foreground">
+          Scheduled reports are auto-generated as CSV files and saved to Uploaded Reports. Email delivery requires email domain setup.
+        </p>
       </CardContent>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Schedule</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3 py-2">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Report Type</label>
+                <Select
+                  value={editing.report_type}
+                  onValueChange={(v) => setEditing({ ...editing, report_type: v as ScheduleReportType })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Staff Summary</SelectItem>
+                    <SelectItem value="attendance">Attendance</SelectItem>
+                    <SelectItem value="leave">Leave/Pass</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequency</label>
+                <Select
+                  value={editing.frequency}
+                  onValueChange={(v) => setEditing({ ...editing, frequency: v as ScheduleFrequency })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button
+              disabled={editMutation.isPending}
+              onClick={() => editing && editMutation.mutate(editing)}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

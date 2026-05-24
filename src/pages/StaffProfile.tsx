@@ -491,7 +491,7 @@ export default function StaffProfile() {
         <TabsContent value="documents">
           <StaffDocumentVault
             profileId={profile.id}
-            canManage={role === "admin" || profile.user_id === user?.id}
+            canManage={isAdminOrSupervisor}
           />
         </TabsContent>
       </Tabs>
