@@ -23,14 +23,13 @@ export function useAppSettings() {
   const { data } = useQuery({
     queryKey: ["app-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
-      // Non-admin users will get null due to RLS — return defaults
+      // Use the safe RPC that returns only UI-relevant fields to all
+      // authenticated users (full table is restricted to command tier).
+      const { data, error } = await (supabase as any).rpc("get_public_app_settings");
       if (error || !data) return defaults;
-      return data as AppSettings;
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) return defaults;
+      return { ...defaults, ...(row as AppSettings) };
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
