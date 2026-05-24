@@ -19,6 +19,9 @@ import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 import { ProcessingChecklist, VISA_CHECKLIST } from "@/components/applications/ProcessingChecklist";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CategoryTabs, categoryBadge, type ApplicantCategory } from "@/components/processing/CategoryTabs";
+import { isEcowasNationality } from "@/lib/countries";
 
 const PROCESSING_STATUSES = ["submitted", "under_review"];
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected"];
@@ -37,10 +40,17 @@ export default function ProcessingVisaExtensions() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<ApplicantCategory>("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
+  const [form, setForm] = useState<{
+    status: string; notes: string; checklist: Record<string, boolean>;
+    extension_duration_days: string; ecowas_id_number: string; biometrics_captured: boolean;
+  }>({
+    status: "submitted", notes: "", checklist: {},
+    extension_duration_days: "", ecowas_id_number: "", biometrics_captured: false,
+  });
 
   useEffect(() => {
     const channel = supabase
@@ -69,9 +79,16 @@ export default function ProcessingVisaExtensions() {
     mutationFn: async () => {
       if (!editId) return;
       const existing = extensions.find((e: any) => e.id === editId);
-      const { error } = await supabase.from("visa_extensions")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
-        .eq("id", editId);
+      const payload: any = {
+        status: form.status,
+        notes: form.notes,
+        processed_by: user?.id,
+        processing_checklist: form.checklist,
+        extension_duration_days: form.extension_duration_days ? Number(form.extension_duration_days) : null,
+        ecowas_id_number: form.ecowas_id_number || null,
+        biometrics_captured: form.biometrics_captured,
+      };
+      const { error } = await (supabase as any).from("visa_extensions").update(payload).eq("id", editId);
       if (error) throw error;
 
       if (existing && existing.status !== form.status && (form.status === "approved" || form.status === "rejected")) {
@@ -104,24 +121,40 @@ export default function ProcessingVisaExtensions() {
   const [reviewItem, setReviewItem] = useState<any>(null);
 
   const openReview = (ext: any) => {
-    setForm({ status: ext.status, notes: ext.notes || "", checklist: (ext.processing_checklist as Record<string, boolean>) || {} });
+    setForm({
+      status: ext.status, notes: ext.notes || "",
+      checklist: (ext.processing_checklist as Record<string, boolean>) || {},
+      extension_duration_days: ext.extension_duration_days != null ? String(ext.extension_duration_days) : "",
+      ecowas_id_number: ext.ecowas_id_number || "",
+      biometrics_captured: !!ext.biometrics_captured,
+    });
     setEditId(ext.id);
     setReviewItem(ext);
     setOpen(true);
   };
 
+  const catOf = (e: any) => e.applicant_category || (isEcowasNationality(e.nationality) ? "ecowas" : "non_ecowas");
+
   const filtered = extensions.filter((e: any) => {
     const matchesSearch = e.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
       e.passport_number.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCat = category === "all" || catOf(e) === category;
+    return matchesSearch && matchesStatus && matchesCat;
   });
 
-  const hasActiveFilters = search || statusFilter !== "all";
-  const clearAllFilters = () => { setSearch(""); setStatusFilter("all"); };
+  const catCounts = {
+    all: extensions.length,
+    ecowas: extensions.filter((e: any) => catOf(e) === "ecowas").length,
+    non_ecowas: extensions.filter((e: any) => catOf(e) === "non_ecowas").length,
+  };
+
+  const hasActiveFilters = search || statusFilter !== "all" || category !== "all";
+  const clearAllFilters = () => { setSearch(""); setStatusFilter("all"); setCategory("all"); };
   const activeFiltersList = [
     ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
     ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter.replace("_", " "), onClear: () => setStatusFilter("all") }] : []),
+    ...(category !== "all" ? [{ label: "Category", value: category === "ecowas" ? "ECOWAS" : "Non-ECOWAS", onClear: () => setCategory("all") }] : []),
   ];
 
   return (
