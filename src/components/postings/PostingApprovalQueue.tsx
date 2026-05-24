@@ -7,13 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight, Download } from "lucide-react";
+import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight, Download, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 import { generatePostingLetter, downloadPdf } from "@/lib/branded-letter-pdf";
