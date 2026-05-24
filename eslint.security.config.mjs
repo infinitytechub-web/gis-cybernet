@@ -4,6 +4,7 @@
 // informational; errors fail the job.
 import security from "eslint-plugin-security";
 import noUnsanitized from "eslint-plugin-no-unsanitized";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default [
@@ -30,9 +31,15 @@ export default [
         ecmaFeatures: { jsx: true },
       },
     },
+    // Register react-hooks so existing `// eslint-disable-next-line react-hooks/*`
+    // directives in source files do not trip "rule not found" errors.
     plugins: {
       security,
       "no-unsanitized": noUnsanitized,
+      "react-hooks": reactHooks,
+    },
+    linterOptions: {
+      reportUnusedDisableDirectives: "off",
     },
     rules: {
       "security/detect-eval-with-expression": "error",
@@ -43,6 +50,10 @@ export default [
       "security/detect-pseudoRandomBytes": "error",
       "no-unsanitized/method": "error",
       "no-unsanitized/property": "error",
+      // Keep react-hooks rules registered but quiet — full project lint runs
+      // them in the main eslint.config.js.
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
     },
   },
 ];
