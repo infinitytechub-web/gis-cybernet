@@ -9465,6 +9465,19 @@ export type Database = {
           unit: string
         }[]
       }
+      get_public_app_settings: {
+        Args: never
+        Returns: {
+          allow_self_registration: boolean
+          auto_logout_minutes: number
+          auto_logout_warning_seconds: number
+          enable_system_health_widget: boolean
+          enforce_password_change: boolean
+          min_password_length: number
+          org_name: string
+          system_label: string
+        }[]
+      }
       get_realtime_rls_coverage: {
         Args: never
         Returns: {
