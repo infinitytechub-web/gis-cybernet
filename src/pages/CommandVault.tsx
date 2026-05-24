@@ -59,8 +59,8 @@ const CATEGORY_BADGE: Record<string, string> = {
 };
 
 export default function CommandVault() {
-  const { user, isAdmin, isOic, is2ic, role, loading } = useAuth();
-  const allowed = isAdmin || isOic || is2ic || role === "staff_officer";
+  const { user, isAdmin, isOic, is2ic, isAdminOrSupervisor, role, loading } = useAuth();
+  const allowed = isAdminOrSupervisor || isAdmin || isOic || is2ic || role === "staff_officer";
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
