@@ -125,7 +125,6 @@ Deno.serve(async (req) => {
           ok: false,
           reason,
           message,
-          detail: msg.slice(0, 500),
         }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
