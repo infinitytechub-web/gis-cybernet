@@ -468,6 +468,17 @@ export default function Staff() {
         </Select>
       </div>
 
+      {isAdmin && (
+        <BulkActionBar
+          count={bulk.count}
+          itemLabel="staff record"
+          onClear={bulk.clear}
+          onConfirmDelete={() => bulkDeleteMutation.mutate(bulk.selectedIds)}
+          deleting={bulkDeleteMutation.isPending}
+          description={`This will permanently delete ${bulk.count} staff record${bulk.count === 1 ? "" : "s"} and all associated data.`}
+        />
+      )}
+
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading staff...</div>
       ) : (
@@ -475,6 +486,15 @@ export default function Staff() {
           <Table>
             <TableHeader>
               <TableRow>
+                {isAdmin && (
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={bulk.allVisibleSelected ? true : bulk.someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={bulk.toggleAllVisible}
+                      aria-label="Select all visible staff"
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="w-[50px]">Photo</TableHead>
                 <TableHead>Staff ID</TableHead>
                 <TableHead>
@@ -504,11 +524,20 @@ export default function Staff() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
+                  <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((s) => (
-                  <TableRow key={s.id}>
+                  <TableRow key={s.id} data-state={bulk.isSelected(s.id) ? "selected" : undefined}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={bulk.isSelected(s.id)}
+                          onCheckedChange={() => bulk.toggle(s.id)}
+                          aria-label={`Select ${s.first_name} ${s.last_name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
