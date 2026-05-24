@@ -159,6 +159,8 @@ export default function ProcessingVisaExtensions() {
 
   return (
     <div className="space-y-4 mt-4">
+      <CategoryTabs value={category} onChange={setCategory} counts={catCounts} />
+
       {hasActiveFilters && (
         <FilterSummaryBar filters={activeFiltersList} totalResults={filtered.length} onClearAll={clearAllFilters} />
       )}
@@ -179,7 +181,12 @@ export default function ProcessingVisaExtensions() {
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) setEditId(null); setOpen(v); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Review Visa Extension</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Review Visa Extension
+              {reviewItem && categoryBadge(catOf(reviewItem))}
+            </DialogTitle>
+          </DialogHeader>
           {reviewItem && (
             <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
               <div><span className="text-muted-foreground">Name:</span> {reviewItem.applicant_name}</div>
@@ -211,6 +218,23 @@ export default function ProcessingVisaExtensions() {
               value={form.checklist}
               onChange={(checklist) => setForm({ ...form, checklist })}
             />
+            <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">GIS Standard Fields</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Extension Duration (days)</Label>
+                  <Input type="number" min="0" max="365" value={form.extension_duration_days}
+                    onChange={(e) => setForm({ ...form, extension_duration_days: e.target.value })} />
+                </div>
+                {reviewItem && catOf(reviewItem) === "ecowas" && (
+                  <div><Label>ECOWAS ID No.</Label>
+                    <Input value={form.ecowas_id_number} onChange={(e) => setForm({ ...form, ecowas_id_number: e.target.value })} />
+                  </div>
+                )}
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={form.biometrics_captured} onCheckedChange={(v) => setForm({ ...form, biometrics_captured: !!v })} /> Biometrics re-captured
+              </label>
+            </div>
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
