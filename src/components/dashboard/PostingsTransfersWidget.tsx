@@ -107,7 +107,8 @@ export default function PostingsTransfersWidget() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await softDelete({ table: "profiles", id, label: "Staff profile" });
+      const { error } = await supabase.from("profiles").update({ status: "inactive" as any }).eq("id", id);
+      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["postings-transfers-widget"] });
