@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -106,10 +107,9 @@ export default function PostingsHistory() {
   };
 
   const doPrint = () => {
-    const w = window.open("", "_blank"); if (!w) return;
     const esc = (s: unknown) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-    w.document.write(`<html><head><title>Transfer History</title><style>body{font-family:system-ui;padding:24px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px}th{background:#f5f5f5}</style></head><body><h1>Staff Transfer History</h1><table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${exportRows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`);
-    w.document.close(); w.focus(); w.print();
+    const html = `<html><head><title>Transfer History</title><style>body{font-family:system-ui;padding:24px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ccc;padding:6px}th{background:#f5f5f5}</style></head><body><h1>Staff Transfer History</h1><table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${exportRows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></body></html>`;
+    openPrintWindow(html, { autoPrint: true, printDelayMs: 400 });
   };
 
   if (!isAdminOrSupervisor) {

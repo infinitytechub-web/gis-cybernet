@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -319,8 +320,7 @@ function printDetentionRecord(r: any) {
   </tbody></table>
   <div class="footer">CONFIDENTIAL — Ghana Immigration Service</div>
 </body></html>`;
-  const w = window.open("", "_blank", "width=900,height=700");
-  if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+  openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
 }
 
 /* ----------------- EDIT DIALOG ----------------- */

@@ -28,6 +28,7 @@ import { GhanaGPSInput, canonicalizeGpsLocation, isValidGpsLocation } from "@/co
 import { MugshotUpload } from "@/components/enforcement/MugshotUpload";
 import { AuthorisedByPicker } from "@/components/enforcement/AuthorisedByPicker";
 import { useEffect } from "react";
+import { openPrintWindow } from "@/lib/safe-print";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { format } from "date-fns";
@@ -694,9 +695,7 @@ export default function Enforcement() {
   const handlePrint = useCallback(() => {
     const resRate = totalOps > 0 ? Math.round((filtered.filter(o => o.status === "resolved" || o.status === "closed").length / totalOps) * 100) : 0;
     const esc = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) { toast.error("Please allow popups"); return; }
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Enforcement Summary Report</title>
+    const html = `<!DOCTYPE html><html><head><title>Enforcement Summary Report</title>
       <style>
         body{font-family:Arial,sans-serif;padding:40px;color:#333}
         h1{font-size:20px;border-bottom:2px solid #166534;padding-bottom:8px;color:#166534}
@@ -734,10 +733,9 @@ export default function Enforcement() {
       <table><tr><th>Type</th><th>Count</th></tr>
         ${typeBreakdown.map(t => `<tr><td style="text-transform:capitalize">${esc(t.name)}</td><td>${t.value}</td></tr>`).join("")}
       </table>
-    </body></html>`);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => printWindow.print(), 300);
+    </body></html>`;
+    const printWindow = openPrintWindow(html, { autoPrint: true, printDelayMs: 400 });
+    if (!printWindow) { toast.error("Please allow popups"); return; }
   }, [totalOps, totalArrests, totalSuspects, criticalOps, filtered, officerPerformance, topLocations, typeBreakdown, period, startDate]);
 
   const buildEnforcementExportData = useCallback(() => {

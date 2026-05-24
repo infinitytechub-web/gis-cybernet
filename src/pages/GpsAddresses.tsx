@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -709,11 +710,7 @@ export default function GpsAddresses() {
       ["OSM ID", trackResult.osm_id ?? "—"],
       ["Captured", captured],
     ];
-    const win = window.open("", "_blank", "width=900,height=720");
-    if (!win) {
-      toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
-      return;
-    }
+    // Window is opened after HTML is built via openPrintWindow (see below).
     const esc = (s: string) =>
       String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
     const rowsHtml = rows
@@ -741,7 +738,7 @@ export default function GpsAddresses() {
         </div>`
       : "";
 
-    win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>GPS Search & Track Result</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><title>GPS Search & Track Result</title>
       <style>
         body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 32px; color: #111; position: relative; }
         h1 { font-size: 20px; margin: 0 0 4px; }
@@ -783,9 +780,12 @@ export default function GpsAddresses() {
       </div>
       <table>${rowsHtml}</table>
       <div class="footer">Ghana Immigration Service · Cybernet · Generated ${captured} · For official use only${opts?.watermarkText ? ` · ${opts.watermarkText}` : ""}</div>
-      <script>window.onload = () => { window.focus(); window.print(); };</script>
-      </body></html>`);
-    win.document.close();
+      </body></html>`;
+    const win = openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=720", autoPrint: true, printDelayMs: 500 });
+    if (!win) {
+      toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
+      return;
+    }
   };
 
   // ===== Authorization-purpose prompt =====

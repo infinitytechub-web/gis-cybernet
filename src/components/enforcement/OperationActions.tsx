@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { openPrintWindow } from "@/lib/safe-print";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -156,8 +157,7 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
   <div class="footer">CONFIDENTIAL — Ghana Immigration Service</div>
 </body></html>`;
 
-    const w = window.open("", "_blank", "width=900,height=700");
-    if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+    openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
     onOpenChange(false);
   };
 

@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { openPrintWindow } from "@/lib/safe-print";
 
 export interface AssetLabelData {
   asset_tag: string;
@@ -30,12 +31,8 @@ export async function printAssetLabel(item: AssetLabelData) {
     return;
   }
 
-  const win = window.open("", "_blank", "width=520,height=360");
-  if (!win) {
-    toast.error("Pop-up blocked. Allow pop-ups to print labels.");
-    return;
-  }
-  win.document.write(`<!doctype html>
+  
+  const html = `<!doctype html>
 <html>
 <head>
   <title>Asset label — ${item.asset_tag}</title>
@@ -69,10 +66,13 @@ export async function printAssetLabel(item: AssetLabelData) {
       <div class="brand">GIS Cybernet · Stores</div>
     </div>
   </div>
-  <script>window.addEventListener('load', () => { setTimeout(() => window.print(), 200); });</script>
 </body>
-</html>`);
-  win.document.close();
+</html>`;
+  const win = openPrintWindow(html, { features: "noopener,noreferrer,width=520,height=360", printDelayMs: 400 });
+  if (!win) {
+    toast.error("Pop-up blocked. Allow pop-ups to print labels.");
+    return;
+  }
 }
 
 function escapeHtml(s: string): string {

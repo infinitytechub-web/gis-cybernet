@@ -1,0 +1,6 @@
+# RLS hygiene allow-list — historical migration files whose permissive
+# WITH CHECK / USING (true) clauses have been superseded by a tightened
+# follow-up migration. CI grep skips these basenames.
+#
+# Format: one migration basename per line. Comments start with '#'.
+20260507004333_386a5d66-1366-460d-8637-5463c7c63fa1.sql
