@@ -201,6 +201,8 @@ export default function ProcessingVisaApplications() {
         ))}
       </div>
 
+      <CategoryTabs value={category} onChange={setCategory} counts={catCounts} />
+
       {hasActiveFilters && (
         <FilterSummaryBar filters={activeFiltersList} totalResults={filtered.length} onClearAll={clearAllFilters} />
       )}
@@ -217,16 +219,16 @@ export default function ProcessingVisaApplications() {
             {PROCESSING_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ").replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Toggle pressed={ecowasOnly} onPressedChange={setEcowasOnly} variant="outline" size="sm"
-          className="gap-1 whitespace-nowrap data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:border-primary/30"
-          aria-label="Filter ECOWAS only">
-          ⭐ ECOWAS
-        </Toggle>
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditId(null); } setOpen(v); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Review Visa Application</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Review Visa Application
+              {reviewApp && categoryBadge(reviewApp.applicant_category || (isEcowasNationality(reviewApp.nationality) ? "ecowas" : "non_ecowas"))}
+            </DialogTitle>
+          </DialogHeader>
           {reviewApp && (
             <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
               <div><span className="text-muted-foreground">Name:</span> {reviewApp.applicant_name}</div>
@@ -257,6 +259,33 @@ export default function ProcessingVisaApplications() {
               value={form.checklist}
               onChange={(checklist) => setForm({ ...form, checklist })}
             />
+            <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">GIS Standard Fields</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Visa Class</Label>
+                  <Select value={form.visa_class} onValueChange={(v) => setForm({ ...form, visa_class: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      {VISA_CLASSES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Duration of Stay (days)</Label>
+                  <Input type="number" min="0" max="365" value={form.duration_of_stay_days}
+                    onChange={(e) => setForm({ ...form, duration_of_stay_days: e.target.value })} />
+                </div>
+                {reviewApp && (reviewApp.applicant_category === "ecowas" || isEcowasNationality(reviewApp.nationality)) && (
+                  <div className="col-span-2"><Label>ECOWAS ID / Travel Cert No.</Label>
+                    <Input value={form.ecowas_id_number} onChange={(e) => setForm({ ...form, ecowas_id_number: e.target.value })} placeholder="e.g. ECOWAS-2025-…" />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <label className="flex items-center gap-2"><Checkbox checked={form.letter_of_invitation} onCheckedChange={(v) => setForm({ ...form, letter_of_invitation: !!v })} /> Letter of invitation</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.biometrics_captured} onCheckedChange={(v) => setForm({ ...form, biometrics_captured: !!v })} /> Biometrics captured</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.yellow_fever_cert} onCheckedChange={(v) => setForm({ ...form, yellow_fever_cert: !!v })} /> Yellow fever certificate</label>
+              </div>
+            </div>
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
