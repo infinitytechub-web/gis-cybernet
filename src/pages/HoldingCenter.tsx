@@ -320,8 +320,7 @@ function printDetentionRecord(r: any) {
   </tbody></table>
   <div class="footer">CONFIDENTIAL — Ghana Immigration Service</div>
 </body></html>`;
-  const w = window.open("", "_blank", "width=900,height=700");
-  if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+  openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
 }
 
 /* ----------------- EDIT DIALOG ----------------- */
