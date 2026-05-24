@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { toast } from "sonner";
+import { openPrintWindow } from "@/lib/safe-print";
 
 export interface AssetLabelData {
   asset_tag: string;
