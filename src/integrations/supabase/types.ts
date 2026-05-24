@@ -6190,6 +6190,8 @@ export type Database = {
           account_locked: boolean
           blood_group: string | null
           created_at: string
+          current_appointment: string | null
+          date_joined_service: string | null
           date_of_birth: string | null
           department_id: string | null
           email: string | null
@@ -6205,6 +6207,7 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           rank_id: string | null
+          retirement_age: number
           shift_group: string | null
           staff_category: string | null
           staff_id: string
@@ -6220,6 +6223,8 @@ export type Database = {
           account_locked?: boolean
           blood_group?: string | null
           created_at?: string
+          current_appointment?: string | null
+          date_joined_service?: string | null
           date_of_birth?: string | null
           department_id?: string | null
           email?: string | null
@@ -6235,6 +6240,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
+          retirement_age?: number
           shift_group?: string | null
           staff_category?: string | null
           staff_id: string
@@ -6250,6 +6256,8 @@ export type Database = {
           account_locked?: boolean
           blood_group?: string | null
           created_at?: string
+          current_appointment?: string | null
+          date_joined_service?: string | null
           date_of_birth?: string | null
           department_id?: string | null
           email?: string | null
@@ -6265,6 +6273,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
+          retirement_age?: number
           shift_group?: string | null
           staff_category?: string | null
           staff_id?: string
