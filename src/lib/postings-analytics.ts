@@ -17,9 +17,11 @@
 
 import {
   differenceInCalendarDays,
-  differenceInCalendarMonths,
   differenceInCalendarYears,
+  differenceInMonths,
+  differenceInYears,
   addYears,
+  addMonths,
 } from "date-fns";
 
 export interface YearsMonths { years: number; months: number; }
@@ -30,9 +32,9 @@ export function yearsOfService(dateJoined: Date | string | null, asOf: Date = ne
   if (!dateJoined) return { years: 0, months: 0 };
   const d = typeof dateJoined === "string" ? new Date(dateJoined) : dateJoined;
   if (isNaN(d.getTime()) || d > asOf) return { years: 0, months: 0 };
-  const years = differenceInCalendarYears(asOf, d);
+  const years = differenceInYears(asOf, d);
   const anchor = addYears(d, years);
-  const months = differenceInCalendarMonths(asOf, anchor);
+  const months = differenceInMonths(asOf, anchor);
   return { years, months };
 }
 
@@ -47,11 +49,10 @@ export function timeUntilRetirement(
   if (isNaN(d.getTime())) return { years: 0, months: 0, days: 0, retired: false };
   const retireDate = addYears(d, retirementAge);
   if (retireDate <= asOf) return { years: 0, months: 0, days: 0, retired: true };
-  const years = differenceInCalendarYears(retireDate, asOf);
+  const years = differenceInYears(retireDate, asOf);
   const afterYears = addYears(asOf, years);
-  const months = differenceInCalendarMonths(retireDate, afterYears);
-  const afterMonths = new Date(afterYears);
-  afterMonths.setMonth(afterMonths.getMonth() + months);
+  const months = differenceInMonths(retireDate, afterYears);
+  const afterMonths = addMonths(afterYears, months);
   const days = differenceInCalendarDays(retireDate, afterMonths);
   return { years, months, days, retired: false };
 }
