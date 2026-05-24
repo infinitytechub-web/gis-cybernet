@@ -322,7 +322,7 @@ export default function ProcessingVisaApplications() {
               <TableRow key={app.id}>
                 <TableCell className="font-medium">{app.applicant_name}</TableCell>
                 <TableCell>{app.passport_number}</TableCell>
-                <TableCell>{app.nationality}</TableCell>
+                <TableCell><div className="flex flex-col gap-1"><span>{app.nationality}</span>{categoryBadge(app.applicant_category || (isEcowasNationality(app.nationality) ? "ecowas" : "non_ecowas"))}</div></TableCell>
                 <TableCell><Badge variant="outline">{app.visa_type}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
                 <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
