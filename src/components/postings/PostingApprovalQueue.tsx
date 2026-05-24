@@ -89,6 +89,35 @@ export function PostingApprovalQueue() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const editMutation = useMutation({
+    mutationFn: async ({ id, effective_date, remarks }: { id: string; effective_date: string; remarks: string }) => {
+      const { error } = await supabase
+        .from("postings_transfers")
+        .update({ effective_date, remarks: remarks || null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      setEditRecord(null);
+      toast.success("Record updated");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("postings_transfers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["postings-transfers"] });
+      setDeleteRecord(null);
+      toast.success("Record deleted");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const filtered = records.filter((r: any) => {
     const name = `${r.profiles?.last_name} ${r.profiles?.first_name} ${r.profiles?.staff_id}`.toLowerCase();
     return !search || name.includes(search.toLowerCase());
