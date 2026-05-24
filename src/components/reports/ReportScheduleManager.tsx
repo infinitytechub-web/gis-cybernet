@@ -160,39 +160,44 @@ export default function ReportScheduleManager() {
       <CardContent className="space-y-4">
         {/* Add new schedule - admin only */}
         {isAdmin && (
-          <div className="flex flex-wrap gap-2 items-end p-3 rounded-lg border border-dashed border-border/60 bg-muted/30">
-            <div className="flex-1 min-w-[120px]">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Report Type</label>
-              <Select value={newType} onValueChange={(v) => setNewType(v as ScheduleReportType)}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="staff">Staff Summary</SelectItem>
-                  <SelectItem value="attendance">Attendance</SelectItem>
-                  <SelectItem value="leave">Leave/Pass</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col gap-3 p-3 rounded-lg border border-dashed border-border/60 bg-muted/30">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Report Types (composite — pick one or more)</label>
+              <div className="flex flex-wrap gap-3">
+                {(["staff", "attendance", "leave"] as ScheduleReportType[]).map((t) => {
+                  const cfg = REPORT_TYPE_CONFIG[t];
+                  return (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer text-sm">
+                      <Checkbox checked={selectedTypes.has(t)} onCheckedChange={() => toggleType(t)} />
+                      <span>{cfg.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex-1 min-w-[120px]">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequency</label>
-              <Select value={newFreq} onValueChange={(v) => setNewFreq(v as ScheduleFrequency)}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="annually">Annually</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[140px]">
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequency</label>
+                <Select value={newFreq} onValueChange={(v) => setNewFreq(v as ScheduleFrequency)}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                size="sm"
+                className="gap-1"
+                onClick={() => createMutation.mutate()}
+                disabled={createMutation.isPending || selectedTypes.size === 0}
+              >
+                <Plus className="h-4 w-4" /> Add {selectedTypes.size > 1 ? `${selectedTypes.size} Schedules` : "Schedule"}
+              </Button>
             </div>
-            <Button
-              size="sm"
-              className="gap-1"
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
-            >
-              <Plus className="h-4 w-4" /> Add Schedule
-            </Button>
           </div>
         )}
 
