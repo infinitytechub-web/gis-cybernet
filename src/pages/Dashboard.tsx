@@ -343,6 +343,7 @@ export default function Dashboard() {
           <InterlinkWidget />
           
           {isAdminOrSupervisor && <StaffAppraisalsWidget />}
+          {isAdminOrSupervisor && <PostingsTransfersWidget />}
           <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
         </div>
       )}
