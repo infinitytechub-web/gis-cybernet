@@ -264,7 +264,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
+    <main className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4" aria-labelledby="login-heading">
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
