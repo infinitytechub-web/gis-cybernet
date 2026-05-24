@@ -1,6 +1,7 @@
 // csrf-classification: cron: protected by isInternalCaller / x-cron-secret
 import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { isInternalCaller } from '../_shared/cron-auth.ts'
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -35,23 +36,10 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60
 }
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split('.')
-  if (parts.length < 2) {
-    return null
-  }
-
-  try {
-    const payload = parts[1]
-      .replaceAll('-', '+')
-      .replaceAll('_', '/')
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
-
-    return JSON.parse(atob(payload)) as Record<string, unknown>
-  } catch {
-    return null
-  }
-}
+// JWT claims parsing removed — authentication is now performed by
+// isInternalCaller(), which compares the Bearer token against the actual
+// SUPABASE_SERVICE_ROLE_KEY secret. This avoids relying on unsigned JWT
+// payloads, which could be forged when verify_jwt=false at the gateway.
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
@@ -92,25 +80,16 @@ Deno.serve(async (req) => {
     )
   }
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
+  // Authoritative caller check: requires either the actual service-role key
+  // (used by pg_cron self-invocations) or a matching CRON_SECRET header.
+  // This does NOT trust the JWT payload — it compares against the real secret.
+  if (!isInternalCaller(req)) {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )
   }
 
-  // Defense in depth: verify_jwt=true already requires a valid JWT at the
-  // gateway layer. This adds an explicit role check so only service-role
-  // callers can trigger queue processing.
-  const token = authHeader.slice('Bearer '.length).trim()
-  const claims = parseJwtClaims(token)
-  if (claims?.role !== 'service_role') {
-    return new Response(
-      JSON.stringify({ error: 'Forbidden' }),
-      { status: 403, headers: { 'Content-Type': 'application/json' } }
-    )
-  }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
