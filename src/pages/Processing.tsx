@@ -105,7 +105,7 @@ export default function Processing() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={colsClass}>
           <TabsTrigger value="visa" className="gap-1 text-xs sm:text-sm">
-            <Stamp className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Visa Apps
+            <Stamp className="h-4 w-4 text-blue-600 dark:text-blue-400" /> E-Visa Application
           </TabsTrigger>
           <TabsTrigger value="extensions" className="gap-1 text-xs sm:text-sm">
             <FileText className="h-4 w-4 text-purple-600 dark:text-purple-400" /> Extensions
