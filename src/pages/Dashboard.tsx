@@ -39,6 +39,7 @@ import StaffAppraisalsWidget from "@/components/dashboard/StaffAppraisalsWidget"
 import AttendanceLogWidget from "@/components/dashboard/AttendanceLogWidget";
 import PostingsTransfersWidget from "@/components/dashboard/PostingsTransfersWidget";
 import CommandTierAnalyticsTabs from "@/components/dashboard/CommandTierAnalyticsTabs";
+import RetirementAlertWidget from "@/components/dashboard/RetirementAlertWidget";
 
 const CHART_COLORS = [
   "hsl(var(--primary))",
@@ -344,6 +345,7 @@ export default function Dashboard() {
           <InterlinkWidget />
           
           {isAdminOrSupervisor && <StaffAppraisalsWidget />}
+          {isAdminOrSupervisor && <RetirementAlertWidget />}
           {isAdminOrSupervisor && <CommandTierAnalyticsTabs />}
           <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
         </div>
