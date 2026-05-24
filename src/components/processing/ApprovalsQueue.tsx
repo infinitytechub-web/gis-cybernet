@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, ShieldCheck, CheckCircle2, XCircle, MessageSquareWarning, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
 
 type AppKind = "visa" | "extensions" | "passport" | "official" | "enquiry";
 
