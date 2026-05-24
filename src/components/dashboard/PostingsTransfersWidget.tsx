@@ -170,9 +170,9 @@ export default function PostingsTransfersWidget() {
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff ID, name, station, appointment…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[280px] border rounded-md">
           <Table className="min-w-[900px]">
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
                 {headers.map((h) => <TableHead key={h} className="text-xs whitespace-nowrap">{h}</TableHead>)}
                 <TableHead className="text-xs w-20">Actions</TableHead>
@@ -184,7 +184,7 @@ export default function PostingsTransfersWidget() {
               ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">No records.</TableCell></TableRow>
               ) : (
-                filtered.slice(0, 50).map((r) => (
+                filtered.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell className="text-xs font-mono">{r.staffId}</TableCell>
                     <TableCell className="text-xs font-medium">{r.name}</TableCell>
@@ -222,17 +222,13 @@ export default function PostingsTransfersWidget() {
               )}
             </TableBody>
           </Table>
-          {filtered.length > 50 && (
-            <p className="text-xs text-muted-foreground text-center pt-2">
-              Showing first 50 of {filtered.length}. Use search or export for the full list.
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground pt-2">
-            Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
-            {" · "}
-            <button className="underline" onClick={() => navigate("/postings/history")}>Open full transfer history →</button>
-          </p>
         </div>
+        <p className="text-xs text-muted-foreground pt-2">
+          Showing {filtered.length} record{filtered.length === 1 ? "" : "s"} · scroll within the table to view all · use search to narrow down.
+          {" · "}Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
+          {" · "}
+          <button className="underline" onClick={() => navigate("/postings/history")}>Open full transfer history →</button>
+        </p>
       </CardContent>
     </Card>
   );
