@@ -189,22 +189,51 @@ export default function PostingsTransfersWidget() {
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff ID, name, station, appointment…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8 h-9" />
         </div>
+        {isAdmin && (
+          <BulkActionBar
+            count={bulk.count}
+            itemLabel="staff record"
+            onClear={bulk.clear}
+            onConfirmDelete={() => bulkArchiveMutation.mutate(bulk.selectedIds)}
+            deleting={bulkArchiveMutation.isPending}
+            destructiveLabel="Archive selected"
+            description={`${bulk.count} staff record${bulk.count === 1 ? "" : "s"} will be marked inactive and moved to the Recycle Bin.`}
+          />
+        )}
         <div className="overflow-auto max-h-[280px] border rounded-md">
           <Table className="min-w-[900px]">
             <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
+                {isAdmin && (
+                  <TableHead className="text-xs w-8">
+                    <Checkbox
+                      checked={bulk.allVisibleSelected ? true : bulk.someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={bulk.toggleAllVisible}
+                      aria-label="Select all visible"
+                    />
+                  </TableHead>
+                )}
                 {headers.map((h) => <TableHead key={h} className="text-xs whitespace-nowrap">{h}</TableHead>)}
                 <TableHead className="text-xs w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={isAdmin ? 11 : 10} className="text-center text-muted-foreground py-6">Loading…</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">No records.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={isAdmin ? 11 : 10} className="text-center text-muted-foreground py-6">No records.</TableCell></TableRow>
               ) : (
                 filtered.map((r) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} data-state={bulk.isSelected(r.id) ? "selected" : undefined}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={bulk.isSelected(r.id)}
+                          onCheckedChange={() => bulk.toggle(r.id)}
+                          aria-label={`Select ${r.name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="text-xs font-mono">{r.staffId}</TableCell>
                     <TableCell className="text-xs font-medium">{r.name}</TableCell>
                     <TableCell className="text-xs">{r.dateJoined ? format(new Date(r.dateJoined), "dd MMM yyyy") : "—"}</TableCell>
