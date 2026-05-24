@@ -100,9 +100,8 @@ function buildDepartmentDocHTML(dept: any) {
 
 function viewDepartmentDoc(dept: any) {
   const html = buildDepartmentDocHTML(dept);
-  const w = window.open("", "_blank");
+  const w = openPrintWindow(html, { autoPrint: false });
   if (!w) { toast.error("Please allow pop-ups to view"); return; }
-  w.document.write(html); w.document.close();
 }
 
 function downloadDepartmentDoc(dept: any) {
@@ -114,10 +113,8 @@ function downloadDepartmentDoc(dept: any) {
 
 function printDepartmentDoc(dept: any) {
   const html = buildDepartmentDocHTML(dept);
-  const w = window.open("", "_blank");
+  const w = openPrintWindow(html, { autoPrint: true, printDelayMs: 500 });
   if (!w) { toast.error("Please allow pop-ups to print"); return; }
-  w.document.write(html); w.document.close();
-  w.onload = () => { w.focus(); w.print(); };
 }
 
 export default function Departments() {
