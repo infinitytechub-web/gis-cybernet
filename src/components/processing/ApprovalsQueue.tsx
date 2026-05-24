@@ -165,16 +165,21 @@ export default function ApprovalsQueue() {
         Command-tier review of all Front Desk applications across departments.
       </div>
 
-      {/* Application kind selector */}
-      <Tabs value={kind} onValueChange={(v) => setKind(v as AppKind)}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="visa">Visa</TabsTrigger>
-          <TabsTrigger value="extensions">Extensions</TabsTrigger>
-          <TabsTrigger value="passport">Passport</TabsTrigger>
-          <TabsTrigger value="official">Official</TabsTrigger>
-          <TabsTrigger value="enquiry">Enquiry</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Application kind filter */}
+      <div className="flex items-center gap-2">
+        <Label className="text-sm whitespace-nowrap">Application type</Label>
+        <Select value={kind} onValueChange={(v) => setKind(v as AppKind)}>
+          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="visa">Visa</SelectItem>
+            <SelectItem value="extensions">Extensions</SelectItem>
+            <SelectItem value="passport">Passport</SelectItem>
+            <SelectItem value="official">Official</SelectItem>
+            <SelectItem value="enquiry">Enquiry</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
