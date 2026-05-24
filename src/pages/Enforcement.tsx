@@ -28,6 +28,7 @@ import { GhanaGPSInput, canonicalizeGpsLocation, isValidGpsLocation } from "@/co
 import { MugshotUpload } from "@/components/enforcement/MugshotUpload";
 import { AuthorisedByPicker } from "@/components/enforcement/AuthorisedByPicker";
 import { useEffect } from "react";
+import { openPrintWindow } from "@/lib/safe-print";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { format } from "date-fns";
