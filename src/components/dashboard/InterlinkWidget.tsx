@@ -118,7 +118,7 @@ export default function InterlinkWidget() {
 
 function Stat({ label, value, tone, icon: Icon }: { label: string; value: number; tone: string; icon: any }) {
   return (
-    <div className={`rounded-lg p-2 text-white bg-gradient-to-br ${tone} shadow-sm`}>
+    <div className={`rounded-lg p-2 text-white shadow-sm ${tone === 'from-amber-500 to-rose-500' ? 'bg-sky-800' : tone === 'from-indigo-500 to-blue-500' ? 'bg-yellow-300 text-black' : 'bg-gradient-to-br ' + tone}`}>
       <div className="flex items-center justify-between">
         <Icon className="h-3.5 w-3.5 opacity-80" />
         <span className="text-lg font-bold leading-none">{value}</span>
