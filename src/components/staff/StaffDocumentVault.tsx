@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
 import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 const DOC_TYPES = [
   { value: "ghana_card", label: "Ghana Card" },
@@ -163,6 +166,37 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
       qc.invalidateQueries({ queryKey: ["staff-doc-vault", profileId] });
     } catch (e: any) {
       toast.error(e.message || "Delete failed");
+    }
+  };
+
+  const bulk = useBulkSelection(filtered as { id: string }[]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const bulkDeleteDocs = async () => {
+    if (bulk.count === 0) return;
+    setBulkDeleting(true);
+    try {
+      const toDelete = (filtered as any[]).filter((d) => bulk.isSelected(d.id));
+      let success = 0;
+      for (const d of toDelete) {
+        try {
+          await softDelete({
+            table: "staff_documents",
+            id: d.id,
+            label: d.file_name || d.document_type,
+            context: d.document_number || undefined,
+            storagePaths: d.file_path ? [{ bucket: "staff-documents", path: d.file_path }] : [],
+          });
+          success++;
+        } catch (e: any) {
+          toast.error(`Failed: ${d.file_name || d.document_type} — ${e.message}`);
+        }
+      }
+      if (success > 0) toast.success(`${success} document${success === 1 ? "" : "s"} moved to Recycle Bin`);
+      bulk.clear();
+      qc.invalidateQueries({ queryKey: ["staff-doc-vault", profileId] });
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
