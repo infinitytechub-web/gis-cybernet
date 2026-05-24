@@ -24,6 +24,9 @@ import { logAdminAudit } from "@/lib/admin-audit";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
@@ -314,6 +317,20 @@ export default function Staff() {
       toast.success("Staff deleted");
     },
     onError: (e: any) => toast.error(e.message),
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("profiles").delete().in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
+      toast.success(`${n} staff record${n === 1 ? "" : "s"} deleted`);
+      bulk.clear();
+    },
+    onError: (e: any) => toast.error(e.message || "Bulk delete failed"),
   });
 
   const toggleSort = (field: "name" | "rank" | "department" | "status") => {
