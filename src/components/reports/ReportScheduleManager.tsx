@@ -35,9 +35,18 @@ const FREQUENCY_CONFIG: Record<ScheduleFrequency, { label: string; badge: string
 export default function ReportScheduleManager() {
   const { isAdmin, user } = useAuth();
   const qc = useQueryClient();
-  const [newType, setNewType] = useState<ScheduleReportType>("staff");
+  const [selectedTypes, setSelectedTypes] = useState<Set<ScheduleReportType>>(new Set(["staff"]));
   const [newFreq, setNewFreq] = useState<ScheduleFrequency>("daily");
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; report_type: ScheduleReportType; frequency: ScheduleFrequency } | null>(null);
+
+  const toggleType = (t: ScheduleReportType) => {
+    setSelectedTypes((prev) => {
+      const n = new Set(prev);
+      n.has(t) ? n.delete(t) : n.add(t);
+      return n;
+    });
+  };
 
   const { data: schedules = [], isLoading } = useQuery({
     queryKey: ["report-schedules"],
