@@ -313,7 +313,62 @@ export default function ReportScheduleManager() {
         <p className="text-xs text-muted-foreground">
           Scheduled reports are auto-generated as CSV files and saved to Uploaded Reports. Email delivery requires email domain setup.
         </p>
+        <p className="text-xs text-muted-foreground">
+          Scheduled reports are auto-generated as CSV files and saved to Uploaded Reports. Email delivery requires email domain setup.
+        </p>
       </CardContent>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Schedule</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3 py-2">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Report Type</label>
+                <Select
+                  value={editing.report_type}
+                  onValueChange={(v) => setEditing({ ...editing, report_type: v as ScheduleReportType })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Staff Summary</SelectItem>
+                    <SelectItem value="attendance">Attendance</SelectItem>
+                    <SelectItem value="leave">Leave/Pass</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Frequency</label>
+                <Select
+                  value={editing.frequency}
+                  onValueChange={(v) => setEditing({ ...editing, frequency: v as ScheduleFrequency })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button
+              disabled={editMutation.isPending}
+              onClick={() => editing && editMutation.mutate(editing)}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
