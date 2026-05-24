@@ -26,6 +26,7 @@ import { format, subDays, subMonths, startOfMonth, endOfMonth, eachDayOfInterval
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
+import PostingsTransfersWidget from "@/components/dashboard/PostingsTransfersWidget";
 
 const COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-blue-100 text-blue-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
@@ -463,6 +464,10 @@ export default function Analytics() {
           <ExportMenu label="Compliance Report" getData={getComplianceData} />
         </div>
       </div>
+
+      {/* Staff Transfer / Postings — Admin & System Administrators only */}
+      {isAdmin && <PostingsTransfersWidget />}
+
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

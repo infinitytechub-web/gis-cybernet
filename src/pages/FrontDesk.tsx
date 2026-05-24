@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { FileText, Stamp, BookOpen, ClipboardList, Shield, HelpCircle, IdCard } from "lucide-react";
+import { FileText, Stamp, ClipboardList, Shield, HelpCircle, IdCard } from "lucide-react";
 import VisaApplications from "@/components/frontdesk/VisaApplications";
 import VisaExtensions from "@/components/frontdesk/VisaExtensions";
-import PassportApplications from "@/components/frontdesk/PassportApplications";
 import OfficialApplications from "@/components/frontdesk/OfficialApplications";
 import EnquiryApplications from "@/components/frontdesk/EnquiryApplications";
 import Permits from "@/components/frontdesk/Permits";
@@ -32,7 +31,7 @@ export default function FrontDesk() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">Front Desk</h1>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="visa" className="gap-1 text-xs sm:text-sm">
             <Stamp className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Visa Apps
           </TabsTrigger>
@@ -41,9 +40,6 @@ export default function FrontDesk() {
           </TabsTrigger>
           <TabsTrigger value="permits" className="gap-1 text-xs sm:text-sm">
             <IdCard className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Permits
-          </TabsTrigger>
-          <TabsTrigger value="passport" className="gap-1 text-xs sm:text-sm">
-            <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Passport
           </TabsTrigger>
           <TabsTrigger value="official" className="gap-1 text-xs sm:text-sm">
             <Shield className="h-4 w-4 text-cyan-600 dark:text-cyan-400" /> Official
@@ -58,7 +54,6 @@ export default function FrontDesk() {
         <TabsContent value="visa"><VisaApplications /></TabsContent>
         <TabsContent value="extensions"><VisaExtensions /></TabsContent>
         <TabsContent value="permits"><Permits /></TabsContent>
-        <TabsContent value="passport"><PassportApplications /></TabsContent>
         <TabsContent value="official"><OfficialApplications /></TabsContent>
         <TabsContent value="enquiry"><EnquiryApplications /></TabsContent>
         <TabsContent value="audit"><AuditLog /></TabsContent>
