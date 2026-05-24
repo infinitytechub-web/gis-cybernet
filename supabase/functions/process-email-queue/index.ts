@@ -36,23 +36,10 @@ function getRetryAfterSeconds(error: unknown): number {
   return 60
 }
 
-function parseJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split('.')
-  if (parts.length < 2) {
-    return null
-  }
-
-  try {
-    const payload = parts[1]
-      .replaceAll('-', '+')
-      .replaceAll('_', '/')
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, '=')
-
-    return JSON.parse(atob(payload)) as Record<string, unknown>
-  } catch {
-    return null
-  }
-}
+// JWT claims parsing removed — authentication is now performed by
+// isInternalCaller(), which compares the Bearer token against the actual
+// SUPABASE_SERVICE_ROLE_KEY secret. This avoids relying on unsigned JWT
+// payloads, which could be forged when verify_jwt=false at the gateway.
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
