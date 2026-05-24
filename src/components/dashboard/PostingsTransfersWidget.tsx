@@ -110,6 +110,20 @@ export default function PostingsTransfersWidget() {
     onError: (e: any) => toast.error(e.message || "Failed to archive"),
   });
 
+  const bulkArchiveMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("profiles").update({ status: "inactive" as any }).in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      qc.invalidateQueries({ queryKey: ["postings-transfers-widget"] });
+      toast.success(`${n} staff record${n === 1 ? "" : "s"} archived`);
+      bulk.clear();
+    },
+    onError: (e: any) => toast.error(e.message || "Bulk archive failed"),
+  });
+
   const filtered = useMemo(() => {
     if (!q.trim()) return rows;
     const needle = q.toLowerCase();
@@ -120,6 +134,8 @@ export default function PostingsTransfersWidget() {
       r.appointment.toLowerCase().includes(needle)
     );
   }, [rows, q]);
+
+  const bulk = useBulkSelection(filtered);
 
   if (!isAdminOrSupervisor) return null;
 
