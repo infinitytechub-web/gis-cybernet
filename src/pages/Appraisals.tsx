@@ -25,7 +25,7 @@ const CRITERIA: { key: string; label: string; hint: string }[] = [
   { key: "job_knowledge",          label: "1. Job Knowledge",            hint: "Understanding of duties, procedures, regulations." },
   { key: "quality_of_work",        label: "2. Quality of Work",          hint: "Accuracy, thoroughness, professionalism of output." },
   { key: "productivity",           label: "3. Productivity",             hint: "Volume of work completed within time standards." },
-  { key: "discipline_conduct",     label: "4. Discipline & Conduct",     hint: "Adherence to GIS code of conduct, integrity, dress." },
+  { key: "discipline_conduct",     label: "4. Discipline & Conduct",     hint: "Adherence to GIS code of conduct, integrity, uniform." },
   { key: "leadership_teamwork",    label: "5. Leadership / Teamwork",    hint: "Collaboration, supporting peers, leading when needed." },
   { key: "initiative",             label: "6. Initiative",               hint: "Proactiveness, problem-solving, going beyond duty." },
   { key: "punctuality_attendance", label: "7. Punctuality & Attendance", hint: "Reporting times, leave compliance, reliability." },
