@@ -283,11 +283,21 @@ export default function ReportScheduleManager() {
                             </Button>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-destructive hover:text-destructive"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Edit"
+                              onClick={() => setEditing({ id: s.id, report_type: s.report_type, frequency: s.frequency })}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              title="Delete"
                               onClick={() => deleteMutation.mutate(s.id)}
                             >
-                              Remove
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
