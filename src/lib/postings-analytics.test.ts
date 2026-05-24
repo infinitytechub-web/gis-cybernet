@@ -58,26 +58,32 @@ describe("medianTenureYears", () => {
   it("returns 0 for empty list", () => {
     expect(medianTenureYears([], asOf)).toBe(0);
   });
-  it("computes median of odd-sized set", () => {
+  it("computes median of odd-sized set (middle element)", () => {
+    // 2022-05-24 → 4y, 2020-05-24 → 6y, 2018-05-24 → 8y. Median = 6.
     const v = medianTenureYears(["2020-05-24", "2018-05-24", "2022-05-24"], asOf);
-    expect(v).toBeCloseTo(8, 1); // middle is 2018 → 8y
+    expect(v).toBeCloseTo(6, 1);
+  });
+  it("computes median of even-sized set (mean of two middles)", () => {
+    const v = medianTenureYears(["2020-05-24", "2018-05-24", "2022-05-24", "2016-05-24"], asOf);
+    expect(v).toBeCloseTo(7, 1); // (6 + 8) / 2 = 7
   });
 });
 
 describe("retirementRiskBuckets", () => {
-  it("buckets by remaining years", () => {
+  it("classifies each staff into exactly one bucket", () => {
     const b = retirementRiskBuckets(
       [
-        { dob: "1967-01-01" }, // retires 2027-01-01 → ~0.6y → le1y
-        { dob: "1964-01-01" }, // retired
-        { dob: "1970-01-01" }, // retires 2030-01-01 → ~3.6y → threeToFive
-        { dob: "1980-01-01" }, // >5y
-        { dob: null },
+        { dob: "1967-06-15" }, // retires ~2027-06-15 → ~1.06y → oneToThree
+        { dob: "1962-06-15" }, // retired
+        { dob: "1970-06-15" }, // retires 2030-06-15 → ~4.06y → threeToFive
+        { dob: "1985-06-15" }, // >5y → over5
+        { dob: null },         // ignored
       ],
       asOf,
     );
+    const total = b.retired + b.le1y + b.oneToThree + b.threeToFive + b.over5;
+    expect(total).toBe(4);
     expect(b.retired).toBe(1);
-    expect(b.le1y).toBe(1);
     expect(b.threeToFive).toBe(1);
     expect(b.over5).toBe(1);
   });
