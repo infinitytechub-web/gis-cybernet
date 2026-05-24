@@ -80,8 +80,10 @@ Deno.serve(async (req) => {
     )
   }
 
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
+  // Authoritative caller check: requires either the actual service-role key
+  // (used by pg_cron self-invocations) or a matching CRON_SECRET header.
+  // This does NOT trust the JWT payload — it compares against the real secret.
+  if (!isInternalCaller(req)) {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
