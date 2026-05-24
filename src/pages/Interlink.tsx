@@ -717,7 +717,7 @@ function ComposeTab({ userId }: { userId: string }) {
 
         <Button
           size="lg"
-          className="w-full bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90 text-white shadow-md bg-green-600"
+          className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md"
           onClick={handleDispatch}
           disabled={sending}
         >
