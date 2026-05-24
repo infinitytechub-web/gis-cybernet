@@ -709,11 +709,7 @@ export default function GpsAddresses() {
       ["OSM ID", trackResult.osm_id ?? "—"],
       ["Captured", captured],
     ];
-    const win = window.open("", "_blank", "width=900,height=720");
-    if (!win) {
-      toast({ title: "Popup blocked", description: "Allow popups to print the lookup.", variant: "destructive" });
-      return;
-    }
+    // Window is opened after HTML is built via openPrintWindow (see below).
     const esc = (s: string) =>
       String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
     const rowsHtml = rows
