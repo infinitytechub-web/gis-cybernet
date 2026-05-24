@@ -54,12 +54,18 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const escapeHtml = (s: string) =>
+      s.replace(/&/g, "&amp;")
+       .replace(/</g, "&lt;")
+       .replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;")
+       .replace(/'/g, "&#39;");
     const rows = events.map(e =>
-      `<tr><td>${new Date(e.created_at).toLocaleString()}</td>` +
-      `<td><strong>${e.action.toUpperCase()}</strong></td>` +
-      `<td>${e.layer}</td>` +
-      `<td>${(e.user_label ?? "—").replace(/[<>]/g, "")}</td>` +
-      `<td>${(e.subject ?? "—").slice(0, 120).replace(/[<>]/g, "")}</td></tr>`
+      `<tr><td>${escapeHtml(new Date(e.created_at).toLocaleString())}</td>` +
+      `<td><strong>${escapeHtml(String(e.action).toUpperCase())}</strong></td>` +
+      `<td>${escapeHtml(String(e.layer ?? ""))}</td>` +
+      `<td>${escapeHtml(String(e.user_label ?? "—"))}</td>` +
+      `<td>${escapeHtml(String(e.subject ?? "—").slice(0, 120))}</td></tr>`
     ).join("");
 
     const html = `<div style="font-family:Arial,sans-serif">
