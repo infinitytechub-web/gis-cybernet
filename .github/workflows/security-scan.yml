@@ -63,28 +63,16 @@ jobs:
       - name: Install ESLint security plugins
         run: bun add -d eslint-plugin-security eslint-plugin-no-unsanitized
 
-      - name: ESLint security rules
-        # Run against src/ only — Lovable repo has plenty of edge-function
-        # files that use different rule sets.
+      - name: ESLint security rules (flat config)
+        # ESLint v9 uses flat config — invoked via a dedicated security config
+        # file (eslint.security.config.mjs) that registers only the
+        # dangerous-pattern rules from eslint-plugin-security +
+        # eslint-plugin-no-unsanitized. Warnings are informational; errors
+        # fail the job.
         run: |
           npx eslint \
-            --no-eslintrc \
-            --parser-options=ecmaVersion:2022,sourceType:module,ecmaFeatures:{jsx:true} \
-            --plugin security,no-unsanitized \
-            --rule '{
-              "security/detect-eval-with-expression": "error",
-              "security/detect-non-literal-fs-filename": "warn",
-              "security/detect-unsafe-regex": "warn",
-              "security/detect-buffer-noassert": "error",
-              "security/detect-child-process": "error",
-              "security/detect-pseudoRandomBytes": "error",
-              "no-unsanitized/method": "error",
-              "no-unsanitized/property": "error"
-            }' \
-            --ext .ts,.tsx,.js,.jsx \
-            src/ || EXIT=$?
-          # Treat warnings as informational; only error-level findings fail.
-          test -z "${EXIT:-}" || [ "${EXIT}" -lt 1 ]
+            --config eslint.security.config.mjs \
+            "src/**/*.{ts,tsx,js,jsx}"
 
       - name: Semgrep (XSS, injection, common web bugs)
         uses: semgrep/semgrep-action@v1
