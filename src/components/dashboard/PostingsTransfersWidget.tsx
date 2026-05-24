@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowRightLeft, Download, Printer, Pencil, Trash2, Search, FileText, FileSpreadsheet } from "lucide-react";
 import { differenceInYears, differenceInMonths, differenceInDays, format } from "date-fns";
 import { exportReport } from "@/lib/export-utils";
-import { softDelete } from "@/lib/recycle-bin";
+
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
