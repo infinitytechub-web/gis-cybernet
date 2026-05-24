@@ -90,7 +90,7 @@ export default function Interlink() {
   return (
     <div className="space-y-4 p-2 md:p-4">
       {/* Colorful header */}
-      <div className="rounded-xl p-5 bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-lg bg-teal-500">
+      <div className="rounded-xl p-5 bg-teal-500 text-white shadow-lg">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-white/20 p-2.5">
             <Network className="h-6 w-6" />
