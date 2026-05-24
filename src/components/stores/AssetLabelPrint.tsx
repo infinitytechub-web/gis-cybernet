@@ -31,7 +31,7 @@ export async function printAssetLabel(item: AssetLabelData) {
     return;
   }
 
-  const win = window.open("", "_blank", "width=520,height=360");
+  
   const html = `<!doctype html>
 <html>
 <head>
