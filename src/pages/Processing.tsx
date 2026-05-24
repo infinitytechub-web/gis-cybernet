@@ -59,19 +59,6 @@ export default function Processing() {
 
   const createApplication = useMutation({
     mutationFn: async () => {
-      const payload = {
-        ...form,
-        entry_date: form.entry_date || null,
-        exit_date: form.exit_date || null,
-        status: "submitted",
-        processed_by: user?.id,
-      };
-      const { error } = await supabase.from("visa_applications").insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-  const createApplication = useMutation({
-    mutationFn: async () => {
       const payload: any = {
         applicant_name: form.applicant_name,
         passport_number: form.passport_number,
