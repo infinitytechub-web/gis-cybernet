@@ -68,9 +68,9 @@ describe("retirementRiskBuckets", () => {
   it("buckets by remaining years", () => {
     const b = retirementRiskBuckets(
       [
-        { dob: "1966-01-01" }, // ~0y left → le1y
+        { dob: "1967-01-01" }, // retires 2027-01-01 → ~0.6y → le1y
         { dob: "1964-01-01" }, // retired
-        { dob: "1970-01-01" }, // ~4y → threeToFive
+        { dob: "1970-01-01" }, // retires 2030-01-01 → ~3.6y → threeToFive
         { dob: "1980-01-01" }, // >5y
         { dob: null },
       ],
