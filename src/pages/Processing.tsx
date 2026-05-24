@@ -67,8 +67,7 @@ export default function Processing() {
   }
 
   const showApprovals = !!role && APPROVALS_ROLES.includes(role);
-  const tabCount = 4 + (showApprovals ? 1 : 0); // visa, extensions, permits, audit (+approvals)
-  const colsClass = `grid w-full grid-cols-${tabCount}`;
+  const colsClass = showApprovals ? "grid w-full grid-cols-5" : "grid w-full grid-cols-4";
 
   return (
     <div className="space-y-6">
