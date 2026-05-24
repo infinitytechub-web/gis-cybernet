@@ -157,15 +157,18 @@ export default function ProcessingPermits() {
 
   return (
     <div className="space-y-4 mt-4">
+      <CategoryTabs value={category} onChange={setCategory} counts={catCounts} />
+
       {hasActive && (
         <FilterSummaryBar
           filters={[
             ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
             ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter.replace("_", " "), onClear: () => setStatusFilter("all") }] : []),
             ...(typeFilter !== "all" ? [{ label: "Type", value: permitTypeLabel(typeFilter), onClear: () => setTypeFilter("all") }] : []),
+            ...(category !== "all" ? [{ label: "Category", value: category === "ecowas" ? "ECOWAS" : "Non-ECOWAS", onClear: () => setCategory("all") }] : []),
           ]}
           totalResults={filtered.length}
-          onClearAll={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
+          onClearAll={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); setCategory("all"); }}
         />
       )}
 
@@ -192,7 +195,12 @@ export default function ProcessingPermits() {
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) setEditId(null); setOpen(v); }}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Review Permit Application</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Review Permit Application
+              {reviewItem && categoryBadge(catOf(reviewItem))}
+            </DialogTitle>
+          </DialogHeader>
           {reviewItem && (
             <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
               {reviewItem.application_reference && <div><span className="text-muted-foreground">Reference:</span> {reviewItem.application_reference}</div>}
