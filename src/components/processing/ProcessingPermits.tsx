@@ -20,6 +20,9 @@ import { createNotification } from "@/lib/notifications";
 import { PERMIT_TYPES, PROCESSING_PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 import { ProcessingChecklist, PERMIT_CHECKLIST } from "@/components/applications/ProcessingChecklist";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CategoryTabs, categoryBadge, type ApplicantCategory } from "@/components/processing/CategoryTabs";
+import { isEcowasNationality } from "@/lib/countries";
 
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
 
@@ -40,10 +43,19 @@ export default function ProcessingPermits() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [category, setCategory] = useState<ApplicantCategory>("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<any>(null);
-  const [form, setForm] = useState<{ status: string; notes: string; fee_charged: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", fee_charged: "", checklist: {} });
+  const [form, setForm] = useState<{
+    status: string; notes: string; fee_charged: string; checklist: Record<string, boolean>;
+    ecowas_id_number: string; biometrics_captured: boolean;
+    yellow_fever_cert: boolean; police_clearance: boolean; medical_clearance: boolean;
+  }>({
+    status: "submitted", notes: "", fee_charged: "", checklist: {},
+    ecowas_id_number: "", biometrics_captured: false,
+    yellow_fever_cert: false, police_clearance: false, medical_clearance: false,
+  });
 
   useEffect(() => {
     const ch = supabase.channel("processing-permits-realtime")
