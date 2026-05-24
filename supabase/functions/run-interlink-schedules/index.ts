@@ -103,7 +103,8 @@ Deno.serve(async (req) => {
     .lte("next_run_at", now);
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("run-interlink-schedules query error:", error.message);
+    return new Response(JSON.stringify({ error: "An internal error occurred" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
