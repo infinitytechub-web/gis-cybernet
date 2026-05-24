@@ -271,7 +271,7 @@ export default function Login() {
             <img src={gisLogo} alt="Ghana Immigration Service" width={96} height={96} fetchPriority="high" decoding="async" className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
+            <h1 id="login-heading" className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
             <p className="text-sm text-muted-foreground">Amasaman Sector Command — Cybernet</p>
           </div>
         </CardHeader>
