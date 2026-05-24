@@ -254,7 +254,7 @@ export default function Login() {
       <div className="text-center space-y-1">
         <ForgotPasswordDialog />
         <div>
-          <a href="/admin-recovery" className="text-[11px] text-muted-foreground hover:text-primary hover:underline">
+          <a href="/admin-recovery" className="text-xs text-foreground hover:text-primary hover:underline">
             Administrator account locked? Use Admin Recovery
           </a>
         </div>
@@ -264,14 +264,14 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4">
+    <main className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4" aria-labelledby="login-heading">
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
             <img src={gisLogo} alt="Ghana Immigration Service" width={96} height={96} fetchPriority="high" decoding="async" className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
+            <h1 id="login-heading" className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
             <p className="text-sm text-muted-foreground">Amasaman Sector Command — Cybernet</p>
           </div>
         </CardHeader>
@@ -325,6 +325,6 @@ export default function Login() {
           </p>
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }

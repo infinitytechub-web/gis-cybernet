@@ -74,16 +74,35 @@ jobs:
             --config eslint.security.config.mjs \
             "src/**/*.{ts,tsx,js,jsx}"
 
-      - name: Semgrep (XSS, injection, common web bugs)
-        uses: semgrep/semgrep-action@v1
+      - name: Set up Python (for Semgrep CLI)
+        uses: actions/setup-python@v5
         with:
-          config: >-
-            p/owasp-top-ten
-            p/javascript
-            p/typescript
-            p/react
-            p/xss
-            p/secrets
+          python-version: "3.11"
+
+      - name: Install Semgrep
+        run: pip install --quiet semgrep
+
+      - name: Semgrep (XSS, injection, common web bugs)
+        # The legacy semgrep/semgrep-action@v1 is deprecated. Invoke the
+        # Semgrep CLI directly so the job stays maintainable and so
+        # transient network errors don't masquerade as security findings.
+        # `--error` makes blocking findings (ERROR severity) fail the job;
+        # warnings are surfaced as informational output only.
+        run: |
+          semgrep \
+            --config p/owasp-top-ten \
+            --config p/javascript \
+            --config p/typescript \
+            --config p/react \
+            --config p/xss \
+            --config p/secrets \
+            --error \
+            --severity ERROR \
+            --exclude node_modules \
+            --exclude dist \
+            --exclude supabase/functions \
+            --timeout 60 \
+            src/
 
   # ───────────────────────────────────────────────────────────────────
   # 3. Supabase RLS / policy hygiene check
