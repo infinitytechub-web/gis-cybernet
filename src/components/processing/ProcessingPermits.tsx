@@ -20,6 +20,9 @@ import { createNotification } from "@/lib/notifications";
 import { PERMIT_TYPES, PROCESSING_PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
 import { ProcessingChecklist, PERMIT_CHECKLIST } from "@/components/applications/ProcessingChecklist";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CategoryTabs, categoryBadge, type ApplicantCategory } from "@/components/processing/CategoryTabs";
+import { isEcowasNationality } from "@/lib/countries";
 
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
 
@@ -40,10 +43,19 @@ export default function ProcessingPermits() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [category, setCategory] = useState<ApplicantCategory>("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<any>(null);
-  const [form, setForm] = useState<{ status: string; notes: string; fee_charged: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", fee_charged: "", checklist: {} });
+  const [form, setForm] = useState<{
+    status: string; notes: string; fee_charged: string; checklist: Record<string, boolean>;
+    ecowas_id_number: string; biometrics_captured: boolean;
+    yellow_fever_cert: boolean; police_clearance: boolean; medical_clearance: boolean;
+  }>({
+    status: "submitted", notes: "", fee_charged: "", checklist: {},
+    ecowas_id_number: "", biometrics_captured: false,
+    yellow_fever_cert: false, police_clearance: false, medical_clearance: false,
+  });
 
   useEffect(() => {
     const ch = supabase.channel("processing-permits-realtime")
@@ -76,6 +88,11 @@ export default function ProcessingPermits() {
       };
       if (form.fee_charged !== "") payload.fee_charged = Number(form.fee_charged);
       payload.processing_checklist = form.checklist;
+      payload.ecowas_id_number = form.ecowas_id_number || null;
+      payload.biometrics_captured = form.biometrics_captured;
+      payload.yellow_fever_cert = form.yellow_fever_cert;
+      payload.police_clearance = form.police_clearance;
+      payload.medical_clearance = form.medical_clearance;
       const { error } = await (supabase as any).from("permits").update(payload).eq("id", editId);
       if (error) throw error;
 
@@ -103,33 +120,55 @@ export default function ProcessingPermits() {
   });
 
   const openReview = (p: any) => {
-    setForm({ status: p.status, notes: p.notes || "", fee_charged: p.fee_charged != null ? String(p.fee_charged) : "", checklist: (p.processing_checklist as Record<string, boolean>) || {} });
+    setForm({
+      status: p.status,
+      notes: p.notes || "",
+      fee_charged: p.fee_charged != null ? String(p.fee_charged) : "",
+      checklist: (p.processing_checklist as Record<string, boolean>) || {},
+      ecowas_id_number: p.ecowas_id_number || "",
+      biometrics_captured: !!p.biometrics_captured,
+      yellow_fever_cert: !!p.yellow_fever_cert,
+      police_clearance: !!p.police_clearance,
+      medical_clearance: !!p.medical_clearance,
+    });
     setEditId(p.id);
     setReviewItem(p);
     setOpen(true);
   };
+
+  const catOf = (p: any) => p.applicant_category || (isEcowasNationality(p.nationality) ? "ecowas" : "non_ecowas");
 
   const filtered = permits.filter((p: any) => {
     const term = search.toLowerCase();
     const matchSearch = !term || p.applicant_name?.toLowerCase().includes(term) || p.passport_number?.toLowerCase().includes(term) || p.application_reference?.toLowerCase().includes(term);
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
     const matchType = typeFilter === "all" || p.permit_type === typeFilter;
-    return matchSearch && matchStatus && matchType;
+    const matchCat = category === "all" || catOf(p) === category;
+    return matchSearch && matchStatus && matchType && matchCat;
   });
 
-  const hasActive = !!search || statusFilter !== "all" || typeFilter !== "all";
+  const catCounts = {
+    all: permits.length,
+    ecowas: permits.filter((p: any) => catOf(p) === "ecowas").length,
+    non_ecowas: permits.filter((p: any) => catOf(p) === "non_ecowas").length,
+  };
+
+  const hasActive = !!search || statusFilter !== "all" || typeFilter !== "all" || category !== "all";
 
   return (
     <div className="space-y-4 mt-4">
+      <CategoryTabs value={category} onChange={setCategory} counts={catCounts} />
+
       {hasActive && (
         <FilterSummaryBar
           filters={[
             ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
             ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter.replace("_", " "), onClear: () => setStatusFilter("all") }] : []),
             ...(typeFilter !== "all" ? [{ label: "Type", value: permitTypeLabel(typeFilter), onClear: () => setTypeFilter("all") }] : []),
+            ...(category !== "all" ? [{ label: "Category", value: category === "ecowas" ? "ECOWAS" : "Non-ECOWAS", onClear: () => setCategory("all") }] : []),
           ]}
           totalResults={filtered.length}
-          onClearAll={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
+          onClearAll={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); setCategory("all"); }}
         />
       )}
 
@@ -156,7 +195,12 @@ export default function ProcessingPermits() {
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) setEditId(null); setOpen(v); }}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Review Permit Application</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Review Permit Application
+              {reviewItem && categoryBadge(catOf(reviewItem))}
+            </DialogTitle>
+          </DialogHeader>
           {reviewItem && (
             <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
               {reviewItem.application_reference && <div><span className="text-muted-foreground">Reference:</span> {reviewItem.application_reference}</div>}
@@ -184,6 +228,20 @@ export default function ProcessingPermits() {
           {reviewItem && <ApplicationDocuments recordType="permit" recordId={reviewItem.id} permitType={reviewItem.permit_type} readOnly />}
           <ProcessingChecklist items={PERMIT_CHECKLIST} value={form.checklist} onChange={(c) => setForm({ ...form, checklist: c })} />
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} className="space-y-3">
+            <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">GIS Standard Fields</div>
+              {reviewItem && catOf(reviewItem) === "ecowas" && (
+                <div><Label>ECOWAS ID / Travel Cert No.</Label>
+                  <Input value={form.ecowas_id_number} onChange={(e) => setForm({ ...form, ecowas_id_number: e.target.value })} />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <label className="flex items-center gap-2"><Checkbox checked={form.biometrics_captured} onCheckedChange={(v) => setForm({ ...form, biometrics_captured: !!v })} /> Biometrics captured</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.yellow_fever_cert} onCheckedChange={(v) => setForm({ ...form, yellow_fever_cert: !!v })} /> Yellow fever certificate</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.police_clearance} onCheckedChange={(v) => setForm({ ...form, police_clearance: !!v })} /> Police clearance</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.medical_clearance} onCheckedChange={(v) => setForm({ ...form, medical_clearance: !!v })} /> Medical clearance</label>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Update Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
@@ -220,7 +278,7 @@ export default function ProcessingPermits() {
               : filtered.map((p: any) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs">{p.application_reference || "—"}</TableCell>
-                  <TableCell className="font-medium">{p.applicant_name}</TableCell>
+                  <TableCell className="font-medium"><div className="flex flex-col gap-0.5">{p.applicant_name}{categoryBadge(catOf(p))}</div></TableCell>
                   <TableCell>{p.passport_number}</TableCell>
                   <TableCell><Badge variant="outline">{permitTypeLabel(p.permit_type)}</Badge></TableCell>
                   <TableCell>{statusBadge(p.status)}</TableCell>

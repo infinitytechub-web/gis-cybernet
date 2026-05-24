@@ -17,10 +17,21 @@ import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExte
 import ProcessingPermits from "@/components/processing/ProcessingPermits";
 import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
+import { CountryCombobox } from "@/components/ui/country-combobox";
+import { Checkbox } from "@/components/ui/checkbox";
+import { isEcowasNationality } from "@/lib/countries";
+import { categoryBadge } from "@/components/processing/CategoryTabs";
 
 const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
 const APPROVALS_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
 const VISA_TYPES = ["tourist", "business", "work", "transit", "student", "diplomatic"];
+const VISA_CLASSES = [
+  { value: "single_entry", label: "Single Entry" },
+  { value: "multiple_entry", label: "Multiple Entry" },
+  { value: "transit", label: "Transit" },
+  { value: "emergency", label: "Emergency Entry" },
+  { value: "ecowas_residence", label: "ECOWAS Residence" },
+];
 
 export default function Processing() {
   const { role, user } = useAuth();
@@ -31,8 +42,15 @@ export default function Processing() {
   const [newOpen, setNewOpen] = useState(false);
   const [form, setForm] = useState({
     applicant_name: "", passport_number: "", nationality: "",
-    visa_type: "tourist", entry_date: "", exit_date: "", purpose: "",
+    visa_type: "tourist", visa_class: "", entry_date: "", exit_date: "",
+    duration_of_stay_days: "", ecowas_id_number: "",
+    letter_of_invitation: false, biometrics_captured: false, yellow_fever_cert: false,
+    purpose: "",
   });
+
+  const derivedCategory: "ecowas" | "non_ecowas" | null = form.nationality
+    ? (isEcowasNationality(form.nationality) ? "ecowas" : "non_ecowas")
+    : null;
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -41,21 +59,37 @@ export default function Processing() {
 
   const createApplication = useMutation({
     mutationFn: async () => {
-      const payload = {
-        ...form,
+      const payload: any = {
+        applicant_name: form.applicant_name,
+        passport_number: form.passport_number,
+        nationality: form.nationality,
+        visa_type: form.visa_type,
+        visa_class: form.visa_class || null,
         entry_date: form.entry_date || null,
         exit_date: form.exit_date || null,
+        duration_of_stay_days: form.duration_of_stay_days ? Number(form.duration_of_stay_days) : null,
+        ecowas_id_number: form.ecowas_id_number || null,
+        letter_of_invitation: form.letter_of_invitation,
+        biometrics_captured: form.biometrics_captured,
+        yellow_fever_cert: form.yellow_fever_cert,
+        purpose: form.purpose,
         status: "submitted",
         processed_by: user?.id,
       };
-      const { error } = await supabase.from("visa_applications").insert(payload);
+      const { error } = await (supabase as any).from("visa_applications").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["visa-applications"] });
       qc.invalidateQueries({ queryKey: ["processing-visa-applications"] });
       toast.success("Application created");
-      setForm({ applicant_name: "", passport_number: "", nationality: "", visa_type: "tourist", entry_date: "", exit_date: "", purpose: "" });
+      setForm({
+        applicant_name: "", passport_number: "", nationality: "",
+        visa_type: "tourist", visa_class: "", entry_date: "", exit_date: "",
+        duration_of_stay_days: "", ecowas_id_number: "",
+        letter_of_invitation: false, biometrics_captured: false, yellow_fever_cert: false,
+        purpose: "",
+      });
       setNewOpen(false);
       setActiveTab("visa");
     },
@@ -77,21 +111,50 @@ export default function Processing() {
           <DialogTrigger asChild>
             <Button className="gap-1"><Plus className="h-4 w-4" /> New Application</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>New Visa Application</DialogTitle></DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                New Visa Application
+                {derivedCategory && categoryBadge(derivedCategory)}
+              </DialogTitle>
+            </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); createApplication.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
                 <div><Label>Passport Number *</Label><Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} required /></div>
-                <div><Label>Nationality *</Label><Input value={form.nationality} onChange={(e) => setForm({ ...form, nationality: e.target.value })} required /></div>
+                <div className="col-span-2"><Label>Nationality *</Label>
+                  <CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required />
+                  {derivedCategory === "ecowas" && (
+                    <p className="text-xs text-muted-foreground mt-1">ECOWAS citizen — visa-free entry up to 90 days. Use this form only if requesting a long-stay visa.</p>
+                  )}
+                </div>
                 <div><Label>Visa Type</Label>
                   <Select value={form.visa_type} onValueChange={(v) => setForm({ ...form, visa_type: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{VISA_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                <div><Label>Visa Class</Label>
+                  <Select value={form.visa_class} onValueChange={(v) => setForm({ ...form, visa_class: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>{VISA_CLASSES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Entry Date</Label><Input type="date" value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
                 <div><Label>Exit Date</Label><Input type="date" value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
+                <div><Label>Duration of Stay (days)</Label>
+                  <Input type="number" min="0" max="365" value={form.duration_of_stay_days} onChange={(e) => setForm({ ...form, duration_of_stay_days: e.target.value })} />
+                </div>
+                {derivedCategory === "ecowas" && (
+                  <div><Label>ECOWAS ID / Travel Cert No.</Label>
+                    <Input value={form.ecowas_id_number} onChange={(e) => setForm({ ...form, ecowas_id_number: e.target.value })} placeholder="e.g. ECOWAS-2025-…" />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm rounded-md border p-3 bg-muted/30">
+                <label className="flex items-center gap-2"><Checkbox checked={form.letter_of_invitation} onCheckedChange={(v) => setForm({ ...form, letter_of_invitation: !!v })} /> Letter of invitation</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.biometrics_captured} onCheckedChange={(v) => setForm({ ...form, biometrics_captured: !!v })} /> Biometrics captured</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.yellow_fever_cert} onCheckedChange={(v) => setForm({ ...form, yellow_fever_cert: !!v })} /> Yellow fever certificate</label>
               </div>
               <div><Label>Purpose</Label><Textarea value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} rows={2} /></div>
               <Button type="submit" className="w-full" disabled={createApplication.isPending}>

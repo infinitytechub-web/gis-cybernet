@@ -5272,13 +5272,16 @@ export type Database = {
       }
       permits: {
         Row: {
+          applicant_category: string | null
           applicant_name: string
           application_reference: string | null
+          biometrics_captured: boolean | null
           course_of_study: string | null
           created_at: string
           current_permit_expiry: string | null
           date_of_birth: string | null
           dual_nationality: string | null
+          ecowas_id_number: string | null
           emergency_contact: string | null
           employer_sponsor_address: string | null
           employer_sponsor_name: string | null
@@ -5295,6 +5298,7 @@ export type Database = {
           institution_name: string | null
           intended_duration_months: number | null
           marital_status: string | null
+          medical_clearance: boolean | null
           nationality: string | null
           nearest_landmark: string | null
           next_of_kin: string | null
@@ -5310,6 +5314,7 @@ export type Database = {
           permit_type: string
           phone: string | null
           place_of_birth: string | null
+          police_clearance: boolean | null
           port_of_entry: string | null
           previous_permit_history: string | null
           processed_by: string | null
@@ -5320,15 +5325,19 @@ export type Database = {
           street_name: string | null
           surname: string | null
           updated_at: string
+          yellow_fever_cert: boolean | null
         }
         Insert: {
+          applicant_category?: string | null
           applicant_name: string
           application_reference?: string | null
+          biometrics_captured?: boolean | null
           course_of_study?: string | null
           created_at?: string
           current_permit_expiry?: string | null
           date_of_birth?: string | null
           dual_nationality?: string | null
+          ecowas_id_number?: string | null
           emergency_contact?: string | null
           employer_sponsor_address?: string | null
           employer_sponsor_name?: string | null
@@ -5345,6 +5354,7 @@ export type Database = {
           institution_name?: string | null
           intended_duration_months?: number | null
           marital_status?: string | null
+          medical_clearance?: boolean | null
           nationality?: string | null
           nearest_landmark?: string | null
           next_of_kin?: string | null
@@ -5360,6 +5370,7 @@ export type Database = {
           permit_type: string
           phone?: string | null
           place_of_birth?: string | null
+          police_clearance?: boolean | null
           port_of_entry?: string | null
           previous_permit_history?: string | null
           processed_by?: string | null
@@ -5370,15 +5381,19 @@ export type Database = {
           street_name?: string | null
           surname?: string | null
           updated_at?: string
+          yellow_fever_cert?: boolean | null
         }
         Update: {
+          applicant_category?: string | null
           applicant_name?: string
           application_reference?: string | null
+          biometrics_captured?: boolean | null
           course_of_study?: string | null
           created_at?: string
           current_permit_expiry?: string | null
           date_of_birth?: string | null
           dual_nationality?: string | null
+          ecowas_id_number?: string | null
           emergency_contact?: string | null
           employer_sponsor_address?: string | null
           employer_sponsor_name?: string | null
@@ -5395,6 +5410,7 @@ export type Database = {
           institution_name?: string | null
           intended_duration_months?: number | null
           marital_status?: string | null
+          medical_clearance?: boolean | null
           nationality?: string | null
           nearest_landmark?: string | null
           next_of_kin?: string | null
@@ -5410,6 +5426,7 @@ export type Database = {
           permit_type?: string
           phone?: string | null
           place_of_birth?: string | null
+          police_clearance?: boolean | null
           port_of_entry?: string | null
           previous_permit_history?: string | null
           processed_by?: string | null
@@ -5420,6 +5437,7 @@ export type Database = {
           street_name?: string | null
           surname?: string | null
           updated_at?: string
+          yellow_fever_cert?: boolean | null
         }
         Relationships: []
       }
@@ -8820,10 +8838,14 @@ export type Database = {
       }
       visa_applications: {
         Row: {
+          applicant_category: string | null
           applicant_name: string
+          biometrics_captured: boolean | null
           created_at: string
           date_of_birth: string | null
           dual_nationality: string | null
+          duration_of_stay_days: number | null
+          ecowas_id_number: string | null
           emergency_contact: string | null
           entry_date: string | null
           exit_date: string | null
@@ -8837,6 +8859,7 @@ export type Database = {
           host_name: string | null
           host_phone: string | null
           id: string
+          letter_of_invitation: boolean | null
           marital_status: string | null
           nationality: string
           nearest_landmark: string | null
@@ -8860,13 +8883,19 @@ export type Database = {
           street_name: string | null
           surname: string | null
           updated_at: string
+          visa_class: string | null
           visa_type: string
+          yellow_fever_cert: boolean | null
         }
         Insert: {
+          applicant_category?: string | null
           applicant_name: string
+          biometrics_captured?: boolean | null
           created_at?: string
           date_of_birth?: string | null
           dual_nationality?: string | null
+          duration_of_stay_days?: number | null
+          ecowas_id_number?: string | null
           emergency_contact?: string | null
           entry_date?: string | null
           exit_date?: string | null
@@ -8880,6 +8909,7 @@ export type Database = {
           host_name?: string | null
           host_phone?: string | null
           id?: string
+          letter_of_invitation?: boolean | null
           marital_status?: string | null
           nationality: string
           nearest_landmark?: string | null
@@ -8903,13 +8933,19 @@ export type Database = {
           street_name?: string | null
           surname?: string | null
           updated_at?: string
+          visa_class?: string | null
           visa_type?: string
+          yellow_fever_cert?: boolean | null
         }
         Update: {
+          applicant_category?: string | null
           applicant_name?: string
+          biometrics_captured?: boolean | null
           created_at?: string
           date_of_birth?: string | null
           dual_nationality?: string | null
+          duration_of_stay_days?: number | null
+          ecowas_id_number?: string | null
           emergency_contact?: string | null
           entry_date?: string | null
           exit_date?: string | null
@@ -8923,6 +8959,7 @@ export type Database = {
           host_name?: string | null
           host_phone?: string | null
           id?: string
+          letter_of_invitation?: boolean | null
           marital_status?: string | null
           nationality?: string
           nearest_landmark?: string | null
@@ -8946,18 +8983,24 @@ export type Database = {
           street_name?: string | null
           surname?: string | null
           updated_at?: string
+          visa_class?: string | null
           visa_type?: string
+          yellow_fever_cert?: boolean | null
         }
         Relationships: []
       }
       visa_extensions: {
         Row: {
+          applicant_category: string | null
           applicant_name: string
+          biometrics_captured: boolean | null
           created_at: string
           current_visa_expiry: string
           date_of_birth: string | null
           dual_nationality: string | null
+          ecowas_id_number: string | null
           emergency_contact: string | null
+          extension_duration_days: number | null
           fee_charged: number | null
           fee_receipt_number: string | null
           foreign_address: string | null
@@ -8995,12 +9038,16 @@ export type Database = {
           visa_application_id: string | null
         }
         Insert: {
+          applicant_category?: string | null
           applicant_name: string
+          biometrics_captured?: boolean | null
           created_at?: string
           current_visa_expiry: string
           date_of_birth?: string | null
           dual_nationality?: string | null
+          ecowas_id_number?: string | null
           emergency_contact?: string | null
+          extension_duration_days?: number | null
           fee_charged?: number | null
           fee_receipt_number?: string | null
           foreign_address?: string | null
@@ -9038,12 +9085,16 @@ export type Database = {
           visa_application_id?: string | null
         }
         Update: {
+          applicant_category?: string | null
           applicant_name?: string
+          biometrics_captured?: boolean | null
           created_at?: string
           current_visa_expiry?: string
           date_of_birth?: string | null
           dual_nationality?: string | null
+          ecowas_id_number?: string | null
           emergency_contact?: string | null
+          extension_duration_days?: number | null
           fee_charged?: number | null
           fee_receipt_number?: string | null
           foreign_address?: string | null
@@ -9440,6 +9491,7 @@ export type Database = {
         Returns: undefined
       }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      is_ecowas_country: { Args: { _nationality: string }; Returns: boolean }
       is_frontdesk_realtime_topic: {
         Args: { _topic: string }
         Returns: boolean

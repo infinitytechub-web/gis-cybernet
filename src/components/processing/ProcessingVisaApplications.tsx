@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { isEcowasNationality } from "@/lib/countries";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CategoryTabs, categoryBadge, type ApplicantCategory } from "@/components/processing/CategoryTabs";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,13 @@ import { ProcessingChecklist, VISA_CHECKLIST } from "@/components/applications/P
 
 const PROCESSING_STATUSES = ["submitted", "under_review"];
 const ALL_STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
+const VISA_CLASSES = [
+  { value: "single_entry", label: "Single Entry" },
+  { value: "multiple_entry", label: "Multiple Entry" },
+  { value: "transit", label: "Transit" },
+  { value: "emergency", label: "Emergency Entry" },
+  { value: "ecowas_residence", label: "ECOWAS Residence" },
+];
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
@@ -41,11 +50,21 @@ export default function ProcessingVisaApplications() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [ecowasOnly, setEcowasOnly] = useState(false);
+  const [category, setCategory] = useState<ApplicantCategory>("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editId, setEditId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<{ status: string; notes: string; checklist: Record<string, boolean> }>({ status: "submitted", notes: "", checklist: {} });
+  const [form, setForm] = useState<{
+    status: string; notes: string; checklist: Record<string, boolean>;
+    visa_class: string; duration_of_stay_days: string;
+    letter_of_invitation: boolean; biometrics_captured: boolean;
+    ecowas_id_number: string; yellow_fever_cert: boolean;
+  }>({
+    status: "submitted", notes: "", checklist: {},
+    visa_class: "", duration_of_stay_days: "",
+    letter_of_invitation: false, biometrics_captured: false,
+    ecowas_id_number: "", yellow_fever_cert: false,
+  });
 
   useEffect(() => {
     const channel = supabase
@@ -74,10 +93,22 @@ export default function ProcessingVisaApplications() {
     mutationFn: async () => {
       if (!editId) return;
       const existing = applications.find((a: any) => a.id === editId);
-      const { error } = await supabase.from("visa_applications")
-        .update({ status: form.status, notes: form.notes, processed_by: user?.id, processing_checklist: form.checklist as any } as any)
-        .eq("id", editId);
+      const payload: any = {
+        status: form.status,
+        notes: form.notes,
+        processed_by: user?.id,
+        processing_checklist: form.checklist,
+        visa_class: form.visa_class || null,
+        duration_of_stay_days: form.duration_of_stay_days ? Number(form.duration_of_stay_days) : null,
+        letter_of_invitation: form.letter_of_invitation,
+        biometrics_captured: form.biometrics_captured,
+        ecowas_id_number: form.ecowas_id_number || null,
+        yellow_fever_cert: form.yellow_fever_cert,
+      };
+      const { error } = await (supabase as any).from("visa_applications")
+        .update(payload).eq("id", editId);
       if (error) throw error;
+
 
       if (existing && existing.status !== form.status && (form.status === "approved" || form.status === "rejected")) {
         const { data: roledUsers } = await supabase
@@ -109,26 +140,44 @@ export default function ProcessingVisaApplications() {
   const [reviewApp, setReviewApp] = useState<any>(null);
 
   const openReview = (app: any) => {
-    setForm({ status: app.status, notes: app.notes || "", checklist: (app.processing_checklist as Record<string, boolean>) || {} });
+    setForm({
+      status: app.status,
+      notes: app.notes || "",
+      checklist: (app.processing_checklist as Record<string, boolean>) || {},
+      visa_class: app.visa_class || "",
+      duration_of_stay_days: app.duration_of_stay_days != null ? String(app.duration_of_stay_days) : "",
+      letter_of_invitation: !!app.letter_of_invitation,
+      biometrics_captured: !!app.biometrics_captured,
+      ecowas_id_number: app.ecowas_id_number || "",
+      yellow_fever_cert: !!app.yellow_fever_cert,
+    });
     setEditId(app.id);
     setReviewApp(app);
     setOpen(true);
   };
 
+  const catOf = (a: any) => a.applicant_category || (isEcowasNationality(a.nationality) ? "ecowas" : "non_ecowas");
+
   const filtered = applications.filter((a: any) => {
     const matchesSearch = a.applicant_name.toLowerCase().includes(search.toLowerCase()) ||
       a.passport_number.toLowerCase().includes(search.toLowerCase());
-    const matchesEcowas = !ecowasOnly || isEcowasNationality(a.nationality);
+    const matchesCat = category === "all" || catOf(a) === category;
     const matchesStatus = statusFilter === "all" || a.status === statusFilter;
-    return matchesSearch && matchesEcowas && matchesStatus;
+    return matchesSearch && matchesCat && matchesStatus;
   });
 
-  const hasActiveFilters = search || ecowasOnly || statusFilter !== "all";
-  const clearAllFilters = () => { setSearch(""); setEcowasOnly(false); setStatusFilter("all"); };
+  const catCounts = {
+    all: applications.length,
+    ecowas: applications.filter((a: any) => catOf(a) === "ecowas").length,
+    non_ecowas: applications.filter((a: any) => catOf(a) === "non_ecowas").length,
+  };
+
+  const hasActiveFilters = search || category !== "all" || statusFilter !== "all";
+  const clearAllFilters = () => { setSearch(""); setCategory("all"); setStatusFilter("all"); };
   const activeFiltersList = [
     ...(search ? [{ label: "Search", value: `"${search}"`, onClear: () => setSearch("") }] : []),
     ...(statusFilter !== "all" ? [{ label: "Status", value: statusFilter.replace("_", " "), onClear: () => setStatusFilter("all") }] : []),
-    ...(ecowasOnly ? [{ label: "Region", value: "ECOWAS", onClear: () => setEcowasOnly(false) }] : []),
+    ...(category !== "all" ? [{ label: "Category", value: category === "ecowas" ? "ECOWAS" : "Non-ECOWAS", onClear: () => setCategory("all") }] : []),
   ];
 
   const summary = {
@@ -152,6 +201,8 @@ export default function ProcessingVisaApplications() {
         ))}
       </div>
 
+      <CategoryTabs value={category} onChange={setCategory} counts={catCounts} />
+
       {hasActiveFilters && (
         <FilterSummaryBar filters={activeFiltersList} totalResults={filtered.length} onClearAll={clearAllFilters} />
       )}
@@ -168,16 +219,16 @@ export default function ProcessingVisaApplications() {
             {PROCESSING_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.replace("_", " ").replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Toggle pressed={ecowasOnly} onPressedChange={setEcowasOnly} variant="outline" size="sm"
-          className="gap-1 whitespace-nowrap data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:border-primary/30"
-          aria-label="Filter ECOWAS only">
-          ⭐ ECOWAS
-        </Toggle>
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditId(null); } setOpen(v); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Review Visa Application</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Review Visa Application
+              {reviewApp && categoryBadge(reviewApp.applicant_category || (isEcowasNationality(reviewApp.nationality) ? "ecowas" : "non_ecowas"))}
+            </DialogTitle>
+          </DialogHeader>
           {reviewApp && (
             <div className="grid grid-cols-2 gap-2 text-sm border rounded-md p-3 bg-muted/30">
               <div><span className="text-muted-foreground">Name:</span> {reviewApp.applicant_name}</div>
@@ -208,6 +259,33 @@ export default function ProcessingVisaApplications() {
               value={form.checklist}
               onChange={(checklist) => setForm({ ...form, checklist })}
             />
+            <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">GIS Standard Fields</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Visa Class</Label>
+                  <Select value={form.visa_class} onValueChange={(v) => setForm({ ...form, visa_class: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                    <SelectContent>
+                      {VISA_CLASSES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Duration of Stay (days)</Label>
+                  <Input type="number" min="0" max="365" value={form.duration_of_stay_days}
+                    onChange={(e) => setForm({ ...form, duration_of_stay_days: e.target.value })} />
+                </div>
+                {reviewApp && (reviewApp.applicant_category === "ecowas" || isEcowasNationality(reviewApp.nationality)) && (
+                  <div className="col-span-2"><Label>ECOWAS ID / Travel Cert No.</Label>
+                    <Input value={form.ecowas_id_number} onChange={(e) => setForm({ ...form, ecowas_id_number: e.target.value })} placeholder="e.g. ECOWAS-2025-…" />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <label className="flex items-center gap-2"><Checkbox checked={form.letter_of_invitation} onCheckedChange={(v) => setForm({ ...form, letter_of_invitation: !!v })} /> Letter of invitation</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.biometrics_captured} onCheckedChange={(v) => setForm({ ...form, biometrics_captured: !!v })} /> Biometrics captured</label>
+                <label className="flex items-center gap-2"><Checkbox checked={form.yellow_fever_cert} onCheckedChange={(v) => setForm({ ...form, yellow_fever_cert: !!v })} /> Yellow fever certificate</label>
+              </div>
+            </div>
             <div><Label>Update Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -244,7 +322,7 @@ export default function ProcessingVisaApplications() {
               <TableRow key={app.id}>
                 <TableCell className="font-medium">{app.applicant_name}</TableCell>
                 <TableCell>{app.passport_number}</TableCell>
-                <TableCell>{app.nationality}</TableCell>
+                <TableCell><div className="flex flex-col gap-1"><span>{app.nationality}</span>{categoryBadge(app.applicant_category || (isEcowasNationality(app.nationality) ? "ecowas" : "non_ecowas"))}</div></TableCell>
                 <TableCell><Badge variant="outline">{app.visa_type}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
                 <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
