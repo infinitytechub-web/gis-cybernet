@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
 import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 const DOC_TYPES = [
   { value: "ghana_card", label: "Ghana Card" },
@@ -166,6 +169,37 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
     }
   };
 
+  const bulk = useBulkSelection(filtered as { id: string }[]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const bulkDeleteDocs = async () => {
+    if (bulk.count === 0) return;
+    setBulkDeleting(true);
+    try {
+      const toDelete = (filtered as any[]).filter((d) => bulk.isSelected(d.id));
+      let success = 0;
+      for (const d of toDelete) {
+        try {
+          await softDelete({
+            table: "staff_documents",
+            id: d.id,
+            label: d.file_name || d.document_type,
+            context: d.document_number || undefined,
+            storagePaths: d.file_path ? [{ bucket: "staff-documents", path: d.file_path }] : [],
+          });
+          success++;
+        } catch (e: any) {
+          toast.error(`Failed: ${d.file_name || d.document_type} — ${e.message}`);
+        }
+      }
+      if (success > 0) toast.success(`${success} document${success === 1 ? "" : "s"} moved to Recycle Bin`);
+      bulk.clear();
+      qc.invalidateQueries({ queryKey: ["staff-doc-vault", profileId] });
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
@@ -228,6 +262,19 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
           </div>
         )}
 
+        {canManage && (
+          <div className="mb-2">
+            <BulkActionBar
+              count={bulk.count}
+              itemLabel="document"
+              onClear={bulk.clear}
+              onConfirmDelete={bulkDeleteDocs}
+              deleting={bulkDeleting}
+              destructiveLabel="Move selected to Recycle Bin"
+            />
+          </div>
+        )}
+
         {isLoading ? (
           <p className="text-center py-8 text-muted-foreground text-sm">Loading…</p>
         ) : filtered.length === 0 ? (
@@ -237,6 +284,15 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {canManage && (
+                    <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={bulk.allVisibleSelected ? true : bulk.someVisibleSelected ? "indeterminate" : false}
+                        onCheckedChange={bulk.toggleAllVisible}
+                        aria-label="Select all visible documents"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>Document</TableHead>
                   <TableHead className="hidden sm:table-cell">Number</TableHead>
                   <TableHead className="hidden md:table-cell">Expiry</TableHead>
@@ -246,7 +302,16 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
               </TableHeader>
               <TableBody>
                 {filtered.map((d: any) => (
-                  <TableRow key={d.id}>
+                  <TableRow key={d.id} data-state={bulk.isSelected(d.id) ? "selected" : undefined}>
+                    {canManage && (
+                      <TableCell>
+                        <Checkbox
+                          checked={bulk.isSelected(d.id)}
+                          onCheckedChange={() => bulk.toggle(d.id)}
+                          aria-label={`Select ${d.file_name || d.document_type}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary shrink-0" />

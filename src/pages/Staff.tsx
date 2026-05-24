@@ -24,6 +24,9 @@ import { logAdminAudit } from "@/lib/admin-audit";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
+import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
@@ -316,6 +319,20 @@ export default function Staff() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("profiles").delete().in("id", ids);
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: (n) => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
+      toast.success(`${n} staff record${n === 1 ? "" : "s"} deleted`);
+      bulk.clear();
+    },
+    onError: (e: any) => toast.error(e.message || "Bulk delete failed"),
+  });
+
   const toggleSort = (field: "name" | "rank" | "department" | "status") => {
     if (sortField === field) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDir("asc"); }
@@ -349,6 +366,8 @@ export default function Staff() {
     });
     return list;
   }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, sortField, sortDir]);
+
+  const bulk = useBulkSelection(filtered);
 
   const buildStaffExportRows = () =>
     filtered.map((s) => [
@@ -449,6 +468,17 @@ export default function Staff() {
         </Select>
       </div>
 
+      {isAdmin && (
+        <BulkActionBar
+          count={bulk.count}
+          itemLabel="staff record"
+          onClear={bulk.clear}
+          onConfirmDelete={() => bulkDeleteMutation.mutate(bulk.selectedIds)}
+          deleting={bulkDeleteMutation.isPending}
+          description={`This will permanently delete ${bulk.count} staff record${bulk.count === 1 ? "" : "s"} and all associated data.`}
+        />
+      )}
+
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading staff...</div>
       ) : (
@@ -456,6 +486,15 @@ export default function Staff() {
           <Table>
             <TableHeader>
               <TableRow>
+                {isAdmin && (
+                  <TableHead className="w-[40px]">
+                    <Checkbox
+                      checked={bulk.allVisibleSelected ? true : bulk.someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={bulk.toggleAllVisible}
+                      aria-label="Select all visible staff"
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="w-[50px]">Photo</TableHead>
                 <TableHead>Staff ID</TableHead>
                 <TableHead>
@@ -485,11 +524,20 @@ export default function Staff() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
+                  <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((s) => (
-                  <TableRow key={s.id}>
+                  <TableRow key={s.id} data-state={bulk.isSelected(s.id) ? "selected" : undefined}>
+                    {isAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={bulk.isSelected(s.id)}
+                          onCheckedChange={() => bulk.toggle(s.id)}
+                          aria-label={`Select ${s.first_name} ${s.last_name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
