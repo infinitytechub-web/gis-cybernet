@@ -367,6 +367,8 @@ export default function Staff() {
     return list;
   }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, sortField, sortDir]);
 
+  const bulk = useBulkSelection(filtered);
+
   const buildStaffExportRows = () =>
     filtered.map((s) => [
       s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
