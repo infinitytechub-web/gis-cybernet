@@ -266,6 +266,8 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
       const div = L.DomUtil.create("div", "leaflet-legend");
       const bg = darkMode ? "rgba(30,41,59,0.92)" : "rgba(255,255,255,0.92)";
       const textColor = darkMode ? "#e2e8f0" : "#1e293b";
+      // Safe: all interpolated values are internal constants (SEVERITY_COLORS keys/values + darkMode booleans). No user input.
+      // eslint-disable-next-line no-unsanitized/property
       div.innerHTML = `
         <div style="background:${bg};color:${textColor};padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.6;box-shadow:0 1px 4px rgba(0,0,0,0.3)">
           <div style="font-weight:600;margin-bottom:4px">Severity</div>
