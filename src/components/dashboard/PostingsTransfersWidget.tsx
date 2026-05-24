@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowRightLeft, Download, Printer, Pencil, Trash2, Search, FileText, FileSpreadsheet } from "lucide-react";
-import { differenceInYears, differenceInMonths, differenceInDays, format } from "date-fns";
+import { format } from "date-fns";
+import { timeUntilRetirement, yearsOfService } from "@/lib/postings-analytics";
 import { exportReport } from "@/lib/export-utils";
 
 import { toast } from "sonner";
@@ -29,27 +30,16 @@ interface Row {
 }
 
 function formatRetirement(dob: string | null, retirementAge: number): string {
+  const r = timeUntilRetirement(dob, retirementAge);
   if (!dob) return "—";
-  const retireDate = new Date(dob);
-  retireDate.setFullYear(retireDate.getFullYear() + retirementAge);
-  const now = new Date();
-  if (retireDate <= now) return "Retired";
-  const years = differenceInYears(retireDate, now);
-  const after1 = new Date(now); after1.setFullYear(after1.getFullYear() + years);
-  const months = differenceInMonths(retireDate, after1);
-  const after2 = new Date(after1); after2.setMonth(after2.getMonth() + months);
-  const days = differenceInDays(retireDate, after2);
-  return `${years}y ${months}m ${days}d`;
+  if (r.retired) return "Retired";
+  return `${r.years}y ${r.months}m ${r.days}d`;
 }
 
 function formatYearsService(dateJoined: string | null): string {
   if (!dateJoined) return "—";
-  const d = new Date(dateJoined);
-  const now = new Date();
-  const years = differenceInYears(now, d);
-  const after = new Date(d); after.setFullYear(after.getFullYear() + years);
-  const months = differenceInMonths(now, after);
-  return `${years}y ${months}m`;
+  const t = yearsOfService(dateJoined);
+  return `${t.years}y ${t.months}m`;
 }
 
 export default function PostingsTransfersWidget() {
