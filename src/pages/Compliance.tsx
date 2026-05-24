@@ -50,7 +50,7 @@ function useOwnProfileId() {
 
 // ─── Documents Tab ───
 function DocumentsTab() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrSupervisor } = useAuth();
   const { data: ownProfileId } = useOwnProfileId();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -180,10 +180,10 @@ function DocumentsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff or document type..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+        <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-1" disabled={!isAdminOrSupervisor}>
           <Upload className="h-4 w-4" /> Bulk upload
         </Button>
-        <Button onClick={openCreate} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+        <Button onClick={openCreate} className="gap-1" disabled={!isAdminOrSupervisor}>
           <Plus className="h-4 w-4" /> Add Document
         </Button>
       </div>
@@ -469,7 +469,7 @@ function EquipmentTab() {
 
 // ─── Certifications Tab ───
 function CertificationsTab() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isAdminOrSupervisor } = useAuth();
   const { data: ownProfileId } = useOwnProfileId();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -596,10 +596,10 @@ function CertificationsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search staff or certification..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+        <Button variant="outline" onClick={() => setBulkOpen(true)} className="gap-1" disabled={!isAdminOrSupervisor}>
           <Upload className="h-4 w-4" /> Bulk upload
         </Button>
-        <Button onClick={openCreate} className="gap-1" disabled={!isAdmin && !ownProfileId}>
+        <Button onClick={openCreate} className="gap-1" disabled={!isAdminOrSupervisor}>
           <Plus className="h-4 w-4" /> Add Certification
         </Button>
       </div>
@@ -710,7 +710,7 @@ export default function Compliance() {
         <div>
           <h1 className="text-2xl font-bold text-secondary">Compliance Management</h1>
           <p className="text-sm text-muted-foreground">
-            Every staff member can upload and manage their own documents and certifications. Admins can manage all records.
+            Document uploads are restricted to Command-tier users and administrators. Staff may view their own records but cannot edit or download them.
           </p>
         </div>
         <ComplianceBulkAuditDialog />

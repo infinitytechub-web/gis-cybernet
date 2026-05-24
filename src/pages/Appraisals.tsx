@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Award, Star, Trophy, Send, Save, ClipboardList, ClipboardCheck } from "lucide-react";
+import { Award, Star, Trophy, Send, Save, ClipboardList, ClipboardCheck, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -329,9 +330,9 @@ export default function Appraisals() {
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table className="min-w-[700px]">
-                  <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Officer</TableHead><TableHead>Period</TableHead><TableHead>Score</TableHead><TableHead>Status</TableHead><TableHead>Outstanding</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Officer</TableHead><TableHead>Period</TableHead><TableHead>Score</TableHead><TableHead>Status</TableHead><TableHead>Outstanding</TableHead>{canManage && <TableHead className="w-[110px] text-right">Actions</TableHead>}</TableRow></TableHeader>
                   <TableBody>
-                    {appraisals.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No appraisals yet.</TableCell></TableRow>}
+                    {appraisals.length === 0 && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-xs text-muted-foreground py-6">No appraisals yet.</TableCell></TableRow>}
                     {appraisals.map((a: any) => (
                       <TableRow key={a.id}>
                         <TableCell className="text-xs">{format(new Date(a.created_at), "dd MMM yyyy")}</TableCell>
@@ -340,6 +341,33 @@ export default function Appraisals() {
                         <TableCell className="text-xs">{a.total_score} / 35 · avg {a.average_score}</TableCell>
                         <TableCell><Badge className={STATUS_COLOR[a.status] ?? ""}>{a.status}</Badge></TableCell>
                         <TableCell className="text-xs">{a.outstanding ? <Star className="h-3.5 w-3.5 text-amber-500 inline" /> : "—"}</TableCell>
+                        {canManage && (
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              <Button asChild variant="ghost" size="icon" className="h-7 w-7" title="Edit / Open">
+                                <Link to={`/appraisals/officer/${a.staff_profile_id}`}><Pencil className="h-3 w-3" /></Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                title="Delete"
+                                onClick={async () => {
+                                  if (!confirm("Delete this appraisal? It can be restored from the Recycle Bin.")) return;
+                                  try {
+                                    await softDelete({ table: "staff_appraisals", id: a.id, label: "Appraisal" });
+                                    toast.success("Appraisal removed");
+                                    qc.invalidateQueries({ queryKey: ["appraisals-list"] });
+                                  } catch (e: any) {
+                                    toast.error(e.message);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>

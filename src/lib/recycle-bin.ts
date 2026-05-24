@@ -44,7 +44,8 @@ export type RecyclableTable =
   | "enquiry_applications"
   | "front_desk_audit_log"
   | "night_guard_activity_log"
-  | "platform_sync_history";
+  | "platform_sync_history"
+  | "staff_appraisals";
 
 export interface SoftDeleteOptions {
   table: RecyclableTable;
