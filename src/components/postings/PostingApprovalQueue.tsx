@@ -20,12 +20,17 @@ import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 import { generatePostingLetter, downloadPdf } from "@/lib/branded-letter-pdf";
 
 export function PostingApprovalQueue() {
-  const { user } = useAuth();
+  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
+  const canManage = isAdmin || isAdminOrSupervisor;
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [comments, setComments] = useState("");
+  const [editRecord, setEditRecord] = useState<any>(null);
+  const [editEffectiveDate, setEditEffectiveDate] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
+  const [deleteRecord, setDeleteRecord] = useState<any>(null);
 
   const { data: adminProfile } = useQuery({
     queryKey: ["my-profile", user?.id],
