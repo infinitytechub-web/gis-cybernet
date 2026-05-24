@@ -58,7 +58,7 @@ export default function PostingsTransfersWidget() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["postings-transfers-widget"],
     enabled: isAdminOrSupervisor,
     queryFn: async () => {
@@ -237,6 +237,16 @@ export default function PostingsTransfersWidget() {
               Showing first 50 of {filtered.length}. Use search or export for the full list.
             </p>
           )}
+          <p className="text-xs text-muted-foreground pt-2">
+            Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
+            {" · "}
+            <button className="underline" onClick={() => navigate("/postings/history")}>Open full transfer history →</button>
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
         </div>
       </CardContent>
     </Card>
