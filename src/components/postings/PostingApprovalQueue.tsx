@@ -289,6 +289,69 @@ export function PostingApprovalQueue() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editRecord} onOpenChange={(open) => { if (!open) setEditRecord(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Posting/Transfer</DialogTitle></DialogHeader>
+          {editRecord && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                {editRecord.profiles?.last_name}, {editRecord.profiles?.first_name} — {editRecord.profiles?.staff_id}
+              </div>
+              <div>
+                <Label htmlFor="edit-effective">Effective Date</Label>
+                <Input
+                  id="edit-effective"
+                  type="date"
+                  value={editEffectiveDate}
+                  onChange={(e) => setEditEffectiveDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-remarks">Remarks</Label>
+                <Textarea
+                  id="edit-remarks"
+                  rows={3}
+                  value={editRemarks}
+                  onChange={(e) => setEditRemarks(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditRecord(null)}>Cancel</Button>
+                <Button
+                  onClick={() => editMutation.mutate({ id: editRecord.id, effective_date: editEffectiveDate, remarks: editRemarks })}
+                  disabled={editMutation.isPending || !editEffectiveDate}
+                >
+                  Save changes
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteRecord} onOpenChange={(open) => { if (!open) setDeleteRecord(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete posting/transfer record?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the {deleteRecord?.type} request for{" "}
+              <span className="font-medium">{deleteRecord?.profiles?.last_name}, {deleteRecord?.profiles?.first_name}</span>.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); if (deleteRecord) deleteMutation.mutate(deleteRecord.id); }}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
