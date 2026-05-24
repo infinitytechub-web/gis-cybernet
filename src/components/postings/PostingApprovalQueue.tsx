@@ -156,7 +156,6 @@ export function PostingApprovalQueue() {
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
       </Tabs>
-      </div>
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
