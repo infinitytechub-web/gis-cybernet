@@ -187,7 +187,7 @@ describe("PendingStaffApprovals — bulk actions", () => {
     await user.click(screen.getByRole("checkbox", { name: /select all/i }));
     expect(await screen.findByText(`${PENDING_COUNT} records selected`)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /^approve$/i }));
+    await user.click(within(getBulkBar()).getByRole("button", { name: /^approve$/i }));
 
     // AlertDialog confirmation must appear and gate the mutation
     const dialog = await screen.findByRole("alertdialog");
