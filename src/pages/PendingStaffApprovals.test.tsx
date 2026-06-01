@@ -226,7 +226,7 @@ describe("PendingStaffApprovals — bulk actions", () => {
     await waitForRowsLoaded();
 
     await user.click(screen.getByRole("checkbox", { name: /select all/i }));
-    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    await user.click(within(getBulkBar()).getByRole("button", { name: /^delete$/i }));
 
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText(/reject 75 records\?/i)).toBeInTheDocument();
