@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock, ShieldCheck } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock, ShieldCheck, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
@@ -32,6 +32,7 @@ import { SecurityAuditPanel } from "@/components/settings/SecurityAuditPanel";
 import { HrmExportDlpPanel } from "@/components/settings/HrmExportDlpPanel";
 import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
+import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -106,6 +107,7 @@ export default function Settings() {
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4 text-destructive" /> User Roles</TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4 text-chart-1" /> Permissions</TabsTrigger>
+          <TabsTrigger value="portfolios" className="gap-1.5"><Briefcase className="h-4 w-4 text-primary" /> Portfolios</TabsTrigger>
           <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4 text-chart-2" /> Accounts</TabsTrigger>
           <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
           <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
@@ -131,6 +133,7 @@ export default function Settings() {
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
+        <TabsContent value="portfolios"><PortfoliosTab /></TabsContent>
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
