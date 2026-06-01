@@ -150,7 +150,7 @@ export function PostingApprovalQueue() {
 
       <Tabs value={statusFilter} onValueChange={setStatusFilter}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="pending">Reviewing</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
