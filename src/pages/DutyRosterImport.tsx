@@ -136,10 +136,23 @@ function parseSheet(rowsAoA: any[][]): ParseResult {
 async function readFileAsAoA(file: File): Promise<any[][]> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
-  // If workbook has multiple sheets, prefer "All Shifts" or the first
-  const preferred = wb.SheetNames.find((n) => /all/i.test(n)) ?? wb.SheetNames[0];
-  const sheet = wb.Sheets[preferred];
-  return XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: "" });
+  // Prefer an "All Shifts"/"All" sheet; otherwise concatenate every sheet so
+  // multi-tab rosters (Shift A / Shift B / Shift C / Shift D) are all read.
+  const preferred = wb.SheetNames.find((n) => /^all/i.test(n));
+  if (preferred) {
+    return XLSX.utils.sheet_to_json<any[]>(wb.Sheets[preferred], { header: 1, defval: "" });
+  }
+  const merged: any[][] = [];
+  for (const name of wb.SheetNames) {
+    const aoa = XLSX.utils.sheet_to_json<any[]>(wb.Sheets[name], { header: 1, defval: "" });
+    if (!aoa.length) continue;
+    // Insert a synthetic shift-label row if the sheet name is "Shift X" / "Group X"
+    const m = name.toUpperCase().match(/(?:SHIFT|GROUP|TEAM)\s*([ABCD])/);
+    if (m) merged.push([`SHIFT ${m[1]}`]);
+    merged.push(...aoa);
+    merged.push([]); // blank separator
+  }
+  return merged;
 }
 
 export default function DutyRosterImport() {
