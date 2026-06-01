@@ -28,7 +28,10 @@ const SUPABASE_URL = process.env.E2E_SUPABASE_URL;
 const ANON_KEY = process.env.E2E_SUPABASE_ANON_KEY;
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
-const skipAll = !SUPABASE_URL || !ANON_KEY || !ADMIN_EMAIL || !ADMIN_PASSWORD;
+// Destructive spec — opt in explicitly. CI runs read-only a11y + non-destructive
+// e2e by default; set E2E_RUN_DESTRUCTIVE=1 to enable the bulk write flow.
+const OPT_IN = process.env.E2E_RUN_DESTRUCTIVE === "1";
+const skipAll = !OPT_IN || !SUPABASE_URL || !ANON_KEY || !ADMIN_EMAIL || !ADMIN_PASSWORD;
 
 const REST = SUPABASE_URL ? `${SUPABASE_URL}/rest/v1` : "";
 
