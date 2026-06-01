@@ -53,27 +53,33 @@ function parseSheet(rowsAoA: any[][]): ParseResult {
   const warnings: string[] = [];
   if (!rowsAoA.length) return { rows: [], warnings: ["Empty sheet"] };
 
-  // Find the header row — it's the first row containing "name" + "rank"
+  const NAME_ALIASES = ["name", "fullname", "officername", "officer", "surname", "lastname", "staffname"];
+  const RANK_ALIASES = ["rank", "ranks", "designation", "grade"];
+  const SN_ALIASES = ["sn", "serialno", "serial", "no", "sno", "number", "num", "sl", "sln"];
+  const SHIFT_ALIASES = ["shift", "group", "shiftgroup", "team"];
+  const SEX_ALIASES = ["fm", "sex", "gender", "mf"];
+  const UNIT_ALIASES = ["unit", "units", "department", "dept", "section", "office", "posting"];
+
+  // Find the header row anywhere in the sheet — first row with name-ish AND rank-ish columns
   let headerIdx = -1;
-  for (let i = 0; i < Math.min(15, rowsAoA.length); i++) {
-    const norm = rowsAoA[i].map((c) => normaliseHeader(String(c ?? "")));
-    if (norm.includes("name") && norm.includes("rank")) {
-      headerIdx = i;
-      break;
-    }
+  for (let i = 0; i < rowsAoA.length; i++) {
+    const norm = (rowsAoA[i] || []).map((c) => normaliseHeader(String(c ?? "")));
+    const hasName = norm.some((n) => NAME_ALIASES.includes(n));
+    const hasRank = norm.some((n) => RANK_ALIASES.includes(n));
+    if (hasName && hasRank) { headerIdx = i; break; }
   }
   if (headerIdx === -1) {
-    warnings.push("Could not find a header row (need columns including 'Name' and 'Rank')");
+    warnings.push("Could not find a header row. Expected columns like 'Rank' and 'Name' (or 'Officer Name' / 'Surname' / 'Designation').");
     return { rows: [], warnings };
   }
 
   const headers = rowsAoA[headerIdx].map((c) => String(c ?? ""));
-  const colShift = detectColumn(headers, ["shift"]);
-  const colSn = detectColumn(headers, ["sn", "serialno", "serial", "no"]);
-  const colRank = detectColumn(headers, ["rank"]);
-  const colName = detectColumn(headers, ["name", "fullname"]);
-  const colSex = detectColumn(headers, ["fm", "sex", "gender"]);
-  const colUnit = detectColumn(headers, ["unit", "units"]);
+  const colShift = detectColumn(headers, SHIFT_ALIASES);
+  const colSn = detectColumn(headers, SN_ALIASES);
+  const colRank = detectColumn(headers, RANK_ALIASES);
+  const colName = detectColumn(headers, NAME_ALIASES);
+  const colSex = detectColumn(headers, SEX_ALIASES);
+  const colUnit = detectColumn(headers, UNIT_ALIASES);
 
   if (colRank === -1 || colName === -1) {
     warnings.push("Required columns 'Rank' and 'Name' missing");
@@ -82,20 +88,23 @@ function parseSheet(rowsAoA: any[][]): ParseResult {
 
   const rows: Row[] = [];
   let currentShift: Row["shift"] | null = colShift === -1 ? "A" : null;
+  let autoSn = 0;
 
   for (let i = headerIdx + 1; i < rowsAoA.length; i++) {
     const r = rowsAoA[i];
     if (!r || r.every((c) => c == null || String(c).trim() === "")) continue;
 
-    // Shift label rows like "SHIFT B" with the rest empty (or shift cell only)
+    // Shift label rows like "SHIFT B", "GROUP C", "TEAM D"
     const joined = r.map((c) => String(c ?? "").trim()).join(" ").toUpperCase();
-    const shiftLabel = joined.match(/SHIFT\s+([ABCD])\b/);
+    const shiftLabel = joined.match(/(?:SHIFT|GROUP|TEAM)\s+([ABCD])\b/);
     if (shiftLabel && (colShift === -1 || !r[colName])) {
       currentShift = shiftLabel[1] as Row["shift"];
+      autoSn = 0;
       continue;
     }
 
-    const shiftCell = colShift !== -1 ? String(r[colShift] ?? "").trim().toUpperCase() : "";
+    const shiftCellRaw = colShift !== -1 ? String(r[colShift] ?? "").trim().toUpperCase() : "";
+    const shiftCell = shiftCellRaw.replace(/^(SHIFT|GROUP|TEAM)\s+/, "").charAt(0);
     const shift = (SHIFTS.includes(shiftCell as any) ? shiftCell : currentShift) as Row["shift"] | null;
     const snRaw = String(r[colSn === -1 ? -1 : colSn] ?? "").replace(/\.$/, "").trim();
     const rank = String(r[colRank] ?? "").trim();
@@ -105,8 +114,8 @@ function parseSheet(rowsAoA: any[][]): ParseResult {
 
     if (!shift) { warnings.push(`Row ${i + 1}: cannot determine shift, skipped`); continue; }
     if (!rank || !name) continue;
-    const sn = parseInt(snRaw || "0", 10);
-    if (!sn) { warnings.push(`Row ${i + 1}: invalid S/N "${snRaw}", skipped`); continue; }
+    let sn = parseInt(snRaw || "0", 10);
+    if (!sn) { autoSn += 1; sn = autoSn; } else { autoSn = sn; }
 
     rows.push({ shift, serial_no: sn, rank, name, gender, unit });
   }
@@ -127,10 +136,23 @@ function parseSheet(rowsAoA: any[][]): ParseResult {
 async function readFileAsAoA(file: File): Promise<any[][]> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
-  // If workbook has multiple sheets, prefer "All Shifts" or the first
-  const preferred = wb.SheetNames.find((n) => /all/i.test(n)) ?? wb.SheetNames[0];
-  const sheet = wb.Sheets[preferred];
-  return XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: "" });
+  // Prefer an "All Shifts"/"All" sheet; otherwise concatenate every sheet so
+  // multi-tab rosters (Shift A / Shift B / Shift C / Shift D) are all read.
+  const preferred = wb.SheetNames.find((n) => /^all/i.test(n));
+  if (preferred) {
+    return XLSX.utils.sheet_to_json<any[]>(wb.Sheets[preferred], { header: 1, defval: "" });
+  }
+  const merged: any[][] = [];
+  for (const name of wb.SheetNames) {
+    const aoa = XLSX.utils.sheet_to_json<any[]>(wb.Sheets[name], { header: 1, defval: "" });
+    if (!aoa.length) continue;
+    // Insert a synthetic shift-label row if the sheet name is "Shift X" / "Group X"
+    const m = name.toUpperCase().match(/(?:SHIFT|GROUP|TEAM)\s*([ABCD])/);
+    if (m) merged.push([`SHIFT ${m[1]}`]);
+    merged.push(...aoa);
+    merged.push([]); // blank separator
+  }
+  return merged;
 }
 
 export default function DutyRosterImport() {
