@@ -197,6 +197,17 @@ export default function Staff() {
     setDateOfBirth(s.date_of_birth || "");
     setDateJoinedService((s as any).date_joined_service || "");
     setMaritalStatus(s.marital_status || "");
+    setCurrentAppointment((s as any).current_appointment || "");
+    // Load assigned portfolios for this profile
+    supabase
+      .from("profile_portfolios")
+      .select("portfolio_id")
+      .eq("profile_id", s.id)
+      .then(({ data }) => {
+        const ids = (data ?? []).map((r: any) => r.portfolio_id);
+        setPortfolioIds(ids);
+        setInitialPortfolioIds(ids);
+      });
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
