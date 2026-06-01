@@ -291,6 +291,24 @@ export default function Staff() {
         date_of_birth: dateOfBirth || null,
         date_joined_service: dateJoinedService || null,
         marital_status: maritalStatus || null,
+        current_appointment: currentAppointment || null,
+      };
+
+      const syncPortfolios = async (profileId: string) => {
+        const toAdd = portfolioIds.filter((id) => !initialPortfolioIds.includes(id));
+        const toRemove = initialPortfolioIds.filter((id) => !portfolioIds.includes(id));
+        if (toRemove.length) {
+          const { error } = await supabase
+            .from("profile_portfolios").delete()
+            .eq("profile_id", profileId).in("portfolio_id", toRemove);
+          if (error) throw error;
+        }
+        if (toAdd.length) {
+          const { error } = await supabase
+            .from("profile_portfolios")
+            .insert(toAdd.map((portfolio_id) => ({ profile_id: profileId, portfolio_id })));
+          if (error) throw error;
+        }
       };
 
       if (editing) {
@@ -301,6 +319,7 @@ export default function Staff() {
         const { error } = await supabase.from("profiles").update(payload).eq("id", editing.id);
         if (error) throw error;
         await syncContacts(editing.id, validContacts);
+        await syncPortfolios(editing.id);
       } else {
         const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
@@ -310,7 +329,10 @@ export default function Staff() {
             await supabase.from("profiles").update({ photo_url: photoPath }).eq("id", data.id);
           }
         }
-        if (data) await syncContacts(data.id, validContacts);
+        if (data) {
+          await syncContacts(data.id, validContacts);
+          await syncPortfolios(data.id);
+        }
       }
     },
     onSuccess: () => {
