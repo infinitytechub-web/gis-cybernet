@@ -194,7 +194,6 @@ export default function PendingStaffApprovals() {
         <ResolveDialog
           row={open.row}
           mode={open.kind}
-          bulkRows={open.kind === "merge" && open.bulk ? selectedRows : undefined}
           onClose={() => setOpen(null)}
           onDone={() => { setOpen(null); selection.clear(); qc.invalidateQueries({ queryKey: ["pending-staff-matches"] }); }}
         />
