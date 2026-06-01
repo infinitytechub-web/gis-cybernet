@@ -8,18 +8,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { ShieldCheck, UserPlus, GitMerge, XCircle } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ShieldCheck, UserPlus, GitMerge, XCircle, Loader2, X, Trash2, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
 
 export default function PendingStaffApprovals() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
   const qc = useQueryClient();
   const [open, setOpen] = useState<any | null>(null);
+  const [bulkAction, setBulkAction] = useState<null | "approve" | "delete" | "merge">(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const matches = useQuery({
     queryKey: ["pending-staff-matches"],
@@ -35,13 +43,16 @@ export default function PendingStaffApprovals() {
     enabled: !!user && isAdminOrSupervisor,
   });
 
-  if (loading) return null;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
-
   const pending = (matches.data ?? []).filter((m: any) => m.status === "pending");
   const merged = (matches.data ?? []).filter((m: any) => m.status === "merged");
   const approved = (matches.data ?? []).filter((m: any) => m.status === "approved");
+
+  const selection = useBulkSelection<any>(pending);
+  const selectedRows = pending.filter((m: any) => selection.isSelected(m.id));
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdminOrSupervisor) return <Navigate to="/dashboard" replace />;
 
   const reject = async (m: any) => {
     if (!confirm(`Reject ${m.name_text}? The auto-created profile will be removed.`)) return;
@@ -57,6 +68,72 @@ export default function PendingStaffApprovals() {
     qc.invalidateQueries({ queryKey: ["pending-staff-matches"] });
   };
 
+  // Process bulk actions in chunks of 50 to keep payloads small for large selections.
+  const chunk = <T,>(arr: T[], size = 50): T[][] => {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  };
+
+  const runBulkApprove = async () => {
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    const nowIso = new Date().toISOString();
+    try {
+      const profileIds = selectedRows.map((r) => r.created_profile_id).filter(Boolean) as string[];
+      for (const batch of chunk(profileIds)) {
+        const { error } = await supabase.from("profiles").update({ login_enabled: true }).in("id", batch);
+        if (error) fail += batch.length; else ok += batch.length;
+      }
+      const matchIds = selectedRows.map((r) => r.id);
+      for (const batch of chunk(matchIds)) {
+        const { error } = await supabase
+          .from("pending_staff_matches")
+          .update({ status: "approved", resolved_at: nowIso, resolved_by: user.id })
+          .in("id", batch);
+        if (error) fail += batch.length;
+      }
+      if (ok > 0) toast.success(`Approved ${ok} record${ok === 1 ? "" : "s"}`);
+      if (fail > 0) toast.error(`${fail} record${fail === 1 ? "" : "s"} failed`);
+      selection.clear();
+      qc.invalidateQueries({ queryKey: ["pending-staff-matches"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Bulk approve failed");
+    } finally {
+      setBulkBusy(false);
+      setBulkAction(null);
+    }
+  };
+
+  const runBulkDelete = async () => {
+    setBulkBusy(true);
+    let ok = 0, fail = 0;
+    const nowIso = new Date().toISOString();
+    try {
+      const profileIds = selectedRows.map((r) => r.created_profile_id).filter(Boolean) as string[];
+      for (const batch of chunk(profileIds)) {
+        await supabase.from("profiles").delete().in("id", batch);
+      }
+      const matchIds = selectedRows.map((r) => r.id);
+      for (const batch of chunk(matchIds)) {
+        const { error } = await supabase
+          .from("pending_staff_matches")
+          .update({ status: "rejected", resolved_at: nowIso, resolved_by: user.id })
+          .in("id", batch);
+        if (error) fail += batch.length; else ok += batch.length;
+      }
+      if (ok > 0) toast.success(`Rejected ${ok} record${ok === 1 ? "" : "s"}`);
+      if (fail > 0) toast.error(`${fail} record${fail === 1 ? "" : "s"} failed`);
+      selection.clear();
+      qc.invalidateQueries({ queryKey: ["pending-staff-matches"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Bulk delete failed");
+    } finally {
+      setBulkBusy(false);
+      setBulkAction(null);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-6xl">
       <div>
@@ -68,7 +145,47 @@ export default function PendingStaffApprovals() {
         </p>
       </div>
 
-      <SectionCard title={`Awaiting approval (${pending.length})`} desc="New names from the roster that did not match an existing staff record." rows={pending} onApprove={(m) => setOpen({ kind: "approve", row: m })} onMerge={(m) => setOpen({ kind: "merge", row: m })} onReject={reject} />
+      {selection.count > 0 && (
+        <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 rounded-md border bg-card/95 backdrop-blur px-3 py-2 shadow-sm">
+          <span className="text-sm font-medium">
+            {selection.count} record{selection.count === 1 ? "" : "s"} selected
+          </span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={selection.clear} className="gap-1" disabled={bulkBusy}>
+              <X className="h-4 w-4" /> Clear
+            </Button>
+            <Button size="sm" variant="default" className="gap-1" disabled={bulkBusy} onClick={() => setBulkAction("approve")}>
+              <CheckCheck className="h-4 w-4" /> Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1"
+              disabled={bulkBusy}
+              onClick={() => {
+                if (selection.count === 1) setOpen({ kind: "merge", row: selectedRows[0] });
+                else setBulkAction("merge");
+              }}
+            >
+              <GitMerge className="h-4 w-4" /> Merge
+            </Button>
+            <Button size="sm" variant="destructive" className="gap-1" disabled={bulkBusy} onClick={() => setBulkAction("delete")}>
+              {bulkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <SectionCard
+        title={`Awaiting approval (${pending.length})`}
+        desc="New names from the roster that did not match an existing staff record."
+        rows={pending}
+        onApprove={(m: any) => setOpen({ kind: "approve", row: m })}
+        onMerge={(m: any) => setOpen({ kind: "merge", row: m })}
+        onReject={reject}
+        selection={selection}
+      />
       <SectionCard title={`Recently merged (${merged.length})`} desc="Names that were auto-matched to existing staff and had their shift updated." rows={merged.slice(0, 50)} muted />
       <SectionCard title={`Approved (${approved.length})`} desc="Approved auto-created profiles." rows={approved.slice(0, 50)} muted />
 
@@ -77,14 +194,50 @@ export default function PendingStaffApprovals() {
           row={open.row}
           mode={open.kind}
           onClose={() => setOpen(null)}
-          onDone={() => { setOpen(null); qc.invalidateQueries({ queryKey: ["pending-staff-matches"] }); }}
+          onDone={() => { setOpen(null); selection.clear(); qc.invalidateQueries({ queryKey: ["pending-staff-matches"] }); }}
         />
       )}
+
+      <AlertDialog open={bulkAction !== null} onOpenChange={(o) => !o && !bulkBusy && setBulkAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkAction === "approve" && `Approve ${selection.count} record${selection.count === 1 ? "" : "s"}?`}
+              {bulkAction === "delete" && `Reject ${selection.count} record${selection.count === 1 ? "" : "s"}?`}
+              {bulkAction === "merge" && "Merge multiple records"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkAction === "approve" && "Selected auto-created profiles will be activated and the matches marked approved. Rank and department can be set individually afterwards."}
+              {bulkAction === "delete" && "Auto-created profiles will be removed and these matches marked rejected. This cannot be undone."}
+              {bulkAction === "merge" && "Bulk merge requires a single target profile per record. Please merge records one at a time using the Merge action on each row."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkBusy}>Cancel</AlertDialogCancel>
+            {bulkAction === "approve" && (
+              <AlertDialogAction onClick={(e) => { e.preventDefault(); void runBulkApprove(); }} disabled={bulkBusy}>
+                {bulkBusy ? "Approving…" : "Confirm approve"}
+              </AlertDialogAction>
+            )}
+            {bulkAction === "delete" && (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); void runBulkDelete(); }}
+                disabled={bulkBusy}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {bulkBusy ? "Deleting…" : "Confirm delete"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted }: any) {
+function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted, selection }: any) {
+  const selectable = !muted && !!selection;
+  const extraCols = (selectable ? 1 : 0) + (muted ? 0 : 1);
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -96,6 +249,15 @@ function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted }:
           <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
+                {selectable && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selection.allVisibleSelected ? true : selection.someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={() => selection.toggleAllVisible()}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="w-12">S/N</TableHead>
                 <TableHead>Rank (text)</TableHead>
                 <TableHead>Name</TableHead>
@@ -107,9 +269,18 @@ function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted }:
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
-                <TableRow><TableCell colSpan={muted ? 6 : 7} className="text-center py-6 text-muted-foreground">Nothing to show</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6 + extraCols} className="text-center py-6 text-muted-foreground">Nothing to show</TableCell></TableRow>
               ) : rows.map((m: any) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id} data-state={selectable && selection.isSelected(m.id) ? "selected" : undefined}>
+                  {selectable && (
+                    <TableCell className="w-10">
+                      <Checkbox
+                        checked={selection.isSelected(m.id)}
+                        onCheckedChange={() => selection.toggle(m.id)}
+                        aria-label={`Select ${m.name_text}`}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="font-mono text-xs">{m.serial_no}</TableCell>
                   <TableCell className="text-xs">{m.rank_text}</TableCell>
                   <TableCell className="text-xs font-medium">{m.name_text}</TableCell>
