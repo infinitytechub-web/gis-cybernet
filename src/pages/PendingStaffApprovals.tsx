@@ -17,7 +17,6 @@ import {
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ShieldCheck, UserPlus, GitMerge, XCircle, Loader2, X, Trash2, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
