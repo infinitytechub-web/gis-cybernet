@@ -47,7 +47,7 @@ export function PostingApprovalQueue() {
     queryFn: async () => {
       let query = supabase
         .from("postings_transfers")
-        .select("*, profiles(first_name, last_name, staff_id), from_dept:departments!postings_transfers_from_department_id_fkey(name), to_dept:departments!postings_transfers_to_department_id_fkey(name)")
+        .select("*, profiles!postings_transfers_profile_id_fkey(first_name, last_name, staff_id), from_dept:departments!postings_transfers_from_department_id_fkey(name), to_dept:departments!postings_transfers_to_department_id_fkey(name)")
         .order("created_at", { ascending: false });
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter as "pending" | "approved" | "rejected");
