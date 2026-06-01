@@ -27,6 +27,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { AppointmentAndPortfolios } from "@/components/staff/AppointmentAndPortfolios";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
