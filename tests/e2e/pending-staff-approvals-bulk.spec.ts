@@ -179,6 +179,10 @@ test.describe("Pending Staff Approvals — bulk actions (Supabase sandbox)", () 
   let importCreated = false;
 
   test.beforeAll(async () => {
+    // `test.skip(skipAll)` above marks tests as skipped, but Playwright still
+    // executes describe-level hooks — guard the auth call so CI without the
+    // destructive opt-in doesn't throw "Admin sign-in failed".
+    if (skipAll) return;
     adminToken = await getAdminToken();
     api = await pwRequest.newContext();
     const imp = await ensureImport(api, adminToken);
@@ -187,6 +191,7 @@ test.describe("Pending Staff Approvals — bulk actions (Supabase sandbox)", () 
   });
 
   test.afterAll(async () => {
+    if (skipAll) return;
     if (importCreated) await restDelete(api, adminToken, `/duty_roster_imports?id=eq.${importId}`);
     await api.dispose();
   });
