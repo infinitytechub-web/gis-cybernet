@@ -236,7 +236,9 @@ export default function PendingStaffApprovals() {
   );
 }
 
-function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted }: any) {
+function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted, selection }: any) {
+  const selectable = !muted && !!selection;
+  const extraCols = (selectable ? 1 : 0) + (muted ? 0 : 1);
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -248,6 +250,15 @@ function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted }:
           <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
+                {selectable && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selection.allVisibleSelected ? true : selection.someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={() => selection.toggleAllVisible()}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="w-12">S/N</TableHead>
                 <TableHead>Rank (text)</TableHead>
                 <TableHead>Name</TableHead>
@@ -259,9 +270,18 @@ function SectionCard({ title, desc, rows, onApprove, onMerge, onReject, muted }:
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
-                <TableRow><TableCell colSpan={muted ? 6 : 7} className="text-center py-6 text-muted-foreground">Nothing to show</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6 + extraCols} className="text-center py-6 text-muted-foreground">Nothing to show</TableCell></TableRow>
               ) : rows.map((m: any) => (
-                <TableRow key={m.id}>
+                <TableRow key={m.id} data-state={selectable && selection.isSelected(m.id) ? "selected" : undefined}>
+                  {selectable && (
+                    <TableCell className="w-10">
+                      <Checkbox
+                        checked={selection.isSelected(m.id)}
+                        onCheckedChange={() => selection.toggle(m.id)}
+                        aria-label={`Select ${m.name_text}`}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="font-mono text-xs">{m.serial_no}</TableCell>
                   <TableCell className="text-xs">{m.rank_text}</TableCell>
                   <TableCell className="text-xs font-medium">{m.name_text}</TableCell>
