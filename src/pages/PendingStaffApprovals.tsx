@@ -8,13 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { ShieldCheck, UserPlus, GitMerge, XCircle } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ShieldCheck, UserPlus, GitMerge, XCircle, Loader2, X, Trash2, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useBulkSelection } from "@/hooks/useBulkSelection";
 
 export default function PendingStaffApprovals() {
   const { user, isAdminOrSupervisor, loading } = useAuthContext();
