@@ -5489,6 +5489,33 @@ export type Database = {
           },
         ]
       }
+      portfolios: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       postings_transfers: {
         Row: {
           approved_by: string | null
@@ -6196,6 +6223,49 @@ export type Database = {
           },
           {
             foreignKeyName: "profile_office_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_portfolios: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          portfolio_id: string
+          profile_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          portfolio_id: string
+          profile_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          portfolio_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_portfolios_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_portfolios_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_portfolios_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "staff_birthdays"
