@@ -144,6 +144,9 @@ export default function Staff() {
     setDateOfBirth("");
     setDateJoinedService("");
     setMaritalStatus("");
+    setCurrentAppointment("");
+    setPortfolioIds([]);
+    setInitialPortfolioIds([]);
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
