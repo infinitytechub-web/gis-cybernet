@@ -27,6 +27,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { AppointmentAndPortfolios } from "@/components/staff/AppointmentAndPortfolios";
 
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
@@ -80,6 +81,9 @@ export default function Staff() {
   const [dateOfBirth, setDateOfBirth] = useState<string>("");
   const [dateJoinedService, setDateJoinedService] = useState<string>("");
   const [maritalStatus, setMaritalStatus] = useState<string>("");
+  const [currentAppointment, setCurrentAppointment] = useState<string>("");
+  const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
+  const [initialPortfolioIds, setInitialPortfolioIds] = useState<string[]>([]);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
@@ -140,6 +144,9 @@ export default function Staff() {
     setDateOfBirth("");
     setDateJoinedService("");
     setMaritalStatus("");
+    setCurrentAppointment("");
+    setPortfolioIds([]);
+    setInitialPortfolioIds([]);
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -190,6 +197,17 @@ export default function Staff() {
     setDateOfBirth(s.date_of_birth || "");
     setDateJoinedService((s as any).date_joined_service || "");
     setMaritalStatus(s.marital_status || "");
+    setCurrentAppointment((s as any).current_appointment || "");
+    // Load assigned portfolios for this profile
+    supabase
+      .from("profile_portfolios")
+      .select("portfolio_id")
+      .eq("profile_id", s.id)
+      .then(({ data }) => {
+        const ids = (data ?? []).map((r: any) => r.portfolio_id);
+        setPortfolioIds(ids);
+        setInitialPortfolioIds(ids);
+      });
     setPhotoFile(null);
     setPhotoPreview((s as any)._photoUrl ?? null);
     setDialogOpen(true);
@@ -273,6 +291,24 @@ export default function Staff() {
         date_of_birth: dateOfBirth || null,
         date_joined_service: dateJoinedService || null,
         marital_status: maritalStatus || null,
+        current_appointment: currentAppointment || null,
+      };
+
+      const syncPortfolios = async (profileId: string) => {
+        const toAdd = portfolioIds.filter((id) => !initialPortfolioIds.includes(id));
+        const toRemove = initialPortfolioIds.filter((id) => !portfolioIds.includes(id));
+        if (toRemove.length) {
+          const { error } = await supabase
+            .from("profile_portfolios").delete()
+            .eq("profile_id", profileId).in("portfolio_id", toRemove);
+          if (error) throw error;
+        }
+        if (toAdd.length) {
+          const { error } = await supabase
+            .from("profile_portfolios")
+            .insert(toAdd.map((portfolio_id) => ({ profile_id: profileId, portfolio_id })));
+          if (error) throw error;
+        }
       };
 
       if (editing) {
@@ -283,6 +319,7 @@ export default function Staff() {
         const { error } = await supabase.from("profiles").update(payload).eq("id", editing.id);
         if (error) throw error;
         await syncContacts(editing.id, validContacts);
+        await syncPortfolios(editing.id);
       } else {
         const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
@@ -292,7 +329,10 @@ export default function Staff() {
             await supabase.from("profiles").update({ photo_url: photoPath }).eq("id", data.id);
           }
         }
-        if (data) await syncContacts(data.id, validContacts);
+        if (data) {
+          await syncContacts(data.id, validContacts);
+          await syncPortfolios(data.id);
+        }
       }
     },
     onSuccess: () => {
@@ -834,6 +874,12 @@ export default function Staff() {
                 </Select>
               </div>
             </div>
+            <AppointmentAndPortfolios
+              appointment={currentAppointment}
+              onAppointmentChange={setCurrentAppointment}
+              portfolioIds={portfolioIds}
+              onPortfolioIdsChange={setPortfolioIds}
+            />
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full">
               {saveMutation.isPending ? (
                 <span className="flex items-center gap-2">
