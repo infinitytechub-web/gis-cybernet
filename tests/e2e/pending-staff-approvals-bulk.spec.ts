@@ -28,7 +28,10 @@ const SUPABASE_URL = process.env.E2E_SUPABASE_URL;
 const ANON_KEY = process.env.E2E_SUPABASE_ANON_KEY;
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
-const skipAll = !SUPABASE_URL || !ANON_KEY || !ADMIN_EMAIL || !ADMIN_PASSWORD;
+// Destructive spec — opt in explicitly. CI runs read-only a11y + non-destructive
+// e2e by default; set E2E_RUN_DESTRUCTIVE=1 to enable the bulk write flow.
+const OPT_IN = process.env.E2E_RUN_DESTRUCTIVE === "1";
+const skipAll = !OPT_IN || !SUPABASE_URL || !ANON_KEY || !ADMIN_EMAIL || !ADMIN_PASSWORD;
 
 const REST = SUPABASE_URL ? `${SUPABASE_URL}/rest/v1` : "";
 
@@ -176,6 +179,10 @@ test.describe("Pending Staff Approvals — bulk actions (Supabase sandbox)", () 
   let importCreated = false;
 
   test.beforeAll(async () => {
+    // `test.skip(skipAll)` above marks tests as skipped, but Playwright still
+    // executes describe-level hooks — guard the auth call so CI without the
+    // destructive opt-in doesn't throw "Admin sign-in failed".
+    if (skipAll) return;
     adminToken = await getAdminToken();
     api = await pwRequest.newContext();
     const imp = await ensureImport(api, adminToken);
@@ -184,6 +191,7 @@ test.describe("Pending Staff Approvals — bulk actions (Supabase sandbox)", () 
   });
 
   test.afterAll(async () => {
+    if (skipAll) return;
     if (importCreated) await restDelete(api, adminToken, `/duty_roster_imports?id=eq.${importId}`);
     await api.dispose();
   });
