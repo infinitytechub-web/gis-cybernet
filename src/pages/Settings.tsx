@@ -107,6 +107,7 @@ export default function Settings() {
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4 text-destructive" /> User Roles</TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4 text-chart-1" /> Permissions</TabsTrigger>
+          <TabsTrigger value="portfolios" className="gap-1.5"><Briefcase className="h-4 w-4 text-primary" /> Portfolios</TabsTrigger>
           <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4 text-chart-2" /> Accounts</TabsTrigger>
           <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
           <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
