@@ -135,6 +135,14 @@ async function waitForRowsLoaded() {
   await waitFor(() => expect(screen.getByText("Test Officer 1")).toBeInTheDocument());
 }
 
+/** Resolve the sticky bulk action bar so queries don't collide with per-row buttons. */
+function getBulkBar(): HTMLElement {
+  const label = screen.getByText(/\d+ records? selected/);
+  const bar = label.closest("div");
+  if (!bar) throw new Error("Bulk action bar not found");
+  return bar as HTMLElement;
+}
+
 describe("PendingStaffApprovals — bulk actions", () => {
   beforeEach(() => {
     recorder.updates = [];
