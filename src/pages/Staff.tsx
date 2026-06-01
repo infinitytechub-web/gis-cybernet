@@ -874,6 +874,12 @@ export default function Staff() {
                 </Select>
               </div>
             </div>
+            <AppointmentAndPortfolios
+              appointment={currentAppointment}
+              onAppointmentChange={setCurrentAppointment}
+              portfolioIds={portfolioIds}
+              onPortfolioIdsChange={setPortfolioIds}
+            />
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full">
               {saveMutation.isPending ? (
                 <span className="flex items-center gap-2">
