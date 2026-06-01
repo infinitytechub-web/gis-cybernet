@@ -81,6 +81,9 @@ export default function Staff() {
   const [dateOfBirth, setDateOfBirth] = useState<string>("");
   const [dateJoinedService, setDateJoinedService] = useState<string>("");
   const [maritalStatus, setMaritalStatus] = useState<string>("");
+  const [currentAppointment, setCurrentAppointment] = useState<string>("");
+  const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
+  const [initialPortfolioIds, setInitialPortfolioIds] = useState<string[]>([]);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
