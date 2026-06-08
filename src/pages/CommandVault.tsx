@@ -462,7 +462,7 @@ export default function CommandVault() {
                             {u.name}
                           </span>
                           <span className="text-muted-foreground tabular-nums">
-                            {u.count} <span className="text-muted-foreground/70">({pct}%)</span>
+                            {u.count} <span className="text-muted-foreground">({pct}%)</span>
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted overflow-hidden">

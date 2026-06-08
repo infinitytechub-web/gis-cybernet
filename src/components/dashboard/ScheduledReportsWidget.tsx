@@ -95,7 +95,7 @@ export default function ScheduledReportsWidget() {
                     <span>Not scheduled yet</span>
                   )}
                   {s.last_run_at && (
-                    <span className="ml-2 text-muted-foreground/70">
+                    <span className="ml-2 text-muted-foreground">
                       · Last: {format(new Date(s.last_run_at), "dd MMM HH:mm")}
                     </span>
                   )}
