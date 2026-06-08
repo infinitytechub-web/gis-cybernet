@@ -63,6 +63,8 @@ export default function VisaApplications() {
   });
 
   const { data: applications = [], isLoading } = useQuery({
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryKey: ["visa-applications"],
     queryFn: async () => {
       const { data, error } = await supabase
