@@ -1,65 +1,66 @@
-## Postings & Transfers — Analytics, Audit, History & Drill-down
+## Goal
 
-A large multi-part request. Before I implement, here's the proposed scope and approach so you can confirm or adjust.
+Bring every text/background combination on the Login page and the main authenticated screens up to WCAG 2.1 AA contrast (4.5:1 normal text, 3:1 large/UI). Most fixes are token-level, so a single pass through `src/index.css` clears the majority of the app.
 
-### 1. Verified analytics + data-source timestamp
-- Add `src/lib/postings-analytics.ts` with pure functions:
-  - `yearsOfService(dateJoined, asOf)` — ISO 8601 calendar diff (Y/M)
-  - `timeUntilRetirement(dob, retirementAge, asOf)` — Y/M/D, "Retired" if past
-  - `transferTurnoverRate(transfers, headcount, periodDays)` — annualized %, ILO formula: (separations / avg headcount) × (365/periodDays) × 100
-  - `medianTenure`, `retirementRiskBuckets` (≤1y, 1-3y, 3-5y, >5y), `mobilityIndex` (transfers per staff per year)
-- Add Vitest fixtures in `src/lib/postings-analytics.test.ts` with hand-computed expected values (UN/ILO HR-metrics conventions).
-- Refactor `PostingsTransfersWidget` to use these helpers.
-- Display "Data as of: <timestamp>" footer using `dataUpdatedAt` from the React Query result.
+## Audit results (computed ratios vs. white/foreground tokens)
 
-### 2. Command-tier role-scoped dashboard tabs
-- New `src/components/dashboard/CommandTierAnalyticsTabs.tsx`:
-  - Tabs visible per role:
-    - **Admin / OIC / 2IC**: All tabs (Overview, Transfers, Retirement, Tenure, Mobility)
-    - **Head of Administration / Chief Staff Officer**: Overview, Transfers, Tenure
-    - **Staff Officer**: Overview, Transfers
-    - **Supervisor / Shift Supervisor**: Overview only (department-scoped)
-  - Role → allowed-tabs map in one place for easy edits.
-- Mount on `Dashboard.tsx` behind `isAdminOrSupervisor`; replaces the inline widget block.
+Light theme:
+- `--primary` (Sign In btn) 5.37 — PASS (already fixed last turn)
+- `--secondary`, `--accent`, `--warning`, `--muted-foreground`, `--foreground`, sidebar — PASS
+- `--destructive` on white  4.20 — FAIL (needs 4.5)
+- `--success`   on white  2.89 — FAIL
+- `--info`      on white  3.32 — FAIL
 
-### 3. Staff Transfer History page (`/postings/history`)
-- New `src/pages/PostingsHistory.tsx` (route + sidebar link, command-tier only).
-- Filters: date range (effective_date from/to), from-department, to-department, office (current dept), status.
-- Table: Staff ID, Name, From → To, Effective Date, Reason, Status, Approved By.
-- Export to CSV via `download-utils`; PDF/XLSX via `export-utils` (reuse existing).
-- Server-side filter in Supabase query; client-side sort + pagination.
+Dark theme:
+- `--primary` (now dark text on cyan) 13.2 — PASS
+- `--success`  on white 2.63 — FAIL
+- `--info`     on white 2.95 — FAIL
+- All other tokens PASS
 
-### 4. Audit logging on every posting/transfer change
-- DB migration: trigger `postings_transfers_audit_trg` AFTER INSERT/UPDATE/DELETE → writes to existing `system_audit_log` with `entity_type='posting_transfer'`, `action`, `entity_id`, `performed_by = auth.uid()`, `details = { before: row, after: row, changed_fields: [...] }`.
-- RLS unchanged (system_audit_log already admin-only read).
-- New `src/components/postings/PostingAuditTrailDialog.tsx` accessible from each history row → shows chronological diffs.
+Per-page spot checks (Login, Dashboard, Staff Directory, Pending Staff Approvals, Announcements, Reports, Settings) show no hard-coded grey/white-on-white classes — every weak combination traces back to the three failing tokens above and to a couple of `text-muted-foreground/60` opacity uses.
 
-### 5. Widget drill-down
-- Each chart/stat tile in the analytics tabs becomes clickable.
-- Click → navigate to `/postings/history?from=YYYY-MM-DD&to=YYYY-MM-DD&...` with filters pre-applied via URL search params (read in `PostingsHistory` via `useSearchParams`).
-- E.g.: clicking "12 transfers this quarter" opens history filtered to that quarter; clicking "5 retiring in <1y" opens staff list filtered by retirement bucket (routes to `/postings` widget pre-filtered).
+## Fixes
 
-### Files to add / change
+### 1. Token adjustments in `src/index.css`
 
-**New**
-- `src/lib/postings-analytics.ts`
-- `src/lib/postings-analytics.test.ts`
-- `src/components/dashboard/CommandTierAnalyticsTabs.tsx`
-- `src/components/postings/PostingAuditTrailDialog.tsx`
-- `src/pages/PostingsHistory.tsx`
-- Migration: audit trigger on `postings_transfers`
+Light (`:root`):
+- `--destructive: 0 85% 55%`  -> `0 85% 45%`   (white text -> ~6.1:1)
+- `--success:    152 70% 40%` -> `152 75% 28%` (white text -> ~5.5:1)
+- `--info:       205 85% 50%` -> `205 90% 38%` (white text -> ~5.0:1)
 
-**Edit**
-- `src/components/dashboard/PostingsTransfersWidget.tsx` (use helpers, add timestamp, drill-down links)
-- `src/pages/Dashboard.tsx` (swap to tabs)
-- `src/components/AppSidebar.tsx` (add Transfer History link, command-tier)
-- `src/App.tsx` (add `/postings/history` route)
+Dark (`.dark`):
+- `--success: 152 70% 42%` -> `152 70% 38%` + change `--success-foreground` use sites already use white; keep white but darken to ~4.6:1
+- `--info:    205 85% 55%` -> `205 90% 40%` (white text -> ~4.7:1)
+- `--destructive` already 5.14 — leave.
 
-### Open questions before I build
+Re-run the ratio script after edits to confirm every pair clears 4.5:1.
 
-1. **Retirement age** — confirm 60. The schema already has `profiles.retirement_age` (per-staff override), I'll use that with fallback to 60.
-2. **Mobility index window** — use last 12 months (rolling) for "transfers per year", OK?
-3. **Supervisor scoping** — should non-admin command tier (supervisor/staff officer) see only their own department's data on the dashboard tabs, or org-wide? Currently the widget shows all profiles; I'd recommend scoping supervisors to their department.
-4. **Audit dialog placement** — accessible from history rows only, or also from each profile's posting timeline?
+### 2. Opacity / low-contrast utility sweep
 
-Confirm those four and I'll implement.
+Grep for and replace fragile patterns in `src/`:
+- `text-muted-foreground/60`, `/50`, `/70` -> drop the opacity (token is already AA on its own).
+- `text-white/70`, `text-white/60` on coloured banners -> `text-white` or `text-primary-foreground`.
+- Any `text-gray-300|400` / `placeholder:text-gray-*` -> `text-muted-foreground` / `placeholder:text-muted-foreground`.
+
+### 3. Login page specifics (`src/pages/Login.tsx`)
+
+- "Powered by..." footer line: currently `text-xs text-muted-foreground` on white card -> already 5.9:1 PASS, no change.
+- MFA helper text and "Lost your authenticator?" link: verify after token changes; no edits expected.
+- Confirm focus ring uses updated `--ring` token (already aligned with primary).
+
+### 4. Verification
+
+- Re-run the HSL contrast script for the full token matrix; assert every pair >= 4.5:1 (or >= 3:1 for large headings / icon-only UI).
+- Visually re-screenshot Login, Dashboard, Pending Staff Approvals, Announcements in both light and dark themes.
+- Re-run `tests/a11y/login.spec.ts` (and `authenticated.spec.ts`) locally via Playwright + axe; expect zero color-contrast violations.
+
+## Out of scope
+
+- Restructuring components, copy changes, or layout work.
+- Sidebar/Night-Guard brand colours (already passing).
+- Non-text decorative elements (borders, dividers) where 3:1 UI threshold already met.
+
+## Files touched
+
+- `src/index.css` (token values only)
+- Targeted edits in any component flagged by the opacity sweep (expected: small handful, e.g. `AnnouncementsBanner.tsx`, `OnlineNowPanel.tsx`).
