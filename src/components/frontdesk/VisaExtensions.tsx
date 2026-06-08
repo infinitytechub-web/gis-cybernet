@@ -85,6 +85,8 @@ export default function VisaExtensions() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryKey: ["visa-extensions", { search: debouncedSearch, statusFilter }],
     initialPageParam: null as Cursor,
     queryFn: async ({ pageParam }) => {
