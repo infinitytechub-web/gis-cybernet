@@ -66,7 +66,7 @@ body {
     --accent: 186 85% 90%;
     --accent-foreground: 215 80% 28%;
 
-    --destructive: 0 85% 55%;
+    --destructive: 0 85% 45%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 200 25% 86%;
@@ -75,11 +75,11 @@ body {
 
     --radius: 0.5rem;
 
-    --success: 152 70% 40%;
+    --success: 152 75% 28%;
     --success-foreground: 0 0% 100%;
     --warning: 38 95% 50%;
     --warning-foreground: 30 80% 15%;
-    --info: 205 85% 50%;
+    --info: 205 90% 38%;
     --info-foreground: 0 0% 100%;
 
     --sidebar-background: 215 75% 14%;
@@ -121,11 +121,11 @@ body {
     --input: 215 40% 20%;
     --ring: 189 100% 45%;
 
-    --success: 152 70% 42%;
+    --success: 152 70% 30%;
     --success-foreground: 0 0% 100%;
     --warning: 38 90% 52%;
     --warning-foreground: 30 80% 10%;
-    --info: 205 85% 55%;
+    --info: 205 90% 40%;
     --info-foreground: 0 0% 100%;
 
     --sidebar-background: 215 60% 8%;

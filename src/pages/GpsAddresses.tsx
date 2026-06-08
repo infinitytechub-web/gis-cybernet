@@ -1421,7 +1421,7 @@ export default function GpsAddresses() {
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-mono font-semibold">{r.region}</span>
                         <span className="text-muted-foreground tabular-nums">
-                          {r.count} <span className="text-muted-foreground/70">({pct}%)</span>
+                          {r.count} <span className="text-muted-foreground">({pct}%)</span>
                         </span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
