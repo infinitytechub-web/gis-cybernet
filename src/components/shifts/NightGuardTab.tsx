@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import NightGuardAssignmentsPanel from "./NightGuardAssignmentsPanel";
@@ -31,21 +31,15 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const nightGuardShift = shifts.find((s: any) => s.name?.toLowerCase().includes("night guard"));
 
-  // Cross-dashboard sync: any change to shift_assignments (Admin / Command / IPSE upload)
-  // refreshes Night Guard views in real time so all roles see the same roster.
-  useEffect(() => {
-    const ch = supabase
-      .channel("night-guard-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shift_assignments" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["night-guard-assignments"] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [queryClient]);
-
+  // Cross-dashboard sync: poll every 30s + refetch on window focus so all roles
+  // see the same Night Guard roster. (Realtime broadcast was removed for security
+  // — it bypassed RLS and exposed organisation-wide shift changes to every staff
+  // subscriber.)
   // Fetch actual DB assignments for this week
   const { data: weekAssignments = [] } = useQuery({
     queryKey: ["night-guard-assignments", weekStart.toISOString()],
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       if (!nightGuardShift) return [];
       const from = format(weekStart, "yyyy-MM-dd");
