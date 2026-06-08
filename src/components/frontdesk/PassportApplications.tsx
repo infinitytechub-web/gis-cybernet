@@ -70,6 +70,8 @@ export default function PassportApplications() {
   });
 
   const { data: applications = [], isLoading } = useQuery({
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryKey: ["passport-applications"],
     queryFn: async () => {
       const { data, error } = await supabase.from("passport_applications").select("*").order("created_at", { ascending: false });

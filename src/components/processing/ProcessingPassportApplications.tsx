@@ -57,6 +57,8 @@ export default function ProcessingPassportApplications() {
   }, [qc]);
 
   const { data: applications = [], isLoading } = useQuery({
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryKey: ["passport-applications-processing"],
     queryFn: async () => {
       const { data, error } = await supabase

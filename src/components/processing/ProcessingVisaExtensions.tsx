@@ -63,6 +63,8 @@ export default function ProcessingVisaExtensions() {
   }, [qc]);
 
   const { data: extensions = [], isLoading } = useQuery({
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryKey: ["visa-extensions-processing"],
     queryFn: async () => {
       const { data, error } = await supabase

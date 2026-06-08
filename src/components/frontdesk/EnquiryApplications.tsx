@@ -62,6 +62,8 @@ export default function EnquiryApplications() {
   }, [qc]);
 
   const { data: applications = [], isLoading } = useQuery({
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
     queryKey: ["enquiry-applications"],
     queryFn: async () => {
       const { data, error } = await supabase
