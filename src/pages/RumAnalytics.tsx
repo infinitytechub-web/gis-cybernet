@@ -221,6 +221,19 @@ export default function RumAnalytics() {
             <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-1" />
+            Print
+          </Button>
+        </div>
+      </header>
+
+      {/* Active filter summary — also shown when printed */}
+      <div className="text-xs text-muted-foreground print:text-black">
+        Range: <span className="font-medium">{RANGES.find((r) => r.hours === hours)?.label ?? `Last ${hours}h`}</span>
+        {" · "}From <span className="font-mono">{format(new Date(since), "yyyy-MM-dd HH:mm")}</span>
+        {" to "}<span className="font-mono">{format(new Date(), "yyyy-MM-dd HH:mm")}</span>
+        {routeFilter.trim() && <> · Route filter: <span className="font-mono">{routeFilter.trim()}</span></>}
         </div>
       </header>
 
