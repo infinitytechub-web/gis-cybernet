@@ -99,6 +99,7 @@ const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals
 const MfaGate = lazy(() => import("./pages/MfaGate"));
 const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
 const AdminShiftRotations = lazy(() => import("./pages/AdminShiftRotations"));
+const RumAnalytics = lazy(() => import("./pages/RumAnalytics"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
