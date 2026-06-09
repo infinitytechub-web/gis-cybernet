@@ -125,6 +125,16 @@ Deno.test("assertCsrfSafe: Referer is honoured when Origin is missing", () => {
   assert(r.ok);
 });
 
+Deno.test("assertCsrfSafe: localhost origin (any port) is accepted with header — local server deploys", () => {
+  for (const origin of ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:8080", "http://192.168.1.50"]) {
+    const r = assertCsrfSafe(new Request("https://x.test/", {
+      method: "POST",
+      headers: { origin, [CSRF_HEADER]: CSRF_HEADER_VALUE },
+    }));
+    assert(r.ok, `expected ${origin} to be accepted`);
+  }
+});
+
 Deno.test("assertCsrfSafe: x-internal-caller bypass works", () => {
   const r = assertCsrfSafe(new Request("https://x.test/", {
     method: "POST",
