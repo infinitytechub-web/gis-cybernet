@@ -78,7 +78,11 @@ interface ExportOptions {
   qr?: ExportQrCode;
 }
 
-function generatePDF({ title, filename, headers, rows, subtitle, meta, image, watermark, qr }: ExportOptions) {
+async function generatePDF({ title, filename, headers, rows, subtitle, meta, image, watermark, qr }: ExportOptions) {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
   const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
