@@ -223,6 +223,7 @@ function App() {
           <Route path="/staff-mapping-import" element={<ProtectedRoute><Layout><StaffMappingImport /></Layout></ProtectedRoute>} />
           <Route path="/my-portal" element={<ProtectedRoute><Layout><StaffPortal /></Layout></ProtectedRoute>} />
           <Route path="/audit-log" element={<ProtectedRoute><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/rum-analytics" element={<ProtectedRoute><Layout><RumAnalytics /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
