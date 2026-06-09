@@ -792,7 +792,7 @@ function PreviewContent({ file, url, csvText }: { file: any; url: string; csvTex
   if (isImage) {
     return (
       <div className="flex items-center justify-center p-4 min-h-[60vh]">
-        <img src={url} alt={file.file_name} className="max-w-full max-h-[80vh] rounded shadow-md object-contain" />
+        <img src={url} alt={file.file_name} loading="lazy" decoding="async" className="max-w-full max-h-[80vh] rounded shadow-md object-contain" />
       </div>
     );
   }
