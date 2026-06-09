@@ -1,66 +1,83 @@
 ## Goal
 
-Bring every text/background combination on the Login page and the main authenticated screens up to WCAG 2.1 AA contrast (4.5:1 normal text, 3:1 large/UI). Most fixes are token-level, so a single pass through `src/index.css` clears the majority of the app.
+Lock in the RBAC fixes from the previous turn with automated regression tests so a future trigger or RLS change can't silently re-break admin staff management.
 
-## Audit results (computed ratios vs. white/foreground tokens)
+## Scope
 
-Light theme:
-- `--primary` (Sign In btn) 5.37 — PASS (already fixed last turn)
-- `--secondary`, `--accent`, `--warning`, `--muted-foreground`, `--foreground`, sidebar — PASS
-- `--destructive` on white  4.20 — FAIL (needs 4.5)
-- `--success`   on white  2.89 — FAIL
-- `--info`      on white  3.32 — FAIL
+Three new Playwright e2e specs under `tests/e2e/`, following the existing
+`admin-reset-password.spec.ts` style (direct REST/edge-function calls with a
+signed-in admin token, no UI driving). Each spec is skipped when its env
+vars are missing so local runs don't fail.
 
-Dark theme:
-- `--primary` (now dark text on cyan) 13.2 — PASS
-- `--success`  on white 2.63 — FAIL
-- `--info`     on white 2.95 — FAIL
-- All other tokens PASS
+## New files
 
-Per-page spot checks (Login, Dashboard, Staff Directory, Pending Staff Approvals, Announcements, Reports, Settings) show no hard-coded grey/white-on-white classes — every weak combination traces back to the three failing tokens above and to a couple of `text-muted-foreground/60` opacity uses.
+### 1. `tests/e2e/admin-edit-profile.spec.ts`
+Verifies admins can update fields that the `restrict_profile_updates`
+trigger blocks for everyone else.
 
-## Fixes
+Cases (admin token, PostgREST PATCH `/rest/v1/profiles`):
+- Update non-restricted field (`other_names`) → 200/204.
+- Update restricted field `rank_id` → 200/204 (admin bypass).
+- Update `department_id` (including to/from MISD) → 200/204.
+- Update `staff_id`, `shift_group`, `unit`, `account_locked`, `login_enabled`, `status` → all succeed.
+- Non-admin staff token attempting the same restricted updates → 4xx with the trigger's "Only admins can change …" message.
 
-### 1. Token adjustments in `src/index.css`
+Each test snapshots the original value first and restores it in `afterAll` so the run is idempotent.
 
-Light (`:root`):
-- `--destructive: 0 85% 55%`  -> `0 85% 45%`   (white text -> ~6.1:1)
-- `--success:    152 70% 40%` -> `152 75% 28%` (white text -> ~5.5:1)
-- `--info:       205 85% 50%` -> `205 90% 38%` (white text -> ~5.0:1)
+### 2. `tests/e2e/admin-delete-staff-account.spec.ts`
+Mirrors `admin-reset-password.spec.ts` shape against
+`/functions/v1/admin-delete-staff-account`.
 
-Dark (`.dark`):
-- `--success: 152 70% 42%` -> `152 70% 38%` + change `--success-foreground` use sites already use white; keep white but darken to ~4.6:1
-- `--info:    205 85% 55%` -> `205 90% 40%` (white text -> ~4.7:1)
-- `--destructive` already 5.14 — leave.
+Cases:
+- Unauthenticated → 401.
+- Authenticated non-admin → 403.
+- Admin + missing `profile_id` → 400.
+- Admin + reason shorter than 4 chars → 400.
+- Admin + unknown `profile_id` → 404.
+- Admin + reserved staff_id (`ADMIN-001`) → 400 "protected system account".
+- Admin + self profile → 400 "cannot delete your own account".
+- Admin + valid stub profile (env `E2E_DELETE_TARGET_PROFILE_ID`, expected to be a `PEND-*` stub that may have `shift_assignment_overrides` rows) → 200, regression-guard for the "append-only" cascade bug fixed earlier.
+- Follow-up GET on `profiles?id=eq.<id>` returns empty → confirms hard delete.
 
-Re-run the ratio script after edits to confirm every pair clears 4.5:1.
+### 3. `tests/e2e/admin-password-change-flows.spec.ts`
+Covers the end-to-end password lifecycle so any future change to
+`must_change_password`, RLS on `failed_login_attempts`, or
+`admin_reset_failed_attempts` is caught.
 
-### 2. Opacity / low-contrast utility sweep
+Cases (chained, single admin session):
+1. Admin calls `admin-reset-password` for `E2E_RESET_TARGET_PROFILE_ID` → 200 with new `temporary_password`.
+2. Target user logs in with temp password → succeeds, session JWT carries `user_metadata.must_change_password === true`.
+3. Target hits any protected REST endpoint and is allowed (token is valid) but client-side gate would force `/change-password` (asserted via the metadata flag).
+4. Target calls `supabase.auth.updateUser({ password: newStrongPw, data: { must_change_password: false } })` → 200.
+5. Re-login with `newStrongPw` → succeeds; metadata flag now false.
+6. Old temp password no longer works → 400 invalid creds.
+7. Admin re-resets again to leave the account in a known state for the next CI run.
 
-Grep for and replace fragile patterns in `src/`:
-- `text-muted-foreground/60`, `/50`, `/70` -> drop the opacity (token is already AA on its own).
-- `text-white/70`, `text-white/60` on coloured banners -> `text-white` or `text-primary-foreground`.
-- Any `text-gray-300|400` / `placeholder:text-gray-*` -> `text-muted-foreground` / `placeholder:text-muted-foreground`.
+## Support changes
 
-### 3. Login page specifics (`src/pages/Login.tsx`)
+- `tests/support/auth.ts`: add a small `signInToken(email, password)` helper that returns just the access token (the existing helper only seeds localStorage). Both new specs need raw tokens.
+- No production code changes.
 
-- "Powered by..." footer line: currently `text-xs text-muted-foreground` on white card -> already 5.9:1 PASS, no change.
-- MFA helper text and "Lost your authenticator?" link: verify after token changes; no edits expected.
-- Confirm focus ring uses updated `--ring` token (already aligned with primary).
+## Env vars (documented in each spec header, all optional → skip)
 
-### 4. Verification
+Already present:
+`E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`,
+`E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`,
+`E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`,
+`E2E_RESET_TARGET_PROFILE_ID`, `E2E_ORPHAN_PROFILE_ID`.
 
-- Re-run the HSL contrast script for the full token matrix; assert every pair >= 4.5:1 (or >= 3:1 for large headings / icon-only UI).
-- Visually re-screenshot Login, Dashboard, Pending Staff Approvals, Announcements in both light and dark themes.
-- Re-run `tests/a11y/login.spec.ts` (and `authenticated.spec.ts`) locally via Playwright + axe; expect zero color-contrast violations.
+New:
+- `E2E_ADMIN_PROFILE_ID` — admin's own profile id (self-delete guard test).
+- `E2E_EDIT_TARGET_PROFILE_ID` — disposable profile safe to mutate.
+- `E2E_DELETE_TARGET_PROFILE_ID` — disposable stub profile safe to delete.
+- `E2E_MISD_DEPARTMENT_ID`, `E2E_OTHER_DEPARTMENT_ID`, `E2E_ALT_RANK_ID` — values used by the edit spec.
+
+## CI wiring
+
+`playwright.e2e.config.ts` already auto-discovers `tests/**/*.spec.ts`, so the new files are picked up without config changes. The existing `.github/workflows/*` job that runs `npm run test:e2e` will execute them; missing env vars cause clean `test.skip()` rather than failures.
 
 ## Out of scope
 
-- Restructuring components, copy changes, or layout work.
-- Sidebar/Night-Guard brand colours (already passing).
-- Non-text decorative elements (borders, dividers) where 3:1 UI threshold already met.
-
-## Files touched
-
-- `src/index.css` (token values only)
-- Targeted edits in any component flagged by the opacity sweep (expected: small handful, e.g. `AnnouncementsBanner.tsx`, `OnlineNowPanel.tsx`).
+- No UI-driving tests (the existing flows are pure API-level, much more stable).
+- No vitest unit tests — these regressions are inherently integration-level (RLS + triggers + edge function).
+- No changes to the edge functions or migrations themselves.

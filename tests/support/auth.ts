@@ -47,3 +47,24 @@ export async function signInAs(page: Page, role: "staff" | "admin" = "staff") {
     [storageKey, JSON.stringify(session)],
   );
 }
+
+/**
+ * Returns just the access token for a given user. Used by edge-function /
+ * REST regression specs that need to hand-craft `Authorization: Bearer …`
+ * headers instead of driving the SPA.
+ */
+export async function signInToken(email: string, password: string): Promise<string> {
+  const url = process.env.E2E_SUPABASE_URL;
+  const anon = process.env.E2E_SUPABASE_ANON_KEY;
+  if (!url || !anon) {
+    throw new Error("Missing E2E_SUPABASE_URL / E2E_SUPABASE_ANON_KEY");
+  }
+  const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: anon, "content-type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error(`Sign-in failed (${res.status}): ${await res.text()}`);
+  const json = await res.json();
+  return json.access_token as string;
+}
