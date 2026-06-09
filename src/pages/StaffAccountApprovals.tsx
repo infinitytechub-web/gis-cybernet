@@ -429,6 +429,18 @@ export default function StaffAccountApprovals() {
           }}
         />
       )}
+
+      {bulkDeleteOpen && isAdmin && (
+        <BulkDeleteDialog
+          rows={selectedRows}
+          onClose={() => setBulkDeleteOpen(false)}
+          onDone={() => {
+            setBulkDeleteOpen(false);
+            setSelected(new Set());
+            qc.invalidateQueries({ queryKey: ["staff-account-approvals"] });
+          }}
+        />
+      )}
     </div>
   );
 }
