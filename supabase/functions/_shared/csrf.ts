@@ -43,8 +43,20 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.has(origin)) return true;
   try {
-    const host = new URL(origin).host;
-    return ALLOWED_ORIGIN_SUFFIXES.some(s => host === s.slice(1) || host.endsWith(s));
+    const url = new URL(origin);
+    const host = url.hostname;
+    // Allow local development origins (any port on localhost/127.0.0.1/[::1]).
+    // The CSRF custom-header requirement still blocks cross-origin form posts,
+    // so this is safe for on-prem / local server deployments.
+    if (host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1") {
+      return true;
+    }
+    // Allow private LAN ranges (10.x, 192.168.x, 172.16-31.x) for on-prem installs.
+    if (/^10\./.test(host) || /^192\.168\./.test(host) ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(host)) {
+      return true;
+    }
+    return ALLOWED_ORIGIN_SUFFIXES.some(s => url.host === s.slice(1) || url.host.endsWith(s));
   } catch {
     return false;
   }
@@ -88,7 +100,7 @@ export function assertCsrfSafe(req: Request): CsrfCheck {
 
   const csrf = req.headers.get(CSRF_HEADER);
   if (csrf !== CSRF_HEADER_VALUE) {
-    return { ok: false, reason: `missing or invalid ${CSRF_HEADER} header` };
+    return { ok: false, reason: `missing or invalid CSRF ${CSRF_HEADER} header` };
   }
 
   return { ok: true, origin: candidate! };
