@@ -1,6 +1,7 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+// Heavy libs (jspdf, jspdf-autotable, xlsx) are dynamically imported inside
+// generate* functions so they stay out of the initial page chunk for every
+// route that statically imports `exportReport`. They only load when the
+// user actually clicks Export.
 import { format } from "date-fns";
 import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 
@@ -77,7 +78,11 @@ interface ExportOptions {
   qr?: ExportQrCode;
 }
 
-function generatePDF({ title, filename, headers, rows, subtitle, meta, image, watermark, qr }: ExportOptions) {
+async function generatePDF({ title, filename, headers, rows, subtitle, meta, image, watermark, qr }: ExportOptions) {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
   const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
@@ -211,7 +216,8 @@ function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportO
   downloadCSVString(lines.join("\n"), `${filename}.csv`);
 }
 
-function generateExcel({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
+async function generateExcel({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
+  const XLSX = await import("xlsx");
   const aoa: string[][] = [];
   aoa.push(["GIS Amasaman Sector Command"]);
   aoa.push([title]);
@@ -283,16 +289,16 @@ export function getFormatLabel(fmt: ExportFormat) {
   return FORMAT_LABELS[fmt];
 }
 
-export function exportReport(fmt: ExportFormat, options: ExportOptions) {
+export async function exportReport(fmt: ExportFormat, options: ExportOptions) {
   switch (fmt) {
     case "pdf":
-      generatePDF(options);
+      await generatePDF(options);
       break;
     case "csv":
       generateCSV(options);
       break;
     case "excel":
-      generateExcel(options);
+      await generateExcel(options);
       break;
     case "word":
       generateWord(options);
