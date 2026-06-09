@@ -234,8 +234,9 @@ export default function RumAnalytics() {
         {" · "}From <span className="font-mono">{format(new Date(since), "yyyy-MM-dd HH:mm")}</span>
         {" to "}<span className="font-mono">{format(new Date(), "yyyy-MM-dd HH:mm")}</span>
         {routeFilter.trim() && <> · Route filter: <span className="font-mono">{routeFilter.trim()}</span></>}
-        </div>
-      </header>
+      </div>
+
+
 
       {/* Headline KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
