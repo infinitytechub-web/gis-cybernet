@@ -100,7 +100,16 @@ const MfaGate = lazy(() => import("./pages/MfaGate"));
 const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
 const AdminShiftRotations = lazy(() => import("./pages/AdminShiftRotations"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 function PageLoader() {
   return (
