@@ -14,18 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      _delete_diag: {
-        Row: {
-          msg: string | null
-        }
-        Insert: {
-          msg?: string | null
-        }
-        Update: {
-          msg?: string | null
-        }
-        Relationships: []
-      }
       account_unlock_audit: {
         Row: {
           created_at: string
