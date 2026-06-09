@@ -7101,6 +7101,51 @@ export type Database = {
         }
         Relationships: []
       }
+      rum_events: {
+        Row: {
+          build_id: string | null
+          created_at: string
+          id: number
+          kind: string
+          meta: Json
+          rating: string | null
+          route: string | null
+          session_id: string | null
+          ua: string | null
+          user_id: string | null
+          value: number | null
+          viewport: string | null
+        }
+        Insert: {
+          build_id?: string | null
+          created_at?: string
+          id?: number
+          kind: string
+          meta?: Json
+          rating?: string | null
+          route?: string | null
+          session_id?: string | null
+          ua?: string | null
+          user_id?: string | null
+          value?: number | null
+          viewport?: string | null
+        }
+        Update: {
+          build_id?: string | null
+          created_at?: string
+          id?: number
+          kind?: string
+          meta?: Json
+          rating?: string | null
+          route?: string | null
+          session_id?: string | null
+          ua?: string | null
+          user_id?: string | null
+          value?: number | null
+          viewport?: string | null
+        }
+        Relationships: []
+      }
       scheduled_file_deliveries: {
         Row: {
           attempts: number
