@@ -1,6 +1,7 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+// Heavy libs (jspdf, jspdf-autotable, xlsx) are dynamically imported inside
+// generate* functions so they stay out of the initial page chunk for every
+// route that statically imports `exportReport`. They only load when the
+// user actually clicks Export.
 import { format } from "date-fns";
 import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 
