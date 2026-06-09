@@ -292,6 +292,11 @@ export default function StaffAccountApprovals() {
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Bulk re-enable
                 </Button>
               )}
+              {isAdmin && tab === "pending" && (
+                <Button size="sm" variant="destructive" onClick={() => setBulkDeleteOpen(true)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Bulk delete
+                </Button>
+              )}
               <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
             </div>
           )}
