@@ -7,14 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown, Download } from "lucide-react";
+import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown, Download, Printer } from "lucide-react";
 
-function downloadCsv(filename: string, rows: (string | number)[][]) {
+function downloadCsv(filename: string, rows: (string | number)[][], preamble: string[][] = []) {
   const esc = (v: string | number) => {
     const s = String(v ?? "");
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const csv = rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  const all = [...preamble, ...(preamble.length ? [[""]] : []), ...rows];
+  const csv = all.map((r) => r.map(esc).join(",")).join("\r\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
