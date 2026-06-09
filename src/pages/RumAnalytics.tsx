@@ -382,11 +382,38 @@ export default function RumAnalytics() {
 
         <TabsContent value="errors">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
                 Recent errors &amp; unhandled rejections
               </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={errorEvents.length === 0}
+                onClick={() => {
+                  const rows: (string | number)[][] = [
+                    ["Timestamp", "Kind", "Route", "Message", "Filename", "Session", "User", "Stack"],
+                    ...errorEvents.map((e) => {
+                      const m = (e.meta ?? {}) as { message?: string; filename?: string; stack?: string };
+                      return [
+                        e.created_at,
+                        e.kind,
+                        e.route ?? "",
+                        m.message ?? "",
+                        m.filename ?? "",
+                        e.session_id ?? "",
+                        e.user_id ?? "",
+                        m.stack ?? "",
+                      ];
+                    }),
+                  ];
+                  downloadCsv(`rum-errors-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {recentErrors.length === 0 ? <EmptyState label="No errors in this window 🎉" /> : (
