@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { extractEdgeFunctionError } from "@/lib/edge-function-error";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -756,7 +757,7 @@ function DeleteDialog({ row, onClose, onDone }: { row: ProfileRow; onClose: () =
       const { data, error } = await supabase.functions.invoke("admin-delete-staff-account", {
         body: { profile_id: row.id, reason: reason.trim() },
       });
-      if (error) throw error;
+      if (error) throw new Error(await extractEdgeFunctionError(error, "Failed to delete account"));
       const payload = data as { ok?: boolean; warning?: string; error?: string } | null;
       if (payload?.error) throw new Error(payload.error);
       if (payload?.warning) toast.warning(payload.warning);
