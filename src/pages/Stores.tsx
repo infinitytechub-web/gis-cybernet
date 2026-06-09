@@ -251,7 +251,7 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
               return (
                 <Card key={i.id} className={`cursor-pointer hover:shadow-md transition-shadow ${out ? "border-destructive/40" : low ? "border-amber-300" : ""}`} onClick={() => setOpenItem(i)}>
                   <div className="aspect-square bg-muted rounded-t-md overflow-hidden flex items-center justify-center">
-                    {i.photo_url ? <img src={i.photo_url} alt={i.name} className="w-full h-full object-cover" /> : <Package className="h-12 w-12 text-muted-foreground/40" />}
+                    {i.photo_url ? <img src={i.photo_url} alt={i.name} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <Package className="h-12 w-12 text-muted-foreground/40" />}
                   </div>
                   <CardContent className="p-3 space-y-1">
                     <div className="font-medium truncate">{i.name}</div>
