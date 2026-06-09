@@ -79,7 +79,7 @@ export function ItemPhotoUpload({ value, onChange }: ItemPhotoUploadProps) {
     <div className="flex items-center gap-3">
       <div className="h-20 w-20 rounded-md border bg-muted/30 overflow-hidden flex items-center justify-center">
         {signedUrl ? (
-          <img src={signedUrl} alt="Item" className="h-full w-full object-cover" />
+          <img src={signedUrl} alt="Item" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : (
           <ImageIcon className="h-6 w-6 text-muted-foreground" />
         )}

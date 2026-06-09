@@ -2,10 +2,15 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { installCsrfHeader } from "./lib/csrf-fetch";
+import { initRum } from "./lib/rum";
 
 // Stamp every state-changing request with the X-Cybernet-App header so
 // edge functions can reject calls forged from third-party origins.
 installCsrfHeader();
+
+// Real User Monitoring — captures Web Vitals, route timings, errors, and
+// unhandled rejections from production traffic.
+initRum();
 
 // Auto-recover from stale chunk hashes after a new deploy.
 // When the browser holds an old index.html that references hashed assets

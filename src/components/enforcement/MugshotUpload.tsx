@@ -109,6 +109,8 @@ export function MugshotUpload({ value, onChange, folder, disabled }: Props) {
         <img
           src={previewUrl}
           alt="Mugshot preview"
+          loading="lazy"
+          decoding="async"
           className="h-32 w-32 object-cover rounded-md border"
         />
       )}

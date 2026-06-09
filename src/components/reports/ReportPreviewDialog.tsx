@@ -42,7 +42,7 @@ export default function ReportPreviewDialog({ open, onClose, url, fileType, file
           {isPdf ? (
             <iframe src={url} className="w-full h-[70vh] border rounded" title={fileName} />
           ) : isImage ? (
-            <img src={url} alt={fileName} className="max-w-full mx-auto rounded" />
+            <img src={url} alt={fileName} loading="lazy" decoding="async" className="max-w-full mx-auto rounded" />
           ) : isCsv ? (
             <div className="p-4 text-sm text-muted-foreground">
               CSV preview not available. Please download the file to view its contents.

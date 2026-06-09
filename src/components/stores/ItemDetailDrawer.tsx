@@ -221,7 +221,7 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="aspect-square rounded-lg border overflow-hidden bg-muted/30 flex items-center justify-center">
                   {photoUrl ? (
-                    <img src={photoUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={photoUrl} alt={item.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <Package className="h-10 w-10 text-muted-foreground" />
                   )}
