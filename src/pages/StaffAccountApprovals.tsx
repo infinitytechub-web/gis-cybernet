@@ -840,3 +840,146 @@ function DeleteDialog({ row, onClose, onDone }: { row: ProfileRow; onClose: () =
     </Dialog>
   );
 }
+
+function BulkDeleteDialog({ rows, onClose, onDone }: { rows: ProfileRow[]; onClose: () => void; onDone: () => void }) {
+  const [reason, setReason] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; failed: number }>({ done: 0, failed: 0 });
+  const [errors, setErrors] = useState<{ staff_id: string | null; name: string; message: string }[]>([]);
+
+  const reserved = new Set(["ADMIN-001", "DEPUTY-001"]);
+  const eligible = rows.filter((r) => !(r.staff_id && reserved.has(r.staff_id)));
+  const blocked = rows.length - eligible.length;
+  const expected = "DELETE";
+
+  const submit = async () => {
+    if (eligible.length === 0) {
+      toast.error("No eligible accounts selected");
+      return;
+    }
+    if (reason.trim().length < 4) {
+      toast.error("Please provide a reason (min 4 characters)");
+      return;
+    }
+    if (confirmText.trim().toUpperCase() !== expected) {
+      toast.error(`Type ${expected} to confirm`);
+      return;
+    }
+    setBusy(true);
+    setProgress({ done: 0, failed: 0 });
+    setErrors([]);
+    let done = 0, failed = 0;
+    const failures: { staff_id: string | null; name: string; message: string }[] = [];
+    for (const r of eligible) {
+      const name = `${r.last_name ?? ""} ${r.first_name ?? ""}`.trim() || "—";
+      try {
+        const { data, error } = await supabase.functions.invoke("admin-delete-staff-account", {
+          body: { profile_id: r.id, reason: reason.trim() },
+        });
+        if (error) throw new Error(await extractEdgeFunctionError(error, "Delete failed"));
+        const payload = data as { ok?: boolean; error?: string } | null;
+        if (payload?.error) throw new Error(payload.error);
+        done++;
+      } catch (e) {
+        failed++;
+        failures.push({ staff_id: r.staff_id, name, message: e instanceof Error ? e.message : "Delete failed" });
+      }
+      setProgress({ done, failed });
+      setErrors([...failures]);
+    }
+    setBusy(false);
+    if (failed === 0) toast.success(`${done} account${done === 1 ? "" : "s"} deleted`);
+    else if (done === 0) toast.error(`All ${failed} deletions failed`);
+    else toast.warning(`${done} deleted · ${failed} failed`);
+    if (failed === 0) onDone();
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" /> Bulk delete {eligible.length} pending account{eligible.length === 1 ? "" : "s"}
+          </DialogTitle>
+          <DialogDescription>
+            This permanently removes the selected pending accounts and their logins. This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="rounded-md border bg-muted/30 px-3 py-2 max-h-32 overflow-y-auto text-xs space-y-0.5">
+            {eligible.slice(0, 50).map((r) => (
+              <div key={r.id} className="font-mono">
+                {r.staff_id ?? "—"} · {`${r.last_name ?? ""} ${r.first_name ?? ""}`.trim() || "—"}
+              </div>
+            ))}
+            {eligible.length > 50 && <div className="text-muted-foreground">…and {eligible.length - 50} more</div>}
+            {eligible.length === 0 && <div className="text-muted-foreground">No eligible accounts.</div>}
+          </div>
+          {blocked > 0 && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs">
+              {blocked} reserved system account{blocked === 1 ? "" : "s"} will be skipped (ADMIN-001 / DEPUTY-001).
+            </div>
+          )}
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+            Each deletion is audited individually. Failures (e.g. protected accounts, linked records) are reported below.
+          </div>
+          <div>
+            <Label className="text-xs">Reason (required)</Label>
+            <Textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Duplicate stub profiles created during bulk import"
+              rows={3}
+              disabled={busy}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">
+              Type <span className="font-mono">{expected}</span> to confirm
+            </Label>
+            <Input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={expected}
+              autoComplete="off"
+              disabled={busy}
+            />
+          </div>
+          {(busy || progress.done > 0 || progress.failed > 0) && (
+            <div className="text-xs text-muted-foreground">
+              {busy ? "Deleting" : "Completed"} {progress.done}/{eligible.length}
+              {progress.failed > 0 ? ` · ${progress.failed} failed` : ""}
+            </div>
+          )}
+          {errors.length > 0 && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px] space-y-1 max-h-32 overflow-y-auto">
+              {errors.map((e, i) => (
+                <div key={i}>
+                  <span className="font-mono">{e.staff_id ?? "—"}</span> · {e.name}: <span className="text-destructive">{e.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            {errors.length > 0 && !busy ? "Close" : "Cancel"}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={submit}
+            disabled={
+              busy ||
+              eligible.length === 0 ||
+              confirmText.trim().toUpperCase() !== expected ||
+              reason.trim().length < 4
+            }
+          >
+            {busy ? "Deleting…" : `Delete ${eligible.length} permanently`}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
