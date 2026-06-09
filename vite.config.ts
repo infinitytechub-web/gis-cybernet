@@ -25,6 +25,24 @@ export default defineConfig(({ mode }) => ({
     // Login page doesn't eagerly fetch Dashboard + its dependencies (recharts,
     // leaflet, etc.). Lazy routes will still load on demand via dynamic import.
     modulePreload: { polyfill: true, resolveDependencies: () => [] },
+    // Stable vendor chunking — groups heavy libs together so they cache
+    // across deploys and don't bloat individual route chunks.
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return "react-vendor";
+          if (/[\\/]node_modules[\\/]@radix-ui[\\/]/.test(id)) return "radix";
+          if (/[\\/]node_modules[\\/]@tanstack[\\/]/.test(id)) return "query";
+          if (/[\\/]node_modules[\\/]recharts[\\/]/.test(id)) return "charts";
+          if (/[\\/]node_modules[\\/](jspdf|jspdf-autotable|xlsx|docx|file-saver|qrcode)[\\/]/.test(id)) return "pdf-xlsx";
+          if (/[\\/]node_modules[\\/](leaflet|leaflet\.markercluster)[\\/]/.test(id)) return "maps";
+          if (/[\\/]node_modules[\\/]pdfjs-dist[\\/]/.test(id)) return "pdfjs";
+          if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) return "motion";
+          if (/[\\/]node_modules[\\/]date-fns[\\/]/.test(id)) return "date-fns";
+        },
+      },
+    },
   },
   resolve: {
     alias: {
