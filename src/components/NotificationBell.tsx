@@ -149,24 +149,23 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!user) return;
+    // Per-user private Broadcast channel. The `notifications` table is no
+    // longer in the supabase_realtime publication (postgres_changes bypasses
+    // RLS), so a server trigger forwards each new row to topic
+    // `notifications:<user_id>`, gated by a realtime.messages SELECT policy.
+    supabase.realtime.setAuth();
     const channel = supabase
-      .channel("notifications-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        handleNewNotification
-      )
+      .channel(`notifications:${user.id}`, { config: { private: true } })
+      .on("broadcast", { event: "new_notification" }, (payload) => {
+        handleNewNotification({ new: (payload as any).payload });
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [user, handleNewNotification]);
+
 
   // Animate bell on new unread
   const unreadCount = notifications.filter((n: any) => !n.is_read).length;
