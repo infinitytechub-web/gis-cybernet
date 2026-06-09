@@ -7,7 +7,24 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown } from "lucide-react";
+import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown, Download } from "lucide-react";
+
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  const esc = (v: string | number) => {
+    const s = String(v ?? "");
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 import {
   ResponsiveContainer,
   BarChart,
@@ -297,11 +314,33 @@ export default function RumAnalytics() {
 
         <TabsContent value="routes">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingDown className="h-4 w-4" />
                 Slow-route ranking (by LCP p75)
               </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={slowRoutes.length === 0}
+                onClick={() => {
+                  const rows: (string | number)[][] = [
+                    ["Route", "Samples", "p50 (ms)", "p75 (ms)", "p95 (ms)", "Rating"],
+                    ...slowRoutes.map((r) => [
+                      r.route,
+                      r.samples,
+                      Math.round(r.p50),
+                      Math.round(r.p75),
+                      Math.round(r.p95),
+                      ratingFor("lcp", r.p75),
+                    ]),
+                  ];
+                  downloadCsv(`rum-slow-routes-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {slowRoutes.length === 0 ? <EmptyState /> : (
@@ -343,11 +382,38 @@ export default function RumAnalytics() {
 
         <TabsContent value="errors">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
                 Recent errors &amp; unhandled rejections
               </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={errorEvents.length === 0}
+                onClick={() => {
+                  const rows: (string | number)[][] = [
+                    ["Timestamp", "Kind", "Route", "Message", "Filename", "Session", "User", "Stack"],
+                    ...errorEvents.map((e) => {
+                      const m = (e.meta ?? {}) as { message?: string; filename?: string; stack?: string };
+                      return [
+                        e.created_at,
+                        e.kind,
+                        e.route ?? "",
+                        m.message ?? "",
+                        m.filename ?? "",
+                        e.session_id ?? "",
+                        e.user_id ?? "",
+                        m.stack ?? "",
+                      ];
+                    }),
+                  ];
+                  downloadCsv(`rum-errors-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {recentErrors.length === 0 ? <EmptyState label="No errors in this window 🎉" /> : (
