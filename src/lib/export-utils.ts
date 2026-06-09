@@ -289,16 +289,16 @@ export function getFormatLabel(fmt: ExportFormat) {
   return FORMAT_LABELS[fmt];
 }
 
-export function exportReport(fmt: ExportFormat, options: ExportOptions) {
+export async function exportReport(fmt: ExportFormat, options: ExportOptions) {
   switch (fmt) {
     case "pdf":
-      generatePDF(options);
+      await generatePDF(options);
       break;
     case "csv":
       generateCSV(options);
       break;
     case "excel":
-      generateExcel(options);
+      await generateExcel(options);
       break;
     case "word":
       generateWord(options);
