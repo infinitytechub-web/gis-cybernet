@@ -314,11 +314,33 @@ export default function RumAnalytics() {
 
         <TabsContent value="routes">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <TrendingDown className="h-4 w-4" />
                 Slow-route ranking (by LCP p75)
               </CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={slowRoutes.length === 0}
+                onClick={() => {
+                  const rows: (string | number)[][] = [
+                    ["Route", "Samples", "p50 (ms)", "p75 (ms)", "p95 (ms)", "Rating"],
+                    ...slowRoutes.map((r) => [
+                      r.route,
+                      r.samples,
+                      Math.round(r.p50),
+                      Math.round(r.p75),
+                      Math.round(r.p95),
+                      ratingFor("lcp", r.p75),
+                    ]),
+                  ];
+                  downloadCsv(`rum-slow-routes-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                }}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </Button>
             </CardHeader>
             <CardContent>
               {slowRoutes.length === 0 ? <EmptyState /> : (
