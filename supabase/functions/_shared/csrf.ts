@@ -100,7 +100,7 @@ export function assertCsrfSafe(req: Request): CsrfCheck {
 
   const csrf = req.headers.get(CSRF_HEADER);
   if (csrf !== CSRF_HEADER_VALUE) {
-    return { ok: false, reason: `missing or invalid ${CSRF_HEADER} header` };
+    return { ok: false, reason: `missing or invalid CSRF ${CSRF_HEADER} header` };
   }
 
   return { ok: true, origin: candidate! };
