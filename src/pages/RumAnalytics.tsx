@@ -7,14 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown, Download } from "lucide-react";
+import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown, Download, Printer } from "lucide-react";
 
-function downloadCsv(filename: string, rows: (string | number)[][]) {
+function downloadCsv(filename: string, rows: (string | number)[][], preamble: string[][] = []) {
   const esc = (v: string | number) => {
     const s = String(v ?? "");
     return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const csv = rows.map((r) => r.map(esc).join(",")).join("\r\n");
+  const all = [...preamble, ...(preamble.length ? [[""]] : []), ...rows];
+  const csv = all.map((r) => r.map(esc).join(",")).join("\r\n");
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -220,8 +221,22 @@ export default function RumAnalytics() {
             <RefreshCw className={`h-4 w-4 mr-1 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-1" />
+            Print
+          </Button>
         </div>
       </header>
+
+      {/* Active filter summary — also shown when printed */}
+      <div className="text-xs text-muted-foreground print:text-black">
+        Range: <span className="font-medium">{RANGES.find((r) => r.hours === hours)?.label ?? `Last ${hours}h`}</span>
+        {" · "}From <span className="font-mono">{format(new Date(since), "yyyy-MM-dd HH:mm")}</span>
+        {" to "}<span className="font-mono">{format(new Date(), "yyyy-MM-dd HH:mm")}</span>
+        {routeFilter.trim() && <> · Route filter: <span className="font-mono">{routeFilter.trim()}</span></>}
+      </div>
+
+
 
       {/* Headline KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -335,7 +350,16 @@ export default function RumAnalytics() {
                       ratingFor("lcp", r.p75),
                     ]),
                   ];
-                  downloadCsv(`rum-slow-routes-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                  const rangeLabel = RANGES.find((r) => r.hours === hours)?.label ?? `Last ${hours}h`;
+                  const preamble: string[][] = [
+                    ["Report", "RUM Slow Routes (LCP p75)"],
+                    ["Time range", rangeLabel],
+                    ["From", format(new Date(since), "yyyy-MM-dd HH:mm")],
+                    ["To", format(new Date(), "yyyy-MM-dd HH:mm")],
+                    ["Route filter", routeFilter.trim() || "(none)"],
+                    ["Generated at", new Date().toISOString()],
+                  ];
+                  downloadCsv(`rum-slow-routes-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows, preamble);
                 }}
               >
                 <Download className="h-4 w-4 mr-1" />
@@ -408,7 +432,16 @@ export default function RumAnalytics() {
                       ];
                     }),
                   ];
-                  downloadCsv(`rum-errors-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                  const rangeLabel = RANGES.find((r) => r.hours === hours)?.label ?? `Last ${hours}h`;
+                  const preamble: string[][] = [
+                    ["Report", "RUM Errors & Unhandled Rejections"],
+                    ["Time range", rangeLabel],
+                    ["From", format(new Date(since), "yyyy-MM-dd HH:mm")],
+                    ["To", format(new Date(), "yyyy-MM-dd HH:mm")],
+                    ["Route filter", routeFilter.trim() || "(none)"],
+                    ["Generated at", new Date().toISOString()],
+                  ];
+                  downloadCsv(`rum-errors-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows, preamble);
                 }}
               >
                 <Download className="h-4 w-4 mr-1" />
