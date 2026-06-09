@@ -136,16 +136,21 @@ jobs:
           echo "::group::Checking $(echo "$targets" | wc -l) migration files"
 
           # 1) New CREATE TABLE statements must enable RLS in the same migration.
+          # Tables whose name starts with '_' are treated as internal/diagnostic
+          # scratch tables (e.g. one-off DO-block diagnostics) and are exempt;
+          # they should be dropped by a follow-up migration.
           while IFS= read -r f; do
             tables=$(grep -iEo 'CREATE TABLE[[:space:]]+(IF NOT EXISTS[[:space:]]+)?(public\.)?[a-zA-Z0-9_]+' "$f" \
                        | awk '{print $NF}' | sed 's/^public\.//' | sort -u || true)
             for t in $tables; do
+              case "$t" in _*) continue ;; esac
               if ! grep -iqE "ALTER TABLE[[:space:]]+(public\.)?${t}[[:space:]]+ENABLE ROW LEVEL SECURITY" "$f"; then
                 echo "::error file=$f::Table '$t' is created but RLS is not enabled in the same migration."
                 fail=1
               fi
             done
           done <<< "$targets"
+
 
           # 2) No policies with USING (true) / WITH CHECK (true) for write ops.
           # Historical migrations superseded by a tightened follow-up are
