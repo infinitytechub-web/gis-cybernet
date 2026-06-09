@@ -216,7 +216,8 @@ function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportO
   downloadCSVString(lines.join("\n"), `${filename}.csv`);
 }
 
-function generateExcel({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
+async function generateExcel({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
+  const XLSX = await import("xlsx");
   const aoa: string[][] = [];
   aoa.push(["GIS Amasaman Sector Command"]);
   aoa.push([title]);
