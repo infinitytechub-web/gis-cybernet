@@ -153,7 +153,7 @@ function BirthdayRow({
         className={`h-7 w-7 rounded-full bg-muted flex items-center justify-center overflow-hidden ${ringClass}`}
       >
         {b.photo_url ? (
-          <img src={b.photo_url} alt="" className="h-full w-full object-cover" />
+          <img src={b.photo_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : (
           <span className="text-[10px] font-semibold">
             {(b.first_name?.[0] ?? "?")}{(b.last_name?.[0] ?? "")}
