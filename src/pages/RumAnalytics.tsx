@@ -432,7 +432,16 @@ export default function RumAnalytics() {
                       ];
                     }),
                   ];
-                  downloadCsv(`rum-errors-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows);
+                  const rangeLabel = RANGES.find((r) => r.hours === hours)?.label ?? `Last ${hours}h`;
+                  const preamble: string[][] = [
+                    ["Report", "RUM Errors & Unhandled Rejections"],
+                    ["Time range", rangeLabel],
+                    ["From", format(new Date(since), "yyyy-MM-dd HH:mm")],
+                    ["To", format(new Date(), "yyyy-MM-dd HH:mm")],
+                    ["Route filter", routeFilter.trim() || "(none)"],
+                    ["Generated at", new Date().toISOString()],
+                  ];
+                  downloadCsv(`rum-errors-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, rows, preamble);
                 }}
               >
                 <Download className="h-4 w-4 mr-1" />
