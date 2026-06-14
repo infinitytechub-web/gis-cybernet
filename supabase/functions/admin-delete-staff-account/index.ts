@@ -137,11 +137,12 @@ Deno.serve(async (req) => {
     if (profile.user_id) {
       const { error: delUserErr } = await admin.auth.admin.deleteUser(profile.user_id);
       if (delUserErr) {
+        console.error("admin-delete-staff-account auth delete error:", delUserErr.message);
         // Profile is already gone; surface a partial-success warning
         return new Response(
           JSON.stringify({
             ok: true,
-            warning: `Profile deleted but auth user removal failed: ${delUserErr.message}`,
+            warning: "Profile deleted but auth user removal failed",
             staff_id: profile.staff_id,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },

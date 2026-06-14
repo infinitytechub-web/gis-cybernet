@@ -113,11 +113,15 @@ Deno.serve(async (req) => {
         resent_at: new Date().toISOString(),
       })
       .eq("id", row.id);
-    if (updErr) return json({ error: updErr.message }, 500);
+    if (updErr) {
+      console.error("interlink-resend-notification update error:", updErr.message);
+      return json({ error: "Failed to update notification log" }, 500);
+    }
 
     return json({ ok: true, status: newStatus, error: errorMessage });
   } catch (e) {
-    return json({ error: (e as Error).message }, 500);
+    console.error("interlink-resend-notification error:", (e as Error).message);
+    return json({ error: "An internal error occurred" }, 500);
   }
 });
 
