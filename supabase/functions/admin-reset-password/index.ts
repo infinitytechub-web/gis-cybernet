@@ -97,7 +97,8 @@ Deno.serve(async (req) => {
       user_metadata: { must_change_password: true },
     });
     if (updErr) {
-      return new Response(JSON.stringify({ error: updErr.message }), {
+      console.error("admin-reset-password update error:", updErr.message);
+      return new Response(JSON.stringify({ error: "Failed to reset password" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

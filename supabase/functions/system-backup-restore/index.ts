@@ -81,11 +81,15 @@ Deno.serve(async (req) => {
     sourceLabel = `snapshot:${snap.file_name}`;
     const { data: file, error: dErr } = await admin.storage
       .from("system-backups").download(snap.storage_path);
-    if (dErr || !file) return json({ error: `Failed to read snapshot: ${dErr?.message}` }, 500);
+    if (dErr || !file) {
+      console.error("system-backup-restore download error:", dErr?.message);
+      return json({ error: "Failed to read snapshot" }, 500);
+    }
     try {
       payload = JSON.parse(await file.text());
     } catch (e) {
-      return json({ error: `Snapshot is not valid JSON: ${(e as Error).message}` }, 400);
+      console.error("system-backup-restore JSON parse error:", (e as Error).message);
+      return json({ error: "Snapshot is not valid JSON" }, 400);
     }
   } else if (body?.snapshot_payload && typeof body.snapshot_payload === "object") {
     payload = body.snapshot_payload as Record<string, unknown>;
@@ -125,7 +129,8 @@ Deno.serve(async (req) => {
       rowsWritten[table] = written;
       total += written;
     } catch (e) {
-      errors.push(`${table}: ${(e as Error).message}`);
+      console.error(`system-backup-restore upsert error for ${table}:`, (e as Error).message);
+      errors.push(`${table}: restore failed`);
     }
   }
 

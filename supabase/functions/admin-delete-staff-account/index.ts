@@ -126,7 +126,8 @@ Deno.serve(async (req) => {
     // Delete the profile (RLS bypassed by service key); related rows should cascade or be set null per FK config
     const { error: delProfErr } = await admin.from("profiles").delete().eq("id", profile.id);
     if (delProfErr) {
-      return new Response(JSON.stringify({ error: `Failed to delete profile: ${delProfErr.message}` }), {
+      console.error("admin-delete-staff-account delete profile error:", delProfErr.message);
+      return new Response(JSON.stringify({ error: "Failed to delete profile" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
