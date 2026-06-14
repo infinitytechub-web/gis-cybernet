@@ -43,3 +43,9 @@ export function installCsrfHeader(): void {
     }
   };
 }
+
+// Auto-install at module-evaluation time. This guarantees the patch is in
+// place BEFORE any other module (notably @supabase/supabase-js) captures a
+// reference to window.fetch. Callers may still invoke installCsrfHeader()
+// explicitly — the `installed` guard makes it idempotent.
+installCsrfHeader();
