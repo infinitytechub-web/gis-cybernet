@@ -1,11 +1,14 @@
+// CSRF header patch MUST be imported FIRST so it self-installs before
+// any other module (notably @supabase/supabase-js) captures window.fetch.
+// Reordering these imports re-introduces the "CSRF check failed" regression.
+import { installCsrfHeader } from "./lib/csrf-fetch";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { installCsrfHeader } from "./lib/csrf-fetch";
 import { initRum } from "./lib/rum";
 
-// Stamp every state-changing request with the X-Cybernet-App header so
-// edge functions can reject calls forged from third-party origins.
+// Belt-and-braces: the import above already auto-installs the patch, but we
+// call it again explicitly so a tree-shaker can never elide the side effect.
 installCsrfHeader();
 
 // Real User Monitoring — captures Web Vitals, route timings, errors, and
