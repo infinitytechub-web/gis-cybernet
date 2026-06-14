@@ -126,7 +126,8 @@ Deno.serve(async (req) => {
     // Delete the profile (RLS bypassed by service key); related rows should cascade or be set null per FK config
     const { error: delProfErr } = await admin.from("profiles").delete().eq("id", profile.id);
     if (delProfErr) {
-      return new Response(JSON.stringify({ error: `Failed to delete profile: ${delProfErr.message}` }), {
+      console.error("admin-delete-staff-account delete profile error:", delProfErr.message);
+      return new Response(JSON.stringify({ error: "Failed to delete profile" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -136,11 +137,12 @@ Deno.serve(async (req) => {
     if (profile.user_id) {
       const { error: delUserErr } = await admin.auth.admin.deleteUser(profile.user_id);
       if (delUserErr) {
+        console.error("admin-delete-staff-account auth delete error:", delUserErr.message);
         // Profile is already gone; surface a partial-success warning
         return new Response(
           JSON.stringify({
             ok: true,
-            warning: `Profile deleted but auth user removal failed: ${delUserErr.message}`,
+            warning: "Profile deleted but auth user removal failed",
             staff_id: profile.staff_id,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },

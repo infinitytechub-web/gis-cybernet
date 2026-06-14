@@ -84,15 +84,16 @@ Deno.serve(async (req) => {
       upsert: false,
     });
     if (upErr) {
-      console.error("Upload error", upErr);
-      return json({ error: `Upload failed: ${upErr.message}` }, 500);
+      console.error("gps-cloud-export upload error", upErr);
+      return json({ error: "Upload failed" }, 500);
     }
 
     const { data: signed, error: sErr } = await admin.storage
       .from(BUCKET)
       .createSignedUrl(objectPath, expiresIn, { download: safeName });
     if (sErr || !signed?.signedUrl) {
-      return json({ error: `Sign failed: ${sErr?.message ?? "unknown"}` }, 500);
+      console.error("gps-cloud-export sign error", sErr?.message ?? "unknown");
+      return json({ error: "Failed to generate download link" }, 500);
     }
 
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
@@ -127,7 +128,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     console.error("gps-cloud-export error", msg);
-    return json({ error: msg }, 500);
+    return json({ error: "An internal error occurred" }, 500);
   }
 });
 
