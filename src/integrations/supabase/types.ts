@@ -9467,6 +9467,7 @@ export type Database = {
           start_date: string
         }[]
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       empty_recycle_bin: { Args: never; Returns: Json }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }

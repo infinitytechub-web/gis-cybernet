@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "All authenticated view health reports" ON public.health_reports;
+CREATE POLICY "Command tier or owner view health reports" ON public.health_reports FOR SELECT TO authenticated USING (is_command_tier(auth.uid()) OR created_by = auth.uid());
