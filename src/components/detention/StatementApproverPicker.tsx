@@ -50,8 +50,8 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
     queryKey: ["detention-approver-options"],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase.from("profiles") as any)
+
         .select("id, first_name, last_name, unit, ranks(abbreviation, name), departments(name), user_roles(role)")
         .order("last_name")
         .limit(1000);
