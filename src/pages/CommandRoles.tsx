@@ -24,7 +24,8 @@ type Holder = { user_id: string; first_name?: string | null; last_name?: string 
 type Candidate = Holder & { department_id?: string | null; office?: string | null; shift_group?: string | null; user_id: string };
 
 export default function CommandRoles() {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, canManageCommandTier, user } = useAuth();
+  const canManage = canManageCommandTier || isAdmin;
   const qc = useQueryClient();
   const [assignRole, setAssignRole] = useState<AppRole | null>(null);
   const [search, setSearch] = useState("");
@@ -43,7 +44,7 @@ export default function CommandRoles() {
       const { data } = await supabase.from("departments").select("id, name").order("name");
       return data ?? [];
     },
-    enabled: isAdmin,
+    enabled: canManage,
   });
 
   const { data: holdersByRole = {} } = useQuery({
@@ -68,7 +69,7 @@ export default function CommandRoles() {
       }
       return map;
     },
-    enabled: isAdmin,
+    enabled: canManage,
   });
 
   const { data: candidates = [] } = useQuery({
@@ -82,7 +83,7 @@ export default function CommandRoles() {
       if (error) throw error;
       return (data ?? []).filter((p: any) => p.user_id) as Candidate[];
     },
-    enabled: isAdmin,
+    enabled: canManage,
   });
 
   const { data: auditEntries = [] } = useQuery({
@@ -96,7 +97,7 @@ export default function CommandRoles() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: isAdmin,
+    enabled: canManage,
   });
 
   const officeOptions = useMemo(() => {
@@ -250,7 +251,7 @@ export default function CommandRoles() {
     onSettled: () => setUndoing(false),
   });
 
-  if (!isAdmin) {
+  if (!canManage) {
     return (
       <Alert variant="destructive" className="max-w-2xl">
         <AlertTitle>Admin only</AlertTitle>
