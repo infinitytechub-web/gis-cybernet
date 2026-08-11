@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Crown, ShieldCheck, UserCog, Loader2, History, Filter, X as XIcon, User as UserIcon, Users, ExternalLink, Search, Undo2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CommandTierGrantsPanel } from "@/components/admin/CommandTierGrantsPanel";
 import { BulkCommandRoleAssignDialog } from "@/components/admin/BulkCommandRoleAssignDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -664,6 +665,8 @@ export default function CommandRoles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CommandTierGrantsPanel />
 
       <BulkCommandRoleAssignDialog
         open={bulkOpen}
