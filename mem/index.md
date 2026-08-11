@@ -1,0 +1,1 @@
+- [Admin Console & Delegation](mem://features/admin-console-and-delegation) — /admin hub, command_tier_grants delegation, Standard Bail forms, map tile failover
