@@ -20,7 +20,9 @@ export function BrandingProvider({ children }: { children?: React.ReactNode }) {
     apply("--ring", b.primary_color);
     apply("--secondary", b.secondary_color);
     apply("--sidebar-primary", b.secondary_color);
-    apply("--accent", b.accent_color);
+    // Kept as a dedicated brand token: shadcn's --accent is a light hover
+    // surface, so overriding it would break hover/foreground contrast.
+    apply("--brand-accent", b.accent_color);
   }, [b.primary_color, b.secondary_color, b.accent_color]);
 
   useEffect(() => {
