@@ -1,53 +1,85 @@
-## Goal
-Reduce page load time across the app — focus on First Contentful Paint on `/login` and `/dashboard`, and on the size of route chunks that currently pull in heavyweight libraries (`jspdf`, `jspdf-autotable`, `xlsx`, `docx`, `recharts`, `leaflet`, `qrcode`, `pdfjs-dist`) on first render even though those libs are only needed when the user clicks Export / Print / Show map.
+# Cybernet HRM — Administration, Security, Bail & Map Enhancement
 
-Scope is strictly performance + responsive verification. No feature/business-logic changes.
+Eight work items, grouped so nothing existing breaks. Each item ends with verification.
 
-## Findings (from current code)
+## 1. Standard Bail form (Holding & Detention Center)
 
-1. **Heavy libs imported at module top-level inside route pages**, so they ship inside the page chunk and parse before the page renders. Examples:
-   - `pages/Stores.tsx`, `pages/HoldingCenter.tsx`, `pages/Ipse.tsx`, `pages/Appraisals.tsx` → static `recharts` import (only needed for visible charts — OK to keep, but chart sub-imports can be tree-shaken via a single shared `chart` wrapper).
-   - `pages/DutyRosterImport.tsx`, `pages/AppraisalCoverageReport.tsx`, `pages/RouteHistory.tsx`, `pages/MyExcuseDutySubmissions.tsx`, `pages/StaffMappingImport.tsx`, `pages/RoleAssignmentsAdmin.tsx` → static `jspdf` / `jspdf-autotable` / `xlsx` / `docx` imports used only in export click handlers.
-   - `components/enforcement/OperationActions.tsx`, `components/stores/ComplianceExportFilters.tsx`, `components/stores/ItemDetailDrawer.tsx`, `components/staff/BulkStaffUploadDialog.tsx`, `components/staff/BulkImportDialog.tsx`, `components/reports/AttendanceComplianceImportDialog.tsx`, `components/dashboard/StaffAppraisalsWidget.tsx` → same pattern.
-   - `lib/export-utils.ts`, `lib/record-pdf.ts`, `lib/branded-letter-pdf.ts`, `lib/health-lab-export.ts`, `lib/security-scan-export.ts`, `lib/staff-export-integrity.ts`, `lib/interlink-export.ts`, `lib/guard-schedule-export.ts`, `lib/excuse-duty-templates.ts`, `lib/attendance-compliance-template.ts`, `lib/official-stamp.ts` → ship pdf/xlsx/docx/qrcode at module load.
-2. **Single shared `QueryClient`** with no defaults → every refocus refetches. Setting `staleTime` & disabling `refetchOnWindowFocus` reduces post-load thrash and bandwidth.
-3. **No manual `build.rollupOptions.output.manualChunks`** → `react`, `react-dom`, `@tanstack/react-query`, Radix, `recharts`, `leaflet`, etc. are split unpredictably by Vite. Adding stable vendor chunks improves long-term cache hits across deploys.
-4. **No route prefetch** — hovering a nav link doesn't warm the route chunk. Adding a tiny `onMouseEnter` prefetch on `NavLink` cuts perceived navigation latency.
-5. **`<link rel="preconnect">` only to Supabase host** — also preconnect to the tile proxy and add `crossorigin` on the Supabase preconnect for the wss handshake.
-6. **Responsive sanity** — `Layout` already covers mobile bottom-nav + responsive header. We will visually verify with Playwright snapshots at the 3 breakpoints already defined in `tests/header-snapshots.spec.ts` (mobile 390, tablet 820, desktop 1366) on a handful of representative pages and address any newly broken layouts only.
+New "Standard Bail" tab beside Active Custody / Archive / Analytics.
 
-## Changes
+- New `detention_bail_records` table: optional link to a custody record, bailee details (name, ID, contact, address), offence/reason, bail type, bail amount and currency, conditions, surety details (name, relationship, ID, contact, address), grant date, return/report date, and the authorization block — authorized-by name, rank/position, signature (typed name + drawn/uploaded signature image), authorization date, authorization status (pending / authorized / declined).
+- Standalone or detainee-linked: picking a detainee prefills bailee details; leaving it blank allows walk-in cases.
+- Table view with row actions **View**, **Edit**, **Delete**, **Print**.
+  - View: read-only drawer showing the complete record.
+  - Edit: same validated form, updates in place.
+  - Delete: typed confirmation, restricted to authorized roles.
+  - Print: clean A4 bail document with letterhead, signature block and CONFIDENTIAL footer, matching the existing print/PDF style.
+- Field validation (required fields, numeric amount, date sanity, phone format).
+- Access rules: detention staff and command tier can create/view/edit; delete restricted to command tier; the authorization block is only editable by authorized approvers, enforced by a database trigger (same pattern as the statement-approver guard). Every create/edit/delete/authorize is captured by the audit trigger.
 
-### A. Defer heavy export/print libs (biggest win)
-Convert every "fires only inside a click handler" import into a dynamic `await import(...)` inside the handler. Files to update (export-only call sites):
+## 2. Admin password management — post-deployment fix
 
-- `src/lib/export-utils.ts` — make `exportToPdf`/`exportToXlsx` `async` and `await import("jspdf"|"jspdf-autotable"|"xlsx")` inside.
-- `src/lib/record-pdf.ts`, `src/lib/branded-letter-pdf.ts`, `src/lib/health-lab-export.ts`, `src/lib/security-scan-export.ts`, `src/lib/staff-export-integrity.ts`, `src/lib/interlink-export.ts`, `src/lib/guard-schedule-export.ts`, `src/lib/excuse-duty-templates.ts`, `src/lib/attendance-compliance-template.ts`, `src/lib/official-stamp.ts` — same pattern.
-- `src/pages/DutyRosterImport.tsx`, `pages/AppraisalCoverageReport.tsx`, `pages/RouteHistory.tsx`, `pages/MyExcuseDutySubmissions.tsx`, `pages/StaffMappingImport.tsx`, `pages/RoleAssignmentsAdmin.tsx`.
-- `src/components/enforcement/OperationActions.tsx`, `components/stores/ComplianceExportFilters.tsx`, `components/stores/ItemDetailDrawer.tsx`, `components/stores/AssetQrCode.tsx`, `components/stores/AssetLabelPrint.tsx`, `components/staff/BulkStaffUploadDialog.tsx`, `components/staff/BulkImportDialog.tsx`, `components/reports/AttendanceComplianceImportDialog.tsx`, `components/dashboard/StaffAppraisalsWidget.tsx`, `components/auth/TwoFactorSetup.tsx` (qrcode → render on demand after dialog open).
+Full audit of the password/credential path, then removal of whatever blocks a legitimate admin.
 
-Each call site keeps its signature but moves the heavy `import` into the function body. Callers already `await` the existing helpers in most cases; the few synchronous ones get a thin `async` wrapper.
+- Re-check the `admin-reset-password`, `admin-delete-staff-account`, `admin-recovery`, `repair-missing-auth`, `reset-and-create-accounts` and `bulk-create-accounts` functions for consistent admin checks, CSRF handling and error surfacing (real message, not "non-2xx status code").
+- Verify the CSRF fetch patch is applied before any client call and that the production origin is accepted.
+- Review the profile/auth database triggers and policies for rules that block admin writes (the SAO trigger fix is already in place — confirm no sibling trigger does the same).
+- Sweep for stale/duplicate password components, dead endpoints and obsolete auth helpers; remove or consolidate them.
+- End-to-end check: admin resets a password, forces a change, unlocks an account, and the staff account signs in with the temporary password.
 
-Charts stay statically imported where they render on page load (`Dashboard`, `Analytics`, `Ipse`, `Stores`, `HoldingCenter`, `Appraisals`) — moving them dynamic would cause a chart-shaped layout shift. The savings come from removing pdf/xlsx/docx/qrcode from those chunks.
+## 3. System Branding Management (enterprise upgrade)
 
-### B. Vendor chunking + prefetch
-- `vite.config.ts` — add `build.rollupOptions.output.manualChunks` grouping: `react-vendor` (react, react-dom, react-router-dom), `radix` (`@radix-ui/*`), `query` (`@tanstack/react-query`), `charts` (`recharts`), `pdf` (`jspdf*`, `xlsx`, `docx`), `maps` (`leaflet*`). Leaves dynamic chunks intact (still on-demand).
-- `src/components/NavLink.tsx` — accept an optional `prefetch?: () => Promise<unknown>` and call it on `onMouseEnter` / `onFocus`. `AppSidebar.tsx` / `MobileBottomNav.tsx` pass the matching `() => import("@/pages/...")` for each link.
-- `index.html` — add `<link rel="preconnect" href="https://ebndffutyrgybsduvijo.supabase.co" crossorigin>` (the existing one is missing `crossorigin`, which costs us a duplicate handshake for the wss/auth fetch).
+Upgrade the existing Branding tab into a full module surfaced as **Admin Console → System Branding**.
 
-### C. React Query defaults
-- `src/App.tsx` — `new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, gcTime: 5*60_000, refetchOnWindowFocus: false, retry: 1 } } })`. Cuts redundant refetches after window focus and during route navigation.
+- Adds organization name, system description and contact information (email, phone, address, website) to the branding record.
+- Sections: Identity, Logos & Favicon, Login page, Dashboard, Header/Footer, Theme colours, Contact & description.
+- Live preview panel (login card + header/sidebar mock) with an explicit Publish step, so nothing goes live until saved.
+- Image validation: type allow-list, size cap, dimension guidance and a warning when a logo is too small/large for its slot.
+- Every branding save writes an audit-log entry recording which fields changed.
+- Values keep living in the settings record, so they survive redeploys.
 
-### D. Responsive / a11y verification (no code change unless something breaks)
-- Run `bun run build` and confirm: per-route chunk sizes drop for the pages listed in A; a `pdf`/`maps`/`charts` vendor chunk appears.
-- Run the existing Playwright `tests/header-snapshots.spec.ts` (mobile/tablet/desktop) and any existing a11y specs (`tests/a11y/*`).
-- Manually open `/dashboard`, `/staff`, `/stores`, `/ipse`, `/duty-roster/import`, `/login` in `browser--view_preview` at 390 / 820 / 1366 widths — screenshot, eyeball for regressions, and only edit if something visibly broke.
-- Use `browser--performance_profile` on `/login` and `/dashboard` before vs. after to record FCP/LCP/TBT deltas for the summary.
+## 4. Global brand-name replacement
 
-## Out of scope
-- No new features, no schema changes, no removed functionality.
-- No edits to `.workspace`, edge functions, or backend.
-- No SEO, copy, or design changes.
+Replace "Amasaman Sector Command" with "Cybernet HRM System" everywhere it occurs. Confirmed occurrences span ~36 files: `index.html`, `public/manifest.json`, page components (Reports, Analytics, Interlink, Enforcement, Operations, Holding Center, GPS Addresses, Guard Schedule Import), export/print libraries (record PDF/DOCX, branded letter, guard schedule, interlink, compliance, excuse-duty templates, export utils), settings/staff components, an edge function (`send-record-email`), the audit scheduler, and one test file. Historical SQL migration files are left untouched (rewriting applied migrations is unsafe); current database defaults/settings rows are updated via a data update instead.
 
-## Deliverable
-Summary report including: per-page chunk size before/after, Web Vitals before/after for `/login` and `/dashboard`, responsive screenshots at the three breakpoints, Playwright/a11y results, and a list of files changed.
+Afterwards a repo-wide search must return zero matches outside `supabase/migrations/`.
+
+## 5. Command-tier model (both changes)
+
+- **Delegated assignment:** Admin, OIC and 2IC can assign, modify, remove and view command-tier role assignments (today only Admin can). Database policies on the role table are rewritten so those three roles may write command-tier rows, with a guard preventing anyone from escalating themselves or granting above their own level.
+- **Explicit permission grants:** a per-staff grant layer lets Admin/OIC/2IC authorize an individual non-command staff member for a specific command-tier capability. Feature gates change from "is command tier" to "is command tier OR holds a grant for this capability", checked by a security-definer database function so it is enforced server-side, not just in the UI.
+- The Command Roles screen gains a Grants section (assign, view, revoke, expiry) and both role changes and grants are written to the command-role audit trail.
+
+## 6. Live GPS map — automatic tile failover
+
+Current behaviour: one-shot fallback from Google tiles to OSM. Upgrade to a resilient chain.
+
+- Ordered source chain (Google proxy → OSM/Carto → Esri → OpenTopo) with per-source health tracking.
+- On repeated tile errors the map switches to the next healthy source without reloading the map or losing GPS tracking.
+- Exponential-backoff retry re-promotes a recovered source; tile results are cached and requests de-duplicated to avoid hammering the proxy.
+- Geolocation watch is independent of tiles: markers and live tracking keep updating during any tile outage.
+- If every source fails, a clear "base map unavailable — tracking still active" state is shown over a neutral grid instead of a blank map.
+- Applied to every map surface (live GPS widget, command vault map, operations/enforcement maps, route history).
+
+## 7. Admin Console (hub)
+
+New `/admin` route: a single console page with grouped cards linking to the existing administrative screens — user & staff management, password management, roles & permissions, command tier, system branding, system configuration, security & authentication, audit trail, backup/restore, security updates, GPS/map configuration, notifications, data import/export, recycle bin.
+
+- Cards are filtered by the viewer's actual authorization; the console itself is route-guarded.
+- Sidebar keeps one "Admin Console" entry for administrators, and scattered admin links in ordinary menus are pointed at the console.
+- Each linked screen keeps its own server-side checks — the hub adds navigation, never becomes the security boundary. Existing routes stay valid.
+
+## 8. System-wide verification
+
+- TypeScript check and production build.
+- Database linter and security scan; fix anything introduced by these changes.
+- Browser smoke test of: bail create/view/edit/delete/print, admin password reset, branding publish and propagation, command-tier assignment plus grant, map failover (simulated tile outage), and Admin Console access as admin vs ordinary staff.
+- Console/network error sweep on the touched pages.
+- Final report listing every item above with COMPLETED / VERIFIED status.
+
+## Technical notes
+
+- New tables: `detention_bail_records`, plus a command-tier grants table. Both get explicit grants, RLS, policies, `updated_at` triggers and audit coverage.
+- New trigger guards: bail authorization block, command-tier grant escalation.
+- New security-definer helper for the "command tier or explicit grant" check, used by both policies and the client role hook.
+- Map work centralizes in `src/lib/leaflet-base-layers.ts` and `src/lib/google-tile-layer.ts` so all surfaces inherit failover.
+- Order of execution: database migrations first (bail, grants, policies), then Admin Console + branding, then command-tier wiring, then map failover, then the name replacement sweep, then verification.
