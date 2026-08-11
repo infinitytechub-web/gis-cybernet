@@ -111,9 +111,10 @@ export function BrandingSettings() {
         .single();
       if (error) throw error;
       const cleaned = Object.fromEntries(
-        Object.entries(data as Record<string, unknown>).map(([k, v]) => [k, v === null && k.endsWith("_url") ? null : v ?? (typeof BRANDING_DEFAULTS[k as keyof Branding] === "string" ? "" : null)]),
+        Object.entries(data as unknown as Record<string, unknown>).filter(([, v]) => v !== null && v !== undefined),
       );
-      return cleaned as unknown as Row;
+      return { ...(data as any), ...cleaned } as unknown as Row;
+
     },
   });
 
