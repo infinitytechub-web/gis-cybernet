@@ -290,12 +290,17 @@ export type Database = {
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
           company_name: string
+          contact_address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          contact_website: string | null
           created_at: string
           dashboard_logo_url: string | null
           enable_system_health_widget: boolean
           enforce_password_change: boolean
           favicon_url: string | null
           footer_text: string
+          header_text: string | null
           id: string
           login_logo_url: string | null
           logo_url: string | null
@@ -307,6 +312,7 @@ export type Database = {
           security_scan_enabled: boolean
           security_scan_frequency: string
           security_scan_last_run_at: string | null
+          system_description: string | null
           system_label: string
           updated_at: string
         }
@@ -321,12 +327,17 @@ export type Database = {
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           company_name?: string
+          contact_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_website?: string | null
           created_at?: string
           dashboard_logo_url?: string | null
           enable_system_health_widget?: boolean
           enforce_password_change?: boolean
           favicon_url?: string | null
           footer_text?: string
+          header_text?: string | null
           id?: string
           login_logo_url?: string | null
           logo_url?: string | null
@@ -338,6 +349,7 @@ export type Database = {
           security_scan_enabled?: boolean
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
+          system_description?: string | null
           system_label?: string
           updated_at?: string
         }
@@ -352,12 +364,17 @@ export type Database = {
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
           company_name?: string
+          contact_address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          contact_website?: string | null
           created_at?: string
           dashboard_logo_url?: string | null
           enable_system_health_widget?: boolean
           enforce_password_change?: boolean
           favicon_url?: string | null
           footer_text?: string
+          header_text?: string | null
           id?: string
           login_logo_url?: string | null
           logo_url?: string | null
@@ -369,6 +386,7 @@ export type Database = {
           security_scan_enabled?: boolean
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
+          system_description?: string | null
           system_label?: string
           updated_at?: string
         }
@@ -9853,14 +9871,20 @@ export type Database = {
         Returns: {
           accent_color: string
           company_name: string
+          contact_address: string
+          contact_email: string
+          contact_phone: string
+          contact_website: string
           dashboard_logo_url: string
           favicon_url: string
           footer_text: string
+          header_text: string
           login_logo_url: string
           logo_url: string
           org_name: string
           primary_color: string
           secondary_color: string
+          system_description: string
           system_label: string
         }[]
       }
