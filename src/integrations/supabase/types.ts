@@ -913,6 +913,48 @@ export type Database = {
         }
         Relationships: []
       }
+      command_tier_grants: {
+        Row: {
+          capability: string
+          created_at: string
+          expires_at: string | null
+          granted_by: string
+          granted_by_name: string | null
+          id: string
+          reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capability: string
+          created_at?: string
+          expires_at?: string | null
+          granted_by: string
+          granted_by_name?: string | null
+          id?: string
+          reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capability?: string
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string
+          granted_by_name?: string | null
+          id?: string
+          reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       command_vault_files: {
         Row: {
           category: string
@@ -1288,6 +1330,151 @@ export type Database = {
             columns: ["parent_department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_bail_records: {
+        Row: {
+          authorization_remarks: string | null
+          authorization_status: string
+          authorized_at: string | null
+          authorized_by: string | null
+          authorized_by_name: string | null
+          authorized_by_rank: string | null
+          authorized_signature_name: string | null
+          authorized_signature_url: string | null
+          bail_amount: number | null
+          bail_type: string
+          bailee_address: string | null
+          bailee_first_name: string
+          bailee_gender: string | null
+          bailee_id_number: string | null
+          bailee_id_type: string | null
+          bailee_last_name: string
+          bailee_nationality: string | null
+          bailee_phone: string | null
+          conditions: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          detention_id: string | null
+          granted_at: string
+          id: string
+          notes: string | null
+          offence: string
+          reference: string | null
+          report_back_at: string | null
+          report_station: string | null
+          surety_address: string | null
+          surety_id_number: string | null
+          surety_id_type: string | null
+          surety_name: string | null
+          surety_occupation: string | null
+          surety_phone: string | null
+          surety_relationship: string | null
+          updated_at: string
+        }
+        Insert: {
+          authorization_remarks?: string | null
+          authorization_status?: string
+          authorized_at?: string | null
+          authorized_by?: string | null
+          authorized_by_name?: string | null
+          authorized_by_rank?: string | null
+          authorized_signature_name?: string | null
+          authorized_signature_url?: string | null
+          bail_amount?: number | null
+          bail_type?: string
+          bailee_address?: string | null
+          bailee_first_name: string
+          bailee_gender?: string | null
+          bailee_id_number?: string | null
+          bailee_id_type?: string | null
+          bailee_last_name: string
+          bailee_nationality?: string | null
+          bailee_phone?: string | null
+          conditions?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          detention_id?: string | null
+          granted_at?: string
+          id?: string
+          notes?: string | null
+          offence: string
+          reference?: string | null
+          report_back_at?: string | null
+          report_station?: string | null
+          surety_address?: string | null
+          surety_id_number?: string | null
+          surety_id_type?: string | null
+          surety_name?: string | null
+          surety_occupation?: string | null
+          surety_phone?: string | null
+          surety_relationship?: string | null
+          updated_at?: string
+        }
+        Update: {
+          authorization_remarks?: string | null
+          authorization_status?: string
+          authorized_at?: string | null
+          authorized_by?: string | null
+          authorized_by_name?: string | null
+          authorized_by_rank?: string | null
+          authorized_signature_name?: string | null
+          authorized_signature_url?: string | null
+          bail_amount?: number | null
+          bail_type?: string
+          bailee_address?: string | null
+          bailee_first_name?: string
+          bailee_gender?: string | null
+          bailee_id_number?: string | null
+          bailee_id_type?: string | null
+          bailee_last_name?: string
+          bailee_nationality?: string | null
+          bailee_phone?: string | null
+          conditions?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          detention_id?: string | null
+          granted_at?: string
+          id?: string
+          notes?: string | null
+          offence?: string
+          reference?: string | null
+          report_back_at?: string | null
+          report_station?: string | null
+          surety_address?: string | null
+          surety_id_number?: string | null
+          surety_id_type?: string | null
+          surety_name?: string | null
+          surety_occupation?: string | null
+          surety_phone?: string | null
+          surety_relationship?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_bail_records_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_bail_records_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_bail_records_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
             referencedColumns: ["id"]
           },
         ]
@@ -9462,6 +9649,7 @@ export type Database = {
         Returns: boolean
       }
       can_manage_appraisals: { Args: { _uid: string }; Returns: boolean }
+      can_manage_command_tier: { Args: { _user_id: string }; Returns: boolean }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_shift_connection_action: {
         Args: { _action: string }
@@ -9482,6 +9670,7 @@ export type Database = {
         Args: { _staff_id: string }
         Returns: undefined
       }
+      command_authority_level: { Args: { _user_id: string }; Returns: number }
       compute_interlink_next_run: {
         Args: {
           _day_of_month: number
@@ -9689,6 +9878,10 @@ export type Database = {
       }
       get_security_threat_summary: { Args: never; Returns: Json }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
+      has_command_capability: {
+        Args: { _capability: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
