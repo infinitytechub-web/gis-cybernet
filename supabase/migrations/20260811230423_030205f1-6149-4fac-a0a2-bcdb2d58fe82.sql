@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.guard_detention_statement_approver() FROM PUBLIC, anon, authenticated;
