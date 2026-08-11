@@ -56,6 +56,9 @@ body {
     --primary: 189 100% 27%;
     --primary-foreground: 0 0% 100%;
 
+    /* Brand accent — overridable at runtime by BrandingProvider */
+    --brand-accent: 152 70% 30%;
+
 
     --secondary: 215 80% 32%;
     --secondary-foreground: 0 0% 100%;
