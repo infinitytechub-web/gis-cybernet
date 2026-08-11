@@ -24,7 +24,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { safePrintHtml } from "@/lib/safe-print";
+import { openPrintWindow } from "@/lib/safe-print";
 
 type Bail = Record<string, any>;
 
@@ -277,7 +277,9 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
       </div>
       <p style="margin-top:28px;font-size:10px;text-align:center">CONFIDENTIAL — Cybernet HRM System</p>
     `;
-    safePrintHtml(html, `Standard Bail Form — ${fullName(r)}`);
+    openPrintWindow(`<!doctype html><html><head><meta charset="utf-8"><title>Standard Bail Form — ${fullName(r)}</title>
+      <style>body{font-family:system-ui,Arial,sans-serif;padding:28px;color:#111}h2{border-bottom:1px solid #ccc;padding-bottom:2px}</style>
+      </head><body>${html}</body></html>`);
   };
 
   return (
