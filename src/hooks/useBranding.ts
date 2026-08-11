@@ -13,6 +13,12 @@ export interface Branding {
   secondary_color: string;
   accent_color: string;
   footer_text: string;
+  system_description: string;
+  header_text: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_address: string;
+  contact_website: string;
 }
 
 /** Fallbacks used before the row loads, or if the request fails. */
@@ -28,7 +34,14 @@ export const BRANDING_DEFAULTS: Branding = {
   secondary_color: "220 80% 18%",
   accent_color: "152 70% 30%",
   footer_text: "Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026",
+  system_description: "",
+  header_text: "",
+  contact_email: "",
+  contact_phone: "",
+  contact_address: "",
+  contact_website: "",
 };
+
 
 export const BRANDING_BUCKET = "branding";
 const SIGNED_URL_TTL = 60 * 60 * 6; // 6h
