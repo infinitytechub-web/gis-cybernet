@@ -35,7 +35,7 @@ import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
 import { toast } from "sonner";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
 
 const roleLabels: Record<AppRole, string> = {
@@ -96,6 +96,9 @@ const roleColors: Record<AppRole, string> = {
 
 export default function Settings() {
   const { isAdmin, loading: authLoading } = useAuth();
+
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
 
   if (!authLoading && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
