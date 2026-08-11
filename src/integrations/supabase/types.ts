@@ -1413,10 +1413,15 @@ export type Database = {
           officer_in_charge_id: string | null
           phone: string | null
           photo_url: string | null
+          referred_from: string | null
+          referred_to: string | null
           release_reason: string | null
           released_at: string | null
           released_by: string | null
           risk_level: string
+          statement_approved_at: string | null
+          statement_approved_by: string | null
+          statement_approved_by_name: string | null
           status: string
           updated_at: string
         }
@@ -1452,10 +1457,15 @@ export type Database = {
           officer_in_charge_id?: string | null
           phone?: string | null
           photo_url?: string | null
+          referred_from?: string | null
+          referred_to?: string | null
           release_reason?: string | null
           released_at?: string | null
           released_by?: string | null
           risk_level?: string
+          statement_approved_at?: string | null
+          statement_approved_by?: string | null
+          statement_approved_by_name?: string | null
           status?: string
           updated_at?: string
         }
@@ -1491,10 +1501,15 @@ export type Database = {
           officer_in_charge_id?: string | null
           phone?: string | null
           photo_url?: string | null
+          referred_from?: string | null
+          referred_to?: string | null
           release_reason?: string | null
           released_at?: string | null
           released_by?: string | null
           risk_level?: string
+          statement_approved_at?: string | null
+          statement_approved_by?: string | null
+          statement_approved_by_name?: string | null
           status?: string
           updated_at?: string
         }
@@ -1537,6 +1552,20 @@ export type Database = {
           {
             foreignKeyName: "detention_records_released_by_fkey"
             columns: ["released_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_records_statement_approved_by_fkey"
+            columns: ["statement_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_records_statement_approved_by_fkey"
+            columns: ["statement_approved_by"]
             isOneToOne: false
             referencedRelation: "staff_birthdays"
             referencedColumns: ["id"]
