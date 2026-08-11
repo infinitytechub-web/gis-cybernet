@@ -20,6 +20,7 @@ import { CountryCombobox } from "@/components/ui/country-combobox";
 import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { StatementApproverPicker } from "@/components/detention/StatementApproverPicker";
 import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
@@ -30,18 +31,47 @@ const STATUS_COLORS: Record<string, string> = {
   in_custody: "bg-rose-100 text-rose-800 dark:bg-rose-950/40",
   bail: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40",
   released: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40",
+  repatriated: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
   deported: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
   transferred: "bg-blue-100 text-blue-800 dark:bg-blue-950/40",
   court: "bg-amber-100 text-amber-800 dark:bg-amber-950/40",
   escaped: "bg-red-200 text-red-900 dark:bg-red-950/60",
 };
+/**
+ * Custody status labels. Legacy rows stored the value `deported`; the module now
+ * uses `repatriated` and both render as "Repatriated" everywhere in the UI,
+ * reports and exports.
+ */
+const STATUS_LABELS: Record<string, string> = {
+  in_custody: "In Custody",
+  bail: "Bail",
+  released: "Released",
+  repatriated: "Repatriated",
+  deported: "Repatriated",
+  transferred: "Transferred",
+  court: "Court",
+  escaped: "Escaped",
+};
+const statusLabel = (s?: string | null) => (s ? STATUS_LABELS[s] ?? s.replace(/_/g, " ") : "—");
+const ARCHIVE_STATUSES = ["released", "bail", "repatriated", "deported", "transferred", "court", "escaped"];
 const RELEASE_OUTCOMES = [
   { value: "released", label: "Released" },
   { value: "bail", label: "Bail Granted" },
-  { value: "deported", label: "Deported" },
+  { value: "repatriated", label: "Repatriated" },
   { value: "transferred", label: "Transferred" },
   { value: "court", label: "Sent to Court" },
 ];
+const REFERRAL_SOURCES = [
+  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
+  "Border Patrol Unit", "Enforcement Unit", "Airport (KIA)", "Public / Walk-in Report",
+  "National Security", "Other Agency",
+];
+const REFERRAL_DESTINATIONS = [
+  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
+  "Repatriation Unit", "Court", "Hospital / Clinic", "Prisons Service", "Embassy / Consulate",
+  "Other Agency",
+];
+
 const RISK_COLORS: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
   medium: "bg-amber-100 text-amber-800",
@@ -102,7 +132,7 @@ export default function HoldingCenter() {
           <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
-        <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="archive"><RecordsList status={ARCHIVE_STATUSES} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
@@ -134,7 +164,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
 
   const filtered = useMemo(() => records.filter((r: any) => {
     const q = search.toLowerCase();
-    if (q && !`${r.first_name} ${r.last_name} ${r.alias || ""} ${r.nationality || ""} ${r.crime_type}`.toLowerCase().includes(q)) return false;
+    if (q && !`${r.first_name} ${r.last_name} ${r.alias || ""} ${r.nationality || ""} ${r.crime_type} ${r.referred_from || ""} ${r.referred_to || ""} ${r.next_of_kin || ""} ${r.statement_approved_by_name || ""} ${statusLabel(r.status)}`.toLowerCase().includes(q)) return false;
     if (filterGender !== "all" && r.gender !== filterGender) return false;
     if (filterRisk !== "all" && r.risk_level !== filterRisk) return false;
     if (filterCountry && (r.nationality || "").toLowerCase() !== filterCountry.toLowerCase() && (r.country_of_origin || "").toLowerCase() !== filterCountry.toLowerCase()) return false;
@@ -187,8 +217,8 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
         <ExportMenu getData={() => ({
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
-          headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk"],
-          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), r.status, r.risk_level]),
+          headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
+          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, r.referred_from || "-", r.referred_to || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
       </div>
@@ -214,7 +244,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
                     <TableCell>{r.crime_type}</TableCell>
                     <TableCell className="font-mono">{r.cell_number || "—"}</TableCell>
                     <TableCell><Badge className={RISK_COLORS[r.risk_level]}>{r.risk_level}</Badge></TableCell>
-                    <TableCell><Badge className={STATUS_COLORS[r.status]}>{r.status.replace(/_/g, " ")}</Badge></TableCell>
+                    <TableCell><Badge className={STATUS_COLORS[r.status]}>{statusLabel(r.status)}</Badge></TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{formatDistanceToNow(new Date(r.intake_at), { addSuffix: false })}</TableCell>
                     <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-0.5">
@@ -244,8 +274,8 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
         </CardContent>
       </Card>
 
-      {intakeOpen && <IntakeForm onClose={() => setIntakeOpen(false)} userId={userId} />}
-      {editing && <EditDetaineeDialog record={editing} onClose={() => setEditing(null)} />}
+      {intakeOpen && <IntakeForm onClose={() => setIntakeOpen(false)} userId={userId} role={role} />}
+      {editing && <EditDetaineeDialog record={editing} onClose={() => setEditing(null)} role={role} />}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
@@ -291,11 +321,14 @@ function printDetentionRecord(r: any) {
     ["Arresting Officer", r.arresting_officer_name],
     ["Cell / Room", r.cell_number],
     ["Risk Level", r.risk_level],
-    ["Status", r.status?.replace(/_/g, " ")],
+    ["Status", statusLabel(r.status)],
     ["Intake", format(new Date(r.intake_at), "dd MMM yyyy HH:mm")],
     ["Custody Duration", `${differenceInHours(r.released_at ? new Date(r.released_at) : new Date(), new Date(r.intake_at))} hrs`],
-    ["Next of Kin", r.next_of_kin],
-    ["NoK Phone", r.next_of_kin_phone],
+    ["Referred from", r.referred_from],
+    ["Referred to", r.referred_to],
+    ["Statement Approved by", r.statement_approved_by_name],
+    ["Next of Kin (NoK)", r.next_of_kin],
+    ["Next of Kin (NoK) Phone", r.next_of_kin_phone],
     ["Emergency Contact", r.emergency_contact],
     ["Medical Alerts", r.medical_alerts],
     ["Notes", r.notes],
@@ -323,8 +356,24 @@ function printDetentionRecord(r: any) {
   openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
 }
 
+/* ----------------- REFERRAL FIELD ----------------- */
+/**
+ * Select-or-type referral field: presets are offered as a dropdown list while
+ * still allowing any other institution/command/agency to be typed in freely.
+ */
+function ReferralField({ id, value, options, placeholder, onChange }: { id: string; value: string; options: string[]; placeholder: string; onChange: (v: string) => void }) {
+  return (
+    <>
+      <Input id={id} list={`${id}-options`} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} />
+      <datalist id={`${id}-options`}>
+        {options.map(o => <option key={o} value={o} />)}
+      </datalist>
+    </>
+  );
+}
+
 /* ----------------- EDIT DIALOG ----------------- */
-function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => void }) {
+function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: () => void; role?: string | null }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     first_name: record.first_name || "",
@@ -350,12 +399,25 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
     risk_level: record.risk_level || "medium",
     medical_alerts: record.medical_alerts || "",
     notes: record.notes || "",
+    referred_from: record.referred_from || "",
+    referred_to: record.referred_to || "",
+  });
+  const canApprove = ["admin", "oic", "2ic"].includes(role || "");
+  const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({
+    id: record.statement_approved_by || null,
+    label: record.statement_approved_by_name || null,
   });
 
   const update = useMutation({
     mutationFn: async () => {
       if (!form.first_name.trim() || !form.last_name.trim()) throw new Error("Name required");
-      const { error } = await supabase.from("detention_records").update(form).eq("id", record.id);
+      const payload: any = { ...form };
+      if (canApprove) {
+        payload.statement_approved_by = approver.id;
+        payload.statement_approved_by_name = approver.label;
+        if (!approver.id) payload.statement_approved_at = null;
+      }
+      const { error } = await supabase.from("detention_records").update(payload).eq("id", record.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Record updated"); onClose(); },
@@ -397,8 +459,8 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
               </div>
               <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
               <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
-              <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
-              <div><Label>NoK Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK)</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK) Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
               <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
             </div>
           </div>
@@ -423,6 +485,9 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} /></div>
+              <div><Label htmlFor="edit-referred-from">Referred from</Label><ReferralField id="edit-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
+              <div><Label htmlFor="edit-referred-to">Referred to</Label><ReferralField id="edit-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
           </div>
@@ -438,7 +503,7 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
 }
 
 /* ----------------- INTAKE ----------------- */
-function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string }) {
+function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: string; role?: string | null }) {
   const qc = useQueryClient();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [form, setForm] = useState({
@@ -447,7 +512,10 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
     home_address: "", phone: "", next_of_kin: "", next_of_kin_phone: "", emergency_contact: "",
     crime_type: "Illegal Entry", charge_description: "", location_of_arrest: "",
     arresting_officer_name: "", cell_number: "", risk_level: "medium", medical_alerts: "", notes: "",
+    referred_from: "", referred_to: "",
   });
+  const canApprove = ["admin", "oic", "2ic"].includes(role || "");
+  const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({ id: null, label: null });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -459,7 +527,12 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
         if (upErr) throw upErr;
         photo_url = path;
       }
-      const { error } = await supabase.from("detention_records").insert({ ...form, photo_url, created_by: userId });
+      const payload: any = { ...form, photo_url, created_by: userId };
+      if (canApprove && approver.id) {
+        payload.statement_approved_by = approver.id;
+        payload.statement_approved_by_name = approver.label;
+      }
+      const { error } = await supabase.from("detention_records").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Detainee booked in"); onClose(); },
@@ -502,8 +575,8 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
               </div>
               <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
               <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
-              <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
-              <div><Label>NoK Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK)</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK) Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
               <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
             </div>
             <div>
@@ -533,6 +606,9 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} placeholder="e.g. diabetic, allergies" /></div>
+              <div><Label htmlFor="intake-referred-from">Referred from</Label><ReferralField id="intake-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
+              <div><Label htmlFor="intake-referred-to">Referred to</Label><ReferralField id="intake-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
           </div>
@@ -578,7 +654,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
       const { error } = await supabase.from("detention_records").update({ status: outcome, released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
       if (error) throw error;
     },
-    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${vars.outcome.replace(/_/g, " ")}`); onClose(); },
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${statusLabel(vars.outcome)}`); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -594,7 +670,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
             <div className="flex-1 text-left">
               <div>{record.first_name} {record.last_name} {record.alias && <span className="text-sm text-muted-foreground">aka "{record.alias}"</span>}</div>
               <div className="flex gap-1.5 mt-1">
-                <Badge className={STATUS_COLORS[record.status]}>{record.status.replace(/_/g, " ")}</Badge>
+                <Badge className={STATUS_COLORS[record.status]}>{statusLabel(record.status)}</Badge>
                 <Badge className={RISK_COLORS[record.risk_level]}>{record.risk_level} risk</Badge>
                 {record.medical_alerts && <Badge variant="outline" className="border-rose-400"><Heart className="h-3 w-3 mr-1 text-rose-500" />Medical</Badge>}
               </div>
@@ -628,14 +704,17 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Charge" value={record.charge_description} full />
               <Field label="Arrest Location" value={record.location_of_arrest} />
               <Field label="Arresting Officer" value={record.arresting_officer_name} />
+              <Field label="Referred from" value={record.referred_from} />
+              <Field label="Referred to" value={record.referred_to} />
+              <Field label="Statement Approved by" value={record.statement_approved_by_name} />
               <Field label="Intake" value={format(new Date(record.intake_at), "MMM d, yyyy HH:mm")} />
               <Field label="Custody Duration" value={`${differenceInHours(record.released_at ? new Date(record.released_at) : new Date(), new Date(record.intake_at))} hrs`} />
               {record.medical_alerts && <Field label="⚠ Medical Alerts" value={record.medical_alerts} full />}
               {record.notes && <Field label="Notes" value={record.notes} full />}
             </Section>
-            <Section title="Next of Kin / Emergency">
-              <Field label="Next of Kin" value={record.next_of_kin} />
-              <Field label="NoK Phone" value={record.next_of_kin_phone} />
+            <Section title="Next of Kin (NoK) / Emergency">
+              <Field label="Next of Kin (NoK)" value={record.next_of_kin} />
+              <Field label="Next of Kin (NoK) Phone" value={record.next_of_kin_phone} />
               <Field label="Emergency Contact" value={record.emergency_contact} full />
             </Section>
             {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(outcome, reason) => release.mutate({ outcome, reason })} pending={release.isPending} />}
@@ -680,7 +759,7 @@ function ReleaseAction({ onRelease, pending }: { onRelease: (outcome: string, re
             </div>
             <div>
               <Label>Reason / Notes *</Label>
-              <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted on GHS 10,000, deported to Nigeria via KIA, transferred to court for hearing…" />
+              <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted on GHS 10,000, repatriated to Nigeria via KIA, transferred to court for hearing…" />
             </div>
             <Button onClick={() => { if (reason.trim()) { onRelease(outcome, reason); setOpen(false); } else toast.error("Reason required"); }} disabled={pending} className="w-full bg-emerald-600 hover:bg-emerald-700">{pending ? "Saving…" : "Confirm"}</Button>
           </div>
@@ -801,7 +880,7 @@ function HoldingAnalytics() {
   const totalEver = data.length;
   const released = data.filter((r: any) => r.status === "released").length;
   const onBail = data.filter((r: any) => r.status === "bail").length;
-  const deported = data.filter((r: any) => r.status === "deported").length;
+  const repatriated = data.filter((r: any) => r.status === "repatriated" || r.status === "deported").length;
   const escaped = data.filter((r: any) => r.status === "escaped").length;
 
   const groupBy = (key: string) => {
@@ -831,7 +910,7 @@ function HoldingAnalytics() {
         <KPI title="In Custody" value={inCustody} icon={Lock} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-950/40" />
         <KPI title="On Bail" value={onBail} icon={UserCheck} color="text-cyan-600" bg="bg-cyan-50 dark:bg-cyan-950/40" />
         <KPI title="Released" value={released} icon={UserCheck} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/40" />
-        <KPI title="Deported" value={deported} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
+        <KPI title="Repatriated" value={repatriated} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
         <KPI title="Total Records" value={totalEver} icon={Activity} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/40" />
         <KPI title="Avg Custody" value={`${avgHrs} hrs`} icon={UserCheck} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/40" />
         <KPI title="Escapes" value={escaped} icon={AlertTriangle} color="text-red-700" bg="bg-red-100 dark:bg-red-950/50" />
