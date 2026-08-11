@@ -280,6 +280,7 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          accent_color: string
           allow_self_registration: boolean
           announcement_file_cleanup_last_run_at: string | null
           announcement_file_cleanup_mode: string
@@ -288,13 +289,21 @@ export type Database = {
           announcement_file_retention_enabled: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
+          company_name: string
           created_at: string
+          dashboard_logo_url: string | null
           enable_system_health_widget: boolean
           enforce_password_change: boolean
+          favicon_url: string | null
+          footer_text: string
           id: string
+          login_logo_url: string | null
+          logo_url: string | null
           mfa_required_roles: string[]
           min_password_length: number
           org_name: string
+          primary_color: string
+          secondary_color: string
           security_scan_enabled: boolean
           security_scan_frequency: string
           security_scan_last_run_at: string | null
@@ -302,6 +311,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          accent_color?: string
           allow_self_registration?: boolean
           announcement_file_cleanup_last_run_at?: string | null
           announcement_file_cleanup_mode?: string
@@ -310,13 +320,21 @@ export type Database = {
           announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
+          company_name?: string
           created_at?: string
+          dashboard_logo_url?: string | null
           enable_system_health_widget?: boolean
           enforce_password_change?: boolean
+          favicon_url?: string | null
+          footer_text?: string
           id?: string
+          login_logo_url?: string | null
+          logo_url?: string | null
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
+          primary_color?: string
+          secondary_color?: string
           security_scan_enabled?: boolean
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
@@ -324,6 +342,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          accent_color?: string
           allow_self_registration?: boolean
           announcement_file_cleanup_last_run_at?: string | null
           announcement_file_cleanup_mode?: string
@@ -332,13 +351,21 @@ export type Database = {
           announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
+          company_name?: string
           created_at?: string
+          dashboard_logo_url?: string | null
           enable_system_health_widget?: boolean
           enforce_password_change?: boolean
+          favicon_url?: string | null
+          footer_text?: string
           id?: string
+          login_logo_url?: string | null
+          logo_url?: string | null
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
+          primary_color?: string
+          secondary_color?: string
           security_scan_enabled?: boolean
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
@@ -9584,13 +9611,38 @@ export type Database = {
       get_public_app_settings: {
         Args: never
         Returns: {
+          accent_color: string
           allow_self_registration: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
+          company_name: string
+          dashboard_logo_url: string
           enable_system_health_widget: boolean
           enforce_password_change: boolean
+          favicon_url: string
+          footer_text: string
+          login_logo_url: string
+          logo_url: string
           min_password_length: number
           org_name: string
+          primary_color: string
+          secondary_color: string
+          system_label: string
+        }[]
+      }
+      get_public_branding: {
+        Args: never
+        Returns: {
+          accent_color: string
+          company_name: string
+          dashboard_logo_url: string
+          favicon_url: string
+          footer_text: string
+          login_logo_url: string
+          logo_url: string
+          org_name: string
+          primary_color: string
+          secondary_color: string
           system_label: string
         }[]
       }

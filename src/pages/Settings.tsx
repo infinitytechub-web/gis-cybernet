@@ -8,12 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock, ShieldCheck, Briefcase } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock, ShieldCheck, Briefcase, Palette } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
 import { AppSettings } from "@/components/settings/AppSettings";
+import { BrandingSettings } from "@/components/settings/BrandingSettings";
 import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttemptsPanel";
 import { FailedLoginTimelinePanel } from "@/components/settings/FailedLoginTimelinePanel";
 import { PresenceEventsPanel } from "@/components/settings/PresenceEventsPanel";
@@ -110,6 +111,7 @@ export default function Settings() {
           <TabsTrigger value="portfolios" className="gap-1.5"><Briefcase className="h-4 w-4 text-primary" /> Portfolios</TabsTrigger>
           <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4 text-chart-2" /> Accounts</TabsTrigger>
           <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
+          <TabsTrigger value="branding" className="gap-1.5"><Palette className="h-4 w-4 text-chart-1" /> Branding</TabsTrigger>
           <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
           <TabsTrigger value="locked-accounts" className="gap-1.5"><Unlock className="h-4 w-4 text-emerald-600" /> Locked Accounts</TabsTrigger>
           <TabsTrigger value="login-audit" className="gap-1.5"><History className="h-4 w-4 text-destructive" /> Login Audit</TabsTrigger>
@@ -136,6 +138,7 @@ export default function Settings() {
         <TabsContent value="portfolios"><PortfoliosTab /></TabsContent>
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
+        <TabsContent value="branding"><BrandingSettings /></TabsContent>
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
         <TabsContent value="locked-accounts"><LockedAccountsPanel /></TabsContent>
         <TabsContent value="login-audit"><FailedLoginTimelinePanel /></TabsContent>

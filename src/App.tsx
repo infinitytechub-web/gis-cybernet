@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { BrandingProvider } from "@/components/BrandingProvider";
 import { lazy, Suspense } from "react";
 // Layout is lazy — it pulls in the authenticated app shell (sidebar,
 // SystemAuditTray, notification bell, etc.) and its transitive deps. The
@@ -147,6 +148,7 @@ function App() {
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <TooltipProvider>
+      <BrandingProvider />
       <Toaster />
       <Sonner />
       <BrowserRouter>

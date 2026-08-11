@@ -18,8 +18,10 @@ import { getTrustedMac } from "@/lib/trusted-mac";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
+import { useBranding } from "@/hooks/useBranding";
 
 export default function Login() {
+  const branding = useBranding();
   const [staffId, setStaffId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -268,11 +270,11 @@ export default function Login() {
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
-            <img src={gisLogo} alt="Ghana Immigration Service" width={96} height={96} decoding="async" {...({ fetchpriority: "high" } as Record<string, string>)} className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
+            <img src={branding.login_logo_url || branding.logo_url || gisLogo} alt={branding.company_name} width={96} height={96} decoding="async" {...({ fetchpriority: "high" } as Record<string, string>)} className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
           </div>
           <div>
-            <h1 id="login-heading" className="text-xl font-bold text-secondary">Ghana Immigration Service</h1>
-            <p className="text-sm text-muted-foreground">Amasaman Sector Command — Cybernet</p>
+            <h1 id="login-heading" className="text-xl font-bold text-secondary">{branding.company_name}</h1>
+            <p className="text-sm text-muted-foreground">{branding.org_name} — {branding.system_label}</p>
           </div>
         </CardHeader>
         <CardContent>

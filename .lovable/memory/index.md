@@ -1,0 +1,1 @@
+- [Branding Management](mem://features/branding-management) — Admin Branding tab: names, logos, favicon, theme colors via app_settings + branding bucket
