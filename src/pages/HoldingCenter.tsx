@@ -20,6 +20,7 @@ import { CountryCombobox } from "@/components/ui/country-combobox";
 import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { StatementApproverPicker } from "@/components/detention/StatementApproverPicker";
 import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
@@ -131,7 +132,7 @@ export default function HoldingCenter() {
           <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
-        <TabsContent value="archive"><RecordsList status={["released", "bail", "deported", "transferred", "court", "escaped"]} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="archive"><RecordsList status={ARCHIVE_STATUSES} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
@@ -163,7 +164,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
 
   const filtered = useMemo(() => records.filter((r: any) => {
     const q = search.toLowerCase();
-    if (q && !`${r.first_name} ${r.last_name} ${r.alias || ""} ${r.nationality || ""} ${r.crime_type}`.toLowerCase().includes(q)) return false;
+    if (q && !`${r.first_name} ${r.last_name} ${r.alias || ""} ${r.nationality || ""} ${r.crime_type} ${r.referred_from || ""} ${r.referred_to || ""} ${r.next_of_kin || ""} ${r.statement_approved_by_name || ""} ${statusLabel(r.status)}`.toLowerCase().includes(q)) return false;
     if (filterGender !== "all" && r.gender !== filterGender) return false;
     if (filterRisk !== "all" && r.risk_level !== filterRisk) return false;
     if (filterCountry && (r.nationality || "").toLowerCase() !== filterCountry.toLowerCase() && (r.country_of_origin || "").toLowerCase() !== filterCountry.toLowerCase()) return false;
@@ -216,8 +217,8 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
         <ExportMenu getData={() => ({
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
-          headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk"],
-          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), r.status, r.risk_level]),
+          headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
+          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, r.referred_from || "-", r.referred_to || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
       </div>
@@ -243,7 +244,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
                     <TableCell>{r.crime_type}</TableCell>
                     <TableCell className="font-mono">{r.cell_number || "—"}</TableCell>
                     <TableCell><Badge className={RISK_COLORS[r.risk_level]}>{r.risk_level}</Badge></TableCell>
-                    <TableCell><Badge className={STATUS_COLORS[r.status]}>{r.status.replace(/_/g, " ")}</Badge></TableCell>
+                    <TableCell><Badge className={STATUS_COLORS[r.status]}>{statusLabel(r.status)}</Badge></TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{formatDistanceToNow(new Date(r.intake_at), { addSuffix: false })}</TableCell>
                     <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-0.5">
@@ -320,11 +321,14 @@ function printDetentionRecord(r: any) {
     ["Arresting Officer", r.arresting_officer_name],
     ["Cell / Room", r.cell_number],
     ["Risk Level", r.risk_level],
-    ["Status", r.status?.replace(/_/g, " ")],
+    ["Status", statusLabel(r.status)],
     ["Intake", format(new Date(r.intake_at), "dd MMM yyyy HH:mm")],
     ["Custody Duration", `${differenceInHours(r.released_at ? new Date(r.released_at) : new Date(), new Date(r.intake_at))} hrs`],
-    ["Next of Kin", r.next_of_kin],
-    ["NoK Phone", r.next_of_kin_phone],
+    ["Referred from", r.referred_from],
+    ["Referred to", r.referred_to],
+    ["Statement Approved by", r.statement_approved_by_name],
+    ["Next of Kin (NoK)", r.next_of_kin],
+    ["Next of Kin (NoK) Phone", r.next_of_kin_phone],
     ["Emergency Contact", r.emergency_contact],
     ["Medical Alerts", r.medical_alerts],
     ["Notes", r.notes],
@@ -426,8 +430,8 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
               </div>
               <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
               <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
-              <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
-              <div><Label>NoK Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK)</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK) Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
               <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
             </div>
           </div>
@@ -531,8 +535,8 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
               </div>
               <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
               <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
-              <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
-              <div><Label>NoK Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK)</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK) Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
               <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
             </div>
             <div>
@@ -607,7 +611,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
       const { error } = await supabase.from("detention_records").update({ status: outcome, released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
       if (error) throw error;
     },
-    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${vars.outcome.replace(/_/g, " ")}`); onClose(); },
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${statusLabel(vars.outcome)}`); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -623,7 +627,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
             <div className="flex-1 text-left">
               <div>{record.first_name} {record.last_name} {record.alias && <span className="text-sm text-muted-foreground">aka "{record.alias}"</span>}</div>
               <div className="flex gap-1.5 mt-1">
-                <Badge className={STATUS_COLORS[record.status]}>{record.status.replace(/_/g, " ")}</Badge>
+                <Badge className={STATUS_COLORS[record.status]}>{statusLabel(record.status)}</Badge>
                 <Badge className={RISK_COLORS[record.risk_level]}>{record.risk_level} risk</Badge>
                 {record.medical_alerts && <Badge variant="outline" className="border-rose-400"><Heart className="h-3 w-3 mr-1 text-rose-500" />Medical</Badge>}
               </div>
@@ -657,14 +661,17 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Charge" value={record.charge_description} full />
               <Field label="Arrest Location" value={record.location_of_arrest} />
               <Field label="Arresting Officer" value={record.arresting_officer_name} />
+              <Field label="Referred from" value={record.referred_from} />
+              <Field label="Referred to" value={record.referred_to} />
+              <Field label="Statement Approved by" value={record.statement_approved_by_name} />
               <Field label="Intake" value={format(new Date(record.intake_at), "MMM d, yyyy HH:mm")} />
               <Field label="Custody Duration" value={`${differenceInHours(record.released_at ? new Date(record.released_at) : new Date(), new Date(record.intake_at))} hrs`} />
               {record.medical_alerts && <Field label="⚠ Medical Alerts" value={record.medical_alerts} full />}
               {record.notes && <Field label="Notes" value={record.notes} full />}
             </Section>
-            <Section title="Next of Kin / Emergency">
-              <Field label="Next of Kin" value={record.next_of_kin} />
-              <Field label="NoK Phone" value={record.next_of_kin_phone} />
+            <Section title="Next of Kin (NoK) / Emergency">
+              <Field label="Next of Kin (NoK)" value={record.next_of_kin} />
+              <Field label="Next of Kin (NoK) Phone" value={record.next_of_kin_phone} />
               <Field label="Emergency Contact" value={record.emergency_contact} full />
             </Section>
             {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(outcome, reason) => release.mutate({ outcome, reason })} pending={release.isPending} />}
@@ -709,7 +716,7 @@ function ReleaseAction({ onRelease, pending }: { onRelease: (outcome: string, re
             </div>
             <div>
               <Label>Reason / Notes *</Label>
-              <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted on GHS 10,000, deported to Nigeria via KIA, transferred to court for hearing…" />
+              <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={3} placeholder="e.g. Bail granted on GHS 10,000, repatriated to Nigeria via KIA, transferred to court for hearing…" />
             </div>
             <Button onClick={() => { if (reason.trim()) { onRelease(outcome, reason); setOpen(false); } else toast.error("Reason required"); }} disabled={pending} className="w-full bg-emerald-600 hover:bg-emerald-700">{pending ? "Saving…" : "Confirm"}</Button>
           </div>
@@ -830,7 +837,7 @@ function HoldingAnalytics() {
   const totalEver = data.length;
   const released = data.filter((r: any) => r.status === "released").length;
   const onBail = data.filter((r: any) => r.status === "bail").length;
-  const deported = data.filter((r: any) => r.status === "deported").length;
+  const repatriated = data.filter((r: any) => r.status === "repatriated" || r.status === "deported").length;
   const escaped = data.filter((r: any) => r.status === "escaped").length;
 
   const groupBy = (key: string) => {
@@ -860,7 +867,7 @@ function HoldingAnalytics() {
         <KPI title="In Custody" value={inCustody} icon={Lock} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-950/40" />
         <KPI title="On Bail" value={onBail} icon={UserCheck} color="text-cyan-600" bg="bg-cyan-50 dark:bg-cyan-950/40" />
         <KPI title="Released" value={released} icon={UserCheck} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/40" />
-        <KPI title="Deported" value={deported} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
+        <KPI title="Repatriated" value={repatriated} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
         <KPI title="Total Records" value={totalEver} icon={Activity} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/40" />
         <KPI title="Avg Custody" value={`${avgHrs} hrs`} icon={UserCheck} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/40" />
         <KPI title="Escapes" value={escaped} icon={AlertTriangle} color="text-red-700" bg="bg-red-100 dark:bg-red-950/50" />
