@@ -1,0 +1,1 @@
+UPDATE app_settings SET org_name = 'Cybernet', system_label = 'HRM System';
