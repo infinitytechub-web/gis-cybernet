@@ -274,8 +274,8 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
         </CardContent>
       </Card>
 
-      {intakeOpen && <IntakeForm onClose={() => setIntakeOpen(false)} userId={userId} />}
-      {editing && <EditDetaineeDialog record={editing} onClose={() => setEditing(null)} />}
+      {intakeOpen && <IntakeForm onClose={() => setIntakeOpen(false)} userId={userId} role={role} />}
+      {editing && <EditDetaineeDialog record={editing} onClose={() => setEditing(null)} role={role} />}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
@@ -356,8 +356,24 @@ function printDetentionRecord(r: any) {
   openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
 }
 
+/* ----------------- REFERRAL FIELD ----------------- */
+/**
+ * Select-or-type referral field: presets are offered as a dropdown list while
+ * still allowing any other institution/command/agency to be typed in freely.
+ */
+function ReferralField({ id, value, options, placeholder, onChange }: { id: string; value: string; options: string[]; placeholder: string; onChange: (v: string) => void }) {
+  return (
+    <>
+      <Input id={id} list={`${id}-options`} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} />
+      <datalist id={`${id}-options`}>
+        {options.map(o => <option key={o} value={o} />)}
+      </datalist>
+    </>
+  );
+}
+
 /* ----------------- EDIT DIALOG ----------------- */
-function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => void }) {
+function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: () => void; role?: string | null }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     first_name: record.first_name || "",
@@ -383,12 +399,25 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
     risk_level: record.risk_level || "medium",
     medical_alerts: record.medical_alerts || "",
     notes: record.notes || "",
+    referred_from: record.referred_from || "",
+    referred_to: record.referred_to || "",
+  });
+  const canApprove = ["admin", "oic", "2ic"].includes(role || "");
+  const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({
+    id: record.statement_approved_by || null,
+    label: record.statement_approved_by_name || null,
   });
 
   const update = useMutation({
     mutationFn: async () => {
       if (!form.first_name.trim() || !form.last_name.trim()) throw new Error("Name required");
-      const { error } = await supabase.from("detention_records").update(form).eq("id", record.id);
+      const payload: any = { ...form };
+      if (canApprove) {
+        payload.statement_approved_by = approver.id;
+        payload.statement_approved_by_name = approver.label;
+        if (!approver.id) payload.statement_approved_at = null;
+      }
+      const { error } = await supabase.from("detention_records").update(payload).eq("id", record.id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Record updated"); onClose(); },
@@ -456,6 +485,9 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} /></div>
+              <div><Label htmlFor="edit-referred-from">Referred from</Label><ReferralField id="edit-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
+              <div><Label htmlFor="edit-referred-to">Referred to</Label><ReferralField id="edit-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
           </div>
@@ -471,7 +503,7 @@ function EditDetaineeDialog({ record, onClose }: { record: any; onClose: () => v
 }
 
 /* ----------------- INTAKE ----------------- */
-function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string }) {
+function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: string; role?: string | null }) {
   const qc = useQueryClient();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [form, setForm] = useState({
@@ -480,7 +512,10 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
     home_address: "", phone: "", next_of_kin: "", next_of_kin_phone: "", emergency_contact: "",
     crime_type: "Illegal Entry", charge_description: "", location_of_arrest: "",
     arresting_officer_name: "", cell_number: "", risk_level: "medium", medical_alerts: "", notes: "",
+    referred_from: "", referred_to: "",
   });
+  const canApprove = ["admin", "oic", "2ic"].includes(role || "");
+  const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({ id: null, label: null });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -492,7 +527,12 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
         if (upErr) throw upErr;
         photo_url = path;
       }
-      const { error } = await supabase.from("detention_records").insert({ ...form, photo_url, created_by: userId });
+      const payload: any = { ...form, photo_url, created_by: userId };
+      if (canApprove && approver.id) {
+        payload.statement_approved_by = approver.id;
+        payload.statement_approved_by_name = approver.label;
+      }
+      const { error } = await supabase.from("detention_records").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Detainee booked in"); onClose(); },
@@ -566,6 +606,9 @@ function IntakeForm({ onClose, userId }: { onClose: () => void; userId?: string 
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} placeholder="e.g. diabetic, allergies" /></div>
+              <div><Label htmlFor="intake-referred-from">Referred from</Label><ReferralField id="intake-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
+              <div><Label htmlFor="intake-referred-to">Referred to</Label><ReferralField id="intake-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
           </div>
