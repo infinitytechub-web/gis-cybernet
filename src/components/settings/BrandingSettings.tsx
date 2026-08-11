@@ -113,7 +113,7 @@ export function BrandingSettings() {
       const cleaned = Object.fromEntries(
         Object.entries(data as unknown as Record<string, unknown>).filter(([, v]) => v !== null && v !== undefined),
       );
-      return { ...(data as any), ...cleaned } as unknown as Row;
+      return cleaned as unknown as Row;
 
     },
   });
