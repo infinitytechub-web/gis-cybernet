@@ -274,7 +274,7 @@ export default function Login() {
           </div>
           <div>
             <h1 id="login-heading" className="text-xl font-bold text-secondary">{branding.company_name}</h1>
-            <p className="text-sm text-muted-foreground">{branding.org_name} — {branding.system_label}</p>
+            <p className="text-sm text-muted-foreground">{branding.org_name} {branding.system_label}</p>
           </div>
         </CardHeader>
         <CardContent>
