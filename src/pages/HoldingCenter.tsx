@@ -30,18 +30,47 @@ const STATUS_COLORS: Record<string, string> = {
   in_custody: "bg-rose-100 text-rose-800 dark:bg-rose-950/40",
   bail: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40",
   released: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40",
+  repatriated: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
   deported: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
   transferred: "bg-blue-100 text-blue-800 dark:bg-blue-950/40",
   court: "bg-amber-100 text-amber-800 dark:bg-amber-950/40",
   escaped: "bg-red-200 text-red-900 dark:bg-red-950/60",
 };
+/**
+ * Custody status labels. Legacy rows stored the value `deported`; the module now
+ * uses `repatriated` and both render as "Repatriated" everywhere in the UI,
+ * reports and exports.
+ */
+const STATUS_LABELS: Record<string, string> = {
+  in_custody: "In Custody",
+  bail: "Bail",
+  released: "Released",
+  repatriated: "Repatriated",
+  deported: "Repatriated",
+  transferred: "Transferred",
+  court: "Court",
+  escaped: "Escaped",
+};
+const statusLabel = (s?: string | null) => (s ? STATUS_LABELS[s] ?? s.replace(/_/g, " ") : "—");
+const ARCHIVE_STATUSES = ["released", "bail", "repatriated", "deported", "transferred", "court", "escaped"];
 const RELEASE_OUTCOMES = [
   { value: "released", label: "Released" },
   { value: "bail", label: "Bail Granted" },
-  { value: "deported", label: "Deported" },
+  { value: "repatriated", label: "Repatriated" },
   { value: "transferred", label: "Transferred" },
   { value: "court", label: "Sent to Court" },
 ];
+const REFERRAL_SOURCES = [
+  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
+  "Border Patrol Unit", "Enforcement Unit", "Airport (KIA)", "Public / Walk-in Report",
+  "National Security", "Other Agency",
+];
+const REFERRAL_DESTINATIONS = [
+  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
+  "Repatriation Unit", "Court", "Hospital / Clinic", "Prisons Service", "Embassy / Consulate",
+  "Other Agency",
+];
+
 const RISK_COLORS: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
   medium: "bg-amber-100 text-amber-800",
