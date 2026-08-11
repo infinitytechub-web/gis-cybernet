@@ -1,4 +1,4 @@
-// Amasaman Command Shift System 2026 — automated rotation utility.
+// Cybernet HRM System — automated shift rotation utility (4-day cycle, 2026).
 // Source: AMASAMAN_COMMAND_SHIFT_SYSTEM_2026 (published roster).
 // Pattern: every calendar day advances one letter through A → B → C → D
 // then back to A. Anchor point verified against the published PDF:

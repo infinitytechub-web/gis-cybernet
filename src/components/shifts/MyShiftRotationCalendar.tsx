@@ -57,7 +57,7 @@ type AssignmentRow = {
 };
 
 /**
- * Self-view rotation calendar driven by the published Amasaman 4-day rotation.
+ * Self-view rotation calendar driven by the published 4-day rotation.
  * Renders a 3D perspective grid where the staff member's on-duty days lift
  * forward and glow, while off-duty days recede.
  */

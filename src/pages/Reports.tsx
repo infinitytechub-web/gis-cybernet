@@ -416,7 +416,7 @@ export default function Reports() {
       />
 
       <p className="text-xs text-center text-muted-foreground">
-        Reports generated with GIS Amasaman Sector Command branding
+        Reports generated with Cybernet HRM System branding
       </p>
     </div>
   );

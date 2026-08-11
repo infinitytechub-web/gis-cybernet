@@ -125,7 +125,7 @@ export async function exportSchedulePdf(header: ScheduleHeader, assignments: Ass
       const page = doc.getNumberOfPages();
       doc.setFontSize(8);
       doc.text(
-        `CONFIDENTIAL — GIS Amasaman Sector Command   |   Page ${page}`,
+        `CONFIDENTIAL — Cybernet HRM System   |   Page ${page}`,
         40,
         doc.internal.pageSize.getHeight() - 18
       );

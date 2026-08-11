@@ -20,8 +20,11 @@ interface AuthContextValue {
   is2ic: boolean;
   isOic: boolean;
   isHoa: boolean;
+  /** Admin, OIC and 2IC may assign, modify and revoke command-tier roles/grants. */
+  canManageCommandTier: boolean;
   /** Tightest tier — only Admin + OIC may export Interlink dispatch & approval logs. */
   canExportInterlinkLogs: boolean;
+
 }
 
 /**
@@ -43,6 +46,7 @@ const FALLBACK_AUTH: AuthContextValue = {
   is2ic: false,
   isOic: false,
   isHoa: false,
+  canManageCommandTier: false,
   canExportInterlinkLogs: false,
 };
 
@@ -194,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     is2ic: role === "2ic",
     isOic: role === "oic",
     isHoa: role === "head_of_administration",
+    canManageCommandTier: role === "admin" || role === "oic" || role === "2ic",
     canExportInterlinkLogs: role === "admin" || role === "oic",
   }), [user, role, loading, signIn, signOut]);
 

@@ -82,7 +82,7 @@ function buildPdf(opts: {
       const pg = doc.getNumberOfPages();
       doc.setFontSize(7).setTextColor(110);
       doc.text(
-        `CONFIDENTIAL — GIS Amasaman Sector Command • Page ${pg}`,
+        `CONFIDENTIAL — Cybernet HRM System • Page ${pg}`,
         w / 2,
         doc.internal.pageSize.getHeight() - 16,
         { align: "center" },

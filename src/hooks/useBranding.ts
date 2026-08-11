@@ -13,6 +13,12 @@ export interface Branding {
   secondary_color: string;
   accent_color: string;
   footer_text: string;
+  system_description: string;
+  header_text: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_address: string;
+  contact_website: string;
 }
 
 /** Fallbacks used before the row loads, or if the request fails. */
@@ -28,7 +34,14 @@ export const BRANDING_DEFAULTS: Branding = {
   secondary_color: "220 80% 18%",
   accent_color: "152 70% 30%",
   footer_text: "Powered by: Infinity Techub Intelligence | All Rights Reserved: 2026",
+  system_description: "",
+  header_text: "",
+  contact_email: "",
+  contact_phone: "",
+  contact_address: "",
+  contact_website: "",
 };
+
 
 export const BRANDING_BUCKET = "branding";
 const SIGNED_URL_TTL = 60 * 60 * 6; // 6h
@@ -79,9 +92,16 @@ export function useBranding() {
         resolveBrandingAsset(row.dashboard_logo_url),
       ]);
 
+      // The RPC returns NULL for unset text fields — strip them so the
+      // defaults above win instead of rendering "null".
+      const cleaned = Object.fromEntries(
+        Object.entries(row).filter(([, v]) => v !== null && v !== undefined),
+      ) as Partial<Branding>;
+
       return {
         ...BRANDING_DEFAULTS,
-        ...row,
+        ...cleaned,
+
         logo_url: logo,
         favicon_url: favicon,
         login_logo_url: login,

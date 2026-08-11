@@ -1472,14 +1472,14 @@ async function buildReportBlob(
 ): Promise<Blob> {
   if (fmt === "csv") {
     const escape = (c: string) => `"${(c ?? "").replace(/"/g, '""')}"`;
-    const lines = [escape("GIS Amasaman Sector Command"), escape(opts.title), ""];
+    const lines = [escape("Cybernet HRM System"), escape(opts.title), ""];
     lines.push(opts.headers.map(escape).join(","));
     opts.rows.forEach((r) => lines.push(r.map(escape).join(",")));
     return new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
   }
   if (fmt === "excel") {
     const XLSX = await import("xlsx");
-    const aoa = [["GIS Amasaman Sector Command"], [opts.title], [], opts.headers, ...opts.rows];
+    const aoa = [["Cybernet HRM System"], [opts.title], [], opts.headers, ...opts.rows];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, opts.title.slice(0, 31) || "Report");
@@ -1492,7 +1492,7 @@ async function buildReportBlob(
       .join("");
     const headerRow = `<tr>${opts.headers.map((h) => `<th style="border:1px solid #006699;padding:4px 8px;background:#006699;color:#fff">${h}</th>`).join("")}</tr>`;
     const html = `<html><head><meta charset="utf-8"></head><body>
-      <h2 style="color:#006699">GIS Amasaman Sector Command</h2><h3>${opts.title}</h3>
+      <h2 style="color:#006699">Cybernet HRM System</h2><h3>${opts.title}</h3>
       <table style="border-collapse:collapse">${headerRow}${tableRows}</table>
     </body></html>`;
     return new Blob([html], { type: "application/msword" });
@@ -1501,7 +1501,7 @@ async function buildReportBlob(
   const jsPDF = (await import("jspdf")).default;
   const autoTable = (await import("jspdf-autotable")).default;
   const doc = new jsPDF({ orientation: opts.headers.length > 6 ? "landscape" : "portrait" });
-  doc.setFontSize(14); doc.text("GIS Amasaman Sector Command", 14, 15);
+  doc.setFontSize(14); doc.text("Cybernet HRM System", 14, 15);
   doc.setFontSize(11); doc.text(opts.title, 14, 23);
   autoTable(doc, {
     head: [opts.headers], body: opts.rows, startY: 28,

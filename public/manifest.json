@@ -1,7 +1,7 @@
 {
   "name": "GIS ASC Cybernet - HRM System",
   "short_name": "Cybernet",
-  "description": "Ghana Immigration Service, Amasaman Sector Command - Human Resource Management System",
+  "description": "Cybernet HRM System — Human Resource Management",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

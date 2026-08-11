@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StandardBailTab } from "@/components/detention/StandardBailTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ExportMenu } from "@/components/ui/export-menu";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { MultiContactInput } from "@/components/ui/multi-contact-input";
-import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2 } from "lucide-react";
+import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2, Gavel } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { StatementApproverPicker } from "@/components/detention/StatementApproverPicker";
 import { softDelete } from "@/lib/recycle-bin";
@@ -129,10 +130,12 @@ export default function HoldingCenter() {
         <TabsList className="flex flex-wrap h-auto bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/50 p-1">
           <TabsTrigger value="active" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white"><UserCheck className="h-4 w-4 mr-1 text-rose-700 dark:text-rose-400" />Active Custody</TabsTrigger>
           <TabsTrigger value="archive" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><FileSearch className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Archive</TabsTrigger>
+          <TabsTrigger value="bail" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Gavel className="h-4 w-4 mr-1 text-cyan-700 dark:text-cyan-400" />Standard Bail</TabsTrigger>
           <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
         <TabsContent value="archive"><RecordsList status={ARCHIVE_STATUSES} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="bail"><StandardBailTab canEdit={canCreate} canDelete={["admin", "oic", "2ic"].includes(role || "")} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
@@ -345,7 +348,7 @@ function printDetentionRecord(r: any) {
   td.label { background: ${isDark ? "#334155" : "#f1f5f9"}; font-weight: 600; width: 35%; }
   .footer { text-align: center; margin-top: 18px; font-size: 9px; color: #888; }
 </style></head><body>
-  <h2>GIS Amasaman Sector Command</h2>
+  <h2>Cybernet HRM System</h2>
   <h3>Holding / Detention Center — Detainee Record</h3>
   <div class="meta">Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}</div>
   <table><tbody>

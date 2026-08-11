@@ -123,7 +123,7 @@ export async function buildRecordDocxBlob(
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: "Amasaman Sector Command", size: 22 })],
+            children: [new TextRun({ text: "Cybernet HRM System", size: 22 })],
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,

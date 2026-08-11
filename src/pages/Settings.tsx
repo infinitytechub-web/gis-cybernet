@@ -35,7 +35,7 @@ import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
 import { toast } from "sonner";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
 
 const roleLabels: Record<AppRole, string> = {
@@ -97,6 +97,9 @@ const roleColors: Record<AppRole, string> = {
 export default function Settings() {
   const { isAdmin, loading: authLoading } = useAuth();
 
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
   if (!authLoading && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -104,7 +107,7 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-secondary">System Settings</h1>
-      <Tabs defaultValue="roles" className="space-y-4">
+      <Tabs defaultValue={tabParam ?? "roles"} className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4 text-destructive" /> User Roles</TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4 text-chart-1" /> Permissions</TabsTrigger>

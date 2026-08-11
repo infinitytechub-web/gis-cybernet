@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
         <p>${escapeHtml(body.message).replace(/\n/g, "<br/>")}</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
         <p style="font-size:12px;color:#64748b">
-          Ghana Immigration Service — Amasaman Sector Command · Cybernet
+          Cybernet HRM System
         </p>
       </div>`;
 
