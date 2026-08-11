@@ -254,8 +254,10 @@ export default function CommandRoles() {
   if (!canManage) {
     return (
       <Alert variant="destructive" className="max-w-2xl">
-        <AlertTitle>Admin only</AlertTitle>
-        <AlertDescription>This page is restricted to administrators.</AlertDescription>
+        <AlertTitle>Not authorized</AlertTitle>
+        <AlertDescription>
+          Command-tier management is restricted to System Administrators, the OIC and the 2IC.
+        </AlertDescription>
       </Alert>
     );
   }
