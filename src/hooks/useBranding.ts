@@ -92,9 +92,16 @@ export function useBranding() {
         resolveBrandingAsset(row.dashboard_logo_url),
       ]);
 
+      // The RPC returns NULL for unset text fields — strip them so the
+      // defaults above win instead of rendering "null".
+      const cleaned = Object.fromEntries(
+        Object.entries(row).filter(([, v]) => v !== null && v !== undefined),
+      ) as Partial<Branding>;
+
       return {
         ...BRANDING_DEFAULTS,
-        ...row,
+        ...cleaned,
+
         logo_url: logo,
         favicon_url: favicon,
         login_logo_url: login,
