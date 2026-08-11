@@ -18,8 +18,10 @@ import { getTrustedMac } from "@/lib/trusted-mac";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
+import { useBranding } from "@/hooks/useBranding";
 
 export default function Login() {
+  const branding = useBranding();
   const [staffId, setStaffId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
