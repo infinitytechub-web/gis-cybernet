@@ -145,7 +145,7 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
   tr:nth-child(even) { background: ${isDark ? "#1a2332" : "#f8fafc"}; }
   .footer { text-align: center; margin-top: 16px; font-size: 9px; color: #888; }
 </style></head><body>
-  <h2>GIS Amasaman Sector Command</h2>
+  <h2>Cybernet HRM System</h2>
   <h3>${esc(title)}</h3>
   <div class="meta">Generated: ${format(new Date(), "dd MMM yyyy HH:mm")} · ${operations.length} records</div>
   <table>
@@ -302,7 +302,7 @@ export function downloadOperationPDF(op: OpRecord, profiles: ProfileRef[], modul
 
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
-  doc.text("GIS Amasaman Sector Command", 14, 15);
+  doc.text("Cybernet HRM System", 14, 15);
   doc.setFontSize(12);
   doc.setTextColor(60, 60, 60);
   doc.text(`${moduleTitle} Record`, 14, 23);

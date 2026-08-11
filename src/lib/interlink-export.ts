@@ -110,7 +110,7 @@ export function exportDispatchesPDF(rows: DispatchExportRow[]) {
     headStyles: { fillColor: [79, 70, 229], textColor: 255 },
     didDrawPage: () => {
       doc.setFontSize(8);
-      doc.text("CONFIDENTIAL — GIS Amasaman Sector Command",
+      doc.text("CONFIDENTIAL — Cybernet HRM System",
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 14, { align: "center" });
     },

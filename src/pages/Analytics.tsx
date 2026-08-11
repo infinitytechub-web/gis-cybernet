@@ -1198,7 +1198,7 @@ export default function Analytics() {
       </Tabs>
 
       <p className="text-xs text-center text-muted-foreground">
-        Analytics powered by GIS Amasaman Sector Command — Real-time data insights
+        Analytics powered by Cybernet HRM System — Real-time data insights
       </p>
     </div>
   );

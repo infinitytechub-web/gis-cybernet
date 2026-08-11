@@ -37,7 +37,7 @@ export interface ExcuseDutyData {
 }
 
 const ORG_TITLE = "GHANA IMMIGRATION SERVICE";
-const ORG_SUB = "Amasaman Sector Command";
+const ORG_SUB = "Cybernet HRM System";
 const FORM_TITLE = "EXCUSE DUTY FORM";
 
 // ─────────────────────────── PDF ───────────────────────────

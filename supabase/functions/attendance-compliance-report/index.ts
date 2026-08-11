@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
     const doc = new jsPDF({ orientation: "landscape" });
     doc.setFontSize(16);
     doc.setTextColor(0, 102, 153);
-    doc.text("GIS Amasaman Sector Command", 14, 15);
+    doc.text("Cybernet HRM System", 14, 15);
     doc.setFontSize(12);
     doc.setTextColor(60, 60, 60);
     doc.text(`Attendance Compliance — ${body.period === "weekly" ? "Weekly" : "Monthly"}`, 14, 23);
@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
         </ul>
         <p>Full breakdown attached.</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0"/>
-        <p style="font-size:12px;color:#64748b">Ghana Immigration Service — Amasaman Sector Command · Cybernet</p>
+        <p style="font-size:12px;color:#64748b">Cybernet HRM System</p>
       </div>`;
 
       for (const recipient of recipients) {

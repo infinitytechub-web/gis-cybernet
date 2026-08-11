@@ -76,7 +76,7 @@ export function downloadAttendanceComplianceTemplate(opts: TemplateOptions = {})
 
   // ---- Sheet 1: Instructions
   const instructions: string[][] = [
-    ["GIS Amasaman Sector Command — Monthly Attendance Compliance Template"],
+    ["Cybernet HRM System — Monthly Attendance Compliance Template"],
     [`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`],
     [],
     ["Purpose"],

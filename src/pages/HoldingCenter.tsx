@@ -345,7 +345,7 @@ function printDetentionRecord(r: any) {
   td.label { background: ${isDark ? "#334155" : "#f1f5f9"}; font-weight: 600; width: 35%; }
   .footer { text-align: center; margin-top: 18px; font-size: 9px; color: #888; }
 </style></head><body>
-  <h2>GIS Amasaman Sector Command</h2>
+  <h2>Cybernet HRM System</h2>
   <h3>Holding / Detention Center — Detainee Record</h3>
   <div class="meta">Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}</div>
   <table><tbody>

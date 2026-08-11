@@ -267,7 +267,7 @@ export function PermissionsMatrix() {
   return (
     <Card className="permissions-print-area">
       <div className="print-only hidden mb-4 px-6 pt-6">
-        <h1 className="text-lg font-bold" style={{ color: "#006699" }}>GIS Amasaman Sector Command</h1>
+        <h1 className="text-lg font-bold" style={{ color: "#006699" }}>Cybernet HRM System</h1>
         <p className="text-sm text-muted-foreground">Permissions Matrix — Generated {new Date().toLocaleDateString()}</p>
       </div>
       <CardHeader>

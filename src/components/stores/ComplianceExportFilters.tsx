@@ -293,7 +293,7 @@ export function ComplianceExportFilters() {
         doc.setPage(p);
         doc.setFontSize(7).setTextColor(110);
         doc.text(
-          `CONFIDENTIAL — GIS Amasaman Sector Command • Page ${p} of ${pages}`,
+          `CONFIDENTIAL — Cybernet HRM System • Page ${p} of ${pages}`,
           w / 2,
           doc.internal.pageSize.getHeight() - 16,
           { align: "center" },

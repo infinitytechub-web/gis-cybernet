@@ -22,7 +22,7 @@ function header(doc: jsPDF, subtitle: string) {
   doc.text("GHANA IMMIGRATION SERVICE", MARGIN, 10);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Amasaman Sector Command — Cybernet", MARGIN, 16);
+  doc.text("Cybernet HRM System", MARGIN, 16);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text(subtitle.toUpperCase(), w - MARGIN, 14, { align: "right" });
@@ -123,7 +123,7 @@ export function generateLeaveLetter(d: LeaveLetterData): jsPDF {
   y = Math.max(y, 220);
   doc.setDrawColor(0); doc.line(MARGIN, y, MARGIN + 70, y);
   doc.setFontSize(9); doc.text(d.approverName ?? "Approving Officer", MARGIN, y + 5);
-  doc.text("Command Tier — GIS Amasaman", MARGIN, y + 10);
+  doc.text("Cybernet HRM System — Command Tier", MARGIN, y + 10);
 
   footer(doc);
   return doc;
@@ -178,7 +178,7 @@ export function generatePostingLetter(d: PostingLetterData): jsPDF {
   y = Math.max(y, 220);
   doc.line(MARGIN, y, MARGIN + 70, y);
   doc.setFontSize(9); doc.text(d.approverName ?? "Approving Officer", MARGIN, y + 5);
-  doc.text("Command Tier — GIS Amasaman", MARGIN, y + 10);
+  doc.text("Cybernet HRM System — Command Tier", MARGIN, y + 10);
 
   footer(doc);
   return doc;
@@ -222,7 +222,7 @@ export function generateAppraisalSummary(d: AppraisalLetterData): jsPDF {
   y = Math.max(y, 220);
   doc.line(MARGIN, y, MARGIN + 70, y);
   doc.setFontSize(9); doc.text(d.appraiserName ?? "Appraising Officer", MARGIN, y + 5);
-  doc.text("Command Tier — GIS Amasaman", MARGIN, y + 10);
+  doc.text("Cybernet HRM System — Command Tier", MARGIN, y + 10);
 
   footer(doc);
   return doc;

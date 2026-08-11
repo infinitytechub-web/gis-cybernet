@@ -86,7 +86,7 @@ async function generatePDF({ title, filename, headers, rows, subtitle, meta, ima
   const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
   doc.setFontSize(16);
   doc.setTextColor(0, 102, 153);
-  doc.text("GIS Amasaman Sector Command", 14, 15);
+  doc.text("Cybernet HRM System", 14, 15);
   doc.setFontSize(12);
   doc.setTextColor(60, 60, 60);
   doc.text(title, 14, 23);
@@ -203,7 +203,7 @@ async function generatePDF({ title, filename, headers, rows, subtitle, meta, ima
 function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
   const escape = (c: string) => `"${(c ?? "").replace(/"/g, '""')}"`;
   const lines: string[] = [];
-  lines.push(escape("GIS Amasaman Sector Command"));
+  lines.push(escape("Cybernet HRM System"));
   lines.push(escape(title));
   if (subtitle) lines.push(escape(subtitle));
   if (meta && meta.length > 0) {
@@ -219,7 +219,7 @@ function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportO
 async function generateExcel({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
   const XLSX = await import("xlsx");
   const aoa: string[][] = [];
-  aoa.push(["GIS Amasaman Sector Command"]);
+  aoa.push(["Cybernet HRM System"]);
   aoa.push([title]);
   if (subtitle) aoa.push([subtitle]);
   if (meta && meta.length > 0) {
@@ -266,7 +266,7 @@ function generateWord({ filename, title, headers, rows, subtitle, meta }: Export
       table.data tr:nth-child(even) td { background: #f0f8ff; }
     </style></head>
     <body>
-      <h2 style="color:#006699;margin:0">GIS Amasaman Sector Command</h2>
+      <h2 style="color:#006699;margin:0">Cybernet HRM System</h2>
       <h3 style="color:#3c3c3c;margin:4px 0">${title}</h3>
       ${subtitle ? `<p style="color:#787878;font-size:9pt;margin:2px 0">${subtitle}</p>` : ""}
       ${metaHtml}

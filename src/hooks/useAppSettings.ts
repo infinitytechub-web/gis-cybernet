@@ -11,7 +11,7 @@ interface AppSettings {
 }
 
 const defaults: AppSettings = {
-  org_name: "GIS Amasaman Sector Command",
+  org_name: "Cybernet HRM System",
   system_label: "Cybernet",
   auto_logout_minutes: 30,
   enforce_password_change: true,

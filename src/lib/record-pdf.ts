@@ -146,7 +146,7 @@ export function buildRecordPdf(kind: RecordKind, record: Record<string, any>): j
   doc.text("Ghana Immigration Service", margin, 32);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Amasaman Sector Command", margin, 48);
+  doc.text("Cybernet HRM System", margin, 48);
   doc.setFontSize(9);
   doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, pageWidth - margin, 32, { align: "right" });
 

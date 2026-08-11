@@ -711,7 +711,7 @@ export default function Enforcement() {
         @media print{body{padding:20px}}
       </style></head><body>
       <h1>🛡️ Enforcement Summary Report</h1>
-      <div class="meta">Ghana Immigration Service — Amasaman Sector Command<br/>
+      <div class="meta">Cybernet HRM System<br/>
         Period: ${period.charAt(0).toUpperCase() + period.slice(1)} (${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(), "dd MMM yyyy")})<br/>
         Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}</div>
       <div class="kpi-row">
