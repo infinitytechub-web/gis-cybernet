@@ -20,8 +20,11 @@ interface AuthContextValue {
   is2ic: boolean;
   isOic: boolean;
   isHoa: boolean;
+  /** Admin, OIC and 2IC may assign, modify and revoke command-tier roles/grants. */
+  canManageCommandTier: boolean;
   /** Tightest tier — only Admin + OIC may export Interlink dispatch & approval logs. */
   canExportInterlinkLogs: boolean;
+
 }
 
 /**
