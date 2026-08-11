@@ -134,7 +134,8 @@ export function AppSidebar() {
     if (isMobile) setOpenMobile(false);
     else setOpen(false);
   };
-  const { org_name, system_label } = useAppSettings();
+  const { org_name } = useAppSettings();
+  const branding = useBranding();
   const interlinkBranding = useInterlinkBranding();
   const liveCommandVaultItems = commandVaultItems.map((it) =>
     it.url === "/interlink" ? { ...it, title: interlinkBranding.nav } : it
@@ -290,11 +291,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" aria-label="Primary navigation" aria-expanded={!collapsed}>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <img src={gisLogo} alt="GIS" width={40} height={40} decoding="async" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
+          <img src={branding.logo_url || gisLogo} alt={branding.company_name} width={40} height={40} decoding="async" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="text-sm font-bold text-sidebar-primary-foreground">{org_name.length > 20 ? org_name.slice(0, 20) + "…" : org_name}</span>
-              <span className="text-xs text-sidebar-foreground/70">{system_label}</span>
+              <span className="text-xs text-sidebar-foreground/70">{branding.system_label}</span>
             </div>
           )}
         </div>
