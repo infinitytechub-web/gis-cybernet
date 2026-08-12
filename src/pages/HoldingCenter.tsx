@@ -22,6 +22,11 @@ import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2, Gavel } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { StatementApproverPicker } from "@/components/detention/StatementApproverPicker";
+import { StaffPicker } from "@/components/detention/StaffPicker";
+import { ReferralSelect } from "@/components/detention/ReferralSelect";
+import {
+  GENDER_OPTIONS, OTHER_AGENCY, REFERRAL_SOURCES, REFERRAL_DESTINATIONS, referralDisplay,
+} from "@/components/detention/detention-options";
 import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
@@ -62,16 +67,7 @@ const RELEASE_OUTCOMES = [
   { value: "transferred", label: "Transferred" },
   { value: "court", label: "Sent to Court" },
 ];
-const REFERRAL_SOURCES = [
-  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
-  "Border Patrol Unit", "Enforcement Unit", "Airport (KIA)", "Public / Walk-in Report",
-  "National Security", "Other Agency",
-];
-const REFERRAL_DESTINATIONS = [
-  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
-  "Repatriation Unit", "Court", "Hospital / Clinic", "Prisons Service", "Embassy / Consulate",
-  "Other Agency",
-];
+/** Referral option lists live in detention-options.ts (shared with the bail form). */
 
 const RISK_COLORS: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
@@ -221,7 +217,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
-          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, r.referred_from || "-", r.referred_to || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
+          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
       </div>
@@ -327,8 +323,8 @@ function printDetentionRecord(r: any) {
     ["Status", statusLabel(r.status)],
     ["Intake", format(new Date(r.intake_at), "dd MMM yyyy HH:mm")],
     ["Custody Duration", `${differenceInHours(r.released_at ? new Date(r.released_at) : new Date(), new Date(r.intake_at))} hrs`],
-    ["Referred from", r.referred_from],
-    ["Referred to", r.referred_to],
+    ["Referred from", referralDisplay(r.referred_from, r.referred_from_other)],
+    ["Referred to", referralDisplay(r.referred_to, r.referred_to_other)],
     ["Statement Approved by", r.statement_approved_by_name],
     ["Next of Kin (NoK)", r.next_of_kin],
     ["Next of Kin (NoK) Phone", r.next_of_kin_phone],
@@ -359,20 +355,23 @@ function printDetentionRecord(r: any) {
   openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
 }
 
-/* ----------------- REFERRAL FIELD ----------------- */
+/* ----------------- SHARED VALIDATION ----------------- */
 /**
- * Select-or-type referral field: presets are offered as a dropdown list while
- * still allowing any other institution/command/agency to be typed in freely.
+ * Conditional-field validation shared by intake and edit: when
+ * "Other Agency or Command" is chosen the specific agency/command name is
+ * mandatory before the record can be saved.
  */
-function ReferralField({ id, value, options, placeholder, onChange }: { id: string; value: string; options: string[]; placeholder: string; onChange: (v: string) => void }) {
-  return (
-    <>
-      <Input id={id} list={`${id}-options`} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} />
-      <datalist id={`${id}-options`}>
-        {options.map(o => <option key={o} value={o} />)}
-      </datalist>
-    </>
-  );
+function validateDetaineeForm(form: any) {
+  if (!form.first_name?.trim() || !form.last_name?.trim()) return "First and last name are required";
+  if (!form.crime_type) return "Crime type is required";
+  if (!form.risk_level) return "Risk level is required";
+  if (!form.gender) return "Gender is required";
+  if (form.referred_from === OTHER_AGENCY && !form.referred_from_other?.trim())
+    return "Specify the agency/command for “Referred from”";
+  if (form.referred_to === OTHER_AGENCY && !form.referred_to_other?.trim())
+    return "Specify the agency/command for “Referred to”";
+  if (form.date_of_birth && new Date(form.date_of_birth) > new Date()) return "Date of birth cannot be in the future";
+  return null;
 }
 
 /* ----------------- EDIT DIALOG ----------------- */
@@ -404,6 +403,8 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
     notes: record.notes || "",
     referred_from: record.referred_from || "",
     referred_to: record.referred_to || "",
+    referred_from_other: record.referred_from_other || "",
+    referred_to_other: record.referred_to_other || "",
   });
   const canApprove = ["admin", "oic", "2ic"].includes(role || "");
   const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({
@@ -413,7 +414,8 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
 
   const update = useMutation({
     mutationFn: async () => {
-      if (!form.first_name.trim() || !form.last_name.trim()) throw new Error("Name required");
+      const problem = validateDetaineeForm(form);
+      if (problem) throw new Error(problem);
       const payload: any = { ...form };
       if (canApprove) {
         payload.statement_approved_by = approver.id;
@@ -438,10 +440,10 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
               <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
               <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
               <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
-              <div><Label>Gender</Label>
+              <div><Label>Gender *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                  <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
@@ -480,7 +482,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
               <div className="col-span-2"><Label>Charge Description</Label><Textarea rows={2} value={form.charge_description} onChange={e => setForm(p => ({ ...p, charge_description: e.target.value }))} /></div>
               <div><Label>Location of Arrest</Label><Input value={form.location_of_arrest} onChange={e => setForm(p => ({ ...p, location_of_arrest: e.target.value }))} /></div>
-              <div><Label>Arresting Officer</Label><Input value={form.arresting_officer_name} onChange={e => setForm(p => ({ ...p, arresting_officer_name: e.target.value }))} /></div>
+              <div><Label>Arresting Officer</Label><StaffPicker value={null} label={form.arresting_officer_name || null} title="Select arresting officer" placeholder="Select officer from staff directory…" onChange={(_id, label) => setForm(p => ({ ...p, arresting_officer_name: label || "" }))} /></div>
               <div><Label>Risk Level *</Label>
                 <Select value={form.risk_level} onValueChange={v => setForm(p => ({ ...p, risk_level: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -488,8 +490,8 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} /></div>
-              <div><Label htmlFor="edit-referred-from">Referred from</Label><ReferralField id="edit-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
-              <div><Label htmlFor="edit-referred-to">Referred to</Label><ReferralField id="edit-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <ReferralSelect id="edit-referred-from" label="Referred from" value={form.referred_from} other={form.referred_from_other} options={REFERRAL_SOURCES} placeholder="Select referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_from_other: v }))} />
+              <ReferralSelect id="edit-referred-to" label="Referred to" value={form.referred_to} other={form.referred_to_other} options={REFERRAL_DESTINATIONS} placeholder="Select receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_to_other: v }))} />
               <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
@@ -515,14 +517,15 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
     home_address: "", phone: "", next_of_kin: "", next_of_kin_phone: "", emergency_contact: "",
     crime_type: "Illegal Entry", charge_description: "", location_of_arrest: "",
     arresting_officer_name: "", cell_number: "", risk_level: "medium", medical_alerts: "", notes: "",
-    referred_from: "", referred_to: "",
+    referred_from: "", referred_to: "", referred_from_other: "", referred_to_other: "",
   });
   const canApprove = ["admin", "oic", "2ic"].includes(role || "");
   const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({ id: null, label: null });
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!form.first_name.trim() || !form.last_name.trim() || !form.crime_type) throw new Error("Name and crime type required");
+      const problem = validateDetaineeForm(form);
+      if (problem) throw new Error(problem);
       let photo_url: string | null = null;
       if (photoFile) {
         const path = `${Date.now()}-${photoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
@@ -554,10 +557,10 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
               <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
               <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
-              <div><Label>Gender</Label>
+              <div><Label>Gender *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                  <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
@@ -601,7 +604,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
               <div className="col-span-2"><Label>Charge Description</Label><Textarea rows={2} value={form.charge_description} onChange={e => setForm(p => ({ ...p, charge_description: e.target.value }))} /></div>
               <div><Label>Location of Arrest</Label><Input value={form.location_of_arrest} onChange={e => setForm(p => ({ ...p, location_of_arrest: e.target.value }))} /></div>
-              <div><Label>Arresting Officer</Label><Input value={form.arresting_officer_name} onChange={e => setForm(p => ({ ...p, arresting_officer_name: e.target.value }))} /></div>
+              <div><Label>Arresting Officer</Label><StaffPicker value={null} label={form.arresting_officer_name || null} title="Select arresting officer" placeholder="Select officer from staff directory…" onChange={(_id, label) => setForm(p => ({ ...p, arresting_officer_name: label || "" }))} /></div>
               <div><Label>Risk Level *</Label>
                 <Select value={form.risk_level} onValueChange={v => setForm(p => ({ ...p, risk_level: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -609,8 +612,8 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} placeholder="e.g. diabetic, allergies" /></div>
-              <div><Label htmlFor="intake-referred-from">Referred from</Label><ReferralField id="intake-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
-              <div><Label htmlFor="intake-referred-to">Referred to</Label><ReferralField id="intake-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <ReferralSelect id="intake-referred-from" label="Referred from" value={form.referred_from} other={form.referred_from_other} options={REFERRAL_SOURCES} placeholder="Select referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_from_other: v }))} />
+              <ReferralSelect id="intake-referred-to" label="Referred to" value={form.referred_to} other={form.referred_to_other} options={REFERRAL_DESTINATIONS} placeholder="Select receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_to_other: v }))} />
               <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
@@ -707,8 +710,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Charge" value={record.charge_description} full />
               <Field label="Arrest Location" value={record.location_of_arrest} />
               <Field label="Arresting Officer" value={record.arresting_officer_name} />
-              <Field label="Referred from" value={record.referred_from} />
-              <Field label="Referred to" value={record.referred_to} />
+              <Field label="Referred from" value={referralDisplay(record.referred_from, record.referred_from_other)} />
+              <Field label="Referred to" value={referralDisplay(record.referred_to, record.referred_to_other)} />
               <Field label="Statement Approved by" value={record.statement_approved_by_name} />
               <Field label="Intake" value={format(new Date(record.intake_at), "MMM d, yyyy HH:mm")} />
               <Field label="Custody Duration" value={`${differenceInHours(record.released_at ? new Date(record.released_at) : new Date(), new Date(record.intake_at))} hrs`} />

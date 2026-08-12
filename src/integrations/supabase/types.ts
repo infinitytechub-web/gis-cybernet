@@ -1391,6 +1391,7 @@ export type Database = {
           surety_occupation: string | null
           surety_phone: string | null
           surety_relationship: string | null
+          surety_relationship_other: string | null
           updated_at: string
         }
         Insert: {
@@ -1431,6 +1432,7 @@ export type Database = {
           surety_occupation?: string | null
           surety_phone?: string | null
           surety_relationship?: string | null
+          surety_relationship_other?: string | null
           updated_at?: string
         }
         Update: {
@@ -1471,6 +1473,7 @@ export type Database = {
           surety_occupation?: string | null
           surety_phone?: string | null
           surety_relationship?: string | null
+          surety_relationship_other?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1619,7 +1622,9 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           referred_from: string | null
+          referred_from_other: string | null
           referred_to: string | null
+          referred_to_other: string | null
           release_reason: string | null
           released_at: string | null
           released_by: string | null
@@ -1663,7 +1668,9 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           referred_from?: string | null
+          referred_from_other?: string | null
           referred_to?: string | null
+          referred_to_other?: string | null
           release_reason?: string | null
           released_at?: string | null
           released_by?: string | null
@@ -1707,7 +1714,9 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           referred_from?: string | null
+          referred_from_other?: string | null
           referred_to?: string | null
+          referred_to_other?: string | null
           release_reason?: string | null
           released_at?: string | null
           released_by?: string | null
