@@ -1352,6 +1352,99 @@ export type Database = {
           },
         ]
       }
+      detention_bail_print_documents: {
+        Row: {
+          authorization_status: string
+          bail_record_id: string
+          data_snapshot: Json
+          id: string
+          printed_at: string
+          printed_by: string | null
+          record_updated_at: string | null
+          rendered_html: string
+          template_id: string | null
+          template_version: number
+        }
+        Insert: {
+          authorization_status: string
+          bail_record_id: string
+          data_snapshot: Json
+          id?: string
+          printed_at?: string
+          printed_by?: string | null
+          record_updated_at?: string | null
+          rendered_html: string
+          template_id?: string | null
+          template_version: number
+        }
+        Update: {
+          authorization_status?: string
+          bail_record_id?: string
+          data_snapshot?: Json
+          id?: string
+          printed_at?: string
+          printed_by?: string | null
+          record_updated_at?: string | null
+          rendered_html?: string
+          template_id?: string | null
+          template_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_bail_print_documents_bail_record_id_fkey"
+            columns: ["bail_record_id"]
+            isOneToOne: false
+            referencedRelation: "detention_bail_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detention_bail_print_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "detention_bail_print_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_bail_print_templates: {
+        Row: {
+          authorization_status: string
+          created_at: string
+          created_by: string | null
+          html: string
+          id: string
+          is_active: boolean
+          label: string
+          notes: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          authorization_status: string
+          created_at?: string
+          created_by?: string | null
+          html: string
+          id?: string
+          is_active?: boolean
+          label: string
+          notes?: string | null
+          updated_at?: string
+          version: number
+        }
+        Update: {
+          authorization_status?: string
+          created_at?: string
+          created_by?: string | null
+          html?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          notes?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       detention_bail_records: {
         Row: {
           authorization_remarks: string | null
