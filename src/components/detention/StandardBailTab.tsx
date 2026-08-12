@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { openPrintWindow } from "@/lib/safe-print";
+import { prepareBailPrintDocument } from "@/lib/bail-print-templates";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { StaffPicker } from "@/components/detention/StaffPicker";
 import {
@@ -242,54 +243,26 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
     onError: (e: any) => toast.error(e?.message ?? "Failed to delete bail record"),
   });
 
-  const printRecord = (r: Bail) => {
-    const row = (k: string, v: any) =>
-      `<tr><th style="text-align:left;padding:4px 10px 4px 0;width:220px;vertical-align:top">${k}</th><td style="padding:4px 0">${v ?? "—"}</td></tr>`;
-    const html = `
-      <h1 style="font-size:18px;margin:0 0 2px">STANDARD BAIL FORM</h1>
-      <p style="margin:0 0 14px;font-size:12px">Reference: ${r.reference ?? "—"} · Granted: ${r.granted_at ? format(new Date(r.granted_at), "dd MMM yyyy HH:mm") : "—"}</p>
-      <h2 style="font-size:13px;margin:12px 0 4px">Bailee</h2>
-      <table style="font-size:12px;width:100%">
-        ${row("Name", fullName(r))}
-        ${row("Gender / Nationality", `${genderLabel(r.bailee_gender)} / ${r.bailee_nationality ?? "—"}`)}
-        ${row("Phone", r.bailee_phone)}
-        ${row("Address", r.bailee_address)}
-        ${row("Identification", `${r.bailee_id_type ?? "—"} ${r.bailee_id_number ?? ""}`)}
-        ${row("Offence", r.offence)}
-      </table>
-      <h2 style="font-size:13px;margin:12px 0 4px">Bail terms</h2>
-      <table style="font-size:12px;width:100%">
-        ${row("Type", label(r.bail_type))}
-        ${row("Amount", r.bail_amount ? `${r.currency ?? "GHS"} ${Number(r.bail_amount).toLocaleString()}` : "—")}
-        ${row("Conditions", r.conditions)}
-        ${row("Report station", r.report_station)}
-        ${row("Report back", r.report_back_at ? format(new Date(r.report_back_at), "dd MMM yyyy HH:mm") : "—")}
-      </table>
-      <h2 style="font-size:13px;margin:12px 0 4px">Surety</h2>
-      <table style="font-size:12px;width:100%">
-        ${row("Name", r.surety_name)}
-        ${row("Relationship / Occupation", `${relationshipDisplay(r.surety_relationship, r.surety_relationship_other) ?? "—"} / ${r.surety_occupation ?? "—"}`)}
-        ${row("Phone", r.surety_phone)}
-        ${row("Address", r.surety_address)}
-        ${row("Identification", `${r.surety_id_type ?? "—"} ${r.surety_id_number ?? ""}`)}
-      </table>
-      <h2 style="font-size:13px;margin:12px 0 4px">Authorization</h2>
-      <table style="font-size:12px;width:100%">
-        ${row("Status", String(r.authorization_status ?? "pending").toUpperCase())}
-        ${row("Officer", `${r.authorized_by_rank ?? ""} ${r.authorized_by_name ?? "—"}`)}
-        ${row("Remarks", r.authorization_remarks)}
-        ${row("Notes", r.notes)}
-      </table>
-      <div style="margin-top:36px;font-size:12px;display:flex;gap:60px">
-        <div>_____________________________<br/>Bailee signature</div>
-        <div>_____________________________<br/>Authorizing officer${r.authorized_signature_name ? ` (${r.authorized_signature_name})` : ""}</div>
-      </div>
-      <p style="margin-top:28px;font-size:10px;text-align:center">CONFIDENTIAL — Cybernet HRM System</p>
-    `;
-    openPrintWindow(`<!doctype html><html><head><meta charset="utf-8"><title>Standard Bail Form — ${fullName(r)}</title>
-      <style>body{font-family:system-ui,Arial,sans-serif;padding:28px;color:#111}h2{border-bottom:1px solid #ccc;padding-bottom:2px}</style>
-      </head><body>${html}</body></html>`);
-  };
+  /**
+   * Printing renders the stored record through the active versioned template
+   * for its authorization status and archives the rendered document, so the
+   * output always matches the stored data and formatting.
+   */
+  const printMut = useMutation({
+    mutationFn: (r: Bail) => prepareBailPrintDocument(r, user?.id),
+    onSuccess: (doc) => {
+      openPrintWindow(doc.html);
+      toast.success(
+        doc.reused
+          ? `Reprinted stored document (template v${doc.version}, ${doc.status})`
+          : `Generated document from template v${doc.version} (${doc.status})`,
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to prepare the bail form for printing"),
+  });
+
+  const printRecord = (r: Bail) => printMut.mutate(r);
+
 
   return (
     <Card className="mt-3">
@@ -353,8 +326,8 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                         <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(r)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Print" onClick={() => printRecord(r)}>
-                          <Printer className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" title="Print" disabled={printMut.isPending} onClick={() => printRecord(r)}>
+                          {printMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                         </Button>
                         {canEdit && (
                           <Button size="icon" variant="ghost" title="Edit" onClick={() => openEdit(r)}>
@@ -613,8 +586,8 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
             </ScrollArea>
           )}
           <DialogFooter>
-            <Button variant="outline" className="gap-1.5" onClick={() => viewing && printRecord(viewing)}>
-              <Printer className="h-4 w-4" /> Print
+            <Button variant="outline" className="gap-1.5" disabled={printMut.isPending} onClick={() => viewing && printRecord(viewing)}>
+              {printMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Print
             </Button>
             <Button onClick={() => setViewing(null)}>Close</Button>
           </DialogFooter>

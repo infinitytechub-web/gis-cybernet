@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.block_bail_print_document_mutation() FROM PUBLIC, anon, authenticated;
