@@ -557,9 +557,9 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
               <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
               <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
-              <div><Label>Gender</Label>
+              <div><Label>Gender *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                   <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
                 </Select>
               </div>
@@ -604,7 +604,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
               <div className="col-span-2"><Label>Charge Description</Label><Textarea rows={2} value={form.charge_description} onChange={e => setForm(p => ({ ...p, charge_description: e.target.value }))} /></div>
               <div><Label>Location of Arrest</Label><Input value={form.location_of_arrest} onChange={e => setForm(p => ({ ...p, location_of_arrest: e.target.value }))} /></div>
-              <div><Label>Arresting Officer</Label><Input value={form.arresting_officer_name} onChange={e => setForm(p => ({ ...p, arresting_officer_name: e.target.value }))} /></div>
+              <div><Label>Arresting Officer</Label><StaffPicker value={null} label={form.arresting_officer_name || null} title="Select arresting officer" placeholder="Select officer from staff directory…" onChange={(_id, label) => setForm(p => ({ ...p, arresting_officer_name: label || "" }))} /></div>
               <div><Label>Risk Level *</Label>
                 <Select value={form.risk_level} onValueChange={v => setForm(p => ({ ...p, risk_level: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -612,8 +612,8 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} placeholder="e.g. diabetic, allergies" /></div>
-              <div><Label htmlFor="intake-referred-from">Referred from</Label><ReferralField id="intake-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
-              <div><Label htmlFor="intake-referred-to">Referred to</Label><ReferralField id="intake-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <ReferralSelect id="intake-referred-from" label="Referred from" value={form.referred_from} other={form.referred_from_other} options={REFERRAL_SOURCES} placeholder="Select referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_from_other: v }))} />
+              <ReferralSelect id="intake-referred-to" label="Referred to" value={form.referred_to} other={form.referred_to_other} options={REFERRAL_DESTINATIONS} placeholder="Select receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_to_other: v }))} />
               <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
