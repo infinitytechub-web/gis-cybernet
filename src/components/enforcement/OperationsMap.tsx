@@ -5,6 +5,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
 import { format } from "date-fns";
+import { attachTileFailover } from "@/lib/leaflet-base-layers";
 
 const SEVERITY_COLORS: Record<string, string> = {
   low: "#22c55e",
@@ -105,6 +106,8 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [clusterEnabled, setClusterEnabled] = useState(true);
   const [baseLayer, setBaseLayer] = useState<BaseLayerKey>("streets");
+  const [activeSource, setActiveSource] = useState<string | null>(null);
+  const [tilesUnavailable, setTilesUnavailable] = useState(false);
 
   const allSeverities = useMemo(() => {
     const s = new Set(operations.map(op => op.severity));
@@ -175,15 +178,24 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
     const map = L.map(mapRef.current, { zoomAnimation: true }).setView(center, 12);
     mapInstanceRef.current = map;
 
-    const layerCfg = BASE_LAYERS[baseLayer];
-    const tileUrl = baseLayer === "streets" && darkMode && layerCfg.dark ? layerCfg.dark : layerCfg.light;
-    L.tileLayer(tileUrl, {
-      attribution: layerCfg.attribution,
-      maxZoom: layerCfg.maxZoom,
-    }).addTo(map);
-    if (layerCfg.overlay) {
-      L.tileLayer(layerCfg.overlay, { maxZoom: layerCfg.maxZoom, opacity: 0.9 }).addTo(map);
-    }
+    // Ordered tile-source chain: the selected view first, then the remaining
+    // providers as fallbacks. Failover is automatic and never touches markers.
+    const order: BaseLayerKey[] = [baseLayer, ...(["streets", "satellite", "terrain", "hybrid"] as BaseLayerKey[]).filter(k => k !== baseLayer)];
+    const candidates = order.map(key => {
+      const cfg = BASE_LAYERS[key];
+      const url = key === "streets" && darkMode && cfg.dark ? cfg.dark : cfg.light;
+      return {
+        name: cfg.label,
+        layer: L.tileLayer(url, { attribution: cfg.attribution, maxZoom: cfg.maxZoom }),
+        overlay: cfg.overlay ? L.tileLayer(cfg.overlay, { maxZoom: cfg.maxZoom, opacity: 0.9 }) : undefined,
+      };
+    });
+    setTilesUnavailable(false);
+    setActiveSource(null);
+    const detachFailover = attachTileFailover(map, candidates, {
+      onSwitch: (name) => setActiveSource(name),
+      onExhausted: () => setTilesUnavailable(true),
+    });
 
     const markers: L.CircleMarker[] = [];
     mappableOps.forEach(op => {
@@ -284,6 +296,7 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
     legend.addTo(map);
 
     return () => {
+      try { detachFailover(); } catch { /* ignore */ }
       try { map.remove(); } catch { /* ignore */ }
       mapInstanceRef.current = null;
     };
