@@ -22,6 +22,11 @@ import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2, Gavel } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { StatementApproverPicker } from "@/components/detention/StatementApproverPicker";
+import { StaffPicker } from "@/components/detention/StaffPicker";
+import { ReferralSelect } from "@/components/detention/ReferralSelect";
+import {
+  GENDER_OPTIONS, OTHER_AGENCY, REFERRAL_SOURCES, REFERRAL_DESTINATIONS, referralDisplay,
+} from "@/components/detention/detention-options";
 import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
@@ -62,16 +67,7 @@ const RELEASE_OUTCOMES = [
   { value: "transferred", label: "Transferred" },
   { value: "court", label: "Sent to Court" },
 ];
-const REFERRAL_SOURCES = [
-  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
-  "Border Patrol Unit", "Enforcement Unit", "Airport (KIA)", "Public / Walk-in Report",
-  "National Security", "Other Agency",
-];
-const REFERRAL_DESTINATIONS = [
-  "Ghana Police Service", "Ghana Immigration Service HQ", "Regional Command", "Sector Command",
-  "Repatriation Unit", "Court", "Hospital / Clinic", "Prisons Service", "Embassy / Consulate",
-  "Other Agency",
-];
+/** Referral option lists live in detention-options.ts (shared with the bail form). */
 
 const RISK_COLORS: Record<string, string> = {
   low: "bg-emerald-100 text-emerald-800",
@@ -221,7 +217,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
-          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, r.referred_from || "-", r.referred_to || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
+          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
       </div>
@@ -327,8 +323,8 @@ function printDetentionRecord(r: any) {
     ["Status", statusLabel(r.status)],
     ["Intake", format(new Date(r.intake_at), "dd MMM yyyy HH:mm")],
     ["Custody Duration", `${differenceInHours(r.released_at ? new Date(r.released_at) : new Date(), new Date(r.intake_at))} hrs`],
-    ["Referred from", r.referred_from],
-    ["Referred to", r.referred_to],
+    ["Referred from", referralDisplay(r.referred_from, r.referred_from_other)],
+    ["Referred to", referralDisplay(r.referred_to, r.referred_to_other)],
     ["Statement Approved by", r.statement_approved_by_name],
     ["Next of Kin (NoK)", r.next_of_kin],
     ["Next of Kin (NoK) Phone", r.next_of_kin_phone],
@@ -359,20 +355,23 @@ function printDetentionRecord(r: any) {
   openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
 }
 
-/* ----------------- REFERRAL FIELD ----------------- */
+/* ----------------- SHARED VALIDATION ----------------- */
 /**
- * Select-or-type referral field: presets are offered as a dropdown list while
- * still allowing any other institution/command/agency to be typed in freely.
+ * Conditional-field validation shared by intake and edit: when
+ * "Other Agency or Command" is chosen the specific agency/command name is
+ * mandatory before the record can be saved.
  */
-function ReferralField({ id, value, options, placeholder, onChange }: { id: string; value: string; options: string[]; placeholder: string; onChange: (v: string) => void }) {
-  return (
-    <>
-      <Input id={id} list={`${id}-options`} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} />
-      <datalist id={`${id}-options`}>
-        {options.map(o => <option key={o} value={o} />)}
-      </datalist>
-    </>
-  );
+function validateDetaineeForm(form: any) {
+  if (!form.first_name?.trim() || !form.last_name?.trim()) return "First and last name are required";
+  if (!form.crime_type) return "Crime type is required";
+  if (!form.risk_level) return "Risk level is required";
+  if (!form.gender) return "Gender is required";
+  if (form.referred_from === OTHER_AGENCY && !form.referred_from_other?.trim())
+    return "Specify the agency/command for “Referred from”";
+  if (form.referred_to === OTHER_AGENCY && !form.referred_to_other?.trim())
+    return "Specify the agency/command for “Referred to”";
+  if (form.date_of_birth && new Date(form.date_of_birth) > new Date()) return "Date of birth cannot be in the future";
+  return null;
 }
 
 /* ----------------- EDIT DIALOG ----------------- */
