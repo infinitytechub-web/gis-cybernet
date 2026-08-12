@@ -403,6 +403,8 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
     notes: record.notes || "",
     referred_from: record.referred_from || "",
     referred_to: record.referred_to || "",
+    referred_from_other: record.referred_from_other || "",
+    referred_to_other: record.referred_to_other || "",
   });
   const canApprove = ["admin", "oic", "2ic"].includes(role || "");
   const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({
@@ -412,7 +414,8 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
 
   const update = useMutation({
     mutationFn: async () => {
-      if (!form.first_name.trim() || !form.last_name.trim()) throw new Error("Name required");
+      const problem = validateDetaineeForm(form);
+      if (problem) throw new Error(problem);
       const payload: any = { ...form };
       if (canApprove) {
         payload.statement_approved_by = approver.id;
@@ -437,10 +440,10 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
               <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
               <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
               <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
-              <div><Label>Gender</Label>
+              <div><Label>Gender *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                  <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
@@ -479,7 +482,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
               <div className="col-span-2"><Label>Charge Description</Label><Textarea rows={2} value={form.charge_description} onChange={e => setForm(p => ({ ...p, charge_description: e.target.value }))} /></div>
               <div><Label>Location of Arrest</Label><Input value={form.location_of_arrest} onChange={e => setForm(p => ({ ...p, location_of_arrest: e.target.value }))} /></div>
-              <div><Label>Arresting Officer</Label><Input value={form.arresting_officer_name} onChange={e => setForm(p => ({ ...p, arresting_officer_name: e.target.value }))} /></div>
+              <div><Label>Arresting Officer</Label><StaffPicker value={null} label={form.arresting_officer_name || null} title="Select arresting officer" placeholder="Select officer from staff directory…" onChange={(_id, label) => setForm(p => ({ ...p, arresting_officer_name: label || "" }))} /></div>
               <div><Label>Risk Level *</Label>
                 <Select value={form.risk_level} onValueChange={v => setForm(p => ({ ...p, risk_level: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -487,8 +490,8 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
                 </Select>
               </div>
               <div><Label className="flex items-center gap-1"><Heart className="h-3 w-3 text-rose-500" />Medical Alerts</Label><Input value={form.medical_alerts} onChange={e => setForm(p => ({ ...p, medical_alerts: e.target.value }))} /></div>
-              <div><Label htmlFor="edit-referred-from">Referred from</Label><ReferralField id="edit-referred-from" value={form.referred_from} options={REFERRAL_SOURCES} placeholder="Select or type referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} /></div>
-              <div><Label htmlFor="edit-referred-to">Referred to</Label><ReferralField id="edit-referred-to" value={form.referred_to} options={REFERRAL_DESTINATIONS} placeholder="Select or type receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} /></div>
+              <ReferralSelect id="edit-referred-from" label="Referred from" value={form.referred_from} other={form.referred_from_other} options={REFERRAL_SOURCES} placeholder="Select referral source" onChange={v => setForm(p => ({ ...p, referred_from: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_from_other: v }))} />
+              <ReferralSelect id="edit-referred-to" label="Referred to" value={form.referred_to} other={form.referred_to_other} options={REFERRAL_DESTINATIONS} placeholder="Select receiving institution" onChange={v => setForm(p => ({ ...p, referred_to: v }))} onOtherChange={v => setForm(p => ({ ...p, referred_to_other: v }))} />
               <div className="col-span-2"><Label>Statement Approved by</Label><StatementApproverPicker value={approver.id} label={approver.label} canEdit={canApprove} onChange={(id, label) => setApprover({ id, label })} />{!canApprove && <p className="text-xs text-muted-foreground mt-1">Only Admin, OIC or 2IC may set the statement approver.</p>}</div>
               <div className="col-span-2"><Label>Additional Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             </div>
@@ -514,14 +517,15 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
     home_address: "", phone: "", next_of_kin: "", next_of_kin_phone: "", emergency_contact: "",
     crime_type: "Illegal Entry", charge_description: "", location_of_arrest: "",
     arresting_officer_name: "", cell_number: "", risk_level: "medium", medical_alerts: "", notes: "",
-    referred_from: "", referred_to: "",
+    referred_from: "", referred_to: "", referred_from_other: "", referred_to_other: "",
   });
   const canApprove = ["admin", "oic", "2ic"].includes(role || "");
   const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({ id: null, label: null });
 
   const create = useMutation({
     mutationFn: async () => {
-      if (!form.first_name.trim() || !form.last_name.trim() || !form.crime_type) throw new Error("Name and crime type required");
+      const problem = validateDetaineeForm(form);
+      if (problem) throw new Error(problem);
       let photo_url: string | null = null;
       if (photoFile) {
         const path = `${Date.now()}-${photoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
