@@ -386,7 +386,20 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
           No operations match the selected filters.
         </div>
       ) : (
-        <div ref={mapRef} className="h-[350px] rounded-md overflow-hidden border" />
+        <div className="relative">
+          <div ref={mapRef} className="h-[350px] rounded-md overflow-hidden border" />
+          {tilesUnavailable && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-md border bg-muted/80 text-center text-xs text-muted-foreground pointer-events-none">
+              Base map unavailable — operation markers still shown.
+            </div>
+          )}
+          {!tilesUnavailable && activeSource && (
+            <div className="absolute bottom-2 left-2 rounded bg-background/90 border px-2 py-0.5 text-[11px] text-muted-foreground">
+              Base map switched to {activeSource}
+            </div>
+          )}
+        </div>
+
       )}
     </div>
   );
