@@ -326,8 +326,8 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                         <Button size="icon" variant="ghost" title="View" onClick={() => setViewing(r)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Print" onClick={() => printRecord(r)}>
-                          <Printer className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" title="Print" disabled={printMut.isPending} onClick={() => printRecord(r)}>
+                          {printMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                         </Button>
                         {canEdit && (
                           <Button size="icon" variant="ghost" title="Edit" onClick={() => openEdit(r)}>
