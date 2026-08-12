@@ -25,6 +25,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { openPrintWindow } from "@/lib/safe-print";
+import { CountryCombobox } from "@/components/shared/CountryCombobox";
+import { StaffPicker } from "@/components/detention/StaffPicker";
+import {
+  GENDER_OPTIONS, OTHER_RELATIONSHIP, RELATIONSHIP_OPTIONS, genderLabel, relationshipDisplay,
+} from "@/components/detention/detention-options";
 
 type Bail = Record<string, any>;
 
@@ -62,6 +67,7 @@ const blank = () => ({
   report_back_at: "",
   surety_name: "",
   surety_relationship: "",
+  surety_relationship_other: "",
   surety_phone: "",
   surety_address: "",
   surety_occupation: "",
@@ -114,7 +120,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
     queryFn: async () => {
       const { data, error } = await supabase
         .from("detention_records")
-        .select("id, first_name, last_name, nationality, gender, phone, offence_description, status")
+        .select("id, first_name, last_name, nationality, gender, phone, charge_description, crime_type, status")
         .order("created_at", { ascending: false })
         .limit(300);
       if (error) throw error;
@@ -156,7 +162,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
       bailee_nationality: d.nationality ?? f.bailee_nationality,
       bailee_gender: d.gender ?? f.bailee_gender,
       bailee_phone: d.phone ?? f.bailee_phone,
-      offence: d.offence_description ?? f.offence,
+      offence: d.charge_description || d.crime_type || f.offence,
     }));
   };
 
@@ -182,6 +188,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
       report_back_at: form.report_back_at ? new Date(form.report_back_at).toISOString() : null,
       surety_name: clean(form.surety_name),
       surety_relationship: clean(form.surety_relationship),
+      surety_relationship_other: form.surety_relationship === OTHER_RELATIONSHIP ? clean(form.surety_relationship_other) : null,
       surety_phone: clean(form.surety_phone),
       surety_address: clean(form.surety_address),
       surety_occupation: clean(form.surety_occupation),
@@ -202,6 +209,8 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
       const body = payload();
       if (!body.bailee_first_name || !body.bailee_last_name) throw new Error("Bailee first and last name are required");
       if (!body.offence) throw new Error("Offence is required");
+      if (form.surety_relationship === OTHER_RELATIONSHIP && !String(form.surety_relationship_other).trim())
+        throw new Error("Specify the relationship to the bailee");
       if (editing) {
         const { error } = await supabase.from("detention_bail_records").update(body).eq("id", editing.id);
         if (error) throw error;
