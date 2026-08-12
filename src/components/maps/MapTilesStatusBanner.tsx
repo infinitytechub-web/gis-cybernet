@@ -47,7 +47,7 @@ export function MapTilesStatusBanner({ className }: Props) {
     ? "All tile providers are unreachable. Markers, routes and live tracking continue to update."
     : failover
       ? "The primary tile source failed, so a backup provider is being used."
-      : status.message;
+      : (status.status === "error" ? status.message : "");
 
   return (
     <div
