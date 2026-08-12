@@ -91,12 +91,17 @@ export function collectConsoleErrors(page: Page): string[] {
   return errors;
 }
 
-/** Noise we never want to fail a smoke run on (network flake, tile 4xx, extensions). */
+/** Noise we never want to fail a smoke run on (network flake, tile 4xx, dev-only React warnings). */
 const IGNORED_CONSOLE = [
   /favicon/i, /tile/i, /maps-tile-proxy/i, /net::ERR_/i,
   /ResizeObserver loop/i, /Download the React DevTools/i,
   /Failed to load resource/i, /the server responded with a status of 4\d\d/i,
+  // React/library development warnings — only emitted by the dev server, never
+  // in a production build, so they must not fail a post-deploy smoke run.
+  /^Warning:/i, /cannot be given refs/i, /forwardRef/i, /defaultProps/i,
+  /validateDOMNesting/i, /unique "key" prop/i, /React Router Future Flag/i,
 ];
+
 
 export function significantErrors(errors: string[]): string[] {
   return errors.filter((e) => !IGNORED_CONSOLE.some((rx) => rx.test(e)));
