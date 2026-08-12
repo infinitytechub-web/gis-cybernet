@@ -6,6 +6,7 @@ import {
 
 import { useAuth } from "@/hooks/useAuth";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { CapabilitySelfCheckPanel } from "@/components/admin/CapabilitySelfCheckPanel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,8 @@ export default function AdminConsole() {
         title="Admin Console"
         subtitle="One place for every administrative and security surface in the system. Each destination still enforces its own permissions."
       />
+
+      {(isAdmin || canManageCommandTier) && <CapabilitySelfCheckPanel />}
 
       {SECTIONS.map((section) => {
         const items = section.items.filter(visible);
