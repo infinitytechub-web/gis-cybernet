@@ -172,3 +172,56 @@ export function addBaseLayerSwitcher(
 
   return initial;
 }
+
+/**
+ * Attaches automatic tile failover to a map that manages its own base layer
+ * (no layer-switcher control). Pass an ordered chain of candidate tile layers,
+ * best first. The first candidate is added immediately; on repeated tile errors
+ * the next candidate is swapped in. When every candidate fails, `onExhausted`
+ * fires so the surface can show a "base map unavailable" state — markers and
+ * live tracking keep working regardless.
+ */
+export function attachTileFailover(
+  map: L.Map,
+  candidates: { name: string; layer: L.Layer; overlay?: L.Layer }[],
+  opts: { errorThreshold?: number; onSwitch?: (name: string) => void; onExhausted?: () => void } = {},
+) {
+  if (candidates.length === 0) return () => {};
+  const threshold = opts.errorThreshold ?? 6;
+  let index = 0;
+  let switching = false;
+  let errors = 0;
+  let windowStart = Date.now();
+
+  const show = (i: number) => {
+    candidates.forEach(({ layer, overlay }) => {
+      if (map.hasLayer(layer)) map.removeLayer(layer);
+      if (overlay && map.hasLayer(overlay)) map.removeLayer(overlay);
+    });
+    const c = candidates[i];
+    c.layer.addTo(map);
+    c.overlay?.addTo(map);
+  };
+
+  show(0);
+
+  const onError = () => {
+    if (switching) return;
+    if (Date.now() - windowStart > 10_000) { errors = 0; windowStart = Date.now(); }
+    errors += 1;
+    if (errors < threshold) return;
+    errors = 0;
+    if (index >= candidates.length - 1) {
+      opts.onExhausted?.();
+      return;
+    }
+    switching = true;
+    index += 1;
+    show(index);
+    opts.onSwitch?.(candidates[index].name);
+    setTimeout(() => { switching = false; }, 1500);
+  };
+
+  map.on("tileerror", onError);
+  return () => { map.off("tileerror", onError); };
+}
