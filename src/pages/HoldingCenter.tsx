@@ -27,6 +27,8 @@ import { ReferralSelect } from "@/components/detention/ReferralSelect";
 import {
   GENDER_OPTIONS, OTHER_AGENCY, REFERRAL_SOURCES, REFERRAL_DESTINATIONS, referralDisplay,
 } from "@/components/detention/detention-options";
+import { DuplicateCheckDialog } from "@/components/detention/DuplicateCheckDialog";
+import { checkDetaineeDuplicates, type DuplicateMatch } from "@/lib/detention-duplicates";
 import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
@@ -521,6 +523,11 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
   });
   const canApprove = ["admin", "oic", "2ic"].includes(role || "");
   const [approver, setApprover] = useState<{ id: string | null; label: string | null }>({ id: null, label: null });
+  // Duplicate detection state: matches found for the current identifiers.
+  const [dupes, setDupes] = useState<DuplicateMatch[]>([]);
+  const [dupesBlocked, setDupesBlocked] = useState(false);
+  const [dupeDialog, setDupeDialog] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -544,6 +551,33 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Detainee booked in"); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  /**
+   * Book-in entry point. Validates, then screens the identifiers against
+   * existing records: a blocking match (same ID/passport already in custody)
+   * stops the intake, a warning asks for confirmation, and a clean check books
+   * the detainee straight in.
+   */
+  const handleBookIn = async () => {
+    const problem = validateDetaineeForm(form);
+    if (problem) { toast.error(problem); return; }
+    setChecking(true);
+    try {
+      const { matches, blocked } = await checkDetaineeDuplicates(form);
+      if (matches.length > 0) {
+        setDupes(matches);
+        setDupesBlocked(blocked);
+        setDupeDialog(true);
+        return;
+      }
+      create.mutate();
+    } catch (e: any) {
+      toast.error(e?.message || "Duplicate check failed — intake not created");
+    } finally {
+      setChecking(false);
+    }
+  };
+
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -621,11 +655,24 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending} className="bg-rose-600 hover:bg-rose-700">{create.isPending ? "Booking…" : "Book In"}</Button>
+            <Button onClick={handleBookIn} disabled={create.isPending || checking} className="bg-rose-600 hover:bg-rose-700">
+              {checking ? "Checking for duplicates…" : create.isPending ? "Booking…" : "Book In"}
+            </Button>
           </div>
         </div>
+
+        <DuplicateCheckDialog
+          open={dupeDialog}
+          matches={dupes}
+          blocked={dupesBlocked}
+          statusLabel={statusLabel}
+          proceeding={create.isPending}
+          onCancel={() => setDupeDialog(false)}
+          onProceed={() => { setDupeDialog(false); create.mutate(); }}
+        />
       </DialogContent>
     </Dialog>
+
   );
 }
 

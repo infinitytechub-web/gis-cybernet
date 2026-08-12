@@ -9668,6 +9668,7 @@ export type Database = {
             }
             Returns: string
           }
+      can_access_detention: { Args: { _uid: string }; Returns: boolean }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
       can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_export_hrm: { Args: { _kind: string }; Returns: boolean }
@@ -9751,6 +9752,32 @@ export type Database = {
           start_date: string
         }[]
       }
+      detention_find_duplicates: {
+        Args: {
+          _alias?: string
+          _date_of_birth?: string
+          _exclude_id?: string
+          _first_name: string
+          _id_number?: string
+          _id_type?: string
+          _last_name: string
+        }
+        Returns: {
+          alias: string
+          cell_number: string
+          date_of_birth: string
+          first_name: string
+          id: string
+          id_number: string
+          id_type: string
+          intake_at: string
+          last_name: string
+          match_reason: string
+          severity: string
+          status: string
+        }[]
+      }
+      detention_norm: { Args: { _t: string }; Returns: string }
       email_queue_dispatch: { Args: never; Returns: undefined }
       empty_recycle_bin: { Args: never; Returns: Json }
       enqueue_email: {
