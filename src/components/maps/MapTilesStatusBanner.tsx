@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { useMapTilesPreflight } from "@/hooks/useMapTilesPreflight";
 import { cn } from "@/lib/utils";
@@ -14,8 +14,40 @@ interface Props {
 export function MapTilesStatusBanner({ className }: Props) {
   const status = useMapTilesPreflight();
   const [dismissed, setDismissed] = useState(false);
+  const [failover, setFailover] = useState<string | null>(null);
+  const [exhausted, setExhausted] = useState(false);
 
-  if (status.status !== "error" || dismissed) return null;
+  // Automatic tile failover reports which source it switched to, and tells us
+  // when every source has failed. GPS tracking keeps running either way.
+  useEffect(() => {
+    const onSwitch = (e: Event) => {
+      const to = (e as CustomEvent<{ to?: string }>).detail?.to;
+      setExhausted(false);
+      setFailover(to ?? "a backup provider");
+      setDismissed(false);
+    };
+    const onExhausted = () => { setExhausted(true); setDismissed(false); };
+    window.addEventListener("map-tiles-failover", onSwitch);
+    window.addEventListener("map-tiles-exhausted", onExhausted);
+    return () => {
+      window.removeEventListener("map-tiles-failover", onSwitch);
+      window.removeEventListener("map-tiles-exhausted", onExhausted);
+    };
+  }, []);
+
+  const showFailover = exhausted || !!failover;
+  if ((status.status !== "error" && !showFailover) || dismissed) return null;
+
+  const title = exhausted
+    ? "Base map unavailable — tracking still active"
+    : failover
+      ? `Base map switched to ${failover}`
+      : "Google tiles unavailable";
+  const detail = exhausted
+    ? "All tile providers are unreachable. Markers, routes and live tracking continue to update."
+    : failover
+      ? "The primary tile source failed, so a backup provider is being used."
+      : (status.status === "error" ? status.message : "");
 
   return (
     <div
@@ -29,8 +61,8 @@ export function MapTilesStatusBanner({ className }: Props) {
     >
       <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
       <div className="flex-1 min-w-0">
-        <div className="font-medium">Google tiles unavailable</div>
-        <div className="text-xs opacity-90">{status.message}</div>
+        <div className="font-medium">{title}</div>
+        <div className="text-xs opacity-90">{detail}</div>
       </div>
       <button
         type="button"

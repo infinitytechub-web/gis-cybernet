@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { generateSecurePassword } from "../_shared/csprng-password.ts";
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+import { hasStaffAdminAuthority, STAFF_ADMIN_DENIED } from "../_shared/staff-admin-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,13 +49,8 @@ Deno.serve(async (req) => {
     }
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: roles } = await admin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-    const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden: admin role required" }), {
+    if (!(await hasStaffAdminAuthority(admin, user.id))) {
+      return new Response(JSON.stringify({ error: STAFF_ADMIN_DENIED }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
