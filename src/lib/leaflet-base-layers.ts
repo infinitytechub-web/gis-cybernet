@@ -125,7 +125,12 @@ export function addBaseLayerSwitcher(
     if (switching) return;
     const chain = chains[chainKey] ?? chains.streets;
     const next = chain[chainIndex + 1];
-    if (!next) return; // exhausted — keep whatever is showing
+    if (!next) {
+      // Every source in the chain failed — tell the surface so it can show a
+      // "base map unavailable" state. GPS tracking is unaffected.
+      try { window.dispatchEvent(new CustomEvent("map-tiles-exhausted")); } catch { /* ignore */ }
+      return;
+    }
     switching = true;
     chainIndex += 1;
     // Remove every base layer, then add the next candidate.
