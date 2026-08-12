@@ -586,8 +586,8 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
             </ScrollArea>
           )}
           <DialogFooter>
-            <Button variant="outline" className="gap-1.5" onClick={() => viewing && printRecord(viewing)}>
-              <Printer className="h-4 w-4" /> Print
+            <Button variant="outline" className="gap-1.5" disabled={printMut.isPending} onClick={() => viewing && printRecord(viewing)}>
+              {printMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Print
             </Button>
             <Button onClick={() => setViewing(null)}>Close</Button>
           </DialogFooter>
