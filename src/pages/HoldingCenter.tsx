@@ -655,11 +655,24 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => create.mutate()} disabled={create.isPending} className="bg-rose-600 hover:bg-rose-700">{create.isPending ? "Booking…" : "Book In"}</Button>
+            <Button onClick={handleBookIn} disabled={create.isPending || checking} className="bg-rose-600 hover:bg-rose-700">
+              {checking ? "Checking for duplicates…" : create.isPending ? "Booking…" : "Book In"}
+            </Button>
           </div>
         </div>
+
+        <DuplicateCheckDialog
+          open={dupeDialog}
+          matches={dupes}
+          blocked={dupesBlocked}
+          statusLabel={statusLabel}
+          proceeding={create.isPending}
+          onCancel={() => setDupeDialog(false)}
+          onProceed={() => { setDupeDialog(false); create.mutate(); }}
+        />
       </DialogContent>
     </Dialog>
+
   );
 }
 
