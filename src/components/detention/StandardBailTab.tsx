@@ -251,7 +251,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
       <h2 style="font-size:13px;margin:12px 0 4px">Bailee</h2>
       <table style="font-size:12px;width:100%">
         ${row("Name", fullName(r))}
-        ${row("Gender / Nationality", `${r.bailee_gender ?? "—"} / ${r.bailee_nationality ?? "—"}`)}
+        ${row("Gender / Nationality", `${genderLabel(r.bailee_gender)} / ${r.bailee_nationality ?? "—"}`)}
         ${row("Phone", r.bailee_phone)}
         ${row("Address", r.bailee_address)}
         ${row("Identification", `${r.bailee_id_type ?? "—"} ${r.bailee_id_number ?? ""}`)}
@@ -268,7 +268,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
       <h2 style="font-size:13px;margin:12px 0 4px">Surety</h2>
       <table style="font-size:12px;width:100%">
         ${row("Name", r.surety_name)}
-        ${row("Relationship / Occupation", `${r.surety_relationship ?? "—"} / ${r.surety_occupation ?? "—"}`)}
+        ${row("Relationship / Occupation", `${relationshipDisplay(r.surety_relationship, r.surety_relationship_other) ?? "—"} / ${r.surety_occupation ?? "—"}`)}
         ${row("Phone", r.surety_phone)}
         ${row("Address", r.surety_address)}
         ${row("Identification", `${r.surety_id_type ?? "—"} ${r.surety_id_number ?? ""}`)}
