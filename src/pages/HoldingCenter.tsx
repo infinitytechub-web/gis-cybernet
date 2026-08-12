@@ -27,6 +27,8 @@ import { ReferralSelect } from "@/components/detention/ReferralSelect";
 import {
   GENDER_OPTIONS, OTHER_AGENCY, REFERRAL_SOURCES, REFERRAL_DESTINATIONS, referralDisplay,
 } from "@/components/detention/detention-options";
+import { DuplicateCheckDialog } from "@/components/detention/DuplicateCheckDialog";
+import { checkDetaineeDuplicates, type DuplicateMatch } from "@/lib/detention-duplicates";
 import { softDelete } from "@/lib/recycle-bin";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours } from "date-fns";
