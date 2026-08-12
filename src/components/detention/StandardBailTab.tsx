@@ -408,8 +408,20 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="First name *" value={form.bailee_first_name} onChange={(v) => set("bailee_first_name", v)} />
                   <Field label="Last name *" value={form.bailee_last_name} onChange={(v) => set("bailee_last_name", v)} />
-                  <Field label="Gender" value={form.bailee_gender} onChange={(v) => set("bailee_gender", v)} />
-                  <Field label="Nationality" value={form.bailee_nationality} onChange={(v) => set("bailee_nationality", v)} />
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select value={form.bailee_gender || "none"} onValueChange={(v) => set("bailee_gender", v === "none" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">—</SelectItem>
+                        {GENDER_OPTIONS.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nationality</Label>
+                    <CountryCombobox value={form.bailee_nationality} onValueChange={(v) => set("bailee_nationality", v)} placeholder="Select nationality..." />
+                  </div>
                   <Field label="Phone" value={form.bailee_phone} onChange={(v) => set("bailee_phone", v)} />
                   <Field label="Address" value={form.bailee_address} onChange={(v) => set("bailee_address", v)} />
                   <div className="space-y-2">
@@ -472,7 +484,36 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                 <h3 className="text-sm font-semibold">Surety</h3>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Full name" value={form.surety_name} onChange={(v) => set("surety_name", v)} />
-                  <Field label="Relationship to bailee" value={form.surety_relationship} onChange={(v) => set("surety_relationship", v)} />
+                  <div className="space-y-2">
+                    <Label>Relationship to bailee</Label>
+                    <Select
+                      value={form.surety_relationship || "none"}
+                      onValueChange={(v) => {
+                        const next = v === "none" ? "" : v;
+                        set("surety_relationship", next);
+                        if (next !== OTHER_RELATIONSHIP) set("surety_relationship_other", "");
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select relationship" /></SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        <SelectItem value="none">—</SelectItem>
+                        {RELATIONSHIP_OPTIONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {form.surety_relationship === OTHER_RELATIONSHIP && (
+                      <>
+                        <Input
+                          value={form.surety_relationship_other}
+                          onChange={(e) => set("surety_relationship_other", e.target.value)}
+                          placeholder="Specify relationship *"
+                          aria-invalid={!String(form.surety_relationship_other).trim()}
+                        />
+                        {!String(form.surety_relationship_other).trim() && (
+                          <p className="text-xs text-destructive">Please specify the relationship.</p>
+                        )}
+                      </>
+                    )}
+                  </div>
                   <Field label="Phone" value={form.surety_phone} onChange={(v) => set("surety_phone", v)} />
                   <Field label="Occupation" value={form.surety_occupation} onChange={(v) => set("surety_occupation", v)} />
                   <Field label="Address" value={form.surety_address} onChange={(v) => set("surety_address", v)} />
@@ -504,7 +545,16 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                       </SelectContent>
                     </Select>
                   </div>
-                  <Field label="Authorizing officer" value={form.authorized_by_name} onChange={(v) => set("authorized_by_name", v)} />
+                  <div className="space-y-2">
+                    <Label>Authorizing officer</Label>
+                    <StaffPicker
+                      value={null}
+                      label={form.authorized_by_name || null}
+                      title="Select authorizing officer"
+                      placeholder="Select officer from staff directory…"
+                      onChange={(_id, label) => set("authorized_by_name", label || "")}
+                    />
+                  </div>
                   <Field label="Officer rank / position" value={form.authorized_by_rank} onChange={(v) => set("authorized_by_rank", v)} />
                   <Field label="Signature name" value={form.authorized_signature_name} onChange={(v) => set("authorized_signature_name", v)} />
                 </div>
@@ -544,7 +594,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                 <Detail k="Amount" v={viewing.bail_amount ? `${viewing.currency ?? "GHS"} ${Number(viewing.bail_amount).toLocaleString()}` : "—"} />
                 <Detail k="Granted at" v={viewing.granted_at ? format(new Date(viewing.granted_at), "dd MMM yyyy HH:mm") : "—"} />
                 <Detail k="Status" v={String(viewing.authorization_status ?? "pending")} />
-                <Detail k="Gender" v={viewing.bailee_gender} />
+                <Detail k="Gender" v={genderLabel(viewing.bailee_gender)} />
                 <Detail k="Nationality" v={viewing.bailee_nationality} />
                 <Detail k="Phone" v={viewing.bailee_phone} />
                 <Detail k="Address" v={viewing.bailee_address} />
@@ -555,7 +605,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                 <Detail k="Report back" v={viewing.report_back_at ? format(new Date(viewing.report_back_at), "dd MMM yyyy HH:mm") : "—"} />
                 <Detail k="Surety" v={viewing.surety_name} />
                 <Detail k="Surety phone" v={viewing.surety_phone} />
-                <Detail k="Surety relationship" v={viewing.surety_relationship} />
+                <Detail k="Surety relationship" v={relationshipDisplay(viewing.surety_relationship, viewing.surety_relationship_other)} />
                 <Detail k="Authorizing officer" v={`${viewing.authorized_by_rank ?? ""} ${viewing.authorized_by_name ?? "—"}`} />
                 <Detail k="Remarks" v={viewing.authorization_remarks} />
                 <Detail k="Notes" v={viewing.notes} />
