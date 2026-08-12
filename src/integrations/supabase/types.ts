@@ -9689,6 +9689,18 @@ export type Database = {
         Returns: undefined
       }
       command_authority_level: { Args: { _user_id: string }; Returns: number }
+      command_capability_report: {
+        Args: { _target: string }
+        Returns: {
+          authority_level: number
+          capability: string
+          effective: boolean
+          expires_at: string
+          is_command_tier: boolean
+          roles: string[]
+          source: string
+        }[]
+      }
       compute_interlink_next_run: {
         Args: {
           _day_of_month: number
