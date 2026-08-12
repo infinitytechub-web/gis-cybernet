@@ -710,8 +710,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Charge" value={record.charge_description} full />
               <Field label="Arrest Location" value={record.location_of_arrest} />
               <Field label="Arresting Officer" value={record.arresting_officer_name} />
-              <Field label="Referred from" value={record.referred_from} />
-              <Field label="Referred to" value={record.referred_to} />
+              <Field label="Referred from" value={referralDisplay(record.referred_from, record.referred_from_other)} />
+              <Field label="Referred to" value={referralDisplay(record.referred_to, record.referred_to_other)} />
               <Field label="Statement Approved by" value={record.statement_approved_by_name} />
               <Field label="Intake" value={format(new Date(record.intake_at), "MMM d, yyyy HH:mm")} />
               <Field label="Custody Duration" value={`${differenceInHours(record.released_at ? new Date(record.released_at) : new Date(), new Date(record.intake_at))} hrs`} />
