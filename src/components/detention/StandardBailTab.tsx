@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { openPrintWindow } from "@/lib/safe-print";
+import { prepareBailPrintDocument } from "@/lib/bail-print-templates";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { StaffPicker } from "@/components/detention/StaffPicker";
 import {
