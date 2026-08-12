@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { openPrintWindow } from "@/lib/safe-print";
-import { CountryCombobox } from "@/components/shared/CountryCombobox";
+import { CountryCombobox } from "@/components/ui/country-combobox";
 import { StaffPicker } from "@/components/detention/StaffPicker";
 import {
   GENDER_OPTIONS, OTHER_RELATIONSHIP, RELATIONSHIP_OPTIONS, genderLabel, relationshipDisplay,
