@@ -19,6 +19,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test -c playwright.e2e.config.ts",
     "test:a11y": "playwright test -c playwright.e2e.config.ts tests/a11y",
+    "test:smoke": "playwright test -c playwright.smoke.config.ts",
+    "test:smoke:prod": "E2E_BASE_URL=https://giscybernet-hrm.lovable.app playwright test -c playwright.smoke.config.ts",
     "check:edge": "bash scripts/check-edge-function.sh",
     "check:edge:all": "bash scripts/check-edge-function.sh",
     "check:edge:strict": "bash scripts/check-edge-function.sh --lint-strict",

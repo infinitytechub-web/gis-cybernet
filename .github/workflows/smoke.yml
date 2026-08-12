@@ -1,0 +1,44 @@
+name: Post-Deploy Smoke
+
+# Read-only smoke suite: auth flows, map tile failover, permission checks.
+# Run it manually after a deploy (or on a schedule) against any environment.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL to smoke test (blank = build + local preview)"
+        required: false
+        default: "https://giscybernet-hrm.lovable.app"
+  schedule:
+    - cron: "0 7 * * 1" # Monday morning health check
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - run: bun install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+      - name: Run smoke suite
+        env:
+          CI: "true"
+          E2E_BASE_URL: ${{ github.event.inputs.base_url }}
+          E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: npx playwright test -c playwright.smoke.config.ts
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-smoke
+          path: playwright-report-smoke
+          retention-days: 14
