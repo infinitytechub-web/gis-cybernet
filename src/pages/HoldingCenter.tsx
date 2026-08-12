@@ -560,7 +560,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div><Label>Gender *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                  <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                  <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
