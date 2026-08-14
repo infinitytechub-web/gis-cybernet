@@ -4,10 +4,9 @@ import { format, isValid, parse } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DateInput } from "@/components/ui/date-input";
 
 /**
- * Drop-in replacement for `<DateInput  />`.
+ * Drop-in replacement for the native date input.
  *
  * Native date inputs render in the BROWSER's locale (US machines show
  * month-first order), which breaks the house standard. This control always displays
