@@ -95,6 +95,6 @@ export function ageGroup(dob: Date | string | null | undefined): string {
   if (years <= 35) return "26–35";
   if (years <= 45) return "36–45";
 
-  if (a.years <= 60) return "46–60";
+  if (years <= 60) return "46–60";
   return "60+";
 }
