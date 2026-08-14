@@ -255,7 +255,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
       if (decision === "declined" && !remarks.trim()) throw new Error("A reason is required to deny bail");
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, last_name, rank_text")
+        .select("first_name, last_name, ranks(abbreviation)")
         .eq("id", user!.id)
         .maybeSingle();
       const name = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() : null;
@@ -266,7 +266,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
           authorization_remarks: remarks.trim() || null,
           authorized_by: user!.id,
           authorized_by_name: name || null,
-          authorized_by_rank: (profile as any)?.rank_text ?? null,
+          authorized_by_rank: (profile as any)?.ranks?.abbreviation ?? null,
           authorized_signature_name: name || null,
           authorized_at: decision === "authorized" ? new Date().toISOString() : null,
         } as any)
