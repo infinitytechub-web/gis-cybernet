@@ -26,13 +26,18 @@ import { StaffPicker } from "@/components/detention/StaffPicker";
 import { ReferralSelect } from "@/components/detention/ReferralSelect";
 import {
   GENDER_OPTIONS, OTHER_AGENCY, REFERRAL_SOURCES, REFERRAL_DESTINATIONS, referralDisplay,
+  OFFENSE_GROUPS, offenseCategory,
 } from "@/components/detention/detention-options";
 import { DuplicateCheckDialog } from "@/components/detention/DuplicateCheckDialog";
 import { checkDetaineeDuplicates, type DuplicateMatch } from "@/lib/detention-duplicates";
 import { softDelete } from "@/lib/recycle-bin";
+import { AgeDisplay } from "@/components/ui/age-display";
+import { formatDate, formatDateTime, ageLabel, ageGroup, DATE_FORMAT_HINT } from "@/lib/date-format";
 import { toast } from "sonner";
-import { format, formatDistanceToNow, differenceInHours } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDays, subMonths, startOfDay } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
+import { SelectGroup, SelectLabel } from "@/components/ui/select";
+
 
 const PIE_COLORS = ["hsl(var(--primary))", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6"];
 const STATUS_COLORS: Record<string, string> = {
