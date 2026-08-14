@@ -65,15 +65,31 @@ export function StaffPicker({
     enabled: open,
     staleTime: 60_000,
     queryFn: async () => {
+      // NOTE: `user_roles` has no foreign key to `profiles` (it references
+      // auth.users), so it must NOT be embedded here — PostgREST returns 400
+      // and the directory would render empty. Roles are fetched separately.
       let q = (supabase.from("profiles") as any)
-        .select("id, staff_id, first_name, last_name, status, unit, ranks(abbreviation, name), departments(name), user_roles(role)")
+        .select("id, user_id, staff_id, first_name, last_name, status, unit, ranks(abbreviation, name), departments(name)")
         .order("last_name")
         .limit(2000);
       if (!includeInactive) q = q.eq("status", "active");
       const { data, error } = await q;
       if (error) throw error;
+
+      const rows = (data ?? []) as any[];
+      const roleByUser = new Map<string, string>();
+      const userIds = rows.map((p) => p.user_id).filter(Boolean);
+      if (userIds.length) {
+        const { data: roles } = await (supabase.from("user_roles") as any)
+          .select("user_id, role")
+          .in("user_id", userIds.slice(0, 2000));
+        for (const r of (roles ?? []) as any[]) {
+          if (!roleByUser.has(r.user_id)) roleByUser.set(r.user_id, r.role);
+        }
+      }
+
       const seen = new Set<string>();
-      return ((data ?? []) as any[])
+      return rows
         .filter((p) => (p.id && !seen.has(p.id) ? (seen.add(p.id), true) : false))
         .map((p) => ({
           id: p.id,
@@ -85,7 +101,7 @@ export function StaffPicker({
           rank_name: p.ranks?.name ?? null,
           department: p.departments?.name ?? null,
           unit: p.unit ?? null,
-          role: p.user_roles?.[0]?.role ?? null,
+          role: (p.user_id ? roleByUser.get(p.user_id) : null) ?? null,
         })) as StaffOption[];
     },
   });

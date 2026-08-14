@@ -44,15 +44,23 @@ export function AuthorisedByPicker({ value, onChange }: Props) {
     queryKey: ["authorising-officer-selected", value],
     enabled: !!value,
     queryFn: async () => {
+      // `user_roles` cannot be embedded on `profiles` (no FK — it points at
+      // auth.users); PostgREST rejects such a select with 400.
       const { data, error } = await (supabase
         .from("profiles") as any)
-        .select("id, first_name, last_name, ranks(abbreviation), departments(name), user_roles(role)")
+        .select("id, user_id, first_name, last_name, ranks(abbreviation), departments(name)")
         .eq("id", value!)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const role = (data as any).user_roles?.find((r: any) => r.role === "oic" || r.role === "2ic")?.role
-        ?? (data as any).user_roles?.[0]?.role ?? "";
+      let role = "";
+      if ((data as any).user_id) {
+        const { data: roles } = await (supabase.from("user_roles") as any)
+          .select("role")
+          .eq("user_id", (data as any).user_id);
+        const list = ((roles ?? []) as any[]).map((r) => r.role);
+        role = list.find((r) => r === "oic" || r === "2ic") ?? list[0] ?? "";
+      }
       return {
         id: data.id,
         first_name: data.first_name,
