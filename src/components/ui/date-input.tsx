@@ -98,15 +98,13 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
         />
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              disabled={disabled}
-              aria-label="Open calendar (DD/MM/YYYY)"
-              className="absolute right-0 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <CalendarIcon className="h-4 w-4" />
-            </button>
+          <PopoverTrigger
+            type="button"
+            disabled={disabled}
+            aria-label="Open calendar (DD/MM/YYYY)"
+            className="absolute right-0 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CalendarIcon className="h-4 w-4" />
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
             <Calendar
