@@ -48,7 +48,7 @@ function buildDepartmentDocHTML(dept: any) {
     // @ts-ignore lucide accepts these props
     <Icon width={56} height={56} stroke="#1e3a8a" strokeWidth={1.6} />
   );
-  const created = dept.created_at ? fmtDate(new Date(dept.created_at), "dd MMM yyyy") : "—";
+  const created = dept.created_at ? fmtDate(new Date(dept.created_at), "dd/MM/yyyy") : "—";
   const safe = (s?: string | null) => (s ?? "—").toString().replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] as string));
   return `<!doctype html>
 <html><head><meta charset="utf-8"/><title>${safe(dept.name)} — Department Profile</title>
@@ -92,7 +92,7 @@ function buildDepartmentDocHTML(dept: any) {
     </div>
     <div class="footer">
       <span class="stamp">GIS · ASC</span>
-      <span>Generated ${fmtDate(new Date(), "dd MMM yyyy HH:mm")}</span>
+      <span>Generated ${fmtDate(new Date(), "dd/MM/yyyy HH:mm")}</span>
     </div>
   </div>
 </body></html>`;

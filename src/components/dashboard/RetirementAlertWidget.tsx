@@ -46,7 +46,7 @@ export default function RetirementAlertWidget() {
           name: `${(p as any).last_name ?? ""}, ${(p as any).first_name ?? ""}`.trim(),
           remaining: `${r.years}y ${r.months}m ${r.days}d`,
           totalYears,
-          retireDate: format(retire, "dd MMM yyyy"),
+          retireDate: format(retire, "dd/MM/yyyy"),
         });
       }
       return rows.sort((a, b) => a.totalYears - b.totalYears);
@@ -123,7 +123,7 @@ export default function RetirementAlertWidget() {
           </div>
         )}
         <p className="text-xs text-muted-foreground pt-3">
-          Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
+          Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd/MM/yyyy HH:mm:ss") : "—"}
         </p>
       </CardContent>
     </Card>

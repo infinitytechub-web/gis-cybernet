@@ -44,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h2 className="text-sm font-semibold flex-1 truncate" style={{ color: "hsl(var(--brand-accent))" }}>{company_name}: {branding.system_label}</h2>
               <span className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums shrink-0">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {format(clock, "EEE, dd MMM yyyy")}
+                {format(clock, "EEE, dd/MM/yyyy")}
                 <span className="mx-0.5 opacity-40">·</span>
                 <Clock className="h-3.5 w-3.5" />
                 {clock.toLocaleTimeString()}
@@ -66,7 +66,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Compact date & clock row for mobile */}
             <div className="sm:hidden flex items-center justify-center gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
               <CalendarDays className="h-3 w-3" />
-              {format(clock, "EEE, dd MMM yyyy")}
+              {format(clock, "EEE, dd/MM/yyyy")}
               <span className="opacity-40">·</span>
               <Clock className="h-3 w-3" />
               {clock.toLocaleTimeString()}

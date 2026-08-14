@@ -119,7 +119,7 @@ export function ManualAssignDialog({ nightGuardStaff, shifts }: Props) {
             <div className="rounded-md border p-3 space-y-2">
               <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
-                Already assigned on {format(new Date(startDate + "T00:00:00"), "dd MMM yyyy")}
+                Already assigned on {format(new Date(startDate + "T00:00:00"), "dd/MM/yyyy")}
               </p>
               {existingAssignments.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">No guards assigned yet</p>

@@ -155,7 +155,7 @@ export function StoresReportsTab() {
     if (fmt === "csv") {
       const lines: string[] = [];
       lines.push(`"Stores & Inventory — Combined Report"`);
-      lines.push(`"Generated","${format(new Date(), "PPpp")}"`);
+      lines.push(`"Generated","${format(new Date(), "dd/MM/yyyy HH:mm:ss")}"`);
       lines.push(`"Total stock value","₵${valuation.total.toFixed(2)}"`);
       lines.push("");
       sections.forEach(s => {
@@ -184,7 +184,7 @@ export function StoresReportsTab() {
     });
     exportReport("pdf", {
       title: "Stores & Inventory — Combined Report",
-      subtitle: `Generated ${format(new Date(), "PPpp")} · Total value ₵${valuation.total.toFixed(2)}`,
+      subtitle: `Generated ${format(new Date(), "dd/MM/yyyy HH:mm:ss")} · Total value ₵${valuation.total.toFixed(2)}`,
       filename: `stores-combined-report-${today}`,
       headers,
       rows,
@@ -485,7 +485,7 @@ export function StoresReportsTab() {
                       r.expected_return_date < new Date().toISOString().slice(0, 10);
                     return (
                       <TableRow key={r.id} className={isOverdue ? "bg-destructive/5" : ""}>
-                        <TableCell className="text-xs">{format(new Date(r.issued_at), "PP")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(r.issued_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="font-medium text-xs">{r.inventory_items?.name ?? "—"}</TableCell>
                         <TableCell className="text-right text-xs">
                           {Number(r.quantity)} {r.inventory_items?.unit}
@@ -503,7 +503,7 @@ export function StoresReportsTab() {
                               variant={isOverdue ? "destructive" : "secondary"}
                               className="font-normal"
                             >
-                              {format(new Date(r.expected_return_date), "PP")}
+                              {format(new Date(r.expected_return_date), "dd/MM/yyyy")}
                               {isOverdue && " · overdue"}
                             </Badge>
                           ) : (

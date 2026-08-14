@@ -122,7 +122,7 @@ function buildOptions(rows: ServerGpsRow[], filters: GpsExportFilters) {
       (r.label ?? "").replace(/_/g, " "),
       r.reference ?? "",
       r.status ?? "",
-      format(new Date(r.created_at), "dd MMM yyyy, HH:mm"),
+      format(new Date(r.created_at), "dd/MM/yyyy, HH:mm"),
     ];
   });
 
@@ -130,8 +130,8 @@ function buildOptions(rows: ServerGpsRow[], filters: GpsExportFilters) {
   if (filters.sources && filters.sources.length > 0) {
     filterParts.push(`Sources: ${filters.sources.map((s) => SOURCE_LABEL[s] ?? s).join(", ")}`);
   }
-  if (filters.from) filterParts.push(`From: ${format(new Date(filters.from), "dd MMM yyyy")}`);
-  if (filters.to) filterParts.push(`To: ${format(new Date(filters.to), "dd MMM yyyy")}`);
+  if (filters.from) filterParts.push(`From: ${format(new Date(filters.from), "dd/MM/yyyy")}`);
+  if (filters.to) filterParts.push(`To: ${format(new Date(filters.to), "dd/MM/yyyy")}`);
 
   const cappedNote = rows.length >= GPS_EXPORT_MAX_ROWS
     ? ` · capped at ${GPS_EXPORT_MAX_ROWS.toLocaleString()} rows`

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { AgeDisplay } from "@/components/ui/age-display";
+import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -232,7 +234,7 @@ export default function MyProfile() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Date of birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
+            <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
             <div>
               <Label>Marital status</Label>
               <Select value={form.marital_status || ""} onValueChange={(v) => setForm({ ...form, marital_status: v })}>

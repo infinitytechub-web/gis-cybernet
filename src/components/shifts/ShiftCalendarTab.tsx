@@ -75,7 +75,7 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium">
-            {format(weekStart, "dd MMM")} – {format(addDays(weekStart, 6), "dd MMM yyyy")}
+            {format(weekStart, "dd MMM")} – {format(addDays(weekStart, 6), "dd/MM/yyyy")}
           </span>
           <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
             <ChevronRight className="h-4 w-4" />
@@ -97,7 +97,7 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
 
           <ExportMenu
             getData={() => ({
-              title: `Shift Schedule — ${format(weekStart, "dd MMM")} to ${format(addDays(weekStart, 6), "dd MMM yyyy")}`,
+              title: `Shift Schedule — ${format(weekStart, "dd MMM")} to ${format(addDays(weekStart, 6), "dd/MM/yyyy")}`,
               filename: `shifts_${format(weekStart, "yyyy-MM-dd")}`,
               headers,
               rows: buildExportRows(),

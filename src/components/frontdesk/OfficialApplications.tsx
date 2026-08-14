@@ -254,7 +254,7 @@ export default function OfficialApplications() {
                 <TableCell>{app.nationality}</TableCell>
                 <TableCell><Badge variant="outline">{app.official_type}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
-                <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
+                <TableCell className="text-sm">{format(new Date(app.created_at), "dd/MM/yyyy")}</TableCell>
                 <TableCell>
                   <RecordRowActions
                     kind="official_application"

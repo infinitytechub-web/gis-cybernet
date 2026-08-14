@@ -602,7 +602,7 @@ function IssuanceTab({ canManage, userId }: { canManage: boolean; userId?: strin
                 {issuance.length === 0 ? <TableRow><TableCell colSpan={canManage ? 6 : 5} className="text-center py-6 text-muted-foreground">No issuance records</TableCell></TableRow>
                 : issuance.map((i: any) => (
                   <TableRow key={i.id}>
-                    <TableCell className="text-xs whitespace-nowrap">{format(new Date(i.issued_at), "MMM d, yyyy")}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{format(new Date(i.issued_at), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="font-medium">{i.inventory_items?.name}</TableCell>
                     <TableCell><div className="text-sm">{i.profiles?.first_name} {i.profiles?.last_name}</div><div className="text-xs text-muted-foreground font-mono">{i.profiles?.staff_id}</div></TableCell>
                     <TableCell className="text-right font-semibold">{Number(i.quantity)} {i.inventory_items?.unit}</TableCell>

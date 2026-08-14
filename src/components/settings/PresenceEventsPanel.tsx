@@ -370,7 +370,7 @@ export function PresenceEventsPanel() {
                   return (
                     <TableRow key={e.id}>
                       <TableCell className="text-xs whitespace-nowrap">
-                        <div>{format(new Date(e.created_at), "PPp")}</div>
+                        <div>{format(new Date(e.created_at), "dd/MM/yyyy HH:mm")}</div>
                         <div className="text-muted-foreground">
                           {formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}
                         </div>
@@ -406,10 +406,10 @@ export function PresenceEventsPanel() {
                       </TableCell>
                       <TableCell className="text-xs">{e.current_page ?? "—"}</TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
-                        {format(new Date(e.last_active_at), "PPp")}
+                        {format(new Date(e.last_active_at), "dd/MM/yyyy HH:mm")}
                       </TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
-                        {e.pruned_at ? format(new Date(e.pruned_at), "PPp") : "—"}
+                        {e.pruned_at ? format(new Date(e.pruned_at), "dd/MM/yyyy HH:mm") : "—"}
                       </TableCell>
                       <TableCell className="text-xs">
                         {e.window_minutes != null ? `${e.window_minutes} min` : "—"}

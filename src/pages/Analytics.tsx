@@ -391,7 +391,7 @@ export default function Analytics() {
       ["Expired Documents", String(complianceSummary.expiredDocs)],
       ["Expired Certifications", String(complianceSummary.expiredCerts)],
     ],
-    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`,
+    subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"}`,
   });
 
   const getComplianceData = () => ({
@@ -403,7 +403,7 @@ export default function Analytics() {
       ["Certifications", String(complianceSummary.totalCerts), String(complianceSummary.expiredCerts), "—", complianceSummary.expiredCerts > 0 ? "Action Required" : "Compliant"],
       ["Equipment Issued", String(complianceSummary.issuedEquip), "—", "—", "Tracked"],
     ],
-    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+    subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`,
   });
 
   const getDeptAttendanceData = () => ({
@@ -411,7 +411,7 @@ export default function Analytics() {
     filename: `GIS_ASC_Dept_Attendance_${format(new Date(), "yyyy-MM-dd")}`,
     headers: ["Department", "Present", "Late", "Absent", "Total", "Rate (%)"],
     rows: deptAttendance.map((d) => [d.name, String(d.present), String(d.late), String(d.absent), String(d.total), `${d.rate}%`]),
-    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`,
   });
 
   const getAttendanceTrendData = () => ({
@@ -419,7 +419,7 @@ export default function Analytics() {
     filename: `GIS_ASC_Attendance_Trend_${format(new Date(), "yyyy-MM-dd")}`,
     headers: ["Date", "Present", "Late", "Absent", "Total"],
     rows: attendanceTrend.map((d) => [d.date, String(d.present), String(d.late), String(d.absent), String(d.total)]),
-    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`,
   });
 
   const getWeeklyComparisonData = () => ({
@@ -427,7 +427,7 @@ export default function Analytics() {
     filename: `GIS_ASC_Weekly_Comparison_${format(new Date(), "yyyy-MM-dd")}`,
     headers: ["Week", "Present", "Late", "Absent", "Total", "Rate (%)", "Change (%)"],
     rows: weeklyComparison.map((w) => [w.week, String(w.present), String(w.late), String(w.absent), String(w.total), `${w.rate}%`, `${w.change > 0 ? "+" : ""}${w.change}%`]),
-    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`,
   });
 
   const getDeptSparklineData = () => ({
@@ -435,7 +435,7 @@ export default function Analytics() {
     filename: `GIS_ASC_Dept_Rate_Trends_${format(new Date(), "yyyy-MM-dd")}`,
     headers: ["Department", "Latest Rate (%)", "Trend", ...( deptSparklines[0]?.points.map(p => `W/${p.week}`) ?? [])],
     rows: deptSparklines.map((d) => [d.dept, `${d.latest}%`, d.trend === "up" ? "↑" : "↓", ...d.points.map(p => `${p.rate}%`)]),
-    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`,
+    subtitle: `Period: Last ${period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "12 months"} | Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`,
   });
 
   const getRolesData = () => ({
@@ -443,7 +443,7 @@ export default function Analytics() {
     filename: `GIS_ASC_Role_Statistics_${format(new Date(), "yyyy-MM-dd")}`,
     headers: ["Role", "Total", "Active", "Inactive", "Share (%)", "Top Department"],
     rows: rolesStats.rows.map((r) => [r.label, String(r.count), String(r.active), String(r.inactive), `${r.pct}%`, r.topDept]),
-    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Total Assigned Roles: ${rolesStats.total}`,
+    subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Total Assigned Roles: ${rolesStats.total}`,
   });
 
   return (
@@ -926,7 +926,7 @@ export default function Analytics() {
                         <TableCell className="text-xs capitalize">{inc.incident_type.replace(/_/g, " ")}</TableCell>
                         <TableCell><Badge className={`text-xs ${SEVERITY_COLORS[inc.severity] || ""}`}>{inc.severity}</Badge></TableCell>
                         <TableCell><Badge className={`text-xs ${STATUS_COLORS[inc.status] || ""}`}>{inc.status}</Badge></TableCell>
-                        <TableCell className="text-xs">{format(new Date(inc.created_at), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(inc.created_at), "dd/MM/yyyy")}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

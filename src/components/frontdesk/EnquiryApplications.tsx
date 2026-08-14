@@ -256,7 +256,7 @@ export default function EnquiryApplications() {
                 <TableCell>{app.nationality}</TableCell>
                 <TableCell><Badge variant="outline">{app.enquiry_type.replace("_", " ")}</Badge></TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
-                <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
+                <TableCell className="text-sm">{format(new Date(app.created_at), "dd/MM/yyyy")}</TableCell>
                 <TableCell>
                   <RecordRowActions
                     kind="enquiry_application"

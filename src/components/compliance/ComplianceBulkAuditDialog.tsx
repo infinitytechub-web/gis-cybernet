@@ -336,7 +336,7 @@ export function ComplianceBulkAuditDialog() {
                       <span className="text-muted-foreground">→</span>
                       <span>{labelFor(first.target, first.target_profile_id.slice(0, 8))}</span>
                       <span className="text-muted-foreground ml-auto">
-                        {format(new Date(first.created_at), "dd MMM yyyy HH:mm")}
+                        {format(new Date(first.created_at), "dd/MM/yyyy HH:mm")}
                       </span>
                       <Badge className="bg-emerald-100 text-emerald-800">{ok} uploaded</Badge>
                       {failed > 0 && <Badge variant="destructive">{failed} failed</Badge>}

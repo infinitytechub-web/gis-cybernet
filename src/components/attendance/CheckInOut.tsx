@@ -200,7 +200,7 @@ export function CheckInOut() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-secondary">
           <Clock className="h-5 w-5 text-primary" />
-          My Attendance — {format(new Date(), "PPP")}
+          My Attendance — {format(new Date(), "dd/MM/yyyy")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -116,7 +116,7 @@ export function InventoryThresholdAuditTrail() {
               {intact ? (
                 <><ShieldCheck className="h-3 w-3 mr-1" />{verifyResult.verified}/{verifyResult.total} intact</>
               ) : (
-                <><ShieldAlert className="h-3 w-3 mr-1" />break at {verifyResult.first_break_at && format(new Date(verifyResult.first_break_at), "PPp")}</>
+                <><ShieldAlert className="h-3 w-3 mr-1" />break at {verifyResult.first_break_at && format(new Date(verifyResult.first_break_at), "dd/MM/yyyy HH:mm")}</>
               )}
             </Badge>
           )}
@@ -153,7 +153,7 @@ export function InventoryThresholdAuditTrail() {
                     <span className="ml-auto text-muted-foreground">
                       {formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}
                       {" · "}
-                      {format(new Date(e.created_at), "PPp")}
+                      {format(new Date(e.created_at), "dd/MM/yyyy HH:mm")}
                     </span>
                   </div>
                   <div className="text-muted-foreground">

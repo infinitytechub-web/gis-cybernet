@@ -336,7 +336,7 @@ export default function CommandRoleAudit() {
                 {rows.map((r: any) => (
                   <TableRow key={r.id}>
                     <TableCell className="text-[11px] whitespace-nowrap">
-                      {r.created_at ? format(new Date(r.created_at), "dd MMM yyyy HH:mm") : "—"}
+                      {r.created_at ? format(new Date(r.created_at), "dd/MM/yyyy HH:mm") : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge className={cn(

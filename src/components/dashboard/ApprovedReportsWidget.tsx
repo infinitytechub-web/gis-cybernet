@@ -107,7 +107,7 @@ export default function ApprovedReportsWidget({ variant = "standard" }: Props) {
                       {String(r.severity).toUpperCase()}
                     </Badge>
                   )}
-                  <span>{format(new Date(r.report_date), "dd MMM yyyy")}</span>
+                  <span>{format(new Date(r.report_date), "dd/MM/yyyy")}</span>
                 </div>
                 {isIpse && r.ipse_comment && (
                   <div className="text-[10px] italic text-muted-foreground mt-0.5 truncate" title={r.ipse_comment}>

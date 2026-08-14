@@ -234,7 +234,7 @@ export function ApprovalAuditTrail({ entityType, entityId, pageSize = 20 }: Prop
                       className={cn("w-full justify-start mt-1", !fromDate && "text-muted-foreground")}
                     >
                       <CalendarIcon className="h-3.5 w-3.5 mr-2" />
-                      {fromDate ? format(fromDate, "PP") : "Any"}
+                      {fromDate ? format(fromDate, "dd/MM/yyyy") : "Any"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -259,7 +259,7 @@ export function ApprovalAuditTrail({ entityType, entityId, pageSize = 20 }: Prop
                       className={cn("w-full justify-start mt-1", !toDate && "text-muted-foreground")}
                     >
                       <CalendarIcon className="h-3.5 w-3.5 mr-2" />
-                      {toDate ? format(toDate, "PP") : "Any"}
+                      {toDate ? format(toDate, "dd/MM/yyyy") : "Any"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -344,7 +344,7 @@ export function ApprovalAuditTrail({ entityType, entityId, pageSize = 20 }: Prop
                   {role && <span className="text-xs text-muted-foreground"> ({role})</span>}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {format(new Date(row.created_at), "PPp")}
+                  {format(new Date(row.created_at), "dd/MM/yyyy HH:mm")}
                   {row.previous_status && row.new_status && row.previous_status !== row.new_status && (
                     <> · status: <span className="font-mono">{row.previous_status}</span> → <span className="font-mono">{row.new_status}</span></>
                   )}

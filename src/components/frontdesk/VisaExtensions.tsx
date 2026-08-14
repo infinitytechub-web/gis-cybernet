@@ -328,10 +328,10 @@ export default function VisaExtensions() {
               <TableRow key={ext.id}>
                 <TableCell className="font-medium">{ext.applicant_name}</TableCell>
                 <TableCell>{ext.passport_number}</TableCell>
-                <TableCell>{format(new Date(ext.current_visa_expiry), "dd MMM yyyy")}</TableCell>
-                <TableCell>{format(new Date(ext.requested_extension_date), "dd MMM yyyy")}</TableCell>
+                <TableCell>{format(new Date(ext.current_visa_expiry), "dd/MM/yyyy")}</TableCell>
+                <TableCell>{format(new Date(ext.requested_extension_date), "dd/MM/yyyy")}</TableCell>
                 <TableCell>{statusBadge(ext.status)}</TableCell>
-                <TableCell className="text-sm">{format(new Date(ext.created_at), "dd MMM yyyy")}</TableCell>
+                <TableCell className="text-sm">{format(new Date(ext.created_at), "dd/MM/yyyy")}</TableCell>
                 <TableCell>
                   <RecordRowActions
                     kind="visa_extension"

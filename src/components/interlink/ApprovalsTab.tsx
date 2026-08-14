@@ -216,7 +216,7 @@ export function ApprovalsTab() {
                         <Badge variant={d.source === "scheduled" ? "default" : "secondary"} className="text-[10px] capitalize">{d.source}</Badge>
                       </TableCell>
                       <TableCell className="text-xs">{d.recipient_count} · {d.attachment_count} files</TableCell>
-                      <TableCell className="text-xs">{format(new Date(d.created_at), "PP p")}</TableCell>
+                      <TableCell className="text-xs">{format(new Date(d.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" onClick={() => setSelected(d)}>
                           <Eye className="h-3.5 w-3.5 mr-1" /> Review
@@ -254,7 +254,7 @@ export function ApprovalsTab() {
                       <div key={t.id} className="text-xs py-1 border-b last:border-0">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-[9px]">{t.action}</Badge>
-                          <span className="text-muted-foreground">{format(new Date(t.created_at), "PP p")}</span>
+                          <span className="text-muted-foreground">{format(new Date(t.created_at), "dd/MM/yyyy HH:mm")}</span>
                         </div>
                         {t.comment && <p className="text-muted-foreground italic mt-0.5">"{t.comment}"</p>}
                         <p className="text-[10px] text-muted-foreground font-mono truncate">hash: {t.entry_hash?.slice(0, 24)}…</p>
@@ -289,7 +289,7 @@ export function ApprovalsTab() {
                   </>
                 )}
                 {selected.workflow_state === "approved" && (
-                  <p className="text-xs text-muted-foreground">Approved {selected.approved_at && format(new Date(selected.approved_at), "PP p")}. Use Compose tab to send.</p>
+                  <p className="text-xs text-muted-foreground">Approved {selected.approved_at && format(new Date(selected.approved_at), "dd/MM/yyyy HH:mm")}. Use Compose tab to send.</p>
                 )}
               </DialogFooter>
             </>

@@ -75,7 +75,7 @@ export default function AttendanceLogWidget() {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex flex-wrap items-center gap-2">
           <ClipboardCheck className="h-4 w-4 text-primary" />
-          {isToday ? "Today's Attendance Log" : `Attendance — ${format(selectedDate, "dd MMM yyyy")}`}
+          {isToday ? "Today's Attendance Log" : `Attendance — ${format(selectedDate, "dd/MM/yyyy")}`}
           <Popover>
             <PopoverTrigger asChild>
               <Button

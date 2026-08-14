@@ -216,7 +216,7 @@ export function PostingTimeline() {
                       className="text-sm font-semibold text-foreground"
                       dateTime={r.effective_date}
                     >
-                      {format(parseISO(r.effective_date), "PPP")}
+                      {format(parseISO(r.effective_date), "dd/MM/yyyy")}
                     </time>
                     <Badge variant="outline" className={`${meta.className} gap-1`}>
                       <Icon className="h-3 w-3" />
@@ -233,9 +233,9 @@ export function PostingTimeline() {
                     <p className="mt-1.5 text-sm text-muted-foreground italic">"{r.remarks}"</p>
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Recorded {format(new Date(r.created_at), "PP")}
+                    Recorded {format(new Date(r.created_at), "dd/MM/yyyy")}
                     {r.status !== "pending" && r.updated_at && r.updated_at !== r.created_at && (
-                      <> · {meta.label.toLowerCase()} {format(new Date(r.updated_at), "PP")}</>
+                      <> · {meta.label.toLowerCase()} {format(new Date(r.updated_at), "dd/MM/yyyy")}</>
                     )}
                   </p>
                 </li>

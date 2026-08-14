@@ -178,7 +178,7 @@ async function generatePDF({ title, filename, headers, rows, subtitle, meta, ima
     // Footer band: timestamp on left, attribution + optional QR on right.
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
-    doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Page ${i} of ${pageCount}`, 14, pageHeight - 8);
+    doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Page ${i} of ${pageCount}`, 14, pageHeight - 8);
     doc.text("Powered by Infinity Techub Intelligence", pageWidth - 14, pageHeight - 8, { align: "right" });
 
     if (qr?.dataUrl) {
@@ -209,7 +209,7 @@ function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportO
   if (meta && meta.length > 0) {
     for (const m of meta) lines.push([escape(m.label), escape(m.value)].join(","));
   }
-  lines.push(escape(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`));
+  lines.push(escape(`Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`));
   lines.push("");
   lines.push(headers.map(escape).join(","));
   rows.forEach((r) => lines.push(r.map(escape).join(",")));
@@ -225,7 +225,7 @@ async function generateExcel({ filename, headers, rows, title, subtitle, meta }:
   if (meta && meta.length > 0) {
     for (const m of meta) aoa.push([m.label, m.value]);
   }
-  aoa.push([`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`]);
+  aoa.push([`Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`]);
   aoa.push([]);
   aoa.push(headers);
   rows.forEach((r) => aoa.push(r));
@@ -271,7 +271,7 @@ function generateWord({ filename, title, headers, rows, subtitle, meta }: Export
       ${subtitle ? `<p style="color:#787878;font-size:9pt;margin:2px 0">${subtitle}</p>` : ""}
       ${metaHtml}
       <table class="data">${headerRow}${tableRows}</table>
-      <p style="font-size:7pt;color:#969696;margin-top:12px">Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Powered by Infinity Techub Intelligence</p>
+      <p style="font-size:7pt;color:#969696;margin-top:12px">Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Powered by Infinity Techub Intelligence</p>
     </body></html>`;
 
   const blob = new Blob([html], { type: "application/msword" });

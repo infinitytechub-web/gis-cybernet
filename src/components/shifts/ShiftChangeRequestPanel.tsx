@@ -160,7 +160,7 @@ export function ShiftChangeRequestPanel({ profileId, userId, shifts, defaultDate
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-sm font-semibold">
                         <Badge variant="outline" className="capitalize">{r.request_type}</Badge>
-                        <span>{format(parseISO(r.affected_date), "EEE, dd MMM yyyy")}</span>
+                        <span>{format(parseISO(r.affected_date), "EEE, dd/MM/yyyy")}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {curShift?.name ?? "—"} →{" "}
@@ -289,7 +289,7 @@ function NewRequestDialog({
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start", !date && "text-muted-foreground")}>
                   <CalendarIcon className="h-4 w-4 mr-2" />
-                  {date ? format(date, "PP") : "Pick a date"}
+                  {date ? format(date, "dd/MM/yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

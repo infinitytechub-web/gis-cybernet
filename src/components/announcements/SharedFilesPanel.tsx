@@ -646,7 +646,7 @@ export function SharedFilesPanel() {
                         {f.download_count}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
-                        {format(new Date(f.created_at), "dd MMM yyyy")}
+                        {format(new Date(f.created_at), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-xs">
                         {f.expires_at ? (
@@ -655,7 +655,7 @@ export function SharedFilesPanel() {
                             const days = Math.ceil(ms / 86400_000);
                             const cls = ms <= 0 ? "text-destructive" : days <= 7 ? "text-amber-600" : "text-muted-foreground";
                             return (
-                              <span className={cls} title={format(new Date(f.expires_at), "PPpp")}>
+                              <span className={cls} title={format(new Date(f.expires_at), "dd/MM/yyyy HH:mm:ss")}>
                                 {ms <= 0 ? "Expired" : `${days}d`}
                               </span>
                             );
@@ -755,7 +755,7 @@ export function SharedFilesPanel() {
               <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
                 <span className="font-medium text-foreground">{editing.filename}</span>
                 {" — "}{fmtSize(editing.size_bytes)}
-                <p className="mt-0.5">Shared {format(new Date(editing.created_at), "dd MMM yyyy")}.</p>
+                <p className="mt-0.5">Shared {format(new Date(editing.created_at), "dd/MM/yyyy")}.</p>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Title</Label>
@@ -865,7 +865,7 @@ export function SharedFilesPanel() {
                   <div className="font-medium text-foreground truncate">{m.title}</div>
                   <div className="text-muted-foreground truncate">{m.filename}</div>
                   <div className="text-muted-foreground mt-0.5 flex flex-wrap gap-x-2">
-                    <span>Shared {format(new Date(m.created_at), "dd MMM yyyy")}</span>
+                    <span>Shared {format(new Date(m.created_at), "dd/MM/yyyy")}</span>
                     <span>·</span>
                     <span>
                       {m.target_user_id

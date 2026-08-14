@@ -237,7 +237,7 @@ export function AttendanceComplianceExportDialog({ open, onOpenChange, initial, 
           </div>
 
           <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
-            <Badge variant="outline" className="text-[11px]">{format(parseISO(fromIso || initial.fromIso), "dd MMM yyyy")} → {format(parseISO(toIso || initial.toIso), "dd MMM yyyy")}</Badge>
+            <Badge variant="outline" className="text-[11px]">{format(parseISO(fromIso || initial.fromIso), "dd/MM/yyyy")} → {format(parseISO(toIso || initial.toIso), "dd/MM/yyyy")}</Badge>
             <Badge variant="outline" className="text-[11px]">
               {selectedDepartments.size === 0 ? "All depts" : `${selectedDepartments.size} dept${selectedDepartments.size === 1 ? "" : "s"}`}
             </Badge>

@@ -405,14 +405,14 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                 <Field
                   icon={CalendarClock}
                   label="Purchased"
-                  value={item.purchase_date ? format(new Date(item.purchase_date), "PP") : "—"}
+                  value={item.purchase_date ? format(new Date(item.purchase_date), "dd/MM/yyyy") : "—"}
                 />
                 <Field
                   icon={CalendarClock}
                   label="Warranty"
                   value={
                     item.warranty_expires
-                      ? `${format(new Date(item.warranty_expires), "PP")} (${formatDistanceToNow(new Date(item.warranty_expires), { addSuffix: true })})`
+                      ? `${format(new Date(item.warranty_expires), "dd/MM/yyyy")} (${formatDistanceToNow(new Date(item.warranty_expires), { addSuffix: true })})`
                       : "—"
                   }
                 />
@@ -452,7 +452,7 @@ export function ItemDetailDrawer({ item, onOpenChange }: Props) {
                             </Badge>
                           </div>
                           <div className="text-muted-foreground">
-                            {format(new Date(m.movement_date), "PPp")} ·{" "}
+                            {format(new Date(m.movement_date), "dd/MM/yyyy HH:mm")} ·{" "}
                             {formatDistanceToNow(new Date(m.movement_date), { addSuffix: true })}
                           </div>
                           {m.reference && (

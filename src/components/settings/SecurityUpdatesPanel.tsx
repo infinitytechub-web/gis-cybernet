@@ -194,7 +194,7 @@ export function SecurityUpdatesPanel() {
             {settings?.security_scan_last_run_at && (
               <div className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                Last run: {format(new Date(settings.security_scan_last_run_at), "PPpp")}
+                Last run: {format(new Date(settings.security_scan_last_run_at), "dd/MM/yyyy HH:mm:ss")}
               </div>
             )}
           </div>
@@ -360,7 +360,7 @@ export function SecurityUpdatesPanel() {
                 <TableBody>
                   {history.map((h) => (
                     <TableRow key={h.id}>
-                      <TableCell className="text-xs">{format(new Date(h.started_at), "PPp")}</TableCell>
+                      <TableCell className="text-xs">{format(new Date(h.started_at), "dd/MM/yyyy HH:mm")}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{h.trigger_kind}</Badge>
                       </TableCell>

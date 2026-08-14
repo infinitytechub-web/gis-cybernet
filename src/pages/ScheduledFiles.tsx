@@ -141,7 +141,7 @@ export default function ScheduledFiles() {
       const { error: recErr } = await supabase.from("scheduled_file_recipients").insert(rows);
       if (recErr) throw recErr;
 
-      toast.success(`Scheduled for ${format(when, "PPp")} to ${selected.size} recipient(s)`);
+      toast.success(`Scheduled for ${format(when, "dd/MM/yyyy HH:mm")} to ${selected.size} recipient(s)`);
       reset();
       refetch();
     } catch (e: any) {
@@ -227,7 +227,7 @@ export default function ScheduledFiles() {
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-start text-left font-normal">
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(scheduledDate, "PPP")}
+                          {format(scheduledDate, "dd/MM/yyyy")}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
@@ -346,7 +346,7 @@ export default function ScheduledFiles() {
                           <TableRow key={d.id}>
                             <TableCell className="font-medium text-sm">{d.title}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{d.file_name}</TableCell>
-                            <TableCell className="text-xs">{format(new Date(d.scheduled_for), "PPp")}</TableCell>
+                            <TableCell className="text-xs">{format(new Date(d.scheduled_for), "dd/MM/yyyy HH:mm")}</TableCell>
                             <TableCell className="text-xs">{delivered}/{recs.length}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className={statusBadge(d.status)}>{d.status}</Badge>

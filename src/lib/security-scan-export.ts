@@ -98,7 +98,7 @@ export function exportRunAsPdf(run: ExportRun, history: ExportRun[]) {
   doc.setFontSize(10);
   const meta: [string, string][] = [
     ["Run ID", run.id],
-    ["Started", format(new Date(run.started_at), "PPpp")],
+    ["Started", format(new Date(run.started_at), "dd/MM/yyyy HH:mm:ss")],
     ["Trigger", run.trigger_kind],
     ["Status", run.status],
     [
@@ -175,7 +175,7 @@ export function exportRunAsPdf(run: ExportRun, history: ExportRun[]) {
     startY: afterY + 6,
     head: [["Started", "Trigger", "Status", "Checks", "Errors", "Warnings", "Info"]],
     body: history.map((h) => [
-      format(new Date(h.started_at), "PPp"),
+      format(new Date(h.started_at), "dd/MM/yyyy HH:mm"),
       h.trigger_kind,
       h.status,
       String(h.total_checks),

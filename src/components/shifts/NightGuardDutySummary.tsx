@@ -86,7 +86,7 @@ export function NightGuardDutySummary({ nightGuardStaff, todayDutyStaff }: Props
     ]);
 
   const headers = ["Name", "Staff ID", "Gender", "Reported", "Status", "First Login", "Last Logout"];
-  const dateLabel = format(today, "dd MMM yyyy");
+  const dateLabel = format(today, "dd/MM/yyyy");
 
   return (
     <Card className="border-[hsl(220,80%,18%)]/20">

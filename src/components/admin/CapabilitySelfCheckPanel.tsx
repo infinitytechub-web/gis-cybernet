@@ -41,7 +41,7 @@ const sourceLabel = (row: ReportRow) => {
   if (row.source === "role_tier") return "Role tier";
   if (row.source === "grant") {
     return row.expires_at
-      ? `Individual grant (expires ${format(new Date(row.expires_at), "dd MMM yyyy")})`
+      ? `Individual grant (expires ${format(new Date(row.expires_at), "dd/MM/yyyy")})`
       : "Individual grant (no expiry)";
   }
   return "—";

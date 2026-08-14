@@ -237,7 +237,7 @@ export function SchedulesTab({ userId }: { userId: string }) {
                     </div>
                   </TableCell>
                   <TableCell className="text-xs">
-                    {s.next_run_at ? format(new Date(s.next_run_at), "PPp") : "—"}
+                    {s.next_run_at ? format(new Date(s.next_run_at), "dd/MM/yyyy HH:mm") : "—"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={s.requires_per_run_approval ? "default" : "secondary"} className="text-[10px]">

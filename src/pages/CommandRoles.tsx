@@ -645,7 +645,7 @@ export default function CommandRoles() {
                       {a.target_staff_id && <span className="text-[10px] text-muted-foreground">({a.target_staff_id})</span>}
                     </div>
                     <span className="text-[10px] text-muted-foreground">
-                      {a.created_at ? format(new Date(a.created_at), "dd MMM yyyy HH:mm") : ""}
+                      {a.created_at ? format(new Date(a.created_at), "dd/MM/yyyy HH:mm") : ""}
                     </span>
                   </div>
                   <div className="text-[11px] text-muted-foreground">

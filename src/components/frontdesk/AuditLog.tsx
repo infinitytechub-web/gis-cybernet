@@ -196,7 +196,7 @@ export default function AuditLog() {
               </TableCell></TableRow>
             ) : paginatedLogs.map((log: any) => (
               <TableRow key={log.id}>
-                <TableCell className="text-sm">{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                <TableCell className="text-sm">{format(new Date(log.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                 <TableCell><Badge className={actionColor(log.action)}>{log.action}</Badge></TableCell>
                 <TableCell><Badge variant="outline">{log.entity_type.replace("_", " ")}</Badge></TableCell>
                 <TableCell>{log.details?.applicant_name || "—"}</TableCell>

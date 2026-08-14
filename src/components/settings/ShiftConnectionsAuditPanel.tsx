@@ -554,7 +554,7 @@ export function ShiftConnectionsAuditPanel() {
                       <TableCell className="text-xs whitespace-nowrap">
                         {c.last_sync_at ? (
                           <div>
-                            <div>{format(new Date(c.last_sync_at), "PPp")}</div>
+                            <div>{format(new Date(c.last_sync_at), "dd/MM/yyyy HH:mm")}</div>
                             <div className="text-muted-foreground">
                               {formatDistanceToNow(new Date(c.last_sync_at), { addSuffix: true })}
                             </div>
@@ -564,7 +564,7 @@ export function ShiftConnectionsAuditPanel() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
-                        {format(new Date(c.created_at), "PPp")}
+                        {format(new Date(c.created_at), "dd/MM/yyyy HH:mm")}
                       </TableCell>
                     </TableRow>
                   );
@@ -757,13 +757,13 @@ export function ShiftConnectionsAuditPanel() {
                       label="Last seen"
                       value={
                         openRow.last_sync_at
-                          ? `${format(new Date(openRow.last_sync_at), "PPp")} (${formatDistanceToNow(new Date(openRow.last_sync_at), { addSuffix: true })})`
+                          ? `${format(new Date(openRow.last_sync_at), "dd/MM/yyyy HH:mm")} (${formatDistanceToNow(new Date(openRow.last_sync_at), { addSuffix: true })})`
                           : "Never"
                       }
                     />
                     <Field
                       label="Connected at"
-                      value={format(new Date(openRow.created_at), "PPp")}
+                      value={format(new Date(openRow.created_at), "dd/MM/yyyy HH:mm")}
                     />
                   </div>
 
@@ -810,7 +810,7 @@ export function ShiftConnectionsAuditPanel() {
                                   )}
                                 </div>
                                 <div className="text-muted-foreground">
-                                  {format(new Date(h.synced_at), "PPp")} · {formatDistanceToNow(new Date(h.synced_at), { addSuffix: true })}
+                                  {format(new Date(h.synced_at), "dd/MM/yyyy HH:mm")} · {formatDistanceToNow(new Date(h.synced_at), { addSuffix: true })}
                                 </div>
                                 {h.error_message && (
                                   <div className="text-destructive">{h.error_message}</div>

@@ -322,7 +322,7 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
                       </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell font-mono text-xs">{d.document_number || "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{d.expiry_date ? format(new Date(d.expiry_date), "dd MMM yyyy") : "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{d.expiry_date ? format(new Date(d.expiry_date), "dd/MM/yyyy") : "—"}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={STATUS_BADGE[d.status] || ""}>{d.status}</Badge>
                     </TableCell>

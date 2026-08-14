@@ -193,7 +193,7 @@ export default function Reports() {
   };
 
   const getReportData = (): { headers: string[]; rows: string[][]; title: string } => {
-    const dateRange = `${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(endDate), "dd MMM yyyy")}`;
+    const dateRange = `${format(new Date(startDate), "dd/MM/yyyy")} – ${format(new Date(endDate), "dd/MM/yyyy")}`;
     switch (reportType) {
       case "staff":
         return {
@@ -209,7 +209,7 @@ export default function Reports() {
           title: `Attendance Report (${dateRange})`,
           headers: ["Date", "Staff ID", "Name", "Check In", "Check Out", "Status", "Notes"],
           rows: attendance.map((a: any) => [
-            format(new Date(a.date), "dd MMM yyyy"), a.profiles?.staff_id ?? "—",
+            format(new Date(a.date), "dd/MM/yyyy"), a.profiles?.staff_id ?? "—",
             `${a.profiles?.last_name ?? ""}, ${a.profiles?.first_name ?? ""}`,
             a.check_in ? format(new Date(a.check_in), "HH:mm") : "—",
             a.check_out ? format(new Date(a.check_out), "HH:mm") : "—",
@@ -222,8 +222,8 @@ export default function Reports() {
           headers: ["Staff ID", "Name", "Type", "Start Date", "End Date", "Status", "Reason"],
           rows: leaveRequests.map((l: any) => [
             l.profiles?.staff_id ?? "—", `${l.profiles?.last_name ?? ""}, ${l.profiles?.first_name ?? ""}`,
-            l.type, format(new Date(l.start_date), "dd MMM yyyy"),
-            format(new Date(l.end_date), "dd MMM yyyy"), l.status, l.reason ?? "",
+            l.type, format(new Date(l.start_date), "dd/MM/yyyy"),
+            format(new Date(l.end_date), "dd/MM/yyyy"), l.status, l.reason ?? "",
           ]),
         };
     }
@@ -231,9 +231,9 @@ export default function Reports() {
 
   const buildExportPayload = () => {
     const { headers, rows, title } = getReportData();
-    const dateRange = `${format(new Date(startDate), "dd-MMM-yyyy")}_${format(new Date(endDate), "dd-MMM-yyyy")}`;
+    const dateRange = `${format(new Date(startDate), "dd/MM/yyyy")}_${format(new Date(endDate), "dd/MM/yyyy")}`;
     const filename = `GIS_ASC_${reportType}_${dateRange}`;
-    const subtitle = `Period: ${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(endDate), "dd MMM yyyy")} | Records: ${rows.length}`;
+    const subtitle = `Period: ${format(new Date(startDate), "dd/MM/yyyy")} – ${format(new Date(endDate), "dd/MM/yyyy")} | Records: ${rows.length}`;
     return { title, filename, headers, rows, subtitle };
   };
 

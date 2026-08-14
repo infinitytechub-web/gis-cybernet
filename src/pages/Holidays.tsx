@@ -75,7 +75,7 @@ export default function Holidays() {
         table: "holidays",
         id: h.id,
         label: h.name,
-        context: format(new Date(h.date), "dd MMM yyyy"),
+        context: format(new Date(h.date), "dd/MM/yyyy"),
       });
     },
     onSuccess: () => {
@@ -136,7 +136,7 @@ export default function Holidays() {
                         <span className="font-medium">{h.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{format(new Date(h.date), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-sm">{format(new Date(h.date), "dd/MM/yyyy")}</TableCell>
                     <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{format(new Date(h.date), "EEEE")}</TableCell>
                     <TableCell>
                       <Badge variant={h.recurring ? "default" : "secondary"} className="text-xs">

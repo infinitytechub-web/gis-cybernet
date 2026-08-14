@@ -173,7 +173,7 @@ export function InventoryAuditReport() {
                 getData={() => ({
                   title: "Inventory Audit Report",
                   filename: `inventory-audit-${format(new Date(), "yyyy-MM-dd")}`,
-                  subtitle: `Filter: ${filter} · Generated ${format(new Date(), "PPpp")}`,
+                  subtitle: `Filter: ${filter} · Generated ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}`,
                   headers: ["Asset Tag", "Item", "Category", "Location", "System Qty", "Physical Count", "Variance", "Variance Value", "Last Counted"],
                   rows: exportRows,
                 })}
@@ -306,7 +306,7 @@ export function InventoryAuditReport() {
                       <TableCell className="text-xs">
                         {r._last ? (
                           <div>
-                            <div>{format(new Date(r._last.counted_at), "PP")}</div>
+                            <div>{format(new Date(r._last.counted_at), "dd/MM/yyyy")}</div>
                             <div className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(r._last.counted_at), { addSuffix: true })}</div>
                           </div>
                         ) : (

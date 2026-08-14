@@ -636,7 +636,7 @@ export default function GpsAddresses() {
     stamp?: { watermarkText?: string; qrDataUrl?: string; qrCaption?: string; meta?: import("@/lib/export-utils").ExportMetaField[] },
   ) => {
     if (!trackResult) return null;
-    const captured = format(new Date(), "dd MMM yyyy, HH:mm");
+    const captured = format(new Date(), "dd/MM/yyyy, HH:mm");
     const base: any = {
       title: "GPS Search & Track Result",
       filename: `gps_search_track_${format(new Date(), "yyyyMMdd_HHmm")}`,
@@ -699,7 +699,7 @@ export default function GpsAddresses() {
     qrCaption?: string;
   }) => {
     if (!trackResult) return;
-    const captured = format(new Date(), "dd MMM yyyy, HH:mm");
+    const captured = format(new Date(), "dd/MM/yyyy, HH:mm");
     const rows: [string, string][] = [
       ["Query", trackQuery || "—"],
       ["Display Name", trackResult.display_name],
@@ -898,7 +898,7 @@ export default function GpsAddresses() {
             { label: "Department", value: stamp.department },
             { label: "Authorisation Reason", value: reason },
             { label: "Audit Reference", value: auditRow.id },
-            { label: "Authorised At", value: format(new Date(authorizedAt), "dd MMM yyyy, HH:mm") },
+            { label: "Authorised At", value: format(new Date(authorizedAt), "dd/MM/yyyy, HH:mm") },
           ],
         });
         if (!data) throw new Error("Nothing to export");
@@ -942,7 +942,7 @@ export default function GpsAddresses() {
       r.context ?? "",
       r.reference ?? "",
       r.status ?? "",
-      format(new Date(r.created_at), "dd MMM yyyy, HH:mm"),
+      format(new Date(r.created_at), "dd/MM/yyyy, HH:mm"),
     ]);
     const filterParts: string[] = [];
     if (sourceFilter !== "all") filterParts.push(`Source: ${SOURCE_META[sourceFilter as SourceKey].label}`);
@@ -1641,7 +1641,7 @@ export default function GpsAddresses() {
                         <TableCell className="hidden md:table-cell text-xs capitalize">{r.context}</TableCell>
                         <TableCell className="hidden md:table-cell text-xs font-mono text-muted-foreground">{r.reference}</TableCell>
                         <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
-                          {format(new Date(r.created_at), "dd MMM yyyy, HH:mm")}
+                          {format(new Date(r.created_at), "dd/MM/yyyy, HH:mm")}
                         </TableCell>
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
@@ -1914,7 +1914,7 @@ export default function GpsAddresses() {
                                 <Badge variant="secondary" className="text-[9px] h-4 px-1">me</Badge>
                               )}
                             </div>
-                            <div className="text-muted-foreground" title={format(new Date(entry.created_at), "dd MMM yyyy, HH:mm:ss")}>
+                            <div className="text-muted-foreground" title={format(new Date(entry.created_at), "dd/MM/yyyy, HH:mm:ss")}>
                               {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                             </div>
                             {entry.details?.purpose && (
@@ -1966,7 +1966,7 @@ export default function GpsAddresses() {
                                 <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-primary/15 text-primary">current</Badge>
                               )}
                             </div>
-                            <div className="text-muted-foreground" title={format(new Date(entry.created_at), "dd MMM yyyy, HH:mm:ss")}>
+                            <div className="text-muted-foreground" title={format(new Date(entry.created_at), "dd/MM/yyyy, HH:mm:ss")}>
                               {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
                             </div>
                             {(entry.details?.lat != null && entry.details?.lng != null) && (
@@ -2115,7 +2115,7 @@ export default function GpsAddresses() {
                 <InfoCell label="Longitude" value={viewing.lng != null ? viewing.lng.toFixed(6) : "—"} mono />
                 <InfoCell label="Context" value={viewing.context || "—"} />
                 <InfoCell label="Reference" value={viewing.reference || "—"} mono />
-                <InfoCell label="Captured" value={format(new Date(viewing.created_at), "dd MMM yyyy, HH:mm")} />
+                <InfoCell label="Captured" value={format(new Date(viewing.created_at), "dd/MM/yyyy, HH:mm")} />
                 <InfoCell label="Record ID" value={viewing.id} mono />
               </div>
             </div>

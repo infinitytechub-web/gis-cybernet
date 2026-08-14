@@ -21,7 +21,7 @@ export function exportMedicalRecordPDF(record: any, profile?: Profile | null) {
   const rows: [string, string][] = [
     ["Officer", profile ? `${profile.last_name}, ${profile.first_name}` : "—"],
     ["Staff ID", profile?.staff_id ?? "—"],
-    ["Visit date", record.visit_date ? format(new Date(record.visit_date), "dd MMM yyyy") : "—"],
+    ["Visit date", record.visit_date ? format(new Date(record.visit_date), "dd/MM/yyyy") : "—"],
     ["Chief complaint", record.chief_complaint ?? "—"],
     ["Diagnosis", record.diagnosis ?? "—"],
     ["Treatment", record.treatment ?? "—"],
@@ -36,7 +36,7 @@ export function exportMedicalRecordPDF(record: any, profile?: Profile | null) {
     y += Math.max(7, lines.length * 6);
   });
   doc.setFont("helvetica", "italic"); doc.setFontSize(9);
-  doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, 20, 285);
+  doc.text(`Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 20, 285);
   doc.save(`medical_record_${(profile?.staff_id ?? "record")}_${format(new Date(record.visit_date ?? new Date()), "yyyyMMdd")}.pdf`);
 }
 
@@ -50,13 +50,13 @@ export async function exportMedicalRecordDOCX(record: any, profile?: Profile | n
         new Paragraph({ children: [new TextRun("")] }),
         kv("Officer:", profile ? `${profile.last_name}, ${profile.first_name}` : "—"),
         kv("Staff ID:", profile?.staff_id ?? "—"),
-        kv("Visit date:", record.visit_date ? format(new Date(record.visit_date), "dd MMM yyyy") : "—"),
+        kv("Visit date:", record.visit_date ? format(new Date(record.visit_date), "dd/MM/yyyy") : "—"),
         kv("Chief complaint:", record.chief_complaint ?? "—"),
         kv("Diagnosis:", record.diagnosis ?? "—"),
         kv("Treatment:", record.treatment ?? "—"),
         kv("Notes:", record.notes ?? "—"),
         new Paragraph({ children: [new TextRun("")] }),
-        new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, italics: true, size: 18 })] }),
+        new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`, italics: true, size: 18 })] }),
       ],
     }],
   });
@@ -71,7 +71,7 @@ export function exportHealthReportPDF(report: any) {
   const rows: [string, string][] = [
     ["Title", report.title ?? "—"],
     ["Category", report.category ?? "—"],
-    ["Report date", report.report_date ? format(new Date(report.report_date), "dd MMM yyyy") : "—"],
+    ["Report date", report.report_date ? format(new Date(report.report_date), "dd/MM/yyyy") : "—"],
   ];
   doc.setFontSize(11);
   rows.forEach(([k, v]) => {
@@ -83,7 +83,7 @@ export function exportHealthReportPDF(report: any) {
   doc.setFont("helvetica", "normal");
   doc.text(doc.splitTextToSize(report.summary || "—", 170), 20, y);
   doc.setFont("helvetica", "italic"); doc.setFontSize(9);
-  doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, 20, 285);
+  doc.text(`Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 20, 285);
   doc.save(`health_report_${format(new Date(report.report_date ?? new Date()), "yyyyMMdd")}.pdf`);
 }
 
@@ -97,12 +97,12 @@ export async function exportHealthReportDOCX(report: any) {
         new Paragraph({ children: [new TextRun("")] }),
         kv("Title:", report.title ?? "—"),
         kv("Category:", report.category ?? "—"),
-        kv("Report date:", report.report_date ? format(new Date(report.report_date), "dd MMM yyyy") : "—"),
+        kv("Report date:", report.report_date ? format(new Date(report.report_date), "dd/MM/yyyy") : "—"),
         new Paragraph({ children: [new TextRun("")] }),
         new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: "Summary", bold: true })] }),
         new Paragraph({ children: [new TextRun(report.summary || "—")] }),
         new Paragraph({ children: [new TextRun("")] }),
-        new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, italics: true, size: 18 })] }),
+        new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`, italics: true, size: 18 })] }),
       ],
     }],
   });
@@ -177,7 +177,7 @@ function tablePDF(title: string, headers: string[], rows: string[][], filename: 
     y += maxLines * 4 + 2;
   });
   doc.setFont("helvetica", "italic"); doc.setFontSize(8);
-  doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · ${rows.length} rows`, 15, 200);
+  doc.text(`Generated ${format(new Date(), "dd/MM/yyyy HH:mm")} · ${rows.length} rows`, 15, 200);
   doc.save(filename);
 }
 
@@ -185,7 +185,7 @@ export function exportRecordsPDF(records: any[], profileMap: Record<string, any>
   const rows = records.map((r) => {
     const p = profileMap[r.staff_profile_id];
     return [
-      r.visit_date ? format(new Date(r.visit_date), "dd MMM yyyy") : "",
+      r.visit_date ? format(new Date(r.visit_date), "dd/MM/yyyy") : "",
       p?.staff_id ?? "",
       p ? `${p.last_name}, ${p.first_name}` : "",
       r.diagnosis ?? "",
@@ -199,7 +199,7 @@ export function exportRecordsPDF(records: any[], profileMap: Record<string, any>
 
 export function exportReportsPDF(reports: any[], suffix = "filtered") {
   const rows = reports.map((r) => [
-    r.report_date ? format(new Date(r.report_date), "dd MMM yyyy") : "",
+    r.report_date ? format(new Date(r.report_date), "dd/MM/yyyy") : "",
     r.title ?? "",
     r.category ?? "",
     r.summary ?? "",
@@ -234,7 +234,7 @@ export function exportAuditCSV(rows: any[], actorMap: Record<string, any>, suffi
 
 export function exportAuditPDF(rows: any[], actorMap: Record<string, any>, suffix = "filtered") {
   const pdfRows = rows.map((a) => [
-    a.performed_at ? format(new Date(a.performed_at), "dd MMM yy HH:mm") : "",
+    a.performed_at ? format(new Date(a.performed_at), "dd/MM/yy HH:mm") : "",
     a.action ?? "",
     a.item_name ?? "",
     a.delta != null ? (a.delta > 0 ? `+${a.delta}` : String(a.delta)) : "",
@@ -256,7 +256,7 @@ export async function exportAuditDOCX(rows: any[], actorMap: Record<string, any>
   rows.forEach((a) => {
     lines.push(new Paragraph({
       children: [
-        new TextRun({ text: `${a.performed_at ? format(new Date(a.performed_at), "dd MMM yy HH:mm") : "—"} · `, bold: true }),
+        new TextRun({ text: `${a.performed_at ? format(new Date(a.performed_at), "dd/MM/yy HH:mm") : "—"} · `, bold: true }),
         new TextRun({ text: `${(a.action ?? "").toUpperCase()} `, bold: true }),
         new TextRun(`${a.item_name ?? "—"} `),
         new TextRun(a.delta != null ? `(Δ ${a.delta > 0 ? "+" : ""}${a.delta}) ` : ""),
@@ -267,7 +267,7 @@ export async function exportAuditDOCX(rows: any[], actorMap: Record<string, any>
     }));
   });
   lines.push(new Paragraph({ children: [new TextRun("")] }));
-  lines.push(new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · ${rows.length} entries`, italics: true, size: 18 })] }));
+  lines.push(new Paragraph({ children: [new TextRun({ text: `Generated ${format(new Date(), "dd/MM/yyyy HH:mm")} · ${rows.length} entries`, italics: true, size: 18 })] }));
   const docx = new Document({ sections: [{ children: lines }] });
   const blob = await Packer.toBlob(docx);
   saveAs(blob, `inventory_audit_${suffix}_${format(new Date(), "yyyyMMdd_HHmm")}.docx`);

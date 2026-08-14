@@ -32,6 +32,8 @@ import { AppointmentAndPortfolios } from "@/components/staff/AppointmentAndPortf
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
+import { AgeDisplay } from "@/components/ui/age-display";
+import { DATE_FORMAT_HINT } from "@/lib/date-format";
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
@@ -440,7 +442,7 @@ export default function Staff() {
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
                 headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"],
                 rows: buildStaffExportRows(),
-                subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Records: ${filtered.length}`,
+                subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
             {isAdmin && (
@@ -825,7 +827,10 @@ export default function Staff() {
                 </Select>
               </div>
               <div>
-                <Label>Date of Birth</Label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <Label>Date of Birth ({DATE_FORMAT_HINT})</Label>
+                  <AgeDisplay dob={dateOfBirth} />
+                </div>
                 <Input
                   type="date"
                   value={dateOfBirth}
@@ -833,6 +838,7 @@ export default function Staff() {
                   max={format(new Date(), "yyyy-MM-dd")}
                 />
               </div>
+
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

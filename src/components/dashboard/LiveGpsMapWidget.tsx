@@ -167,7 +167,7 @@ export default function LiveGpsMapWidget() {
                 {active.approximate && (
                   <Badge variant="outline" className="text-[10px]">approx.</Badge>
                 )}
-                <span>· {format(new Date(active.created_at), "dd MMM yyyy HH:mm")}</span>
+                <span>· {format(new Date(active.created_at), "dd/MM/yyyy HH:mm")}</span>
               </div>
             </div>
             <div className="space-y-1 max-h-[340px] overflow-y-auto pr-1">

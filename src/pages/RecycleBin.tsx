@@ -295,7 +295,7 @@ export default function RecycleBin() {
                           {r.deleted_by_name || <span className="text-muted-foreground">—</span>}
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                          {format(new Date(r.deleted_at), "dd MMM yyyy, HH:mm")}
+                          {format(new Date(r.deleted_at), "dd/MM/yyyy, HH:mm")}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-xs">
                           <span className={isExpiringSoon ? "text-amber-700 dark:text-amber-300 font-medium" : "text-muted-foreground"}>

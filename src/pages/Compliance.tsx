@@ -219,7 +219,7 @@ function DocumentsTab() {
                   <TableCell><div className="font-medium text-sm">{d.profiles?.last_name}, {d.profiles?.first_name}</div><div className="text-xs text-muted-foreground">{d.profiles?.staff_id}</div></TableCell>
                   <TableCell className="text-sm">{d.document_type}</TableCell>
                   <TableCell className="hidden sm:table-cell text-xs">{d.document_number || "—"}</TableCell>
-                  <TableCell className="text-xs">{d.expiry_date ? format(new Date(d.expiry_date), "dd MMM yyyy") : "N/A"}</TableCell>
+                  <TableCell className="text-xs">{d.expiry_date ? format(new Date(d.expiry_date), "dd/MM/yyyy") : "N/A"}</TableCell>
                   <TableCell>{getExpiryBadge(d.expiry_date)}</TableCell>
                   <TableCell><FileLinkButton filePath={d.file_path} fileName={d.file_name} /></TableCell>
                   <TableCell>
@@ -413,7 +413,7 @@ function EquipmentTab() {
                   <TableCell><div className="font-medium text-sm">{e.profiles?.last_name}, {e.profiles?.first_name}</div><div className="text-xs text-muted-foreground">{e.profiles?.staff_id}</div></TableCell>
                   <TableCell className="font-medium text-sm">{e.equipment_name}</TableCell>
                   <TableCell className="hidden sm:table-cell text-xs">{e.serial_number || "—"}</TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs">{format(new Date(e.issued_date), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-xs">{format(new Date(e.issued_date), "dd/MM/yyyy")}</TableCell>
                   <TableCell><Badge variant="secondary" className={`text-xs ${conditionColor(e.condition)}`}>{e.condition}</Badge></TableCell>
                   <TableCell><Badge variant={e.returned_date ? "outline" : "default"} className="text-xs">{e.returned_date ? "Returned" : "Issued"}</Badge></TableCell>
                   {isAdmin && (
@@ -635,7 +635,7 @@ function CertificationsTab() {
                   <TableCell><div className="font-medium text-sm">{c.profiles?.last_name}, {c.profiles?.first_name}</div><div className="text-xs text-muted-foreground">{c.profiles?.staff_id}</div></TableCell>
                   <TableCell className="font-medium text-sm">{c.certification_name}</TableCell>
                   <TableCell className="hidden sm:table-cell text-xs">{c.issuing_body || "—"}</TableCell>
-                  <TableCell className="text-xs">{c.expiry_date ? format(new Date(c.expiry_date), "dd MMM yyyy") : "N/A"}</TableCell>
+                  <TableCell className="text-xs">{c.expiry_date ? format(new Date(c.expiry_date), "dd/MM/yyyy") : "N/A"}</TableCell>
                   <TableCell>{getExpiryBadge(c.expiry_date)}</TableCell>
                   <TableCell><FileLinkButton filePath={(c as any).file_path} fileName={(c as any).file_name} /></TableCell>
                   <TableCell>

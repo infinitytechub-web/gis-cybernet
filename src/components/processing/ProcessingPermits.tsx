@@ -282,7 +282,7 @@ export default function ProcessingPermits() {
                   <TableCell>{p.passport_number}</TableCell>
                   <TableCell><Badge variant="outline">{permitTypeLabel(p.permit_type)}</Badge></TableCell>
                   <TableCell>{statusBadge(p.status)}</TableCell>
-                  <TableCell className="text-sm">{format(new Date(p.created_at), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-sm">{format(new Date(p.created_at), "dd/MM/yyyy")}</TableCell>
                   <TableCell>
                     <RecordRowActions
                       kind="permit"

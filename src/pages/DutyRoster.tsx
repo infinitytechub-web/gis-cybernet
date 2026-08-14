@@ -213,7 +213,7 @@ export default function DutyRoster() {
       filename: `Duty_Roster_${format(currentMonth, "yyyy_MM")}`,
       headers,
       rows,
-      subtitle: `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+      subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
     };
   };
 
@@ -454,7 +454,7 @@ export default function DutyRoster() {
                     <ScrollArea className="max-h-[360px] overflow-y-auto p-3">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-sm">{format(day, "EEE, dd MMM yyyy")}</h4>
+                        <h4 className="font-semibold text-sm">{format(day, "EEE, dd/MM/yyyy")}</h4>
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAssignDay(null)}>
                           <X className="h-3 w-3" />
                         </Button>

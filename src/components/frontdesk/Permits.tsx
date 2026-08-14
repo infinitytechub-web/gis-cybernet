@@ -203,7 +203,7 @@ export default function Permits() {
                   <TableCell><Badge variant="outline">{permitTypeLabel(p.permit_type)}</Badge></TableCell>
                   <TableCell>{p.nationality || "—"}</TableCell>
                   <TableCell>{statusBadge(p.status)}</TableCell>
-                  <TableCell className="text-sm">{format(new Date(p.created_at), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-sm">{format(new Date(p.created_at), "dd/MM/yyyy")}</TableCell>
                   <TableCell>
                     <RecordRowActions
                       kind="permit"

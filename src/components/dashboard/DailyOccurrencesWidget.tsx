@@ -158,7 +158,7 @@ export default function DailyOccurrencesWidget() {
             </TooltipContent>
           </Tooltip>
           <Badge variant="outline" className="text-[10px] font-semibold">
-            {format(new Date(), "dd MMM yyyy")}
+            {format(new Date(), "dd/MM/yyyy")}
           </Badge>
         </CardTitle>
       </CardHeader>

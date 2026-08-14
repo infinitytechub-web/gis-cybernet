@@ -77,7 +77,7 @@ export function MyLeaveHistory() {
                     <TableRow key={r.id}>
                       <TableCell className="capitalize">{r.type}</TableCell>
                       <TableCell className="text-xs">
-                        {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd MMM yy")}
+                        {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
                       </TableCell>
                       <TableCell>{days}</TableCell>
                       <TableCell>
