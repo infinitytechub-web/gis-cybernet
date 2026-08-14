@@ -77,7 +77,7 @@ export function downloadAttendanceComplianceTemplate(opts: TemplateOptions = {})
   // ---- Sheet 1: Instructions
   const instructions: string[][] = [
     ["Cybernet HRM System — Monthly Attendance Compliance Template"],
-    [`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`],
+    [`Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`],
     [],
     ["Purpose"],
     ["Use this workbook to import or back-fill monthly attendance compliance figures."],

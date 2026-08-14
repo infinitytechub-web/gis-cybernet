@@ -456,7 +456,7 @@ export default function IpBlocks() {
                   return rows.map((a: any) => (
                   <TableRow key={a.id}>
                     <TableCell className="text-xs whitespace-nowrap">
-                      {format(new Date(a.created_at), "dd MMM yyyy HH:mm:ss")}
+                      {format(new Date(a.created_at), "dd/MM/yyyy HH:mm:ss")}
                     </TableCell>
                     <TableCell>
                       <Badge variant={a.action === "blocked" ? "destructive" : "secondary"} className="uppercase text-[10px]">

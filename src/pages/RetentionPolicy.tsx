@@ -229,7 +229,7 @@ export default function RetentionPolicy() {
                 <AlertDescription className="text-xs">
                   Scheduled cleanup runs daily at 03:15 UTC. Last run:{" "}
                   {settings?.announcement_file_cleanup_last_run_at
-                    ? format(new Date(settings.announcement_file_cleanup_last_run_at), "PPpp")
+                    ? format(new Date(settings.announcement_file_cleanup_last_run_at), "dd/MM/yyyy HH:mm:ss")
                     : "never"}
                   .
                 </AlertDescription>
@@ -277,7 +277,7 @@ export default function RetentionPolicy() {
                 <TableBody>
                   {history.map((h: any) => (
                     <TableRow key={h.id}>
-                      <TableCell className="text-xs">{format(new Date(h.started_at), "PPp")}</TableCell>
+                      <TableCell className="text-xs">{format(new Date(h.started_at), "dd/MM/yyyy HH:mm")}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{h.trigger_kind}</Badge>
                       </TableCell>

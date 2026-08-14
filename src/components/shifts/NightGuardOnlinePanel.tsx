@@ -253,7 +253,7 @@ export function NightGuardOnlinePanel({ nightGuardStaff, todayDutyStaff }: Props
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs h-8", !filterDate && "text-muted-foreground")}>
                   <CalendarIcon className="h-3.5 w-3.5" />
-                  {filterDate ? format(filterDate, "dd MMM yyyy") : "All dates"}
+                  {filterDate ? format(filterDate, "dd/MM/yyyy") : "All dates"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

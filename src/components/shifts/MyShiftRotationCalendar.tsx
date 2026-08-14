@@ -131,7 +131,7 @@ export function MyShiftRotationCalendar({ staffGroup, staffName, profileId, staf
     const subtitle = [
       `Staff: ${fullName}${staffId ? ` (${staffId})` : ""}`,
       `Group: ${myGroup ?? "—"}`,
-      `Period: ${format(monthStart, "dd MMM yyyy")} – ${format(monthEnd, "dd MMM yyyy")}`,
+      `Period: ${format(monthStart, "dd/MM/yyyy")} – ${format(monthEnd, "dd/MM/yyyy")}`,
       `On-duty days: ${onDutyDates.length}${overrideCount ? ` (${overrideCount} admin override${overrideCount === 1 ? "" : "s"})` : ""}`,
     ].join(" · ");
     return {

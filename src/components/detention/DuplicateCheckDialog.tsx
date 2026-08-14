@@ -58,7 +58,7 @@ export function DuplicateCheckDialog({
               <p className="text-muted-foreground">
                 {m.id_type ? `${m.id_type}: ${m.id_number || "—"} · ` : ""}
                 {m.date_of_birth ? `DOB ${m.date_of_birth} · ` : ""}
-                {m.intake_at ? `Booked in ${format(new Date(m.intake_at), "dd MMM yyyy")}` : "Intake date unknown"}
+                {m.intake_at ? `Booked in ${format(new Date(m.intake_at), "dd/MM/yyyy")}` : "Intake date unknown"}
                 {m.cell_number ? ` · Cell ${m.cell_number}` : ""}
               </p>
             </li>

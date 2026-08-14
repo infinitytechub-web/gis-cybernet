@@ -386,7 +386,7 @@ export default function HealthLab() {
       const overriding = !!conflict;
       if (overriding) {
         if (!overrideBy || !overrideReason.trim()) {
-          setApptConflict(`This staff member already has an appointment at ${format(new Date(conflict.scheduled_at), "dd MMM yyyy HH:mm")} (${conflict.status}). To override, choose an authorizer and provide a reason.`);
+          setApptConflict(`This staff member already has an appointment at ${format(new Date(conflict.scheduled_at), "dd/MM/yyyy HH:mm")} (${conflict.status}). To override, choose an authorizer and provide a reason.`);
           throw new Error("APPOINTMENT_CONFLICT");
         }
       }
@@ -511,7 +511,7 @@ export default function HealthLab() {
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">Recent activity</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-xs">
-              <div>Latest record: {records[0] ? format(new Date(records[0].visit_date), "dd MMM yyyy") : "—"}</div>
+              <div>Latest record: {records[0] ? format(new Date(records[0].visit_date), "dd/MM/yyyy") : "—"}</div>
               <div>Latest report: {reports[0] ? reports[0].title : "—"}</div>
               <div>Pending excuse duty: <strong>{pendingExcuse.length}</strong></div>
               <div>Low-stock items: <strong className="text-rose-700">{inventoryAlerts.lowStock.length}</strong> · Expiring ≤30d: <strong className="text-amber-700">{inventoryAlerts.expSoon.length}</strong> · Expired: <strong className="text-destructive">{inventoryAlerts.expired.length}</strong></div>
@@ -593,7 +593,7 @@ export default function HealthLab() {
                       const p = profileMap[r.staff_profile_id];
                       return (
                         <TableRow key={r.id}>
-                          <TableCell className="text-xs">{format(new Date(r.visit_date), "dd MMM yyyy")}</TableCell>
+                          <TableCell className="text-xs">{format(new Date(r.visit_date), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="text-xs font-medium">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
                           <TableCell className="text-xs">{r.diagnosis ?? "—"}</TableCell>
                           <TableCell className="text-xs">{r.treatment ?? "—"}</TableCell>
@@ -652,7 +652,7 @@ export default function HealthLab() {
                   {pagedReports.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No reports.</TableCell></TableRow>}
                   {pagedReports.map((r: any) => (
                     <TableRow key={r.id}>
-                      <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
+                      <TableCell className="text-xs">{format(new Date(r.report_date), "dd/MM/yyyy")}</TableCell>
                       <TableCell className="text-xs font-medium">{r.title}</TableCell>
                       <TableCell className="text-xs"><Badge variant="outline">{r.category}</Badge></TableCell>
                       <TableCell className="text-xs">{r.summary ?? "—"}</TableCell>
@@ -695,7 +695,7 @@ export default function HealthLab() {
                     const auth = (authorizers as any[]).find((u) => u.user_id === a.authorized_by);
                     return (
                       <TableRow key={a.id}>
-                        <TableCell className="text-xs">{format(new Date(a.scheduled_at), "dd MMM yyyy HH:mm")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(a.scheduled_at), "dd/MM/yyyy HH:mm")}</TableCell>
                         <TableCell className="text-xs">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
                         <TableCell className="text-xs">{s?.name ?? "—"}</TableCell>
                         <TableCell>
@@ -785,7 +785,7 @@ export default function HealthLab() {
                           <TableCell className="text-xs text-right font-bold">{i.quantity}</TableCell>
                           <TableCell className="text-xs">{i.unit ?? "—"}</TableCell>
                           <TableCell className="text-xs text-right">{i.reorder_threshold ?? 0}</TableCell>
-                          <TableCell className="text-xs">{i.expiry_date ? format(new Date(i.expiry_date), "dd MMM yyyy") : "—"}{days !== null && (<div className="text-[10px] text-muted-foreground">{expired ? `expired ${Math.abs(days)}d ago` : `${days}d left`}</div>)}</TableCell>
+                          <TableCell className="text-xs">{i.expiry_date ? format(new Date(i.expiry_date), "dd/MM/yyyy") : "—"}{days !== null && (<div className="text-[10px] text-muted-foreground">{expired ? `expired ${Math.abs(days)}d ago` : `${days}d left`}</div>)}</TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {low && <Badge className="bg-rose-600 hover:bg-rose-700 text-[10px]">LOW</Badge>}
@@ -825,9 +825,9 @@ export default function HealthLab() {
                     const p = profileMap[e.staff_profile_id];
                     return (
                       <TableRow key={e.id}>
-                        <TableCell className="text-xs">{format(new Date(e.created_at), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(e.created_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs font-medium">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
-                        <TableCell className="text-xs">{format(new Date(e.start_date), "dd MMM")} – {format(new Date(e.end_date), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(e.start_date), "dd MMM")} – {format(new Date(e.end_date), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs max-w-[300px] truncate" title={e.reason}>{e.reason}</TableCell>
                         <TableCell><Badge className={STATUS_COLOR[e.status] ?? ""}>{e.status}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -1088,7 +1088,7 @@ export default function HealthLab() {
                   const actor = (authorizers as any[]).find((u) => u.user_id === a.performed_by);
                   return (
                     <TableRow key={a.id}>
-                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(a.performed_at), "dd MMM yy HH:mm")}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(a.performed_at), "dd/MM/yy HH:mm")}</TableCell>
                       <TableCell><Badge variant="outline" className="capitalize text-[10px]">{a.action}</Badge></TableCell>
                       <TableCell className="text-xs">{a.item_name}</TableCell>
                       <TableCell className={`text-xs text-right font-mono ${a.delta && a.delta < 0 ? "text-rose-600" : a.delta && a.delta > 0 ? "text-emerald-600" : ""}`}>{a.delta != null ? (a.delta > 0 ? "+" : "") + a.delta : "—"}</TableCell>

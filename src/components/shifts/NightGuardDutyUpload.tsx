@@ -533,7 +533,7 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
               <Input type="date" value={replaceWeekStart} onChange={(e) => setReplaceWeekStart(e.target.value)} />
               {replaceWeekDates.length === 7 && (
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Week: {format(parseISO(replaceWeekDates[0]), "dd MMM")} — {format(parseISO(replaceWeekDates[6]), "dd MMM yyyy")}
+                  Week: {format(parseISO(replaceWeekDates[0]), "dd MMM")} — {format(parseISO(replaceWeekDates[6]), "dd/MM/yyyy")}
                 </p>
               )}
             </div>
@@ -615,7 +615,7 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
             <AlertDialogTitle>Confirm Week Replacement</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2">
-                <p>This will permanently delete <strong>{existingWeekAssignments.length}</strong> existing assignment(s) for the week of <strong>{replaceWeekDates[0] ? format(parseISO(replaceWeekDates[0]), "dd MMM") : ""} — {replaceWeekDates[6] ? format(parseISO(replaceWeekDates[6]), "dd MMM yyyy") : ""}</strong> and create <strong>{validReplaceGuards.length * 7}</strong> new assignments.</p>
+                <p>This will permanently delete <strong>{existingWeekAssignments.length}</strong> existing assignment(s) for the week of <strong>{replaceWeekDates[0] ? format(parseISO(replaceWeekDates[0]), "dd MMM") : ""} — {replaceWeekDates[6] ? format(parseISO(replaceWeekDates[6]), "dd/MM/yyyy") : ""}</strong> and create <strong>{validReplaceGuards.length * 7}</strong> new assignments.</p>
                 <p className="text-destructive font-medium">This action cannot be undone.</p>
               </div>
             </AlertDialogDescription>

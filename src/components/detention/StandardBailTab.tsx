@@ -315,7 +315,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                       <TableCell>{label(r.bail_type)}</TableCell>
                       <TableCell>{r.bail_amount ? `${r.currency ?? "GHS"} ${Number(r.bail_amount).toLocaleString()}` : "—"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {r.granted_at ? format(new Date(r.granted_at), "dd MMM yyyy") : "—"}
+                        {r.granted_at ? format(new Date(r.granted_at), "dd/MM/yyyy") : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge className={STATUS_STYLE[r.authorization_status] ?? ""} variant="secondary">
@@ -565,7 +565,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
               <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">
                 <Detail k="Bail type" v={label(viewing.bail_type)} />
                 <Detail k="Amount" v={viewing.bail_amount ? `${viewing.currency ?? "GHS"} ${Number(viewing.bail_amount).toLocaleString()}` : "—"} />
-                <Detail k="Granted at" v={viewing.granted_at ? format(new Date(viewing.granted_at), "dd MMM yyyy HH:mm") : "—"} />
+                <Detail k="Granted at" v={viewing.granted_at ? format(new Date(viewing.granted_at), "dd/MM/yyyy HH:mm") : "—"} />
                 <Detail k="Status" v={String(viewing.authorization_status ?? "pending")} />
                 <Detail k="Gender" v={genderLabel(viewing.bailee_gender)} />
                 <Detail k="Nationality" v={viewing.bailee_nationality} />
@@ -575,7 +575,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                 <Detail k="Offence" v={viewing.offence} />
                 <Detail k="Conditions" v={viewing.conditions} />
                 <Detail k="Report station" v={viewing.report_station} />
-                <Detail k="Report back" v={viewing.report_back_at ? format(new Date(viewing.report_back_at), "dd MMM yyyy HH:mm") : "—"} />
+                <Detail k="Report back" v={viewing.report_back_at ? format(new Date(viewing.report_back_at), "dd/MM/yyyy HH:mm") : "—"} />
                 <Detail k="Surety" v={viewing.surety_name} />
                 <Detail k="Surety phone" v={viewing.surety_phone} />
                 <Detail k="Surety relationship" v={relationshipDisplay(viewing.surety_relationship, viewing.surety_relationship_other)} />

@@ -734,7 +734,7 @@ function AuditDialog({ row, onClose }: { row: ProfileRow; onClose: () => void })
                   <li key={a.id} className="p-3 text-xs space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">{a.action}</span>
-                      <span className="text-muted-foreground">{format(new Date(a.created_at), "PP p")}</span>
+                      <span className="text-muted-foreground">{format(new Date(a.created_at), "dd/MM/yyyy HH:mm")}</span>
                     </div>
                     {reason && <div className="text-muted-foreground">Reason: {reason}</div>}
                     <pre className="bg-muted/40 rounded p-2 overflow-x-auto text-[11px]">

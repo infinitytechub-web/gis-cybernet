@@ -30,7 +30,7 @@ export function TodayRosterCard({ todayDutyStaff, totalStaff, shiftStartTime, sh
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] font-bold">
           <Shield className="h-4 w-4 stroke-[2.5]" />
-          Tonight's Duty Roster — {format(new Date(), "EEEE, dd MMM yyyy")}
+          Tonight's Duty Roster — {format(new Date(), "EEEE, dd/MM/yyyy")}
           <Badge variant="outline" className="ml-auto text-[10px] font-semibold">
             {todayDutyStaff.length} of {totalStaff} assigned
           </Badge>

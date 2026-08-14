@@ -213,8 +213,8 @@ export default function ExcuseDutyForm() {
               {myForms.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No submissions yet.</TableCell></TableRow>}
               {myForms.map((f: any) => (
                 <TableRow key={f.id}>
-                  <TableCell className="text-xs">{format(new Date(f.created_at), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(f.start_date), "dd MMM")} – {format(new Date(f.end_date), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(f.created_at), "dd/MM/yyyy")}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(f.start_date), "dd MMM")} – {format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
                   <TableCell><Badge className={STATUS_COLOR[f.status] ?? ""}>{f.status}</Badge></TableCell>
                   <TableCell className="text-xs">{f.review_comment ?? "—"}</TableCell>
                   <TableCell className="text-right">
@@ -248,7 +248,7 @@ export default function ExcuseDutyForm() {
             <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
               <div><span className="text-muted-foreground">Officer:</span> <span className="font-medium">{autoFill?.officer}</span></div>
               <div><span className="text-muted-foreground">Period:</span> <span className="font-medium">{confirmation.period}</span></div>
-              <div><span className="text-muted-foreground">Submitted:</span> <span className="font-medium">{format(confirmation.submittedAt, "dd MMM yyyy HH:mm")}</span></div>
+              <div><span className="text-muted-foreground">Submitted:</span> <span className="font-medium">{format(confirmation.submittedAt, "dd/MM/yyyy HH:mm")}</span></div>
             </div>
           )}
           <div className="space-y-2 text-xs">

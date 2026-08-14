@@ -258,7 +258,7 @@ export function FailedLoginTimelinePanel() {
                   </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {format(new Date(g.first), "PPp")} → {format(new Date(g.last), "p")}
+                  {format(new Date(g.first), "dd/MM/yyyy HH:mm")} → {format(new Date(g.last), "p")}
                   <span className="ml-2">({formatDistanceToNow(new Date(g.last), { addSuffix: true })})</span>
                 </div>
               </div>
@@ -268,7 +268,7 @@ export function FailedLoginTimelinePanel() {
                     <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full bg-destructive ring-2 ring-background" />
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                       <span className="text-muted-foreground tabular-nums">
-                        {format(new Date(a.attempted_at), "PPp")}
+                        {format(new Date(a.attempted_at), "dd/MM/yyyy HH:mm")}
                       </span>
                       <span className="inline-flex items-center gap-1 font-mono">
                         <IdCard className="h-3 w-3 text-muted-foreground" /> {a.staff_id}
@@ -300,7 +300,7 @@ export function FailedLoginTimelinePanel() {
             <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full bg-chart-4 ring-2 ring-background" />
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
               <span className="text-muted-foreground tabular-nums">
-                {format(new Date(a.attempted_at), "PPp")}
+                {format(new Date(a.attempted_at), "dd/MM/yyyy HH:mm")}
               </span>
               <span className="text-muted-foreground">
                 ({formatDistanceToNow(new Date(a.attempted_at), { addSuffix: true })})

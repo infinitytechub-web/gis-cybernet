@@ -208,7 +208,7 @@ export function LeaveAdminDashboard() {
                         <TableCell className="text-sm">{r.shift_group ?? "—"}</TableCell>
                         <TableCell className="capitalize text-sm">{r.type}</TableCell>
                         <TableCell className="text-xs">
-                          {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd MMM yy")}
+                          {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
                         </TableCell>
                         <TableCell>{days}</TableCell>
                         <TableCell>

@@ -265,7 +265,7 @@ export function ProcurementReportsTab() {
 
     // Rough payload size estimate from raw text
     const text =
-      `Procurement Combined Report ${format(new Date(), "PPpp")}\n` +
+      `Procurement Combined Report ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}\n` +
       sections
         .map(
           (s) =>
@@ -316,7 +316,7 @@ export function ProcurementReportsTab() {
       if (fmt === "csv") {
         const lines: string[] = [];
         lines.push(`"Procurement — Combined Report"`);
-        lines.push(`"Generated","${format(new Date(), "PPpp")}"`);
+        lines.push(`"Generated","${format(new Date(), "dd/MM/yyyy HH:mm:ss")}"`);
         lines.push(`"Total PO value","${fmtCurrency(kpis.poTotal)}"`);
         lines.push(`"Invoices total","${fmtCurrency(kpis.invTotal)}"`);
         lines.push(`"Invoices outstanding","${fmtCurrency(kpis.invOutstanding)}"`);
@@ -359,7 +359,7 @@ export function ProcurementReportsTab() {
         });
         exportReport("pdf", {
           title: "Procurement — Combined Report",
-          subtitle: `Generated ${format(new Date(), "PPpp")} · PO total ${fmtCurrency(kpis.poTotal)} · Outstanding ${fmtCurrency(kpis.invOutstanding)}`,
+          subtitle: `Generated ${format(new Date(), "dd/MM/yyyy HH:mm:ss")} · PO total ${fmtCurrency(kpis.poTotal)} · Outstanding ${fmtCurrency(kpis.invOutstanding)}`,
           filename: `procurement-combined-report-${today}`,
           headers,
           rows,
@@ -552,7 +552,7 @@ export function ProcurementReportsTab() {
                       </TableCell>
                       <TableCell className="text-xs">
                         <Badge variant="destructive" className="font-normal">
-                          {i.due_date ? format(new Date(i.due_date), "PP") : "—"}
+                          {i.due_date ? format(new Date(i.due_date), "dd/MM/yyyy") : "—"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs capitalize">{i.status}</TableCell>
@@ -626,7 +626,7 @@ export function ProcurementReportsTab() {
                         {fmtCurrency(Number(c.value || 0))}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {c.end_date ? format(new Date(c.end_date), "PP") : "—"}
+                        {c.end_date ? format(new Date(c.end_date), "dd/MM/yyyy") : "—"}
                       </TableCell>
                     </TableRow>
                   ))
@@ -879,7 +879,7 @@ function ProcurementComplianceExport({
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start", !from && "text-muted-foreground")}>
                   <CalendarIcon className="h-4 w-4 mr-1" />
-                  {from ? format(from, "PP") : "Any"}
+                  {from ? format(from, "dd/MM/yyyy") : "Any"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -893,7 +893,7 @@ function ProcurementComplianceExport({
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start", !to && "text-muted-foreground")}>
                   <CalendarIcon className="h-4 w-4 mr-1" />
-                  {to ? format(to, "PP") : "Any"}
+                  {to ? format(to, "dd/MM/yyyy") : "Any"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

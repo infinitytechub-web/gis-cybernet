@@ -272,7 +272,7 @@ export default function ProcessingPassportApplications() {
 
               {reviewApp.mfa_reviewed_at && (
                 <div className="text-xs text-muted-foreground">
-                  Last reviewed {format(new Date(reviewApp.mfa_reviewed_at), "dd MMM yyyy HH:mm")}
+                  Last reviewed {format(new Date(reviewApp.mfa_reviewed_at), "dd/MM/yyyy HH:mm")}
                 </div>
               )}
 
@@ -303,7 +303,7 @@ export default function ProcessingPassportApplications() {
                               </Badge>
                             </div>
                             <span className="text-[10px] text-muted-foreground">
-                              {format(new Date(a.reviewed_at), "dd MMM yyyy HH:mm")}
+                              {format(new Date(a.reviewed_at), "dd/MM/yyyy HH:mm")}
                             </span>
                           </div>
                           <div className="mt-1 text-muted-foreground">
@@ -377,7 +377,7 @@ export default function ProcessingPassportApplications() {
                     return <Badge className={cls}>{s}</Badge>;
                   })()}
                 </TableCell>
-                <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
+                <TableCell className="text-sm">{format(new Date(app.created_at), "dd/MM/yyyy")}</TableCell>
                 <TableCell>
                   <RecordRowActions
                     kind="passport_application"

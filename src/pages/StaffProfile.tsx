@@ -320,7 +320,7 @@ export default function StaffProfile() {
                     <TableBody>
                       {attendance.map((a) => (
                         <TableRow key={a.id}>
-                          <TableCell>{format(new Date(a.date), "dd MMM yyyy")}</TableCell>
+                          <TableCell>{format(new Date(a.date), "dd/MM/yyyy")}</TableCell>
                           <TableCell>{a.check_in ? format(new Date(a.check_in), "HH:mm") : "—"}</TableCell>
                           <TableCell>{a.check_out ? format(new Date(a.check_out), "HH:mm") : "—"}</TableCell>
                           <TableCell>
@@ -364,7 +364,7 @@ export default function StaffProfile() {
                           <TableRow key={r.id}>
                             <TableCell className="capitalize">{r.type}</TableCell>
                             <TableCell className="text-xs">
-                              {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd MMM yy")}
+                              {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
                             </TableCell>
                             <TableCell>{days}</TableCell>
                             <TableCell>
@@ -408,7 +408,7 @@ export default function StaffProfile() {
                           <TableCell className="text-xs">
                             {p.from_dept?.name ?? "—"} → {p.to_dept?.name ?? "—"}
                           </TableCell>
-                          <TableCell>{format(new Date(p.effective_date), "dd MMM yyyy")}</TableCell>
+                          <TableCell>{format(new Date(p.effective_date), "dd/MM/yyyy")}</TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={statusColor(p.status)}>{p.status}</Badge>
                           </TableCell>
@@ -466,7 +466,7 @@ export default function StaffProfile() {
                       {officeHistory.map((h: any) => (
                         <TableRow key={h.id}>
                           <TableCell className="text-xs font-mono whitespace-nowrap">
-                            {format(new Date(h.changed_at), "dd MMM yyyy, HH:mm")}
+                            {format(new Date(h.changed_at), "dd/MM/yyyy, HH:mm")}
                           </TableCell>
                           <TableCell className="text-sm">
                             {h.previous_office

@@ -440,7 +440,7 @@ export default function Staff() {
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
                 headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"],
                 rows: buildStaffExportRows(),
-                subtitle: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")} | Records: ${filtered.length}`,
+                subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
             {isAdmin && (

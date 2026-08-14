@@ -245,7 +245,7 @@ export default function ReportScheduleManager() {
                       </TableCell>
                       <TableCell className="text-xs">
                         {s.last_run_at ? (
-                          <span title={format(new Date(s.last_run_at), "dd MMM yyyy HH:mm")}>
+                          <span title={format(new Date(s.last_run_at), "dd/MM/yyyy HH:mm")}>
                             {formatDistanceToNow(new Date(s.last_run_at), { addSuffix: true })}
                           </span>
                         ) : (

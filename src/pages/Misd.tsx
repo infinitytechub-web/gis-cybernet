@@ -391,7 +391,7 @@ function IncidentsTab({ canCreate, canManage, userId }: { canCreate: boolean; ca
                     <TableCell className="text-xs capitalize">{i.incident_type.replace("_", " ")}</TableCell>
                     <TableCell><Badge className={SEVERITY_COLORS[i.severity]}>{i.severity}</Badge></TableCell>
                     <TableCell><Badge variant="secondary" className={STATUS_COLORS[i.status]}>{i.status}</Badge></TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.reported_at, "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.reported_at, "dd/MM/yyyy")}</TableCell>
                     {canCreate && <TableCell><Button variant="ghost" size="sm" onClick={() => openDialog(i)}>Open</Button></TableCell>}
                   </TableRow>
                 ))}
@@ -518,7 +518,7 @@ function ThreatIntelTab({ canCreate, canManage, userId }: { canCreate: boolean; 
                     <TableCell><Badge className={SEVERITY_COLORS[i.threat_level]}>{i.threat_level}</Badge></TableCell>
                     <TableCell className="text-xs">{i.category || "—"}</TableCell>
                     <TableCell>{i.is_active ? <Badge className="bg-emerald-100 text-emerald-800">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.first_seen, "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{safeFormat(i.first_seen, "dd/MM/yyyy")}</TableCell>
                     {canManage && <TableCell><Button variant="ghost" size="sm" onClick={() => toggle.mutate({ id: i.id, is_active: !i.is_active })}>{i.is_active ? "Deactivate" : "Activate"}</Button></TableCell>}
                   </TableRow>
                 ))}

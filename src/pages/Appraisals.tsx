@@ -335,7 +335,7 @@ export default function Appraisals() {
                     {appraisals.length === 0 && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-xs text-muted-foreground py-6">No appraisals yet.</TableCell></TableRow>}
                     {appraisals.map((a: any) => (
                       <TableRow key={a.id}>
-                        <TableCell className="text-xs">{format(new Date(a.created_at), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(a.created_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs">{a.profiles?.last_name}, {a.profiles?.first_name}</TableCell>
                         <TableCell className="text-xs">{a.period_month ? MONTHS[a.period_month - 1] + " " : ""}{a.period_year}</TableCell>
                         <TableCell className="text-xs">{a.total_score} / 35 · avg {a.average_score}</TableCell>

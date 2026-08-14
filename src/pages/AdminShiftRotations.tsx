@@ -1077,7 +1077,7 @@ function AuditPanel({ scheduleId }: { scheduleId: string }) {
               <li key={r.id} className="flex items-start gap-2 border-b border-border/50 pb-1.5 last:border-0">
                 <Badge variant="outline" className="text-[10px]">{r.action}</Badge>
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  {format(parseISO(r.created_at), "dd MMM yyyy HH:mm")}
+                  {format(parseISO(r.created_at), "dd/MM/yyyy HH:mm")}
                 </span>
               </li>
             ))}

@@ -65,10 +65,10 @@ function fmt(key: string, v: any): string {
   if (v === null || v === undefined || v === "") return "—";
   if (key === "fee_charged") return `GHS ${Number(v).toFixed(2)}`;
   if (key === "created_at") {
-    try { return format(new Date(v), "dd MMM yyyy, HH:mm"); } catch { return String(v); }
+    try { return format(new Date(v), "dd/MM/yyyy, HH:mm"); } catch { return String(v); }
   }
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) {
-    try { return format(new Date(v), "dd MMM yyyy"); } catch { return String(v); }
+    try { return format(new Date(v), "dd/MM/yyyy"); } catch { return String(v); }
   }
   if (typeof v === "string") return v.replace(/_/g, " ");
   return String(v);
@@ -127,7 +127,7 @@ export async function buildRecordDocxBlob(
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
-            children: [new TextRun({ text: `Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, size: 18, color: "64748B" })],
+            children: [new TextRun({ text: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`, size: 18, color: "64748B" })],
           }),
           new Paragraph({ children: [new TextRun("")] }),
           new Paragraph({

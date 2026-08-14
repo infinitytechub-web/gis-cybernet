@@ -87,7 +87,7 @@ export default function PostingsHistory() {
   const headers = ["Staff ID", "Name", "From", "To", "Effective Date", "Status", "Reason"];
   const exportRows = mapped.map((r) => [
     r.staffId, r.name, r.fromDept, r.toDept,
-    r.effective ? format(new Date(r.effective), "dd MMM yyyy") : "—",
+    r.effective ? format(new Date(r.effective), "dd/MM/yyyy") : "—",
     r.status, r.reason,
   ]);
 
@@ -97,7 +97,7 @@ export default function PostingsHistory() {
       filename: `transfer-history-${format(new Date(), "yyyy-MM-dd")}`,
       headers,
       rows: exportRows,
-      subtitle: `${mapped.length} records · Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+      subtitle: `${mapped.length} records · Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
     });
   };
 
@@ -197,7 +197,7 @@ export default function PostingsHistory() {
                       <TableCell className="text-xs font-medium">{r.name}</TableCell>
                       <TableCell className="text-xs">{r.fromDept}</TableCell>
                       <TableCell className="text-xs">{r.toDept}</TableCell>
-                      <TableCell className="text-xs">{r.effective ? format(new Date(r.effective), "dd MMM yyyy") : "—"}</TableCell>
+                      <TableCell className="text-xs">{r.effective ? format(new Date(r.effective), "dd/MM/yyyy") : "—"}</TableCell>
                       <TableCell className="text-xs"><Badge variant={r.status === "approved" ? "default" : r.status === "rejected" ? "destructive" : "secondary"}>{r.status}</Badge></TableCell>
                       <TableCell className="text-xs max-w-[200px] truncate" title={r.reason}>{r.reason}</TableCell>
                       <TableCell>
@@ -213,7 +213,7 @@ export default function PostingsHistory() {
             </Table>
           </div>
           <p className="text-xs text-muted-foreground pt-3">
-            Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
+            Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd/MM/yyyy HH:mm:ss") : "—"}
           </p>
         </CardContent>
       </Card>

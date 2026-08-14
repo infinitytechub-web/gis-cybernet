@@ -490,7 +490,7 @@ export default function MyShiftTracker() {
     const subtitle = [
       `Staff: ${fullName}${profile?.staff_id ? ` (${profile.staff_id})` : ""}`,
       `Shift Group: ${profile?.shift_group ?? "—"}`,
-      `Period: ${format(monthStart, "dd MMM yyyy")} – ${format(monthEnd, "dd MMM yyyy")}`,
+      `Period: ${format(monthStart, "dd/MM/yyyy")} – ${format(monthEnd, "dd/MM/yyyy")}`,
       `Scope: ${exportScope}`,
       `Status: ${exportStatus}`,
       `Totals: ${metrics.scheduled} scheduled · ${metrics.worked} worked · ${fmtMinutes(metrics.totalMinutes)}`,
@@ -530,7 +530,7 @@ export default function MyShiftTracker() {
           <div className="rounded-lg border bg-card px-3 py-2 text-right shadow-sm">
             <div className="text-xs text-muted-foreground">Current time</div>
             <div className="font-mono text-lg font-semibold tabular-nums">{format(now, "HH:mm:ss")}</div>
-            <div className="text-xs text-muted-foreground">{format(now, "EEE, dd MMM yyyy")}</div>
+            <div className="text-xs text-muted-foreground">{format(now, "EEE, dd/MM/yyyy")}</div>
           </div>
           {profile?.shift_group && (
             <Badge
@@ -732,7 +732,7 @@ export default function MyShiftTracker() {
             <div>
               <Label className="text-xs">Period</Label>
               <div className="h-9 px-3 rounded-md border bg-muted/30 flex items-center text-sm font-mono">
-                {format(monthStart, "dd MMM")} – {format(monthEnd, "dd MMM yyyy")}
+                {format(monthStart, "dd MMM")} – {format(monthEnd, "dd/MM/yyyy")}
               </div>
             </div>
           </div>

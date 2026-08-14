@@ -166,7 +166,7 @@ export default function MyExcuseDutySubmissions() {
     doc.setFont("helvetica", "normal");
     doc.text(doc.splitTextToSize(entry.reason || "—", 170), 20, y);
     doc.setFont("helvetica", "italic"); doc.setFontSize(9);
-    doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, 20, 285);
+    doc.text(`Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 20, 285);
     doc.save(`excuse_duty_${format(new Date(entry.created_at), "yyyyMMdd")}.pdf`);
   };
 
@@ -287,9 +287,9 @@ export default function MyExcuseDutySubmissions() {
                 {!isLoading && rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No submissions yet.</TableCell></TableRow>}
                 {rows.map((f: any) => (
                   <TableRow key={f.id}>
-                    <TableCell className="text-xs">{format(new Date(f.created_at), "dd MMM yyyy HH:mm")}</TableCell>
-                    <TableCell className="text-xs">{format(new Date(f.start_date), "dd MMM yyyy")}</TableCell>
-                    <TableCell className="text-xs">{format(new Date(f.end_date), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-xs">{format(new Date(f.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                    <TableCell className="text-xs">{format(new Date(f.start_date), "dd/MM/yyyy")}</TableCell>
+                    <TableCell className="text-xs">{format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
                     <TableCell><Badge className={STATUS_COLOR[f.status] ?? ""}>{f.status}</Badge></TableCell>
                     <TableCell className="text-xs">{f.review_comment ?? "—"}</TableCell>
                     <TableCell className="text-right">

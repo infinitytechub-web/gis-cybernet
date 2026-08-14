@@ -233,8 +233,8 @@ export function ComplianceExportFilters() {
         body: [
           ["Location/Office", location === "any" ? "All" : location],
           ["Frequency", freq === "any" ? "All" : freq],
-          ["From", from ? format(from, "PPP") : "—"],
-          ["To", to ? format(to, "PPP") : "—"],
+          ["From", from ? format(from, "dd/MM/yyyy") : "—"],
+          ["To", to ? format(to, "dd/MM/yyyy") : "—"],
           ["Items in scope", String(composed.rows.length)],
           ["Mismatched", String(composed.mismatched)],
           ["Net variance (GHS)", composed.net.toFixed(2)],
@@ -259,7 +259,7 @@ export function ComplianceExportFilters() {
           r.asset_tag, r.name, r.category, r.location, r.condition,
           r.sys, r.phys ?? "", r.variance ?? "",
           r.variValue === null ? "" : Number(r.variValue).toFixed(2),
-          r.counted_at ? format(new Date(r.counted_at), "Pp") : "",
+          r.counted_at ? format(new Date(r.counted_at), "dd/MM/yyyy HH:mm") : "",
         ]),
         theme: "striped",
         styles: { fontSize: 7, cellPadding: 2.5, overflow: "linebreak" },
@@ -275,7 +275,7 @@ export function ComplianceExportFilters() {
           startY: y + 6,
           head: [["Created", "Trigger", "Frequency", "Mismatched", "Net Variance (GHS)"]],
           body: runs.map((r) => [
-            format(new Date(r.created_at), "Pp"),
+            format(new Date(r.created_at), "dd/MM/yyyy HH:mm"),
             r.triggered_kind,
             r.schedule?.frequency ?? "—",
             String(r.mismatched_count),
@@ -353,7 +353,7 @@ export function ComplianceExportFilters() {
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("h-9 w-full justify-start text-left font-normal", !from && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {from ? format(from, "PPP") : "Pick a date"}
+                  {from ? format(from, "dd/MM/yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -367,7 +367,7 @@ export function ComplianceExportFilters() {
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("h-9 w-full justify-start text-left font-normal", !to && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {to ? format(to, "PPP") : "Pick a date"}
+                  {to ? format(to, "dd/MM/yyyy") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

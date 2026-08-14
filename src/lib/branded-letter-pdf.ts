@@ -38,14 +38,14 @@ function footer(doc: jsPDF) {
   doc.setFontSize(8);
   doc.setTextColor(90, 90, 90);
   doc.text("CONFIDENTIAL — For Official Use Only", MARGIN, h - 12);
-  doc.text(`Generated: ${format(new Date(), "PPpp")}`, w - MARGIN, h - 12, { align: "right" });
+  doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}`, w - MARGIN, h - 12, { align: "right" });
 }
 
 function refLine(doc: jsPDF, ref: string, y: number) {
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
   doc.text(`Ref: ${ref}`, MARGIN, y);
-  doc.text(`Date: ${format(new Date(), "PPP")}`, doc.internal.pageSize.getWidth() - MARGIN, y, { align: "right" });
+  doc.text(`Date: ${format(new Date(), "dd/MM/yyyy")}`, doc.internal.pageSize.getWidth() - MARGIN, y, { align: "right" });
   doc.setTextColor(20, 20, 20);
 }
 
@@ -96,8 +96,8 @@ export function generateLeaveLetter(d: LeaveLetterData): jsPDF {
   field(doc, "Staff ID", d.staffId, y); y += 7;
   if (d.department) { field(doc, "Department", d.department, y); y += 7; }
   field(doc, "Leave Type", d.type, y); y += 7;
-  field(doc, "From", format(new Date(d.startDate), "PPP"), y); y += 7;
-  field(doc, "To", format(new Date(d.endDate), "PPP"), y); y += 7;
+  field(doc, "From", format(new Date(d.startDate), "dd/MM/yyyy"), y); y += 7;
+  field(doc, "To", format(new Date(d.endDate), "dd/MM/yyyy"), y); y += 7;
   field(doc, "Duration", `${d.days} day(s)`, y); y += 12;
 
   doc.setFont("helvetica", "bold");
@@ -105,9 +105,9 @@ export function generateLeaveLetter(d: LeaveLetterData): jsPDF {
   doc.text("Decision", MARGIN, y); y += 6;
   const verdict =
     d.status === "approved"
-      ? `This is to formally notify you that your application for ${d.type} leave from ${format(new Date(d.startDate), "PPP")} to ${format(new Date(d.endDate), "PPP")} has been APPROVED. You are expected to resume duty on the working day immediately following the end date.`
+      ? `This is to formally notify you that your application for ${d.type} leave from ${format(new Date(d.startDate), "dd/MM/yyyy")} to ${format(new Date(d.endDate), "dd/MM/yyyy")} has been APPROVED. You are expected to resume duty on the working day immediately following the end date.`
       : d.status === "rejected"
-      ? `This is to inform you that your application for ${d.type} leave from ${format(new Date(d.startDate), "PPP")} to ${format(new Date(d.endDate), "PPP")} has NOT been approved at this time.`
+      ? `This is to inform you that your application for ${d.type} leave from ${format(new Date(d.startDate), "dd/MM/yyyy")} to ${format(new Date(d.endDate), "dd/MM/yyyy")} has NOT been approved at this time.`
       : `Your leave application has been received and is currently under review.`;
   y = paragraph(doc, verdict, y) + 4;
 
@@ -153,14 +153,14 @@ export function generatePostingLetter(d: PostingLetterData): jsPDF {
   field(doc, "Staff ID", d.staffId, y); y += 7;
   field(doc, "From", d.fromDepartment ?? "—", y); y += 7;
   field(doc, "To", d.toDepartment ?? "—", y); y += 7;
-  if (d.effectiveDate) { field(doc, "Effective", format(new Date(d.effectiveDate), "PPP"), y); y += 7; }
+  if (d.effectiveDate) { field(doc, "Effective", format(new Date(d.effectiveDate), "dd/MM/yyyy"), y); y += 7; }
   field(doc, "Status", d.status.toUpperCase(), y); y += 12;
 
   doc.setFont("helvetica", "bold"); doc.setFontSize(11);
   doc.text("Directive", MARGIN, y); y += 6;
   const body =
     d.status === "approved"
-      ? `By the authority of the Sector Command, you are hereby posted/transferred from ${d.fromDepartment ?? "your current department"} to ${d.toDepartment ?? "the receiving department"}${d.effectiveDate ? ", effective " + format(new Date(d.effectiveDate), "PPP") : ""}. You are to report to the receiving officer and ensure proper handing-over.`
+      ? `By the authority of the Sector Command, you are hereby posted/transferred from ${d.fromDepartment ?? "your current department"} to ${d.toDepartment ?? "the receiving department"}${d.effectiveDate ? ", effective " + format(new Date(d.effectiveDate), "dd/MM/yyyy") : ""}. You are to report to the receiving officer and ensure proper handing-over.`
       : d.status === "rejected"
       ? `Your request for posting/transfer has not been approved at this time. You are to continue your current duties pending further notice.`
       : `Your posting/transfer request is currently under review by the Command.`;

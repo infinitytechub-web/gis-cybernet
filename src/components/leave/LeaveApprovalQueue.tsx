@@ -188,7 +188,7 @@ export function LeaveApprovalQueue() {
                       </TableCell>
                       <TableCell className="capitalize">{r.type}</TableCell>
                       <TableCell className="hidden sm:table-cell text-xs">
-                        {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd MMM yy")}
+                        {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{days}</TableCell>
                       <TableCell>
@@ -256,11 +256,11 @@ export function LeaveApprovalQueue() {
                 </div>
                 <div>
                   <span className="text-muted-foreground">From:</span>
-                  <p className="font-medium">{format(new Date(selectedRequest.start_date), "PPP")}</p>
+                  <p className="font-medium">{format(new Date(selectedRequest.start_date), "dd/MM/yyyy")}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">To:</span>
-                  <p className="font-medium">{format(new Date(selectedRequest.end_date), "PPP")}</p>
+                  <p className="font-medium">{format(new Date(selectedRequest.end_date), "dd/MM/yyyy")}</p>
                 </div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Days:</span>

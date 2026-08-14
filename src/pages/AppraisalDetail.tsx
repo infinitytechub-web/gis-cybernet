@@ -264,7 +264,7 @@ export default function AppraisalDetail() {
                 )}
                 {audit.map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell className="text-xs">{format(new Date(row.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                    <TableCell className="text-xs">{format(new Date(row.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                     <TableCell><Badge className={ACTION_COLOR[row.action] ?? ""}>{row.action.replace("_", " ")}</Badge></TableCell>
                     <TableCell className="text-xs">
                       {row.actor ? `${row.actor.last_name ?? ""}, ${row.actor.first_name ?? ""}` : "—"}

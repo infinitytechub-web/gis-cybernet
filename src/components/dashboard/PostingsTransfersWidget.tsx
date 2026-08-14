@@ -143,9 +143,9 @@ export default function PostingsTransfersWidget() {
   const headers = ["Staff ID", "Name", "Date Joined", "Station(s)", "Phone", "DOB", "Appointment", "Years in Service", "Time Until Retirement"];
   const exportRows = filtered.map((r) => [
     r.staffId, r.name,
-    r.dateJoined ? format(new Date(r.dateJoined), "dd MMM yyyy") : "—",
+    r.dateJoined ? format(new Date(r.dateJoined), "dd/MM/yyyy") : "—",
     r.stations, r.phone,
-    r.dob ? format(new Date(r.dob), "dd MMM yyyy") : "—",
+    r.dob ? format(new Date(r.dob), "dd/MM/yyyy") : "—",
     r.appointment, r.yearsService, r.retirement,
   ]);
 
@@ -155,7 +155,7 @@ export default function PostingsTransfersWidget() {
       filename: `postings-transfers-${format(new Date(), "yyyy-MM-dd")}`,
       headers,
       rows: exportRows,
-      subtitle: `${filtered.length} staff records · Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+      subtitle: `${filtered.length} staff records · Generated ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
     });
   };
 
@@ -234,10 +234,10 @@ export default function PostingsTransfersWidget() {
                     )}
                     <TableCell className="text-xs font-mono">{r.staffId}</TableCell>
                     <TableCell className="text-xs font-medium">{r.name}</TableCell>
-                    <TableCell className="text-xs">{r.dateJoined ? format(new Date(r.dateJoined), "dd MMM yyyy") : "—"}</TableCell>
+                    <TableCell className="text-xs">{r.dateJoined ? format(new Date(r.dateJoined), "dd/MM/yyyy") : "—"}</TableCell>
                     <TableCell className="text-xs">{r.stations}</TableCell>
                     <TableCell className="text-xs">{r.phone}</TableCell>
-                    <TableCell className="text-xs">{r.dob ? format(new Date(r.dob), "dd MMM yyyy") : "—"}</TableCell>
+                    <TableCell className="text-xs">{r.dob ? format(new Date(r.dob), "dd/MM/yyyy") : "—"}</TableCell>
                     <TableCell className="text-xs">{r.appointment}</TableCell>
                     <TableCell className="text-xs">{r.yearsService}</TableCell>
                     <TableCell className="text-xs">{r.retirement}</TableCell>
@@ -271,7 +271,7 @@ export default function PostingsTransfersWidget() {
         </div>
         <p className="text-xs text-muted-foreground pt-2">
           Showing {filtered.length} record{filtered.length === 1 ? "" : "s"} · scroll within the table to view all · use search to narrow down.
-          {" · "}Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
+          {" · "}Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd/MM/yyyy HH:mm:ss") : "—"}
           {" · "}
           <button className="underline" onClick={() => navigate("/postings/history")}>Open full transfer history →</button>
         </p>

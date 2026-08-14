@@ -218,7 +218,7 @@ export default function OperationsMap({ operations }: OperationsMapProps) {
       marker.bindPopup(`
         <div style="font-size:12px;min-width:200px">
           <p style="font-weight:bold;text-transform:capitalize;margin:0 0 4px">${esc(op.operation_type.replace(/_/g, " "))}</p>
-          <p style="margin:0;color:#666">${esc(format(new Date(op.operation_date), "dd MMM yyyy"))}</p>
+          <p style="margin:0;color:#666">${esc(format(new Date(op.operation_date), "dd/MM/yyyy"))}</p>
           <p style="margin:2px 0;color:#666">${esc(op.location)}</p>
           <p style="margin:4px 0"><strong>${esc(op.suspects_count)}</strong> suspects · <strong style="color:#dc2626">${esc(op.arrests_count)}</strong> arrests</p>
           <p style="margin:4px 0">

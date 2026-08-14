@@ -58,7 +58,7 @@ const dash = (v: unknown) => {
   return s ? esc(s) : "—";
 };
 
-const dt = (v: unknown) => (v ? format(new Date(String(v)), "dd MMM yyyy HH:mm") : "—");
+const dt = (v: unknown) => (v ? format(new Date(String(v)), "dd/MM/yyyy HH:mm") : "—");
 
 const rows = (pairs: Array<[string, string]>) =>
   pairs.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${v}</td></tr>`).join("");
@@ -117,7 +117,7 @@ export function buildBailPlaceholders(r: BailRecord): Record<string, string> {
     terms_section: terms,
     surety_section: surety,
     footer: `<p class="footer">CONFIDENTIAL — Cybernet HRM System · printed ${esc(
-      format(new Date(), "dd MMM yyyy HH:mm"),
+      format(new Date(), "dd/MM/yyyy HH:mm"),
     )}</p>`,
   };
 }

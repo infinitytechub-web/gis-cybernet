@@ -118,7 +118,7 @@ export default function StaffPortal() {
                       return (
                         <TableRow key={r.id}>
                           <TableCell className="capitalize">{r.type}</TableCell>
-                          <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd MMM yy")}</TableCell>
+                          <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}</TableCell>
                           <TableCell className="hidden sm:table-cell">{days}</TableCell>
                           <TableCell><Badge className={statusColor(r.status)} variant="secondary">{r.status}</Badge></TableCell>
                           <TableCell>
@@ -174,7 +174,7 @@ export default function StaffPortal() {
                       <TableRow key={r.id}>
                         <TableCell className="capitalize">{r.type}</TableCell>
                         <TableCell className="hidden sm:table-cell text-xs">{r.from_dept?.name ?? "—"} → {r.to_dept?.name ?? "—"}</TableCell>
-                        <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.effective_date), "PP")}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.effective_date), "dd/MM/yyyy")}</TableCell>
                         <TableCell><Badge className={statusColor(r.status)} variant="secondary">{r.status}</Badge></TableCell>
                         <TableCell>
                           {(r.status === "approved" || r.status === "rejected") && (

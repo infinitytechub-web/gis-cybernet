@@ -471,7 +471,7 @@ export default function StaffRequestApprovals() {
             <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
               <div className="font-medium text-sm">{staffName(review.req.profiles)}</div>
               <div className="text-muted-foreground">
-                {review.req.kind === "shift" ? "Shift change" : "Attendance edit"} · {format(parseISO(review.req.affected_date), "EEE, dd MMM yyyy")}
+                {review.req.kind === "shift" ? "Shift change" : "Attendance edit"} · {format(parseISO(review.req.affected_date), "EEE, dd/MM/yyyy")}
               </div>
               <div className="italic">"{review.req.reason}"</div>
             </div>
@@ -598,7 +598,7 @@ function RequestCard({
           <div>
             <div className="font-semibold text-sm">{who}{staffId ? <span className="text-muted-foreground font-normal"> · {staffId}</span> : null}</div>
             <div className="text-xs text-muted-foreground">
-              For {format(parseISO(affectedDate), "EEE, dd MMM yyyy")} · submitted {format(parseISO(createdAt), "dd MMM, HH:mm")}
+              For {format(parseISO(affectedDate), "EEE, dd/MM/yyyy")} · submitted {format(parseISO(createdAt), "dd MMM, HH:mm")}
             </div>
           </div>
           <Badge variant="outline" className={cn("capitalize gap-1", STATUS_TONE[status])}>
@@ -671,7 +671,7 @@ function RequestCard({
                       <span className="font-medium capitalize">
                         {h.from_status ? `${h.from_status} → ${h.to_status}` : `Submitted (${h.to_status})`}
                       </span>
-                      <span className="text-muted-foreground"> · {format(parseISO(h.created_at), "dd MMM yyyy, HH:mm")}</span>
+                      <span className="text-muted-foreground"> · {format(parseISO(h.created_at), "dd/MM/yyyy, HH:mm")}</span>
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       by {h.actor_name || "System"}

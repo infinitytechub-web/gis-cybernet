@@ -41,7 +41,7 @@ export default function ProcessingAuditLog() {
                 <TableCell><Badge variant="outline">{log.action}</Badge></TableCell>
                 <TableCell>{log.entity_type}</TableCell>
                 <TableCell className="text-xs font-mono">{log.entity_id.slice(0, 8)}…</TableCell>
-                <TableCell className="text-sm">{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                <TableCell className="text-sm">{format(new Date(log.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
               </TableRow>
             ))}
           </TableBody>

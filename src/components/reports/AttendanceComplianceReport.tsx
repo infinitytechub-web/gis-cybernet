@@ -260,7 +260,7 @@ export default function AttendanceComplianceReport() {
   const [detailStaff, setDetailStaff] = useState<typeof rows[number] | null>(null);
 
 
-  const periodLabel = `${format(from, "dd MMM yyyy")} – ${format(to, "dd MMM yyyy")}`;
+  const periodLabel = `${format(from, "dd/MM/yyyy")} – ${format(to, "dd/MM/yyyy")}`;
 
   const buildExport = () => {
     if (displayRows.length === 0) return null;
@@ -286,7 +286,7 @@ export default function AttendanceComplianceReport() {
         { label: "Department filter", value: departmentName },
         { label: "Shift filter", value: shiftName },
         { label: "Office filter", value: officeName },
-        { label: "Generated at", value: format(new Date(), "dd MMM yyyy, HH:mm") },
+        { label: "Generated at", value: format(new Date(), "dd/MM/yyyy, HH:mm") },
       ],
     };
   };
@@ -369,7 +369,7 @@ export default function AttendanceComplianceReport() {
       ? "All departments"
       : (departments as any[]).filter((d) => opts.departmentIds.includes(d.id)).map((d) => d.name).join(", ");
     const officeNames = opts.offices.length === 0 ? "All offices" : opts.offices.join(", ");
-    const periodLbl = `${format(fromD, "dd MMM yyyy")} – ${format(toD, "dd MMM yyyy")}`;
+    const periodLbl = `${format(fromD, "dd/MM/yyyy")} – ${format(toD, "dd/MM/yyyy")}`;
     const totalsExpected = scopedRows.reduce((s, r) => s + r.expected, 0);
     const totalsPresent = scopedRows.reduce((s, r) => s + r.present, 0);
     const totalsMissing = scopedRows.reduce((s, r) => s + r.missing, 0);
@@ -392,7 +392,7 @@ export default function AttendanceComplianceReport() {
         { label: "Working days", value: `${workDays.length}` },
         { label: "Department filter", value: deptNames },
         { label: "Office filter", value: officeNames },
-        { label: "Generated at", value: format(new Date(), "dd MMM yyyy, HH:mm") },
+        { label: "Generated at", value: format(new Date(), "dd/MM/yyyy, HH:mm") },
       ],
     };
 

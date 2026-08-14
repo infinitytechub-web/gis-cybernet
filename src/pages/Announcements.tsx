@@ -272,7 +272,7 @@ export default function Announcements() {
                               </Badge>
                             </TableCell>
                             <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                              {format(new Date(a.created_at), "dd MMM yyyy")}
+                              {format(new Date(a.created_at), "dd/MM/yyyy")}
                             </TableCell>
                             <TableCell className="text-center">
                               <Switch

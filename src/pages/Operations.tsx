@@ -712,8 +712,8 @@ export default function Operations() {
       </style></head><body>
       <h1>📋 Operations Summary Report</h1>
       <div class="meta">Cybernet HRM System<br/>
-        Period: ${period.charAt(0).toUpperCase() + period.slice(1)} (${format(new Date(startDate), "dd MMM yyyy")} – ${format(new Date(), "dd MMM yyyy")})<br/>
-        Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}</div>
+        Period: ${period.charAt(0).toUpperCase() + period.slice(1)} (${format(new Date(startDate), "dd/MM/yyyy")} – ${format(new Date(), "dd/MM/yyyy")})<br/>
+        Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}</div>
       <div class="kpi-row">
         <div class="kpi"><div class="kpi-val">${totalOps}</div><div class="kpi-label">Operations</div></div>
         <div class="kpi"><div class="kpi-val">${totalArrests}</div><div class="kpi-label">Arrests</div></div>
@@ -741,7 +741,7 @@ export default function Operations() {
   const buildOperationsExportData = useCallback(() => {
     const headers = ["Date", "Type", "Location", "Severity", "Suspects", "Arrests", "Status", "Outcome"];
     const rows = searched.map(op => [
-      format(new Date(op.operation_date), "dd MMM yyyy"),
+      format(new Date(op.operation_date), "dd/MM/yyyy"),
       op.operation_type.replace(/_/g, " "),
       op.location || "—",
       op.severity,
@@ -752,7 +752,7 @@ export default function Operations() {
     ]);
     return {
       title: `Operations Report — ${period.charAt(0).toUpperCase() + period.slice(1)}`,
-      subtitle: `Period: ${format(new Date(startDate), "dd MMM yyyy")} to ${format(new Date(), "dd MMM yyyy")} | ${searched.length} operations`,
+      subtitle: `Period: ${format(new Date(startDate), "dd/MM/yyyy")} to ${format(new Date(), "dd/MM/yyyy")} | ${searched.length} operations`,
       filename: `operations-report-${period}-${format(new Date(), "yyyy-MM-dd")}`,
       headers,
       rows,
@@ -767,7 +767,7 @@ export default function Operations() {
     ]);
     return {
       title: `Officer Performance Report — ${period.charAt(0).toUpperCase() + period.slice(1)}`,
-      subtitle: `Period: ${format(new Date(startDate), "dd MMM yyyy")} to ${format(new Date(), "dd MMM yyyy")}`,
+      subtitle: `Period: ${format(new Date(startDate), "dd/MM/yyyy")} to ${format(new Date(), "dd/MM/yyyy")}`,
       filename: `officer-performance-ops-${period}-${format(new Date(), "yyyy-MM-dd")}`,
       headers,
       rows,
@@ -936,7 +936,7 @@ export default function Operations() {
                             <Badge variant="outline" className={`text-[10px] ${SEVERITY_COLORS[op.severity] || ""}`}>{op.severity}</Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(op.operation_date), "dd MMM yyyy")}{op.location ? ` · ${op.location}` : ""}
+                            {format(new Date(op.operation_date), "dd/MM/yyyy")}{op.location ? ` · ${op.location}` : ""}
                           </p>
                           <div className="flex gap-2 mt-1">
                             <span className="text-[10px] text-muted-foreground">{op.suspects_count} suspects</span>

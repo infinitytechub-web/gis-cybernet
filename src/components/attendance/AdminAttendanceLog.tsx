@@ -245,7 +245,7 @@ export function AdminAttendanceLog() {
         </Dialog>
         <ExportMenu
           getData={() => ({
-            title: `Attendance Log — ${format(new Date(selectedDate + "T00:00"), "PPP")}`,
+            title: `Attendance Log — ${format(new Date(selectedDate + "T00:00"), "dd/MM/yyyy")}`,
             filename: `attendance-${selectedDate}`,
             headers: ["Staff ID", "Name", "Shift", "Check In", "Check Out", "Check-In IP", "Check-In Address", "Check-Out IP", "Check-Out Address", "Status", "Notes"],
             rows: buildExportRows(),
@@ -276,7 +276,7 @@ export function AdminAttendanceLog() {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                    No attendance records for {format(new Date(selectedDate + "T00:00"), "PPP")}
+                    No attendance records for {format(new Date(selectedDate + "T00:00"), "dd/MM/yyyy")}
                   </TableCell>
                 </TableRow>
               ) : (

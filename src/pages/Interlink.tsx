@@ -1164,7 +1164,7 @@ function InterlinkListAuditPanel() {
                   const entries = r.diff ? Object.entries(r.diff as Record<string, { from: any; to: any }>) : [];
                   return (
                     <TableRow key={r.id}>
-                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(r.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                       <TableCell className="text-xs">{r.actor_name ?? "—"}</TableCell>
                       <TableCell className="text-xs font-medium">{r.list_name ?? "—"}</TableCell>
                       <TableCell>

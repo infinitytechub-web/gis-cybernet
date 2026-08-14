@@ -73,7 +73,7 @@ function fmtVal(field: string, value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
   if (field === "enforce_window") return value ? "On" : "Off";
   if (field === "effective_from" || field === "effective_to") {
-    try { return format(parseISO(String(value)), "dd MMM yyyy"); } catch { return String(value); }
+    try { return format(parseISO(String(value)), "dd/MM/yyyy"); } catch { return String(value); }
   }
   return String(value);
 }
@@ -259,7 +259,7 @@ export default function ShiftWindowAudit() {
                           {r.shifts?.name ?? "Unknown shift"}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          by {r.performed_by_name || "System"} · {format(parseISO(r.created_at), "dd MMM yyyy, HH:mm")}
+                          by {r.performed_by_name || "System"} · {format(parseISO(r.created_at), "dd/MM/yyyy, HH:mm")}
                         </div>
                       </div>
                     </div>

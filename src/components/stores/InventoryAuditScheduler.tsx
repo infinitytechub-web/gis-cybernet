@@ -193,7 +193,7 @@ export function InventoryAuditScheduler() {
                 <div className="text-xs text-muted-foreground">
                   Next:{" "}
                   {s.next_run_at
-                    ? `${format(new Date(s.next_run_at), "PPp")} (${formatDistanceToNow(new Date(s.next_run_at), { addSuffix: true })})`
+                    ? `${format(new Date(s.next_run_at), "dd/MM/yyyy HH:mm")} (${formatDistanceToNow(new Date(s.next_run_at), { addSuffix: true })})`
                     : "—"}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -249,7 +249,7 @@ export function InventoryAuditScheduler() {
                   {r.triggered_kind}
                 </Badge>
                 <span className="text-muted-foreground">
-                  {format(new Date(r.created_at), "PPp")}
+                  {format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}
                 </span>
                 <Badge
                   variant={r.mismatched_count > 0 ? "destructive" : "secondary"}

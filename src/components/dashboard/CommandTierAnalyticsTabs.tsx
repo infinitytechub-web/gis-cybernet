@@ -188,7 +188,7 @@ export default function CommandTierAnalyticsTabs() {
           <TrendingUp className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           Postings & Transfers — HR Analytics
           <span className="ml-auto text-xs font-normal text-muted-foreground">
-            Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd MMM yyyy HH:mm:ss") : "—"}
+            Data as of: {dataUpdatedAt ? format(new Date(dataUpdatedAt), "dd/MM/yyyy HH:mm:ss") : "—"}
           </span>
         </CardTitle>
       </CardHeader>

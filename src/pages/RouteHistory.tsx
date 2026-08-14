@@ -219,7 +219,7 @@ export default function RouteHistory() {
       <PopoverTrigger asChild>
         <Button variant="outline" className={cn("justify-start text-left font-normal", !value && "text-muted-foreground")}>
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : <span>{label}</span>}
+          {value ? format(value, "dd/MM/yyyy") : <span>{label}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

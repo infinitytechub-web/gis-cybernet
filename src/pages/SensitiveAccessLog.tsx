@@ -153,7 +153,7 @@ export default function SensitiveAccessLog() {
                   filtered.map(r => (
                     <TableRow key={r.id}>
                       <TableCell className="whitespace-nowrap text-xs">
-                        {format(new Date(r.created_at), "dd MMM yyyy HH:mm:ss")}
+                        {format(new Date(r.created_at), "dd/MM/yyyy HH:mm:ss")}
                       </TableCell>
                       <TableCell className="text-xs">{r.accessed_by_name ?? <span className="font-mono text-muted-foreground">{(r.accessed_by ?? "—").slice(0, 8)}</span>}</TableCell>
                       <TableCell className="font-mono text-xs">{r.table_name}</TableCell>

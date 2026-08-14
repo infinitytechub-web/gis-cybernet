@@ -69,7 +69,7 @@ export default function Attendance() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-secondary">Attendance</h1>
-        <Badge variant="outline">{format(new Date(), "PPP")}</Badge>
+        <Badge variant="outline">{format(new Date(), "dd/MM/yyyy")}</Badge>
       </div>
 
       {/* Staff always sees their own check-in/out card */}

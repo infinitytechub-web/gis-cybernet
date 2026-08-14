@@ -234,7 +234,7 @@ export default function AuditLogDashboard() {
           </DialogHeader>
           {details && (
             <div className="space-y-2 text-sm">
-              <div><span className="text-muted-foreground">Time:</span> {format(new Date(details.created_at), "PPpp")}</div>
+              <div><span className="text-muted-foreground">Time:</span> {format(new Date(details.created_at), "dd/MM/yyyy HH:mm:ss")}</div>
               <div><span className="text-muted-foreground">Entity ID:</span> <code className="text-xs">{details.entity_id ?? "—"}</code></div>
               <div className="text-muted-foreground">Details:</div>
               <pre className="bg-muted rounded p-3 text-xs overflow-auto max-h-[400px]">{JSON.stringify(details.details, null, 2)}</pre>

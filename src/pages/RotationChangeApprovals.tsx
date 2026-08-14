@@ -141,7 +141,7 @@ export default function RotationChangeApprovals() {
                 </DialogTitle>
                 <DialogDescription>
                   Submitted by {active.proposer?.first_name ?? ""} {active.proposer?.last_name ?? ""}{" "}
-                  ({active.proposer?.staff_id ?? "—"}) on {format(new Date(active.created_at), "dd MMM yyyy HH:mm")}.
+                  ({active.proposer?.staff_id ?? "—"}) on {format(new Date(active.created_at), "dd/MM/yyyy HH:mm")}.
                   Effective from <strong>{active.effective_from}</strong>.
                 </DialogDescription>
               </DialogHeader>
@@ -380,7 +380,7 @@ function AuditTrail({ proposalId }: { proposalId: string }) {
                   </span>
                 </div>
                 <div className="text-muted-foreground">
-                  {format(new Date(e.created_at), "dd MMM yyyy HH:mm:ss")}
+                  {format(new Date(e.created_at), "dd/MM/yyyy HH:mm:ss")}
                   {e.previous_status && e.new_status && e.previous_status !== e.new_status
                     ? ` • ${e.previous_status} → ${e.new_status}`
                     : ""}

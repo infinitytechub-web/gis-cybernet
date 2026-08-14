@@ -99,7 +99,7 @@ export default function ApprovalsQueue() {
       const update: Record<string, any> = { status: decision };
       // Append comment to notes (preserve any existing notes)
       if (comment.trim()) {
-        const stamp = `[${format(new Date(), "dd MMM yyyy HH:mm")}] ${decision.toUpperCase()} by supervisor: ${comment.trim()}`;
+        const stamp = `[${format(new Date(), "dd/MM/yyyy HH:mm")}] ${decision.toUpperCase()} by supervisor: ${comment.trim()}`;
         update.notes = reviewApp.notes ? `${reviewApp.notes}\n${stamp}` : stamp;
       }
       // For passport_applications + others, processed_by trigger handles it; we stamp it explicitly
@@ -233,7 +233,7 @@ export default function ApprovalsQueue() {
                 {reviewApp.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewApp.phone}</div>}
                 {reviewApp.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewApp.gender}</div>}
                 {reviewApp.date_of_birth && <div><span className="text-muted-foreground">DOB:</span> {reviewApp.date_of_birth}</div>}
-                {reviewApp.created_at && <div className="col-span-2"><span className="text-muted-foreground">Submitted:</span> {format(new Date(reviewApp.created_at), "dd MMM yyyy HH:mm")}</div>}
+                {reviewApp.created_at && <div className="col-span-2"><span className="text-muted-foreground">Submitted:</span> {format(new Date(reviewApp.created_at), "dd/MM/yyyy HH:mm")}</div>}
                 {reviewApp.notes && <div className="col-span-2 whitespace-pre-wrap"><span className="text-muted-foreground">Existing notes:</span><br />{reviewApp.notes}</div>}
               </div>
 
@@ -294,7 +294,7 @@ export default function ApprovalsQueue() {
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">{app.nationality}</TableCell>
                 <TableCell>{statusBadge(app.status)}</TableCell>
-                <TableCell className="hidden md:table-cell text-sm">{app.created_at ? format(new Date(app.created_at), "dd MMM yyyy") : ""}</TableCell>
+                <TableCell className="hidden md:table-cell text-sm">{app.created_at ? format(new Date(app.created_at), "dd/MM/yyyy") : ""}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => openReview(app)} className="gap-1">
                     <Eye className="h-4 w-4" /> {canApprove ? "Review" : "View"}

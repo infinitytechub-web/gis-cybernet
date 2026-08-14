@@ -262,7 +262,7 @@ export default function OnlineNowPanel() {
                   try {
                     const lastDate = new Date(u.lastActiveAt ?? u.onlineSince);
                     lastActiveRelative = formatDistanceToNowStrict(lastDate, { addSuffix: true });
-                    lastActiveExact = format(lastDate, "PPpp");
+                    lastActiveExact = format(lastDate, "dd/MM/yyyy HH:mm:ss");
                   } catch { /* ignore */ }
                   const statusLabel = u.isOnline ? "Online" : "Offline";
                   const a11yLabel =

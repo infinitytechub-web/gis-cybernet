@@ -101,7 +101,7 @@ export function exportDispatchesPDF(rows: DispatchExportRow[]) {
   doc.setFontSize(14);
   doc.text("Interlink Dispatch Log", 40, 40);
   doc.setFontSize(9);
-  doc.text(`Generated ${format(new Date(), "PPpp")} • ${rows.length} record${rows.length === 1 ? "" : "s"}`, 40, 56);
+  doc.text(`Generated ${format(new Date(), "dd/MM/yyyy HH:mm:ss")} • ${rows.length} record${rows.length === 1 ? "" : "s"}`, 40, 56);
   autoTable(doc, {
     startY: 70,
     head: [DISPATCH_HEADERS],
@@ -176,7 +176,7 @@ export function exportApprovalsPDF(rows: ApprovalExportRow[]) {
   doc.setFontSize(14);
   doc.text("Interlink Approval Audit (immutable)", 40, 40);
   doc.setFontSize(9);
-  doc.text(`Generated ${format(new Date(), "PPpp")} • ${rows.length} action${rows.length === 1 ? "" : "s"}`, 40, 56);
+  doc.text(`Generated ${format(new Date(), "dd/MM/yyyy HH:mm:ss")} • ${rows.length} action${rows.length === 1 ? "" : "s"}`, 40, 56);
   autoTable(doc, {
     startY: 70,
     head: [APPROVAL_HEADERS],

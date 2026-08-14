@@ -92,12 +92,12 @@ export default function ReportApprovalsTable({ reports, onPreview, showActions }
                     )}
                   </TableCell>
                   <TableCell><Badge variant="outline">{r.category}</Badge></TableCell>
-                  <TableCell className="text-sm">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
+                  <TableCell className="text-sm">{format(new Date(r.report_date), "dd/MM/yyyy")}</TableCell>
                   <TableCell className="text-xs capitalize">{r.source || "manual"}</TableCell>
                   <TableCell>{statusBadge(r.approval_status)}</TableCell>
                   <TableCell className="text-xs">
                     {r.approved_at ? (
-                      <span title={format(new Date(r.approved_at), "dd MMM yyyy HH:mm")}>
+                      <span title={format(new Date(r.approved_at), "dd/MM/yyyy HH:mm")}>
                         {format(new Date(r.approved_at), "dd MMM HH:mm")}
                       </span>
                     ) : (

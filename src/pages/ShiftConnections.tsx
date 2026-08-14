@@ -433,7 +433,7 @@ export default function ShiftConnections() {
                                 {formatDistanceToNow(new Date(c.last_sync_at), { addSuffix: true })}
                               </div>
                               <div className="text-muted-foreground">
-                                {format(new Date(c.last_sync_at), "PPp")}
+                                {format(new Date(c.last_sync_at), "dd/MM/yyyy HH:mm")}
                               </div>
                             </div>
                           ) : (

@@ -413,7 +413,7 @@ export default function Ipse() {
                       const p: any = (profiles as any[]).find((pp) => pp.user_id === sb);
                       return (
                         <TableRow key={r.id}>
-                          <TableCell className="text-xs">{format(new Date(r.created_at), "dd MMM yyyy")}</TableCell>
+                          <TableCell className="text-xs">{format(new Date(r.created_at), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="font-medium text-xs">{r.title}</TableCell>
                           <TableCell className="text-xs">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
                           <TableCell>
@@ -475,7 +475,7 @@ export default function Ipse() {
                     {reports.filter((r: any) => r.ipse_status !== "approved" && r.ipse_status !== "rejected").map((r: any) => (
                       <TableRow key={r.id}>
                         <TableCell className="text-sm font-medium">{r.title}</TableCell>
-                        <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(r.report_date), "dd/MM/yyyy")}</TableCell>
                         <TableCell>{r.severity ? <Badge className={SEVERITY_BADGE[r.severity]}>{r.severity.toUpperCase()}</Badge> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                         <TableCell><Badge variant="outline">{STATUS_LABEL[r.ipse_status] ?? r.ipse_status}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -579,7 +579,7 @@ export default function Ipse() {
                     {drillReports.map((r: any) => (
                       <TableRow key={r.id}>
                         <TableCell className="text-sm font-medium">{r.title}</TableCell>
-                        <TableCell className="text-xs">{format(new Date(r.report_date), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(r.report_date), "dd/MM/yyyy")}</TableCell>
                         <TableCell>{r.severity ? <Badge className={SEVERITY_BADGE[r.severity]}>{r.severity.toUpperCase()}</Badge> : "—"}</TableCell>
                         <TableCell><Badge variant="outline">{STATUS_LABEL[r.ipse_status] ?? r.ipse_status}</Badge></TableCell>
                       </TableRow>

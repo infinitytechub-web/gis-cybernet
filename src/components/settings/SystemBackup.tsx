@@ -590,7 +590,7 @@ function BackupSnapshotsPanel() {
               )}
               {snapshots.map((snap: any) => (
                 <TableRow key={snap.id}>
-                  <TableCell className="text-xs whitespace-nowrap">{format(new Date(snap.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                  <TableCell className="text-xs whitespace-nowrap">{format(new Date(snap.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px]">{snap.source}</Badge></TableCell>
                   <TableCell className="text-xs font-mono truncate max-w-[220px]" title={snap.file_name}>{snap.file_name}</TableCell>
                   <TableCell className="text-xs">{(snap.tables_included ?? []).length}</TableCell>

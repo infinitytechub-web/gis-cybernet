@@ -142,7 +142,7 @@ export function FileAuditTrailDialog({ fileId, trigger }: Props) {
               ) : filtered.map((r: any) => (
                 <TableRow key={r.id}>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {format(new Date(r.created_at), "dd MMM yyyy HH:mm:ss")}
+                    {format(new Date(r.created_at), "dd/MM/yyyy HH:mm:ss")}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="gap-1 text-xs capitalize">

@@ -189,7 +189,7 @@ export function AttendanceEditRequestPanel({ profileId, userId, attendances }: P
                 ) : (
                   recentAtts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
-                      {format(parseISO(a.date), "EEE, dd MMM yyyy")}
+                      {format(parseISO(a.date), "EEE, dd/MM/yyyy")}
                       {a.check_in ? ` · in ${format(parseISO(a.check_in), "HH:mm")}` : ""}
                       {a.check_out ? ` · out ${format(parseISO(a.check_out), "HH:mm")}` : ""}
                     </SelectItem>
@@ -262,7 +262,7 @@ export function AttendanceEditRequestPanel({ profileId, userId, attendances }: P
                 <div key={r.id} className="rounded-md border p-3 text-xs space-y-1">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="font-medium">
-                      {format(parseISO(r.affected_date), "EEE, dd MMM yyyy")} · {r.field.replace("_", "-")}
+                      {format(parseISO(r.affected_date), "EEE, dd/MM/yyyy")} · {r.field.replace("_", "-")}
                     </div>
                     <StatusBadge status={r.status} />
                   </div>

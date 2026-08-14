@@ -291,7 +291,7 @@ export function ShiftRotationOverrides() {
               )}
               {auditLogs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(parseISO(log.changed_at), "dd MMM yyyy HH:mm")}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{format(parseISO(log.changed_at), "dd/MM/yyyy HH:mm")}</TableCell>
                   <TableCell className="text-xs">{log.changed_by_name ?? "—"}</TableCell>
                   <TableCell className="text-xs"><Badge variant="outline" className="text-[10px]">{log.action}</Badge></TableCell>
                   <TableCell className="text-xs space-y-0.5">

@@ -122,10 +122,10 @@ function formatValue(key: string, value: any): string {
   if (value === null || value === undefined || value === "") return "—";
   if (key === "fee_charged") return `GHS ${Number(value).toFixed(2)}`;
   if (key === "created_at" || key === "updated_at") {
-    try { return format(new Date(value), "dd MMM yyyy, HH:mm"); } catch { return String(value); }
+    try { return format(new Date(value), "dd/MM/yyyy, HH:mm"); } catch { return String(value); }
   }
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-    try { return format(new Date(value), "dd MMM yyyy"); } catch { return String(value); }
+    try { return format(new Date(value), "dd/MM/yyyy"); } catch { return String(value); }
   }
   if (typeof value === "string") return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return String(value);
@@ -148,7 +148,7 @@ export function buildRecordPdf(kind: RecordKind, record: Record<string, any>): j
   doc.setFontSize(10);
   doc.text("Cybernet HRM System", margin, 48);
   doc.setFontSize(9);
-  doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, pageWidth - margin, 32, { align: "right" });
+  doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")}`, pageWidth - margin, 32, { align: "right" });
 
   y = 110;
   doc.setTextColor(15, 23, 42);

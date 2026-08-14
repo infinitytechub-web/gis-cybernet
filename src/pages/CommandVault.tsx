@@ -478,7 +478,7 @@ export default function CommandVault() {
               )}
               {stats.lastUpload && (
                 <p className="text-[11px] text-muted-foreground mt-3 pt-2 border-t">
-                  Last upload: {format(new Date(stats.lastUpload), "dd MMM yyyy, HH:mm")}
+                  Last upload: {format(new Date(stats.lastUpload), "dd/MM/yyyy, HH:mm")}
                 </p>
               )}
             </div>
@@ -588,7 +588,7 @@ export default function CommandVault() {
                         ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
-                        {format(new Date(d.created_at), "dd MMM yyyy, HH:mm")}
+                        {format(new Date(d.created_at), "dd/MM/yyyy, HH:mm")}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
@@ -672,7 +672,7 @@ export default function CommandVault() {
                 <span className="font-medium">File:</span> {editing.file_name}
                 <span className="mx-2 text-muted-foreground">·</span>
                 <span className="text-muted-foreground">
-                  Uploaded {format(new Date(editing.created_at), "dd MMM yyyy, HH:mm")}
+                  Uploaded {format(new Date(editing.created_at), "dd/MM/yyyy, HH:mm")}
                 </span>
               </div>
               <div>

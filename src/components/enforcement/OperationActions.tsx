@@ -70,7 +70,7 @@ function resolveOfficer(op: OpRecord, profiles: ProfileRef[]) {
 
 function getColumnValue(key: string, op: OpRecord, profiles: ProfileRef[]) {
   switch (key) {
-    case "date": return format(new Date(op.operation_date), "dd MMM yyyy");
+    case "date": return format(new Date(op.operation_date), "dd/MM/yyyy");
     case "type": return op.operation_type.replace(/_/g, " ");
     case "location": return op.location || "—";
     case "officer": return resolveOfficer(op, profiles);
@@ -147,7 +147,7 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
 </style></head><body>
   <h2>Cybernet HRM System</h2>
   <h3>${esc(title)}</h3>
-  <div class="meta">Generated: ${format(new Date(), "dd MMM yyyy HH:mm")} · ${operations.length} records</div>
+  <div class="meta">Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")} · ${operations.length} records</div>
   <table>
     <thead><tr>${cols.map(c => `<th>${esc(c.label)}</th>`).join("")}</tr></thead>
     <tbody>${operations.map(op =>
@@ -170,7 +170,7 @@ export function PrintColumnDialog({ open, onOpenChange, operations, profiles, ti
       filename: slug,
       headers,
       rows,
-      subtitle: `${operations.length} records · Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+      subtitle: `${operations.length} records · Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
     });
     onOpenChange(false);
   };
@@ -246,7 +246,7 @@ export function ViewDetailDialog({ op, open, onOpenChange, profiles, moduleTitle
             </div>
             <div>
               <p className="font-medium text-muted-foreground text-xs mb-0.5">Date</p>
-              <p className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{format(new Date(op.operation_date), "dd MMM yyyy")}</p>
+              <p className="flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />{format(new Date(op.operation_date), "dd/MM/yyyy")}</p>
             </div>
             <div>
               <p className="font-medium text-muted-foreground text-xs mb-0.5">Location</p>
@@ -308,11 +308,11 @@ export function downloadOperationPDF(op: OpRecord, profiles: ProfileRef[], modul
   doc.text(`${moduleTitle} Record`, 14, 23);
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text(`Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`, 14, 29);
+  doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 29);
 
   const rows = [
     ["Type", op.operation_type.replace(/_/g, " ")],
-    ["Date", format(new Date(op.operation_date), "dd MMM yyyy")],
+    ["Date", format(new Date(op.operation_date), "dd/MM/yyyy")],
     ["Location", op.location || "—"],
     ["Severity", op.severity],
     ["Status", op.status.replace(/_/g, " ")],
@@ -348,7 +348,7 @@ export function downloadOperationWord(op: OpRecord, profiles: ProfileRef[], modu
   const officer = resolveOfficer(op, profiles);
   const rows = [
     ["Type", op.operation_type.replace(/_/g, " ")],
-    ["Date", format(new Date(op.operation_date), "dd MMM yyyy")],
+    ["Date", format(new Date(op.operation_date), "dd/MM/yyyy")],
     ["Location", op.location || "—"],
     ["Severity", op.severity],
     ["Status", op.status.replace(/_/g, " ")],
@@ -365,7 +365,7 @@ export function downloadOperationWord(op: OpRecord, profiles: ProfileRef[], modu
     filename: `${moduleTitle.toLowerCase().replace(/\s+/g, "-")}-${op.id.slice(0, 8)}`,
     headers: ["Field", "Value"],
     rows,
-    subtitle: `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+    subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
   });
 }
 
@@ -397,7 +397,7 @@ export function OperationRowActions({ op, profiles, moduleTitle, onEdit, onView,
         table,
         id: op.id,
         label: `${moduleTitle}: ${op.operation_type.replace(/_/g, " ")}`,
-        context: `${format(new Date(op.operation_date), "dd MMM yyyy")}${op.location ? ` · ${op.location}` : ""}`,
+        context: `${format(new Date(op.operation_date), "dd/MM/yyyy")}${op.location ? ` · ${op.location}` : ""}`,
       });
       toast.success(`${moduleTitle} moved to Recycle Bin`);
       if (queryKey) queryClient.invalidateQueries({ queryKey });

@@ -75,7 +75,7 @@ export function MyPostingHistory() {
                         {r.from_dept?.name ?? "—"} <ArrowRight className="h-3 w-3 text-muted-foreground" /> {r.to_dept?.name ?? "—"}
                       </span>
                     </TableCell>
-                    <TableCell className="text-xs">{format(new Date(r.effective_date), "PP")}</TableCell>
+                    <TableCell className="text-xs">{format(new Date(r.effective_date), "dd/MM/yyyy")}</TableCell>
                     <TableCell><Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge></TableCell>
                   </TableRow>
                 ))}

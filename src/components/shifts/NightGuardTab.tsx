@@ -111,7 +111,7 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
             <div>
               <CardTitle className="flex items-center gap-2 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] text-base font-bold">
                 <Shield className="h-5 w-5 text-[hsl(220,80%,18%)] dark:text-[hsl(220,70%,60%)] stroke-[2.5]" />
-                Night Guard Duty Assignments — Week of {format(weekStart, "dd MMM yyyy")}
+                Night Guard Duty Assignments — Week of {format(weekStart, "dd/MM/yyyy")}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 {nightGuardStaff.length} staff in Night Guard dept — manage duty via upload or manual assignment
@@ -138,7 +138,7 @@ export default function NightGuardTab({ nightGuardStaff, allStaff = [], shifts, 
               )}
               <ExportMenu
                 getData={() => ({
-                  title: `Night Guard Duty — ${format(weekStart, "dd MMM yyyy")}`,
+                  title: `Night Guard Duty — ${format(weekStart, "dd/MM/yyyy")}`,
                   filename: `night_guard_${format(weekStart, "yyyy-MM-dd")}`,
                   headers: ["Date", "Assigned Guards"],
                   rows: buildRows(),

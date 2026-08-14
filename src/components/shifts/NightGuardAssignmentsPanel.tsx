@@ -160,7 +160,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
       `${a.profiles?.last_name}, ${a.profiles?.first_name}`,
       a.profiles?.staff_id ?? "",
       a.shifts?.name ?? "—",
-      format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy"),
+      format(new Date(a.start_date + "T00:00:00"), "dd/MM/yyyy"),
     ]);
 
   if (nightGuardStaff.length === 0 && allStaff.length === 0) return null;
@@ -192,7 +192,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
                 filename: `night_guard_assignments${filterDate ? `_${filterDate}` : ""}`,
                 headers: ["Guard", "Staff ID", "Shift", "Date"],
                 rows: buildExportRows(),
-                subtitle: filterDate ? `Date: ${format(new Date(filterDate + "T00:00:00"), "dd MMM yyyy")}` : undefined,
+                subtitle: filterDate ? `Date: ${format(new Date(filterDate + "T00:00:00"), "dd/MM/yyyy")}` : undefined,
               })}
             />
           </div>
@@ -255,7 +255,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
                         </Button>
                       </div>
                     ) : (
-                      format(new Date(a.start_date + "T00:00:00"), "dd MMM yyyy")
+                      format(new Date(a.start_date + "T00:00:00"), "dd/MM/yyyy")
                     )}
                   </TableCell>
                   <TableCell>

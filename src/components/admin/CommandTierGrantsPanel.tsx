@@ -192,7 +192,7 @@ export function CommandTierGrantsPanel() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{g.granted_by_name ?? "—"}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {g.expires_at ? format(new Date(g.expires_at), "dd MMM yyyy") : "No expiry"}
+                        {g.expires_at ? format(new Date(g.expires_at), "dd/MM/yyyy") : "No expiry"}
                       </TableCell>
                       <TableCell className="text-right">
                         {canManage && isActive(g) && (

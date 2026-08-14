@@ -150,7 +150,7 @@ export function ShiftRotationSettings() {
             </Label>
             <Badge variant="secondary" className="text-[10px]">
               Source: {config.source === "db" ? "saved config" : "default"}
-              {config.updatedAt ? ` · last saved ${format(parseISO(config.updatedAt), "dd MMM yyyy HH:mm")}` : ""}
+              {config.updatedAt ? ` · last saved ${format(parseISO(config.updatedAt), "dd/MM/yyyy HH:mm")}` : ""}
             </Badge>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs">

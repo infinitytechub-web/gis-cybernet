@@ -91,7 +91,7 @@ export function PostingAuditTrailDialog({ open, onOpenChange, postingId }: Props
                       {r.action}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(r.created_at), "dd MMM yyyy HH:mm:ss")}
+                      {format(new Date(r.created_at), "dd/MM/yyyy HH:mm:ss")}
                     </span>
                     <span className="text-xs ml-auto">
                       by {actors[r.performed_by] ?? r.performed_by?.slice(0, 8) ?? "system"}

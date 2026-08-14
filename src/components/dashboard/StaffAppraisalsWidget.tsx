@@ -385,7 +385,7 @@ export default function StaffAppraisalsWidget() {
                         </Badge>
                       )}
                       {a.submitted_at && (
-                        <span>{format(new Date(a.submitted_at), "dd MMM yyyy")}</span>
+                        <span>{format(new Date(a.submitted_at), "dd/MM/yyyy")}</span>
                       )}
                     </div>
                   </div>

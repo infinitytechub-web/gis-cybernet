@@ -110,7 +110,7 @@ export function downloadExcuseDutyPDF(data: ExcuseDutyData, blank = false) {
   doc.text("E. Approval", margin, y); y += 5;
   drawRow("Status:", blank ? "" : (data.status || "PENDING").toUpperCase());
   drawRow("Reviewed By:", blank ? "" : `${data.reviewer_rank || ""} ${data.reviewer_name || "—"}`.trim());
-  drawRow("Reviewed On:", blank ? "" : (data.reviewed_at ? format(new Date(data.reviewed_at), "dd MMM yyyy HH:mm") : "—"));
+  drawRow("Reviewed On:", blank ? "" : (data.reviewed_at ? format(new Date(data.reviewed_at), "dd/MM/yyyy HH:mm") : "—"));
 
   y += 4;
   // Signature block
@@ -131,7 +131,7 @@ export function downloadExcuseDutyPDF(data: ExcuseDutyData, blank = false) {
   // Footer
   doc.setFont("helvetica", "italic").setFontSize(8).setTextColor(120);
   doc.text(
-    `Ghana Immigration Service · Cybernet HRM · ${blank ? "Blank standard form" : "Generated " + format(new Date(), "dd MMM yyyy HH:mm")}`,
+    `Ghana Immigration Service · Cybernet HRM · ${blank ? "Blank standard form" : "Generated " + format(new Date(), "dd/MM/yyyy HH:mm")}`,
     pageW / 2, 287, { align: "center" }
   );
   doc.setTextColor(0);
@@ -225,7 +225,7 @@ export async function downloadExcuseDutyDOCX(data: ExcuseDutyData, blank = false
           rows: [
             kv("Status", blank ? "" : (data.status || "PENDING").toUpperCase()),
             kv("Reviewed By", blank ? "" : `${data.reviewer_rank || ""} ${data.reviewer_name || "—"}`.trim()),
-            kv("Reviewed On", blank ? "" : (data.reviewed_at ? format(new Date(data.reviewed_at), "dd MMM yyyy HH:mm") : "—")),
+            kv("Reviewed On", blank ? "" : (data.reviewed_at ? format(new Date(data.reviewed_at), "dd/MM/yyyy HH:mm") : "—")),
           ],
         }),
 
@@ -234,7 +234,7 @@ export async function downloadExcuseDutyDOCX(data: ExcuseDutyData, blank = false
         new Paragraph({ spacing: { before: 240 }, children: [new TextRun(`Authorising Officer: ${blank ? "____________________________" : (data.authorised_rank || "") + " " + (data.authorised_by || "—")}`)] }),
         new Paragraph({ spacing: { before: 120 }, children: [new TextRun("Signature: ____________________________     Date: ______________")] }),
 
-        new Paragraph({ spacing: { before: 400 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Ghana Immigration Service · Cybernet HRM · ${blank ? "Blank standard form" : "Generated " + format(new Date(), "dd MMM yyyy HH:mm")}`, italics: true, size: 16, color: "777777" })] }),
+        new Paragraph({ spacing: { before: 400 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: `Ghana Immigration Service · Cybernet HRM · ${blank ? "Blank standard form" : "Generated " + format(new Date(), "dd/MM/yyyy HH:mm")}`, italics: true, size: 16, color: "777777" })] }),
       ],
     }],
   });

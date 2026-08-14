@@ -577,7 +577,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                   )}
                   {auditLog.map((l) => (
                     <TableRow key={l.id}>
-                      <TableCell className="text-xs whitespace-nowrap">{format(parseISO(l.uploaded_at), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{format(parseISO(l.uploaded_at), "dd/MM/yyyy HH:mm")}</TableCell>
                       <TableCell className="text-xs">{l.uploaded_by_name ?? "—"}</TableCell>
                       <TableCell className="text-xs truncate max-w-[180px]">{l.file_name ?? "—"}</TableCell>
                       <TableCell className="text-xs text-right tabular-nums">{l.total_rows}</TableCell>
@@ -614,7 +614,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
                   )}
                   {snapshots.map((s) => (
                     <TableRow key={s.id}>
-                      <TableCell className="text-xs whitespace-nowrap">{format(parseISO(s.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{format(parseISO(s.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                       <TableCell className="text-xs">{s.taken_by_name ?? "—"}</TableCell>
                       <TableCell className="text-xs truncate max-w-[220px]">{s.note ?? s.file_name ?? "—"}</TableCell>
                       <TableCell className="text-xs text-right tabular-nums">{s.profiles_count}</TableCell>

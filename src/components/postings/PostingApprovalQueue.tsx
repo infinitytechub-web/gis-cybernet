@@ -188,7 +188,7 @@ export function PostingApprovalQueue() {
                         {r.from_dept?.name ?? "—"} <ArrowRight className="h-3 w-3 text-muted-foreground" /> {r.to_dept?.name ?? "—"}
                       </span>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.effective_date), "PP")}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.effective_date), "dd/MM/yyyy")}</TableCell>
                     <TableCell><Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge></TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -264,7 +264,7 @@ export function PostingApprovalQueue() {
                 <div><span className="text-muted-foreground">Type:</span><p className="font-medium capitalize">{selectedRecord.type}</p></div>
                 <div><span className="text-muted-foreground">From:</span><p className="font-medium">{selectedRecord.from_dept?.name ?? "—"}</p></div>
                 <div><span className="text-muted-foreground">To:</span><p className="font-medium">{selectedRecord.to_dept?.name ?? "—"}</p></div>
-                <div className="col-span-2"><span className="text-muted-foreground">Effective:</span><p className="font-medium">{format(new Date(selectedRecord.effective_date), "PPP")}</p></div>
+                <div className="col-span-2"><span className="text-muted-foreground">Effective:</span><p className="font-medium">{format(new Date(selectedRecord.effective_date), "dd/MM/yyyy")}</p></div>
               </div>
               {selectedRecord.remarks && (
                 <div className="text-sm"><span className="text-muted-foreground">Remarks:</span><p className="mt-1 p-2 bg-muted rounded text-foreground">{selectedRecord.remarks}</p></div>

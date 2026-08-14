@@ -315,7 +315,7 @@ export default function VisaApplications() {
                     <TableCell>{app.nationality}</TableCell>
                     <TableCell><Badge variant="outline">{app.visa_type}</Badge></TableCell>
                     <TableCell>{statusBadge(app.status)}</TableCell>
-                    <TableCell className="text-sm">{format(new Date(app.created_at), "dd MMM yyyy")}</TableCell>
+                    <TableCell className="text-sm">{format(new Date(app.created_at), "dd/MM/yyyy")}</TableCell>
                     <TableCell>
                       <RecordRowActions
                         kind="visa_application"
