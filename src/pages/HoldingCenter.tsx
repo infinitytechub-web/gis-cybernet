@@ -82,7 +82,6 @@ const RISK_COLORS: Record<string, string> = {
   high: "bg-orange-100 text-orange-800",
   critical: "bg-red-200 text-red-900",
 };
-const CRIME_TYPES = ["Illegal Entry", "Overstay", "Document Fraud", "Smuggling", "Trafficking", "Assault", "Theft", "Drug Offence", "Other"];
 
 export default function HoldingCenter() {
   const { user, role } = useAuth();
@@ -185,7 +184,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
         table: "detention_records",
         id: deleting.id,
         label: `Detainee: ${deleting.first_name} ${deleting.last_name}`,
-        context: `${deleting.crime_type}${deleting.cell_number ? ` · Cell ${deleting.cell_number}` : ""} · Intake ${format(new Date(deleting.intake_at), "dd MMM yyyy")}`,
+        context: `${deleting.crime_type}${deleting.cell_number ? ` · Cell ${deleting.cell_number}` : ""} · Intake ${formatDate(deleting.intake_at)}`,
       });
       toast.success("Record moved to Recycle Bin");
       qc.invalidateQueries({ queryKey: ["detention_records"] });
@@ -224,7 +223,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
-          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", format(new Date(r.intake_at), "yyyy-MM-dd HH:mm"), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
+          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", formatDateTime(r.intake_at), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
       </div>
@@ -314,21 +313,22 @@ function printDetentionRecord(r: any) {
     ["Full Name", `${r.first_name} ${r.last_name}`],
     ["Alias", r.alias],
     ["Gender", r.gender],
-    ["Date of Birth", r.date_of_birth ? format(new Date(r.date_of_birth), "dd MMM yyyy") : "—"],
+    ["Date of Birth", formatDate(r.date_of_birth)],
+    ["Age", ageLabel(r.date_of_birth)],
     ["Nationality", r.nationality],
     ["Country of Origin", r.country_of_origin],
     ["ID Type", r.id_type],
     ["ID Number", r.id_number],
     ["Phone", r.phone],
     ["Home Address", r.home_address],
-    ["Crime Type", r.crime_type],
+    ["Type of Offense", r.crime_type],
     ["Charge Description", r.charge_description],
     ["Location of Arrest", r.location_of_arrest],
     ["Arresting Officer", r.arresting_officer_name],
     ["Cell / Room", r.cell_number],
     ["Risk Level", r.risk_level],
     ["Status", statusLabel(r.status)],
-    ["Intake", format(new Date(r.intake_at), "dd MMM yyyy HH:mm")],
+    ["Intake", formatDateTime(r.intake_at)],
     ["Custody Duration", `${differenceInHours(r.released_at ? new Date(r.released_at) : new Date(), new Date(r.intake_at))} hrs`],
     ["Referred from", referralDisplay(r.referred_from, r.referred_from_other)],
     ["Referred to", referralDisplay(r.referred_to, r.referred_to_other)],
@@ -353,7 +353,7 @@ function printDetentionRecord(r: any) {
 </style></head><body>
   <h2>Cybernet HRM System</h2>
   <h3>Holding / Detention Center — Detainee Record</h3>
-  <div class="meta">Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}</div>
+  <div class="meta">Generated: ${formatDateTime(new Date())}</div>
   <table><tbody>
     ${rows.map(([label, value]) => `<tr><td class="label">${esc(label)}</td><td>${esc(value)}</td></tr>`).join("")}
   </tbody></table>
@@ -370,7 +370,7 @@ function printDetentionRecord(r: any) {
  */
 function validateDetaineeForm(form: any) {
   if (!form.first_name?.trim() || !form.last_name?.trim()) return "First and last name are required";
-  if (!form.crime_type) return "Crime type is required";
+  if (!form.crime_type) return "Type of offense is required";
   if (!form.risk_level) return "Risk level is required";
   if (!form.gender) return "Gender is required";
   if (form.referred_from === OTHER_AGENCY && !form.referred_from_other?.trim())
@@ -453,7 +453,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
                   <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of Birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
               <div><Label>Marital Status</Label>
                 <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -480,10 +480,15 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
           <div className="border rounded-lg p-3 space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2"><ShieldAlert className="h-4 w-4" />Case Details</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Crime Type *</Label>
+              <div><Label>Type of Offense *</Label>
                 <Select value={form.crime_type} onValueChange={v => setForm(p => ({ ...p, crime_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CRIME_TYPES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent className="max-h-72">{OFFENSE_GROUPS.map(g => (
+                    <SelectGroup key={g.group}>
+                      <SelectLabel>{g.group}</SelectLabel>
+                      {g.options.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectGroup>
+                  ))}</SelectContent>
                 </Select>
               </div>
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
@@ -602,7 +607,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
                   <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of Birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
               <div><Label>Marital Status</Label>
                 <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -634,10 +639,15 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
           <div className="border rounded-lg p-3 space-y-3">
             <h3 className="font-semibold text-sm flex items-center gap-2"><ShieldAlert className="h-4 w-4" />Case Details</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Crime Type *</Label>
+              <div><Label>Type of Offense *</Label>
                 <Select value={form.crime_type} onValueChange={v => setForm(p => ({ ...p, crime_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CRIME_TYPES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectContent className="max-h-72">{OFFENSE_GROUPS.map(g => (
+                    <SelectGroup key={g.group}>
+                      <SelectLabel>{g.group}</SelectLabel>
+                      {g.options.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectGroup>
+                  ))}</SelectContent>
                 </Select>
               </div>
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
@@ -748,7 +758,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
           <TabsContent value="bio" className="space-y-3">
             <Section title="Identification">
               <Field label="Gender" value={record.gender} />
-              <Field label="DOB" value={record.date_of_birth ? format(new Date(record.date_of_birth), "MMM d, yyyy") : "—"} />
+              <Field label="Date of Birth" value={formatDate(record.date_of_birth)} />
+              <Field label="Age" value={ageLabel(record.date_of_birth)} />
               <Field label="Nationality" value={record.nationality} />
               <Field label="Country of Origin" value={record.country_of_origin} />
               <Field label="ID Type" value={record.id_type} />
@@ -757,7 +768,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Home Address" value={record.home_address} full />
             </Section>
             <Section title="Case">
-              <Field label="Crime Type" value={record.crime_type} />
+              <Field label="Type of Offense" value={record.crime_type} />
               <Field label="Cell" value={record.cell_number} />
               <Field label="Charge" value={record.charge_description} full />
               <Field label="Arrest Location" value={record.location_of_arrest} />
@@ -765,7 +776,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Referred from" value={referralDisplay(record.referred_from, record.referred_from_other)} />
               <Field label="Referred to" value={referralDisplay(record.referred_to, record.referred_to_other)} />
               <Field label="Statement Approved by" value={record.statement_approved_by_name} />
-              <Field label="Intake" value={format(new Date(record.intake_at), "MMM d, yyyy HH:mm")} />
+              <Field label="Intake" value={formatDateTime(record.intake_at)} />
               <Field label="Custody Duration" value={`${differenceInHours(record.released_at ? new Date(record.released_at) : new Date(), new Date(record.intake_at))} hrs`} />
               {record.medical_alerts && <Field label="⚠ Medical Alerts" value={record.medical_alerts} full />}
               {record.notes && <Field label="Notes" value={record.notes} full />}
@@ -839,7 +850,7 @@ function PropertyLog({ records, detentionId, userId, canEdit }: any) {
     <div className="space-y-2">
       {canEdit && <Button size="sm" onClick={() => setOpen(true)} className="gap-1"><Plus className="h-3.5 w-3.5" />Log Property</Button>}
       {records.length === 0 ? <p className="text-sm text-muted-foreground py-4">No property logged.</p> :
-        <div className="space-y-2">{records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.item_description}</div><div className="text-xs text-muted-foreground">Qty: {r.quantity} · {r.condition || "—"}</div></div><div className="text-xs text-muted-foreground">{format(new Date(r.logged_at), "MMM d, HH:mm")}</div></div>{r.notes && <p className="text-xs mt-1">{r.notes}</p>}</Card>)}</div>}
+        <div className="space-y-2">{records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.item_description}</div><div className="text-xs text-muted-foreground">Qty: {r.quantity} · {r.condition || "—"}</div></div><div className="text-xs text-muted-foreground">{formatDateTime(r.logged_at)}</div></div>{r.notes && <p className="text-xs mt-1">{r.notes}</p>}</Card>)}</div>}
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Log Property</DialogTitle></DialogHeader>
         <div className="space-y-3"><div><Label>Description *</Label><Input value={form.item_description} onChange={e => setForm(p => ({ ...p, item_description: e.target.value }))} /></div>
           <div className="grid grid-cols-2 gap-3"><div><Label>Quantity</Label><Input type="number" min={1} value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: Number(e.target.value) }))} /></div>
@@ -861,7 +872,7 @@ function VisitorLog({ records, detentionId, userId, canEdit }: any) {
     <div className="space-y-2">
       {canEdit && <Button size="sm" onClick={() => setOpen(true)} className="gap-1"><Plus className="h-3.5 w-3.5" />Log Visitor</Button>}
       {records.length === 0 ? <p className="text-sm text-muted-foreground py-4">No visitors recorded.</p> :
-        records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.visitor_name}</div><div className="text-xs text-muted-foreground">{r.relationship || "—"} · {r.phone || "—"}</div></div><div className="text-xs text-muted-foreground">{format(new Date(r.visit_start), "MMM d, HH:mm")}</div></div>{r.notes && <p className="text-xs mt-1">{r.notes}</p>}</Card>)}
+        records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.visitor_name}</div><div className="text-xs text-muted-foreground">{r.relationship || "—"} · {r.phone || "—"}</div></div><div className="text-xs text-muted-foreground">{formatDateTime(r.visit_start)}</div></div>{r.notes && <p className="text-xs mt-1">{r.notes}</p>}</Card>)}
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Log Visitor</DialogTitle></DialogHeader>
         <div className="space-y-3"><div><Label>Visitor Name *</Label><Input value={form.visitor_name} onChange={e => setForm(p => ({ ...p, visitor_name: e.target.value }))} /></div>
           <div className="grid grid-cols-2 gap-3"><div><Label>Relationship</Label><Input value={form.relationship} onChange={e => setForm(p => ({ ...p, relationship: e.target.value }))} /></div>
@@ -884,7 +895,7 @@ function MedicalLog({ records, detentionId, userId, canEdit }: any) {
     <div className="space-y-2">
       {canEdit && <Button size="sm" onClick={() => setOpen(true)} className="gap-1"><Plus className="h-3.5 w-3.5" />Add Record</Button>}
       {records.length === 0 ? <p className="text-sm text-muted-foreground py-4">No medical records.</p> :
-        records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.complaint}</div>{r.treatment && <div className="text-xs">{r.treatment}</div>}<div className="text-xs text-muted-foreground">{r.attended_by || "—"}</div></div><div className="text-xs text-muted-foreground">{format(new Date(r.attended_at), "MMM d, HH:mm")}</div></div></Card>)}
+        records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.complaint}</div>{r.treatment && <div className="text-xs">{r.treatment}</div>}<div className="text-xs text-muted-foreground">{r.attended_by || "—"}</div></div><div className="text-xs text-muted-foreground">{formatDateTime(r.attended_at)}</div></div></Card>)}
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Medical Record</DialogTitle></DialogHeader>
         <div className="space-y-3"><div><Label>Complaint *</Label><Input value={form.complaint} onChange={e => setForm(p => ({ ...p, complaint: e.target.value }))} /></div>
           <div><Label>Treatment</Label><Textarea rows={2} value={form.treatment} onChange={e => setForm(p => ({ ...p, treatment: e.target.value }))} /></div>
@@ -913,7 +924,7 @@ function TransferLog({ records, detentionId, userId, canEdit }: any) {
     <div className="space-y-2">
       {canEdit && <Button size="sm" onClick={() => setOpen(true)} className="gap-1"><Plus className="h-3.5 w-3.5" />Record Transfer</Button>}
       {records.length === 0 ? <p className="text-sm text-muted-foreground py-4">No transfers.</p> :
-        records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.from_location || "Holding"} → {r.to_location}</div>{r.reason && <div className="text-xs">{r.reason}</div>}<div className="text-xs text-muted-foreground">Escort: {r.escorted_by || "—"}</div></div><div className="text-xs text-muted-foreground">{format(new Date(r.transferred_at), "MMM d, HH:mm")}</div></div></Card>)}
+        records.map((r: any) => <Card key={r.id} className="p-3"><div className="flex justify-between"><div><div className="font-medium">{r.from_location || "Holding"} → {r.to_location}</div>{r.reason && <div className="text-xs">{r.reason}</div>}<div className="text-xs text-muted-foreground">Escort: {r.escorted_by || "—"}</div></div><div className="text-xs text-muted-foreground">{formatDateTime(r.transferred_at)}</div></div></Card>)}
       <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Record Transfer</DialogTitle></DialogHeader>
         <div className="space-y-3"><div><Label>From</Label><Input value={form.from_location} onChange={e => setForm(p => ({ ...p, from_location: e.target.value }))} placeholder="Default: Holding" /></div>
           <div><Label>To *</Label><Input value={form.to_location} onChange={e => setForm(p => ({ ...p, to_location: e.target.value }))} placeholder="e.g. Court, HQ, Hospital" /></div>
