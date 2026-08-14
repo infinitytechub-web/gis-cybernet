@@ -32,6 +32,8 @@ import { AppointmentAndPortfolios } from "@/components/staff/AppointmentAndPortf
 type StaffStatus = Database["public"]["Enums"]["staff_status"];
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
+import { AgeDisplay } from "@/components/ui/age-display";
+import { DATE_FORMAT_HINT } from "@/lib/date-format";
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
