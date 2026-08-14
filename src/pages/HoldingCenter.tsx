@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ExportMenu } from "@/components/ui/export-menu";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { MultiContactInput } from "@/components/ui/multi-contact-input";
-import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2, Gavel } from "lucide-react";
+import { ShieldAlert, Lock, Plus, Search, Camera, AlertTriangle, UserCheck, Package, Heart, ArrowRightLeft, Users, Activity, BarChart3, FileSearch, X, Stethoscope, Eye, Pencil, Printer, Trash2, Gavel, Check, Ban } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { StatementApproverPicker } from "@/components/detention/StatementApproverPicker";
 import { StaffPicker } from "@/components/detention/StaffPicker";
@@ -137,7 +137,7 @@ export default function HoldingCenter() {
           <TabsTrigger value="analytics" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><BarChart3 className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Analytics</TabsTrigger>
         </TabsList>
         <TabsContent value="active"><RecordsList status={["in_custody"]} canCreate={canCreate} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
-        <TabsContent value="archive"><RecordsList status={ARCHIVE_STATUSES} canCreate={false} userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
+        <TabsContent value="archive"><RecordsList status={ARCHIVE_STATUSES} canCreate={false} isArchive userId={user?.id} role={role} onSelect={setSelected} /></TabsContent>
         <TabsContent value="bail"><StandardBailTab canEdit={canCreate} canDelete={["admin", "oic", "2ic"].includes(role || "")} /></TabsContent>
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
@@ -148,7 +148,7 @@ export default function HoldingCenter() {
 }
 
 /* ----------------- LIST ----------------- */
-function RecordsList({ status, canCreate, userId, role, onSelect }: { status: string[]; canCreate: boolean; userId?: string; role: string | null; onSelect: (r: any) => void }) {
+function RecordsList({ status, canCreate, isArchive = false, userId, role, onSelect }: { status: string[]; canCreate: boolean; isArchive?: boolean; userId?: string; role: string | null; onSelect: (r: any) => void }) {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterGender, setFilterGender] = useState("all");
@@ -162,6 +162,42 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
   const isAdmin = role === "admin";
   const isOic = role === "oic";
   const canModify = isAdmin || isOic;
+  /**
+   * Archive review authority — Admin, OIC and 2IC only. The same rule is
+   * enforced server-side by the `guard_detention_archive_review` trigger, so
+   * hiding the buttons is convenience, not the security boundary.
+   */
+  const canReviewArchive = ["admin", "oic", "2ic"].includes(role || "");
+  const [review, setReview] = useState<{ record: any; action: "approved" | "denied" } | null>(null);
+  const [reviewReason, setReviewReason] = useState("");
+  const [reviewPending, setReviewPending] = useState(false);
+
+  const submitReview = async () => {
+    if (!review) return;
+    if (review.action === "denied" && !reviewReason.trim()) {
+      toast.error("A reason is required to deny an archived record");
+      return;
+    }
+    setReviewPending(true);
+    try {
+      const { error } = await supabase
+        .from("detention_records")
+        .update({
+          archive_review_status: review.action,
+          archive_review_reason: reviewReason.trim() || null,
+        } as any)
+        .eq("id", review.record.id);
+      if (error) throw error;
+      toast.success(review.action === "approved" ? "Archived record approved" : "Archived record denied");
+      qc.invalidateQueries({ queryKey: ["detention_records"] });
+      setReview(null);
+      setReviewReason("");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to record the review");
+    } finally {
+      setReviewPending(false);
+    }
+  };
 
   const { data: records = [] } = useQuery({
     queryKey: ["detention_records", status],
