@@ -9986,6 +9986,14 @@ export type Database = {
           status: string
         }[]
       }
+      get_inventory_alert_webhooks: {
+        Args: never
+        Returns: {
+          record_id: string
+          source: string
+          webhook_url: string
+        }[]
+      }
       get_misd_department_id: { Args: never; Returns: string }
       get_profile_protected_fields: {
         Args: { _user_id: string }
@@ -10360,6 +10368,10 @@ export type Database = {
           sent: number
           skipped: number
         }[]
+      }
+      set_inventory_alert_webhook: {
+        Args: { _record_id: string; _source: string; _webhook_url: string }
+        Returns: undefined
       }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
