@@ -32,6 +32,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { format } from "date-fns";
+import { formatDate } from "@/lib/date-format";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
@@ -1188,7 +1189,7 @@ export default function Operations() {
                       <TableRow className="cursor-pointer" onClick={() => setExpandedId(prev => prev === op.id ? null : op.id)}>
                         <TableCell className="whitespace-nowrap">
                           {expandedId === op.id ? <ChevronDown className="inline h-3 w-3 mr-1" /> : <ChevronRight className="inline h-3 w-3 mr-1" />}
-                          {new Date(op.operation_date).toLocaleDateString()}
+                          {formatDate(op.operation_date)}
                         </TableCell>
                         <TableCell className="capitalize whitespace-nowrap">{op.operation_type.replace(/_/g, " ")}</TableCell>
                         <TableCell>{op.location || "—"}</TableCell>

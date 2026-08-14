@@ -485,7 +485,7 @@ function MovementsTab({ canManage, userId }: { canManage: boolean; userId?: stri
                   const Icon = meta?.icon || Activity;
                   return (
                     <TableRow key={m.id}>
-                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(m.movement_date), "MMM d, HH:mm")}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(m.movement_date), "dd/MM HH:mm")}</TableCell>
                       <TableCell className="font-medium">{m.inventory_items?.name}</TableCell>
                       <TableCell><Badge variant="outline" className="gap-1"><Icon className={`h-3 w-3 ${meta?.color}`} />{meta?.label}</Badge></TableCell>
                       <TableCell className="text-right font-semibold">{Number(m.quantity)} {m.inventory_items?.unit}</TableCell>
@@ -606,7 +606,7 @@ function IssuanceTab({ canManage, userId }: { canManage: boolean; userId?: strin
                     <TableCell className="font-medium">{i.inventory_items?.name}</TableCell>
                     <TableCell><div className="text-sm">{i.profiles?.first_name} {i.profiles?.last_name}</div><div className="text-xs text-muted-foreground font-mono">{i.profiles?.staff_id}</div></TableCell>
                     <TableCell className="text-right font-semibold">{Number(i.quantity)} {i.inventory_items?.unit}</TableCell>
-                    <TableCell>{i.returned_at ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">Returned {format(new Date(i.returned_at), "MMM d")}</Badge> : <Badge variant="outline">Active</Badge>}</TableCell>
+                    <TableCell>{i.returned_at ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">Returned {format(new Date(i.returned_at), "dd MMM")}</Badge> : <Badge variant="outline">Active</Badge>}</TableCell>
                     {canManage && <TableCell>{!i.returned_at && <Button size="sm" variant="outline" onClick={() => markReturned.mutate(i.id)}>Mark Returned</Button>}</TableCell>}
                   </TableRow>
                 ))}
@@ -804,11 +804,11 @@ function AnalyticsTab() {
   // Movements 30 days
   const movByDay: Record<string, { date: string; in: number; out: number }> = {};
   for (let i = 29; i >= 0; i--) {
-    const d = format(new Date(Date.now() - i * 86400000), "MMM d");
+    const d = format(new Date(Date.now() - i * 86400000), "dd MMM");
     movByDay[d] = { date: d, in: 0, out: 0 };
   }
   data.movements.forEach((m: any) => {
-    const d = format(new Date(m.movement_date), "MMM d");
+    const d = format(new Date(m.movement_date), "dd MMM");
     if (movByDay[d]) {
       if (m.movement_type === "in") movByDay[d].in += Number(m.quantity);
       else if (m.movement_type === "out") movByDay[d].out += Number(m.quantity);

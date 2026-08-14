@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatDate } from "@/lib/date-format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -268,7 +269,7 @@ export function PermissionsMatrix() {
     <Card className="permissions-print-area">
       <div className="print-only hidden mb-4 px-6 pt-6">
         <h1 className="text-lg font-bold" style={{ color: "#006699" }}>Cybernet HRM System</h1>
-        <p className="text-sm text-muted-foreground">Permissions Matrix — Generated {new Date().toLocaleDateString()}</p>
+        <p className="text-sm text-muted-foreground">Permissions Matrix — Generated {formatDate(new Date())}</p>
       </div>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -347,7 +348,7 @@ export function PermissionsMatrix() {
         <div className="print-only hidden mt-6 pt-4 border-t border-border text-xs" style={{ color: "#666" }}>
           <p className="font-semibold">CONFIDENTIAL — For Official Use Only</p>
           <p>This document contains sensitive access control information. Unauthorized distribution is prohibited.</p>
-          <p className="mt-1">Printed by authorized personnel on {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })} • Powered by Infinity Techub Intelligence</p>
+          <p className="mt-1">Printed by authorized personnel on {formatDate(new Date())} • Powered by Infinity Techub Intelligence</p>
         </div>
       </CardContent>
     </Card>

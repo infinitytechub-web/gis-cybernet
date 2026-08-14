@@ -171,7 +171,7 @@ export default function RumAnalytics() {
     return Object.entries(buckets)
       .map(([k, v]) => ({
         t: Number(k),
-        label: format(new Date(Number(k)), bucketHours < 1 ? "HH:mm" : bucketHours <= 6 ? "MMM d HH:mm" : "MMM d"),
+        label: format(new Date(Number(k)), bucketHours < 1 ? "HH:mm" : bucketHours <= 6 ? "dd MMM HH:mm" : "dd MMM"),
         lcp_p75: Math.round(percentile(v.lcp, 75)),
         fcp_p75: Math.round(percentile(v.fcp, 75)),
       }))
@@ -461,7 +461,7 @@ export default function RumAnalytics() {
                           </Badge>
                           <span className="font-mono">{e.route}</span>
                           <span>·</span>
-                          <span>{format(new Date(e.created_at), "MMM d, HH:mm:ss")}</span>
+                          <span>{format(new Date(e.created_at), "dd/MM HH:mm:ss")}</span>
                         </div>
                         <div className="mt-1 text-sm font-medium break-words">{meta.message ?? "—"}</div>
                         {meta.filename && (

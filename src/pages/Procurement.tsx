@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { formatDate } from "@/lib/date-format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { softDelete } from "@/lib/recycle-bin";
@@ -265,7 +266,7 @@ export default function Procurement() {
                           <span className="font-medium">{it.title}</span>
                           <span className="text-muted-foreground">— {it.sub}</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">{new Date(it.when).toLocaleDateString()}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(it.when)}</span>
                       </div>
                     ))}
                   {pos.length === 0 && invoices.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">No activity yet.</p>}
@@ -859,7 +860,7 @@ function DocumentsTab({ canManage, userId, vendors }: any) {
                 <TableCell><div className="font-medium">{d.title}</div><div className="text-xs text-muted-foreground">{d.file_name}</div></TableCell>
                 <TableCell><Badge variant="outline" className="capitalize">{d.document_type}</Badge></TableCell>
                 <TableCell>{(Number(d.file_size) / 1024).toFixed(1)} KB</TableCell>
-                <TableCell className="text-xs">{new Date(d.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-xs">{formatDate(d.created_at)}</TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button size="sm" variant="outline" onClick={() => downloadDoc(d)}><Download className="h-3 w-3" /></Button>
