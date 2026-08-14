@@ -7,6 +7,7 @@ import {
   requireAdminCreds,
   requireStaffCreds,
 } from "./support/smoke";
+import { findFullDateTokens, isPaddedDayFirst, monthFirstOffenders } from "../../src/lib/date-scan";
 
 /**
  * Date rendering regression smoke check.
@@ -20,23 +21,6 @@ import {
  * its SECOND segment is greater than 12 (e.g. 03/14/2026), or when the first
  * segment is greater than 31.
  */
-
-const DATE_TOKEN = /\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/g;
-const SHORT_TOKEN = /\b(\d{1,2})\/(\d{1,2})\b(?!\/)/g;
-
-export function monthFirstOffenders(text: string): string[] {
-  const bad: string[] = [];
-  for (const m of text.matchAll(DATE_TOKEN)) {
-    const [token, a, b] = [m[0], Number(m[1]), Number(m[2])];
-    if (b > 12 || a > 31) bad.push(token);
-  }
-  for (const m of text.matchAll(SHORT_TOKEN)) {
-    const [token, a, b] = [m[0], Number(m[1]), Number(m[2])];
-    // Only judge tokens that look like a day/month pair (skip fractions/ratios).
-    if (a <= 31 && b > 12 && b <= 31) bad.push(token);
-  }
-  return [...new Set(bad)];
-}
 
 async function visibleText(page: Page): Promise<string> {
   return page.evaluate(() => document.body.innerText ?? "");
@@ -71,8 +55,8 @@ test.describe("date rendering — screens and calendars", () => {
       const offenders = monthFirstOffenders(text);
       expect(offenders, `Month-first dates on ${route}: ${offenders.join(", ")}`).toEqual([]);
       // Any date shown must be zero-padded day-first, e.g. 09/03/2026.
-      const fullDates = [...text.matchAll(DATE_TOKEN)].map((m) => m[0]);
-      for (const d of fullDates) expect(d, `Unpadded/short date on ${route}`).toMatch(/^\d{2}\/\d{2}\/(\d{2}|\d{4})$/);
+      const fullDates = findFullDateTokens(text);
+      for (const d of fullDates) expect(isPaddedDayFirst(d), `Unpadded date "${d}" on ${route}`).toBe(true);
       expect(errors.filter((e) => /date|Invalid time value/i.test(e))).toEqual([]);
     });
   }
