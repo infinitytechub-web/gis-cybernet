@@ -1684,6 +1684,11 @@ export type Database = {
       detention_records: {
         Row: {
           alias: string | null
+          archive_review_reason: string | null
+          archive_review_status: string
+          archive_reviewed_at: string | null
+          archive_reviewed_by: string | null
+          archive_reviewed_by_name: string | null
           arrest_date: string
           arresting_officer_id: string | null
           arresting_officer_name: string | null
@@ -1730,6 +1735,11 @@ export type Database = {
         }
         Insert: {
           alias?: string | null
+          archive_review_reason?: string | null
+          archive_review_status?: string
+          archive_reviewed_at?: string | null
+          archive_reviewed_by?: string | null
+          archive_reviewed_by_name?: string | null
           arrest_date?: string
           arresting_officer_id?: string | null
           arresting_officer_name?: string | null
@@ -1776,6 +1786,11 @@ export type Database = {
         }
         Update: {
           alias?: string | null
+          archive_review_reason?: string | null
+          archive_review_status?: string
+          archive_reviewed_at?: string | null
+          archive_reviewed_by?: string | null
+          archive_reviewed_by_name?: string | null
           arrest_date?: string
           arresting_officer_id?: string | null
           arresting_officer_name?: string | null
