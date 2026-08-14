@@ -178,7 +178,7 @@ export default function Analytics() {
       const dayStr = format(day, "yyyy-MM-dd");
       const dayRecords = attendance.filter((a: any) => a.date === dayStr);
       return {
-        date: format(day, "MMM dd"),
+        date: format(day, "dd MMM"),
         present: dayRecords.filter((a: any) => a.status === "present").length,
         late: dayRecords.filter((a: any) => a.status === "late").length,
         absent: dayRecords.filter((a: any) => a.status === "absent").length,
@@ -201,7 +201,7 @@ export default function Analytics() {
       const late = weekRecords.filter((a: any) => a.status === "late").length;
       const absent = weekRecords.filter((a: any) => a.status === "absent").length;
       const total = present + late + absent;
-      return { week: format(ws, "MMM dd"), present, late, absent, total, rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0 };
+      return { week: format(ws, "dd MMM"), present, late, absent, total, rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0 };
     });
     return weekData.map((w, i) => ({ ...w, change: i > 0 ? w.rate - weekData[i - 1].rate : 0 }));
   }, [attendance, periodStart]);
@@ -268,7 +268,7 @@ export default function Analytics() {
         return d >= weekStart && d <= we;
       });
       return {
-        week: format(weekStart, "MMM dd"),
+        week: format(weekStart, "dd MMM"),
         total: weekIncidents.length,
         critical: weekIncidents.filter((i: any) => i.severity === "critical").length,
         high: weekIncidents.filter((i: any) => i.severity === "high").length,

@@ -124,7 +124,7 @@ function AuditEntryCard({ entry, profiles }: { entry: AuditEntry; profiles: Reco
           <div className="flex items-center gap-2 mt-1 text-[10px] text-[hsl(120,15%,55%)]">
             <User className="h-3 w-3" /><span>{performerName}</span>
             <span>•</span>
-            <Clock className="h-3 w-3" /><span>{format(new Date(entry.created_at), "MMM dd, HH:mm:ss")}</span>
+            <Clock className="h-3 w-3" /><span>{format(new Date(entry.created_at), "dd MMM, HH:mm:ss")}</span>
           </div>
         </div>
         <Button variant="ghost" size="icon" className="h-6 w-6 text-[hsl(120,15%,55%)] hover:bg-[hsl(120,20%,18%)]" onClick={() => setExpanded(!expanded)}>

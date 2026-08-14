@@ -535,7 +535,7 @@ function EventsTab() {
               <TableBody>
                 {events.map((ev) => (
                   <TableRow key={ev.id}>
-                    <TableCell className="text-xs whitespace-nowrap">{format(new Date(ev.created_at), "MM-dd HH:mm:ss")}</TableCell>
+                    <TableCell className="text-xs whitespace-nowrap">{format(new Date(ev.created_at), "dd-MM HH:mm:ss")}</TableCell>
                     <TableCell><Badge variant="outline">{ev.layer}</Badge></TableCell>
                     <TableCell><Badge variant="outline" className={ACTION_BADGE[ev.action as Action]}>{ev.action}</Badge></TableCell>
                     <TableCell className="font-mono text-xs break-all max-w-[320px]">{ev.subject}</TableCell>

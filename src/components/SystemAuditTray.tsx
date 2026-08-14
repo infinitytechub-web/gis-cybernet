@@ -155,7 +155,7 @@ function AuditEntryCard({ entry, profiles }: { entry: AuditEntry; profiles: Reco
             <span>{performerName}</span>
             <span>•</span>
             <Clock className="h-3 w-3" />
-            <span>{format(new Date(entry.created_at), "MMM dd, HH:mm:ss")}</span>
+            <span>{format(new Date(entry.created_at), "dd MMM, HH:mm:ss")}</span>
           </div>
         </div>
         <Button
@@ -448,7 +448,7 @@ export function SystemAuditTray() {
                     )}
                   >
                     <CalendarIcon className="h-3 w-3 mr-1" />
-                    {dateFrom ? format(dateFrom, "MMM dd") : "From"}
+                    {dateFrom ? format(dateFrom, "dd MMM") : "From"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-[hsl(120,18%,12%)] border-[hsl(120,25%,25%)]" align="start">
@@ -474,7 +474,7 @@ export function SystemAuditTray() {
                     )}
                   >
                     <CalendarIcon className="h-3 w-3 mr-1" />
-                    {dateTo ? format(dateTo, "MMM dd") : "To"}
+                    {dateTo ? format(dateTo, "dd MMM") : "To"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 bg-[hsl(120,18%,12%)] border-[hsl(120,25%,25%)]" align="start">
