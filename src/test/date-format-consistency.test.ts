@@ -88,6 +88,24 @@ describe("date display consistency", () => {
     ).toEqual([]);
   });
 
+
+  it("does not use locale-dependent toLocaleString for date-times", () => {
+    const offenders: string[] = [];
+    const re = /new Date\([^;]*?\)\.toLocaleString\(/g;
+    for (const file of FILES) {
+      const src = fs.readFileSync(file, "utf8");
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(src))) {
+        const line = src.slice(0, m.index).split("\n").length;
+        offenders.push(`${rel(file)}:${line}`);
+      }
+    }
+    expect(
+      offenders,
+      `Locale-dependent date-time rendering found (use formatDateTime from @/lib/date-format):\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
   it("shows DD/MM/YYYY hints (never MM/DD/YYYY) in date input helper text", () => {
     const offenders: string[] = [];
     for (const file of FILES) {
