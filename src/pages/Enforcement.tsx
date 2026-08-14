@@ -1119,7 +1119,7 @@ export default function Enforcement() {
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("w-[130px] justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
                   <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-                  {dateFrom ? format(dateFrom, "dd/MM/yy") : "From"}
+                  {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "From"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -1130,7 +1130,7 @@ export default function Enforcement() {
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("w-[130px] justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
                   <CalendarIcon className="mr-1 h-3.5 w-3.5" />
-                  {dateTo ? format(dateTo, "dd/MM/yy") : "To"}
+                  {dateTo ? format(dateTo, "dd/MM/yyyy") : "To"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

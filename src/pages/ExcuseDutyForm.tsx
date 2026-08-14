@@ -215,7 +215,7 @@ export default function ExcuseDutyForm() {
               {myForms.map((f: any) => (
                 <TableRow key={f.id}>
                   <TableCell className="text-xs">{format(new Date(f.created_at), "dd/MM/yyyy")}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(f.start_date), "dd MMM")} – {format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(f.start_date), "dd/MM/yyyy")} – {format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
                   <TableCell><Badge className={STATUS_COLOR[f.status] ?? ""}>{f.status}</Badge></TableCell>
                   <TableCell className="text-xs">{f.review_comment ?? "—"}</TableCell>
                   <TableCell className="text-right">

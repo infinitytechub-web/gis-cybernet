@@ -828,7 +828,7 @@ export default function HealthLab() {
                       <TableRow key={e.id}>
                         <TableCell className="text-xs">{format(new Date(e.created_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs font-medium">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
-                        <TableCell className="text-xs">{format(new Date(e.start_date), "dd MMM")} – {format(new Date(e.end_date), "dd/MM/yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(e.start_date), "dd/MM/yyyy")} – {format(new Date(e.end_date), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs max-w-[300px] truncate" title={e.reason}>{e.reason}</TableCell>
                         <TableCell><Badge className={STATUS_COLOR[e.status] ?? ""}>{e.status}</Badge></TableCell>
                         <TableCell className="text-right">

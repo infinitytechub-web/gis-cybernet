@@ -268,7 +268,7 @@ export default function CommandRoleAudit() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-8 w-full px-2 text-xs justify-start gap-1", !startDate && "text-muted-foreground")}>
                       <CalendarIcon className="h-3 w-3" />
-                      {startDate ? format(startDate, "dd MMM") : "Any"}
+                      {startDate ? format(startDate, "dd/MM/yyyy") : "Any"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -282,7 +282,7 @@ export default function CommandRoleAudit() {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("h-8 w-full px-2 text-xs justify-start gap-1", !endDate && "text-muted-foreground")}>
                       <CalendarIcon className="h-3 w-3" />
-                      {endDate ? format(endDate, "dd MMM") : "Any"}
+                      {endDate ? format(endDate, "dd/MM/yyyy") : "Any"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">

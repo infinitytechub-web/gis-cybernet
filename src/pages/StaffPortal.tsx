@@ -118,7 +118,7 @@ export default function StaffPortal() {
                       return (
                         <TableRow key={r.id}>
                           <TableCell className="capitalize">{r.type}</TableCell>
-                          <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}</TableCell>
+                          <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="hidden sm:table-cell">{days}</TableCell>
                           <TableCell><Badge className={statusColor(r.status)} variant="secondary">{r.status}</Badge></TableCell>
                           <TableCell>
