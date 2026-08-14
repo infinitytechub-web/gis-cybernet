@@ -11,7 +11,7 @@ import { DateInput } from "@/components/ui/date-input";
  * Drop-in replacement for `<DateInput  />`.
  *
  * Native date inputs render in the BROWSER's locale (US machines show
- * MM/DD/YYYY), which breaks the house standard. This control always displays
+ * month-first order), which breaks the house standard. This control always displays
  * and accepts DD/MM/YYYY while keeping the machine value ISO (`yyyy-MM-dd`),
  * so `value` / `onChange(e.target.value)` behave exactly as before.
  */
