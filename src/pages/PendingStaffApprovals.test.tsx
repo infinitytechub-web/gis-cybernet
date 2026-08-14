@@ -165,6 +165,7 @@ describe("PendingStaffApprovals — bulk actions", () => {
   });
 
   it("select-all toggles every visible pending row and Clear empties it", async () => {
+
     const user = userEvent.setup();
     renderPage();
     await waitForRowsLoaded();
@@ -176,7 +177,8 @@ describe("PendingStaffApprovals — bulk actions", () => {
     await waitFor(() =>
       expect(screen.queryByText(/records? selected/)).not.toBeInTheDocument(),
     );
-  });
+  }, 20_000); // 75 rows of select-all/clear is slow in jsdom
+
 
   it("requires confirmation before approving and processes selection in chunks of 50", async () => {
     const user = userEvent.setup();

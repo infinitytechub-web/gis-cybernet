@@ -162,82 +162,83 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin-recovery" element={<AdminRecovery />} />
-          <Route path="/change-password" element={<ProtectedRoute><ForcePasswordChange /></ProtectedRoute>} />
+          <Route path="/change-password" element={<ProtectedRoute module="change-password"><ForcePasswordChange /></ProtectedRoute>} />
           <Route path="/2fa" element={<MfaGate />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-          <Route path="/staff" element={<ProtectedRoute><Layout><Staff /></Layout></ProtectedRoute>} />
-          <Route path="/staff/:id" element={<ProtectedRoute><Layout><StaffProfile /></Layout></ProtectedRoute>} />
-          <Route path="/directory" element={<ProtectedRoute><Layout><StaffDirectory /></Layout></ProtectedRoute>} />
-          <Route path="/departments" element={<ProtectedRoute><Layout><Departments /></Layout></ProtectedRoute>} />
-          <Route path="/roles" element={<ProtectedRoute><Layout><Roles /></Layout></ProtectedRoute>} />
-          <Route path="/shifts" element={<ProtectedRoute><Layout><Shifts /></Layout></ProtectedRoute>} />
-          <Route path="/roster" element={<ProtectedRoute><Layout><DutyRoster /></Layout></ProtectedRoute>} />
-          <Route path="/roster/import" element={<ProtectedRoute><Layout><DutyRosterImport /></Layout></ProtectedRoute>} />
-          <Route path="/guard-schedule" element={<ProtectedRoute><Layout><GuardSchedule /></Layout></ProtectedRoute>} />
-          <Route path="/guard-schedule/import" element={<ProtectedRoute><Layout><GuardScheduleImport /></Layout></ProtectedRoute>} />
-          <Route path="/route-history" element={<ProtectedRoute><Layout><RouteHistory /></Layout></ProtectedRoute>} />
-          <Route path="/verify-export" element={<ProtectedRoute><Layout><VerifyExport /></Layout></ProtectedRoute>} />
-          <Route path="/staff-export-integrity" element={<ProtectedRoute><Layout><StaffExportIntegrity /></Layout></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute module="dashboard"><Layout><Dashboard /></Layout></ProtectedRoute>} />
+          <Route path="/staff" element={<ProtectedRoute module="staff"><Layout><Staff /></Layout></ProtectedRoute>} />
+          <Route path="/staff/:id" element={<ProtectedRoute module="staff"><Layout><StaffProfile /></Layout></ProtectedRoute>} />
+          <Route path="/directory" element={<ProtectedRoute module="staff-directory"><Layout><StaffDirectory /></Layout></ProtectedRoute>} />
+          <Route path="/departments" element={<ProtectedRoute module="departments"><Layout><Departments /></Layout></ProtectedRoute>} />
 
-          <Route path="/staff-approvals/pending" element={<ProtectedRoute><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
-          <Route path="/staff-approvals/accounts" element={<ProtectedRoute><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
-          <Route path="/staff-approvals/profile-changes" element={<ProtectedRoute><Layout><ProfileChangeApprovals /></Layout></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute><Layout><Attendance /></Layout></ProtectedRoute>} />
-          <Route path="/my-shift" element={<ProtectedRoute><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
-          <Route path="/shift-rotation-approvals" element={<ProtectedRoute><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
-          <Route path="/attendance/connections" element={<ProtectedRoute><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
-          <Route path="/staff-approvals" element={<ProtectedRoute><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
-          <Route path="/shift-window-audit" element={<ProtectedRoute><Layout><ShiftWindowAudit /></Layout></ProtectedRoute>} />
-          <Route path="/sensitive-access-log" element={<ProtectedRoute><Layout><SensitiveAccessLog /></Layout></ProtectedRoute>} />
-          <Route path="/quarantine" element={<ProtectedRoute><Layout><QuarantineInbox /></Layout></ProtectedRoute>} />
-          <Route path="/ip-blocks" element={<ProtectedRoute><Layout><IpBlocks /></Layout></ProtectedRoute>} />
-          <Route path="/leave" element={<ProtectedRoute><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
-          <Route path="/holidays" element={<ProtectedRoute><Layout><Holidays /></Layout></ProtectedRoute>} />
-          <Route path="/postings" element={<ProtectedRoute><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />
-          <Route path="/postings/history" element={<ProtectedRoute><Layout><PostingsHistory /></Layout></ProtectedRoute>} />
-          <Route path="/compliance" element={<ProtectedRoute><Layout><Compliance /></Layout></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
-          <Route path="/announcements" element={<ProtectedRoute><Layout><Announcements /></Layout></ProtectedRoute>} />
-          <Route path="/scheduled-files" element={<ProtectedRoute><Layout><ScheduledFiles /></Layout></ProtectedRoute>} />
-          <Route path="/processing" element={<ProtectedRoute><Layout><Processing /></Layout></ProtectedRoute>} />
-          <Route path="/front-desk" element={<ProtectedRoute><Layout><FrontDesk /></Layout></ProtectedRoute>} />
-          <Route path="/analytics" element={<ProtectedRoute><Layout><Analytics /></Layout></ProtectedRoute>} />
-          <Route path="/enforcement" element={<ProtectedRoute><Layout><Enforcement /></Layout></ProtectedRoute>} />
-          <Route path="/operations" element={<ProtectedRoute><Layout><Operations /></Layout></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
-          <Route path="/admin/shift-rotations" element={<ProtectedRoute><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute><Layout><AdminConsole /></Layout></ProtectedRoute>} />
-          <Route path="/command-roles" element={<ProtectedRoute><Layout><CommandRoles /></Layout></ProtectedRoute>} />
-          <Route path="/admin-access-matrix" element={<ProtectedRoute><Layout><AdminAccessMatrix /></Layout></ProtectedRoute>} />
-          <Route path="/command-role-audit" element={<ProtectedRoute><Layout><CommandRoleAudit /></Layout></ProtectedRoute>} />
-          <Route path="/stores" element={<ProtectedRoute><Layout><Stores /></Layout></ProtectedRoute>} />
-          <Route path="/holding" element={<ProtectedRoute><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
-          <Route path="/procurement" element={<ProtectedRoute><Layout><Procurement /></Layout></ProtectedRoute>} />
-          <Route path="/misd" element={<ProtectedRoute><Layout><Misd /></Layout></ProtectedRoute>} />
-          <Route path="/ipse" element={<ProtectedRoute><Layout><Ipse /></Layout></ProtectedRoute>} />
-          <Route path="/health-lab" element={<ProtectedRoute><Layout><HealthLab /></Layout></ProtectedRoute>} />
-          <Route path="/excuse-duty" element={<ProtectedRoute><Layout><ExcuseDutyForm /></Layout></ProtectedRoute>} />
-          <Route path="/excuse-duty/mine" element={<ProtectedRoute><Layout><MyExcuseDutySubmissions /></Layout></ProtectedRoute>} />
-          <Route path="/my-profile" element={<ProtectedRoute><Layout><MyProfile /></Layout></ProtectedRoute>} />
-          <Route path="/appraisals" element={<ProtectedRoute><Layout><Appraisals /></Layout></ProtectedRoute>} />
-          <Route path="/appraisals/coverage" element={<ProtectedRoute><Layout><AppraisalCoverageReport /></Layout></ProtectedRoute>} />
-          <Route path="/appraisals/officer/:staffProfileId" element={<ProtectedRoute><Layout><AppraisalDetail /></Layout></ProtectedRoute>} />
+          <Route path="/roles" element={<ProtectedRoute module="roles-designations"><Layout><Roles /></Layout></ProtectedRoute>} />
+          <Route path="/shifts" element={<ProtectedRoute module="shifts"><Layout><Shifts /></Layout></ProtectedRoute>} />
+          <Route path="/roster" element={<ProtectedRoute module="roster"><Layout><DutyRoster /></Layout></ProtectedRoute>} />
+          <Route path="/roster/import" element={<ProtectedRoute module="roster-import"><Layout><DutyRosterImport /></Layout></ProtectedRoute>} />
+          <Route path="/guard-schedule" element={<ProtectedRoute module="guard-schedule"><Layout><GuardSchedule /></Layout></ProtectedRoute>} />
+          <Route path="/guard-schedule/import" element={<ProtectedRoute module="guard-schedule-import"><Layout><GuardScheduleImport /></Layout></ProtectedRoute>} />
+          <Route path="/route-history" element={<ProtectedRoute module="route-history"><Layout><RouteHistory /></Layout></ProtectedRoute>} />
+          <Route path="/verify-export" element={<ProtectedRoute module="verify-export"><Layout><VerifyExport /></Layout></ProtectedRoute>} />
+          <Route path="/staff-export-integrity" element={<ProtectedRoute module="staff-export-integrity"><Layout><StaffExportIntegrity /></Layout></ProtectedRoute>} />
 
-          <Route path="/role-assignments" element={<ProtectedRoute><Layout><RoleAssignmentsAdmin /></Layout></ProtectedRoute>} />
-          <Route path="/staff-mapping-import" element={<ProtectedRoute><Layout><StaffMappingImport /></Layout></ProtectedRoute>} />
-          <Route path="/my-portal" element={<ProtectedRoute><Layout><StaffPortal /></Layout></ProtectedRoute>} />
-          <Route path="/audit-log" element={<ProtectedRoute><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/rum-analytics" element={<ProtectedRoute><Layout><RumAnalytics /></Layout></ProtectedRoute>} />
-          <Route path="/command-vault" element={<ProtectedRoute><Layout><CommandVault /></Layout></ProtectedRoute>} />
-         <Route path="/command-vault/gps" element={<ProtectedRoute><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals/pending" element={<ProtectedRoute module="staff-approvals-pending"><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals/accounts" element={<ProtectedRoute module="staff_admin"><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals/profile-changes" element={<ProtectedRoute module="profile-change-approvals"><Layout><ProfileChangeApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/attendance" element={<ProtectedRoute module="attendance"><Layout><Attendance /></Layout></ProtectedRoute>} />
+          <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
+          <Route path="/shift-rotation-approvals" element={<ProtectedRoute module="shift-rotation-approvals"><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/attendance/connections" element={<ProtectedRoute module="shift-connections"><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
+          <Route path="/staff-approvals" element={<ProtectedRoute module="staff-request-approvals"><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/shift-window-audit" element={<ProtectedRoute module="shift-window-audit"><Layout><ShiftWindowAudit /></Layout></ProtectedRoute>} />
+          <Route path="/sensitive-access-log" element={<ProtectedRoute module="sensitive-access-log"><Layout><SensitiveAccessLog /></Layout></ProtectedRoute>} />
+          <Route path="/quarantine" element={<ProtectedRoute module="quarantine"><Layout><QuarantineInbox /></Layout></ProtectedRoute>} />
+          <Route path="/ip-blocks" element={<ProtectedRoute module="ip-blocks"><Layout><IpBlocks /></Layout></ProtectedRoute>} />
+          <Route path="/leave" element={<ProtectedRoute module="leave"><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
+          <Route path="/holidays" element={<ProtectedRoute module="holidays"><Layout><Holidays /></Layout></ProtectedRoute>} />
+          <Route path="/postings" element={<ProtectedRoute module="postings"><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />
+          <Route path="/postings/history" element={<ProtectedRoute module="postings"><Layout><PostingsHistory /></Layout></ProtectedRoute>} />
+          <Route path="/compliance" element={<ProtectedRoute module="compliance"><Layout><Compliance /></Layout></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute module="reports"><Layout><Reports /></Layout></ProtectedRoute>} />
+          <Route path="/announcements" element={<ProtectedRoute module="announcements"><Layout><Announcements /></Layout></ProtectedRoute>} />
+          <Route path="/scheduled-files" element={<ProtectedRoute module="scheduled-files"><Layout><ScheduledFiles /></Layout></ProtectedRoute>} />
+          <Route path="/processing" element={<ProtectedRoute module="processing"><Layout><Processing /></Layout></ProtectedRoute>} />
+          <Route path="/front-desk" element={<ProtectedRoute module="front-desk"><Layout><FrontDesk /></Layout></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute module="analytics"><Layout><Analytics /></Layout></ProtectedRoute>} />
+          <Route path="/enforcement" element={<ProtectedRoute module="enforcement"><Layout><Enforcement /></Layout></ProtectedRoute>} />
+          <Route path="/operations" element={<ProtectedRoute module="operations"><Layout><Operations /></Layout></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute module="settings"><Layout><Settings /></Layout></ProtectedRoute>} />
+          <Route path="/admin/shift-rotations" element={<ProtectedRoute module="admin-shift-rotations"><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute module="admin-console"><Layout><AdminConsole /></Layout></ProtectedRoute>} />
+          <Route path="/command-roles" element={<ProtectedRoute module="command-roles"><Layout><CommandRoles /></Layout></ProtectedRoute>} />
+          <Route path="/admin-access-matrix" element={<ProtectedRoute module="admin-access-matrix"><Layout><AdminAccessMatrix /></Layout></ProtectedRoute>} />
+          <Route path="/command-role-audit" element={<ProtectedRoute module="command-role-audit"><Layout><CommandRoleAudit /></Layout></ProtectedRoute>} />
+          <Route path="/stores" element={<ProtectedRoute module="stores"><Layout><Stores /></Layout></ProtectedRoute>} />
+          <Route path="/holding" element={<ProtectedRoute module="detention"><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
+          <Route path="/procurement" element={<ProtectedRoute module="procurement"><Layout><Procurement /></Layout></ProtectedRoute>} />
+          <Route path="/misd" element={<ProtectedRoute module="misd"><Layout><Misd /></Layout></ProtectedRoute>} />
+          <Route path="/ipse" element={<ProtectedRoute module="ipse"><Layout><Ipse /></Layout></ProtectedRoute>} />
+          <Route path="/health-lab" element={<ProtectedRoute module="health-lab"><Layout><HealthLab /></Layout></ProtectedRoute>} />
+          <Route path="/excuse-duty" element={<ProtectedRoute module="excuse-duty"><Layout><ExcuseDutyForm /></Layout></ProtectedRoute>} />
+          <Route path="/excuse-duty/mine" element={<ProtectedRoute module="excuse-duty"><Layout><MyExcuseDutySubmissions /></Layout></ProtectedRoute>} />
+          <Route path="/my-profile" element={<ProtectedRoute module="my-profile"><Layout><MyProfile /></Layout></ProtectedRoute>} />
+          <Route path="/appraisals" element={<ProtectedRoute module="appraisals"><Layout><Appraisals /></Layout></ProtectedRoute>} />
+          <Route path="/appraisals/coverage" element={<ProtectedRoute module="appraisal-coverage"><Layout><AppraisalCoverageReport /></Layout></ProtectedRoute>} />
+          <Route path="/appraisals/officer/:staffProfileId" element={<ProtectedRoute module="appraisals"><Layout><AppraisalDetail /></Layout></ProtectedRoute>} />
+
+          <Route path="/role-assignments" element={<ProtectedRoute module="role-assignments"><Layout><RoleAssignmentsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/staff-mapping-import" element={<ProtectedRoute module="staff-mapping-import"><Layout><StaffMappingImport /></Layout></ProtectedRoute>} />
+          <Route path="/my-portal" element={<ProtectedRoute module="my-portal"><Layout><StaffPortal /></Layout></ProtectedRoute>} />
+          <Route path="/audit-log" element={<ProtectedRoute module="audit-log"><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/rum-analytics" element={<ProtectedRoute module="rum-analytics"><Layout><RumAnalytics /></Layout></ProtectedRoute>} />
+          <Route path="/command-vault" element={<ProtectedRoute module="command-vault"><Layout><CommandVault /></Layout></ProtectedRoute>} />
+         <Route path="/command-vault/gps" element={<ProtectedRoute module="command-vault"><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
          <Route path="/gps-addresses" element={<Navigate to="/command-vault/gps" replace />} />
          <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />
-          <Route path="/recycle-bin" element={<ProtectedRoute><Layout><RecycleBin /></Layout></ProtectedRoute>} />
-          <Route path="/announcements/retention" element={<ProtectedRoute><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
-          <Route path="/interlink" element={<ProtectedRoute><Layout><Interlink /></Layout></ProtectedRoute>} />
-          <Route path="/commands" element={<ProtectedRoute><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
-          <Route path="/command/:slug" element={<ProtectedRoute><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
+          <Route path="/recycle-bin" element={<ProtectedRoute module="recycle-bin"><Layout><RecycleBin /></Layout></ProtectedRoute>} />
+          <Route path="/announcements/retention" element={<ProtectedRoute module="retention-policy"><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
+          <Route path="/interlink" element={<ProtectedRoute module="interlink"><Layout><Interlink /></Layout></ProtectedRoute>} />
+          <Route path="/commands" element={<ProtectedRoute module="commands"><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
+          <Route path="/command/:slug" element={<ProtectedRoute module="commands"><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

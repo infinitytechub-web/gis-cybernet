@@ -1,16 +1,20 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { RequireModule } from "@/components/RequireModule";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRole?: "admin" | "supervisor";
+  /** RBAC registry module key — enforces role/privilege access for the route. */
+  module?: string;
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole, module }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
   const location = useLocation();
   const mustChange = user?.user_metadata?.must_change_password === true;
   const isPasswordChangeRoute = location.pathname === "/change-password";
+
 
   if (loading) {
     return (
@@ -34,5 +38,8 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/change-password" replace />;
   }
 
+  if (module) return <RequireModule module={module}>{children}</RequireModule>;
+
   return <>{children}</>;
 }
+
