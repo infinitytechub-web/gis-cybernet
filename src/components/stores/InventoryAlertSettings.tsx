@@ -221,22 +221,31 @@ export function InventoryAlertSettings() {
               onCheckedChange={(v) => setForm({ ...form, alert_webhook_enabled: v })}
             />
           </div>
-          <Input
-            placeholder="https://hooks.slack.com/services/..."
-            disabled={!canEdit || !form.alert_webhook_enabled}
-            value={form.webhook_url ?? ""}
-            onChange={(e) => setForm({ ...form, webhook_url: e.target.value })}
-          />
-          <div className="flex justify-end">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={testWebhook}
-              disabled={!form.alert_webhook_enabled || !form.webhook_url}
-            >
-              Send test
-            </Button>
-          </div>
+          {canManageWebhook ? (
+            <>
+              <Input
+                placeholder="https://hooks.slack.com/services/..."
+                disabled={!form.alert_webhook_enabled}
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={testWebhook}
+                  disabled={!form.alert_webhook_enabled || !webhookUrl.trim()}
+                >
+                  Send test
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              The webhook address is restricted to Admin, OIC and 2IC. You can still switch webhook alerts on or off.
+            </p>
+          )}
+
         </div>
 
         <div className="rounded-md border p-3 space-y-3">
