@@ -52,9 +52,14 @@ export function formatTime(value: Date | string | number | null | undefined, fal
 
 /* ----------------------------- Age calculator ----------------------------- */
 
-export type AgeResult =
-  | { ok: true; years: number; months: number; label: string }
-  | { ok: false; reason: "empty" | "invalid" | "future" };
+export type AgeResult = {
+  ok: boolean;
+  years?: number;
+  months?: number;
+  label?: string;
+  reason?: "empty" | "invalid" | "future";
+};
+
 
 /**
  * Current age from a date of birth. Infants (< 1 year) report months so the
