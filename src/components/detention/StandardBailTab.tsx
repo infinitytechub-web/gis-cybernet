@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
-  Eye, Gavel, Loader2, Pencil, Plus, Printer, Search, Trash2,
+  CheckCircle2, Eye, Gavel, Loader2, Pencil, Plus, Printer, Search, Trash2, XCircle,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -91,7 +91,7 @@ const fullName = (b: Bail) => `${b.bailee_first_name ?? ""} ${b.bailee_last_name
  * Records may optionally be linked to a detainee in custody; when linked the
  * detainee's identity is pre-filled and the bail appears in their history.
  */
-export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canDelete: boolean }) {
+export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { canEdit: boolean; canDelete: boolean; canAuthorize?: boolean }) {
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -101,6 +101,8 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
   const [viewing, setViewing] = useState<Bail | null>(null);
   const [deleting, setDeleting] = useState<Bail | null>(null);
   const [form, setForm] = useState<Record<string, any>>(blank());
+  const [reviewing, setReviewing] = useState<{ record: Bail; decision: "authorized" | "declined" } | null>(null);
+  const [reviewRemarks, setReviewRemarks] = useState("");
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -244,6 +246,42 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
   });
 
   /**
+   * Approve / deny the bail authorization block. The database trigger
+   * `guard_bail_authorization` re-checks command-tier authority server-side and
+   * stamps the authorization timestamp, so the UI gate is a convenience only.
+   */
+  const reviewMut = useMutation({
+    mutationFn: async ({ record, decision, remarks }: { record: Bail; decision: "authorized" | "declined"; remarks: string }) => {
+      if (decision === "declined" && !remarks.trim()) throw new Error("A reason is required to deny bail");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, rank")
+        .eq("id", user!.id)
+        .maybeSingle();
+      const name = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() : null;
+      const { error } = await supabase
+        .from("detention_bail_records")
+        .update({
+          authorization_status: decision,
+          authorization_remarks: remarks.trim() || null,
+          authorized_by: user!.id,
+          authorized_by_name: name || null,
+          authorized_by_rank: (profile as any)?.rank ?? null,
+          authorized_signature_name: name || null,
+          authorized_at: decision === "authorized" ? new Date().toISOString() : null,
+        } as any)
+        .eq("id", record.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["detention-bail-records"] });
+      toast.success(vars.decision === "authorized" ? "Bail approved" : "Bail denied");
+      setReviewing(null); setReviewRemarks("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to record the bail decision"),
+  });
+
+  /**
    * Printing renders the stored record through the active versioned template
    * for its authorization status and archives the rendered document, so the
    * output always matches the stored data and formatting.
@@ -268,7 +306,7 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
     <Card className="mt-3">
       <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Gavel className="h-4 w-4 text-cyan-700 dark:text-cyan-400" /> Standard Bail Forms ({records.length})
+          <Gavel className="h-4 w-4 text-cyan-700 dark:text-cyan-400" /> Bail Forms ({records.length})
         </CardTitle>
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -329,6 +367,18 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
                         <Button size="icon" variant="ghost" title="Print" disabled={printMut.isPending} onClick={() => printRecord(r)}>
                           {printMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                         </Button>
+                        {canAuthorize && r.authorization_status !== "authorized" && (
+                          <Button size="icon" variant="ghost" title="Approve bail"
+                            onClick={() => { setReviewRemarks(""); setReviewing({ record: r, decision: "authorized" }); }}>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          </Button>
+                        )}
+                        {canAuthorize && r.authorization_status !== "declined" && (
+                          <Button size="icon" variant="ghost" title="Deny bail"
+                            onClick={() => { setReviewRemarks(""); setReviewing({ record: r, decision: "declined" }); }}>
+                            <XCircle className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                         {canEdit && (
                           <Button size="icon" variant="ghost" title="Edit" onClick={() => openEdit(r)}>
                             <Pencil className="h-4 w-4" />
@@ -349,11 +399,38 @@ export function StandardBailTab({ canEdit, canDelete }: { canEdit: boolean; canD
         )}
       </CardContent>
 
+      {/* Approve / deny bail authorization */}
+      <Dialog open={!!reviewing} onOpenChange={(v) => { if (!v) { setReviewing(null); setReviewRemarks(""); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{reviewing?.decision === "authorized" ? "Approve bail" : "Deny bail"}</DialogTitle>
+            <DialogDescription>
+              {reviewing ? `${fullName(reviewing.record)} · ${reviewing.record.reference ?? "no reference"}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>{reviewing?.decision === "declined" ? "Reason for denial *" : "Remarks (optional)"}</Label>
+            <Textarea rows={3} value={reviewRemarks} onChange={(e) => setReviewRemarks(e.target.value)}
+              placeholder={reviewing?.decision === "declined" ? "State why bail is denied…" : "Any authorization remarks…"} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReviewing(null); setReviewRemarks(""); }}>Cancel</Button>
+            <Button
+              variant={reviewing?.decision === "declined" ? "destructive" : "default"}
+              disabled={reviewMut.isPending}
+              onClick={() => reviewing && reviewMut.mutate({ record: reviewing.record, decision: reviewing.decision, remarks: reviewRemarks })}>
+              {reviewMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {reviewing?.decision === "authorized" ? "Approve" : "Deny"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create / edit */}
       <Dialog open={formOpen} onOpenChange={(v) => { setFormOpen(v); if (!v) setEditing(null); }}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit bail record" : "New standard bail form"}</DialogTitle>
+            <DialogTitle>{editing ? "Edit bail record" : "New bail form"}</DialogTitle>
             <DialogDescription>
               Optionally link the form to a detainee in custody to pre-fill their particulars.
             </DialogDescription>
