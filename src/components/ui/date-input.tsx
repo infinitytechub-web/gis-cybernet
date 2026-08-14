@@ -2,7 +2,6 @@ import * as React from "react";
 import { CalendarIcon } from "lucide-react";
 import { format, isValid, parse } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateInput } from "@/components/ui/date-input";
@@ -100,16 +99,14 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
         />
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="icon"
               disabled={disabled}
               aria-label="Open calendar (DD/MM/YYYY)"
-              className="absolute right-0 h-10 w-10 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              className="absolute right-0 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               <CalendarIcon className="h-4 w-4" />
-            </Button>
+            </button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="end">
             <Calendar
