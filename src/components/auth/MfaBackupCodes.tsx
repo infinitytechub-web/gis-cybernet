@@ -11,6 +11,7 @@ import { KeyRound, Copy, Download, RefreshCw, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { downloadBlob } from "@/lib/download-utils";
 import { logSecurityEvent } from "@/lib/security-audit";
+import { formatDateTime } from "@/lib/date-format";
 
 const AUTO_HIDE_SECONDS = 60;
 
@@ -91,7 +92,7 @@ export default function MfaBackupCodes() {
   };
   const downloadCodes = () => {
     if (!showCodes) return;
-    const txt = `GIS Cybernet — MFA Backup Codes\nGenerated: ${new Date().toLocaleString()}\nUser: ${user?.email}\n\nKeep these codes safe. Each can be used ONCE.\n\n${showCodes.join("\n")}\n`;
+    const txt = `GIS Cybernet — MFA Backup Codes\nGenerated: ${formatDateTime(new Date())}\nUser: ${user?.email}\n\nKeep these codes safe. Each can be used ONCE.\n\n${showCodes.join("\n")}\n`;
     downloadBlob(new Blob([txt], { type: "text/plain" }), `gis-cybernet-backup-codes.txt`);
   };
 

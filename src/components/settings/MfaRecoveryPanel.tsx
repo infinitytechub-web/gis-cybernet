@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShieldQuestion, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/date-format";
 
 export function MfaRecoveryPanel() {
   const qc = useQueryClient();
@@ -91,7 +92,7 @@ export function MfaRecoveryPanel() {
                 <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No requests.</TableCell></TableRow>
               ) : rows.map((r: any) => (
                 <TableRow key={r.id}>
-                  <TableCell className="text-xs">{new Date(r.created_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-xs">{formatDateTime(r.created_at)}</TableCell>
                   <TableCell className="font-mono text-xs">{r.staff_id || "—"}</TableCell>
                   <TableCell className="text-xs max-w-[280px] truncate">{r.reason}</TableCell>
                   <TableCell>

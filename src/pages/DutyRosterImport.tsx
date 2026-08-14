@@ -19,6 +19,7 @@ import { DeployedAssignmentsDialog } from "@/components/shifts/DeployedAssignmen
 import { downloadCSVString } from "@/lib/download-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatDateTime } from "@/lib/date-format";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
@@ -377,7 +378,7 @@ export default function DutyRosterImport() {
       const page = (doc as any).internal.getCurrentPageInfo().pageNumber;
       doc.setFontSize(8);
       doc.text(
-        `Generated ${new Date().toLocaleString()}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
+        `Generated ${formatDateTime(new Date())}  ·  Page ${page} of ${pageCount}  ·  CONFIDENTIAL`,
         40, doc.internal.pageSize.getHeight() - 20,
       );
     };
@@ -766,7 +767,7 @@ export default function DutyRosterImport() {
                           {i.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{i.committed_at ? new Date(i.committed_at).toLocaleString() : "—"}</TableCell>
+                      <TableCell className="text-xs">{i.committed_at ? formatDateTime(i.committed_at) : "—"}</TableCell>
                       <TableCell className="text-right">
                         {i.status === "committed" && (
                           <div className="flex justify-end gap-1">

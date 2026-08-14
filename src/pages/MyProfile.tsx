@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AgeDisplay } from "@/components/ui/age-display";
-import { DATE_FORMAT_HINT } from "@/lib/date-format";
+import { DATE_FORMAT_HINT, formatDateTime } from "@/lib/date-format";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -290,7 +290,7 @@ export default function MyProfile() {
                       r.status === "cancelled" ? "bg-muted text-muted-foreground" :
                       "bg-amber-100 text-amber-800"
                     }`}>{r.status}</span>
-                    <span className="text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                    <span className="text-muted-foreground">{formatDateTime(r.created_at)}</span>
                   </div>
                   <div className="text-muted-foreground">
                     Fields: <span className="font-medium text-foreground">{Object.keys(r.requested_changes || {}).join(", ") || "—"}</span>

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { exportSecurityAudit, verifySecurityAuditChain, createSecurityAuditAnchor } from "@/lib/security-audit";
 import { downloadBlob } from "@/lib/download-utils";
 import { AuditImportVerifyDialog } from "./AuditImportVerifyDialog";
+import { formatDateTime } from "@/lib/date-format";
 
 const sevColor: Record<string, string> = {
   info: "bg-muted text-muted-foreground",
@@ -212,7 +213,7 @@ export function SecurityAuditPanel() {
                   rows.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell className="font-mono text-xs">{r.seq}</TableCell>
-                      <TableCell className="text-xs">{new Date(r.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs">{formatDateTime(r.created_at)}</TableCell>
                       <TableCell><Badge variant="outline" className="text-xs">{r.category}</Badge></TableCell>
                       <TableCell className="text-xs">{r.action}</TableCell>
                       <TableCell><Badge className={sevColor[r.severity] || ""}>{r.severity}</Badge></TableCell>

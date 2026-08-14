@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { downloadBlob, downloadCSVString } from "@/lib/download-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatDateTime } from "@/lib/date-format";
 
 const FREQS = ["hourly", "daily", "weekly", "monthly"] as const;
 type Freq = typeof FREQS[number] | "any";
@@ -225,7 +226,7 @@ export function ComplianceExportFilters() {
       doc.setFont("helvetica", "bold").setFontSize(14);
       doc.text("GIS CYBERNET — Inventory Compliance Summary", w / 2, 36, { align: "center" });
       doc.setFont("helvetica", "normal").setFontSize(9);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, w / 2, 52, { align: "center" });
+      doc.text(`Generated: ${formatDateTime(new Date())}`, w / 2, 52, { align: "center" });
 
       autoTable(doc, {
         startY: 70,

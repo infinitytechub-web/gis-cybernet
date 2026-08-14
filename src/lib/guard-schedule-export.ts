@@ -1,6 +1,7 @@
 // Exports for guard schedule (XLSX, CSV, PDF)
 import * as XLSX from "xlsx";
 import { downloadBlob } from "@/lib/download-utils";
+import { formatDateTime } from "@/lib/date-format";
 
 export type Assignment = {
   id: string;
@@ -98,7 +99,7 @@ export async function exportSchedulePdf(header: ScheduleHeader, assignments: Ass
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(
-    `Range: ${header.start_date} → ${header.end_date}    Status: ${header.status.toUpperCase()}    Exported: ${new Date().toLocaleString()}`,
+    `Range: ${header.start_date} → ${header.end_date}    Status: ${header.status.toUpperCase()}    Exported: ${formatDateTime(new Date())}`,
     40,
     58
   );

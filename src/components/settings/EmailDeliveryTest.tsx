@@ -9,6 +9,7 @@ import { MailCheck, Send, Loader2, AlertTriangle, RefreshCw, ShieldCheck, Clock 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/date-format";
 
 type Status =
   | { kind: "idle" }
@@ -122,7 +123,7 @@ export function EmailDeliveryTest() {
             </Badge>
             {domain?.last_checked_at && (
               <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {new Date(domain.last_checked_at).toLocaleString()}
+                <Clock className="h-3 w-3" /> {formatDateTime(domain.last_checked_at)}
               </span>
             )}
           </div>
@@ -180,7 +181,7 @@ export function EmailDeliveryTest() {
                 <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/20">Queued</Badge>
                 <span className="text-muted-foreground">→ {status.recipient}</span>
               </div>
-              <div className="text-xs text-muted-foreground">Submitted at: {new Date(status.at).toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">Submitted at: {formatDateTime(status.at)}</div>
               {status.messageId && (
                 <div className="text-xs font-mono text-muted-foreground break-all">message_id: {status.messageId}</div>
               )}
