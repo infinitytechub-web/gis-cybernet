@@ -67,6 +67,16 @@ const STATUS_LABELS: Record<string, string> = {
   escaped: "Escaped",
 };
 const statusLabel = (s?: string | null) => (s ? STATUS_LABELS[s] ?? s.replace(/_/g, " ") : "—");
+const ARCHIVE_REVIEW_LABELS: Record<string, string> = {
+  pending: "Pending review",
+  approved: "Approved",
+  denied: "Denied",
+};
+const ARCHIVE_REVIEW_COLORS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
+  approved: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
+  denied: "bg-red-100 text-red-900 dark:bg-red-950/50 dark:text-red-200",
+};
 const ARCHIVE_STATUSES = ["released", "bail", "repatriated", "deported", "transferred", "court", "escaped"];
 const RELEASE_OUTCOMES = [
   { value: "released", label: "Released" },
@@ -273,10 +283,11 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
                 <TableHead></TableHead><TableHead>Detainee</TableHead><TableHead>Gender</TableHead>
                 <TableHead>Nationality</TableHead><TableHead>Type of Offense</TableHead><TableHead>Cell</TableHead>
                 <TableHead>Risk</TableHead><TableHead>Status</TableHead><TableHead>Duration</TableHead>
+                {isArchive && <TableHead>Archive Review</TableHead>}
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {filtered.length === 0 ? <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">No records</TableCell></TableRow>
+                {filtered.length === 0 ? <TableRow><TableCell colSpan={isArchive ? 11 : 10} className="text-center py-6 text-muted-foreground">No records</TableCell></TableRow>
                 : filtered.map((r: any) => (
                   <TableRow key={r.id} className="cursor-pointer hover:bg-accent/50" onClick={() => onSelect(r)}>
                     <TableCell><Avatar className="h-9 w-9"><AvatarFallback className="bg-rose-100 text-rose-700 text-xs">{r.first_name[0]}{r.last_name[0]}</AvatarFallback></Avatar></TableCell>
@@ -288,6 +299,18 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
                     <TableCell><Badge className={RISK_COLORS[r.risk_level]}>{r.risk_level}</Badge></TableCell>
                     <TableCell><Badge className={STATUS_COLORS[r.status]}>{statusLabel(r.status)}</Badge></TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{formatDistanceToNow(new Date(r.intake_at), { addSuffix: false })}</TableCell>
+                    {isArchive && (
+                      <TableCell className="whitespace-nowrap">
+                        <Badge className={ARCHIVE_REVIEW_COLORS[r.archive_review_status || "pending"]}>
+                          {ARCHIVE_REVIEW_LABELS[r.archive_review_status || "pending"]}
+                        </Badge>
+                        {r.archive_reviewed_at && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            {formatDateTime(r.archive_reviewed_at)}
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onSelect(r)} title="View details">
@@ -297,6 +320,30 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(r)} title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
+                        )}
+                        {isArchive && canReviewArchive && (
+                          <>
+                            <Button
+                              variant="ghost" size="icon"
+                              className="h-7 w-7 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-500/10 dark:text-emerald-400"
+                              disabled={(r.archive_review_status || "pending") === "approved"}
+                              onClick={() => { setReviewReason(""); setReview({ record: r, action: "approved" }); }}
+                              title="Approve archived record"
+                              aria-label={`Approve archived record for ${r.first_name} ${r.last_name}`}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost" size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={(r.archive_review_status || "pending") === "denied"}
+                              onClick={() => { setReviewReason(""); setReview({ record: r, action: "denied" }); }}
+                              title="Deny archived record"
+                              aria-label={`Deny archived record for ${r.first_name} ${r.last_name}`}
+                            >
+                              <Ban className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
                         )}
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => printDetentionRecord(r)} title="Print">
                           <Printer className="h-3.5 w-3.5" />
@@ -318,6 +365,48 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
 
       {intakeOpen && <IntakeForm onClose={() => setIntakeOpen(false)} userId={userId} role={role} />}
       {editing && <EditDetaineeDialog record={editing} onClose={() => setEditing(null)} role={role} />}
+
+      <AlertDialog open={!!review} onOpenChange={(o) => { if (!o) { setReview(null); setReviewReason(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {review?.action === "approved" ? "Approve this archived record?" : "Deny this archived record?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {review && (
+                <>
+                  {review.action === "approved" ? "Approving" : "Denying"} the archived record for{" "}
+                  <span className="font-semibold">{review.record.first_name} {review.record.last_name}</span>{" "}
+                  ({statusLabel(review.record.status)} · intake {formatDate(review.record.intake_at)}).
+                  The decision, reviewer and time are recorded.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="archive-review-reason">
+              {review?.action === "denied" ? "Reason for denial (required)" : "Remarks (optional)"}
+            </Label>
+            <Textarea
+              id="archive-review-reason"
+              value={reviewReason}
+              onChange={(e) => setReviewReason(e.target.value)}
+              placeholder={review?.action === "denied" ? "Explain why this archived record is denied…" : "Any supporting remarks…"}
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reviewPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); submitReview(); }}
+              disabled={reviewPending || (review?.action === "denied" && !reviewReason.trim())}
+              className={review?.action === "denied" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : undefined}
+            >
+              {reviewPending ? "Saving…" : review?.action === "denied" ? "Confirm Deny" : "Confirm Approve"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
