@@ -17,6 +17,7 @@ import jsPDF from "jspdf";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 import { saveAs } from "file-saver";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DateInput } from "@/components/ui/date-input";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
@@ -230,11 +231,11 @@ export default function MyExcuseDutySubmissions() {
         <div className="px-6 pb-3 pt-1 border-b grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
           <div>
             <Label className="text-[10px] uppercase text-muted-foreground">From</Label>
-            <Input type="date" className="h-8 text-xs" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0); }} />
+            <DateInput  className="h-8 text-xs" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0); }} />
           </div>
           <div>
             <Label className="text-[10px] uppercase text-muted-foreground">To</Label>
-            <Input type="date" className="h-8 text-xs" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0); }} />
+            <DateInput  className="h-8 text-xs" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0); }} />
           </div>
           <div>
             <Label className="text-[10px] uppercase text-muted-foreground">Status</Label>

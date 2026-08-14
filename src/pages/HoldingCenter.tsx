@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDays, subMonths, startOfDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
 import { SelectGroup, SelectLabel } from "@/components/ui/select";
+import { DateInput } from "@/components/ui/date-input";
 
 
 const PIE_COLORS = ["hsl(var(--primary))", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6"];
@@ -453,7 +454,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
                   <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of Birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of Birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><DateInput  value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
               <div><Label>Marital Status</Label>
                 <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -607,7 +608,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
                   <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of Birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><Input type="date" value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of Birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><DateInput  value={form.date_of_birth} onChange={e => setForm(p => ({ ...p, date_of_birth: e.target.value }))} /></div>
               <div><Label>Marital Status</Label>
                 <Select value={form.marital_status} onValueChange={v => setForm(p => ({ ...p, marital_status: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>

@@ -16,6 +16,7 @@ import {
   exportComplianceAuditPDF,
   type AuditExportRow,
 } from "@/lib/compliance-audit-export";
+import { DateInput } from "@/components/ui/date-input";
 
 interface AuditRow {
   id: string;
@@ -242,11 +243,11 @@ export function ComplianceBulkAuditDialog() {
               </div>
               <div>
                 <Label className="text-xs">From</Label>
-                <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                <DateInput  value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
               </div>
               <div>
                 <Label className="text-xs">To</Label>
-                <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                <DateInput  value={toDate} onChange={(e) => setToDate(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import {
   exportScheduleXlsx, exportScheduleCsv, exportSchedulePdf, type Assignment,
 } from "@/lib/guard-schedule-export";
+import { DateInput } from "@/components/ui/date-input";
 
 const SHIFTS = ["A", "B", "C", "D"] as const;
 
@@ -845,7 +846,7 @@ function EditAssignmentDialog({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Date</Label>
-              <Input type="date" value={dutyDate} onChange={(e) => setDutyDate(e.target.value)} className="h-8 text-xs" />
+              <DateInput  value={dutyDate} onChange={(e) => setDutyDate(e.target.value)} className="h-8 text-xs" />
             </div>
             <div>
               <Label className="text-xs">Shift</Label>

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Sliders, Save, RotateCcw, Sun, Moon, Globe2, Plus, Trash2, CalendarRange } from "lucide-react";
+import { DateInput } from "@/components/ui/date-input";
 
 type Shift = {
   id: string;
@@ -444,11 +445,11 @@ function ShiftOverrideRule({
       <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <Label className="text-xs">Effective from</Label>
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <DateInput  value={from} onChange={(e) => setFrom(e.target.value)} />
         </div>
         <div>
           <Label className="text-xs">Effective to</Label>
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <DateInput  value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         <div className="md:col-span-2 text-[11px] text-muted-foreground self-end pb-2">
           Leave blank for an always-on rule. Date ranges may not overlap with another rule for this shift.

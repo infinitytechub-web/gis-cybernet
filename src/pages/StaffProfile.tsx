@@ -364,7 +364,7 @@ export default function StaffProfile() {
                           <TableRow key={r.id}>
                             <TableCell className="capitalize">{r.type}</TableCell>
                             <TableCell className="text-xs">
-                              {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
+                              {format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}
                             </TableCell>
                             <TableCell>{days}</TableCell>
                             <TableCell>

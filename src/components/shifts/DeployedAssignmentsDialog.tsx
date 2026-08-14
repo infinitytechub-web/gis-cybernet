@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ShieldAlert, Repeat } from "lucide-react";
 import { toast } from "sonner";
+import { DateInput } from "@/components/ui/date-input";
 
 const SHIFTS = ["A", "B", "C", "D"] as const;
 type ShiftLetter = typeof SHIFTS[number];
@@ -193,7 +194,7 @@ export function DeployedAssignmentsDialog({ open, onOpenChange, effectiveDate, i
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Effective from</Label>
-                <Input type="date" className="h-9" value={overrideDate} onChange={(e) => setOverrideDate(e.target.value)} />
+                <DateInput  className="h-9" value={overrideDate} onChange={(e) => setOverrideDate(e.target.value)} />
               </div>
             </div>
             <div className="space-y-1">

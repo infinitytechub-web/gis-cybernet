@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ExportMenu } from "@/components/ui/export-menu";
 import { format, parseISO } from "date-fns";
 import { CalendarClock, ArrowRight, CheckCircle2, XCircle, Clock, Filter, X } from "lucide-react";
+import { DateInput } from "@/components/ui/date-input";
 
 const statusMeta = (s: string) => {
   switch (s) {
@@ -144,9 +145,8 @@ export function PostingTimeline() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               <div>
                 <Label htmlFor="timeline-from" className="text-xs">From</Label>
-                <Input
+                <DateInput
                   id="timeline-from"
-                  type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
                   className="h-8 text-xs"
@@ -154,9 +154,8 @@ export function PostingTimeline() {
               </div>
               <div>
                 <Label htmlFor="timeline-to" className="text-xs">To</Label>
-                <Input
+                <DateInput
                   id="timeline-to"
-                  type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
                   min={fromDate || undefined}

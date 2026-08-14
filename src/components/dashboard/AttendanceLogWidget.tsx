@@ -84,7 +84,7 @@ export default function AttendanceLogWidget() {
                 className={cn("h-7 px-2 text-xs gap-1.5 ml-auto", !isToday && "border-primary text-primary")}
               >
                 <CalendarIcon className="h-3 w-3" />
-                {format(selectedDate, "dd MMM")}
+                {format(selectedDate, "dd/MM/yyyy")}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">

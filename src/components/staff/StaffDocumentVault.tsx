@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
+import { DateInput } from "@/components/ui/date-input";
 
 const DOC_TYPES = [
   { value: "ghana_card", label: "Ghana Card" },
@@ -373,11 +374,11 @@ export function StaffDocumentVault({ profileId, canManage = false }: Props) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label>Issue Date</Label>
-                  <Input type="date" value={meta.issue_date} onChange={(e) => setMeta({ ...meta, issue_date: e.target.value })} />
+                  <DateInput  value={meta.issue_date} onChange={(e) => setMeta({ ...meta, issue_date: e.target.value })} />
                 </div>
                 <div>
                   <Label>Expiry Date</Label>
-                  <Input type="date" value={meta.expiry_date} onChange={(e) => setMeta({ ...meta, expiry_date: e.target.value })} />
+                  <DateInput  value={meta.expiry_date} onChange={(e) => setMeta({ ...meta, expiry_date: e.target.value })} />
                 </div>
               </div>
               <div>

@@ -13,6 +13,7 @@ import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, CalendarIcon, Plus,
 import { format, addDays, eachDayOfInterval, parseISO, startOfWeek } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { DateInput } from "@/components/ui/date-input";
 
 interface Props {
   nightGuardStaff: any[];
@@ -388,11 +389,11 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Start Date</Label>
-                    <Input type="date" value={uploadStartDate} onChange={(e) => setUploadStartDate(e.target.value)} />
+                    <DateInput  value={uploadStartDate} onChange={(e) => setUploadStartDate(e.target.value)} />
                   </div>
                   <div>
                     <Label className="text-xs">End Date</Label>
-                    <Input type="date" value={uploadEndDate} onChange={(e) => setUploadEndDate(e.target.value)} min={uploadStartDate} />
+                    <DateInput  value={uploadEndDate} onChange={(e) => setUploadEndDate(e.target.value)} min={uploadStartDate} />
                   </div>
                 </div>
               )}
@@ -463,11 +464,11 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label>Start Date</Label>
-                <Input type="date" value={manualStartDate} onChange={(e) => setManualStartDate(e.target.value)} />
+                <DateInput  value={manualStartDate} onChange={(e) => setManualStartDate(e.target.value)} />
               </div>
               <div>
                 <Label>End Date (optional)</Label>
-                <Input type="date" value={manualEndDate} onChange={(e) => setManualEndDate(e.target.value)} min={manualStartDate} />
+                <DateInput  value={manualEndDate} onChange={(e) => setManualEndDate(e.target.value)} min={manualStartDate} />
               </div>
             </div>
             {manualDateCount > 1 && (
@@ -530,7 +531,7 @@ export default function NightGuardDutyUpload({ nightGuardStaff, shifts }: Props)
 
             <div>
               <Label>Select any day in the target week</Label>
-              <Input type="date" value={replaceWeekStart} onChange={(e) => setReplaceWeekStart(e.target.value)} />
+              <DateInput  value={replaceWeekStart} onChange={(e) => setReplaceWeekStart(e.target.value)} />
               {replaceWeekDates.length === 7 && (
                 <p className="text-[10px] text-muted-foreground mt-1">
                   Week: {format(parseISO(replaceWeekDates[0]), "dd MMM")} — {format(parseISO(replaceWeekDates[6]), "dd/MM/yyyy")}

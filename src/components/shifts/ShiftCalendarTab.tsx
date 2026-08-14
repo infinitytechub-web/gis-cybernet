@@ -75,7 +75,7 @@ export default function ShiftCalendarTab({ shifts, assignments, weekStart, setWe
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium">
-            {format(weekStart, "dd MMM")} – {format(addDays(weekStart, 6), "dd/MM/yyyy")}
+            {format(weekStart, "dd/MM/yyyy")} – {format(addDays(weekStart, 6), "dd/MM/yyyy")}
           </span>
           <Button variant="outline" size="sm" onClick={() => setWeekStart(addWeeks(weekStart, 1))}>
             <ChevronRight className="h-4 w-4" />

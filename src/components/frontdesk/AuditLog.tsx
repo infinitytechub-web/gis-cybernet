@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Pencil, Trash2, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { DateInput } from "@/components/ui/date-input";
 
 const PAGE_SIZE = 20;
 
@@ -158,11 +159,11 @@ export default function AuditLog() {
             </div>
             <div>
               <Label className="text-xs">From</Label>
-              <Input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" />
+              <DateInput  value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" />
             </div>
             <div>
               <Label className="text-xs">To</Label>
-              <Input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
+              <DateInput  value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setPage(0); }} className="h-8 text-xs w-[140px]" min={filterDateFrom} />
             </div>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 gap-1 text-xs">

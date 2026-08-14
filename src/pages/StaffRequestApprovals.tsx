@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { Navigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 type Status = "pending" | "approved" | "rejected" | "cancelled";
 
@@ -333,11 +334,11 @@ export default function StaffRequestApprovals() {
           </div>
           <div>
             <Label className="text-xs">From (affected date)</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <DateInput  value={from} onChange={(e) => setFrom(e.target.value)} />
           </div>
           <div>
             <Label className="text-xs">To (affected date)</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <DateInput  value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div>
             <Label className="text-xs">Search</Label>

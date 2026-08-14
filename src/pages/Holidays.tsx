@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
 import { format, isPast, isFuture, isToday } from "date-fns";
 import { toast } from "sonner";
 import { softDelete } from "@/lib/recycle-bin";
+import { DateInput } from "@/components/ui/date-input";
 
 export default function Holidays() {
   const { isAdmin } = useAuth();
@@ -189,7 +190,7 @@ export default function Holidays() {
             </div>
             <div>
               <Label>Date</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <DateInput  value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={recurring} onCheckedChange={setRecurring} id="recurring" />

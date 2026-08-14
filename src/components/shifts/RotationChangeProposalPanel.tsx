@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DateInput } from "@/components/ui/date-input";
 
 type ShiftRow = { id: string; name: string; start_time: string | null; end_time: string | null };
 const GROUPS = ["A", "B", "C", "D"] as const;
@@ -453,8 +454,7 @@ export function RotationChangeProposalPanel() {
                   <Label className="text-xs">From</Label>
                   <div className="relative">
                     <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="date"
+                    <DateInput
                       className="pl-8"
                       value={raDateFrom}
                       onChange={(e) => setRaDateFrom(e.target.value)}
@@ -466,8 +466,7 @@ export function RotationChangeProposalPanel() {
                   <Label className="text-xs">To</Label>
                   <div className="relative">
                     <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="date"
+                    <DateInput
                       className="pl-8"
                       value={raDateTo}
                       onChange={(e) => setRaDateTo(e.target.value)}
@@ -633,8 +632,7 @@ export function RotationChangeProposalPanel() {
                   <Label className="text-xs">Effective from</Label>
                   <div className="relative">
                     <CalendarIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="date"
+                    <DateInput
                       value={effectiveFrom}
                       onChange={(e) => setEffectiveFrom(e.target.value)}
                       min={format(new Date(), "yyyy-MM-dd")}

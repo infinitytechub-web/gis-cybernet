@@ -22,6 +22,7 @@ import { ComplianceFileInput, FileLinkButton, type ComplianceFile } from "@/comp
 import { ComplianceBulkUploadDialog } from "@/components/compliance/ComplianceBulkUploadDialog";
 import { ComplianceBulkAuditDialog } from "@/components/compliance/ComplianceBulkAuditDialog";
 import { Upload } from "lucide-react";
+import { DateInput } from "@/components/ui/date-input";
 
 function getExpiryBadge(expiryDate: string | null) {
   if (!expiryDate) return <Badge variant="outline" className="text-xs">No expiry</Badge>;
@@ -271,8 +272,8 @@ function DocumentsTab() {
               <div><Label>Document Number</Label><Input value={docNumber} onChange={(e) => setDocNumber(e.target.value)} placeholder="e.g. G12345678" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Issue Date</Label><Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} /></div>
-              <div><Label>Expiry Date</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} /></div>
+              <div><Label>Issue Date</Label><DateInput  value={issueDate} onChange={(e) => setIssueDate(e.target.value)} /></div>
+              <div><Label>Expiry Date</Label><DateInput  value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} /></div>
             </div>
             <div><Label>Issuing Authority</Label><Input value={authority} onChange={(e) => setAuthority(e.target.value)} placeholder="e.g. Ghana Immigration Service" /></div>
             <div><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
@@ -449,8 +450,8 @@ function EquipmentTab() {
               <div><Label>Serial Number</Label><Input value={serial} onChange={(e) => setSerial(e.target.value)} placeholder="e.g. BC-001" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Issued Date</Label><Input type="date" value={issuedDate} onChange={(e) => setIssuedDate(e.target.value)} /></div>
-              <div><Label>Returned Date</Label><Input type="date" value={returnedDate} onChange={(e) => setReturnedDate(e.target.value)} /></div>
+              <div><Label>Issued Date</Label><DateInput  value={issuedDate} onChange={(e) => setIssuedDate(e.target.value)} /></div>
+              <div><Label>Returned Date</Label><DateInput  value={returnedDate} onChange={(e) => setReturnedDate(e.target.value)} /></div>
             </div>
             <div><Label>Condition</Label>
               <Select value={condition} onValueChange={setCondition}>
@@ -682,8 +683,8 @@ function CertificationsTab() {
             </div>
             <div><Label>Issuing Body</Label><Input value={issuingBody} onChange={(e) => setIssuingBody(e.target.value)} placeholder="e.g. Ghana Red Cross" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Date Obtained</Label><Input type="date" value={dateObtained} onChange={(e) => setDateObtained(e.target.value)} /></div>
-              <div><Label>Expiry Date</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} /></div>
+              <div><Label>Date Obtained</Label><DateInput  value={dateObtained} onChange={(e) => setDateObtained(e.target.value)} /></div>
+              <div><Label>Expiry Date</Label><DateInput  value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} /></div>
             </div>
             <div><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
             <ComplianceFileInput

@@ -21,6 +21,7 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
 import { PERMIT_TYPES, PERMIT_STATUSES, permitTypeLabel } from "@/lib/permits";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { DateInput } from "@/components/ui/date-input";
 
 function statusBadge(status: string) {
   const colors: Record<string, string> = {
@@ -262,13 +263,13 @@ export function PermitForm({
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Passport Issue Date</Label><Input type="date" value={form.passport_issue_date} onChange={(e) => setForm({ ...form, passport_issue_date: e.target.value })} /></div>
-        <div><Label>Passport Expiry Date *</Label><Input type="date" value={form.passport_expiry_date} onChange={(e) => setForm({ ...form, passport_expiry_date: e.target.value })} required /></div>
+        <div><Label>Passport Issue Date</Label><DateInput  value={form.passport_issue_date} onChange={(e) => setForm({ ...form, passport_issue_date: e.target.value })} /></div>
+        <div><Label>Passport Expiry Date *</Label><DateInput  value={form.passport_expiry_date} onChange={(e) => setForm({ ...form, passport_expiry_date: e.target.value })} required /></div>
         <div><Label>Passport Place of Issue</Label><Input value={form.passport_place_of_issue} onChange={(e) => setForm({ ...form, passport_place_of_issue: e.target.value })} /></div>
         <div><Label>Port of Entry</Label><Input value={form.port_of_entry} onChange={(e) => setForm({ ...form, port_of_entry: e.target.value })} placeholder="e.g. KIA, Aflao, Elubo" /></div>
         <div className="col-span-2"><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
         <div className="col-span-2"><Label>Dual Nationality (if any)</Label><CountryCombobox value={form.dual_nationality} onValueChange={(v) => setForm({ ...form, dual_nationality: v })} /></div>
-        <div><Label>Date of Birth *</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required /></div>
+        <div><Label>Date of Birth *</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required /></div>
         <div><Label>Place of Birth</Label><Input value={form.place_of_birth} onChange={(e) => setForm({ ...form, place_of_birth: e.target.value })} /></div>
         <div><Label>Gender *</Label>
           <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
@@ -316,8 +317,8 @@ export function PermitForm({
 
       <div className="grid grid-cols-3 gap-3">
         <div><Label>Duration (months) *</Label><Input type="number" min={1} value={form.intended_duration_months} onChange={(e) => setForm({ ...form, intended_duration_months: e.target.value })} required /></div>
-        <div><Label>Current Permit Expiry</Label><Input type="date" value={form.current_permit_expiry} onChange={(e) => setForm({ ...form, current_permit_expiry: e.target.value })} /></div>
-        <div><Label>Requested Start Date *</Label><Input type="date" value={form.requested_start_date} onChange={(e) => setForm({ ...form, requested_start_date: e.target.value })} required /></div>
+        <div><Label>Current Permit Expiry</Label><DateInput  value={form.current_permit_expiry} onChange={(e) => setForm({ ...form, current_permit_expiry: e.target.value })} /></div>
+        <div><Label>Requested Start Date *</Label><DateInput  value={form.requested_start_date} onChange={(e) => setForm({ ...form, requested_start_date: e.target.value })} required /></div>
         <div><Label>Fee Charged (GHS) *</Label><FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} required /></div>
         <div className="col-span-2"><Label>Fee Receipt Number *</Label><Input value={form.fee_receipt_number} onChange={(e) => setForm({ ...form, fee_receipt_number: e.target.value })} placeholder="GRA / GIS receipt #" required /></div>
       </div>

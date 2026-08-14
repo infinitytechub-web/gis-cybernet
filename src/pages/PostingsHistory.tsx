@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { exportReport } from "@/lib/export-utils";
 import { downloadCSVString } from "@/lib/download-utils";
 import { PostingAuditTrailDialog } from "@/components/postings/PostingAuditTrailDialog";
+import { DateInput } from "@/components/ui/date-input";
 
 export default function PostingsHistory() {
   const { isAdminOrSupervisor } = useAuth();
@@ -126,8 +127,8 @@ export default function PostingsHistory() {
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-sm">Filters</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <div><Label className="text-xs">From date</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-          <div><Label className="text-xs">To date</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          <div><Label className="text-xs">From date</Label><DateInput  value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div><Label className="text-xs">To date</Label><DateInput  value={to} onChange={(e) => setTo(e.target.value)} /></div>
           <div>
             <Label className="text-xs">From department</Label>
             <Select value={fromDept} onValueChange={setFromDept}>

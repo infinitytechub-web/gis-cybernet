@@ -545,7 +545,7 @@ export default function Dashboard() {
                       <TableCell className="text-sm font-medium">{r.profiles?.last_name}, {r.profiles?.first_name}</TableCell>
                       <TableCell className="text-sm capitalize">{r.type}</TableCell>
                       <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
-                        {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd MMM")}
+                        {format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={`text-xs ${statusColor(r.status)}`}>{r.status}</Badge>
@@ -582,7 +582,7 @@ export default function Dashboard() {
                   return (
                     <div key={h.date} className={`flex items-center justify-between text-sm rounded-lg px-3 py-2 border ${holidayColors[idx % holidayColors.length]}`}>
                       <span className="font-medium truncate mr-2">{h.name}</span>
-                      <Badge variant="outline" className="text-[10px] shrink-0">{format(new Date(h.date), "dd MMM")}</Badge>
+                      <Badge variant="outline" className="text-[10px] shrink-0">{format(new Date(h.date), "dd/MM/yyyy")}</Badge>
                     </div>
                   );
                 })

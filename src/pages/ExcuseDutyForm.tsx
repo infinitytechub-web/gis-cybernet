@@ -18,6 +18,7 @@ import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField
 import { PageHeader } from "@/components/shared/PageHeader";
 import { downloadExcuseDutyPDF, downloadExcuseDutyDOCX, type ExcuseDutyData } from "@/lib/excuse-duty-templates";
 import { FileDown as FileDownIcon } from "lucide-react";
+import { DateInput } from "@/components/ui/date-input";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
@@ -180,8 +181,8 @@ export default function ExcuseDutyForm() {
         <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4" /> New submission</CardTitle><CardDescription className="text-xs">Forms route to HEALTH LAB+ reviewers (Submitted → Reviewed → Approved/Rejected).</CardDescription></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><Label>Start date *</Label><Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
-            <div><Label>End date *</Label><Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></div>
+            <div><Label>Start date *</Label><DateInput  value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
+            <div><Label>End date *</Label><DateInput  value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></div>
             <div><Label>Doctor name</Label><Input value={form.doctor_name} onChange={(e) => setForm({ ...form, doctor_name: e.target.value })} /></div>
             <div><Label>Facility</Label><Input value={form.facility} onChange={(e) => setForm({ ...form, facility: e.target.value })} /></div>
             <div className="md:col-span-2"><Label>Diagnosis</Label><Input value={form.diagnosis} onChange={(e) => setForm({ ...form, diagnosis: e.target.value })} /></div>
@@ -214,7 +215,7 @@ export default function ExcuseDutyForm() {
               {myForms.map((f: any) => (
                 <TableRow key={f.id}>
                   <TableCell className="text-xs">{format(new Date(f.created_at), "dd/MM/yyyy")}</TableCell>
-                  <TableCell className="text-xs">{format(new Date(f.start_date), "dd MMM")} – {format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
+                  <TableCell className="text-xs">{format(new Date(f.start_date), "dd/MM/yyyy")} – {format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
                   <TableCell><Badge className={STATUS_COLOR[f.status] ?? ""}>{f.status}</Badge></TableCell>
                   <TableCell className="text-xs">{f.review_comment ?? "—"}</TableCell>
                   <TableCell className="text-right">

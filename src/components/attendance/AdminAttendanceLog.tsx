@@ -16,6 +16,7 @@ import { Search, Plus, Users, Clock, AlertTriangle, CheckCircle2, MapPin, Globe 
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { DateInput } from "@/components/ui/date-input";
 
 type AttendanceStatus = Database["public"]["Enums"]["attendance_status"];
 
@@ -169,8 +170,7 @@ export function AdminAttendanceLog() {
 
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-2">
-        <Input
-          type="date"
+        <DateInput
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
           className="w-auto"

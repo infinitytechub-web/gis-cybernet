@@ -34,6 +34,7 @@ type StaffStatus = Database["public"]["Enums"]["staff_status"];
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 import { AgeDisplay } from "@/components/ui/age-display";
 import { DATE_FORMAT_HINT } from "@/lib/date-format";
+import { DateInput } from "@/components/ui/date-input";
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
@@ -807,8 +808,7 @@ export default function Staff() {
               </div>
               <div>
                 <Label>Training Date</Label>
-                <Input
-                  type="date"
+                <DateInput
                   value={weaponTrainingDate}
                   onChange={(e) => setWeaponTrainingDate(e.target.value)}
                   disabled={weaponTrained !== "yes"}
@@ -831,8 +831,7 @@ export default function Staff() {
                   <Label>Date of Birth ({DATE_FORMAT_HINT})</Label>
                   <AgeDisplay dob={dateOfBirth} />
                 </div>
-                <Input
-                  type="date"
+                <DateInput
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
                   max={format(new Date(), "yyyy-MM-dd")}
@@ -854,8 +853,7 @@ export default function Staff() {
               </div>
               <div>
                 <Label>Date Joined Service</Label>
-                <Input
-                  type="date"
+                <DateInput
                   value={dateJoinedService}
                   onChange={(e) => setDateJoinedService(e.target.value)}
                   max={format(new Date(), "yyyy-MM-dd")}

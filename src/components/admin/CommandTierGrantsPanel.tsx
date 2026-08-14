@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { DateInput } from "@/components/ui/date-input";
 
 /**
  * Command-tier capability grants.
@@ -265,7 +266,7 @@ export function CommandTierGrantsPanel() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="grant-expires">Expires (optional)</Label>
-                <Input id="grant-expires" type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
+                <DateInput id="grant-expires"  value={expires} onChange={(e) => setExpires(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="grant-reason">Reason</Label>

@@ -24,6 +24,7 @@ import {
   exportAuditCSV, exportAuditPDF, exportAuditDOCX,
 } from "@/lib/health-lab-export";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DateInput } from "@/components/ui/date-input";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-amber-100 text-amber-900",
@@ -530,9 +531,9 @@ export default function HealthLab() {
               <div className="flex items-center gap-1 text-xs">
                 <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                 <Label className="text-xs">From</Label>
-                <Input type="date" className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setRecordsPage(1); }} />
+                <DateInput  className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setRecordsPage(1); }} />
                 <Label className="text-xs">To</Label>
-                <Input type="date" className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setRecordsPage(1); }} />
+                <DateInput  className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setRecordsPage(1); }} />
               </div>
               <div className="w-[220px]">
                 <StaffCombobox
@@ -630,9 +631,9 @@ export default function HealthLab() {
                 <Input className="pl-8" placeholder="Search title, summary, category…" value={search} onChange={(e) => { setSearch(e.target.value); setReportsPage(1); }} />
               </div>
               <Label className="text-xs">From</Label>
-              <Input type="date" className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setReportsPage(1); }} />
+              <DateInput  className="h-8 w-[140px]" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setReportsPage(1); }} />
               <Label className="text-xs">To</Label>
-              <Input type="date" className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setReportsPage(1); }} />
+              <DateInput  className="h-8 w-[140px]" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setReportsPage(1); }} />
               <Input className="h-8 w-[160px]" placeholder="Category…" value={filterService} onChange={(e) => { setFilterService(e.target.value); setReportsPage(1); }} />
               {(filterFrom || filterTo || filterService || search) && (
                 <Button size="sm" variant="ghost" className="h-8" onClick={() => { setFilterFrom(""); setFilterTo(""); setFilterService(""); setSearch(""); setReportsPage(1); }}>Clear</Button>
@@ -827,7 +828,7 @@ export default function HealthLab() {
                       <TableRow key={e.id}>
                         <TableCell className="text-xs">{format(new Date(e.created_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs font-medium">{p ? `${p.last_name}, ${p.first_name}` : "—"}</TableCell>
-                        <TableCell className="text-xs">{format(new Date(e.start_date), "dd MMM")} – {format(new Date(e.end_date), "dd/MM/yyyy")}</TableCell>
+                        <TableCell className="text-xs">{format(new Date(e.start_date), "dd/MM/yyyy")} – {format(new Date(e.end_date), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs max-w-[300px] truncate" title={e.reason}>{e.reason}</TableCell>
                         <TableCell><Badge className={STATUS_COLOR[e.status] ?? ""}>{e.status}</Badge></TableCell>
                         <TableCell className="text-right">
@@ -885,7 +886,7 @@ export default function HealthLab() {
               <div><Label>Unit</Label><Input value={invForm.unit} onChange={(e) => setInvForm({ ...invForm, unit: e.target.value })} placeholder="box, ml, tab…" /></div>
               <div><Label>Quantity</Label><Input type="number" value={invForm.quantity} onChange={(e) => setInvForm({ ...invForm, quantity: Number(e.target.value) })} /></div>
               <div><Label>Reorder threshold</Label><Input type="number" value={invForm.reorder_threshold} onChange={(e) => setInvForm({ ...invForm, reorder_threshold: Number(e.target.value) })} /></div>
-              <div className="col-span-2"><Label>Expiry date</Label><Input type="date" value={invForm.expiry_date} onChange={(e) => setInvForm({ ...invForm, expiry_date: e.target.value })} /></div>
+              <div className="col-span-2"><Label>Expiry date</Label><DateInput  value={invForm.expiry_date} onChange={(e) => setInvForm({ ...invForm, expiry_date: e.target.value })} /></div>
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={invForm.notes} onChange={(e) => setInvForm({ ...invForm, notes: e.target.value })} /></div>
           </div>
@@ -1017,8 +1018,8 @@ export default function HealthLab() {
             <DialogTitle className="flex items-center gap-2"><History className="h-4 w-4" /> Inventory Audit Log</DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap items-end gap-2 border rounded-md p-2 bg-muted/30">
-            <div><Label className="text-[10px]">From</Label><Input type="date" className="h-8 w-[140px]" value={auditFilters.from} onChange={(e) => { setAuditFilters({ ...auditFilters, from: e.target.value }); setAuditPage(1); }} /></div>
-            <div><Label className="text-[10px]">To</Label><Input type="date" className="h-8 w-[140px]" value={auditFilters.to} onChange={(e) => { setAuditFilters({ ...auditFilters, to: e.target.value }); setAuditPage(1); }} /></div>
+            <div><Label className="text-[10px]">From</Label><DateInput  className="h-8 w-[140px]" value={auditFilters.from} onChange={(e) => { setAuditFilters({ ...auditFilters, from: e.target.value }); setAuditPage(1); }} /></div>
+            <div><Label className="text-[10px]">To</Label><DateInput  className="h-8 w-[140px]" value={auditFilters.to} onChange={(e) => { setAuditFilters({ ...auditFilters, to: e.target.value }); setAuditPage(1); }} /></div>
             <div><Label className="text-[10px]">Item</Label><Input className="h-8 w-[160px]" placeholder="Item name…" value={auditFilters.item} onChange={(e) => { setAuditFilters({ ...auditFilters, item: e.target.value }); setAuditPage(1); }} /></div>
             <div className="w-[160px]">
               <Label className="text-[10px]">Action</Label>

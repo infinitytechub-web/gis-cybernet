@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { UsersRound, Loader2, Search } from "lucide-react";
 import { addDays, format, differenceInDays } from "date-fns";
 import { toast } from "sonner";
+import { DateInput } from "@/components/ui/date-input";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -147,11 +148,11 @@ export function BulkAssignDialog({ nightGuardStaff, shifts }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Start Date</Label>
-              <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <DateInput  value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div>
               <Label>End Date</Label>
-              <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
+              <DateInput  value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
             </div>
           </div>
 

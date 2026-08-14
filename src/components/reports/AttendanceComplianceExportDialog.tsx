@@ -14,6 +14,7 @@ import { Download, FileText, FileSpreadsheet, FileType, CalendarRange } from "lu
 import { toast } from "sonner";
 import { differenceInCalendarDays, format, parseISO, isAfter } from "date-fns";
 import { exportReport, getFormatLabel, type ExportFormat } from "@/lib/export-utils";
+import { DateInput } from "@/components/ui/date-input";
 
 const ALL = "__all__";
 const FORMATS: { key: ExportFormat; icon: any; label: string }[] = [
@@ -147,12 +148,12 @@ export function AttendanceComplianceExportDialog({ open, onOpenChange, initial, 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">From</Label>
-              <Input type="date" value={fromIso} max={toIso || undefined}
+              <DateInput  value={fromIso} max={toIso || undefined}
                 onChange={(e) => setFromIso(e.target.value)} className="h-9" />
             </div>
             <div>
               <Label className="text-xs">To</Label>
-              <Input type="date" value={toIso} min={fromIso || undefined}
+              <DateInput  value={toIso} min={fromIso || undefined}
                 onChange={(e) => setToIso(e.target.value)} className="h-9" />
             </div>
           </div>

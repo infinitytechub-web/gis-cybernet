@@ -23,6 +23,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import AttendanceComplianceReport from "@/components/reports/AttendanceComplianceReport";
 import AttendanceRecipientsPanel from "@/components/reports/AttendanceRecipientsPanel";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { DateInput } from "@/components/ui/date-input";
 
 type ReportType = "staff" | "attendance" | "leave";
 type ReportCategory = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
@@ -267,8 +268,8 @@ export default function Reports() {
           <CardHeader className="pb-3"><CardTitle className="text-sm">Date Range</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>From</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
-              <div><Label>To</Label><Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} /></div>
+              <div><Label>From</Label><DateInput  value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+              <div><Label>To</Label><DateInput  value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} /></div>
             </div>
           </CardContent>
         </Card>
@@ -344,7 +345,7 @@ export default function Reports() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div><Label>Report Date</Label><Input type="date" value={uploadForm.report_date} onChange={(e) => setUploadForm({ ...uploadForm, report_date: e.target.value })} /></div>
+                    <div><Label>Report Date</Label><DateInput  value={uploadForm.report_date} onChange={(e) => setUploadForm({ ...uploadForm, report_date: e.target.value })} /></div>
                     <div><Label>Description / Notes</Label><Textarea value={uploadForm.description} onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })} rows={2} /></div>
                     <div>
                       <Label>File (PDF, CSV, JPEG — max 2MB) *</Label>

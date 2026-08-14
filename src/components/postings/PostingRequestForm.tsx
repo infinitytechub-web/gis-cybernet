@@ -12,6 +12,7 @@ import { ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
+import { DateInput } from "@/components/ui/date-input";
 
 type TransferType = Database["public"]["Enums"]["transfer_type"];
 
@@ -106,7 +107,7 @@ export function PostingRequestForm() {
         </div>
         <div>
           <Label>Effective Date</Label>
-          <Input type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} />
+          <DateInput  value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} />
         </div>
         <div>
           <Label>Remarks</Label>

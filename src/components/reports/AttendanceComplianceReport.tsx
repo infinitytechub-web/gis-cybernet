@@ -28,6 +28,7 @@ import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   eachDayOfInterval, format, isWeekend, parseISO,
 } from "date-fns";
+import { DateInput } from "@/components/ui/date-input";
 
 type DayKind = "present" | "late" | "absent" | "leave" | "missing" | "holiday" | "weekend";
 interface DayDetail {
@@ -499,7 +500,7 @@ export default function AttendanceComplianceReport() {
             </div>
             <div>
               <Label className="text-xs">Reference date</Label>
-              <Input type="date" value={refDate} onChange={(e) => setRefDate(e.target.value)} className="h-9" />
+              <DateInput  value={refDate} onChange={(e) => setRefDate(e.target.value)} className="h-9" />
             </div>
             <div>
               <Label className="text-xs">Department</Label>

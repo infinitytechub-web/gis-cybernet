@@ -26,6 +26,7 @@ import { AssetScanner } from "@/components/stores/AssetScanner";
 import { ItemPhotoUpload } from "@/components/stores/ItemPhotoUpload";
 import { StoresReportsTab } from "@/components/stores/StoresReportsTab";
 import { printAssetLabel } from "@/components/stores/AssetLabelPrint";
+import { DateInput } from "@/components/ui/date-input";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 const MOVEMENT_TYPES = [
@@ -391,8 +392,8 @@ function ItemsTab({ canManage, userId }: { canManage: boolean; userId?: string }
               <div></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Purchase Date</Label><Input type="date" value={form.purchase_date} onChange={e => setForm(p => ({ ...p, purchase_date: e.target.value }))} /></div>
-              <div><Label>Warranty Expires</Label><Input type="date" value={form.warranty_expires} onChange={e => setForm(p => ({ ...p, warranty_expires: e.target.value }))} /></div>
+              <div><Label>Purchase Date</Label><DateInput  value={form.purchase_date} onChange={e => setForm(p => ({ ...p, purchase_date: e.target.value }))} /></div>
+              <div><Label>Warranty Expires</Label><DateInput  value={form.warranty_expires} onChange={e => setForm(p => ({ ...p, warranty_expires: e.target.value }))} /></div>
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">{save.isPending ? "Saving…" : editing ? "Update" : "Create"}</Button>
@@ -606,7 +607,7 @@ function IssuanceTab({ canManage, userId }: { canManage: boolean; userId?: strin
                     <TableCell className="font-medium">{i.inventory_items?.name}</TableCell>
                     <TableCell><div className="text-sm">{i.profiles?.first_name} {i.profiles?.last_name}</div><div className="text-xs text-muted-foreground font-mono">{i.profiles?.staff_id}</div></TableCell>
                     <TableCell className="text-right font-semibold">{Number(i.quantity)} {i.inventory_items?.unit}</TableCell>
-                    <TableCell>{i.returned_at ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">Returned {format(new Date(i.returned_at), "dd MMM")}</Badge> : <Badge variant="outline">Active</Badge>}</TableCell>
+                    <TableCell>{i.returned_at ? <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">Returned {format(new Date(i.returned_at), "dd/MM/yyyy")}</Badge> : <Badge variant="outline">Active</Badge>}</TableCell>
                     {canManage && <TableCell>{!i.returned_at && <Button size="sm" variant="outline" onClick={() => markReturned.mutate(i.id)}>Mark Returned</Button>}</TableCell>}
                   </TableRow>
                 ))}
