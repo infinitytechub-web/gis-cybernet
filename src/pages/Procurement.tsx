@@ -28,6 +28,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
+import { DateInput } from "@/components/ui/date-input";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -353,7 +354,7 @@ function RequisitionsTab({ requisitions, canManage, userId }: any) {
                 </div>
                 <div><Label>Estimated Cost (GHS)</Label><Input type="number" value={form.estimated_cost} onChange={e => setForm({ ...form, estimated_cost: e.target.value })} /></div>
               </div>
-              <div><Label>Needed By</Label><Input type="date" value={form.needed_by} onChange={e => setForm({ ...form, needed_by: e.target.value })} /></div>
+              <div><Label>Needed By</Label><DateInput  value={form.needed_by} onChange={e => setForm({ ...form, needed_by: e.target.value })} /></div>
             </div>
             <DialogFooter><Button onClick={submit}>Submit</Button></DialogFooter>
           </DialogContent>
@@ -417,7 +418,7 @@ function RfqsTab({ rfqs, vendors, canManage, userId }: any) {
             <div className="space-y-3">
               <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
               <div><Label>Description</Label><Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
-              <div><Label>Closing Date</Label><Input type="date" value={form.closing_date} onChange={e => setForm({ ...form, closing_date: e.target.value })} /></div>
+              <div><Label>Closing Date</Label><DateInput  value={form.closing_date} onChange={e => setForm({ ...form, closing_date: e.target.value })} /></div>
             </div>
             <DialogFooter><Button onClick={submit}>Create</Button></DialogFooter>
           </DialogContent>
@@ -479,7 +480,7 @@ function PosTab({ pos, vendors, canManage, userId }: any) {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label>Total (GHS)</Label><Input type="number" value={form.total_amount} onChange={e => setForm({ ...form, total_amount: e.target.value })} /></div>
-                <div><Label>Expected Delivery</Label><Input type="date" value={form.expected_delivery} onChange={e => setForm({ ...form, expected_delivery: e.target.value })} /></div>
+                <div><Label>Expected Delivery</Label><DateInput  value={form.expected_delivery} onChange={e => setForm({ ...form, expected_delivery: e.target.value })} /></div>
               </div>
               <div><Label>Payment Terms</Label><Input value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: e.target.value })} /></div>
               <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
@@ -564,7 +565,7 @@ function InvoicesTab({ invoices, vendors, pos, canManage, userId }: any) {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label>Amount (GHS)</Label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
-                <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} /></div>
+                <div><Label>Due Date</Label><DateInput  value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} /></div>
               </div>
             </div>
             <DialogFooter><Button onClick={submit}>Record</Button></DialogFooter>
@@ -642,8 +643,8 @@ function ContractsTab({ contracts, vendors, canManage, userId }: any) {
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <div><Label>Start</Label><Input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} /></div>
-                <div><Label>End</Label><Input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} /></div>
+                <div><Label>Start</Label><DateInput  value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} /></div>
+                <div><Label>End</Label><DateInput  value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} /></div>
               </div>
               <div><Label>Value (GHS)</Label><Input type="number" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} /></div>
             </div>

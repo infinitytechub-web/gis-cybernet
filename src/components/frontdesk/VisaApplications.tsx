@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { DateInput } from "@/components/ui/date-input";
 
 const VISA_TYPES = ["tourist", "business", "work", "transit", "student", "diplomatic"];
 const STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
@@ -234,7 +235,7 @@ export default function VisaApplications() {
                     <SelectContent>{VISA_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
+                <div><Label>Date of Birth</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
                 <div><Label>Gender</Label>
                   <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -256,8 +257,8 @@ export default function VisaApplications() {
                   </Select>
                 </div>
                 <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
-                <div><Label>Entry Date</Label><Input type="date" value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
-                <div><Label>Exit Date</Label><Input type="date" value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
+                <div><Label>Entry Date</Label><DateInput  value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
+                <div><Label>Exit Date</Label><DateInput  value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
               </div>
               <div><Label>Home Address</Label><Textarea value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">

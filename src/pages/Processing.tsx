@@ -21,6 +21,7 @@ import { CountryCombobox } from "@/components/ui/country-combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { isEcowasNationality } from "@/lib/countries";
 import { categoryBadge } from "@/components/processing/CategoryTabs";
+import { DateInput } from "@/components/ui/date-input";
 
 const ALLOWED_ROLES = ["admin", "front_desk", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
 const APPROVALS_ROLES = ["admin", "oic", "2ic", "staff_officer", "supervisor", "shift_supervisor", "deputy_shift_supervisor", "head_of_processing", "deputy_head_of_processing"];
@@ -140,8 +141,8 @@ export default function Processing() {
                     <SelectContent>{VISA_CLASSES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Entry Date</Label><Input type="date" value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
-                <div><Label>Exit Date</Label><Input type="date" value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
+                <div><Label>Entry Date</Label><DateInput  value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
+                <div><Label>Exit Date</Label><DateInput  value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
                 <div><Label>Duration of Stay (days)</Label>
                   <Input type="number" min="0" max="365" value={form.duration_of_stay_days} onChange={(e) => setForm({ ...form, duration_of_stay_days: e.target.value })} />
                 </div>

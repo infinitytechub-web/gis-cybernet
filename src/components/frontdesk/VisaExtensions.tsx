@@ -21,6 +21,7 @@ import { createNotification } from "@/lib/notifications";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { FeeInput } from "@/components/ui/fee-input";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { DateInput } from "@/components/ui/date-input";
 
 const STATUSES = ["submitted", "under_review", "approved", "rejected"];
 const PERMIT_TYPES = [
@@ -241,7 +242,7 @@ export default function VisaExtensions() {
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
                 <div><Label>Passport Number *</Label><Input value={form.passport_number} onChange={(e) => setForm({ ...form, passport_number: e.target.value })} required /></div>
-                <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
+                <div><Label>Date of Birth</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
                 <div><Label>Gender</Label>
                   <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
@@ -275,8 +276,8 @@ export default function VisaExtensions() {
                 <div><Label>Fee Charged (GHS)</Label>
                   <FeeInput value={form.fee_charged} onValueChange={(v) => setForm({ ...form, fee_charged: v })} />
                 </div>
-                <div><Label>Current Visa Expiry *</Label><Input type="date" value={form.current_visa_expiry} onChange={(e) => setForm({ ...form, current_visa_expiry: e.target.value })} required /></div>
-                <div><Label>Requested Extension Date *</Label><Input type="date" value={form.requested_extension_date} onChange={(e) => setForm({ ...form, requested_extension_date: e.target.value })} required /></div>
+                <div><Label>Current Visa Expiry *</Label><DateInput  value={form.current_visa_expiry} onChange={(e) => setForm({ ...form, current_visa_expiry: e.target.value })} required /></div>
+                <div><Label>Requested Extension Date *</Label><DateInput  value={form.requested_extension_date} onChange={(e) => setForm({ ...form, requested_extension_date: e.target.value })} required /></div>
               </div>
               <div><Label>Home Address</Label><Textarea value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">

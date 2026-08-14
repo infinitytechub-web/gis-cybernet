@@ -40,6 +40,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DateInput } from "@/components/ui/date-input";
 
 const ALLOWED_ROLES = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-green-100 text-green-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
@@ -269,7 +270,7 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
         </div>
         <div className="space-y-2">
           <Label>Date *</Label>
-          <Input type="date" value={form.operation_date} onChange={e => setForm(p => ({ ...p, operation_date: e.target.value }))} required />
+          <DateInput  value={form.operation_date} onChange={e => setForm(p => ({ ...p, operation_date: e.target.value }))} required />
         </div>
         <div className="space-y-2">
           <Label>Time</Label>

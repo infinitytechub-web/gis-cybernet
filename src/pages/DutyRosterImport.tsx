@@ -20,6 +20,7 @@ import { downloadCSVString } from "@/lib/download-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatDateTime } from "@/lib/date-format";
+import { DateInput } from "@/components/ui/date-input";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
@@ -545,7 +546,7 @@ export default function DutyRosterImport() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <Label htmlFor="eff" className="text-xs">Effective date</Label>
-              <Input id="eff" type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} />
+              <DateInput id="eff"  value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} />
             </div>
             <div className="md:col-span-2">
               <Label htmlFor="nt" className="text-xs">Notes (optional)</Label>
@@ -640,8 +641,8 @@ export default function DutyRosterImport() {
                   </span>
                   <div className="ml-auto flex items-center gap-2">
                     <Label htmlFor="prev-end" className="text-[11px] text-muted-foreground">Range end</Label>
-                    <Input
-                      id="prev-end" type="date" className="h-7 text-xs w-36"
+                    <DateInput
+                      id="prev-end"  className="h-7 text-xs w-36"
                       value={previewEndDate}
                       min={effectiveDate}
                       onChange={(e) => setPreviewEndDate(e.target.value)}

@@ -18,6 +18,7 @@ import { Search, CheckCircle2, XCircle, Clock, FileText, ArrowRight, Download, P
 import { toast } from "sonner";
 import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 import { generatePostingLetter, downloadPdf } from "@/lib/branded-letter-pdf";
+import { DateInput } from "@/components/ui/date-input";
 
 export function PostingApprovalQueue() {
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
@@ -300,9 +301,8 @@ export function PostingApprovalQueue() {
               </div>
               <div>
                 <Label htmlFor="edit-effective">Effective Date</Label>
-                <Input
+                <DateInput
                   id="edit-effective"
-                  type="date"
                   value={editEffectiveDate}
                   onChange={(e) => setEditEffectiveDate(e.target.value)}
                 />

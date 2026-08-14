@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { DateInput } from "@/components/ui/date-input";
 
 interface Props {
   nightGuardStaff: { id: string; first_name: string; last_name: string; staff_id: string }[];
@@ -200,7 +201,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
       </CardHeader>
       <CardContent>
         <div className="flex gap-2 mb-3 flex-wrap">
-          <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="w-40 h-8 text-xs" placeholder="Filter by date" />
+          <DateInput  value={filterDate} onChange={e => setFilterDate(e.target.value)} className="w-40 h-8 text-xs" placeholder="Filter by date" />
           <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
             <Input placeholder="Search guard..." value={filterGuard} onChange={e => setFilterGuard(e.target.value)} className="pl-7 h-8 text-xs" />
@@ -238,8 +239,7 @@ export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff =
                   <TableCell className="text-xs">
                     {editingId === a.id ? (
                       <div className="flex items-center gap-1">
-                        <Input
-                          type="date"
+                        <DateInput
                           value={editDate}
                           onChange={e => setEditDate(e.target.value)}
                           className="h-7 w-32 text-xs"

@@ -58,6 +58,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DateInput } from "@/components/ui/date-input";
 
 /* ────────────────────────────── Types ────────────────────────────── */
 
@@ -484,9 +485,8 @@ function ScheduleEditor({ schedule, onSaved, onCancel }: EditorProps) {
               <Label htmlFor="rot-anchor" className="flex items-center gap-1.5">
                 <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" /> Anchor date
               </Label>
-              <Input
+              <DateInput
                 id="rot-anchor"
-                type="date"
                 value={anchor}
                 onChange={(e) => setAnchor(e.target.value)}
                 disabled={isPublished}
@@ -844,11 +844,11 @@ function AssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; disabl
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Start</Label>
-            <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            <DateInput  value={start} onChange={(e) => setStart(e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">End (optional)</Label>
-            <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <DateInput  value={end} onChange={(e) => setEnd(e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Priority</Label>
@@ -1343,16 +1343,14 @@ function BulkAssignmentsPanel({ scheduleId, disabled }: { scheduleId: string; di
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      type="date"
+                    <DateInput
                       className="h-8 text-xs"
                       value={r.start_date}
                       onChange={(e) => patch(r.key, { start_date: e.target.value })}
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      type="date"
+                    <DateInput
                       className="h-8 text-xs"
                       value={r.end_date}
                       onChange={(e) => patch(r.key, { end_date: e.target.value })}

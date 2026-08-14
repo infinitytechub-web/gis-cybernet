@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { softDelete } from "@/lib/recycle-bin";
 import { logFileAudit } from "@/lib/announcement-file-audit";
 import { FileAuditTrailDialog } from "./FileAuditTrailDialog";
+import { DateInput } from "@/components/ui/date-input";
 
 const fmtSize = (n: number) => {
   if (n < 1024) return `${n} B`;
@@ -568,11 +569,11 @@ export function SharedFilesPanel() {
           <div className="flex flex-wrap items-end gap-2">
             <div className="flex flex-col gap-1">
               <Label className="text-[11px] text-muted-foreground">From</Label>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[150px] text-xs" />
+              <DateInput  value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[150px] text-xs" />
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-[11px] text-muted-foreground">To</Label>
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[150px] text-xs" />
+              <DateInput  value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[150px] text-xs" />
             </div>
             <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
               {filteredFiles.length} of {files.length} file{files.length === 1 ? "" : "s"}

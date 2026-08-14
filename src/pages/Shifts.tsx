@@ -21,6 +21,7 @@ import type { Database } from "@/integrations/supabase/types";
 import ShiftCalendarTab from "@/components/shifts/ShiftCalendarTab";
 import NightGuardTab from "@/components/shifts/NightGuardTab";
 import ShiftWindowRulesTab from "@/components/shifts/ShiftWindowRulesTab";
+import { DateInput } from "@/components/ui/date-input";
 
 type ShiftPattern = Database["public"]["Enums"]["shift_pattern"];
 
@@ -163,8 +164,8 @@ export default function Shifts() {
                   <div><Label>Shift</Label><Select value={selectedShiftId} onValueChange={setSelectedShiftId}><SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger><SelectContent>{shifts.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>))}</SelectContent></Select></div>
                   <div><Label>Staff Member</Label><StaffCombobox staff={profiles as any} value={selectedProfileId} onValueChange={setSelectedProfileId} /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Start Date</Label><Input type="date" value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} /></div>
-                    <div><Label>End Date (optional)</Label><Input type="date" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} /></div>
+                    <div><Label>Start Date</Label><DateInput  value={assignStartDate} onChange={(e) => setAssignStartDate(e.target.value)} /></div>
+                    <div><Label>End Date (optional)</Label><DateInput  value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={assignStartDate} /></div>
                   </div>
                   <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending} className="w-full">{assignMutation.isPending ? "Assigning..." : "Assign"}</Button>
                 </div>

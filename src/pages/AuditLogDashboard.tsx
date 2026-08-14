@@ -15,6 +15,7 @@ import { ScrollText, Filter, Download, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { DateInput } from "@/components/ui/date-input";
 
 const ACTIONS = ["all", "INSERT", "UPDATE", "DELETE"];
 
@@ -148,11 +149,11 @@ export default function AuditLogDashboard() {
             </div>
             <div>
               <Label>From</Label>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+              <DateInput  value={from} onChange={(e) => setFrom(e.target.value)} />
             </div>
             <div>
               <Label>To</Label>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+              <DateInput  value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-3">

@@ -12,6 +12,7 @@ import { Send } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
+import { DateInput } from "@/components/ui/date-input";
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
 
@@ -91,11 +92,11 @@ export function LeaveRequestForm() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Start Date</Label>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <DateInput  value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div>
             <Label>End Date</Label>
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} />
+            <DateInput  value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} />
           </div>
         </div>
         <div>

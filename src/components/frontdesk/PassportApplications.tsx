@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
 import { ApplicationDocuments } from "@/components/applications/ApplicationDocuments";
+import { DateInput } from "@/components/ui/date-input";
 
 const APP_TYPES = ["new", "renewal", "replacement"];
 const STATUSES = ["submitted", "processing", "ready", "collected", "rejected"];
@@ -218,7 +219,7 @@ export default function PassportApplications() {
             <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Applicant Name *</Label><Input value={form.applicant_name} onChange={(e) => setForm({ ...form, applicant_name: e.target.value })} required /></div>
-                <div><Label>Date of Birth *</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required /></div>
+                <div><Label>Date of Birth *</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} required /></div>
                 <div><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
                 <div><Label>Application Type</Label>
                   <Select value={form.application_type} onValueChange={(v) => setForm({ ...form, application_type: v })}>
@@ -264,7 +265,7 @@ export default function PassportApplications() {
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>Witnessing Officer Name</Label><Input value={form.witnessing_officer_name} onChange={(e) => setForm({ ...form, witnessing_officer_name: e.target.value })} /></div>
                   <div><Label>Witnessing Officer Rank</Label><Input value={form.witnessing_officer_rank} onChange={(e) => setForm({ ...form, witnessing_officer_rank: e.target.value })} /></div>
-                  <div><Label>Declaration Date</Label><Input type="date" value={form.declaration_date} onChange={(e) => setForm({ ...form, declaration_date: e.target.value })} /></div>
+                  <div><Label>Declaration Date</Label><DateInput  value={form.declaration_date} onChange={(e) => setForm({ ...form, declaration_date: e.target.value })} /></div>
                 </div>
                 <div className="flex items-center gap-2">
                   <input id="biometric_consent" type="checkbox" checked={form.biometric_consent} onChange={(e) => setForm({ ...form, biometric_consent: e.target.checked })} />

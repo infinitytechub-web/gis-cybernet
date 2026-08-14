@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 type AuditAction = "created" | "updated" | "deleted";
 
@@ -213,11 +214,11 @@ export default function ShiftWindowAudit() {
           </div>
           <div>
             <Label className="text-xs">From</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <DateInput  value={from} onChange={(e) => setFrom(e.target.value)} />
           </div>
           <div>
             <Label className="text-xs">To</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <DateInput  value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div>
             <Label className="text-xs">Search (user / shift)</Label>

@@ -13,6 +13,7 @@ import { CheckCircle2, AlertCircle, Loader2, Upload, X, RotateCcw } from "lucide
 import { toast } from "sonner";
 import { isPast } from "date-fns";
 import { validateComplianceFile, COMPLIANCE_MAX_BYTES } from "@/lib/compliance-file-validator";
+import { DateInput } from "@/components/ui/date-input";
 
 const BUCKET = "staff-documents";
 const DOC_TYPES = ["Passport", "National ID", "Service ID", "Visa", "Work Permit", "Driver's License", "Medical Certificate", "Other"];
@@ -294,7 +295,7 @@ export function ComplianceBulkUploadDialog({ open, onOpenChange, kind, isAdmin, 
             </div>
             <div>
               <Label>Expiry Date (optional)</Label>
-              <Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
+              <DateInput  value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
             </div>
           </div>
 

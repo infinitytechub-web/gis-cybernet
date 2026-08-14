@@ -21,6 +21,7 @@ import { RecordRowActions } from "@/components/shared/RecordRowActions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { createNotification } from "@/lib/notifications";
+import { DateInput } from "@/components/ui/date-input";
 
 const ENQUIRY_TYPES = ["general", "visa_status", "passport_status", "complaint", "information", "other"];
 const STATUSES = ["submitted", "under_review", "approved", "rejected", "collected"];
@@ -195,7 +196,7 @@ export default function EnquiryApplications() {
                   </Select>
                 </div>
                 <div className="col-span-2"><Label>Subject</Label><Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
-                <div><Label>Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
+                <div><Label>Date of Birth</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
                 <div><Label>Gender</Label>
                   <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>

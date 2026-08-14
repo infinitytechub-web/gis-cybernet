@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useShiftRotationConfig } from "@/hooks/useShiftRotationConfig";
+import { DateInput } from "@/components/ui/date-input";
 
 const DEFAULT_ANCHOR = "2026-05-01";
 const DEFAULT_PATTERN = "A,B,C,D";
@@ -107,9 +108,8 @@ export function ShiftRotationSettings() {
               <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
               Anchor date
             </Label>
-            <Input
+            <DateInput
               id="anchor-date"
-              type="date"
               value={anchor}
               onChange={(e) => setAnchor(e.target.value)}
             />

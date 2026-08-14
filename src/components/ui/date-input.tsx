@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DateInput } from "@/components/ui/date-input";
 
 /**
- * Drop-in replacement for `<Input type="date" />`.
+ * Drop-in replacement for `<DateInput  />`.
  *
  * Native date inputs render in the BROWSER's locale (US machines show
  * MM/DD/YYYY), which breaks the house standard. This control always displays

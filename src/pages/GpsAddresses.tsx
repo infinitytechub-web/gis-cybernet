@@ -59,6 +59,7 @@ import {
   GPS_EXPORT_MAX_ROWS,
   type GpsExportSource,
 } from "@/lib/gps-server-export";
+import { DateInput } from "@/components/ui/date-input";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
@@ -1557,18 +1558,16 @@ export default function GpsAddresses() {
             {/* Date-range filter — applies to capture date (created_at). */}
             <div className="flex items-center gap-1.5">
               <Label htmlFor="gps-date-from" className="text-xs text-muted-foreground">From</Label>
-              <Input
+              <DateInput
                 id="gps-date-from"
-                type="date"
                 value={dateFrom}
                 max={dateTo || undefined}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className="h-9 w-[150px]"
               />
               <Label htmlFor="gps-date-to" className="text-xs text-muted-foreground">To</Label>
-              <Input
+              <DateInput
                 id="gps-date-to"
-                type="date"
                 value={dateTo}
                 min={dateFrom || undefined}
                 onChange={(e) => setDateTo(e.target.value)}

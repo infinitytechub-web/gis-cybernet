@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { DateInput } from "@/components/ui/date-input";
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
@@ -234,7 +235,7 @@ export default function MyProfile() {
                 </SelectContent>
               </Select>
             </div>
-            <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><Input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
+            <div><div className="flex items-center justify-between gap-2 mb-1"><Label>Date of birth ({DATE_FORMAT_HINT})</Label><AgeDisplay dob={form.date_of_birth} /></div><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
             <div>
               <Label>Marital status</Label>
               <Select value={form.marital_status || ""} onValueChange={(v) => setForm({ ...form, marital_status: v })}>

@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { DateInput } from "@/components/ui/date-input";
 
 const SHIFT_COLORS = [
   "bg-primary/15 text-primary border-primary/30",
@@ -574,7 +575,7 @@ export default function DutyRoster() {
                         </div>
                         <div>
                           <Label className="text-xs">End Date (optional, for multi-day)</Label>
-                          <Input type="date" className="h-8 text-xs" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={dateStr} />
+                          <DateInput  className="h-8 text-xs" value={assignEndDate} onChange={(e) => setAssignEndDate(e.target.value)} min={dateStr} />
                         </div>
                         <Button
                           size="sm"

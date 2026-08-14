@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DateInput } from "@/components/ui/date-input";
 
 const ROLE_OPTIONS = [
   "admin", "supervisor", "staff", "deputy_supervisor", "deputy_shift_leader", "deputy",
@@ -204,7 +205,7 @@ export function ShiftRotationOverrides() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Anchor date</Label>
-                <Input type="date" value={anchor} onChange={(e) => setAnchor(e.target.value)} />
+                <DateInput  value={anchor} onChange={(e) => setAnchor(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs flex items-center gap-1"><Layers className="h-3.5 w-3.5" /> Pattern</Label>

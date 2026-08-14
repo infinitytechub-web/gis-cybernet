@@ -14,6 +14,7 @@ import { exportSecurityAudit, verifySecurityAuditChain, createSecurityAuditAncho
 import { downloadBlob } from "@/lib/download-utils";
 import { AuditImportVerifyDialog } from "./AuditImportVerifyDialog";
 import { formatDateTime } from "@/lib/date-format";
+import { DateInput } from "@/components/ui/date-input";
 
 const sevColor: Record<string, string> = {
   info: "bg-muted text-muted-foreground",
@@ -141,11 +142,11 @@ export function SecurityAuditPanel() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <Label className="text-xs">From</Label>
-              <Input type="date" value={from} onChange={e => setFrom(e.target.value)} className="w-40" />
+              <DateInput  value={from} onChange={e => setFrom(e.target.value)} className="w-40" />
             </div>
             <div>
               <Label className="text-xs">To</Label>
-              <Input type="date" value={to} onChange={e => setTo(e.target.value)} className="w-40" />
+              <DateInput  value={to} onChange={e => setTo(e.target.value)} className="w-40" />
             </div>
             <Button variant="outline" onClick={() => handleExport("csv")} className="gap-2">
               <FileSpreadsheet className="h-4 w-4" /> Export CSV
