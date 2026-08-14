@@ -222,7 +222,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
         <ExportMenu getData={() => ({
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
-          headers: ["Name", "Gender", "Nationality", "Crime", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
+          headers: ["Name", "Gender", "Nationality", "Type of Offense", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by"],
           rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", formatDateTime(r.intake_at), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-"]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
@@ -234,7 +234,7 @@ function RecordsList({ status, canCreate, userId, role, onSelect }: { status: st
             <Table className="min-w-[1000px]">
               <TableHeader><TableRow>
                 <TableHead></TableHead><TableHead>Detainee</TableHead><TableHead>Gender</TableHead>
-                <TableHead>Nationality</TableHead><TableHead>Crime</TableHead><TableHead>Cell</TableHead>
+                <TableHead>Nationality</TableHead><TableHead>Type of Offense</TableHead><TableHead>Cell</TableHead>
                 <TableHead>Risk</TableHead><TableHead>Status</TableHead><TableHead>Duration</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow></TableHeader>
