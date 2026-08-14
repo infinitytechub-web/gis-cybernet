@@ -26,13 +26,18 @@ import { StaffPicker } from "@/components/detention/StaffPicker";
 import { ReferralSelect } from "@/components/detention/ReferralSelect";
 import {
   GENDER_OPTIONS, OTHER_AGENCY, REFERRAL_SOURCES, REFERRAL_DESTINATIONS, referralDisplay,
+  OFFENSE_GROUPS, offenseCategory,
 } from "@/components/detention/detention-options";
 import { DuplicateCheckDialog } from "@/components/detention/DuplicateCheckDialog";
 import { checkDetaineeDuplicates, type DuplicateMatch } from "@/lib/detention-duplicates";
 import { softDelete } from "@/lib/recycle-bin";
+import { AgeDisplay } from "@/components/ui/age-display";
+import { formatDate, formatDateTime, ageLabel, ageGroup, DATE_FORMAT_HINT } from "@/lib/date-format";
 import { toast } from "sonner";
-import { format, formatDistanceToNow, differenceInHours } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDays, subMonths, startOfDay } from "date-fns";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
+import { SelectGroup, SelectLabel } from "@/components/ui/select";
+
 
 const PIE_COLORS = ["hsl(var(--primary))", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6"];
 const STATUS_COLORS: Record<string, string> = {
@@ -920,83 +925,371 @@ function TransferLog({ records, detentionId, userId, canEdit }: any) {
 }
 
 /* ----------------- ANALYTICS ----------------- */
+type AnalyticsRange = "7d" | "30d" | "90d" | "12m" | "all";
+const RANGE_LABELS: Record<AnalyticsRange, string> = {
+  "7d": "Last 7 days", "30d": "Last 30 days", "90d": "Last 90 days", "12m": "Last 12 months", all: "All time",
+};
+const STAY_BUCKETS = [
+  { name: "< 24 hrs", test: (h: number) => h < 24 },
+  { name: "1–3 days", test: (h: number) => h >= 24 && h < 72 },
+  { name: "4–7 days", test: (h: number) => h >= 72 && h < 168 },
+  { name: "8–30 days", test: (h: number) => h >= 168 && h < 720 },
+  { name: "30+ days", test: (h: number) => h >= 720 },
+];
+
+/**
+ * Holding / Detention Center analytics dashboard.
+ *
+ * Standardised custody-reporting layout: filter bar → KPI band → trend and
+ * distribution charts → summary tables, with CSV export and print of exactly
+ * the filtered view on screen.
+ */
 function HoldingAnalytics() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["holding-analytics"],
     queryFn: async () => (await supabase.from("detention_records").select("*")).data || [],
     refetchInterval: 30_000,
   });
 
-  if (!data) return <div className="text-center py-8 text-muted-foreground">Loading…</div>;
+  const [range, setRange] = useState<AnalyticsRange>("30d");
+  const [fStatus, setFStatus] = useState("all");
+  const [fGender, setFGender] = useState("all");
+  const [fRisk, setFRisk] = useState("all");
+  const [fOffense, setFOffense] = useState("all");
+  const [fNationality, setFNationality] = useState("");
 
-  const inCustody = data.filter((r: any) => r.status === "in_custody").length;
-  const totalEver = data.length;
-  const released = data.filter((r: any) => r.status === "released").length;
-  const onBail = data.filter((r: any) => r.status === "bail").length;
-  const repatriated = data.filter((r: any) => r.status === "repatriated" || r.status === "deported").length;
-  const escaped = data.filter((r: any) => r.status === "escaped").length;
+  const rangeStart = useMemo(() => {
+    const now = new Date();
+    switch (range) {
+      case "7d": return startOfDay(subDays(now, 6));
+      case "30d": return startOfDay(subDays(now, 29));
+      case "90d": return startOfDay(subDays(now, 89));
+      case "12m": return startOfDay(subMonths(now, 12));
+      default: return null;
+    }
+  }, [range]);
 
-  const groupBy = (key: string) => {
+  const records = data ?? [];
+
+  const rows = useMemo(() => records.filter((r: any) => {
+    if (rangeStart && new Date(r.intake_at) < rangeStart) return false;
+    if (fStatus !== "all") {
+      const s = r.status === "deported" ? "repatriated" : r.status;
+      if (s !== fStatus) return false;
+    }
+    if (fGender !== "all" && (r.gender || "") !== fGender) return false;
+    if (fRisk !== "all" && (r.risk_level || "") !== fRisk) return false;
+    if (fOffense !== "all" && offenseCategory(r.crime_type) !== fOffense) return false;
+    if (fNationality && (r.nationality || "").toLowerCase() !== fNationality.toLowerCase()) return false;
+    return true;
+  }), [records, rangeStart, fStatus, fGender, fRisk, fOffense, fNationality]);
+
+  const stats = useMemo(() => {
+    const is = (s: string) => rows.filter((r: any) => (r.status === "deported" ? "repatriated" : r.status) === s).length;
+    const closed = rows.filter((r: any) => r.released_at);
+    const stayHours = closed.map((r: any) => Math.max(0, differenceInHours(new Date(r.released_at), new Date(r.intake_at))));
+    const avgStay = stayHours.length ? stayHours.reduce((a, b) => a + b, 0) / stayHours.length : 0;
+    const approved = rows.filter((r: any) => r.statement_approved_by_name || r.statement_approved_by).length;
+    const cells = new Set(rows.filter((r: any) => r.status === "in_custody" && r.cell_number).map((r: any) => r.cell_number));
+    return {
+      admissions: rows.length,
+      inCustody: is("in_custody"),
+      released: is("released"),
+      onBail: is("bail"),
+      repatriated: is("repatriated"),
+      transferred: is("transferred"),
+      escaped: is("escaped"),
+      avgStay,
+      cellsOccupied: cells.size,
+      approvalRate: rows.length ? Math.round((approved / rows.length) * 100) : 0,
+      stayHours,
+    };
+  }, [rows]);
+
+  const groupBy = (key: string, limit?: number) => {
     const m: Record<string, number> = {};
-    data.forEach((r: any) => { const k = r[key] || "Unknown"; m[k] = (m[k] || 0) + 1; });
-    return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    rows.forEach((r: any) => { const k = r[key] || "Unknown"; m[k] = (m[k] || 0) + 1; });
+    const list = Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    return limit ? list.slice(0, limit) : list;
   };
-  const byGender = groupBy("gender");
-  const byCrime = groupBy("crime_type");
-  const byNation = groupBy("nationality").slice(0, 10);
-  const byLoc = groupBy("location_of_arrest").slice(0, 10);
-  const byRisk = groupBy("risk_level");
 
-  // 30-day intake trend
-  const trend: Record<string, number> = {};
-  for (let i = 29; i >= 0; i--) trend[format(new Date(Date.now() - i * 86400000), "MMM d")] = 0;
-  data.forEach((r: any) => { const d = format(new Date(r.intake_at), "MMM d"); if (trend[d] !== undefined) trend[d]++; });
-  const trendData = Object.entries(trend).map(([date, count]) => ({ date, count }));
+  const byGender = useMemo(() => groupBy("gender").map(g => ({ ...g, name: g.name.charAt(0).toUpperCase() + g.name.slice(1) })), [rows]);
+  const byStatus = useMemo(() => {
+    const m: Record<string, number> = {};
+    rows.forEach((r: any) => { const k = statusLabel(r.status); m[k] = (m[k] || 0) + 1; });
+    return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [rows]);
+  const byOffense = useMemo(() => groupBy("crime_type", 12), [rows]);
+  const byOffenseCategory = useMemo(() => {
+    const m: Record<string, number> = {};
+    rows.forEach((r: any) => { const k = offenseCategory(r.crime_type); m[k] = (m[k] || 0) + 1; });
+    return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [rows]);
+  const byNation = useMemo(() => groupBy("nationality", 10), [rows]);
+  const byLoc = useMemo(() => groupBy("location_of_arrest", 10), [rows]);
+  const byRisk = useMemo(() => groupBy("risk_level").map(r => ({ ...r, name: r.name.charAt(0).toUpperCase() + r.name.slice(1) })), [rows]);
+  const byAge = useMemo(() => {
+    const order = ["Under 18", "18–25", "26–35", "36–45", "46–60", "60+", "Unknown"];
+    const m: Record<string, number> = {};
+    rows.forEach((r: any) => { const k = ageGroup(r.date_of_birth); m[k] = (m[k] || 0) + 1; });
+    return order.filter(k => m[k]).map(name => ({ name, value: m[name] }));
+  }, [rows]);
+  const stayDistribution = useMemo(
+    () => STAY_BUCKETS.map(b => ({ name: b.name, value: stats.stayHours.filter(b.test).length })),
+    [stats.stayHours],
+  );
 
-  // Avg custody duration (released only)
-  const releasedRecs = data.filter((r: any) => r.released_at);
-  const avgHrs = releasedRecs.length > 0 ? Math.round(releasedRecs.reduce((s: number, r: any) => s + differenceInHours(new Date(r.released_at), new Date(r.intake_at)), 0) / releasedRecs.length) : 0;
+  // Admissions vs. releases over time (daily for ≤90d ranges, monthly otherwise)
+  const flow = useMemo(() => {
+    const monthly = range === "12m" || range === "all";
+    const keyOf = (d: Date) => (monthly ? format(d, "MM/yyyy") : format(d, "dd/MM"));
+    const buckets: { key: string; admissions: number; releases: number }[] = [];
+    const index: Record<string, number> = {};
+    const start = rangeStart ?? (rows.length ? new Date(Math.min(...rows.map((r: any) => +new Date(r.intake_at)))) : new Date());
+    const end = new Date();
+    const step = monthly ? 30 : 1;
+    for (let d = new Date(start); d <= end; d = new Date(+d + step * 86400000)) {
+      const k = keyOf(d);
+      if (index[k] === undefined) { index[k] = buckets.length; buckets.push({ key: k, admissions: 0, releases: 0 }); }
+    }
+    rows.forEach((r: any) => {
+      const ak = keyOf(new Date(r.intake_at));
+      if (index[ak] !== undefined) buckets[index[ak]].admissions++;
+      if (r.released_at) {
+        const rk = keyOf(new Date(r.released_at));
+        if (index[rk] !== undefined) buckets[index[rk]].releases++;
+      }
+    });
+    return buckets;
+  }, [rows, range, rangeStart]);
+
+  const nationalities = useMemo(
+    () => [...new Set(records.map((r: any) => r.nationality).filter(Boolean))].sort() as string[],
+    [records],
+  );
+
+  const filterSummary = [
+    `Period: ${RANGE_LABELS[range]}`,
+    `Status: ${fStatus === "all" ? "All" : statusLabel(fStatus)}`,
+    `Gender: ${fGender === "all" ? "All" : fGender}`,
+    `Risk: ${fRisk === "all" ? "All" : fRisk}`,
+    `Offense category: ${fOffense === "all" ? "All" : fOffense}`,
+    `Nationality: ${fNationality || "All"}`,
+  ].join(" · ");
+
+  const exportData = () => ({
+    title: "Detention Analytics",
+    filename: `detention-analytics-${format(new Date(), "yyyy-MM-dd")}`,
+    headers: ["Section", "Item", "Count", "Share of total"],
+    rows: [
+      ["Filters", filterSummary, "", ""],
+      ["Generated", formatDateTime(new Date()), "", ""],
+      ["KPI", "Admissions in period", String(stats.admissions), ""],
+      ["KPI", "Currently in custody", String(stats.inCustody), ""],
+      ["KPI", "Released", String(stats.released), ""],
+      ["KPI", "On bail", String(stats.onBail), ""],
+      ["KPI", "Repatriated", String(stats.repatriated), ""],
+      ["KPI", "Transferred", String(stats.transferred), ""],
+      ["KPI", "Escapes", String(stats.escaped), ""],
+      ["KPI", "Average length of stay (hrs)", String(Math.round(stats.avgStay)), ""],
+      ["KPI", "Cells occupied", String(stats.cellsOccupied), ""],
+      ["KPI", "Statement approval completion (%)", String(stats.approvalRate), ""],
+      ...byOffenseCategory.map(o => ["Offense category", o.name, String(o.value), `${share(o.value, stats.admissions)}%`]),
+      ...byOffense.map(o => ["Type of offense", o.name, String(o.value), `${share(o.value, stats.admissions)}%`]),
+      ...byNation.map(n => ["Nationality", n.name, String(n.value), `${share(n.value, stats.admissions)}%`]),
+      ...stayDistribution.map(s => ["Length of stay", s.name, String(s.value), ""]),
+    ],
+  });
+
+  const printReport = () => {
+    const esc = (s: any) => String(s ?? "—").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const table = (title: string, list: { name: string; value: number }[]) => `
+      <h4>${esc(title)}</h4>
+      <table><thead><tr><th>Item</th><th>Count</th><th>Share</th></tr></thead><tbody>
+      ${list.map(i => `<tr><td>${esc(i.name)}</td><td>${i.value}</td><td>${share(i.value, stats.admissions)}%</td></tr>`).join("")}
+      </tbody></table>`;
+    const html = `<!DOCTYPE html><html><head><title>Detention Analytics</title><style>
+      @media print { @page { size: A4 portrait; margin: 14mm; } }
+      body { font-family: system-ui, sans-serif; color: #1e293b; padding: 18px; }
+      h2 { color: #be123c; margin: 0 0 2px; font-size: 16px; }
+      h3 { margin: 0 0 8px; font-size: 13px; }
+      h4 { margin: 16px 0 4px; font-size: 12px; }
+      .meta { font-size: 10px; color: #666; margin-bottom: 10px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #e2e8f0; padding: 5px 8px; font-size: 11px; text-align: left; }
+      th { background: #f1f5f9; }
+      .kpis { display: flex; flex-wrap: wrap; gap: 6px; }
+      .kpi { border: 1px solid #e2e8f0; padding: 6px 10px; font-size: 11px; }
+      .footer { text-align: center; margin-top: 16px; font-size: 9px; color: #888; }
+    </style></head><body>
+      <h2>Cybernet HRM System</h2>
+      <h3>Holding / Detention Center — Analytics Report</h3>
+      <div class="meta">${esc(filterSummary)}<br/>Generated: ${formatDateTime(new Date())}</div>
+      <div class="kpis">
+        ${[["Admissions", stats.admissions], ["In Custody", stats.inCustody], ["On Bail", stats.onBail],
+           ["Released", stats.released], ["Repatriated", stats.repatriated], ["Transferred", stats.transferred],
+           ["Escapes", stats.escaped], ["Avg Stay (hrs)", Math.round(stats.avgStay)],
+           ["Cells Occupied", stats.cellsOccupied], ["Statement Approval", `${stats.approvalRate}%`]]
+          .map(([l, v]) => `<div class="kpi"><strong>${esc(v)}</strong><br/>${esc(l)}</div>`).join("")}
+      </div>
+      ${table("Offense categories", byOffenseCategory)}
+      ${table("Type of offense", byOffense)}
+      ${table("Nationalities", byNation)}
+      ${table("Length of stay", stayDistribution)}
+      <div class="footer">CONFIDENTIAL — Ghana Immigration Service</div>
+    </body></html>`;
+    openPrintWindow(html, { features: "noopener,noreferrer,width=900,height=700", autoPrint: true, printDelayMs: 500 });
+  };
+
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading analytics…</div>;
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPI title="In Custody" value={inCustody} icon={Lock} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-950/40" />
-        <KPI title="On Bail" value={onBail} icon={UserCheck} color="text-cyan-600" bg="bg-cyan-50 dark:bg-cyan-950/40" />
-        <KPI title="Released" value={released} icon={UserCheck} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/40" />
-        <KPI title="Repatriated" value={repatriated} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
-        <KPI title="Total Records" value={totalEver} icon={Activity} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/40" />
-        <KPI title="Avg Custody" value={`${avgHrs} hrs`} icon={UserCheck} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/40" />
-        <KPI title="Escapes" value={escaped} icon={AlertTriangle} color="text-red-700" bg="bg-red-100 dark:bg-red-950/50" />
+      {/* Filter bar */}
+      <Card>
+        <CardContent className="p-3 flex flex-wrap items-center gap-2">
+          <Select value={range} onValueChange={(v) => setRange(v as AnalyticsRange)}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>{(Object.keys(RANGE_LABELS) as AnalyticsRange[]).map(k => <SelectItem key={k} value={k}>{RANGE_LABELS[k]}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={fStatus} onValueChange={setFStatus}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {["in_custody", "bail", "released", "repatriated", "transferred", "court", "escaped"].map(s => <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={fGender} onValueChange={setFGender}>
+            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All genders</SelectItem>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={fRisk} onValueChange={setFRisk}>
+            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All risk</SelectItem>{["low", "medium", "high", "critical"].map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={fOffense} onValueChange={setFOffense}>
+            <SelectTrigger className="w-[190px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All offense categories</SelectItem>
+              {OFFENSE_GROUPS.map(g => <SelectItem key={g.group} value={g.group}>{g.group}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={fNationality || "all"} onValueChange={(v) => setFNationality(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">All nationalities</SelectItem>
+              {nationalities.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <div className="ml-auto flex items-center gap-2">
+            <ExportMenu getData={exportData} />
+            <Button variant="outline" size="sm" onClick={printReport} className="gap-1"><Printer className="h-4 w-4" />Print</Button>
+          </div>
+          <p className="w-full text-xs text-muted-foreground">{filterSummary} · {stats.admissions} record{stats.admissions === 1 ? "" : "s"} in view</p>
+        </CardContent>
+      </Card>
+
+      {/* KPI band */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <KPI title="In Custody" value={stats.inCustody} icon={Lock} color="text-rose-600" bg="bg-rose-50 dark:bg-rose-950/40" />
+        <KPI title="Admissions" value={stats.admissions} icon={Activity} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/40" />
+        <KPI title="Released" value={stats.released} icon={UserCheck} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/40" />
+        <KPI title="On Bail" value={stats.onBail} icon={Gavel} color="text-cyan-600" bg="bg-cyan-50 dark:bg-cyan-950/40" />
+        <KPI title="Repatriated" value={stats.repatriated} icon={ArrowRightLeft} color="text-purple-600" bg="bg-purple-50 dark:bg-purple-950/40" />
+        <KPI title="Transferred" value={stats.transferred} icon={ArrowRightLeft} color="text-indigo-600" bg="bg-indigo-50 dark:bg-indigo-950/40" />
+        <KPI title="Escapes" value={stats.escaped} icon={AlertTriangle} color="text-red-700" bg="bg-red-100 dark:bg-red-950/50" />
+        <KPI title="Avg Length of Stay" value={`${Math.round(stats.avgStay)} hrs`} icon={Activity} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/40" />
+        <KPI title="Cells Occupied" value={stats.cellsOccupied} icon={Lock} color="text-slate-600" bg="bg-slate-50 dark:bg-slate-900/40" />
+        <KPI title="Statement Approval" value={`${stats.approvalRate}%`} icon={ShieldAlert} color="text-teal-600" bg="bg-teal-50 dark:bg-teal-950/40" />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
-        <Card><CardHeader><CardTitle className="text-sm">By Gender</CardTitle></CardHeader><CardContent>
-          <ResponsiveContainer width="100%" height={220}><PieChart><Pie data={byGender} dataKey="value" nameKey="name" outerRadius={80} label>{byGender.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer>
-        </CardContent></Card>
+      {stats.admissions === 0 ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">No custody records match the selected filters.</CardContent></Card>
+      ) : (
+        <>
+          <div className="grid lg:grid-cols-2 gap-4">
+            <Card className="lg:col-span-2"><CardHeader><CardTitle className="text-sm">Admissions vs. Releases</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={flow}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="key" fontSize={10} /><YAxis fontSize={11} allowDecimals={false} /><Tooltip /><Legend />
+                  <Area type="monotone" dataKey="admissions" name="Admissions" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.25} />
+                  <Area type="monotone" dataKey="releases" name="Releases" stroke="#10b981" fill="#10b981" fillOpacity={0.2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent></Card>
 
-        <Card><CardHeader><CardTitle className="text-sm">By Risk Level</CardTitle></CardHeader><CardContent>
-          <ResponsiveContainer width="100%" height={220}><PieChart><Pie data={byRisk} dataKey="value" nameKey="name" outerRadius={80} label>{byRisk.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer>
-        </CardContent></Card>
+            <Card><CardHeader><CardTitle className="text-sm">Length of Stay Distribution</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={230}><BarChart data={stayDistribution}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" fontSize={10} /><YAxis fontSize={11} allowDecimals={false} /><Tooltip /><Bar dataKey="value" name="Detainees" fill="#f59e0b" /></BarChart></ResponsiveContainer>
+            </CardContent></Card>
 
-        <Card className="lg:col-span-2"><CardHeader><CardTitle className="text-sm">Intake Trend (Last 30 Days)</CardTitle></CardHeader><CardContent>
-          <ResponsiveContainer width="100%" height={220}><LineChart data={trendData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="date" fontSize={11} /><YAxis fontSize={11} /><Tooltip /><Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" name="Intakes" /></LineChart></ResponsiveContainer>
-        </CardContent></Card>
+            <Card><CardHeader><CardTitle className="text-sm">Custody Status Composition</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={230}><PieChart><Pie data={byStatus} dataKey="value" nameKey="name" innerRadius={45} outerRadius={80} label>{byStatus.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer>
+            </CardContent></Card>
 
-        <Card><CardHeader><CardTitle className="text-sm">By Crime Type</CardTitle></CardHeader><CardContent>
-          <ResponsiveContainer width="100%" height={250}><BarChart data={byCrime} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" fontSize={11} /><YAxis dataKey="name" type="category" width={120} fontSize={11} /><Tooltip /><Bar dataKey="value" fill="#ef4444" /></BarChart></ResponsiveContainer>
-        </CardContent></Card>
+            <Card className="lg:col-span-2"><CardHeader><CardTitle className="text-sm">Type of Offense (Top 12)</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={Math.max(240, byOffense.length * 26)}><BarChart data={byOffense} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" fontSize={11} allowDecimals={false} /><YAxis dataKey="name" type="category" width={190} fontSize={10} /><Tooltip /><Bar dataKey="value" name="Cases" fill="#ef4444" /></BarChart></ResponsiveContainer>
+            </CardContent></Card>
 
-        <Card><CardHeader><CardTitle className="text-sm">Top Nationalities</CardTitle></CardHeader><CardContent>
-          <ResponsiveContainer width="100%" height={250}><BarChart data={byNation} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" fontSize={11} /><YAxis dataKey="name" type="category" width={120} fontSize={11} /><Tooltip /><Bar dataKey="value" fill="hsl(var(--primary))" /></BarChart></ResponsiveContainer>
-        </CardContent></Card>
+            <Card><CardHeader><CardTitle className="text-sm">Top Nationalities</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={250}><BarChart data={byNation} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" fontSize={11} allowDecimals={false} /><YAxis dataKey="name" type="category" width={120} fontSize={10} /><Tooltip /><Bar dataKey="value" name="Detainees" fill="hsl(var(--primary))" /></BarChart></ResponsiveContainer>
+            </CardContent></Card>
 
-        <Card className="lg:col-span-2"><CardHeader><CardTitle className="text-sm">Top Arrest Locations</CardTitle></CardHeader><CardContent>
-          <ResponsiveContainer width="100%" height={250}><BarChart data={byLoc}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" fontSize={10} angle={-25} textAnchor="end" height={70} /><YAxis fontSize={11} /><Tooltip /><Bar dataKey="value" fill="#8b5cf6" /></BarChart></ResponsiveContainer>
-        </CardContent></Card>
-      </div>
+            <Card><CardHeader><CardTitle className="text-sm">Top Arrest Locations</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={250}><BarChart data={byLoc} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" fontSize={11} allowDecimals={false} /><YAxis dataKey="name" type="category" width={120} fontSize={10} /><Tooltip /><Bar dataKey="value" name="Arrests" fill="#8b5cf6" /></BarChart></ResponsiveContainer>
+            </CardContent></Card>
+
+            <Card><CardHeader><CardTitle className="text-sm">Gender Distribution</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={220}><PieChart><Pie data={byGender} dataKey="value" nameKey="name" outerRadius={78} label>{byGender.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer>
+            </CardContent></Card>
+
+            <Card><CardHeader><CardTitle className="text-sm">Age Groups</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={220}><BarChart data={byAge}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" fontSize={10} /><YAxis fontSize={11} allowDecimals={false} /><Tooltip /><Bar dataKey="value" name="Detainees" fill="#06b6d4" /></BarChart></ResponsiveContainer>
+            </CardContent></Card>
+
+            <Card><CardHeader><CardTitle className="text-sm">Risk Level</CardTitle></CardHeader><CardContent>
+              <ResponsiveContainer width="100%" height={220}><PieChart><Pie data={byRisk} dataKey="value" nameKey="name" outerRadius={78} label>{byRisk.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer>
+            </CardContent></Card>
+          </div>
+
+          {/* Summary tables */}
+          <div className="grid lg:grid-cols-2 gap-4">
+            <SummaryTable title="Offense Category Summary" caption="Count and share of records in view" list={byOffenseCategory} total={stats.admissions} />
+            <SummaryTable title="Nationality Summary" caption="Top 10 nationalities in view" list={byNation} total={stats.admissions} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
+
+const share = (value: number, total: number) => (total > 0 ? Math.round((value / total) * 1000) / 10 : 0);
+
+function SummaryTable({ title, caption, list, total }: { title: string; caption: string; list: { name: string; value: number }[]; total: number }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2"><CardTitle className="text-sm">{title}</CardTitle><p className="text-xs text-muted-foreground">{caption}</p></CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow><TableHead>Item</TableHead><TableHead className="text-right">Count</TableHead><TableHead className="text-right">Share</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {list.length === 0 ? <TableRow><TableCell colSpan={3} className="text-center py-6 text-muted-foreground">No data</TableCell></TableRow>
+                : list.map(i => (
+                  <TableRow key={i.name}>
+                    <TableCell>{i.name}</TableCell>
+                    <TableCell className="text-right font-medium">{i.value}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{share(i.value, total)}%</TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function KPI({ title, value, icon: Icon, color, bg }: any) {
   return (
