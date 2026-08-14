@@ -25,7 +25,6 @@ type Override = {
   variance_qty_threshold: number;
   variance_value_threshold: number;
   enabled: boolean;
-  webhook_url: string | null;
   webhook_enabled: boolean;
 };
 
@@ -33,18 +32,51 @@ export function InventoryAlertOverrides() {
   const { role } = useAuth();
   const qc = useQueryClient();
   const canManage = ["admin", "oic", "2ic", "storekeeper"].includes(role || "");
+  /**
+   * Webhook addresses are internal integration endpoints: the column is not
+   * exposed through the Data API and is only reachable by the command tier
+   * through the secured RPCs.
+   */
+  const canManageWebhook = ["admin", "oic", "2ic"].includes(role || "");
 
   const { data: overrides = [] } = useQuery({
     queryKey: ["inventory_alert_overrides"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("inventory_alert_overrides" as any)
-        .select("id, scope_type, scope_value, variance_qty_threshold, variance_value_threshold, enabled, webhook_url, webhook_enabled")
+        .select("id, scope_type, scope_value, variance_qty_threshold, variance_value_threshold, enabled, webhook_enabled")
         .order("scope_type")
         .order("scope_value");
       if (error) throw error;
       return (data ?? []) as unknown as Override[];
     },
+  });
+
+  const { data: webhookMap = {} } = useQuery({
+    queryKey: ["inventory_alert_webhook", "overrides"],
+    enabled: canManageWebhook,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_inventory_alert_webhooks");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      ((data as any[] | null) ?? [])
+        .filter((r) => r.source === "override")
+        .forEach((r) => { map[r.record_id] = r.webhook_url ?? ""; });
+      return map;
+    },
+  });
+
+  const webhookMut = useMutation({
+    mutationFn: async ({ id, url }: { id: string; url: string | null }) => {
+      const { error } = await (supabase as any).rpc("set_inventory_alert_webhook", {
+        _source: "override",
+        _record_id: id,
+        _webhook_url: url,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["inventory_alert_webhook", "overrides"] }),
+    onError: (e: any) => toast.error(e.message),
   });
 
   // Locations available from inventory_items so the user can pick known offices
@@ -239,18 +271,24 @@ export function InventoryAlertOverrides() {
                     disabled={!canManage}
                     onCheckedChange={(v) => updateMut.mutate({ id: o.id, webhook_enabled: v })}
                   />
-                  <Input
-                    placeholder="https://hooks.slack.com/services/... (overrides global)"
-                    className="h-7 flex-1 min-w-[220px]"
-                    disabled={!canManage || !o.webhook_enabled}
-                    defaultValue={o.webhook_url ?? ""}
-                    onBlur={(e) => {
-                      const v = e.target.value.trim() || null;
-                      if (v !== (o.webhook_url ?? null)) {
-                        updateMut.mutate({ id: o.id, webhook_url: v as any });
-                      }
-                    }}
-                  />
+                  {canManageWebhook ? (
+                    <Input
+                      placeholder="https://hooks.slack.com/services/... (overrides global)"
+                      className="h-7 flex-1 min-w-[220px]"
+                      disabled={!o.webhook_enabled}
+                      defaultValue={webhookMap[o.id] ?? ""}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim() || null;
+                        if (v !== ((webhookMap[o.id] || null) ?? null)) {
+                          webhookMut.mutate({ id: o.id, url: v });
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground">
+                      Address restricted to Admin, OIC and 2IC
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
