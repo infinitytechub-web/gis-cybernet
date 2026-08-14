@@ -82,17 +82,19 @@ export function calculateAge(dob: Date | string | null | undefined, now: Date = 
 /** Convenience: "34 yrs" / "—" for tables and read-only views. */
 export function ageLabel(dob: Date | string | null | undefined, fallback = "—"): string {
   const a = calculateAge(dob);
-  return a.ok ? a.label : fallback;
+  return a.ok && a.label ? a.label : fallback;
 }
 
 /** Standard demographic bucket used by analytics dashboards. */
 export function ageGroup(dob: Date | string | null | undefined): string {
   const a = calculateAge(dob);
   if (!a.ok) return "Unknown";
-  if (a.years < 18) return "Under 18";
-  if (a.years <= 25) return "18–25";
-  if (a.years <= 35) return "26–35";
-  if (a.years <= 45) return "36–45";
+  const years = a.years ?? 0;
+  if (years < 18) return "Under 18";
+  if (years <= 25) return "18–25";
+  if (years <= 35) return "26–35";
+  if (years <= 45) return "36–45";
+
   if (a.years <= 60) return "46–60";
   return "60+";
 }
