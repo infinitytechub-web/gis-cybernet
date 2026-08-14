@@ -19,6 +19,7 @@ interface Props {
 
 type ApproverOption = {
   id: string;
+  staff_id: string | null;
   first_name: string;
   last_name: string;
   rank_abbrev: string | null;
@@ -52,12 +53,14 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
     queryFn: async () => {
       const { data, error } = await (supabase.from("profiles") as any)
 
-        .select("id, first_name, last_name, unit, ranks(abbreviation, name), departments(name), user_roles(role)")
+        .select("id, staff_id, first_name, last_name, status, unit, ranks(abbreviation, name), departments(name), user_roles(role)")
+        .eq("status", "active")
         .order("last_name")
         .limit(1000);
       if (error) throw error;
       return ((data ?? []) as any[]).map((p) => ({
         id: p.id,
+        staff_id: p.staff_id ?? null,
         first_name: p.first_name,
         last_name: p.last_name,
         rank_abbrev: p.ranks?.abbreviation ?? null,
@@ -74,7 +77,7 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
     if (!q) return staff.slice(0, 100);
     return staff
       .filter((o) =>
-        `${o.first_name} ${o.last_name} ${o.rank_abbrev ?? ""} ${o.rank_name ?? ""} ${o.department ?? ""} ${o.unit ?? ""} ${o.role ?? ""}`
+        `${o.staff_id ?? ""} ${o.first_name} ${o.last_name} ${o.rank_abbrev ?? ""} ${o.rank_name ?? ""} ${o.department ?? ""} ${o.unit ?? ""} ${o.role ?? ""}`
           .toLowerCase()
           .includes(q),
       )
@@ -102,7 +105,7 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
               <Input
                 autoFocus
                 className="pl-9"
-                placeholder="Search name, rank, department or unit…"
+                placeholder="Search name, staff ID, rank, department or unit…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -136,7 +139,7 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
                 >
                   <div className="font-medium">{approverDisplay(o)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {[o.rank_name || o.rank_abbrev, roleLabel(o.role), o.department, o.unit].filter(Boolean).join(" · ") || "—"}
+                    {[o.staff_id, o.rank_name || o.rank_abbrev, roleLabel(o.role), o.department, o.unit].filter(Boolean).join(" · ") || "—"}
                   </div>
                 </button>
               ))}
