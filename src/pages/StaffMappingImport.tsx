@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/date-format";
 
 type Status = "ready" | "no_change" | "no_staff" | "no_dept" | "no_rank";
 
@@ -297,7 +298,7 @@ export default function StaffMappingImport() {
               <TableBody>
                 {history.map((h: any) => (
                   <TableRow key={h.id}>
-                    <TableCell className="text-xs">{new Date(h.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-xs">{formatDateTime(h.created_at)}</TableCell>
                     <TableCell className="text-xs">{h.filename ?? "—"}</TableCell>
                     <TableCell>{h.total_rows}</TableCell>
                     <TableCell className="text-emerald-700">{h.updated_count}</TableCell>

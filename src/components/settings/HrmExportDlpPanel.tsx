@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { FileLock2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/date-format";
 
 export function HrmExportDlpPanel() {
   const qc = useQueryClient();
@@ -100,7 +101,7 @@ export function HrmExportDlpPanel() {
                   <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">No exports recorded yet.</TableCell></TableRow>
                 ) : audit.map((a: any) => (
                   <TableRow key={a.id}>
-                    <TableCell className="text-xs">{new Date(a.created_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-xs">{formatDateTime(a.created_at)}</TableCell>
                     <TableCell className="text-xs">{a.exported_label || "—"}</TableCell>
                     <TableCell className="text-xs">{a.export_kind}</TableCell>
                     <TableCell className="text-xs uppercase">{a.format}</TableCell>

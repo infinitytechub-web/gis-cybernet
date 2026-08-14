@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { formatDateTime } from "@/lib/date-format";
 import {
   Dialog,
   DialogContent,
@@ -1107,10 +1108,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                       <span className="text-muted-foreground">Generated</span>
                       <span>
                         {attachmentMeta
-                          ? attachmentMeta.generatedAt.toLocaleString(undefined, {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })
+                          ? formatDateTime(attachmentMeta.generatedAt)
                           : "—"}
                       </span>
 

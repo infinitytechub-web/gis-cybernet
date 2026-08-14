@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/date-format";
 
 type Req = {
   id: string;
@@ -86,7 +87,7 @@ export default function ProfileChangeApprovals() {
                 fields: Object.keys(req?.requested_changes ?? {}),
                 reviewerName,
                 reviewerNotes: notes[id] ?? null,
-                reviewedAt: new Date(reviewedAt).toLocaleString(),
+                reviewedAt: formatDateTime(reviewedAt),
                 requestUrl: `${window.location.origin}/my-profile?request=${id}`,
               },
             },
@@ -157,7 +158,7 @@ export default function ProfileChangeApprovals() {
                         <span className="text-muted-foreground font-normal">({r.profiles?.staff_id})</span>
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        Submitted {new Date(r.created_at).toLocaleString()}
+                        Submitted {formatDateTime(r.created_at)}
                       </CardDescription>
                     </div>
                     <Badge

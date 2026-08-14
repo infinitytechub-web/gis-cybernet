@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 import { toast } from "sonner";
 import { SecurityHero, securityButtonClass, securityButtonSolidClass } from "@/components/security/SecurityHero";
+import { formatDateTime } from "@/lib/date-format";
 
 interface RouteRow {
   id: string;
@@ -281,7 +282,7 @@ export default function RouteHistory() {
               <tbody>
                 {routes.map(r => (
                   <tr key={r.id} className="border-t">
-                    <td className="py-1 pr-3">{new Date(r.recorded_at).toLocaleString()}</td>
+                    <td className="py-1 pr-3">{formatDateTime(r.recorded_at)}</td>
                     <td className="py-1 pr-3">{r.point_count}</td>
                     <td className="py-1 pr-3">{r.view_mode ?? "—"}</td>
                     <td className="py-1 pr-3">{r.source ?? "—"}</td>
@@ -305,7 +306,7 @@ export default function RouteHistory() {
               <tbody>
                 {audit.map(a => (
                   <tr key={a.id} className="border-t">
-                    <td className="py-1 pr-3">{new Date(a.occurred_at).toLocaleString()}</td>
+                    <td className="py-1 pr-3">{formatDateTime(a.occurred_at)}</td>
                     <td className="py-1 pr-3">{a.surface}</td>
                     <td className="py-1 pr-3">{a.view_mode ?? "—"}</td>
                   </tr>

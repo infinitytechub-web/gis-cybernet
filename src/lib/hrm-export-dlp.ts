@@ -4,6 +4,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { downloadBlob } from "@/lib/download-utils";
+import { formatDateTime } from "@/lib/date-format";
 
 export interface HRMExportSettings {
   id: string;
@@ -118,7 +119,7 @@ export async function exportHrmPdf(opts: {
       doc.text(label, w / 2, h / 2, { align: "center", angle: 35 });
       doc.setTextColor(120, 120, 120);
       doc.setFontSize(8);
-      doc.text(`Exported by user ${(await supabase.auth.getUser()).data.user?.email ?? ""} • ${new Date().toLocaleString()}`,
+      doc.text(`Exported by user ${(await supabase.auth.getUser()).data.user?.email ?? ""} • ${formatDateTime(new Date())}`,
         w / 2, h - 6, { align: "center" });
       doc.restoreGraphicsState?.();
     }

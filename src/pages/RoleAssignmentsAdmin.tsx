@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { ROLE_LABEL } from "@/lib/role-labels";
+import { formatDateTime } from "@/lib/date-format";
 
 type AppRole =
   | "admin" | "supervisor" | "staff" | "deputy_supervisor" | "deputy_shift_leader"
@@ -658,7 +659,7 @@ export default function RoleAssignmentsAdmin() {
                         return (
                           <TableRow key={e.id}>
                             <TableCell className="text-xs whitespace-nowrap">
-                              {new Date(e.created_at).toLocaleString()}
+                              {formatDateTime(e.created_at)}
                             </TableCell>
                             <TableCell className="text-xs">
                               {e.actor ? `${e.actor.last_name}, ${e.actor.first_name}` : "—"}

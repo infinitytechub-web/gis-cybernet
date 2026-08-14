@@ -28,6 +28,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { normalizeMac } from "@/lib/trusted-mac";
 import { formatDistanceToNow, format } from "date-fns";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { formatDateTime } from "@/lib/date-format";
 
 export default function IpBlocks() {
   const { isAdmin, loading } = useAuth();
@@ -348,7 +349,7 @@ export default function IpBlocks() {
                       {b.blocked_until ? (
                         <span className="inline-flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {new Date(b.blocked_until).toLocaleString()}
+                          {formatDateTime(b.blocked_until)}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">Permanent</span>
@@ -481,7 +482,7 @@ export default function IpBlocks() {
                     <TableCell className="text-xs">{a.reason ?? "—"}</TableCell>
                     <TableCell className="text-xs">
                       {a.blocked_until
-                        ? new Date(a.blocked_until).toLocaleString()
+                        ? formatDateTime(a.blocked_until)
                         : a.duration_minutes === 0 || a.duration_minutes === null
                           ? <span className="text-muted-foreground">Permanent</span>
                           : "—"}

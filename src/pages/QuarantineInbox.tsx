@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ShieldAlert, Inbox, FileText, Link2, Flag, Send } from "lucide-react";
 import { toast } from "sonner";
+import { formatDateTime } from "@/lib/date-format";
 
 const layerIcon: Record<string, JSX.Element> = {
   file: <FileText className="h-4 w-4" />,
@@ -116,7 +117,7 @@ export default function QuarantineInbox() {
                           <div className="font-medium text-sm truncate">{r.subject || "(no subject)"}</div>
                           <div className="text-xs text-muted-foreground">{r.reason}</div>
                           <div className="text-[11px] text-muted-foreground mt-0.5">
-                            Flagged {new Date(r.created_at).toLocaleString()} • Layer: {r.layer}
+                            Flagged {formatDateTime(r.created_at)} • Layer: {r.layer}
                           </div>
                         </div>
                       </div>

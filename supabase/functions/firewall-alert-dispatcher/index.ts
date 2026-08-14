@@ -60,8 +60,14 @@ Deno.serve(async (req) => {
        .replace(/>/g, "&gt;")
        .replace(/"/g, "&quot;")
        .replace(/'/g, "&#39;");
+    const fmtDateTime = (v: string) => {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return "—";
+      const p = (n: number) => String(n).padStart(2, "0");
+      return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+    };
     const rows = events.map(e =>
-      `<tr><td>${escapeHtml(new Date(e.created_at).toLocaleString())}</td>` +
+      `<tr><td>${escapeHtml(fmtDateTime(e.created_at))}</td>` +
       `<td><strong>${escapeHtml(String(e.action).toUpperCase())}</strong></td>` +
       `<td>${escapeHtml(String(e.layer ?? ""))}</td>` +
       `<td>${escapeHtml(String(e.user_label ?? "—"))}</td>` +

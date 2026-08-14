@@ -17,6 +17,7 @@ import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, 
 import { toast } from "sonner";
 import { z } from "zod";
 import {
+import { formatDateTime } from "@/lib/date-format";
   exportScheduleXlsx,
   exportScheduleCsv,
   type Assignment,
@@ -1474,7 +1475,7 @@ export default function GuardScheduleImport() {
                       <TableCell>
                         <Badge variant={s.status === "published" ? "default" : "outline"} className="text-xs">{s.status}</Badge>
                       </TableCell>
-                      <TableCell className="text-xs">{new Date(s.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs">{formatDateTime(s.created_at)}</TableCell>
                     </TableRow>
                   ))
                 )}
