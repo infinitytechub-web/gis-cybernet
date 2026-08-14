@@ -141,6 +141,10 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
                 <div className="p-6 flex items-center justify-center gap-2 text-sm text-muted-foreground" role="status">
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading personnel…
                 </div>
+              ) : isError ? (
+                <div className="p-4 text-sm text-destructive text-center" role="status">
+                  Could not load the staff directory. Check your connection and try again.
+                </div>
               ) : filtered.length === 0 ? (
                 <div className="p-4 text-sm text-muted-foreground text-center" role="status">No matching personnel.</div>
               ) : filtered.map((o) => (
