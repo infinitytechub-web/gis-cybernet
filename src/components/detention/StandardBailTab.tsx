@@ -36,9 +36,7 @@ type Bail = Record<string, any>;
 
 const BAIL_TYPES = [
   { value: "self_recognizance", label: "Self recognizance" },
-  { value: "cash", label: "Cash bail" },
   { value: "surety", label: "Surety bail" },
-  { value: "property", label: "Property bond" },
 ];
 
 const ID_TYPES = ["Ghana Card", "Passport", "Voter ID", "Driver's Licence", "Residence Permit", "Other"];
