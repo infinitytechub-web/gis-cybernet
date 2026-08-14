@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useRbac } from "@/hooks/useRbac";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { CapabilitySelfCheckPanel } from "@/components/admin/CapabilitySelfCheckPanel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,7 @@ const SECTIONS: ConsoleSection[] = [
 
 export default function AdminConsole() {
   const { isAdmin, canManageCommandTier, isAdminOrSupervisor } = useAuth();
+  const { canPath } = useRbac();
   const allowed = isAdmin || canManageCommandTier || isAdminOrSupervisor;
 
   if (!allowed) {
@@ -99,7 +101,9 @@ export default function AdminConsole() {
     );
   }
 
-  const visible = (item: ConsoleLink) => (item.tier === "admin" ? isAdmin : true);
+  // RBAC: a tile is shown only when the account can actually open its route.
+  const visible = (item: ConsoleLink) =>
+    (item.tier === "admin" ? isAdmin : true) && canPath(item.url.split("?")[0]);
 
   return (
     <div className="space-y-6">

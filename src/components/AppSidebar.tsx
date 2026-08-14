@@ -24,6 +24,7 @@ import { INTERLINK_LABELS } from "@/lib/interlink-types";
 import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 import { useConfidentialityCommands } from "@/hooks/useConfidentialityCommands";
+import { useRbac } from "@/hooks/useRbac";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 
 const commandItems = [
@@ -131,6 +132,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { signOut, role } = useAuth();
+  const { canPath } = useRbac();
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -225,7 +227,12 @@ export function AppSidebar() {
     return location.pathname === url || location.pathname.startsWith(url + "/");
   };
 
-  const renderGroup = (label: string, items: NavItem[]) => (
+  const renderGroup = (label: string, allItems: NavItem[]) => {
+    // RBAC: hide destinations the signed-in account cannot reach, and drop the
+    // whole group when nothing in it is permitted.
+    const items = allItems.filter((item) => canPath(item.url));
+    if (items.length === 0) return null;
+    return (
     <SidebarGroup key={label}>
       <SidebarGroupLabel className="text-sidebar-foreground/50">{label}</SidebarGroupLabel>
       <SidebarGroupContent>
@@ -286,7 +293,8 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  );
+    );
+  };
 
   return (
     <TooltipProvider>

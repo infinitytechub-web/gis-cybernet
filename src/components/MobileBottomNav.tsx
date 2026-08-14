@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRbac } from "@/hooks/useRbac";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   DropdownMenuSeparator,
@@ -63,6 +64,11 @@ export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
+  const { canPath } = useRbac();
+  // RBAC: only surface destinations this account may open.
+  const visibleTabs = primaryTabs.filter((t) => canPath(t.url));
+  const visibleMore = moreItems.filter((i) => canPath(i.url));
+  const visibleAdmin = adminItems.filter((i) => canPath(i.url));
   const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -105,7 +111,7 @@ export function MobileBottomNav() {
   const isActive = (url: string) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url);
 
-  const moreActive = moreItems.some((item) => isActive(item.url)) || (isAdminOrSupervisor && adminItems.some((item) => isActive(item.url)));
+  const moreActive = visibleMore.some((item) => isActive(item.url)) || visibleAdmin.some((item) => isActive(item.url));
 
   const handleNavigate = useCallback((url: string) => {
     navigate(url);
@@ -146,7 +152,7 @@ export function MobileBottomNav() {
       )}
     >
       <div className="grid grid-cols-6 h-14">
-        {primaryTabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.url}
             onClick={() => handleNavigate(tab.url)}
@@ -208,7 +214,7 @@ export function MobileBottomNav() {
           <DropdownMenuContent align="end" side="top" className="w-52 mb-2 max-h-[60vh] overflow-y-auto">
             {(() => {
               let lastGroup = "";
-              return moreItems.map((item, idx) => {
+              return visibleMore.map((item, idx) => {
                 const isFirstInGroup = item.group !== lastGroup;
                 if (isFirstInGroup) lastGroup = item.group;
                 return (
@@ -233,10 +239,10 @@ export function MobileBottomNav() {
                 );
               });
             })()}
-            {isAdminOrSupervisor && (
+            {visibleAdmin.length > 0 && (
               <>
                 <DropdownMenuSeparator />
-                {adminItems.map((item) => (
+                {visibleAdmin.map((item) => (
                   <DropdownMenuItem
                     key={item.url}
                     onClick={() => handleNavigate(item.url)}
