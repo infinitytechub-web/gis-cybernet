@@ -47,18 +47,33 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: staff = [], isLoading } = useQuery({
+  const { data: staff = [], isLoading, isError } = useQuery({
     queryKey: ["detention-approver-options"],
     enabled: open,
+    staleTime: 60_000,
     queryFn: async () => {
+      // `user_roles` is keyed on auth.users, not profiles — embedding it here
+      // makes PostgREST reject the request (400) and empties the directory.
       const { data, error } = await (supabase.from("profiles") as any)
-
-        .select("id, staff_id, first_name, last_name, status, unit, ranks(abbreviation, name), departments(name), user_roles(role)")
+        .select("id, user_id, staff_id, first_name, last_name, status, unit, ranks(abbreviation, name), departments(name)")
         .eq("status", "active")
         .order("last_name")
         .limit(1000);
       if (error) throw error;
-      return ((data ?? []) as any[]).map((p) => ({
+
+      const rows = (data ?? []) as any[];
+      const roleByUser = new Map<string, string>();
+      const userIds = rows.map((p) => p.user_id).filter(Boolean);
+      if (userIds.length) {
+        const { data: roles } = await (supabase.from("user_roles") as any)
+          .select("user_id, role")
+          .in("user_id", userIds.slice(0, 1000));
+        for (const r of (roles ?? []) as any[]) {
+          if (!roleByUser.has(r.user_id)) roleByUser.set(r.user_id, r.role);
+        }
+      }
+
+      return rows.map((p) => ({
         id: p.id,
         staff_id: p.staff_id ?? null,
         first_name: p.first_name,
@@ -67,7 +82,7 @@ export function StatementApproverPicker({ value, label, onChange, canEdit = true
         rank_name: p.ranks?.name ?? null,
         department: p.departments?.name ?? null,
         unit: p.unit ?? null,
-        role: p.user_roles?.[0]?.role ?? null,
+        role: (p.user_id ? roleByUser.get(p.user_id) : null) ?? null,
       })) as ApproverOption[];
     },
   });
