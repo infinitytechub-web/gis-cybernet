@@ -185,7 +185,7 @@ export function SyncHistoryLog({ profileId }: SyncHistoryLogProps) {
                     {config.label}
                   </Badge>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {format(new Date(entry.synced_at), "MMM d, HH:mm")}
+                    {format(new Date(entry.synced_at), "dd/MM HH:mm")}
                   </span>
                 </div>
               );

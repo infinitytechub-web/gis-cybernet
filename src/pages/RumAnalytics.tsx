@@ -461,7 +461,7 @@ export default function RumAnalytics() {
                           </Badge>
                           <span className="font-mono">{e.route}</span>
                           <span>·</span>
-                          <span>{format(new Date(e.created_at), "MMM d, HH:mm:ss")}</span>
+                          <span>{format(new Date(e.created_at), "dd/MM HH:mm:ss")}</span>
                         </div>
                         <div className="mt-1 text-sm font-medium break-words">{meta.message ?? "—"}</div>
                         {meta.filename && (

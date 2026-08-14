@@ -236,7 +236,7 @@ export default function Analytics() {
         });
         const total = recs.length;
         const onTime = recs.filter((a: any) => a.status === "present" || a.status === "late").length;
-        return { week: format(ws, "MM/dd"), rate: total > 0 ? Math.round((onTime / total) * 100) : 0 };
+        return { week: format(ws, "dd/MM"), rate: total > 0 ? Math.round((onTime / total) * 100) : 0 };
       });
       const latest = points[points.length - 1]?.rate ?? 0;
       const prev = points.length > 1 ? points[points.length - 2]?.rate ?? 0 : latest;

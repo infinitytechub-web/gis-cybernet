@@ -485,7 +485,7 @@ function MovementsTab({ canManage, userId }: { canManage: boolean; userId?: stri
                   const Icon = meta?.icon || Activity;
                   return (
                     <TableRow key={m.id}>
-                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(m.movement_date), "MMM d, HH:mm")}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{format(new Date(m.movement_date), "dd/MM HH:mm")}</TableCell>
                       <TableCell className="font-medium">{m.inventory_items?.name}</TableCell>
                       <TableCell><Badge variant="outline" className="gap-1"><Icon className={`h-3 w-3 ${meta?.color}`} />{meta?.label}</Badge></TableCell>
                       <TableCell className="text-right font-semibold">{Number(m.quantity)} {m.inventory_items?.unit}</TableCell>

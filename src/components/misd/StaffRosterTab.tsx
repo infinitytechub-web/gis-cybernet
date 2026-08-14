@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { formatDate } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { softDelete } from "@/lib/recycle-bin";
@@ -154,7 +155,7 @@ export function StaffRosterTab() {
       a.unit_name || "",
       a.role_title || "",
       a.is_lead ? "Yes" : "No",
-      a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : "",
+      formatDate(a.assigned_at, ""),
     ]),
   });
 
