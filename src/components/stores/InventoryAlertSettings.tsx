@@ -16,7 +16,6 @@ type Settings = {
   variance_enabled: boolean;
   variance_qty_threshold: number;
   variance_value_threshold: number;
-  webhook_url: string | null;
   alert_webhook_enabled: boolean;
   alert_email_enabled: boolean;
   email_recipients: string[];
@@ -26,6 +25,12 @@ export function InventoryAlertSettings() {
   const { role } = useAuth();
   const qc = useQueryClient();
   const canEdit = ["admin", "oic", "2ic", "storekeeper"].includes(role || "");
+  /**
+   * Webhook addresses are internal integration endpoints, so they are readable
+   * and writable by the command tier only. The column is not exposed through
+   * the Data API — access goes through the secured RPCs below.
+   */
+  const canManageWebhook = ["admin", "oic", "2ic"].includes(role || "");
 
   const { data, isLoading } = useQuery({
     queryKey: ["inventory_alert_settings"],
@@ -33,7 +38,7 @@ export function InventoryAlertSettings() {
       const { data, error } = await supabase
         .from("inventory_alert_settings" as any)
         .select(
-          "id, low_stock_enabled, variance_enabled, variance_qty_threshold, variance_value_threshold, webhook_url, alert_webhook_enabled, alert_email_enabled, email_recipients",
+          "id, low_stock_enabled, variance_enabled, variance_qty_threshold, variance_value_threshold, alert_webhook_enabled, alert_email_enabled, email_recipients",
         )
         .limit(1)
         .maybeSingle();
@@ -42,8 +47,20 @@ export function InventoryAlertSettings() {
     },
   });
 
+  const { data: webhookUrlServer } = useQuery({
+    queryKey: ["inventory_alert_webhook", "settings"],
+    enabled: canManageWebhook,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_inventory_alert_webhooks");
+      if (error) throw error;
+      const row = (data as any[] | null)?.find((r) => r.source === "settings");
+      return (row?.webhook_url as string | null) ?? null;
+    },
+  });
+
   const [form, setForm] = useState<Settings | null>(null);
   const [recipientsRaw, setRecipientsRaw] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
 
   useEffect(() => {
     if (data) {
@@ -51,6 +68,10 @@ export function InventoryAlertSettings() {
       setRecipientsRaw((data.email_recipients ?? []).join(", "));
     }
   }, [data]);
+
+  useEffect(() => {
+    setWebhookUrl(webhookUrlServer ?? "");
+  }, [webhookUrlServer]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -66,28 +87,37 @@ export function InventoryAlertSettings() {
           variance_enabled: form.variance_enabled,
           variance_qty_threshold: Number(form.variance_qty_threshold) || 0,
           variance_value_threshold: Number(form.variance_value_threshold) || 0,
-          webhook_url: form.webhook_url?.trim() || null,
           alert_webhook_enabled: form.alert_webhook_enabled,
           alert_email_enabled: form.alert_email_enabled,
           email_recipients: recipients,
         })
         .eq("id", form.id);
       if (error) throw error;
+
+      if (canManageWebhook && webhookUrl.trim() !== (webhookUrlServer ?? "")) {
+        const { error: hookErr } = await (supabase as any).rpc("set_inventory_alert_webhook", {
+          _source: "settings",
+          _record_id: form.id,
+          _webhook_url: webhookUrl.trim() || null,
+        });
+        if (hookErr) throw hookErr;
+      }
     },
     onSuccess: () => {
       toast.success("Alert settings saved");
       qc.invalidateQueries({ queryKey: ["inventory_alert_settings"] });
+      qc.invalidateQueries({ queryKey: ["inventory_alert_webhook", "settings"] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const testWebhook = async () => {
-    if (!form?.webhook_url) {
+    if (!webhookUrl.trim()) {
       toast.error("Add a webhook URL first");
       return;
     }
     try {
-      const r = await fetch(form.webhook_url, {
+      const r = await fetch(webhookUrl.trim(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,6 +130,7 @@ export function InventoryAlertSettings() {
       toast.error(e.message ?? "Webhook test failed");
     }
   };
+
 
   if (isLoading || !form) {
     return (
