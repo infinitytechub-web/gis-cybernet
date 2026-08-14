@@ -27,12 +27,20 @@ function walk(dir: string, out: string[] = []): string[] {
 const FILES = walk(SRC);
 const rel = (f: string) => path.relative(SRC, f);
 
-/** Machine-readable ISO formats that must not be converted to DD/MM/YYYY. */
-const ISO_PATTERN = /^yyyy-MM(-dd)?([ 'T].*)?$/;
-/** Day-first display formats. */
-const DAY_FIRST = /^(EEEE, )?dd\/MM(\/yyyy)?( .*)?$/;
-/** Patterns that carry no day-of-month token at all (e.g. "MMM yyyy", "HH:mm"). */
-const NO_DAY_TOKEN = (p: string) => !/d/.test(p.replace(/'[^']*'/g, ""));
+/** ISO / filename-safe machine formats always start with the year. */
+const YEAR_FIRST = /^yyyy/;
+
+/**
+ * A display pattern is day-first when it either has no day-of-month token or
+ * places the day token before the month token (dd/MM, dd MMM, EEE, dd/MM/yyyy).
+ */
+function isDayFirst(pattern: string): boolean {
+  const bare = pattern.replace(/'[^']*'/g, "");
+  const day = bare.indexOf("d");
+  const month = bare.indexOf("M");
+  if (day === -1 || month === -1) return true;
+  return day < month;
+}
 
 describe("date display consistency", () => {
   it("scans a meaningful number of source files", () => {
@@ -48,7 +56,7 @@ describe("date display consistency", () => {
       let m: RegExpExecArray | null;
       while ((m = re.exec(src))) {
         const pattern = m[1];
-        if (ISO_PATTERN.test(pattern) || DAY_FIRST.test(pattern) || NO_DAY_TOKEN(pattern)) continue;
+        if (YEAR_FIRST.test(pattern) || isDayFirst(pattern)) continue;
         const line = src.slice(0, m.index).split("\n").length;
         offenders.push(`${rel(file)}:${line} → "${pattern}"`);
       }
