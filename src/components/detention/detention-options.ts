@@ -81,3 +81,75 @@ export const referralDisplay = (value?: string | null, other?: string | null) =>
 /** Human-readable relationship value: falls back to the specified relationship. */
 export const relationshipDisplay = (value?: string | null, other?: string | null) =>
   value === OTHER_RELATIONSHIP ? (other ? `Other — ${other}` : "Other") : value || null;
+
+/* --------------------------- Type of Offense ---------------------------- */
+/**
+ * Internationally recognised immigration-related offense taxonomy, grouped for
+ * the dropdown. Stored as free text in `detention_records.crime_type`, so
+ * legacy values keep rendering exactly as recorded.
+ */
+export const OTHER_OFFENSE = "Other (specify)";
+
+export const OFFENSE_GROUPS: { group: string; options: string[] }[] = [
+  {
+    group: "Immigration Offenses",
+    options: [
+      "Illegal Entry",
+      "Illegal Exit",
+      "Overstay",
+      "Unlawful Residence",
+      "Breach of Visa/Permit Conditions",
+      "Unlawful Employment",
+      "Failure to Register",
+      "Evading Immigration Control",
+      "Re-entry After Removal",
+    ],
+  },
+  {
+    group: "Document Offenses",
+    options: [
+      "Document Fraud",
+      "Forged/Altered Travel Document",
+      "Impersonation",
+      "False Statement/Misrepresentation",
+      "Possession of Another Person's Document",
+    ],
+  },
+  {
+    group: "Smuggling & Trafficking",
+    options: ["Migrant Smuggling", "Human Trafficking", "Child Trafficking", "Facilitating Illegal Entry"],
+  },
+  {
+    group: "Cyber & Financial",
+    options: [
+      "Cyber Fraud / Internet Fraud",
+      "Identity Theft",
+      "Money Laundering",
+      "Online Romance Scam",
+      "Financial Fraud",
+    ],
+  },
+  {
+    group: "Other Criminal Offenses",
+    options: [
+      "Assault",
+      "Theft",
+      "Drug Offence",
+      "Firearms Offence",
+      "Public Order Offence",
+      "Obstruction of an Officer",
+      "Absconding from Custody",
+    ],
+  },
+  { group: "Other", options: [OTHER_OFFENSE] },
+];
+
+/** Flat list of every offense value. */
+export const OFFENSE_TYPES = OFFENSE_GROUPS.flatMap((g) => g.options);
+
+/** Category a stored offense value belongs to (for analytics summaries). */
+export function offenseCategory(value?: string | null): string {
+  if (!value) return "Unclassified";
+  const hit = OFFENSE_GROUPS.find((g) => g.options.includes(value));
+  return hit ? hit.group : "Other / Legacy";
+}
