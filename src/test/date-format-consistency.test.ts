@@ -106,6 +106,16 @@ describe("date display consistency", () => {
     ).toEqual([]);
   });
 
+  it("uses the DD/MM/YYYY DateInput instead of locale-dependent native date inputs", () => {
+    const offenders = FILES.filter(
+      (f) => /type="date"/.test(fs.readFileSync(f, "utf8")) && !/lib\/date-format\.ts$/.test(f),
+    ).map(rel);
+    expect(
+      offenders,
+      `Native date inputs render in the browser locale — use <DateInput /> instead:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
   it("shows DD/MM/YYYY hints (never MM/DD/YYYY) in date input helper text", () => {
     const offenders: string[] = [];
     for (const file of FILES) {
@@ -114,6 +124,7 @@ describe("date display consistency", () => {
     }
     expect(offenders, `Month-first hints found:\n${offenders.join("\n")}`).toEqual([]);
   });
+
 
   it("keeps a single source of truth for display formatting", () => {
     const lib = fs.readFileSync(path.join(SRC, "lib/date-format.ts"), "utf8");
