@@ -245,7 +245,7 @@ export default function MyProfile() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0XXXXXXXXX" /></div>
+            <div><Label htmlFor="my-phone">Phone</Label><GhanaPhoneInput id="my-phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
             <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div><Label>Ghana Card number</Label><GhanaCardInput value={form.ghana_card_number} onChange={(v) => setForm({ ...form, ghana_card_number: v })} /></div>
             <div><Label>Office</Label><Input value={form.office} onChange={(e) => setForm({ ...form, office: e.target.value })} /></div>
