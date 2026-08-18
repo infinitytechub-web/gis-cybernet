@@ -192,6 +192,13 @@ Deno.serve(async (req) => {
           if (Number.isNaN(n) || n < 1 || n > 100) { outcomes.push({ rowIndex: idx, staffId, status: "error", message: `Invalid intake "${intakeRaw}" (1–100)` }); return; }
           intake = n;
         }
+        // Ghana telephone validation — MTN / Telecel / AirtelTigo, 10 digits.
+        let phone: string | null = null;
+        if (phoneRaw !== null && String(phoneRaw).trim() !== "") {
+          const res = normalizeGhanaPhoneList(phoneRaw);
+          if (res.error) { outcomes.push({ rowIndex: idx, staffId, status: "error", message: res.error }); return; }
+          phone = res.value;
+        }
 
         const patch: Record<string, any> = {
           first_name: firstName, last_name: lastName,
