@@ -10066,6 +10066,10 @@ export type Database = {
       }
       get_security_threat_summary: { Args: never; Returns: Json }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
+      gh_phone_is_valid: { Args: { _input: string }; Returns: boolean }
+      gh_phone_network: { Args: { _input: string }; Returns: string }
+      gh_phone_normalize: { Args: { _input: string }; Returns: string }
+      gh_phone_normalize_list: { Args: { _input: string }; Returns: string }
       has_command_capability: {
         Args: { _capability: string; _user_id: string }
         Returns: boolean
