@@ -20,6 +20,8 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
+import { validateGhanaPhone } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
