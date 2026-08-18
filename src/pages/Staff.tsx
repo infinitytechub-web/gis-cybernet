@@ -271,7 +271,17 @@ export default function Staff() {
       // Derive primary phone from contacts list (fallback to legacy field)
       const validContacts = contacts.filter((c) => c.value.trim());
       const primary = validContacts.find((c) => c.is_primary) ?? validContacts[0];
-      const primaryPhone = primary?.value.trim() || phone || null;
+      const primaryPhoneRaw = primary?.value.trim() || phone || "";
+
+      // Ghana telephone validation — every stored staff contact must be a
+      // valid MTN / Telecel / AirtelTigo 10-digit number.
+      for (const c of validContacts.concat(phone.trim() ? [{ contact_type: "mobile", value: phone, is_primary: false }] : [])) {
+        const res = validateGhanaPhone(c.value);
+        if (!res.valid) throw new Error(`Invalid phone "${c.value}" — ${res.error}`);
+      }
+      const primaryPhone = primaryPhoneRaw
+        ? validateGhanaPhone(primaryPhoneRaw).local || primaryPhoneRaw
+        : null;
 
       const payload: any = {
         staff_id: staffId.trim(),
