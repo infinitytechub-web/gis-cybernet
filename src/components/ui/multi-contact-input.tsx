@@ -82,12 +82,13 @@ function StructuredContacts({ value, onChange, className }: StructuredProps) {
             value={c.label ?? ""}
             onChange={(e) => update(idx, { label: e.target.value })}
           />
-          <Input
-            className="col-span-4 h-9"
-            placeholder="0XX XXX XXXX"
-            value={c.value}
-            onChange={(e) => update(idx, { value: e.target.value })}
-          />
+          <div className="col-span-4">
+            <GhanaPhoneInput
+              value={c.value}
+              onChange={(v) => update(idx, { value: v })}
+              compact
+            />
+          </div>
           <Button
             type="button"
             size="icon"
