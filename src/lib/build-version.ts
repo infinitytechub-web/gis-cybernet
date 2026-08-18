@@ -15,6 +15,8 @@ function two(n: number): string {
 export const BUILD_TIME: string =
   typeof __APP_BUILD_TIME__ === "string" ? __APP_BUILD_TIME__ : new Date().toISOString();
 
+declare const __APP_VERSION__: string | undefined;
+
 /** Semantic app version injected from package.json at build time. */
 export const APP_VERSION: string =
   typeof __APP_VERSION__ === "string" && __APP_VERSION__ ? __APP_VERSION__ : "1.0.0";
