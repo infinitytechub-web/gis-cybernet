@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
 
         const rankRaw = pickKey(row, "rank", "rank_name", "rank_abbrev", "rank_abbreviation");
         const deptRaw = pickKey(row, "department", "department_name", "dept");
-        const phone = pickKey(row, "phone", "phone_number", "mobile");
+        const phoneRaw = pickKey(row, "phone", "phone_number", "mobile");
         const genderRaw = pickKey(row, "gender", "sex");
         const statusRaw = pickKey(row, "status");
         const unit = pickKey(row, "unit");
