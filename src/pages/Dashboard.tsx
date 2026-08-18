@@ -268,9 +268,9 @@ export default function Dashboard() {
         <Badge
           variant="outline"
           className="font-mono text-[10px] sm:text-xs whitespace-nowrap"
-          title={`Built ${__APP_BUILD_TIME__}`}
+          title={buildTooltip()}
         >
-          Build {__APP_BUILD_ID__}
+          {buildId()}
         </Badge>
       </div>
 
