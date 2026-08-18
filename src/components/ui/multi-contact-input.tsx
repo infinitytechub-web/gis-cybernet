@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 
 export type ContactEntry = {
   id?: string;
