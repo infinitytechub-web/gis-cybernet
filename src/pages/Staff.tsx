@@ -719,9 +719,9 @@ export default function Staff() {
                 </Select>
               </div>
               <div>
-                <Label>Primary Phone</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0XX XXX XXXX" />
-                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added.</p>
+                <Label htmlFor="staff-phone">Primary Phone</Label>
+                <GhanaPhoneInput id="staff-phone" value={phone} onChange={setPhone} compact />
+                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added. MTN, Telecel or AirtelTigo, 10 digits.</p>
               </div>
             </div>
             <div>
