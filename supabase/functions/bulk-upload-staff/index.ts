@@ -6,6 +6,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+import { normalizeGhanaPhoneList } from "../_shared/ghana-phone.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -164,7 +165,7 @@ Deno.serve(async (req) => {
 
         const rankRaw = pickKey(row, "rank", "rank_name", "rank_abbrev", "rank_abbreviation");
         const deptRaw = pickKey(row, "department", "department_name", "dept");
-        const phone = pickKey(row, "phone", "phone_number", "mobile");
+        const phoneRaw = pickKey(row, "phone", "phone_number", "mobile");
         const genderRaw = pickKey(row, "gender", "sex");
         const statusRaw = pickKey(row, "status");
         const unit = pickKey(row, "unit");
@@ -191,6 +192,13 @@ Deno.serve(async (req) => {
           const n = parseInt(intakeRaw, 10);
           if (Number.isNaN(n) || n < 1 || n > 100) { outcomes.push({ rowIndex: idx, staffId, status: "error", message: `Invalid intake "${intakeRaw}" (1–100)` }); return; }
           intake = n;
+        }
+        // Ghana telephone validation — MTN / Telecel / AirtelTigo, 10 digits.
+        let phone: string | null = null;
+        if (phoneRaw !== null && String(phoneRaw).trim() !== "") {
+          const res = normalizeGhanaPhoneList(phoneRaw);
+          if (res.error) { outcomes.push({ rowIndex: idx, staffId, status: "error", message: res.error }); return; }
+          phone = res.value;
         }
 
         const patch: Record<string, any> = {

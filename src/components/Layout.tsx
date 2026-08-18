@@ -6,6 +6,7 @@ import { HeaderProfileDropdown } from "@/components/HeaderProfileDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
+import { buildId, buildTooltip } from "@/lib/build-version";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
@@ -76,8 +77,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <WelcomeBanner />
             {children}
           </main>
-          <footer className="hidden lg:block border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
-            {footer_text}
+          <footer className="hidden lg:flex items-center justify-center gap-2 border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
+            <span>{footer_text}</span>
+            <span aria-hidden="true" className="opacity-40">·</span>
+            <span className="font-mono" title={buildTooltip()}>{buildId()}</span>
           </footer>
           <MobileBottomNav />
         </div>

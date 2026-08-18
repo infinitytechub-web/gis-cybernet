@@ -14,6 +14,8 @@ import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
+import { validateGhanaPhoneList } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { DateInput } from "@/components/ui/date-input";
 
@@ -125,6 +127,10 @@ export default function MyProfile() {
           reason: "format_invalid",
         }, profile.id);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
+      }
+      const phoneCheck = validateGhanaPhoneList(form.phone ?? "");
+      if (!phoneCheck.valid) {
+        throw new Error(`Invalid phone number — ${phoneCheck.errors[0]}`);
       }
       // Build a diff of only changed fields
       const requested: Record<string, string | null> = {};
@@ -245,7 +251,7 @@ export default function MyProfile() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Phone</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0XXXXXXXXX" /></div>
+            <div><Label htmlFor="my-phone">Phone</Label><GhanaPhoneInput id="my-phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
             <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
             <div><Label>Ghana Card number</Label><GhanaCardInput value={form.ghana_card_number} onChange={(v) => setForm({ ...form, ghana_card_number: v })} /></div>
             <div><Label>Office</Label><Input value={form.office} onChange={(e) => setForm({ ...form, office: e.target.value })} /></div>

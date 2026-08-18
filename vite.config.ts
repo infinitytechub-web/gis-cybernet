@@ -1,16 +1,25 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { createRequire } from "module";
 import { componentTagger } from "lovable-tagger";
 
+const require = createRequire(import.meta.url);
+const pkg = require("./package.json") as { version?: string };
+
 // https://vitejs.dev/config/
+// Build identity — ITI - DD/MM/YYYY - Version (e.g. ITI18082026v1.0.0).
 const BUILD_TIME = new Date().toISOString();
-const BUILD_ID = BUILD_TIME.replace(/[-:T.Z]/g, "").slice(0, 12);
+const APP_VERSION = pkg.version && pkg.version !== "0.0.0" ? pkg.version : "1.0.0";
+const two = (n: number) => String(n).padStart(2, "0");
+const BUILT = new Date(BUILD_TIME);
+const BUILD_ID = `ITI${two(BUILT.getUTCDate())}${two(BUILT.getUTCMonth() + 1)}${BUILT.getUTCFullYear()}v${APP_VERSION}`;
 
 export default defineConfig(({ mode }) => ({
   define: {
     __APP_BUILD_ID__: JSON.stringify(BUILD_ID),
     __APP_BUILD_TIME__: JSON.stringify(BUILD_TIME),
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
   server: {
     host: "::",

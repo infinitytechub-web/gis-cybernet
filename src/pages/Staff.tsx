@@ -20,6 +20,8 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
+import { validateGhanaPhone } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
@@ -269,7 +271,17 @@ export default function Staff() {
       // Derive primary phone from contacts list (fallback to legacy field)
       const validContacts = contacts.filter((c) => c.value.trim());
       const primary = validContacts.find((c) => c.is_primary) ?? validContacts[0];
-      const primaryPhone = primary?.value.trim() || phone || null;
+      const primaryPhoneRaw = primary?.value.trim() || phone || "";
+
+      // Ghana telephone validation — every stored staff contact must be a
+      // valid MTN / Telecel / AirtelTigo 10-digit number.
+      for (const c of validContacts.concat(phone.trim() ? [{ contact_type: "mobile", value: phone, is_primary: false }] : [])) {
+        const res = validateGhanaPhone(c.value);
+        if (!res.valid) throw new Error(`Invalid phone "${c.value}" — ${res.error}`);
+      }
+      const primaryPhone = primaryPhoneRaw
+        ? validateGhanaPhone(primaryPhoneRaw).local || primaryPhoneRaw
+        : null;
 
       const payload: any = {
         staff_id: staffId.trim(),
@@ -717,9 +729,9 @@ export default function Staff() {
                 </Select>
               </div>
               <div>
-                <Label>Primary Phone</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0XX XXX XXXX" />
-                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added.</p>
+                <Label htmlFor="staff-phone">Primary Phone</Label>
+                <GhanaPhoneInput id="staff-phone" value={phone} onChange={setPhone} compact />
+                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added. MTN, Telecel or AirtelTigo, 10 digits.</p>
               </div>
             </div>
             <div>
