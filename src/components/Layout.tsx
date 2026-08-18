@@ -6,6 +6,7 @@ import { HeaderProfileDropdown } from "@/components/HeaderProfileDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
+import { buildId, buildTooltip } from "@/lib/build-version";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
