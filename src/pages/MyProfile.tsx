@@ -14,6 +14,8 @@ import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
+import { validateGhanaPhoneList } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { DateInput } from "@/components/ui/date-input";
 
