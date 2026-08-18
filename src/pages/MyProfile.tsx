@@ -128,6 +128,10 @@ export default function MyProfile() {
         }, profile.id);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
+      const phoneCheck = validateGhanaPhoneList(form.phone ?? "");
+      if (!phoneCheck.valid) {
+        throw new Error(`Invalid phone number — ${phoneCheck.errors[0]}`);
+      }
       // Build a diff of only changed fields
       const requested: Record<string, string | null> = {};
       const previous: Record<string, string | null> = {};
