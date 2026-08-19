@@ -440,6 +440,8 @@ export function FleetDashboardTab({ canManage }: Props) {
 
       <SubmittedPatrolLogsCard days={Number(days)} />
 
+      <VehicleUsageCard days={Number(days)} />
+
       <PatrolGpsActivityCard days={Number(days)} />
 
       <PatrolPlanCommitments />
@@ -455,6 +457,15 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
   const personnel = submitted.reduce((s, l) => s + (l.personnel_count ?? 0), 0);
   const incidents = submitted.reduce((s, l) => s + (l.incidents_count ?? 0), 0);
   const withVehicle = submitted.filter((l) => l.vehicle_id).length;
+  const loggedKm = submitted.reduce(
+    (sum, l) =>
+      sum +
+      (l.odometer_start_km != null && l.odometer_end_km != null
+        ? Math.max(Number(l.odometer_end_km) - Number(l.odometer_start_km), 0)
+        : 0),
+    0,
+  );
+  const loggedLitres = submitted.reduce((sum, l) => sum + Number(l.fuel_used_litres ?? 0), 0);
 
   const statusTone = (status: string) =>
     ({
@@ -473,7 +484,8 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
         <CardDescription>
           {submitted.length} submitted patrol{submitted.length === 1 ? "" : "s"} in the last{" "}
           {Math.max(days, 30)} days · {personnel} officers deployed · {incidents} incident
-          {incidents === 1 ? "" : "s"} · {withVehicle} vehicle-borne, {submitted.length - withVehicle} on foot.
+          {incidents === 1 ? "" : "s"} · {withVehicle} vehicle-borne, {submitted.length - withVehicle} on foot ·{" "}
+          {loggedKm.toFixed(1)} km on the odometer, {loggedLitres.toFixed(1)} L fuel used.
           Recorded in{" "}
           <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>.
         </CardDescription>
@@ -486,7 +498,7 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
         )}
         {rows.length > 0 && (
           <div className="overflow-x-auto">
-            <Table className="min-w-[820px]">
+            <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Reference</TableHead>
@@ -494,6 +506,9 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                   <TableHead>District</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead className="text-right">Strength</TableHead>
+                  <TableHead className="text-right">Odometer (km)</TableHead>
+                  <TableHead className="text-right">Distance</TableHead>
+                  <TableHead className="text-right">Fuel used</TableHead>
                   <TableHead className="text-right">Incidents</TableHead>
                   <TableHead>Details</TableHead>
                   <TableHead>Status</TableHead>
@@ -520,6 +535,19 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                       {(l.patrol_type ?? "—").replace(/_/g, " ")}
                     </TableCell>
                     <TableCell className="text-right">{l.personnel_count ?? 0}</TableCell>
+                    <TableCell className="whitespace-nowrap text-right text-xs text-muted-foreground">
+                      {l.odometer_start_km != null || l.odometer_end_km != null
+                        ? `${l.odometer_start_km != null ? Number(l.odometer_start_km).toLocaleString() : "—"} → ${l.odometer_end_km != null ? Number(l.odometer_end_km).toLocaleString() : "—"}`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {l.odometer_start_km != null && l.odometer_end_km != null
+                        ? `${Math.max(Number(l.odometer_end_km) - Number(l.odometer_start_km), 0).toFixed(1)} km`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {l.fuel_used_litres != null ? `${Number(l.fuel_used_litres).toFixed(1)} L` : "—"}
+                    </TableCell>
                     <TableCell
                       className={`text-right ${(l.incidents_count ?? 0) > 0 ? "font-medium text-destructive" : ""}`}
                     >
@@ -540,6 +568,126 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
               </TableBody>
             </Table>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface VehicleUsageRow {
+  vehicle_id: string;
+  registration_number: string;
+  call_sign: string | null;
+  odometer_km: number;
+  patrol_count: number;
+  patrol_distance_km: number;
+  patrol_fuel_litres: number;
+  refuel_litres: number;
+  refuel_cost_ghs: number;
+  last_odometer_reading: number | null;
+  last_reading_at: string | null;
+  km_per_litre: number | null;
+}
+
+/** Odometer log and fuel tracking per vehicle, sourced from patrol logs and refuel entries. */
+function VehicleUsageCard({ days }: { days: number }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["fleet", "vehicle-usage", days],
+    queryFn: async (): Promise<VehicleUsageRow[]> => {
+      const { data, error } = await supabase.rpc("fleet_vehicle_usage", { _days: days });
+      if (error) throw error;
+      return (data ?? []) as unknown as VehicleUsageRow[];
+    },
+    refetchInterval: 60_000,
+  });
+
+  const rows = data ?? [];
+  const active = rows.filter((r) => r.patrol_count > 0 || r.refuel_litres > 0);
+  const totalKm = rows.reduce((s, r) => s + Number(r.patrol_distance_km ?? 0), 0);
+  const totalLitres = rows.reduce((s, r) => s + Number(r.refuel_litres ?? 0), 0);
+  const totalCost = rows.reduce((s, r) => s + Number(r.refuel_cost_ghs ?? 0), 0);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Gauge className="h-4 w-4 text-primary" aria-hidden="true" />
+          Vehicle odometer log &amp; fuel tracking
+        </CardTitle>
+        <CardDescription>
+          Patrol mileage and refuelling over the last {days} days · {totalKm.toFixed(1)} km patrolled ·{" "}
+          {totalLitres.toFixed(1)} L refuelled · GHS {totalCost.toFixed(2)} fuel spend. Readings come from the
+          odometer fields on each{" "}
+          <Link to="/command-console?tab=patrols" className="underline">patrol log</Link> and from{" "}
+          <Link to="/fleet?tab=fuel" className="underline">fuel entries</Link>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && <p className="text-sm text-muted-foreground">Loading vehicle usage…</p>}
+        {isError && <p className="text-sm text-destructive">Vehicle usage could not be loaded.</p>}
+        {!isLoading && !isError && rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">No vehicles are visible for your unit.</p>
+        )}
+        {rows.length > 0 && (
+          <>
+            {active.length === 0 && (
+              <p className="mb-3 text-sm text-muted-foreground">
+                No odometer or fuel readings recorded in this period — capture them when logging a patrol.
+              </p>
+            )}
+            <div className="overflow-x-auto">
+              <Table className="min-w-[900px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Vehicle</TableHead>
+                    <TableHead className="text-right">Current odometer</TableHead>
+                    <TableHead className="text-right">Patrols</TableHead>
+                    <TableHead className="text-right">Patrol distance</TableHead>
+                    <TableHead className="text-right">Fuel used on patrol</TableHead>
+                    <TableHead className="text-right">Refuelled</TableHead>
+                    <TableHead className="text-right">Fuel spend (GHS)</TableHead>
+                    <TableHead className="text-right">Economy</TableHead>
+                    <TableHead>Last reading</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((r) => (
+                    <TableRow key={r.vehicle_id}>
+                      <TableCell className="whitespace-nowrap">
+                        <span className="font-mono text-xs">{r.registration_number}</span>
+                        {r.call_sign && (
+                          <span className="ml-2 text-xs text-muted-foreground">{r.call_sign}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">{Number(r.odometer_km ?? 0).toLocaleString()} km</TableCell>
+                      <TableCell className="text-right">{r.patrol_count ?? 0}</TableCell>
+                      <TableCell className="text-right">{Number(r.patrol_distance_km ?? 0).toFixed(1)} km</TableCell>
+                      <TableCell className="text-right">{Number(r.patrol_fuel_litres ?? 0).toFixed(1)} L</TableCell>
+                      <TableCell className="text-right">{Number(r.refuel_litres ?? 0).toFixed(1)} L</TableCell>
+                      <TableCell className="text-right">{Number(r.refuel_cost_ghs ?? 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        {r.km_per_litre != null ? (
+                          <Badge variant="outline" className="border-primary/40 text-primary">
+                            {Number(r.km_per_litre).toFixed(2)} km/L
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                        {r.last_odometer_reading != null
+                          ? `${Number(r.last_odometer_reading).toLocaleString()} km`
+                          : "—"}
+                        {r.last_reading_at && (
+                          <span className="ml-2">{formatDate(r.last_reading_at)}</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
