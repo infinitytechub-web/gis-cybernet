@@ -1,3 +1,4 @@
 - [Admin Console & Delegation](mem://features/admin-console-and-delegation) — /admin hub, command_tier_grants delegation, Standard Bail forms, map tile failover
 - [Ghana Phone Validation](mem://features/ghana-phone-validation) — MTN/Telecel/AirtelTigo 10-digit enforcement + forged-number rejection on client, edge functions and DB triggers
 - [Status Workflows](mem://features/status-workflows) — Unified Operations/Detention status transitions + immutable status_change_audit via set_record_status RPC
+- [Hierarchical Command RBAC](mem://features/hierarchical-rbac) — org_units tree (Regional→Unit), scope = own node + below, enforced in RLS, edge functions and UI
