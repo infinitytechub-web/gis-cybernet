@@ -145,6 +145,26 @@ export function FleetDashboardTab({ canManage }: Props) {
     },
   });
 
+  // Assigned-unit lookup so every registered vehicle can be traced to its unit.
+  const unitsQuery = useQuery({
+    queryKey: ["fleet", "dashboard", "vehicle-units"],
+    enabled: canManage,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase
+        .from("fleet_vehicles")
+        .select("id, org_unit_id, org_units:org_unit_id (name, code)")
+        .limit(1000);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const row of (data ?? []) as any[]) {
+        const unit = row.org_units;
+        if (unit?.name) map[row.id] = unit.code ? `${unit.name} (${unit.code})` : unit.name;
+      }
+      return map;
+    },
+  });
+
+
   if (!canManage) {
     return (
       <Card>
