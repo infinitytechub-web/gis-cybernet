@@ -3235,7 +3235,9 @@ export type Database = {
       fleet_positions: {
         Row: {
           altitude_m: number | null
+          boot_open: boolean | null
           created_at: string
+          door_open: boolean | null
           fuel_level_pct: number | null
           heading: number | null
           id: string
@@ -3251,7 +3253,9 @@ export type Database = {
         }
         Insert: {
           altitude_m?: number | null
+          boot_open?: boolean | null
           created_at?: string
+          door_open?: boolean | null
           fuel_level_pct?: number | null
           heading?: number | null
           id?: string
@@ -3267,7 +3271,9 @@ export type Database = {
         }
         Update: {
           altitude_m?: number | null
+          boot_open?: boolean | null
           created_at?: string
+          door_open?: boolean | null
           fuel_level_pct?: number | null
           heading?: number | null
           id?: string
@@ -3302,6 +3308,8 @@ export type Database = {
           fuel_capacity_litres: number | null
           fuel_drop_threshold_pct: number
           id: string
+          last_boot_open: boolean | null
+          last_door_open: boolean | null
           last_fuel_level_pct: number | null
           last_heading: number | null
           last_ignition: boolean | null
@@ -3332,6 +3340,8 @@ export type Database = {
           fuel_capacity_litres?: number | null
           fuel_drop_threshold_pct?: number
           id?: string
+          last_boot_open?: boolean | null
+          last_door_open?: boolean | null
           last_fuel_level_pct?: number | null
           last_heading?: number | null
           last_ignition?: boolean | null
@@ -3362,6 +3372,8 @@ export type Database = {
           fuel_capacity_litres?: number | null
           fuel_drop_threshold_pct?: number
           id?: string
+          last_boot_open?: boolean | null
+          last_door_open?: boolean | null
           last_fuel_level_pct?: number | null
           last_heading?: number | null
           last_ignition?: boolean | null
@@ -10517,6 +10529,10 @@ export type Database = {
         Returns: boolean
       }
       can_use_recycle_bin: { Args: { _user_id: string }; Returns: boolean }
+      can_view_org_unit: {
+        Args: { _org_unit_id: string; _user_id: string }
+        Returns: boolean
+      }
       claim_due_backup_schedules: {
         Args: never
         Returns: {
@@ -11246,6 +11262,7 @@ export type Database = {
         }[]
       }
       unblock_ip: { Args: { _block_id: string }; Returns: undefined }
+      unit_dashboard: { Args: { _org_unit_id: string }; Returns: Json }
       user_department_ids: {
         Args: { _user_id: string }
         Returns: {
@@ -11359,6 +11376,8 @@ export type Database = {
         | "device_offline"
         | "ignition_on"
         | "harsh_driving"
+        | "door_open"
+        | "boot_open"
       fleet_fuel_event: "reading" | "refuel" | "drain"
       fleet_geofence_kind: "circle" | "polygon"
       fleet_geofence_trigger: "enter" | "exit" | "both"
@@ -11591,6 +11610,8 @@ export const Constants = {
         "device_offline",
         "ignition_on",
         "harsh_driving",
+        "door_open",
+        "boot_open",
       ],
       fleet_fuel_event: ["reading", "refuel", "drain"],
       fleet_geofence_kind: ["circle", "polygon"],
