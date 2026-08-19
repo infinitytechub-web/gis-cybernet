@@ -254,9 +254,12 @@ export default function CommandConsole() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="live">
+      <Tabs defaultValue="dashboard">
         <div className="overflow-x-auto">
           <TabsList>
+            <TabsTrigger value="dashboard">
+              <LayoutDashboard className="mr-1 h-4 w-4" aria-hidden="true" />Dashboard
+            </TabsTrigger>
             <TabsTrigger value="live">
               <Radio className="mr-1 h-4 w-4" aria-hidden="true" />Live alerts
               {open.length > 0 && <Badge variant="outline" className="ml-2">{open.length}</Badge>}
@@ -267,11 +270,27 @@ export default function CommandConsole() {
             <TabsTrigger value="inbox">
               <Inbox className="mr-1 h-4 w-4" aria-hidden="true" />Inbox
             </TabsTrigger>
+            <TabsTrigger value="cyber">
+              <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />Cyber
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Gauge className="mr-1 h-4 w-4" aria-hidden="true" />Status dashboards
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* ── Command dashboard (attendance, vehicles, fuel, alerts) ────── */}
+        <TabsContent value="dashboard" className="mt-4">
+          <CommandDashboardTab
+            branchName={branch === "all" ? undefined : orgUnitPath(units, branch) || undefined}
+          />
+        </TabsContent>
+
+        {/* ── Cyber incidents ──────────────────────────────────────────── */}
+        <TabsContent value="cyber" className="mt-4">
+          <CyberIncidentsTab units={units} tree={tree} canManage={isAdminOrSupervisor} />
+        </TabsContent>
+
 
         {/* ── Live alerts ───────────────────────────────────────────────── */}
         <TabsContent value="live" className="mt-4">
