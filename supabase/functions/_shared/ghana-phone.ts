@@ -34,6 +34,25 @@ export function isValidGhanaPhone(input: string | null | undefined): boolean {
   return ghanaNetwork(input) !== null;
 }
 
+const FABRICATED_SUBSCRIBERS = new Set([
+  "0000000",
+  "1234567",
+  "7654321",
+  "1111111",
+  "0123456",
+]);
+
+/** Detects forged-looking numbers (mirrors gh_phone_is_suspicious in SQL). */
+export function isSuspiciousGhanaPhone(input: string | null | undefined): boolean {
+  const local = normalizeGhanaPhone(input);
+  if (!local) return false;
+  const rest = local.slice(3);
+  if (/^(\d)\1{6}$/.test(rest)) return true;
+  if (FABRICATED_SUBSCRIBERS.has(rest)) return true;
+  if (/^(\d\d)\1{2}\d$/.test(rest)) return true;
+  return false;
+}
+
 /**
  * Validate + canonicalise a comma-separated list.
  * Returns { value } on success or { error } describing the offending entry.
@@ -53,6 +72,13 @@ export function normalizeGhanaPhoneList(
         value: null,
         error:
           `Invalid Ghana telephone number "${part}" — expected 10 digits on MTN, Telecel or AirtelTigo`,
+      };
+    }
+    if (isSuspiciousGhanaPhone(local)) {
+      return {
+        value: null,
+        error:
+          `Telephone number "${part}" looks fabricated — please provide a genuine number`,
       };
     }
     out.push(local);

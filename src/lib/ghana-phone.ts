@@ -71,13 +71,26 @@ export function networkForPrefix(prefix: string): GhanaNetwork | null {
   return null;
 }
 
+/** Placeholder / fabricated subscriber-digit patterns (mirrors gh_phone_is_suspicious in SQL). */
+const FABRICATED_SUBSCRIBERS = new Set([
+  "0000000",
+  "1234567",
+  "7654321",
+  "1111111",
+  "0123456",
+]);
+
 function looksFabricated(local: string): boolean {
   const rest = local.slice(3); // 7 subscriber digits
   if (/^(\d)\1{6}$/.test(rest)) return true; // 0241111111
-  if (rest === "0000000") return true;
-  if (rest === "1234567" || rest === "7654321") return true;
+  if (FABRICATED_SUBSCRIBERS.has(rest)) return true;
   if (/^(\d\d)\1{2}\d$/.test(rest)) return true; // 1212123
   return false;
+}
+
+/** True when the number parses as Ghanaian but the digit pattern looks forged. */
+export function isSuspiciousGhanaPhone(input: string): boolean {
+  return validateGhanaPhone(input).suspicious;
 }
 
 /** Full validation + network detection for a single number. */
@@ -141,9 +154,35 @@ export function validateGhanaPhoneList(input: string): {
     .filter(Boolean);
   const results = parts.map(validateGhanaPhone);
   const errors = results
-    .map((r, i) => (r.valid ? null : `${parts[i]}: ${r.error ?? "invalid number"}`))
+    .map((r, i) =>
+      r.valid && !r.suspicious ? null : `${parts[i]}: ${r.error ?? "invalid number"}`,
+    )
     .filter((e): e is string => e !== null);
   return { valid: errors.length === 0, results, errors };
+}
+
+/**
+ * Throws a user-facing Error when any number in a (possibly comma-separated)
+ * field is not a genuine Ghana mobile number. Empty input is allowed unless
+ * `required` is set. Returns the canonical value to persist ("" when blank).
+ */
+export function assertGhanaPhoneList(
+  input: string | null | undefined,
+  label = "Phone",
+  required = false,
+): string {
+  const raw = (input ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join(", ");
+  if (!raw) {
+    if (required) throw new Error(`${label} is required`);
+    return "";
+  }
+  const { valid, errors } = validateGhanaPhoneList(raw);
+  if (!valid) throw new Error(`${label} — ${errors.join("; ")}`);
+  return normalizeGhanaPhoneList(raw);
 }
 
 /** Normalise a list for persistence — returns the canonical local forms. */
@@ -156,5 +195,5 @@ export function normalizeGhanaPhoneList(input: string): string {
     .join(", ");
 }
 
-export const GHANA_PHONE_PLACEHOLDER = "024 123 4567";
+export const GHANA_PHONE_PLACEHOLDER = "0XX XXX XXXX";
 export const GHANA_PHONE_HINT = "10 digits — MTN, Telecel or AirtelTigo";

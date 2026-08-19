@@ -37,6 +37,8 @@ interface ListProps {
   onChange: (next: string) => void;
   placeholder?: string;
   className?: string;
+  /** Enforce Ghana mobile validation (MTN / Telecel / AirtelTigo). */
+  ghana?: boolean;
 }
 
 type Props = StructuredProps | ListProps;
@@ -118,7 +120,7 @@ function StructuredContacts({ value, onChange, className }: StructuredProps) {
   );
 }
 
-function ListContacts({ value, onChange, placeholder, className }: ListProps) {
+function ListContacts({ value, onChange, placeholder, className, ghana }: ListProps) {
   // Keep empty entries so users can add multiple slots and fill them in any order.
   // Only trim/collapse on persistence (handled by callers when storing).
   const items = React.useMemo(() => {
@@ -147,12 +149,18 @@ function ListContacts({ value, onChange, placeholder, className }: ListProps) {
     <div className={cn("space-y-2", className)}>
       {items.map((v, idx) => (
         <div key={idx} className="flex gap-2">
-          <Input
-            className="h-9"
-            placeholder={placeholder ?? "0XX XXX XXXX"}
-            value={v}
-            onChange={(e) => update(idx, e.target.value)}
-          />
+          {ghana ? (
+            <div className="flex-1">
+              <GhanaPhoneInput value={v} onChange={(next) => update(idx, next)} compact />
+            </div>
+          ) : (
+            <Input
+              className="h-9"
+              placeholder={placeholder ?? "0XX XXX XXXX"}
+              value={v}
+              onChange={(e) => update(idx, e.target.value)}
+            />
+          )}
           {items.length > 1 && (
             <Button
               type="button"

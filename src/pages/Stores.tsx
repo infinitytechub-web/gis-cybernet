@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { assertGhanaPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { softDelete } from "@/lib/recycle-bin";
@@ -657,8 +658,9 @@ function SuppliersTab({ canManage }: { canManage: boolean }) {
   const save = useMutation({
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error("Name required");
-      if (editing) { const { error } = await supabase.from("inventory_suppliers").update(form).eq("id", editing.id); if (error) throw error; }
-      else { const { error } = await supabase.from("inventory_suppliers").insert(form); if (error) throw error; }
+      const payload = { ...form, phone: assertGhanaPhoneList(form.phone, "Supplier phone") };
+      if (editing) { const { error } = await supabase.from("inventory_suppliers").update(payload).eq("id", editing.id); if (error) throw error; }
+      else { const { error } = await supabase.from("inventory_suppliers").insert(payload); if (error) throw error; }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["inventory_suppliers"] }); setOpen(false); toast.success(editing ? "Updated" : "Created"); },
     onError: (e: any) => toast.error(e.message),
@@ -700,7 +702,7 @@ function SuppliersTab({ canManage }: { canManage: boolean }) {
           <div className="space-y-3">
             <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
             <div><Label>Contact Person</Label><Input value={form.contact_person} onChange={e => setForm(p => ({ ...p, contact_person: e.target.value }))} /></div>
-            <div><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
+            <div><Label>Phone(s)</Label><MultiContactInput mode="list" ghana value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
             <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
             <div><Label>Address</Label><Textarea rows={2} value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} /></div>
             <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">{save.isPending ? "Saving…" : editing ? "Update" : "Create"}</Button>
