@@ -120,6 +120,7 @@ const adminItems = [
   { title: "Staff Mapping Import", url: "/staff-mapping-import", icon: Building2, iconColor: "text-purple-700 dark:text-purple-300" },
   { title: "Audit Log Dashboard", url: "/audit-log", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
   { title: "RUM Analytics", url: "/rum-analytics", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400" },
+  { title: "Branding Settings", url: "/branding", icon: Palette, iconColor: "text-chart-1" },
   { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
 
