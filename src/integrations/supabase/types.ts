@@ -722,11 +722,15 @@ export type Database = {
           check_in_ip: unknown
           check_in_lat: number | null
           check_in_lng: number | null
+          check_in_photo_path: string | null
+          check_in_reason: string | null
           check_out: string | null
           check_out_address: string | null
           check_out_ip: unknown
           check_out_lat: number | null
           check_out_lng: number | null
+          check_out_photo_path: string | null
+          check_out_reason: string | null
           created_at: string
           date: string
           id: string
@@ -741,11 +745,15 @@ export type Database = {
           check_in_ip?: unknown
           check_in_lat?: number | null
           check_in_lng?: number | null
+          check_in_photo_path?: string | null
+          check_in_reason?: string | null
           check_out?: string | null
           check_out_address?: string | null
           check_out_ip?: unknown
           check_out_lat?: number | null
           check_out_lng?: number | null
+          check_out_photo_path?: string | null
+          check_out_reason?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -760,11 +768,15 @@ export type Database = {
           check_in_ip?: unknown
           check_in_lat?: number | null
           check_in_lng?: number | null
+          check_in_photo_path?: string | null
+          check_in_reason?: string | null
           check_out?: string | null
           check_out_address?: string | null
           check_out_ip?: unknown
           check_out_lat?: number | null
           check_out_lng?: number | null
+          check_out_photo_path?: string | null
+          check_out_reason?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -3491,6 +3503,128 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fleet_ingest_keys_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_maintenance_records: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          downtime_days: number | null
+          id: string
+          notes: string | null
+          odometer_km: number | null
+          parts_replaced: string | null
+          schedule_id: string | null
+          service_date: string
+          service_type: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+          workshop: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          downtime_days?: number | null
+          id?: string
+          notes?: string | null
+          odometer_km?: number | null
+          parts_replaced?: string | null
+          schedule_id?: string | null
+          service_date?: string
+          service_type: string
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+          workshop?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          downtime_days?: number | null
+          id?: string
+          notes?: string | null
+          odometer_km?: number | null
+          parts_replaced?: string | null
+          schedule_id?: string | null
+          service_date?: string
+          service_type?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+          workshop?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_maintenance_records_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_maintenance_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_maintenance_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_maintenance_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          interval_days: number | null
+          interval_km: number | null
+          is_active: boolean
+          last_service_date: string | null
+          last_service_odometer_km: number | null
+          notes: string | null
+          service_type: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interval_days?: number | null
+          interval_km?: number | null
+          is_active?: boolean
+          last_service_date?: string | null
+          last_service_odometer_km?: number | null
+          notes?: string | null
+          service_type: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interval_days?: number | null
+          interval_km?: number | null
+          is_active?: boolean
+          last_service_date?: string | null
+          last_service_odometer_km?: number | null
+          notes?: string | null
+          service_type?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_maintenance_schedules_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "fleet_vehicles"
@@ -7383,6 +7517,50 @@ export type Database = {
         }
         Relationships: []
       }
+      procurement_budgets: {
+        Row: {
+          budget_amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          fiscal_year: number
+          id: string
+          notes: string | null
+          org_unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          budget_amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fiscal_year: number
+          id?: string
+          notes?: string | null
+          org_unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          budget_amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          fiscal_year?: number
+          id?: string
+          notes?: string | null
+          org_unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_budgets_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procurement_contracts: {
         Row: {
           contract_number: string
@@ -8392,6 +8570,7 @@ export type Database = {
           id: string
           needed_by: string | null
           notes: string | null
+          org_unit_id: string | null
           pr_number: string
           priority: string
           receive_notes: string | null
@@ -8414,6 +8593,7 @@ export type Database = {
           id?: string
           needed_by?: string | null
           notes?: string | null
+          org_unit_id?: string | null
           pr_number: string
           priority?: string
           receive_notes?: string | null
@@ -8436,6 +8616,7 @@ export type Database = {
           id?: string
           needed_by?: string | null
           notes?: string | null
+          org_unit_id?: string | null
           pr_number?: string
           priority?: string
           receive_notes?: string | null
@@ -8448,7 +8629,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "purchase_requisitions_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ranks: {
         Row: {
@@ -11620,6 +11809,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      fleet_maintenance_status: {
+        Args: never
+        Returns: {
+          call_sign: string
+          cost_12m: number
+          days_remaining: number
+          downtime_12m: number
+          due_state: string
+          interval_days: number
+          interval_km: number
+          km_remaining: number
+          last_service_date: string
+          last_service_odometer_km: number
+          next_due_date: string
+          next_due_km: number
+          odometer_km: number
+          org_unit_name: string
+          registration_number: string
+          service_type: string
+          services_12m: number
+          vehicle_id: string
+        }[]
+      }
       fleet_mark_messages_read: {
         Args: { _direction?: string; _vehicle_id: string }
         Returns: number
@@ -12002,6 +12214,23 @@ export type Database = {
       }
       patrol_gps_activity: { Args: { _days?: number }; Returns: Json }
       procurement_actor_name: { Args: { _uid: string }; Returns: string }
+      procurement_budget_status: {
+        Args: { _fiscal_year?: number }
+        Returns: {
+          budget_amount: number
+          committed: number
+          currency: string
+          fiscal_year: number
+          org_unit_code: string
+          org_unit_id: string
+          org_unit_name: string
+          over_budget: boolean
+          pending: number
+          remaining: number
+          request_count: number
+          utilisation_pct: number
+        }[]
+      }
       procurement_inventory: { Args: { _days?: number }; Returns: Json }
       procurement_request_decide: {
         Args: { _approve: boolean; _note?: string; _requisition_id: string }
@@ -12112,10 +12341,21 @@ export type Database = {
         Args: { _reason?: string; _session_id: string }
         Returns: boolean
       }
-      roster_clock_action: {
-        Args: { _action: string; _notes?: string; _profile_id: string }
-        Returns: Json
-      }
+      roster_clock_action:
+        | {
+            Args: { _action: string; _notes?: string; _profile_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _action: string
+              _notes?: string
+              _photo_path?: string
+              _profile_id: string
+              _reason?: string
+            }
+            Returns: Json
+          }
       run_security_hygiene_scan: { Args: never; Returns: Json }
       search_approval_audit: {
         Args: {
