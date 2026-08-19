@@ -27,6 +27,8 @@ import {
   PATROL_GPS_MATCH_LABELS,
   type PatrolGpsMatch,
 } from "@/hooks/usePatrolGpsActivity";
+import { useMaintenanceStatus, DUE_LABEL, DUE_TONE } from "@/hooks/useFleetMaintenance";
+import { Wrench } from "lucide-react";
 import { ALERT_TYPE_LABELS, VEHICLE_STATUS_LABELS, type AlertType, type VehicleStatus } from "@/lib/fleet";
 
 interface DashboardVehicle {
@@ -442,6 +444,8 @@ export function FleetDashboardTab({ canManage }: Props) {
 
       <VehicleUsageCard days={Number(days)} />
 
+      <MaintenanceDueCard />
+
       <PatrolGpsActivityCard days={Number(days)} />
 
       <PatrolPlanCommitments />
@@ -452,6 +456,23 @@ export function FleetDashboardTab({ canManage }: Props) {
 /** Submitted patrol log entries — district, strength and incidents, vehicle or foot. */
 function SubmittedPatrolLogsCard({ days }: { days: number }) {
   const { data: logs = [], isLoading, isError } = usePatrolLogs(Math.max(days, 30));
+  // Vehicle lookup so a vehicle patrol shows its plate and a foot patrol says so.
+  const { data: vehicleNames = {} } = useQuery({
+    queryKey: ["fleet", "dashboard", "vehicle-names"],
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase
+        .from("fleet_vehicles")
+        .select("id, registration_number, call_sign")
+        .limit(1000);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const v of (data ?? []) as any[]) {
+        map[v.id] = v.call_sign ? `${v.registration_number} · ${v.call_sign}` : v.registration_number;
+      }
+      return map;
+    },
+    staleTime: 300_000,
+  });
   const submitted = logs.filter((l) => (l.status ?? "").toLowerCase() !== "draft");
   const rows = submitted.slice(0, 15);
   const personnel = submitted.reduce((s, l) => s + (l.personnel_count ?? 0), 0);
@@ -498,12 +519,13 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
         )}
         {rows.length > 0 && (
           <div className="overflow-x-auto">
-            <Table className="min-w-[980px]">
+            <Table className="min-w-[1120px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Reference</TableHead>
                   <TableHead>Date / time</TableHead>
                   <TableHead>District</TableHead>
+                  <TableHead>Vehicle</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead className="text-right">Strength</TableHead>
                   <TableHead className="text-right">Odometer (km)</TableHead>
@@ -525,10 +547,14 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                         {l.end_time ? `–${l.end_time.slice(0, 5)}` : ""}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      {l.district_name ?? "—"}
-                      {!l.vehicle_id && (
-                        <span className="ml-2 text-xs text-muted-foreground">foot patrol</span>
+                    <TableCell>{l.district_name ?? "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {l.vehicle_id ? (
+                        <Badge variant="outline" className="border-primary/40 text-primary">
+                          {vehicleNames[l.vehicle_id] ?? "Vehicle patrol"}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">Foot patrol</Badge>
                       )}
                     </TableCell>
                     <TableCell className="capitalize">
@@ -849,3 +875,91 @@ function PatrolPlanCommitments() {
 }
 
 export default FleetDashboardTab;
+
+/** Maintenance due / overdue picture, sourced from the fleet maintenance module. */
+function MaintenanceDueCard() {
+  const { data = [], isLoading, isError } = useMaintenanceStatus();
+  const scheduled = data.filter((r) => r.service_type);
+  const ranked: Record<string, number> = { overdue: 0, due_soon: 1, ok: 2, unscheduled: 3 };
+  const rows = [...scheduled]
+    .sort((a, b) => (ranked[a.due_state] ?? 9) - (ranked[b.due_state] ?? 9))
+    .slice(0, 12);
+  const overdue = scheduled.filter((r) => r.due_state === "overdue").length;
+  const dueSoon = scheduled.filter((r) => r.due_state === "due_soon").length;
+  const unscheduled = data.filter((r) => !r.service_type).length;
+  const spend = data.reduce((s, r) => s + Number(r.cost_12m ?? 0), 0);
+  const downtime = data.reduce((s, r) => s + Number(r.downtime_12m ?? 0), 0);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
+          Maintenance &amp; servicing
+        </CardTitle>
+        <CardDescription>
+          {overdue} overdue · {dueSoon} due soon · {unscheduled} vehicle
+          {unscheduled === 1 ? "" : "s"} without a schedule · GHS {spend.toFixed(2)} spend and{" "}
+          {downtime.toFixed(1)} downtime days in the last 12 months. Managed on the{" "}
+          <Link to="/fleet?tab=maintenance" className="underline">Maintenance tab</Link>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && <p className="text-sm text-muted-foreground">Loading maintenance status…</p>}
+        {isError && <p className="text-sm text-destructive">Maintenance status could not be loaded.</p>}
+        {!isLoading && !isError && rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No service intervals set yet — add a schedule on the Maintenance tab.
+          </p>
+        )}
+        {rows.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[860px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Unit</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead className="text-right">Odometer</TableHead>
+                  <TableHead>Last service</TableHead>
+                  <TableHead>Next due</TableHead>
+                  <TableHead>State</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r, i) => (
+                  <TableRow key={`${r.vehicle_id}-${r.service_type}-${i}`}>
+                    <TableCell className="font-medium">
+                      {r.registration_number}
+                      {r.call_sign && (
+                        <span className="ml-2 text-xs text-muted-foreground">{r.call_sign}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs">{r.org_unit_name ?? "Unassigned"}</TableCell>
+                    <TableCell>{r.service_type}</TableCell>
+                    <TableCell className="text-right">
+                      {r.odometer_km != null ? `${Number(r.odometer_km).toLocaleString()} km` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {r.last_service_date ? formatDate(r.last_service_date) : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {r.next_due_km != null && <div>{Number(r.next_due_km).toLocaleString()} km</div>}
+                      {r.next_due_date && <div>{formatDate(r.next_due_date)}</div>}
+                      {r.next_due_km == null && !r.next_due_date && "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={DUE_TONE[r.due_state] ?? ""}>
+                        {DUE_LABEL[r.due_state] ?? r.due_state}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

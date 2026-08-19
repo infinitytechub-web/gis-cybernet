@@ -48,6 +48,21 @@ export interface ProcurementItem {
   inventory_item_id: string | null;
 }
 
+export interface BudgetStatus {
+  org_unit_id: string;
+  org_unit_name: string;
+  org_unit_code: string | null;
+  fiscal_year: number;
+  budget_amount: number;
+  currency: string;
+  committed: number;
+  pending: number;
+  remaining: number;
+  utilisation_pct: number | null;
+  request_count: number;
+  over_budget: boolean;
+}
+
 export interface ProcurementRequest {
   id: string;
   pr_number: string;
@@ -60,6 +75,7 @@ export interface ProcurementRequest {
   notes: string | null;
   rejection_reason: string | null;
   receive_notes: string | null;
+  org_unit_id: string | null;
   requested_by: string;
   approved_by: string | null;
   approved_at: string | null;
@@ -96,7 +112,7 @@ export interface ProcurementPhoto {
 }
 
 const REQ_COLS =
-  "id, pr_number, title, description, priority, status, estimated_cost, needed_by, notes, rejection_reason, receive_notes, requested_by, approved_by, approved_at, received_by, received_at, submitted_at, created_at";
+  "id, pr_number, title, description, priority, status, estimated_cost, needed_by, notes, rejection_reason, receive_notes, org_unit_id, requested_by, approved_by, approved_at, received_by, received_at, submitted_at, created_at";
 
 export function isProcurementOpen(status: string) {
   return !["received", "rejected", "cancelled"].includes((status ?? "").toLowerCase());
@@ -212,12 +228,87 @@ export function validateProcurementPhoto(file: File): string | null {
   return null;
 }
 
+/** Budget vs committed/pending spend for every unit with a budget or activity. */
+export function useProcurementBudgets(fiscalYear?: number, enabled = true) {
+  return useQuery({
+    queryKey: ["procurement-budgets", fiscalYear ?? "current"],
+    enabled,
+    staleTime: 60_000,
+    queryFn: async (): Promise<BudgetStatus[]> => {
+      const { data, error } = await supabase.rpc("procurement_budget_status", {
+        _fiscal_year: fiscalYear ?? null,
+      } as any);
+      if (error) throw error;
+      return ((data ?? []) as any[]).map((r) => ({
+        ...r,
+        budget_amount: Number(r.budget_amount ?? 0),
+        committed: Number(r.committed ?? 0),
+        pending: Number(r.pending ?? 0),
+        remaining: Number(r.remaining ?? 0),
+        utilisation_pct: r.utilisation_pct === null ? null : Number(r.utilisation_pct),
+        request_count: Number(r.request_count ?? 0),
+      })) as BudgetStatus[];
+    },
+  });
+}
+
+/** Active org units, for tagging a request to the unit whose budget it draws on. */
+export function useProcurementUnitOptions(enabled = true) {
+  return useQuery({
+    queryKey: ["procurement-unit-options"],
+    enabled,
+    staleTime: 300_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_units")
+        .select("id, name, code")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; code: string | null }[];
+    },
+  });
+}
+
+/** Upsert a unit's budget for a fiscal year (procurement tier only, per RLS). */
+export function useSaveProcurementBudget() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      org_unit_id: string;
+      fiscal_year: number;
+      budget_amount: number;
+      notes?: string;
+    }) => {
+      const { error } = await supabase
+        .from("procurement_budgets")
+        .upsert(
+          {
+            org_unit_id: input.org_unit_id,
+            fiscal_year: input.fiscal_year,
+            budget_amount: input.budget_amount,
+            notes: input.notes || null,
+            created_by: user?.id ?? null,
+          },
+          { onConflict: "org_unit_id,fiscal_year" },
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["procurement-budgets"] });
+    },
+  });
+}
+
 export interface NewRequestInput {
   title: string;
   description?: string;
   priority: string;
   needed_by?: string | null;
   notes?: string;
+  /** Unit whose budget the request draws on. */
+  org_unit_id?: string | null;
   items: {
     item_name: string;
     quantity: number;
@@ -248,6 +339,7 @@ export function useCreateProcurementRequest() {
           priority: input.priority,
           needed_by: input.needed_by || null,
           notes: input.notes || null,
+          org_unit_id: input.org_unit_id || null,
           estimated_cost: estimated,
           requested_by: user.id,
           status: "draft",

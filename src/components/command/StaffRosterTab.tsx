@@ -27,9 +27,11 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog, CalendarCheck,
-  Hourglass, LogIn, LogOut, CheckCircle2, AlertTriangle,
+  Hourglass, LogIn, LogOut, CheckCircle2, AlertTriangle, Camera,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,7 +41,7 @@ import {
   useStaffRoster, useGrantRole, useRevokeRole, useKeyAppointments, formatService,
   ROSTER_ASSIGNABLE_ROLES, KEY_APPOINTMENTS, type RosterMember,
 } from "@/hooks/useStaffRoster";
-import { useRosterClock } from "@/hooks/useRosterClock";
+import { useRosterClock, validateClockPhoto } from "@/hooks/useRosterClock";
 
 const STATUS_CLASS: Record<string, string> = {
   active: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
@@ -78,20 +80,39 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
   const grant = useGrantRole();
   const revoke = useRevokeRole();
   const clock = useRosterClock();
-  const [clocking, setClocking] = useState<string | null>(null);
+  const [clockTarget, setClockTarget] = useState<{ member: RosterMember; action: "check_in" | "check_out" } | null>(null);
+  const [clockReason, setClockReason] = useState("");
+  const [clockPhoto, setClockPhoto] = useState<File | null>(null);
 
   /** Who this signed-in officer may clock: themselves, or anyone when command tier. */
   const canClock = (r: RosterMember) =>
     Boolean(canManageRoles || (r.user_id && user?.id && r.user_id === user.id));
 
-  async function runClock(r: RosterMember, action: "check_in" | "check_out") {
-    setClocking(r.id + action);
+  function openClock(r: RosterMember, action: "check_in" | "check_out") {
+    setClockReason("");
+    setClockPhoto(null);
+    setClockTarget({ member: r, action });
+  }
+
+  async function submitClock() {
+    if (!clockTarget) return;
+    const { member, action } = clockTarget;
+    const onBehalf = !(member.user_id && user?.id && member.user_id === user.id);
+    if (onBehalf && !clockReason.trim()) {
+      toast.error("A reason is required when clocking on behalf of another officer");
+      return;
+    }
     try {
-      await clock.mutateAsync({ profileId: r.id, action, name: r.full_name });
+      await clock.mutateAsync({
+        profileId: member.id,
+        action,
+        reason: clockReason,
+        photo: clockPhoto,
+        name: member.full_name,
+      });
+      setClockTarget(null);
     } catch {
-      /* toast handled in the hook */
-    } finally {
-      setClocking(null);
+      /* toast raised by the hook */
     }
   }
 
@@ -510,20 +531,18 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={clocking === r.id + "check_out"}
-                            onClick={() => runClock(r, "check_out")}
+                            onClick={() => openClock(r, "check_out")}
                           >
                             <LogOut className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                            {clocking === r.id + "check_out" ? "Saving…" : "Clock out"}
+                            Clock out
                           </Button>
                         ) : (
                           <Button
                             size="sm"
-                            disabled={clocking === r.id + "check_in"}
-                            onClick={() => runClock(r, "check_in")}
+                            onClick={() => openClock(r, "check_in")}
                           >
                             <LogIn className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                            {clocking === r.id + "check_in" ? "Saving…" : "Clock in"}
+                            Clock in
                           </Button>
                         )}
                         {r.attendance_today === "late" && (
@@ -587,6 +606,73 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
           )}
         </CardContent>
       </Card>
+
+      {/* ── Clock in / out ───────────────────────────────────────────────── */}
+      <Dialog open={!!clockTarget} onOpenChange={(o) => !o && setClockTarget(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {clockTarget?.action === "check_out" ? "Clock out" : "Clock in"}
+              {clockTarget ? ` — ${clockTarget.member.full_name}` : ""}
+            </DialogTitle>
+            <DialogDescription>
+              Attendance is marked automatically against the officer's shift window. A reason is
+              required when clocking on another officer's behalf; a photo is optional proof of presence.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="clock-reason">Reason / remarks</Label>
+              <Textarea
+                id="clock-reason"
+                rows={3}
+                value={clockReason}
+                maxLength={500}
+                placeholder="e.g. Reported at post, radio check completed"
+                onChange={(e) => setClockReason(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="clock-photo">Photo (optional)</Label>
+              <Input
+                id="clock-photo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  if (f) {
+                    const invalid = validateClockPhoto(f);
+                    if (invalid) {
+                      toast.error(invalid);
+                      e.target.value = "";
+                      setClockPhoto(null);
+                      return;
+                    }
+                  }
+                  setClockPhoto(f);
+                }}
+              />
+              {clockPhoto && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Camera className="h-3 w-3" aria-hidden="true" />
+                  {clockPhoto.name}
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClockTarget(null)}>Cancel</Button>
+            <Button onClick={submitClock} disabled={clock.isPending}>
+              {clock.isPending
+                ? "Saving…"
+                : clockTarget?.action === "check_out"
+                  ? "Confirm clock out"
+                  : "Confirm clock in"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Designate role ───────────────────────────────────────────────── */}
       <Dialog open={!!designating} onOpenChange={(o) => !o && setDesignating(null)}>

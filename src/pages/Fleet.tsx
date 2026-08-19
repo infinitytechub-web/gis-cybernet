@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3 } from "lucide-react";
+import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3, Wrench } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
 import {
@@ -25,6 +25,7 @@ import { FleetOfflineStatus } from "@/components/fleet/FleetOfflineStatus";
 import { FleetCommsTab } from "@/components/fleet/FleetCommsTab";
 import { FleetImmobilizerTab } from "@/components/fleet/FleetImmobilizerTab";
 import { FleetDashboardTab } from "@/components/fleet/FleetDashboardTab";
+import { FleetMaintenanceTab } from "@/components/fleet/FleetMaintenanceTab";
 import { useFleetMessages, useFleetMessagesRealtime, unreadFor } from "@/hooks/useFleetComms";
 
 function Kpi({
@@ -138,6 +139,9 @@ export default function Fleet() {
               {openAlerts > 0 && <Badge variant="outline" className="ml-2">{openAlerts}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="fuel"><Fuel className="mr-1 h-4 w-4" aria-hidden="true" />Fuel</TabsTrigger>
+            <TabsTrigger value="maintenance">
+              <Wrench className="mr-1 h-4 w-4" aria-hidden="true" />Maintenance
+            </TabsTrigger>
             <TabsTrigger value="comms">
               <MessageSquare className="mr-1 h-4 w-4" aria-hidden="true" />In-cab comms
               {unreadFromDrivers > 0 && <Badge variant="outline" className="ml-2">{unreadFromDrivers}</Badge>}
@@ -191,6 +195,10 @@ export default function Fleet() {
 
         <TabsContent value="fuel" className="mt-4">
           <FleetFuelTab vehicles={vehicles} canManage={canManage} />
+        </TabsContent>
+
+        <TabsContent value="maintenance" className="mt-4">
+          <FleetMaintenanceTab vehicles={vehiclesQuery.data ?? []} canManage={canManage} />
         </TabsContent>
 
         <TabsContent value="comms" className="mt-4">
