@@ -67,6 +67,7 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 const Enforcement = lazy(() => import("./pages/Enforcement"));
 const Operations = lazy(() => import("./pages/Operations"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Branding = lazy(() => import("./pages/Branding"));
 const CommandRoles = lazy(() => import("./pages/CommandRoles"));
 const AdminConsole = lazy(() => import("./pages/AdminConsole"));
 const AdminAccessMatrix = lazy(() => import("./pages/AdminAccessMatrix"));
@@ -215,6 +216,7 @@ function App() {
           <Route path="/enforcement" element={<ProtectedRoute module="enforcement"><Layout><Enforcement /></Layout></ProtectedRoute>} />
           <Route path="/operations" element={<ProtectedRoute module="operations"><Layout><Operations /></Layout></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute module="settings"><Layout><Settings /></Layout></ProtectedRoute>} />
+          <Route path="/branding" element={<ProtectedRoute module="branding"><Layout><Branding /></Layout></ProtectedRoute>} />
           <Route path="/admin/shift-rotations" element={<ProtectedRoute module="admin-shift-rotations"><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute module="admin-console"><Layout><AdminConsole /></Layout></ProtectedRoute>} />
           <Route path="/command-roles" element={<ProtectedRoute module="command-roles"><Layout><CommandRoles /></Layout></ProtectedRoute>} />

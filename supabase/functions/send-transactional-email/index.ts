@@ -324,16 +324,46 @@ Deno.serve(async (req) => {
   const html = await renderAsync(
     React.createElement(template.component, templateData)
   )
-  const plainText = await renderAsync(
+  const plainTextBody = await renderAsync(
     React.createElement(template.component, templateData),
     { plainText: true }
   )
+
+  // Branding — administrator-configured sender name, reply-to, footer and signature.
+  const { data: brandRow } = await supabase
+    .from('app_settings')
+    .select('org_name, system_label, email_from_name, email_reply_to, email_footer_text, email_signature, footer_text')
+    .limit(1)
+    .maybeSingle()
+  const brand = (brandRow ?? {}) as Record<string, string | null>
+  const fromName =
+    (brand.email_from_name || '').trim() ||
+    [brand.org_name, brand.system_label].filter(Boolean).join(' ').trim() ||
+    SITE_NAME
+  const replyTo = (brand.email_reply_to || '').trim()
+  const brandFooter = (brand.email_footer_text || brand.footer_text || '').trim()
+  const brandSignature = (brand.email_signature || '').trim()
+
+  const escapeHtml = (v: string) =>
+    v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
   // Resolve subject — supports static string or dynamic function
   const resolvedSubject =
     typeof template.subject === 'function'
       ? template.subject(templateData)
       : template.subject
+
+  const brandBlockHtml =
+    brandSignature || brandFooter
+      ? `<div style="margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">` +
+        (brandSignature ? `<p style="margin:0 0 6px;">${escapeHtml(brandSignature).replace(/\n/g, '<br/>')}</p>` : '') +
+        (brandFooter ? `<p style="margin:0;">${escapeHtml(brandFooter)}</p>` : '') +
+        `</div>`
+      : ''
+  const brandedHtml = brandBlockHtml
+    ? (html.includes('</body>') ? html.replace('</body>', `${brandBlockHtml}</body>`) : html + brandBlockHtml)
+    : html
+  const brandedText = [plainTextBody, brandSignature, brandFooter].filter(Boolean).join('\n\n')
 
   // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
@@ -351,11 +381,12 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      from: `${fromName} <noreply@${FROM_DOMAIN}>`,
+      ...(replyTo ? { reply_to: replyTo } : {}),
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
-      html,
-      text: plainText,
+      html: brandedHtml,
+      text: brandedText,
       purpose: 'transactional',
       label: templateName,
       idempotency_key: idempotencyKey,

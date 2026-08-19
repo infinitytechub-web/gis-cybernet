@@ -266,7 +266,11 @@ export default function Login() {
   };
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-accent via-background to-muted p-4" aria-labelledby="login-heading">
+    <main
+      className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-accent via-background to-muted bg-cover bg-center p-4"
+      style={branding.login_background_url ? { backgroundImage: `url(${branding.login_background_url})` } : undefined}
+      aria-labelledby="login-heading"
+    >
       <Card className="w-full max-w-md border-primary/20 shadow-xl">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
@@ -275,6 +279,9 @@ export default function Login() {
           <div>
             <h1 id="login-heading" className="text-xl font-bold text-secondary">{branding.company_name}</h1>
             <p className="text-sm text-muted-foreground">{branding.org_name} {branding.system_label}</p>
+            {branding.login_tagline && (
+              <p className="mt-1 text-xs text-muted-foreground">{branding.login_tagline}</p>
+            )}
           </div>
         </CardHeader>
         <CardContent>

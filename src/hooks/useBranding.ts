@@ -19,6 +19,14 @@ export interface Branding {
   contact_phone: string;
   contact_address: string;
   contact_website: string;
+  login_tagline: string;
+  login_background_url: string | null;
+  email_from_name: string;
+  email_reply_to: string;
+  email_header_color: string;
+  email_logo_url: string | null;
+  email_footer_text: string;
+  email_signature: string;
 }
 
 /** Fallbacks used before the row loads, or if the request fails. */
@@ -40,6 +48,14 @@ export const BRANDING_DEFAULTS: Branding = {
   contact_phone: "",
   contact_address: "",
   contact_website: "",
+  login_tagline: "",
+  login_background_url: null,
+  email_from_name: "",
+  email_reply_to: "",
+  email_header_color: "220 80% 18%",
+  email_logo_url: null,
+  email_footer_text: "",
+  email_signature: "",
 };
 
 
@@ -85,11 +101,12 @@ export function useBranding() {
       const row = (Array.isArray(data) ? data[0] : data) as Branding | undefined;
       if (!row) return BRANDING_DEFAULTS;
 
-      const [logo, favicon, login, dashboard] = await Promise.all([
+      const [logo, favicon, login, dashboard, loginBackground] = await Promise.all([
         resolveBrandingAsset(row.logo_url),
         resolveBrandingAsset(row.favicon_url),
         resolveBrandingAsset(row.login_logo_url),
         resolveBrandingAsset(row.dashboard_logo_url),
+        resolveBrandingAsset(row.login_background_url ?? null),
       ]);
 
       // The RPC returns NULL for unset text fields — strip them so the
@@ -106,6 +123,7 @@ export function useBranding() {
         favicon_url: favicon,
         login_logo_url: login,
         dashboard_logo_url: dashboard,
+        login_background_url: loginBackground,
       };
     },
   });
