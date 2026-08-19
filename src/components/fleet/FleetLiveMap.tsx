@@ -8,8 +8,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
 import { MapTilesStatusBanner } from "@/components/maps/MapTilesStatusBanner";
-import {
 import { formatDateTime } from "@/lib/date-format";
+import {
   FLEET_DEFAULT_CENTER,
   MOTION_HEX,
   MOTION_LABELS,
