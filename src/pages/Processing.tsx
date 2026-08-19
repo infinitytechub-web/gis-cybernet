@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Stamp, FileText, ShieldCheck, IdCard, ClipboardList, Plus } from "lucide-react";
+import { Stamp, FileText, ShieldCheck, IdCard, ClipboardList, BookOpen, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
