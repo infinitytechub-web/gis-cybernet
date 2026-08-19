@@ -635,12 +635,17 @@ interface VehicleUsageRow {
   patrol_count: number;
   patrol_distance_km: number;
   patrol_fuel_litres: number;
+  patrol_hours: number;
+  avg_hours_per_patrol: number | null;
+  km_per_hour: number | null;
+  litres_per_hour: number | null;
   refuel_litres: number;
   refuel_cost_ghs: number;
   last_odometer_reading: number | null;
   last_reading_at: string | null;
   km_per_litre: number | null;
 }
+
 
 /** Odometer log and fuel tracking per vehicle, sourced from patrol logs and refuel entries. */
 function VehicleUsageCard({ days }: { days: number }) {
@@ -659,22 +664,24 @@ function VehicleUsageCard({ days }: { days: number }) {
   const totalKm = rows.reduce((s, r) => s + Number(r.patrol_distance_km ?? 0), 0);
   const totalLitres = rows.reduce((s, r) => s + Number(r.refuel_litres ?? 0), 0);
   const totalCost = rows.reduce((s, r) => s + Number(r.refuel_cost_ghs ?? 0), 0);
+  const totalHours = rows.reduce((s, r) => s + Number(r.patrol_hours ?? 0), 0);
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Gauge className="h-4 w-4 text-primary" aria-hidden="true" />
-          Vehicle odometer log &amp; fuel tracking
+          Vehicle odometer, fuel &amp; hours used
         </CardTitle>
         <CardDescription>
-          Patrol mileage and refuelling over the last {days} days · {totalKm.toFixed(1)} km patrolled ·{" "}
-          {totalLitres.toFixed(1)} L refuelled · GHS {totalCost.toFixed(2)} fuel spend. Readings come from the
-          odometer fields on each{" "}
+          Usage over the last {days} days · {totalKm.toFixed(1)} km patrolled · {totalHours.toFixed(1)} h on
+          patrol · {totalLitres.toFixed(1)} L refuelled · GHS {totalCost.toFixed(2)} fuel spend. Readings come
+          from the odometer, fuel and start/end times on each{" "}
           <Link to="/command-console?tab=patrols" className="underline">patrol log</Link> and from{" "}
           <Link to="/fleet?tab=fuel" className="underline">fuel entries</Link>.
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         {isLoading && <p className="text-sm text-muted-foreground">Loading vehicle usage…</p>}
         {isError && <p className="text-sm text-destructive">Vehicle usage could not be loaded.</p>}
@@ -689,13 +696,15 @@ function VehicleUsageCard({ days }: { days: number }) {
               </p>
             )}
             <div className="overflow-x-auto">
-              <Table className="min-w-[900px]">
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Vehicle</TableHead>
                     <TableHead className="text-right">Current odometer</TableHead>
                     <TableHead className="text-right">Patrols</TableHead>
                     <TableHead className="text-right">Patrol distance</TableHead>
+                    <TableHead className="text-right">Hours used</TableHead>
+                    <TableHead className="text-right">Avg hours / patrol</TableHead>
                     <TableHead className="text-right">Fuel used on patrol</TableHead>
                     <TableHead className="text-right">Refuelled</TableHead>
                     <TableHead className="text-right">Fuel spend (GHS)</TableHead>
@@ -715,10 +724,16 @@ function VehicleUsageCard({ days }: { days: number }) {
                       <TableCell className="text-right">{Number(r.odometer_km ?? 0).toLocaleString()} km</TableCell>
                       <TableCell className="text-right">{r.patrol_count ?? 0}</TableCell>
                       <TableCell className="text-right">{Number(r.patrol_distance_km ?? 0).toFixed(1)} km</TableCell>
+                      <TableCell className="text-right">{Number(r.patrol_hours ?? 0).toFixed(1)} h</TableCell>
+                      <TableCell className="text-right">
+                        {r.avg_hours_per_patrol != null
+                          ? `${Number(r.avg_hours_per_patrol).toFixed(1)} h`
+                          : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
                       <TableCell className="text-right">{Number(r.patrol_fuel_litres ?? 0).toFixed(1)} L</TableCell>
                       <TableCell className="text-right">{Number(r.refuel_litres ?? 0).toFixed(1)} L</TableCell>
                       <TableCell className="text-right">{Number(r.refuel_cost_ghs ?? 0).toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="space-y-1 text-right">
                         {r.km_per_litre != null ? (
                           <Badge variant="outline" className="border-primary/40 text-primary">
                             {Number(r.km_per_litre).toFixed(2)} km/L
@@ -726,7 +741,15 @@ function VehicleUsageCard({ days }: { days: number }) {
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
+                        {(r.km_per_hour != null || r.litres_per_hour != null) && (
+                          <div className="text-xs text-muted-foreground">
+                            {r.km_per_hour != null && <span>{Number(r.km_per_hour).toFixed(1)} km/h</span>}
+                            {r.km_per_hour != null && r.litres_per_hour != null && <span> · </span>}
+                            {r.litres_per_hour != null && <span>{Number(r.litres_per_hour).toFixed(2)} L/h</span>}
+                          </div>
+                        )}
                       </TableCell>
+
                       <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
                         {r.last_odometer_reading != null
                           ? `${Number(r.last_odometer_reading).toLocaleString()} km`
