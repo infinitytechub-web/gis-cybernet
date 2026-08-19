@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -29,6 +29,7 @@ import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
+  { title: "Command Console", url: "/command-console", icon: MonitorDot, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
   { title: "Analytics", url: "/analytics", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400" },
   { title: "Reports", url: "/reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400" },
 ];
