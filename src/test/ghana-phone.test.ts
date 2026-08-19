@@ -5,6 +5,8 @@ import {
   normalizeGhanaPhone,
   formatGhanaPhone,
   isValidGhanaPhone,
+  isSuspiciousGhanaPhone,
+  assertGhanaPhoneList,
 } from "@/lib/ghana-phone";
 
 describe("Ghana telephone validation", () => {
@@ -37,10 +39,28 @@ describe("Ghana telephone validation", () => {
   });
 
   it("validates comma-separated lists and reports the offending entry", () => {
-    const ok = validateGhanaPhoneList("0241234567, +233201234567");
+    const ok = validateGhanaPhoneList("0244857391, +233208461273");
     expect(ok.valid).toBe(true);
-    const bad = validateGhanaPhoneList("0241234567, 0221234567");
+    const bad = validateGhanaPhoneList("0244857391, 0221234567");
     expect(bad.valid).toBe(false);
     expect(bad.errors.length).toBeGreaterThan(0);
+  });
+
+  it("flags fabricated / placeholder numbers as suspicious", () => {
+    expect(isSuspiciousGhanaPhone("0241111111")).toBe(true);
+    expect(isSuspiciousGhanaPhone("0240000000")).toBe(true);
+    expect(isSuspiciousGhanaPhone("0241234567")).toBe(true);
+    expect(isSuspiciousGhanaPhone("0247654321")).toBe(true);
+    expect(isSuspiciousGhanaPhone("0241212123")).toBe(true);
+    expect(isSuspiciousGhanaPhone("0244857391")).toBe(false);
+    expect(validateGhanaPhoneList("0241111111").valid).toBe(false);
+  });
+
+  it("assertGhanaPhoneList canonicalises and rejects", () => {
+    expect(assertGhanaPhoneList("+233 24 485 7391")).toBe("0244857391");
+    expect(assertGhanaPhoneList("")).toBe("");
+    expect(() => assertGhanaPhoneList("", "Phone", true)).toThrow();
+    expect(() => assertGhanaPhoneList("0221234567")).toThrow();
+    expect(() => assertGhanaPhoneList("0241111111")).toThrow();
   });
 });
