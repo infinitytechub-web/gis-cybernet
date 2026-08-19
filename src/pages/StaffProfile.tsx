@@ -12,7 +12,9 @@ import { ArrowLeft, User, CalendarCheck, CalendarOff, ArrowRightLeft, Shield, Sh
 import { format, differenceInDays } from "date-fns";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
+import { Sensitive } from "@/components/Sensitive";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
+
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
@@ -277,10 +279,18 @@ export default function StaffProfile() {
                 </div>
                 {profile.phone && (
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span>{profile.phone}</span>
+                    <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
+                    <Sensitive
+                      field="phone"
+                      value={profile.phone}
+                      isOwner={(profile as any).user_id === user?.id}
+                      revealable
+                      entityType="staff_profile"
+                      recordId={profile.id}
+                    />
                   </div>
                 )}
+
               </div>
             </div>
           </div>
