@@ -32,6 +32,7 @@ import {
   sumPending,
 } from "@/lib/application-queues";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
+import { navDescription } from "@/lib/nav-descriptions";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
@@ -241,6 +242,7 @@ export function AppSidebar() {
             const ariaLabel = collapsed
               ? `${item.title}${active ? ", current page" : ""}${badgeCount ? `, ${badgeCount} pending` : ""}`
               : undefined;
+            const description = navDescription(item.url);
             const link = (
               <NavLink
                 to={item.url}
@@ -248,14 +250,17 @@ export function AppSidebar() {
                 onClick={handleNavClick}
                 aria-current={active ? "page" : undefined}
                 aria-label={ariaLabel}
-                title={collapsed ? undefined : item.title}
-                className={`hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
+                className={`group/nav relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
                   active
                     ? "ring-2 ring-sidebar-primary bg-sidebar-primary/10 text-sidebar-primary"
                     : ""
                 }`}
                 activeClassName="font-medium"
               >
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-sidebar-primary opacity-0 transition-all duration-150 group-hover/nav:h-4/5 group-hover/nav:opacity-100"
+                />
                 <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
                 {!collapsed && <span>{item.title}</span>}
                 {renderBadge(item)}
@@ -263,28 +268,29 @@ export function AppSidebar() {
             );
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  {collapsed ? (
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent
-                        side="right"
-                        className={
-                          active
-                            ? "font-semibold bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
-                            : "font-medium"
-                        }
-                      >
-                        {item.title}
-                        {active && <span className="sr-only"> (current page)</span>}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    link
-                  )}
-                </SidebarMenuButton>
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton asChild>{link}</SidebarMenuButton>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className={`max-w-[16rem] ${
+                      active
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
+                        : ""
+                    }`}
+                  >
+                    <span className="block font-semibold">{item.title}</span>
+                    {description && (
+                      <span className="mt-0.5 block text-xs font-normal opacity-90">{description}</span>
+                    )}
+                    {active && <span className="sr-only"> (current page)</span>}
+                  </TooltipContent>
+                </Tooltip>
               </SidebarMenuItem>
+
             );
+
           })}
         </SidebarMenu>
       </SidebarGroupContent>
