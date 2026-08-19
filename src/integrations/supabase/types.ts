@@ -7980,6 +7980,51 @@ export type Database = {
         }
         Relationships: []
       }
+      session_action_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          device_fingerprint: string | null
+          id: string
+          ip_address: string | null
+          reason: string | null
+          session_id: string | null
+          sessions_affected: number
+          target_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          session_id?: string | null
+          sessions_affected?: number
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          session_id?: string | null
+          sessions_affected?: number
+          target_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       shift_assignment_overrides: {
         Row: {
           action: string
@@ -9457,6 +9502,57 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string
+          current_page: string | null
+          device_fingerprint: string | null
+          id: string
+          ip_address: string | null
+          last_seen_at: string
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          session_key: string
+          started_at: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_page?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          last_seen_at?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          session_key: string
+          started_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_page?: string | null
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          last_seen_at?: string
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          session_key?: string
+          started_at?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       visa_applications: {
         Row: {
           applicant_category: string | null
@@ -9922,6 +10018,7 @@ export type Database = {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_sessions: { Args: { _user_id: string }; Returns: boolean }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_shift_connection_action: {
         Args: { _action: string }
@@ -10399,6 +10496,10 @@ export type Database = {
         Args: { _schedule_id: string }
         Returns: number
       }
+      prune_stale_sessions: {
+        Args: { _older_than_days?: number }
+        Returns: number
+      }
       prune_system_backup_audit: { Args: never; Returns: Json }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
       purge_old_presence_events: {
@@ -10462,6 +10563,16 @@ export type Database = {
         Returns: string
       }
       redact_old_job_passwords: { Args: never; Returns: undefined }
+      register_session: {
+        Args: {
+          _fingerprint?: string
+          _ip?: string
+          _page?: string
+          _session_key: string
+          _user_agent?: string
+        }
+        Returns: string
+      }
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
@@ -10469,6 +10580,14 @@ export type Database = {
       restore_staff_bulk_snapshot: {
         Args: { p_snapshot_id: string }
         Returns: Json
+      }
+      revoke_all_user_sessions: {
+        Args: { _keep_session_key?: string; _reason?: string; _user_id: string }
+        Returns: number
+      }
+      revoke_session: {
+        Args: { _reason?: string; _session_id: string }
+        Returns: boolean
       }
       run_security_hygiene_scan: { Args: never; Returns: Json }
       search_approval_audit: {
@@ -10516,6 +10635,10 @@ export type Database = {
           sent: number
           skipped: number
         }[]
+      }
+      session_heartbeat: {
+        Args: { _page?: string; _session_key: string }
+        Returns: boolean
       }
       set_inventory_alert_webhook: {
         Args: { _record_id: string; _source: string; _webhook_url: string }
