@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Users, Truck, Fuel, Siren, ShieldAlert } from "lucide-react";
+import { Users, Truck, Fuel, Siren, ShieldAlert, ShoppingCart, ClipboardCheck, PackageCheck } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
 import { ORG_UNIT_TYPE_LABELS, type OrgUnitType } from "@/lib/org-hierarchy";
 import {
@@ -22,6 +22,10 @@ import {
 
 function pct(v: number | null) {
   return v === null ? "—" : `${v}%`;
+}
+
+function money(v: number) {
+  return `GHS ${Number(v || 0).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
 }
 
 function toneFor(v: number | null) {
@@ -67,9 +71,20 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
         acc.openAlerts += totalOpenAlerts(b);
         acc.critical += b.critical_alerts;
         acc.openCyber += b.open_cyber;
+        acc.procTotal += b.proc_total ?? 0;
+        acc.procPending += b.proc_pending ?? 0;
+        acc.procApproved += b.proc_approved ?? 0;
+        acc.procReceived += b.proc_received ?? 0;
+        acc.procCommitted += Number(b.proc_committed ?? 0);
+        acc.procItemsReceived += Number(b.proc_items_received ?? 0);
         return acc;
       },
-      { staff: 0, present: 0, vehicles: 0, ready: 0, lowFuel: 0, fuelSum: 0, fuelWeight: 0, openAlerts: 0, critical: 0, openCyber: 0 },
+      {
+        staff: 0, present: 0, vehicles: 0, ready: 0, lowFuel: 0, fuelSum: 0, fuelWeight: 0,
+        openAlerts: 0, critical: 0, openCyber: 0,
+        procTotal: 0, procPending: 0, procApproved: 0, procReceived: 0,
+        procCommitted: 0, procItemsReceived: 0,
+      },
     );
     return {
       ...t,
@@ -136,18 +151,37 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
           value={isLoading ? "…" : String(totals.openAlerts)}
           hint={`${totals.openCyber} cyber · ${totals.critical} critical`}
         />
+        <Kpi
+          icon={ShoppingCart}
+          label="Procurement requests"
+          value={isLoading ? "…" : String(totals.procTotal)}
+          hint={`${totals.procPending} awaiting approval · ${money(totals.procCommitted)} committed`}
+        />
+        <Kpi
+          icon={ClipboardCheck}
+          label="Approved for receipt"
+          value={isLoading ? "…" : String(totals.procApproved)}
+          hint={`${totals.procPending} still pending a decision`}
+        />
+        <Kpi
+          icon={PackageCheck}
+          label="Requests received"
+          value={isLoading ? "…" : String(totals.procReceived)}
+          hint={`${totals.procItemsReceived} unit${totals.procItemsReceived === 1 ? "" : "s"} taken into stock`}
+        />
       </div>
 
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Readiness per branch</CardTitle>
           <CardDescription>
-            Attendance is for today; vehicles, fuel and alerts cover the last {data?.days ?? 30} days.
+            Attendance is for today; vehicles, fuel, alerts and procurement cover the last{" "}
+            {data?.days ?? 30} days.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table className="min-w-[700px]">
+            <Table className="min-w-[820px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Command</TableHead>
@@ -156,18 +190,19 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
                   <TableHead>Fuel</TableHead>
                   <TableHead>Open alerts</TableHead>
                   <TableHead>Cyber</TableHead>
+                  <TableHead>Procurement</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                       Loading readiness…
                     </TableCell>
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                       No commands in your reach yet.
                     </TableCell>
                   </TableRow>
@@ -223,6 +258,22 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
                             {b.open_cyber} open
                           </div>
                           <div className="text-xs text-muted-foreground">{b.cyber_total} logged</div>
+                        </TableCell>
+                        <TableCell className="w-[190px]">
+                          <div className="text-sm font-medium">{b.proc_total ?? 0} raised</div>
+                          <div className="text-xs text-muted-foreground">
+                            {b.proc_pending ?? 0} pending · {b.proc_approved ?? 0} approved ·{" "}
+                            {b.proc_received ?? 0} received
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {money(Number(b.proc_committed ?? 0))} committed ·{" "}
+                            {Number(b.proc_items_received ?? 0)}/{Number(b.proc_items_ordered ?? 0)} units in
+                          </div>
+                          {(b.proc_pending ?? 0) > 0 && (
+                            <Badge variant="outline" className="mt-1 border-warning/40 bg-warning/10 text-xs">
+                              awaiting approval
+                            </Badge>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

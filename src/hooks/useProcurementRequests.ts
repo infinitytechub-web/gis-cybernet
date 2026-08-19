@@ -44,6 +44,8 @@ export interface ProcurementItem {
   unit: string | null;
   estimated_unit_cost: number | null;
   received_qty: number;
+  /** Optional link to a stock item — receipts then top up its quantity on hand. */
+  inventory_item_id: string | null;
 }
 
 export interface ProcurementRequest {
@@ -125,7 +127,7 @@ export function useProcurementRequests(days = 180, enabled = true) {
 
       const { data: items, error: itemsErr } = await supabase
         .from("purchase_requisition_items")
-        .select("id, requisition_id, item_name, description, quantity, unit, estimated_unit_cost, received_qty")
+        .select("id, requisition_id, item_name, description, quantity, unit, estimated_unit_cost, received_qty, inventory_item_id")
         .in("requisition_id", reqs.map((r) => r.id));
       if (itemsErr) throw itemsErr;
 
@@ -191,7 +193,13 @@ export interface NewRequestInput {
   priority: string;
   needed_by?: string | null;
   notes?: string;
-  items: { item_name: string; quantity: number; unit: string; estimated_unit_cost: number }[];
+  items: {
+    item_name: string;
+    quantity: number;
+    unit: string;
+    estimated_unit_cost: number;
+    inventory_item_id?: string | null;
+  }[];
   photos?: File[];
   submit?: boolean;
 }
@@ -231,6 +239,7 @@ export function useCreateProcurementRequest() {
             quantity: i.quantity,
             unit: i.unit || "pcs",
             estimated_unit_cost: i.estimated_unit_cost || 0,
+            inventory_item_id: i.inventory_item_id || null,
           })),
         );
         if (itemsErr) throw itemsErr;
@@ -372,8 +381,88 @@ export function useReceiveProcurementRequest() {
 function invalidate(qc: ReturnType<typeof useQueryClient>, id?: string) {
   qc.invalidateQueries({ queryKey: ["procurement-requests"] });
   qc.invalidateQueries({ queryKey: ["command-console"] });
+  qc.invalidateQueries({ queryKey: ["command-dashboard"] });
+  qc.invalidateQueries({ queryKey: ["procurement-stock"] });
   if (id) {
     qc.invalidateQueries({ queryKey: ["procurement-trail", id] });
     qc.invalidateQueries({ queryKey: ["procurement-photos", id] });
   }
+}
+
+/* ── Procurement stock (inventory linked to requests and receipts) ─────────── */
+
+export interface ProcurementStockItem {
+  id: string;
+  name: string;
+  sku: string | null;
+  asset_tag: string | null;
+  unit: string;
+  location: string | null;
+  qty_on_hand: number;
+  min_stock: number;
+  unit_cost: number;
+  stock_value: number;
+  stock_level: "out" | "low" | "ok";
+  ordered_qty: number;
+  procured_qty: number;
+  outstanding_qty: number;
+  open_requests: number;
+  request_lines: number;
+  last_received_at: string | null;
+  last_pr_number: string | null;
+  last_pr_status: string | null;
+}
+
+export interface ProcurementStock {
+  as_of: string;
+  days: number;
+  items: ProcurementStockItem[];
+}
+
+/** Stock levels with the procurement activity behind them (`procurement_inventory`). */
+export function useProcurementStock(days = 365, enabled = true) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["procurement-stock", days],
+    enabled: enabled && !!user,
+    staleTime: 20_000,
+    queryFn: async (): Promise<ProcurementStock> => {
+      const { data, error } = await supabase.rpc("procurement_inventory", { _days: days });
+      if (error) throw error;
+      const raw = (data ?? {}) as Partial<ProcurementStock>;
+      return {
+        as_of: raw.as_of ?? new Date().toISOString(),
+        days: raw.days ?? days,
+        items: (raw.items ?? []) as ProcurementStockItem[],
+      };
+    },
+  });
+}
+
+export interface StockItemOption {
+  id: string;
+  name: string;
+  sku: string | null;
+  unit: string;
+  qty_on_hand: number;
+  unit_cost: number | null;
+}
+
+/** Active stock items offered when linking a request line to inventory. */
+export function useStockItemOptions(enabled = true) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["procurement-stock-options"],
+    enabled: enabled && !!user,
+    staleTime: 60_000,
+    queryFn: async (): Promise<StockItemOption[]> => {
+      const { data, error } = await supabase
+        .from("inventory_items")
+        .select("id, name, sku, unit, qty_on_hand, unit_cost")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as StockItemOption[];
+    },
+  });
 }

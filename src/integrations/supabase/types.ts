@@ -8150,6 +8150,7 @@ export type Database = {
           description: string | null
           estimated_unit_cost: number | null
           id: string
+          inventory_item_id: string | null
           item_name: string
           quantity: number
           received_qty: number
@@ -8161,6 +8162,7 @@ export type Database = {
           description?: string | null
           estimated_unit_cost?: number | null
           id?: string
+          inventory_item_id?: string | null
           item_name: string
           quantity?: number
           received_qty?: number
@@ -8172,6 +8174,7 @@ export type Database = {
           description?: string | null
           estimated_unit_cost?: number | null
           id?: string
+          inventory_item_id?: string | null
           item_name?: string
           quantity?: number
           received_qty?: number
@@ -8179,6 +8182,13 @@ export type Database = {
           unit?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "purchase_requisition_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchase_requisition_items_requisition_id_fkey"
             columns: ["requisition_id"]
@@ -11791,6 +11801,7 @@ export type Database = {
         Returns: Json
       }
       procurement_actor_name: { Args: { _uid: string }; Returns: string }
+      procurement_inventory: { Args: { _days?: number }; Returns: Json }
       procurement_request_decide: {
         Args: { _approve: boolean; _note?: string; _requisition_id: string }
         Returns: undefined

@@ -1,2 +1,3 @@
 - [Branding Management](mem://features/branding-management) — Admin Branding tab: names, logos, favicon, theme colors via app_settings + branding bucket
 - [Fleet Offline & Registry](mem://features/fleet-offline-and-registry) — Local GPS queue + sync, registry status/last seen/fuel/unit columns, panic mirrored into Session Management audit
+- [Procurement & Inventory](mem://features/procurement-inventory) — /procurement Requests + Inventory tabs, stock-linked request lines, receipts top up stock, branch procurement KPIs
