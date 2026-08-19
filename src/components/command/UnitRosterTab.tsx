@@ -179,7 +179,7 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
           <p className="py-8 text-center text-sm text-muted-foreground">No units match these filters.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-sm">
+            <table className="w-full min-w-[900px] text-sm">
               <caption className="sr-only">Units with commander, rank, posting and contact details</caption>
               <thead>
                 <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
