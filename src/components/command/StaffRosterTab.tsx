@@ -509,7 +509,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                   ))}
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={canManageRoles ? 9 : 8} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={canManageRoles ? 10 : 9} className="py-8 text-center text-muted-foreground">
                         No staff match these filters.
                       </TableCell>
                     </TableRow>
