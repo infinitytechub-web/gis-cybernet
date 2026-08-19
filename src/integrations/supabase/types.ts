@@ -11569,6 +11569,7 @@ export type Database = {
         Args: { _action: string }
         Returns: boolean
       }
+      can_touch_attendance_photo: { Args: { _path: string }; Returns: boolean }
       can_use_recycle_bin: { Args: { _user_id: string }; Returns: boolean }
       can_view_command_alert: {
         Args: { _alert_id: string; _user_id: string }
