@@ -147,18 +147,37 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
           value={isLoading ? "…" : String(totals.openAlerts)}
           hint={`${totals.openCyber} cyber · ${totals.critical} critical`}
         />
+        <Kpi
+          icon={ShoppingCart}
+          label="Procurement requests"
+          value={isLoading ? "…" : String(totals.procTotal)}
+          hint={`${totals.procPending} awaiting approval · ${money(totals.procCommitted)} committed`}
+        />
+        <Kpi
+          icon={ClipboardCheck}
+          label="Approved for receipt"
+          value={isLoading ? "…" : String(totals.procApproved)}
+          hint={`${totals.procPending} still pending a decision`}
+        />
+        <Kpi
+          icon={PackageCheck}
+          label="Requests received"
+          value={isLoading ? "…" : String(totals.procReceived)}
+          hint={`${totals.procItemsReceived} unit${totals.procItemsReceived === 1 ? "" : "s"} taken into stock`}
+        />
       </div>
 
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Readiness per branch</CardTitle>
           <CardDescription>
-            Attendance is for today; vehicles, fuel and alerts cover the last {data?.days ?? 30} days.
+            Attendance is for today; vehicles, fuel, alerts and procurement cover the last{" "}
+            {data?.days ?? 30} days.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table className="min-w-[700px]">
+            <Table className="min-w-[820px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Command</TableHead>
@@ -167,12 +186,13 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
                   <TableHead>Fuel</TableHead>
                   <TableHead>Open alerts</TableHead>
                   <TableHead>Cyber</TableHead>
+                  <TableHead>Procurement</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                       Loading readiness…
                     </TableCell>
                   </TableRow>
