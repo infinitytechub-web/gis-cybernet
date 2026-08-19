@@ -25,6 +25,12 @@ import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 import { useConfidentialityCommands } from "@/hooks/useConfidentialityCommands";
 import { useRbac } from "@/hooks/useRbac";
+import {
+  ALL_APPLICATION_TABLES,
+  FRONT_DESK_TABLES,
+  PROCESSING_TABLES,
+  sumPending,
+} from "@/lib/application-queues";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 
 const commandItems = [
