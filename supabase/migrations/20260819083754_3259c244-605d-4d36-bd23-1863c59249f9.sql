@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.block_webauthn_audit_mutation() FROM PUBLIC, anon, authenticated;
