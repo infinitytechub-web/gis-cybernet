@@ -389,7 +389,7 @@ export function FleetDashboardTab({ canManage }: Props) {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[820px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Vehicle</TableHead>
