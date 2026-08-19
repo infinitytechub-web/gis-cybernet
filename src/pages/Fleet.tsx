@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert } from "lucide-react";
+import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
 import {
@@ -24,6 +24,7 @@ import { FleetReplayTab } from "@/components/fleet/FleetReplayTab";
 import { FleetOfflineStatus } from "@/components/fleet/FleetOfflineStatus";
 import { FleetCommsTab } from "@/components/fleet/FleetCommsTab";
 import { FleetImmobilizerTab } from "@/components/fleet/FleetImmobilizerTab";
+import { FleetDashboardTab } from "@/components/fleet/FleetDashboardTab";
 import { useFleetMessages, useFleetMessagesRealtime, unreadFor } from "@/hooks/useFleetComms";
 
 function Kpi({
@@ -124,6 +125,9 @@ export default function Fleet() {
         <div className="overflow-x-auto">
           <TabsList>
             <TabsTrigger value="live"><Radio className="mr-1 h-4 w-4" aria-hidden="true" />Live tracking</TabsTrigger>
+            {canManage && (
+              <TabsTrigger value="dashboard"><BarChart3 className="mr-1 h-4 w-4" aria-hidden="true" />Dashboard</TabsTrigger>
+            )}
             <TabsTrigger value="replay"><Route className="mr-1 h-4 w-4" aria-hidden="true" />Route replay</TabsTrigger>
             <TabsTrigger value="vehicles"><Truck className="mr-1 h-4 w-4" aria-hidden="true" />Vehicles</TabsTrigger>
             {canManage && (
@@ -155,6 +159,12 @@ export default function Fleet() {
             canManage={canManage}
           />
         </TabsContent>
+
+        {canManage && (
+          <TabsContent value="dashboard" className="mt-4">
+            <FleetDashboardTab canManage={canManage} />
+          </TabsContent>
+        )}
 
         <TabsContent value="replay" className="mt-4">
           <FleetReplayTab vehicles={vehicles} geofences={geofences} initialVehicleId={focusVehicleId} />

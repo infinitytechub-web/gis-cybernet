@@ -10834,6 +10834,7 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: undefined
       }
+      fleet_dashboard: { Args: { _days?: number }; Returns: Json }
       fleet_demo_tick: {
         Args: { _event?: string; _vehicle_id?: string }
         Returns: Json
