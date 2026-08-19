@@ -2,3 +2,4 @@
 - [Fleet Offline & Registry](mem://features/fleet-offline-and-registry) — Local GPS queue + sync, registry status/last seen/fuel/unit columns, panic mirrored into Session Management audit
 - [Procurement & Inventory](mem://features/procurement-inventory) — /procurement Requests + Inventory tabs, stock-linked request lines, receipts top up stock, branch procurement KPIs
 - [Unit Roster](mem://features/unit-roster) — Command Console unit/commander/rank/posting/contact table; /unit-dashboard?unit= deep link
+- [Patrol Odometer & Fuel](mem://features/fleet-odometer-fuel) — patrol_logs odometer/fuel fields, fleet_vehicle_usage RPC, Fleet Dashboard usage card

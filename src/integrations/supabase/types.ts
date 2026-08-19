@@ -6598,10 +6598,13 @@ export type Database = {
           district_id: string | null
           district_name: string | null
           end_time: string | null
+          fuel_used_litres: number | null
           id: string
           incidents: string | null
           incidents_count: number
           observations: string | null
+          odometer_end_km: number | null
+          odometer_start_km: number | null
           org_unit_id: string | null
           patrol_date: string
           patrol_leader_id: string | null
@@ -6623,10 +6626,13 @@ export type Database = {
           district_id?: string | null
           district_name?: string | null
           end_time?: string | null
+          fuel_used_litres?: number | null
           id?: string
           incidents?: string | null
           incidents_count?: number
           observations?: string | null
+          odometer_end_km?: number | null
+          odometer_start_km?: number | null
           org_unit_id?: string | null
           patrol_date?: string
           patrol_leader_id?: string | null
@@ -6648,10 +6654,13 @@ export type Database = {
           district_id?: string | null
           district_name?: string | null
           end_time?: string | null
+          fuel_used_litres?: number | null
           id?: string
           incidents?: string | null
           incidents_count?: number
           observations?: string | null
+          odometer_end_km?: number | null
+          odometer_start_km?: number | null
           org_unit_id?: string | null
           patrol_date?: string
           patrol_leader_id?: string | null
@@ -11659,6 +11668,23 @@ export type Database = {
         Returns: string
       }
       fleet_summary: { Args: never; Returns: Json }
+      fleet_vehicle_usage: {
+        Args: { _days?: number }
+        Returns: {
+          call_sign: string
+          km_per_litre: number
+          last_odometer_reading: number
+          last_reading_at: string
+          odometer_km: number
+          patrol_count: number
+          patrol_distance_km: number
+          patrol_fuel_litres: number
+          refuel_cost_ghs: number
+          refuel_litres: number
+          registration_number: string
+          vehicle_id: string
+        }[]
+      }
       generate_asset_tag: { Args: never; Returns: string }
       get_effective_attendance_window: {
         Args: { _shift_id: string }

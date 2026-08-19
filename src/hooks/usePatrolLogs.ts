@@ -41,6 +41,9 @@ export interface PatrolLog {
   patrol_leader_id: string | null;
   personnel_count: number;
   vehicle_id: string | null;
+  odometer_start_km: number | null;
+  odometer_end_km: number | null;
+  fuel_used_litres: number | null;
   route_summary: string | null;
   incidents_count: number;
   incidents: string | null;
@@ -66,7 +69,7 @@ export interface PatrolPhoto {
 }
 
 const SELECT_COLS =
-  "id, patrol_reference, patrol_date, start_time, end_time, district_id, district_name, org_unit_id, patrol_type, patrol_leader_id, personnel_count, vehicle_id, route_summary, incidents_count, incidents, observations, status, reviewed_by, reviewed_at, review_notes, created_by, created_at";
+  "id, patrol_reference, patrol_date, start_time, end_time, district_id, district_name, org_unit_id, patrol_type, patrol_leader_id, personnel_count, vehicle_id, odometer_start_km, odometer_end_km, fuel_used_litres, route_summary, incidents_count, incidents, observations, status, reviewed_by, reviewed_at, review_notes, created_by, created_at";
 
 export function isPatrolOpen(status: string) {
   return !["reviewed", "closed"].includes((status ?? "").toLowerCase());
@@ -153,6 +156,9 @@ export interface PatrolLogInput {
   patrol_leader_id?: string | null;
   personnel_count: number;
   vehicle_id?: string | null;
+  odometer_start_km?: number | null;
+  odometer_end_km?: number | null;
+  fuel_used_litres?: number | null;
   route_summary?: string | null;
   incidents_count: number;
   incidents?: string | null;
@@ -164,6 +170,7 @@ function invalidate(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["patrol-logs"] });
   qc.invalidateQueries({ queryKey: ["unit-dashboard"] });
   qc.invalidateQueries({ queryKey: ["command-console"] });
+  qc.invalidateQueries({ queryKey: ["fleet"] });
 }
 
 export function useCreatePatrolLog() {
@@ -186,6 +193,9 @@ export function useCreatePatrolLog() {
           patrol_leader_id: row.patrol_leader_id || null,
           personnel_count: row.personnel_count ?? 0,
           vehicle_id: row.vehicle_id || null,
+          odometer_start_km: row.odometer_start_km ?? null,
+          odometer_end_km: row.odometer_end_km ?? null,
+          fuel_used_litres: row.fuel_used_litres ?? null,
           route_summary: row.route_summary || null,
           incidents_count: row.incidents_count ?? 0,
           incidents: row.incidents || null,
