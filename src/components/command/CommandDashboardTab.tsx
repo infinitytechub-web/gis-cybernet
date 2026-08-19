@@ -67,9 +67,20 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
         acc.openAlerts += totalOpenAlerts(b);
         acc.critical += b.critical_alerts;
         acc.openCyber += b.open_cyber;
+        acc.procTotal += b.proc_total ?? 0;
+        acc.procPending += b.proc_pending ?? 0;
+        acc.procApproved += b.proc_approved ?? 0;
+        acc.procReceived += b.proc_received ?? 0;
+        acc.procCommitted += Number(b.proc_committed ?? 0);
+        acc.procItemsReceived += Number(b.proc_items_received ?? 0);
         return acc;
       },
-      { staff: 0, present: 0, vehicles: 0, ready: 0, lowFuel: 0, fuelSum: 0, fuelWeight: 0, openAlerts: 0, critical: 0, openCyber: 0 },
+      {
+        staff: 0, present: 0, vehicles: 0, ready: 0, lowFuel: 0, fuelSum: 0, fuelWeight: 0,
+        openAlerts: 0, critical: 0, openCyber: 0,
+        procTotal: 0, procPending: 0, procApproved: 0, procReceived: 0,
+        procCommitted: 0, procItemsReceived: 0,
+      },
     );
     return {
       ...t,
