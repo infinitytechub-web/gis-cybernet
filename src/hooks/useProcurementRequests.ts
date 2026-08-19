@@ -261,11 +261,11 @@ export function useProcurementUnitOptions(enabled = true) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("org_units")
-        .select("id, name, code, unit_type")
+        .select("id, name, code")
         .eq("is_active", true)
         .order("name");
       if (error) throw error;
-      return (data ?? []) as { id: string; name: string; code: string | null; unit_type: string }[];
+      return (data ?? []) as { id: string; name: string; code: string | null }[];
     },
   });
 }
