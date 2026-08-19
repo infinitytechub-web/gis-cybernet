@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, Lock, Gavel, Truck, ShieldAlert } from "lucide-react";
+import { Building2, Users, Lock, Gavel, Truck, ShieldAlert, Footprints } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { useUnitDashboard } from "@/hooks/useUnitDashboard";
@@ -137,6 +137,12 @@ export default function UnitDashboard() {
             <Kpi icon={Lock} label="Detainees" value={data.detainees.length} hint={`${data.detainees_in_custody} in custody`} />
             <Kpi icon={Gavel} label="Cases" value={data.cases.length} hint={`${data.cases_open} open`} />
             <Kpi icon={Truck} label="Vehicles" value={data.vehicles.length} />
+            <Kpi
+              icon={Footprints}
+              label="Patrols (30 days)"
+              value={data.patrols_recent}
+              hint={`${data.patrol_incidents_recent} incidents recorded`}
+            />
           </div>
 
           <Tabs defaultValue="staff">
@@ -146,6 +152,7 @@ export default function UnitDashboard() {
                 <TabsTrigger value="detainees">Detainees ({data.detainees.length})</TabsTrigger>
                 <TabsTrigger value="cases">Cases ({data.cases.length})</TabsTrigger>
                 <TabsTrigger value="vehicles">Vehicles ({data.vehicles.length})</TabsTrigger>
+                <TabsTrigger value="patrols">Patrols ({data.patrols.length})</TabsTrigger>
               </TabsList>
             </div>
 
@@ -261,6 +268,42 @@ export default function UnitDashboard() {
                       ))}
                       {data.vehicles.length === 0 && (
                         <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">No vehicles attached to this unit.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="patrols" className="mt-4">
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Unit patrol log</CardTitle></CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full min-w-[700px] text-sm">
+                    <thead className="text-left text-xs uppercase text-muted-foreground">
+                      <tr>
+                        <th className="py-2">Reference</th><th>Date</th><th>Time</th><th>District</th>
+                        <th>Leader</th><th>Strength</th><th>Incidents</th><th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.patrols.map((p) => (
+                        <tr key={p.id} className="border-t border-border">
+                          <td className="py-2 font-mono text-xs">{p.patrol_reference}</td>
+                          <td>{formatDate(p.patrol_date)}</td>
+                          <td className="whitespace-nowrap">
+                            {(p.start_time ?? "").slice(0, 5)}
+                            {p.end_time ? ` – ${p.end_time.slice(0, 5)}` : ""}
+                          </td>
+                          <td>{p.district_name ?? "—"}</td>
+                          <td>{p.leader_name || "—"}</td>
+                          <td>{p.personnel_count ?? 0}</td>
+                          <td>{p.incidents_count ?? 0}</td>
+                          <td><Badge variant="outline" className="capitalize">{p.status ?? "—"}</Badge></td>
+                        </tr>
+                      ))}
+                      {data.patrols.length === 0 && (
+                        <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No patrols logged for this unit.</td></tr>
                       )}
                     </tbody>
                   </table>
