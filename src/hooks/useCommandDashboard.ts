@@ -32,6 +32,15 @@ export interface CommandBranchRollup {
   open_fleet_alerts: number;
   open_cyber: number;
   cyber_total: number;
+  /** Procurement activity raised by staff posted to this branch. */
+  proc_total: number;
+  proc_pending: number;
+  proc_approved: number;
+  proc_received: number;
+  proc_rejected: number;
+  proc_committed: number;
+  proc_items_ordered: number;
+  proc_items_received: number;
 }
 
 export interface CommandDashboard {
