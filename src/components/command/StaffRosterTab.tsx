@@ -221,9 +221,26 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
     }
   }
 
+  /** Rows the signed-in officer may clock, and their own row when on roster. */
+  const clockable = useMemo(() => scoped.filter(canClock), [scoped, canManageRoles, user?.id]);
+  const selfMember = useMemo(
+    () => scoped.find((r) => r.user_id && user?.id && r.user_id === user.id) ?? null,
+    [scoped, user?.id],
+  );
+
   return (
     <div className="space-y-4">
-      {/* ── Key appointments: filled or vacant ───────────────────────────── */}
+      {/* ── Clock-in form: marks today's attendance ───────────────────────── */}
+      {(clockable.length > 0 || selfMember) && (
+        <RosterClockInForm
+          clockable={clockable}
+          canClockOthers={canManageRoles}
+          selfMember={selfMember}
+          summary={attendance}
+        />
+      )}
+
+
       {!compact && (
         <Card>
           <CardHeader className="pb-3">
