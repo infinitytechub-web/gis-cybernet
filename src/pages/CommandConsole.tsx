@@ -275,6 +275,9 @@ export default function CommandConsole() {
             <TabsTrigger value="cyber">
               <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />Cyber
             </TabsTrigger>
+            <TabsTrigger value="procurement">
+              <ShoppingCart className="mr-1 h-4 w-4" aria-hidden="true" />Procurement
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Gauge className="mr-1 h-4 w-4" aria-hidden="true" />Status dashboards
             </TabsTrigger>
@@ -292,6 +295,12 @@ export default function CommandConsole() {
         <TabsContent value="cyber" className="mt-4">
           <CyberIncidentsTab units={units} tree={tree} canManage={isAdminOrSupervisor} />
         </TabsContent>
+
+        {/* ── Procurement: request → approve → receive → audit ──────────── */}
+        <TabsContent value="procurement" className="mt-4">
+          <ProcurementTab />
+        </TabsContent>
+
 
 
         {/* ── Live alerts ───────────────────────────────────────────────── */}
