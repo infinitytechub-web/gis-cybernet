@@ -239,6 +239,7 @@ export function useCreateProcurementRequest() {
             quantity: i.quantity,
             unit: i.unit || "pcs",
             estimated_unit_cost: i.estimated_unit_cost || 0,
+            inventory_item_id: i.inventory_item_id || null,
           })),
         );
         if (itemsErr) throw itemsErr;
