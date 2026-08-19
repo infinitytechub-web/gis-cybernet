@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import CommandInboxTab from "@/components/command/CommandInboxTab";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
   useCommandConsoleFeed, useBranchFilter, rollupByCommand,
