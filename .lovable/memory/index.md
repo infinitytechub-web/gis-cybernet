@@ -3,3 +3,4 @@
 - [Procurement & Inventory](mem://features/procurement-inventory) — /procurement Requests + Inventory tabs, stock-linked request lines, receipts top up stock, branch procurement KPIs
 - [Unit Roster](mem://features/unit-roster) — Command Console unit/commander/rank/posting/contact table; /unit-dashboard?unit= deep link
 - [Patrol Odometer & Fuel](mem://features/fleet-odometer-fuel) — patrol_logs odometer/fuel fields, fleet_vehicle_usage RPC, Fleet Dashboard usage card
+- [Roster Clock In/Out](mem://features/roster-clock) — roster_clock_action RPC, shift-window late/early alerts, Clock column on staff roster
