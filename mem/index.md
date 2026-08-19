@@ -3,3 +3,4 @@
 - [Status Workflows](mem://features/status-workflows) — Unified Operations/Detention status transitions + immutable status_change_audit via set_record_status RPC
 - [Hierarchical Command RBAC](mem://features/hierarchical-rbac) — org_units tree (Regional→Unit), scope = own node + below, enforced in RLS, edge functions and UI
 - [Session Management](mem://features/session-management) — user_sessions registry + /admin/sessions console, single/all sign-out, immutable session_action_audit
+- [Command Console](mem://features/command-console) — /command-console live alert feed, incident register, regional/sector readiness dashboards
