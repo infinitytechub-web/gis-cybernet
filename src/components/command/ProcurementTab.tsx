@@ -198,8 +198,18 @@ export default function ProcurementTab() {
 
 /* ── Raise a request ──────────────────────────────────────────────────────── */
 
-interface DraftLine { item_name: string; quantity: string; unit: string; estimated_unit_cost: string }
-const emptyLine: DraftLine = { item_name: "", quantity: "1", unit: "pcs", estimated_unit_cost: "0" };
+interface DraftLine {
+  item_name: string;
+  quantity: string;
+  unit: string;
+  estimated_unit_cost: string;
+  /** "" = not linked to stock; otherwise an inventory_items.id */
+  inventory_item_id: string;
+}
+const emptyLine: DraftLine = {
+  item_name: "", quantity: "1", unit: "pcs", estimated_unit_cost: "0", inventory_item_id: "",
+};
+const NO_STOCK = "__none__";
 
 function RaiseRequestDialog({
   open, onOpenChange,
