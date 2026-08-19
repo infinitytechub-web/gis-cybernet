@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
+import { assertGhanaPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -223,7 +225,7 @@ export function BrandingSettings() {
         system_description: form.system_description.trim() || null,
         header_text: form.header_text.trim() || null,
         contact_email: form.contact_email.trim() || null,
-        contact_phone: form.contact_phone.trim() || null,
+        contact_phone: assertGhanaPhoneList(form.contact_phone, "Contact phone") || null,
         contact_address: form.contact_address.trim() || null,
         contact_website: form.contact_website.trim() || null,
       };
@@ -468,8 +470,8 @@ export function BrandingSettings() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="brand-phone">Contact phone</Label>
-            <Input id="brand-phone" value={form.contact_phone} maxLength={60} disabled={!isAdmin}
-              onChange={(e) => set("contact_phone", e.target.value)} />
+            <GhanaPhoneInput id="brand-phone" value={form.contact_phone} disabled={!isAdmin}
+              onChange={(v) => set("contact_phone", v)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="brand-website">Website</Label>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { assertGhanaPhoneList } from "@/lib/ghana-phone";
 import { formatDate } from "@/lib/date-format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -684,7 +685,10 @@ function VendorsTab({ vendors, canManage }: any) {
   const filtered = vendors.filter((v: any) => !search || v.name.toLowerCase().includes(search.toLowerCase()) || (v.vendor_code || "").toLowerCase().includes(search.toLowerCase()));
   const submit = async () => {
     if (!form.name) return;
-    const { error } = await supabase.from("procurement_vendors").insert(form);
+    let phone: string;
+    try { phone = assertGhanaPhoneList(form.phone, "Vendor phone"); }
+    catch (e: any) { return toast({ title: "Invalid phone", description: e.message, variant: "destructive" }); }
+    const { error } = await supabase.from("procurement_vendors").insert({ ...form, phone });
     if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
     toast({ title: "Vendor added" }); setOpen(false);
     setForm({ name: "", vendor_code: "", contact_person: "", email: "", phone: "", tin_number: "", category: "" });
@@ -713,7 +717,7 @@ function VendorsTab({ vendors, canManage }: any) {
                 <div className="grid grid-cols-2 gap-2">
                   <div><Label>Email</Label><Input value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
                 </div>
-                <div><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div><Label>Phone(s)</Label><MultiContactInput mode="list" ghana value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>TIN</Label><Input value={form.tin_number} onChange={e => setForm({ ...form, tin_number: e.target.value })} /></div>
               </div>
               <DialogFooter><Button onClick={submit}>Save</Button></DialogFooter>

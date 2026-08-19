@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -326,7 +327,7 @@ export function PermitForm({
       <div className="grid grid-cols-2 gap-3 rounded-md border p-3 bg-muted/30">
         <div className="col-span-2 text-sm font-medium">Host / Local Contact in Ghana</div>
         <div><Label>Host Name</Label><Input value={form.host_name} onChange={(e) => setForm({ ...form, host_name: e.target.value })} /></div>
-        <div><Label>Host Phone</Label><Input value={form.host_phone} onChange={(e) => setForm({ ...form, host_phone: e.target.value })} /></div>
+        <div><Label>Host Phone</Label><GhanaPhoneInput value={form.host_phone} onChange={(v) => setForm({ ...form, host_phone: v })} /></div>
         <div className="col-span-2"><Label>Host Address</Label><Input value={form.host_address} onChange={(e) => setForm({ ...form, host_address: e.target.value })} /></div>
       </div>
 
