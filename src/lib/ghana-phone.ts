@@ -71,13 +71,26 @@ export function networkForPrefix(prefix: string): GhanaNetwork | null {
   return null;
 }
 
+/** Placeholder / fabricated subscriber-digit patterns (mirrors gh_phone_is_suspicious in SQL). */
+const FABRICATED_SUBSCRIBERS = new Set([
+  "0000000",
+  "1234567",
+  "7654321",
+  "1111111",
+  "0123456",
+]);
+
 function looksFabricated(local: string): boolean {
   const rest = local.slice(3); // 7 subscriber digits
   if (/^(\d)\1{6}$/.test(rest)) return true; // 0241111111
-  if (rest === "0000000") return true;
-  if (rest === "1234567" || rest === "7654321") return true;
+  if (FABRICATED_SUBSCRIBERS.has(rest)) return true;
   if (/^(\d\d)\1{2}\d$/.test(rest)) return true; // 1212123
   return false;
+}
+
+/** True when the number parses as Ghanaian but the digit pattern looks forged. */
+export function isSuspiciousGhanaPhone(input: string): boolean {
+  return validateGhanaPhone(input).suspicious;
 }
 
 /** Full validation + network detection for a single number. */
