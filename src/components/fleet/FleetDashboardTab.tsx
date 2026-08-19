@@ -542,6 +542,7 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                   <TableHead className="text-right">Incidents</TableHead>
                   <TableHead>Details</TableHead>
                   <TableHead>Status</TableHead>
+                  {canRecord && <TableHead className="text-right">Vehicle log</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
