@@ -12,7 +12,9 @@ import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, 
 import { Button } from "@/components/ui/button";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
+import { Sensitive } from "@/components/Sensitive";
 import { BulkStaffUploadDialog } from "@/components/staff/BulkStaffUploadDialog";
+
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 const PAGE_SIZE = 24;
@@ -35,7 +37,7 @@ const statusColor = (s: string) => {
 
 export default function StaffDirectory() {
   const navigate = useNavigate();
-  const { isAdmin, isOic, is2ic, role } = useAuth();
+  const { isAdmin, isOic, is2ic, role, user } = useAuth();
   const canBulkUpload = isAdmin || isOic || is2ic || role === "chief_staff_officer";
   const [searchParams] = useSearchParams();
   const initialDept = searchParams.get("dept") || "all";
@@ -216,10 +218,18 @@ export default function StaffDirectory() {
                           <Badge variant="outline" className="text-[10px] mt-1">Shift {s.shift_group}</Badge>
                         )}
                         {s.phone && (
-                          <a href={`tel:${s.phone}`} className="flex items-center gap-1 text-xs text-primary hover:underline mt-1">
-                            <Phone className="h-3 w-3" /> {s.phone}
-                          </a>
+                          <span className="flex items-center gap-1 text-xs mt-1">
+                            <Phone className="h-3 w-3 text-primary" aria-hidden="true" />
+                            <Sensitive
+                              field="phone"
+                              value={s.phone}
+                              isOwner={(s as any).user_id === user?.id}
+                              entityType="staff_profile"
+                              recordId={s.id}
+                            />
+                          </span>
                         )}
+
                         <Button
                           variant="outline"
                           size="sm"

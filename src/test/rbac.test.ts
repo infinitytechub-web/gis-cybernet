@@ -84,6 +84,49 @@ describe("access decisions", () => {
   });
 });
 
+describe("least privilege — audit-sensitive modules", () => {
+  const SENSITIVE = [
+    "audit-log",
+    "command-role-audit",
+    "shift-window-audit",
+    "rum-analytics",
+    "session-management",
+    "admin-access-matrix",
+    "sensitive-access-log",
+    "ip-blocks",
+    "settings",
+    "branding",
+    "retention-policy",
+  ];
+
+  it("restricts audit/security modules to the administration tier", () => {
+    for (const key of SENSITIVE) {
+      expect(canAccessModule(key, { role: "staff" }), key).toBe(false);
+      expect(canAccessModule(key, { role: "supervisor" }), key).toBe(false);
+      expect(canAccessModule(key, { role: "staff_officer" }), key).toBe(false);
+      expect(canAccessModule(key, { role: "admin" }), key).toBe(true);
+    }
+  });
+
+  it("no longer exposes unit oversight or in-cab comms to every staff member", () => {
+    expect(canAccessModule("unit-dashboard", { role: "staff" })).toBe(false);
+    expect(canAccessModule("in-cab", { role: "staff" })).toBe(false);
+    expect(canAccessModule("unit-dashboard", { role: "supervisor" })).toBe(true);
+    expect(canAccessModule("in-cab", { role: "shift_leader" })).toBe(true);
+  });
+
+  it("keeps all-staff modules limited to personal / informational surfaces", () => {
+    const allowed = new Set([
+      "dashboard", "my-profile", "my-portal", "my-shift", "staff-directory",
+      "excuse-duty", "leave", "attendance", "holidays", "announcements",
+      "quarantine", "appraisals", "verify-export", "change-password",
+    ]);
+    const unexpected = MODULES.filter((m) => m.roles === "all" && !allowed.has(m.key)).map((m) => m.key);
+    expect(unexpected, `modules open to everyone: ${unexpected.join(", ")}`).toEqual([]);
+  });
+});
+
+
 describe("Command Officer role", () => {
   const co = { role: "command_officer" as const };
   const supervisor = { role: "supervisor" as const };

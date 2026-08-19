@@ -35,6 +35,10 @@ import { checkDetaineeDuplicates, type DuplicateMatch } from "@/lib/detention-du
 import { softDelete } from "@/lib/recycle-bin";
 import { AgeDisplay } from "@/components/ui/age-display";
 import { formatDate, formatDateTime, ageLabel, ageGroup, DATE_FORMAT_HINT } from "@/lib/date-format";
+import { canSeeField, displayField, type FieldContext, type SensitiveField } from "@/lib/field-visibility";
+import { Sensitive } from "@/components/Sensitive";
+
+
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDays, subMonths, startOfDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
@@ -258,7 +262,7 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
           headers: ["Name", "Gender", "Nationality", "Type of Offense", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by", ...(isArchive ? ["Archive Review", "Reviewed At", "Review Reason"] : [])],
-          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", formatDateTime(r.intake_at), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", r.next_of_kin || "-", r.next_of_kin_phone || "-", r.statement_approved_by_name || "-", ...(isArchive ? [ARCHIVE_REVIEW_LABELS[r.archive_review_status || "pending"], r.archive_reviewed_at ? formatDateTime(r.archive_reviewed_at) : "-", r.archive_review_reason || "-"] : [])]),
+          rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", formatDateTime(r.intake_at), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", displayField("next_of_kin", r.next_of_kin, { role: role as any }), displayField("next_of_kin", r.next_of_kin_phone, { role: role as any }), r.statement_approved_by_name || "-", ...(isArchive ? [ARCHIVE_REVIEW_LABELS[r.archive_review_status || "pending"], r.archive_reviewed_at ? formatDateTime(r.archive_reviewed_at) : "-", r.archive_review_reason || "-"] : [])]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
       </div>
@@ -342,7 +346,7 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
                             </Button>
                           </>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => printDetentionRecord(r)} title="Print">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => printDetentionRecord(r, { role: role as any })} title="Print">
                           <Printer className="h-3.5 w-3.5" />
                         </Button>
                         {canModify && (
@@ -426,24 +430,27 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
 }
 
 /* ----------------- PRINT HELPER ----------------- */
-function printDetentionRecord(r: any) {
+function printDetentionRecord(r: any, viewer: FieldContext = { role: null }) {
   const esc = (s: any) => String(s ?? "—").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const isDark = document.documentElement.classList.contains("dark");
   const bg = isDark ? "#1e293b" : "#fff";
   const fg = isDark ? "#e2e8f0" : "#1e293b";
   const border = isDark ? "#334155" : "#e2e8f0";
+  // Confidentiality: identity, contact and next-of-kin values are redacted on
+  // the printout unless the printing officer has a need-to-know for them.
+  const f = (field: SensitiveField, value: any) => displayField(field, value, viewer);
   const rows: [string, any][] = [
     ["Full Name", `${r.first_name} ${r.last_name}`],
     ["Alias", r.alias],
     ["Gender", r.gender],
-    ["Date of Birth", formatDate(r.date_of_birth)],
+    ["Date of Birth", canSeeField("detainee_identity", viewer) ? formatDate(r.date_of_birth) : "••/••/••••"],
     ["Age", ageLabel(r.date_of_birth)],
     ["Nationality", r.nationality],
     ["Country of Origin", r.country_of_origin],
     ["ID Type", r.id_type],
-    ["ID Number", r.id_number],
-    ["Phone", r.phone],
-    ["Home Address", r.home_address],
+    ["ID Number", f("detainee_identity", r.id_number)],
+    ["Phone", f("detainee_contact", r.phone)],
+    ["Home Address", f("detainee_contact", r.home_address)],
     ["Type of Offense", r.crime_type],
     ["Charge Description", r.charge_description],
     ["Location of Arrest", r.location_of_arrest],
@@ -456,12 +463,13 @@ function printDetentionRecord(r: any) {
     ["Referred from", referralDisplay(r.referred_from, r.referred_from_other)],
     ["Referred to", referralDisplay(r.referred_to, r.referred_to_other)],
     ["Statement Approved by", r.statement_approved_by_name],
-    ["Next of Kin (NoK)", r.next_of_kin],
-    ["Next of Kin (NoK) Phone", r.next_of_kin_phone],
-    ["Emergency Contact", r.emergency_contact],
-    ["Medical Alerts", r.medical_alerts],
+    ["Next of Kin (NoK)", f("next_of_kin", r.next_of_kin)],
+    ["Next of Kin (NoK) Phone", f("next_of_kin", r.next_of_kin_phone)],
+    ["Emergency Contact", f("detainee_contact", r.emergency_contact)],
+    ["Medical Alerts", f("medical_record", r.medical_alerts)],
     ["Notes", r.notes],
   ];
+
   const html = `<!DOCTYPE html><html><head><title>Detention Record — ${esc(r.first_name)} ${esc(r.last_name)}</title>
 <style>
   @media print { @page { size: portrait; margin: 14mm; } }
@@ -827,6 +835,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
   const qc = useQueryClient();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const canCommand = ["admin", "oic", "2ic"].includes(role || "");
+  const viewer: FieldContext = { role: role as any };
+
 
   useEffect(() => {
     if (record.photo_url) {
@@ -902,14 +912,15 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
           <TabsContent value="bio" className="space-y-3">
             <Section title="Identification">
               <Field label="Gender" value={record.gender} />
-              <Field label="Date of Birth" value={formatDate(record.date_of_birth)} />
+              <Field label="Date of Birth" value={canSeeField("detainee_identity", viewer) ? formatDate(record.date_of_birth) : "••/••/••••"} />
               <Field label="Age" value={ageLabel(record.date_of_birth)} />
               <Field label="Nationality" value={record.nationality} />
               <Field label="Country of Origin" value={record.country_of_origin} />
               <Field label="ID Type" value={record.id_type} />
-              <Field label="ID Number" value={record.id_number} />
-              <Field label="Phone" value={record.phone} />
-              <Field label="Home Address" value={record.home_address} full />
+              <Field label="ID Number" value={<Sensitive field="detainee_identity" value={record.id_number} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Phone" value={<Sensitive field="detainee_contact" value={record.phone} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Home Address" value={<Sensitive field="detainee_contact" value={record.home_address} revealable entityType="detention_record" recordId={record.id} />} full />
+
             </Section>
             <Section title="Case">
               <Field label="Type of Offense" value={record.crime_type} />
@@ -926,10 +937,11 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               {record.notes && <Field label="Notes" value={record.notes} full />}
             </Section>
             <Section title="Next of Kin (NoK) / Emergency">
-              <Field label="Next of Kin (NoK)" value={record.next_of_kin} />
-              <Field label="Next of Kin (NoK) Phone" value={record.next_of_kin_phone} />
-              <Field label="Emergency Contact" value={record.emergency_contact} full />
+              <Field label="Next of Kin (NoK)" value={<Sensitive field="next_of_kin" value={record.next_of_kin} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Next of Kin (NoK) Phone" value={<Sensitive field="next_of_kin" value={record.next_of_kin_phone} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Emergency Contact" value={<Sensitive field="detainee_contact" value={record.emergency_contact} revealable entityType="detention_record" recordId={record.id} />} full />
             </Section>
+
             <Section title="Status audit trail">
               <div className="col-span-2">
                 <StatusHistoryList entity="detention_records" recordId={record.id} />

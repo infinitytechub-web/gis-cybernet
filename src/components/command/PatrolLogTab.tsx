@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/date-format";
 import { orgUnitPath, type OrgUnit } from "@/lib/org-hierarchy";
 import { useGhanaDistricts, useFleetVehicles } from "@/hooks/useFleet";
+import { DateInput } from "@/components/ui/date-input";
 import {
   usePatrolLogs, usePatrolPhotos, usePatrolStaffOptions,
   useCreatePatrolLog, useUpdatePatrolLog, useReviewPatrolLog,
@@ -360,9 +361,8 @@ export default function PatrolLogTab({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="patrol-date">Patrol date</Label>
-              <Input
+              <DateInput
                 id="patrol-date"
-                type="date"
                 value={form.patrol_date}
                 onChange={(e) => setForm((f) => ({ ...f, patrol_date: e.target.value }))}
               />

@@ -71,7 +71,7 @@ export const MODULES: ModuleDef[] = [
   { key: "holidays", label: "Holidays", tier: "all-staff", roles: "all", paths: ["/holidays"] },
   { key: "announcements", label: "Announcements", feature: "Announcements", tier: "all-staff", roles: "all", paths: ["/announcements"] },
   { key: "quarantine", label: "Quarantine Inbox", tier: "all-staff", roles: "all", paths: ["/quarantine"] },
-  { key: "in-cab", label: "In-Cab Console", tier: "all-staff", roles: "all", paths: ["/in-cab"] },
+
   { key: "appraisals", label: "Staff Appraisals", tier: "all-staff", roles: "all", paths: ["/appraisals", "/appraisals/officer/:staffProfileId"] },
   { key: "verify-export", label: "Verify Export", tier: "all-staff", roles: "all", paths: ["/verify-export"] },
   { key: "change-password", label: "Change Password", tier: "all-staff", roles: "all", paths: ["/change-password"] },
@@ -102,6 +102,9 @@ export const MODULES: ModuleDef[] = [
   { key: "health-lab", label: "Health Lab+", tier: "module", roles: [...COMMAND, "medical_officer"], paths: ["/health-lab"] },
   { key: "stores", label: "Stores & Inventory", tier: "module", roles: [...COMMAND, "storekeeper", "procurement_officer"], paths: ["/stores"] },
   { key: "fleet", label: "Fleet Management", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "storekeeper"], paths: ["/fleet"] },
+  // In-cab console carries live vehicle/patrol comms — patrol & fleet roles only.
+  { key: "in-cab", label: "In-Cab Console", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "storekeeper", "special_duties"], paths: ["/in-cab"] },
+
 
   { key: "procurement", label: "Procurement Unit", tier: "module", roles: [...COMMAND, "procurement_officer", "storekeeper"], paths: ["/procurement"] },
 
@@ -130,20 +133,24 @@ export const MODULES: ModuleDef[] = [
   { key: "staff-mapping-import", label: "Staff Mapping Import", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-mapping-import"] },
   { key: "role-assignments", label: "Role Assignments", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/role-assignments"] },
   { key: "command-roles", label: "Command Roles & Grants", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/command-roles"] },
-  { key: "unit-dashboard", label: "Unit Dashboard", tier: "all-staff", roles: "all", paths: ["/unit-dashboard"] },
+  // Unit oversight — shows other staff members' postings, so not open to all staff.
+  { key: "unit-dashboard", label: "Unit Dashboard", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, ...IPSE_TIER, ...PROCESSING_TIER], paths: ["/unit-dashboard"] },
   { key: "org-structure", label: "Command Structure", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/org-structure"] },
 
   // ── Administration, security & audit ────────────────────────────────────
+  // Audit, session, security and telemetry surfaces are audit-sensitive:
+  // Admin / OIC / 2IC only. Other command-tier roles need a delegated grant.
   { key: "admin-console", label: "Admin Console", tier: "command", roles: COMMAND, paths: ["/admin"] },
-  { key: "session-management", label: "Session Management", tier: "command", roles: COMMAND, paths: ["/admin/sessions"] },
-  { key: "admin-access-matrix", label: "Admin Access Matrix", tier: "command", roles: COMMAND, paths: ["/admin-access-matrix"] },
+  { key: "session-management", label: "Session Management", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/sessions"] },
+  { key: "admin-access-matrix", label: "Admin Access Matrix", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin-access-matrix"] },
   { key: "admin-shift-rotations", label: "Shift Rotations Administration", tier: "command", roles: COMMAND, paths: ["/admin/shift-rotations"] },
-  { key: "audit-log", label: "Audit Log Dashboard", tier: "command", roles: COMMAND, paths: ["/audit-log"] },
-  { key: "command-role-audit", label: "Command Role Audit", tier: "command", roles: COMMAND, paths: ["/command-role-audit"] },
-  { key: "shift-window-audit", label: "Shift Rules Audit", tier: "command", roles: COMMAND, paths: ["/shift-window-audit"] },
-  { key: "rum-analytics", label: "RUM Analytics", tier: "command", roles: COMMAND, paths: ["/rum-analytics"] },
+  { key: "audit-log", label: "Audit Log Dashboard", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/audit-log"] },
+  { key: "command-role-audit", label: "Command Role Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/command-role-audit"] },
+  { key: "shift-window-audit", label: "Shift Rules Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/shift-window-audit"] },
+  { key: "rum-analytics", label: "RUM Analytics", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/rum-analytics"] },
   { key: "sensitive-access-log", label: "Sensitive Access Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/sensitive-access-log"] },
   { key: "ip-blocks", label: "IP & Device Blocks", tier: "admin", roles: ADMIN_ONLY, paths: ["/ip-blocks"] },
+
   { key: "recycle-bin", label: "Recycle Bin", tier: "admin", roles: ["admin", "oic"], paths: ["/recycle-bin"] },
   { key: "retention-policy", label: "Retention Policy", tier: "admin", roles: ADMIN_ONLY, paths: ["/announcements/retention", "/retention-policy"] },
   { key: "settings", label: "System Settings", tier: "admin", roles: ADMIN_ONLY, paths: ["/settings"] },
