@@ -23,12 +23,14 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
 import CommandDashboardTab from "@/components/command/CommandDashboardTab";
 import CyberIncidentsTab from "@/components/command/CyberIncidentsTab";
+import ProcurementTab from "@/components/command/ProcurementTab";
+
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
   useCommandConsoleFeed, useBranchFilter, rollupByCommand,
@@ -275,6 +277,9 @@ export default function CommandConsole() {
             <TabsTrigger value="cyber">
               <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />Cyber
             </TabsTrigger>
+            <TabsTrigger value="procurement">
+              <ShoppingCart className="mr-1 h-4 w-4" aria-hidden="true" />Procurement
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Gauge className="mr-1 h-4 w-4" aria-hidden="true" />Status dashboards
             </TabsTrigger>
@@ -292,6 +297,12 @@ export default function CommandConsole() {
         <TabsContent value="cyber" className="mt-4">
           <CyberIncidentsTab units={units} tree={tree} canManage={isAdminOrSupervisor} />
         </TabsContent>
+
+        {/* ── Procurement: request → approve → receive → audit ──────────── */}
+        <TabsContent value="procurement" className="mt-4">
+          <ProcurementTab />
+        </TabsContent>
+
 
 
         {/* ── Live alerts ───────────────────────────────────────────────── */}

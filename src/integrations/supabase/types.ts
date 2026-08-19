@@ -7213,6 +7213,94 @@ export type Database = {
           },
         ]
       }
+      procurement_request_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          requisition_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          requisition_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          requisition_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_request_events_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_request_photos: {
+        Row: {
+          caption: string | null
+          content_type: string | null
+          created_at: string
+          id: string
+          kind: string
+          requisition_id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          caption?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          requisition_id: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          caption?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          requisition_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_request_photos_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_requisitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procurement_rfqs: {
         Row: {
           awarded_amount: number | null
@@ -7833,6 +7921,7 @@ export type Database = {
           id: string
           item_name: string
           quantity: number
+          received_qty: number
           requisition_id: string
           unit: string | null
         }
@@ -7843,6 +7932,7 @@ export type Database = {
           id?: string
           item_name: string
           quantity?: number
+          received_qty?: number
           requisition_id: string
           unit?: string | null
         }
@@ -7853,6 +7943,7 @@ export type Database = {
           id?: string
           item_name?: string
           quantity?: number
+          received_qty?: number
           requisition_id?: string
           unit?: string | null
         }
@@ -7879,9 +7970,13 @@ export type Database = {
           notes: string | null
           pr_number: string
           priority: string
+          receive_notes: string | null
+          received_at: string | null
+          received_by: string | null
           rejection_reason: string | null
           requested_by: string
           status: string
+          submitted_at: string | null
           title: string
           updated_at: string
         }
@@ -7897,9 +7992,13 @@ export type Database = {
           notes?: string | null
           pr_number: string
           priority?: string
+          receive_notes?: string | null
+          received_at?: string | null
+          received_by?: string | null
           rejection_reason?: string | null
           requested_by: string
           status?: string
+          submitted_at?: string | null
           title: string
           updated_at?: string
         }
@@ -7915,9 +8014,13 @@ export type Database = {
           notes?: string | null
           pr_number?: string
           priority?: string
+          receive_notes?: string | null
+          received_at?: string | null
+          received_by?: string | null
           rejection_reason?: string | null
           requested_by?: string
           status?: string
+          submitted_at?: string | null
           title?: string
           updated_at?: string
         }
@@ -10846,6 +10949,7 @@ export type Database = {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_procurement: { Args: { _user_id: string }; Returns: boolean }
       can_manage_sessions: { Args: { _user_id: string }; Returns: boolean }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_shift_connection_action: {
@@ -11434,6 +11538,19 @@ export type Database = {
           _reason?: string
         }
         Returns: Json
+      }
+      procurement_actor_name: { Args: { _uid: string }; Returns: string }
+      procurement_request_decide: {
+        Args: { _approve: boolean; _note?: string; _requisition_id: string }
+        Returns: undefined
+      }
+      procurement_request_receive: {
+        Args: { _items?: Json; _note?: string; _requisition_id: string }
+        Returns: string
+      }
+      procurement_request_submit: {
+        Args: { _note?: string; _requisition_id: string }
+        Returns: undefined
       }
       prune_backup_schedule_history: {
         Args: { _schedule_id: string }
