@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Fingerprint, ScanFace, ShieldCheck, Trash2, Loader2 } from "lucide-react";
 import { biometricsAvailable, currentDeviceLabel, enrollBiometric, supportsWebAuthn } from "@/lib/webauthn";
-import { formatDate } from "@/lib/date-utils";
+import { formatDate } from "@/lib/date-format";
 
 interface CredentialRow {
   id: string;
