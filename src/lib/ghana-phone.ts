@@ -195,5 +195,5 @@ export function normalizeGhanaPhoneList(input: string): string {
     .join(", ");
 }
 
-export const GHANA_PHONE_PLACEHOLDER = "024 123 4567";
+export const GHANA_PHONE_PLACEHOLDER = "0XX XXX XXXX";
 export const GHANA_PHONE_HINT = "10 digits — MTN, Telecel or AirtelTigo";
