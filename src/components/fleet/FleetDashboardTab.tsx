@@ -442,7 +442,7 @@ function PatrolGpsActivityCard({ days }: { days: number }) {
           Districts and times taken from each patrol's vehicle trail.{" "}
           {tracked > 0 && `${confirmed} of ${tracked} vehicle patrols GPS-confirmed. `}
           Entries are logged in{" "}
-          <Link to="/command-console?tab=patrol-log" className="underline">Command Console → Patrol log</Link>.
+          <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>.
         </CardDescription>
       </CardHeader>
       <CardContent>
