@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +41,7 @@ import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { flattenOrgTree } from "@/lib/org-hierarchy";
+import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
