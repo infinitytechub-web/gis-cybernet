@@ -10,6 +10,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-cybernet-app",
 };
 
+/**
+ * Roles an administrator may designate when provisioning an account. Kept in
+ * step with ROSTER_ASSIGNABLE_ROLES on the client; 'admin' is deliberately not
+ * grantable here so accounts cannot be self-escalated through this path.
+ */
+const ALLOWED_ROLES = new Set([
+  "oic", "2ic", "chief_staff_officer", "head_of_administration", "staff_officer",
+  "command_officer", "supervisor", "deputy_supervisor", "shift_leader", "front_desk",
+  "storekeeper", "procurement_officer", "medical_officer", "special_duties", "staff",
+]);
+
 function generatePassword(length = 12): string {
   return generateSecurePassword(length);
 }
@@ -103,17 +114,46 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Optional body — targets specific profiles (manual "Add staff" flow) and an
+    // explicit role. Without a body the function keeps its original behaviour of
+    // provisioning every in-scope active staff member without an account.
+    let targetIds: string[] | null = null;
+    let requestedRole = "staff";
+    try {
+      const raw = await req.text();
+      if (raw) {
+        const body = JSON.parse(raw) as { profile_ids?: unknown; role?: unknown };
+        if (Array.isArray(body.profile_ids)) {
+          const ids = body.profile_ids.filter((v): v is string => typeof v === "string");
+          if (ids.length > 0) targetIds = ids.slice(0, 200);
+        }
+        if (typeof body.role === "string" && ALLOWED_ROLES.has(body.role)) {
+          requestedRole = body.role;
+        } else if (typeof body.role === "string" && body.role) {
+          return new Response(JSON.stringify({ error: "Unsupported role requested" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Step 1: Clean up orphan auth users from previous failed attempts
     console.log("Step 1: Cleaning up orphan auth users...");
     await cleanupOrphanAuthUsers(adminClient);
 
-    // Step 2: Get all active profiles without user_id
+    // Step 2: Get active profiles without user_id (optionally a targeted subset)
     console.log("Step 2: Getting active profiles without accounts...");
-    const { data: profiles, error: pErr } = await adminClient
+    let profileQuery = adminClient
       .from("profiles")
       .select("id, first_name, last_name, staff_id")
       .is("user_id", null)
       .eq("status", "active");
+    if (targetIds) profileQuery = profileQuery.in("id", targetIds);
+    const { data: profiles, error: pErr } = await profileQuery;
 
     if (pErr) throw pErr;
 
@@ -181,8 +221,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Assign default 'staff' role
-        await adminClient.from("user_roles").insert({ user_id: newUser.user.id, role: "staff" });
+        // Assign the designated role (defaults to 'staff')
+        await adminClient.from("user_roles").insert({ user_id: newUser.user.id, role: requestedRole });
 
         created.push({
           staffId: profile.staff_id,

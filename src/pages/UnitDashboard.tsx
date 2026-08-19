@@ -15,8 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import StaffRosterTab from "@/components/command/StaffRosterTab";
+import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
+import UnitAddStaffDialog from "@/components/command/UnitAddStaffDialog";
+import { Button } from "@/components/ui/button";
+
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Users, Lock, Gavel, Truck, ShieldAlert, Footprints } from "lucide-react";
+import { Building2, Users, Lock, Gavel, Truck, ShieldAlert, Footprints, Search, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { useUnitDashboard } from "@/hooks/useUnitDashboard";
@@ -55,6 +59,9 @@ export default function UnitDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedUnit = searchParams.get("unit");
   const [unitId, setUnitId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [addStaffOpen, setAddStaffOpen] = useState(false);
+  const canManageStaff = role === "admin" || isCommandTier;
 
   /** Deep link from the Command Console unit roster: /unit-dashboard?unit=<id> */
   useEffect(() => {
@@ -92,24 +99,51 @@ export default function UnitDashboard() {
             Assigned staff, detainees, cases and vehicles for a single command unit.
           </p>
         </div>
-        <div className="w-full sm:w-80">
-          <label htmlFor="unit-filter" className="mb-1 block text-xs font-medium text-muted-foreground">
-            Unit filter
-          </label>
-          <Select value={unitId ?? undefined} onValueChange={selectUnit}>
-            <SelectTrigger id="unit-filter" aria-label="Unit filter">
-              <SelectValue placeholder={scopeLoading ? "Loading units…" : "Select a unit"} />
-            </SelectTrigger>
-            <SelectContent>
-              {selectableUnits.map((u) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {orgUnitPath(units, u.id)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end">
+          <div className="w-full sm:w-80">
+            <label htmlFor="unit-filter" className="mb-1 block text-xs font-medium text-muted-foreground">
+              Unit filter
+            </label>
+            <Select value={unitId ?? undefined} onValueChange={selectUnit}>
+              <SelectTrigger id="unit-filter" aria-label="Unit filter">
+                <SelectValue placeholder={scopeLoading ? "Loading units…" : "Select a unit"} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectableUnits.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {orgUnitPath(units, u.id)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => setPickerOpen(true)}>
+              <Search className="mr-2 h-4 w-4" aria-hidden="true" /> Find staff
+            </Button>
+            {canManageStaff && (
+              <Button type="button" onClick={() => setAddStaffOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" /> Add staff
+              </Button>
+            )}
+          </div>
         </div>
       </header>
+
+      <UnitStaffPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        units={units}
+        selectableUnits={selectableUnits}
+        defaultOrgUnitId={unitId}
+        canManage={canManageStaff}
+      />
+      <UnitAddStaffDialog
+        open={addStaffOpen}
+        onOpenChange={setAddStaffOpen}
+        units={selectableUnits}
+        defaultOrgUnitId={unitId}
+      />
 
       {!scopeLoading && selectableUnits.length === 0 && (
         <Alert>

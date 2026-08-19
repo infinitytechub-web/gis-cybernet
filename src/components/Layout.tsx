@@ -6,6 +6,7 @@ import { HeaderProfileDropdown } from "@/components/HeaderProfileDropdown";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
+import { QuickScroll } from "@/components/ui/quick-scroll";
 import { buildId, buildTooltip } from "@/lib/build-version";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
@@ -77,6 +78,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <WelcomeBanner />
             {children}
           </main>
+          {/* Quick scroll for long pages — appears only when content overflows. */}
+          <QuickScroll selector="#main-content" position="fixed" label="page" />
           <footer className="hidden lg:flex items-center justify-center gap-2 border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
             <span>{footer_text}</span>
             <span aria-hidden="true" className="opacity-40">·</span>
