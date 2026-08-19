@@ -72,6 +72,7 @@ function SeverityBadge({ severity }: { severity: ConsoleSeverity }) {
 }
 
 export default function CommandConsole() {
+  const { isAdminOrSupervisor } = useAuth();
   const { units, tree, scope, loading: orgLoading } = useOrgScope();
   const [branch, setBranch] = useState<string | "all">("all");
   const [source, setSource] = useState<ConsoleSource | "all">("all");
