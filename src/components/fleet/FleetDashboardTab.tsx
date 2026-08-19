@@ -17,7 +17,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { Activity, Fuel, MapPinned, BellRing, Gauge, AlertTriangle } from "lucide-react";
+import { Activity, Fuel, MapPinned, BellRing, Gauge, AlertTriangle, CalendarClock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { formatDate } from "@/lib/date-format";
+import { usePatrolPlans, isPlanOpen } from "@/hooks/usePatrolPlans";
 import { ALERT_TYPE_LABELS, VEHICLE_STATUS_LABELS, type AlertType, type VehicleStatus } from "@/lib/fleet";
 
 interface DashboardVehicle {
@@ -401,7 +404,68 @@ export function FleetDashboardTab({ canManage }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <PatrolPlanCommitments />
     </div>
+  );
+}
+
+/** Open patrol plans that reserve a vehicle — the fleet view of the plan register. */
+function PatrolPlanCommitments() {
+  const { data: plans = [], isLoading } = usePatrolPlans(30);
+  const rows = plans.filter((p) => p.vehicle_id && isPlanOpen(p.status)).slice(0, 12);
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CalendarClock className="h-4 w-4 text-primary" aria-hidden="true" />
+          Patrol plan commitments
+        </CardTitle>
+        <CardDescription>
+          Open plans holding a vehicle. Manage them in{" "}
+          <Link to="/command-console" className="underline">Command Console → Patrol plans</Link>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && <p className="text-sm text-muted-foreground">Loading plans…</p>}
+        {!isLoading && rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">No open patrol plans hold a vehicle.</p>
+        )}
+        {rows.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Window</TableHead>
+                  <TableHead>District</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-mono text-xs">{p.plan_reference}</TableCell>
+                    <TableCell>{p.title}</TableCell>
+                    <TableCell>{formatDate(p.planned_date)}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {(p.start_time ?? "").slice(0, 5)}
+                      {p.end_time ? ` – ${p.end_time.slice(0, 5)}` : ""}
+                    </TableCell>
+                    <TableCell>{p.district_name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">{p.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
