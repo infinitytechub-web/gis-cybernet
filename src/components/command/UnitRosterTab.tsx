@@ -132,6 +132,38 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                 className="w-[240px]"
                 aria-label="Search unit roster"
               />
+              <ExportMenu
+                label="Export units"
+                getData={() => ({
+                  title: "Unit Roster — Order of Battle",
+                  filename: `unit_roster_${new Date().toISOString().slice(0, 10)}`,
+                  subtitle: `${filtered.length} units · Generated ${new Date().toLocaleString("en-GB")}`,
+                  headers: [
+                    "Unit", "Code", "Level", "Posting path", "Commander", "Staff ID", "Command role",
+                    "Rank", "Date joined service", "Years of service", "Phone", "Email",
+                    "Posted strength", "Branch strength", "Status",
+                  ],
+                  rows: filtered.map((r) => [
+                    r.unit_name,
+                    r.unit_code ?? "—",
+                    ORG_UNIT_TYPE_LABELS[r.unit_type] ?? r.unit_type,
+                    r.unit_path,
+                    r.commander?.full_name ?? "Vacant",
+                    r.commander?.staff_id ?? "—",
+                    r.commander_role ? roleLabel(r.commander_role) : "—",
+                    r.commander?.rank ?? "—",
+                    r.commander?.date_joined_service
+                      ? new Date(r.commander.date_joined_service).toLocaleDateString("en-GB")
+                      : "—",
+                    r.commander?.service_label ?? "—",
+                    r.commander?.phone ?? "—",
+                    r.commander?.email ?? "—",
+                    String(r.strength),
+                    String(r.branch_strength),
+                    r.is_active ? "Active" : "Inactive",
+                  ]),
+                })}
+              />
             </div>
           )}
         </div>
