@@ -192,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role === "2ic" ||
       role === "head_of_administration" ||
       role === "chief_staff_officer" ||
+      role === "command_officer" ||
       role === "staff_officer" ||
       role === "supervisor",
     isIpse: role === "ipse_supervisor" || role === "ipse_deputy_supervisor",

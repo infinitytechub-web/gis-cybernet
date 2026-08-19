@@ -11315,6 +11315,7 @@ export type Database = {
         | "head_of_processing"
         | "deputy_head_of_processing"
         | "medical_officer"
+        | "command_officer"
       appraisal_criterion:
         | "job_knowledge"
         | "quality_of_work"
@@ -11542,6 +11543,7 @@ export const Constants = {
         "head_of_processing",
         "deputy_head_of_processing",
         "medical_officer",
+        "command_officer",
       ],
       appraisal_criterion: [
         "job_knowledge",
