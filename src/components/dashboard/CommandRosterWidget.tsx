@@ -21,9 +21,9 @@ export default function CommandRosterWidget() {
       if (!ids.length) return [];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, email")
-        .in("id", ids);
-      const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+        .select("id, user_id, first_name, last_name, email")
+        .in("user_id", ids);
+      const byId = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
       return (roleRows ?? []).map((r: any) => {
         const p: any = byId.get(r.user_id) ?? {};
         return { user_id: r.user_id, role: r.role, first_name: p.first_name, last_name: p.last_name, email: p.email } as Holder;
