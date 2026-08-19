@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -133,6 +134,7 @@ export default function VisaExtensions() {
       const payload = {
         ...form,
         date_of_birth: form.date_of_birth || null,
+        phone: assertContactPhoneList(form.phone, "Telephone"),
         nationality: form.nationality || null,
         permit_type: form.permit_type || null,
         fee_charged: form.fee_charged === "" ? null : Number(form.fee_charged),

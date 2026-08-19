@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
+import { ContactPhoneInput } from "@/components/ui/contact-phone-input";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -176,7 +178,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
       bailee_last_name: String(form.bailee_last_name).trim(),
       bailee_gender: clean(form.bailee_gender),
       bailee_nationality: clean(form.bailee_nationality),
-      bailee_phone: clean(form.bailee_phone),
+      bailee_phone: assertContactPhoneList(form.bailee_phone, "Bailee phone") || null,
       bailee_address: clean(form.bailee_address),
       bailee_id_type: clean(form.bailee_id_type),
       bailee_id_number: clean(form.bailee_id_number),
@@ -190,7 +192,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
       surety_name: clean(form.surety_name),
       surety_relationship: clean(form.surety_relationship),
       surety_relationship_other: form.surety_relationship === OTHER_RELATIONSHIP ? clean(form.surety_relationship_other) : null,
-      surety_phone: clean(form.surety_phone),
+      surety_phone: assertContactPhoneList(form.surety_phone, "Surety phone") || null,
       surety_address: clean(form.surety_address),
       surety_occupation: clean(form.surety_occupation),
       surety_id_type: clean(form.surety_id_type),
@@ -470,7 +472,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
                     <Label>Nationality</Label>
                     <CountryCombobox value={form.bailee_nationality} onValueChange={(v) => set("bailee_nationality", v)} placeholder="Select nationality..." />
                   </div>
-                  <Field label="Phone" value={form.bailee_phone} onChange={(v) => set("bailee_phone", v)} />
+                  <div><Label className="text-xs">Phone</Label><ContactPhoneInput value={form.bailee_phone} onChange={(v) => set("bailee_phone", v)} compact /></div>
                   <Field label="Address" value={form.bailee_address} onChange={(v) => set("bailee_address", v)} />
                   <div className="space-y-2">
                     <Label>ID type</Label>
@@ -562,7 +564,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
                       </>
                     )}
                   </div>
-                  <Field label="Phone" value={form.surety_phone} onChange={(v) => set("surety_phone", v)} />
+                  <div><Label className="text-xs">Phone</Label><ContactPhoneInput value={form.surety_phone} onChange={(v) => set("surety_phone", v)} compact /></div>
                   <Field label="Occupation" value={form.surety_occupation} onChange={(v) => set("surety_occupation", v)} />
                   <Field label="Address" value={form.surety_address} onChange={(v) => set("surety_address", v)} />
                   <div className="space-y-2">

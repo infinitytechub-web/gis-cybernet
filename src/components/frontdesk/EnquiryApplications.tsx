@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,6 +82,7 @@ export default function EnquiryApplications() {
       const payload = {
         ...form,
         date_of_birth: form.date_of_birth || null,
+        phone: assertContactPhoneList(form.phone, "Telephone"),
         processed_by: user?.id,
       };
       let previousStatus: string | null = null;
