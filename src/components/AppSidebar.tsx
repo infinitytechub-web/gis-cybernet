@@ -25,6 +25,12 @@ import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 import { useConfidentialityCommands } from "@/hooks/useConfidentialityCommands";
 import { useRbac } from "@/hooks/useRbac";
+import {
+  ALL_APPLICATION_TABLES,
+  FRONT_DESK_TABLES,
+  PROCESSING_TABLES,
+  sumPending,
+} from "@/lib/application-queues";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 
 const commandItems = [
@@ -169,9 +175,8 @@ export function AppSidebar() {
 
   // Realtime: invalidate sidebar badge counts on any change to application tables
   useEffect(() => {
-    const tables = ["visa_applications", "visa_extensions", "passport_applications", "official_applications", "enquiry_applications"];
     const channel = supabase.channel("sidebar-badge-realtime");
-    tables.forEach((table) => {
+    ALL_APPLICATION_TABLES.forEach((table) => {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
         queryClient.invalidateQueries({ queryKey: ["processing-sidebar-count"] });
         queryClient.invalidateQueries({ queryKey: ["frontdesk-sidebar-count"] });
@@ -183,33 +188,16 @@ export function AppSidebar() {
 
   const { data: processingCount } = useQuery({
     queryKey: ["processing-sidebar-count"],
-    queryFn: async () => {
-      const [v, e, p, o, eq] = await Promise.all([
-        supabase.from("visa_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
-        supabase.from("visa_extensions").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
-        supabase.from("passport_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "processing"]),
-        supabase.from("official_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
-        supabase.from("enquiry_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
-      ]);
-      return (v.count ?? 0) + (e.count ?? 0) + (p.count ?? 0) + (o.count ?? 0) + (eq.count ?? 0);
-    },
+    queryFn: () => sumPending(PROCESSING_TABLES),
     refetchInterval: 30_000,
   });
 
   const { data: frontDeskCount } = useQuery({
     queryKey: ["frontdesk-sidebar-count"],
-    queryFn: async () => {
-      const [v, e, p, o, eq] = await Promise.all([
-        supabase.from("visa_applications").select("id", { count: "exact", head: true }),
-        supabase.from("visa_extensions").select("id", { count: "exact", head: true }),
-        supabase.from("passport_applications").select("id", { count: "exact", head: true }),
-        supabase.from("official_applications").select("id", { count: "exact", head: true }),
-        supabase.from("enquiry_applications").select("id", { count: "exact", head: true }),
-      ]);
-      return (v.count ?? 0) + (e.count ?? 0) + (p.count ?? 0) + (o.count ?? 0) + (eq.count ?? 0);
-    },
+    queryFn: () => sumPending(FRONT_DESK_TABLES),
     refetchInterval: 30_000,
   });
+
 
   const renderBadge = (item: NavItem) => {
     if (item.badge === "processing" && !collapsed && processingCount != null && processingCount > 0) {

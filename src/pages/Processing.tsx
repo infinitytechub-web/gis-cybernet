@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Stamp, FileText, ShieldCheck, IdCard, ClipboardList, Plus } from "lucide-react";
+import { Stamp, FileText, ShieldCheck, IdCard, ClipboardList, BookOpen, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import ProcessingVisaApplications from "@/components/processing/ProcessingVisaApplications";
 import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExtensions";
 import ProcessingPermits from "@/components/processing/ProcessingPermits";
+import ProcessingPassportApplications from "@/components/processing/ProcessingPassportApplications";
 import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
 import { CountryCombobox } from "@/components/ui/country-combobox";
@@ -102,7 +103,7 @@ export default function Processing() {
   }
 
   const showApprovals = !!role && APPROVALS_ROLES.includes(role);
-  const colsClass = showApprovals ? "grid w-full grid-cols-5" : "grid w-full grid-cols-4";
+  const colsClass = showApprovals ? "grid w-full grid-cols-6" : "grid w-full grid-cols-5";
 
   return (
     <div className="space-y-6">
@@ -177,6 +178,9 @@ export default function Processing() {
           <TabsTrigger value="permits" className="gap-1 text-xs sm:text-sm">
             <IdCard className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Permits
           </TabsTrigger>
+          <TabsTrigger value="passport" className="gap-1 text-xs sm:text-sm">
+            <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Passports
+          </TabsTrigger>
           {showApprovals && (
             <TabsTrigger value="approvals" className="gap-1 text-xs sm:text-sm">
               <ShieldCheck className="h-4 w-4 text-rose-600 dark:text-rose-400" /> Approvals
@@ -189,6 +193,8 @@ export default function Processing() {
         <TabsContent value="visa"><ProcessingVisaApplications /></TabsContent>
         <TabsContent value="extensions"><ProcessingVisaExtensions /></TabsContent>
         <TabsContent value="permits"><ProcessingPermits /></TabsContent>
+        <TabsContent value="passport"><ProcessingPassportApplications /></TabsContent>
+
         {showApprovals && <TabsContent value="approvals"><ApprovalsQueue /></TabsContent>}
         <TabsContent value="audit"><ProcessingAuditLog /></TabsContent>
       </Tabs>
