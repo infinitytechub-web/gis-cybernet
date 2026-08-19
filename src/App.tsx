@@ -71,6 +71,8 @@ const AdminConsole = lazy(() => import("./pages/AdminConsole"));
 const AdminAccessMatrix = lazy(() => import("./pages/AdminAccessMatrix"));
 const CommandRoleAudit = lazy(() => import("./pages/CommandRoleAudit"));
 const Stores = lazy(() => import("./pages/Stores"));
+const Fleet = lazy(() => import("./pages/Fleet"));
+
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
 const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
