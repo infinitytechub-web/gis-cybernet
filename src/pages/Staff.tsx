@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { yearsOfService } from "@/lib/postings-analytics";
+import { formatService } from "@/hooks/useStaffRoster";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
