@@ -311,6 +311,53 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                 <SelectItem value="unmarked">Unmarked today</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={serviceFilter} onValueChange={setServiceFilter}>
+              <SelectTrigger className="w-40" aria-label="Filter by years of service">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any service</SelectItem>
+                <SelectItem value="lt5">Under 5 years</SelectItem>
+                <SelectItem value="5to10">5 – 10 years</SelectItem>
+                <SelectItem value="10to20">10 – 20 years</SelectItem>
+                <SelectItem value="gte20">20+ years</SelectItem>
+                <SelectItem value="retiring">Retiring ≤ 2 years</SelectItem>
+                <SelectItem value="unrecorded">Service unrecorded</SelectItem>
+              </SelectContent>
+            </Select>
+            <ExportMenu
+              label="Export roster"
+              getData={() => ({
+                title: "Staff Roster",
+                filename: `staff_roster_${new Date().toISOString().slice(0, 10)}`,
+                subtitle: `${branchName ?? "Whole command"} · ${rows.length} staff · Generated ${new Date().toLocaleString("en-GB")}`,
+                headers: [
+                  "Staff ID", "Name", "Rank", "Branch", "Unit / department", "Roles",
+                  "Phone", "Email", "Date joined service", "Years of service",
+                  "Years to retirement", "Attendance today", "Patrols led", "Status",
+                ],
+                rows: rows.map((r) => [
+                  r.staff_id ?? "—",
+                  r.full_name,
+                  r.rank ?? "—",
+                  r.branch ?? "—",
+                  r.unit ?? r.department ?? "—",
+                  r.roles.map((role) => ROLE_LABEL[role] ?? roleLabel(role)).join(", ") || "None",
+                  r.phone ?? "—",
+                  r.email ?? "—",
+                  r.date_joined_service
+                    ? new Date(r.date_joined_service).toLocaleDateString("en-GB")
+                    : "—",
+                  r.service_label ?? "—",
+                  r.retired
+                    ? "Retired"
+                    : r.years_to_retirement === null ? "—" : String(r.years_to_retirement),
+                  r.attendance_today ?? "Unmarked",
+                  String(r.patrols_led),
+                  (r.status ?? "—").replace(/_/g, " "),
+                ]),
+              })}
+            />
           </div>
         </CardHeader>
         <CardContent>
