@@ -74,6 +74,13 @@ export function normalizeGhanaPhoneList(
           `Invalid Ghana telephone number "${part}" — expected 10 digits on MTN, Telecel or AirtelTigo`,
       };
     }
+    if (isSuspiciousGhanaPhone(local)) {
+      return {
+        value: null,
+        error:
+          `Telephone number "${part}" looks fabricated — please provide a genuine number`,
+      };
+    }
     out.push(local);
   }
   return { value: out.length ? out.join(", ") : null };
