@@ -102,10 +102,35 @@ export function isProcurementOpen(status: string) {
   return !["received", "rejected", "cancelled"].includes((status ?? "").toLowerCase());
 }
 
+/**
+ * True when the signed-in user holds ANY storekeeper-tier role.
+ *
+ * `useAuth().role` only exposes the single highest-priority role, so a
+ * storekeeper who also holds e.g. head_of_administration would otherwise
+ * lose approve/receive controls. Mirrors `can_manage_procurement()` by
+ * checking every assigned role.
+ */
 export function useIsStorekeeperTier() {
-  const { role } = useAuth();
-  return STOREKEEPER_TIER.includes(role as (typeof STOREKEEPER_TIER)[number]);
+  const { user, role } = useAuth();
+  const primary = STOREKEEPER_TIER.includes(role as (typeof STOREKEEPER_TIER)[number]);
+  const { data: tierByRoles = false } = useQuery({
+    queryKey: ["procurement-tier", user?.id],
+    enabled: !!user && !primary,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []).some((r) =>
+        STOREKEEPER_TIER.includes(r.role as (typeof STOREKEEPER_TIER)[number]),
+      );
+    },
+  });
+  return primary || tierByRoles;
 }
+
 
 /** Requests visible to the signed-in user (RLS decides: own, or tier-wide). */
 export function useProcurementRequests(days = 180, enabled = true) {
