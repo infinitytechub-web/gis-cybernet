@@ -55,6 +55,158 @@ const money = (n: number) =>
 const errMessage = (e: unknown) => (e as { message?: string })?.message || "Something went wrong";
 const label = (v: string) => (v || "").replace(/_/g, " ");
 
+/** Budget vs commitments per unit, with an overspend flag. */
+function BudgetPanel({ canManage }: { canManage: boolean }) {
+  const year = new Date().getFullYear();
+  const { data: budgets = [], isLoading } = useProcurementBudgets(year);
+  const { data: units = [] } = useProcurementUnitOptions(canManage);
+  const save = useSaveProcurementBudget();
+  const [editOpen, setEditOpen] = useState(false);
+  const [unitId, setUnitId] = useState("");
+  const [amount, setAmount] = useState("");
+
+  const over = budgets.filter((b) => b.over_budget);
+  const unfunded = budgets.filter((b) => b.budget_amount === 0);
+
+  const submit = async () => {
+    if (!unitId) { toast.error("Select a unit"); return; }
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value < 0) { toast.error("Enter a valid budget amount"); return; }
+    try {
+      await save.mutateAsync({ org_unit_id: unitId, fiscal_year: year, budget_amount: value });
+      toast.success("Budget saved");
+      setEditOpen(false); setUnitId(""); setAmount("");
+    } catch (e) {
+      toast.error(errMessage(e));
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-primary" aria-hidden="true" />
+            Unit &amp; branch budgets — {year}
+          </CardTitle>
+          <CardDescription>
+            {over.length > 0
+              ? `${over.length} unit${over.length === 1 ? "" : "s"} over budget`
+              : "No unit is over budget"}
+            {unfunded.length > 0 ? ` · ${unfunded.length} with spend but no allocation` : ""}
+            . Approved, partial and received requests count as committed; submitted requests are pending.
+          </CardDescription>
+        </div>
+        {canManage && (
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+            Set budget
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        {isLoading && <p className="text-sm text-muted-foreground">Loading budgets…</p>}
+        {!isLoading && budgets.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No budgets allocated yet{canManage ? " — use “Set budget” to allocate one." : "."}
+          </p>
+        )}
+        {budgets.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[820px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Unit</TableHead>
+                  <TableHead className="text-right">Budget</TableHead>
+                  <TableHead className="text-right">Committed</TableHead>
+                  <TableHead className="text-right">Pending</TableHead>
+                  <TableHead className="text-right">Remaining</TableHead>
+                  <TableHead className="text-right">Requests</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {budgets.map((b) => (
+                  <TableRow key={b.org_unit_id} className={b.over_budget ? "bg-destructive/5" : undefined}>
+                    <TableCell className="font-medium">
+                      {b.org_unit_name}
+                      {b.org_unit_code && (
+                        <span className="ml-2 text-xs text-muted-foreground">{b.org_unit_code}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">{money(b.budget_amount)}</TableCell>
+                    <TableCell className="text-right">{money(b.committed)}</TableCell>
+                    <TableCell className="text-right">{money(b.pending)}</TableCell>
+                    <TableCell className={`text-right font-medium ${b.remaining < 0 ? "text-destructive" : ""}`}>
+                      {money(b.remaining)}
+                    </TableCell>
+                    <TableCell className="text-right">{b.request_count}</TableCell>
+                    <TableCell>
+                      {b.budget_amount === 0 ? (
+                        <Badge variant="outline" className="text-muted-foreground">No allocation</Badge>
+                      ) : b.over_budget ? (
+                        <Badge variant="outline" className="border-destructive/40 text-destructive">
+                          <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+                          Over budget{b.utilisation_pct != null ? ` · ${b.utilisation_pct}%` : ""}
+                        </Badge>
+                      ) : (b.utilisation_pct ?? 0) >= 80 ? (
+                        <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300">
+                          {b.utilisation_pct}% used
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300">
+                          {b.utilisation_pct ?? 0}% used
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set {year} budget</DialogTitle>
+            <DialogDescription>
+              Allocates a fiscal-year procurement budget to a unit or branch. Existing allocations are replaced.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="budget-unit">Unit / branch</Label>
+              <Select value={unitId} onValueChange={setUnitId}>
+                <SelectTrigger id="budget-unit"><SelectValue placeholder="Select unit" /></SelectTrigger>
+                <SelectContent>
+                  {units.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}{u.code ? ` (${u.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="budget-amount">Budget amount (GHS)</Label>
+              <Input id="budget-amount" type="number" min="0" step="0.01" value={amount}
+                onChange={(e) => setAmount(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={submit} disabled={save.isPending}>
+              {save.isPending ? "Saving…" : "Save budget"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 export default function ProcurementTab() {
   const { user } = useAuth();
   const canManage = useIsStorekeeperTier();
@@ -85,6 +237,8 @@ export default function ProcurementTab() {
   const current = detail ? requests.find((r) => r.id === detail.id) ?? detail : null;
 
   return (
+    <div className="space-y-4">
+    <BudgetPanel canManage={canManage} />
     <Card>
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
