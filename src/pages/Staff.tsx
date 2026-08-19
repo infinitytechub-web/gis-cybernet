@@ -472,7 +472,7 @@ export default function Staff() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {canManage && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <ExportMenu
               getData={() => ({
                 title: "Staff / Employee Report",
@@ -482,6 +482,9 @@ export default function Staff() {
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
+            <Button variant="outline" size="sm" onClick={() => setAssignUnitOpen(true)} className="gap-1">
+              <Building2 className="h-4 w-4" /> Assign to unit
+            </Button>
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-1">
                 <Upload className="h-4 w-4" /> Import
@@ -495,6 +498,20 @@ export default function Staff() {
           </div>
         )}
       </div>
+
+      <UnitStaffPickerDialog
+        open={assignUnitOpen}
+        onOpenChange={setAssignUnitOpen}
+        units={orgUnits}
+        selectableUnits={assignableUnits}
+        defaultOrgUnitId={null}
+        canManage={canManage}
+        onAssigned={(unitId) => {
+          setAssignUnitOpen(false);
+          navigate(`/unit-dashboard?unit=${unitId}`);
+        }}
+      />
+
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
