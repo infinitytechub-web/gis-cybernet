@@ -268,26 +268,27 @@ export function AppSidebar() {
             );
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <Tooltip delayDuration={200}>
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      className={`max-w-[16rem] ${
-                        active
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
-                          : ""
-                      }`}
-                    >
-                      <span className="block font-semibold">{item.title}</span>
-                      {description && (
-                        <span className="mt-0.5 block text-xs font-normal opacity-90">{description}</span>
-                      )}
-                      {active && <span className="sr-only"> (current page)</span>}
-                    </TooltipContent>
-                  </Tooltip>
-                </SidebarMenuButton>
+                <Tooltip delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton asChild>{link}</SidebarMenuButton>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className={`max-w-[16rem] ${
+                      active
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
+                        : ""
+                    }`}
+                  >
+                    <span className="block font-semibold">{item.title}</span>
+                    {description && (
+                      <span className="mt-0.5 block text-xs font-normal opacity-90">{description}</span>
+                    )}
+                    {active && <span className="sr-only"> (current page)</span>}
+                  </TooltipContent>
+                </Tooltip>
               </SidebarMenuItem>
+
             );
 
           })}
