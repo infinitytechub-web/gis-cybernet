@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Radio, Siren, Gauge, Fuel } from "lucide-react";
 import { FleetLiveMap } from "@/components/fleet/FleetLiveMap";
+import { FleetDemoFeed } from "@/components/fleet/FleetDemoFeed";
 import { raisePanic, useVehicleTrack } from "@/hooks/useFleet";
 import {
   MOTION_CLASSES, MOTION_LABELS, motionState, trackDistanceKm, vehicleLabel,
@@ -24,12 +25,13 @@ import {
 
 interface Props {
   vehicles: FleetVehicle[];
+  canManage?: boolean;
   geofences: FleetGeofence[];
   focusVehicleId: string | null;
   onFocusVehicle: (id: string | null) => void;
 }
 
-export function FleetLiveTab({ vehicles, geofences, focusVehicleId, onFocusVehicle }: Props) {
+export function FleetLiveTab({ vehicles, geofences, focusVehicleId, onFocusVehicle, canManage = false }: Props) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [trackHours, setTrackHours] = useState(0);
@@ -121,6 +123,8 @@ export function FleetLiveTab({ vehicles, geofences, focusVehicleId, onFocusVehic
         </CardContent>
       </Card>
 
+      <div className="space-y-4">
+        <FleetDemoFeed vehicles={vehicles} canManage={canManage} onFocusVehicle={onFocusVehicle} />
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Vehicles</CardTitle>
@@ -187,6 +191,7 @@ export function FleetLiveTab({ vehicles, geofences, focusVehicleId, onFocusVehic
           </ScrollArea>
         </CardContent>
       </Card>
+      </div>
 
       <AlertDialog open={!!panicFor} onOpenChange={(o) => !o && setPanicFor(null)}>
         <AlertDialogContent>
