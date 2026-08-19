@@ -20,6 +20,7 @@ import { FleetVehiclesTab } from "@/components/fleet/FleetVehiclesTab";
 import { FleetGeofencesTab } from "@/components/fleet/FleetGeofencesTab";
 import { FleetAlertsTab } from "@/components/fleet/FleetAlertsTab";
 import { FleetFuelTab } from "@/components/fleet/FleetFuelTab";
+import { FleetReplayTab } from "@/components/fleet/FleetReplayTab";
 
 function Kpi({
   icon: Icon, label, value, hint, tone,
@@ -104,6 +105,7 @@ export default function Fleet() {
         <div className="overflow-x-auto">
           <TabsList>
             <TabsTrigger value="live"><Radio className="mr-1 h-4 w-4" aria-hidden="true" />Live tracking</TabsTrigger>
+            <TabsTrigger value="replay"><Route className="mr-1 h-4 w-4" aria-hidden="true" />Route replay</TabsTrigger>
             <TabsTrigger value="vehicles"><Truck className="mr-1 h-4 w-4" aria-hidden="true" />Vehicles</TabsTrigger>
             {canManage && (
               <TabsTrigger value="geofences"><MapPinned className="mr-1 h-4 w-4" aria-hidden="true" />Geofences</TabsTrigger>
@@ -123,6 +125,10 @@ export default function Fleet() {
             focusVehicleId={focusVehicleId}
             onFocusVehicle={setFocusVehicleId}
           />
+        </TabsContent>
+
+        <TabsContent value="replay" className="mt-4">
+          <FleetReplayTab vehicles={vehicles} geofences={geofences} initialVehicleId={focusVehicleId} />
         </TabsContent>
 
         <TabsContent value="vehicles" className="mt-4">

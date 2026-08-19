@@ -55,6 +55,8 @@ export const ALERT_TYPE_LABELS: Record<AlertType, string> = {
   device_offline: "Tracker offline",
   ignition_on: "Ignition on",
   harsh_driving: "Harsh driving",
+  door_open: "Door opened",
+  boot_open: "Boot opened",
 };
 
 export const ALERT_STATUS_LABELS: Record<AlertStatus, string> = {
