@@ -153,6 +153,7 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                   <th scope="col" className="py-2 pr-3">Unit</th>
                   <th scope="col" className="py-2 pr-3">Commander</th>
                   <th scope="col" className="py-2 pr-3">Rank</th>
+                  <th scope="col" className="py-2 pr-3">Service years</th>
                   <th scope="col" className="py-2 pr-3">Posting</th>
                   <th scope="col" className="py-2 pr-3">Contact</th>
                   <th scope="col" className="py-2 pr-3">Strength</th>
