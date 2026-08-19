@@ -44,6 +44,8 @@ export interface ProcurementItem {
   unit: string | null;
   estimated_unit_cost: number | null;
   received_qty: number;
+  /** Optional link to a stock item — receipts then top up its quantity on hand. */
+  inventory_item_id: string | null;
 }
 
 export interface ProcurementRequest {
