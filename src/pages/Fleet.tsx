@@ -6,7 +6,6 @@
  * this page subscribes to those tables so the map and alert centre follow along.
  */
 import { useEffect, useState } from "react";
-import { Helmet } from "react-helmet-async";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -71,14 +70,6 @@ export default function Fleet() {
 
   return (
     <div className="space-y-4">
-      <Helmet>
-        <title>Fleet Management — GPS Tracking & Alerts</title>
-        <meta
-          name="description"
-          content="Live GPS vehicle tracking, geofence alerts, panic/SOS response and fuel monitoring for the command fleet."
-        />
-      </Helmet>
-
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
