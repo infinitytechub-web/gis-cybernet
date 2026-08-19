@@ -3893,6 +3893,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ghana_regional_capitals: {
+        Row: {
+          capital: string
+          created_at: string
+          district_code: string | null
+          district_id: string | null
+          id: string
+          lat: number
+          lng: number
+          region: string
+          updated_at: string
+        }
+        Insert: {
+          capital: string
+          created_at?: string
+          district_code?: string | null
+          district_id?: string | null
+          id?: string
+          lat: number
+          lng: number
+          region: string
+          updated_at?: string
+        }
+        Update: {
+          capital?: string
+          created_at?: string
+          district_code?: string | null
+          district_id?: string | null
+          id?: string
+          lat?: number
+          lng?: number
+          region?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghana_regional_capitals_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       guard_schedule_assignments: {
         Row: {
           created_at: string
