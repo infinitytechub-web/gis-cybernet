@@ -27,6 +27,8 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog, CalendarCheck,
   Hourglass, LogIn, LogOut, CheckCircle2, AlertTriangle, Camera,
