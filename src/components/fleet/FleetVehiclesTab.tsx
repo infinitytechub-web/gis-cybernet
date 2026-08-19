@@ -21,9 +21,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2, Search, Truck } from "lucide-react";
 import {
   VEHICLE_STATUS_CLASSES, VEHICLE_STATUS_LABELS, VEHICLE_TYPES,
-  motionState, MOTION_CLASSES, MOTION_LABELS, vehicleLabel,
+  motionState, MOTION_CLASSES, MOTION_LABELS, vehicleLabel, isLowFuel,
   type FleetVehicle, type VehicleStatus,
 } from "@/lib/fleet";
+
+/** Relative "last heard from" label for tracker check-ins. */
+function lastSeenLabel(at: string | null): string {
+  if (!at) return "Never";
+  const mins = Math.floor((Date.now() - new Date(at).getTime()) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} h ago`;
+  return `${Math.floor(hours / 24)} d ago`;
+}
 
 interface Props {
   vehicles: FleetVehicle[];
@@ -46,6 +57,7 @@ interface FormState {
   low_fuel_threshold_pct: string;
   fuel_drop_threshold_pct: string;
   assigned_driver_id: string;
+  org_unit_id: string;
   notes: string;
 }
 
@@ -53,7 +65,7 @@ const EMPTY: FormState = {
   registration_number: "", call_sign: "", make: "", model: "", model_year: "",
   vehicle_type: "patrol", status: "active", device_id: "", fuel_capacity_litres: "",
   odometer_km: "0", speed_limit_kph: "80", low_fuel_threshold_pct: "20",
-  fuel_drop_threshold_pct: "12", assigned_driver_id: "none", notes: "",
+  fuel_drop_threshold_pct: "12", assigned_driver_id: "none", org_unit_id: "none", notes: "",
 };
 
 function toForm(v: FleetVehicle): FormState {
@@ -72,6 +84,7 @@ function toForm(v: FleetVehicle): FormState {
     low_fuel_threshold_pct: v.low_fuel_threshold_pct?.toString() ?? "20",
     fuel_drop_threshold_pct: v.fuel_drop_threshold_pct?.toString() ?? "12",
     assigned_driver_id: v.assigned_driver_id ?? "none",
+    org_unit_id: v.org_unit_id ?? "none",
     notes: v.notes ?? "",
   };
 }
@@ -91,14 +104,34 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, staff_id")
+        .select("id, first_name, last_name, staff_id")
         .eq("status", "active")
-        .order("full_name")
+        .order("last_name")
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []).map((d) => ({
+        id: d.id,
+        staff_id: d.staff_id,
+        full_name: [d.first_name, d.last_name].filter(Boolean).join(" ").trim() || d.staff_id || "Unnamed",
+      }));
+    },
+  });
+
+  const unitsQuery = useQuery({
+    queryKey: ["fleet", "org-units"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_units")
+        .select("id, name, code")
+        .order("name")
         .limit(500);
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const unitName = (id: string | null) =>
+    (unitsQuery.data ?? []).find((u: any) => u.id === id)?.name ?? null;
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -139,6 +172,7 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
         low_fuel_threshold_pct: num(form.low_fuel_threshold_pct) ?? 20,
         fuel_drop_threshold_pct: num(form.fuel_drop_threshold_pct) ?? 12,
         assigned_driver_id: form.assigned_driver_id === "none" ? null : form.assigned_driver_id,
+        org_unit_id: form.org_unit_id === "none" ? null : form.org_unit_id,
         notes: form.notes.trim() || null,
       };
       if (editing) {
@@ -221,6 +255,9 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
                 <TableHead>Tracker</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Live</TableHead>
+                <TableHead>Last seen</TableHead>
+                <TableHead className="text-right">Fuel</TableHead>
+                <TableHead>Assigned unit</TableHead>
                 <TableHead className="text-right">Odometer</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -228,7 +265,7 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
             <TableBody>
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
                     No vehicles match the current filters.
                   </TableCell>
                 </TableRow>
@@ -253,6 +290,19 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
                     <TableCell>
                       <Badge variant="outline" className={MOTION_CLASSES[state]}>{MOTION_LABELS[state]}</Badge>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {lastSeenLabel(v.last_seen_at)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {v.last_fuel_level_pct == null ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <span className={isLowFuel(v) ? "font-medium text-destructive" : ""}>
+                          {Math.round(Number(v.last_fuel_level_pct))}%
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs">{unitName(v.org_unit_id) ?? "—"}</TableCell>
                     <TableCell className="text-right">
                       {Math.round(Number(v.odometer_km ?? 0)).toLocaleString()} km
                     </TableCell>
@@ -340,6 +390,20 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
                   {(driversQuery.data ?? []).map((d: any) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.full_name} {d.staff_id ? `(${d.staff_id})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="fv-unit">Assigned unit</Label>
+              <Select value={form.org_unit_id} onValueChange={(v) => setForm({ ...form, org_unit_id: v })}>
+                <SelectTrigger id="fv-unit"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {(unitsQuery.data ?? []).map((u: any) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}{u.code ? ` (${u.code})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

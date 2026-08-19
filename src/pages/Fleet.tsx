@@ -21,6 +21,7 @@ import { FleetGeofencesTab } from "@/components/fleet/FleetGeofencesTab";
 import { FleetAlertsTab } from "@/components/fleet/FleetAlertsTab";
 import { FleetFuelTab } from "@/components/fleet/FleetFuelTab";
 import { FleetReplayTab } from "@/components/fleet/FleetReplayTab";
+import { FleetOfflineStatus } from "@/components/fleet/FleetOfflineStatus";
 
 function Kpi({
   icon: Icon, label, value, hint, tone,
@@ -81,12 +82,16 @@ export default function Fleet() {
             Real-time vehicle tracking, geofencing, emergency response and fuel oversight.
           </p>
         </div>
-        {openPanic > 0 && (
-          <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
-            <Siren className="mr-1 h-4 w-4 animate-pulse" aria-hidden="true" />
-            {openPanic} active SOS
-          </Badge>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <FleetOfflineStatus />
+          {openPanic > 0 && (
+            <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
+              <Siren className="mr-1 h-4 w-4 animate-pulse" aria-hidden="true" />
+              {openPanic} active SOS
+            </Badge>
+          )}
+        </div>
+
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

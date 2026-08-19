@@ -1,1 +1,2 @@
 - [Branding Management](mem://features/branding-management) — Admin Branding tab: names, logos, favicon, theme colors via app_settings + branding bucket
+- [Fleet Offline & Registry](mem://features/fleet-offline-and-registry) — Local GPS queue + sync, registry status/last seen/fuel/unit columns, panic mirrored into Session Management audit

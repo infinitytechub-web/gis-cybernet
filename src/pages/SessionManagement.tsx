@@ -61,7 +61,9 @@ const ACTION_LABEL: Record<string, string> = {
   session_start: "Session started",
   logout_session: "Session logged out",
   logout_all: "All sessions signed out",
+  fleet_panic: "Fleet panic / SOS",
 };
+
 
 /** Compact, human-readable device label from a user-agent string. */
 function deviceLabel(ua: string | null): string {
