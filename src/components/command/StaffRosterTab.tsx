@@ -42,6 +42,7 @@ import {
   ROSTER_ASSIGNABLE_ROLES, KEY_APPOINTMENTS, type RosterMember,
 } from "@/hooks/useStaffRoster";
 import { useRosterClock, validateClockPhoto } from "@/hooks/useRosterClock";
+import { RosterClockInForm } from "@/components/command/RosterClockInForm";
 
 const STATUS_CLASS: Record<string, string> = {
   active: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
