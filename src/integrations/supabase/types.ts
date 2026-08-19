@@ -8995,6 +8995,39 @@ export type Database = {
         }
         Relationships: []
       }
+      status_change_audit: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          entity_table: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          record_id: string
+          to_status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          entity_table: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          record_id: string
+          to_status: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          entity_table?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          record_id?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -10379,6 +10412,15 @@ export type Database = {
         Args: { _record_id: string; _source: string; _webhook_url: string }
         Returns: undefined
       }
+      set_record_status: {
+        Args: {
+          _entity: string
+          _id: string
+          _reason?: string
+          _status: string
+        }
+        Returns: Json
+      }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
@@ -10393,6 +10435,7 @@ export type Database = {
         }
         Returns: string
       }
+      status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       tag_appraisal_audit_batch: {
         Args: {
           _appraisal_id: string
