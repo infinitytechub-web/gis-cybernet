@@ -165,8 +165,10 @@ export function useUpdateCyberIncident() {
   return useMutation({
     mutationFn: async (input: { id: string } & Partial<CyberIncidentInput>) => {
       const { id, ...rest } = input;
-      const patch: Record<string, unknown> = { ...rest };
-      if ("threat_source" in rest) patch.source = rest.threat_source ?? null;
+      // `source` is the legacy column; keep it in step with `threat_source`.
+      const patch = "threat_source" in rest
+        ? { ...rest, source: rest.threat_source ?? null }
+        : rest;
       const { error } = await supabase.from("cyber_incidents").update(patch).eq("id", id);
       if (error) throw error;
     },
