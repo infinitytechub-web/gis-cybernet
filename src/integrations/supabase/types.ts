@@ -3322,8 +3322,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          district_id: string | null
           id: string
           kind: Database["public"]["Enums"]["fleet_geofence_kind"]
+          max_lat: number | null
+          max_lng: number | null
+          min_lat: number | null
+          min_lng: number | null
           name: string
           org_unit_id: string | null
           polygon: Json | null
@@ -3339,8 +3344,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          district_id?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["fleet_geofence_kind"]
+          max_lat?: number | null
+          max_lng?: number | null
+          min_lat?: number | null
+          min_lng?: number | null
           name: string
           org_unit_id?: string | null
           polygon?: Json | null
@@ -3356,8 +3366,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          district_id?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["fleet_geofence_kind"]
+          max_lat?: number | null
+          max_lng?: number | null
+          min_lat?: number | null
+          min_lng?: number | null
           name?: string
           org_unit_id?: string | null
           polygon?: Json | null
@@ -3367,6 +3382,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fleet_geofences_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fleet_geofences_org_unit_id_fkey"
             columns: ["org_unit_id"]
@@ -3814,6 +3836,60 @@ export type Database = {
           entity_type?: string
           id?: string
           performed_by?: string
+        }
+        Relationships: []
+      }
+      ghana_districts: {
+        Row: {
+          category: string
+          centroid_lat: number
+          centroid_lng: number
+          code: string
+          created_at: string
+          id: string
+          max_lat: number
+          max_lng: number
+          min_lat: number
+          min_lng: number
+          name: string
+          polygon: Json
+          region: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          centroid_lat: number
+          centroid_lng: number
+          code: string
+          created_at?: string
+          id?: string
+          max_lat: number
+          max_lng: number
+          min_lat: number
+          min_lng: number
+          name: string
+          polygon: Json
+          region: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          centroid_lat?: number
+          centroid_lng?: number
+          code?: string
+          created_at?: string
+          id?: string
+          max_lat?: number
+          max_lng?: number
+          min_lat?: number
+          min_lng?: number
+          name?: string
+          polygon?: Json
+          region?: string
+          source?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -11162,7 +11238,20 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: undefined
       }
+      fleet_activate_district_zones: {
+        Args: {
+          _district_ids: string[]
+          _org_unit_id?: string
+          _severity?: string
+          _trigger?: string
+        }
+        Returns: number
+      }
       fleet_dashboard: { Args: { _days?: number }; Returns: Json }
+      fleet_deactivate_district_zones: {
+        Args: { _delete?: boolean; _district_ids: string[] }
+        Returns: number
+      }
       fleet_demo_tick: {
         Args: { _event?: string; _vehicle_id?: string }
         Returns: Json
