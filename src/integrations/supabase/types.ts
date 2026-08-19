@@ -1334,7 +1334,7 @@ export type Database = {
           id?: string
           impact_assessment?: string | null
           impact_level?: string
-          incident_number: string
+          incident_number?: string
           incident_type?: string
           org_unit_id?: string | null
           reported_at?: string
@@ -11403,6 +11403,7 @@ export type Database = {
         }
         Returns: number
       }
+      next_cyber_incident_number: { Args: never; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
         Args: {
