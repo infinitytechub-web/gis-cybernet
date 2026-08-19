@@ -405,9 +405,106 @@ export function FleetDashboardTab({ canManage }: Props) {
         </CardContent>
       </Card>
 
+      <PatrolGpsActivityCard days={Number(days)} />
+
       <PatrolPlanCommitments />
     </div>
   );
+}
+
+/** Patrol log entries wired to GPS: district and times proven by the vehicle's trail. */
+function PatrolGpsActivityCard({ days }: { days: number }) {
+  const { data, isLoading, isError } = usePatrolGpsActivity(Math.max(days, 30));
+  const rows = (data?.patrols ?? []).slice(0, 15);
+  const confirmed = (data?.patrols ?? []).filter((p) => p.gps_match === "confirmed").length;
+  const tracked = (data?.patrols ?? []).filter((p) => p.vehicle_id).length;
+
+  const matchTone: Record<PatrolGpsMatch, string> = {
+    confirmed: "border-primary/40 text-primary",
+    mismatch: "border-destructive/50 text-destructive",
+    no_gps: "text-muted-foreground",
+    no_vehicle: "text-muted-foreground",
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <MapPinned className="h-4 w-4 text-primary" aria-hidden="true" />
+          Patrol log vs GPS tracking
+        </CardTitle>
+        <CardDescription>
+          Districts and times taken from each patrol's vehicle trail.{" "}
+          {tracked > 0 && `${confirmed} of ${tracked} vehicle patrols GPS-confirmed. `}
+          Entries are logged in{" "}
+          <Link to="/command-console?tab=patrol-log" className="underline">Command Console → Patrol log</Link>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && <p className="text-sm text-muted-foreground">Loading patrol GPS activity…</p>}
+        {isError && <p className="text-sm text-destructive">Patrol GPS activity could not be loaded.</p>}
+        {!isLoading && !isError && rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">No patrol entries recorded in this period.</p>
+        )}
+        {rows.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[820px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Logged district</TableHead>
+                  <TableHead>GPS district(s)</TableHead>
+                  <TableHead>GPS time on ground</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead className="text-right">Distance</TableHead>
+                  <TableHead>GPS check</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-mono text-xs">{p.patrol_reference}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(p.patrol_date)}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {(p.start_time ?? "").slice(0, 5)}
+                        {p.end_time ? `–${p.end_time.slice(0, 5)}` : ""}
+                      </span>
+                    </TableCell>
+                    <TableCell>{p.logged_district ?? "—"}</TableCell>
+                    <TableCell>
+                      {p.gps_districts.length > 0 ? p.gps_districts.join(", ") : "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">
+                      {p.first_fix && p.last_fix
+                        ? `${hhmm(p.first_fix)} – ${hhmm(p.last_fix)} (${p.fix_count} fixes)`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {p.registration_number ?? "—"}
+                      {p.call_sign && <span className="ml-2 text-xs text-muted-foreground">{p.call_sign}</span>}
+                    </TableCell>
+                    <TableCell className="text-right">{p.distance_km ? `${p.distance_km} km` : "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={matchTone[p.gps_match]}>
+                        {PATROL_GPS_MATCH_LABELS[p.gps_match]}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Local time of a GPS fix, HH:MM. */
+function hhmm(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 /** Open patrol plans that reserve a vehicle — the fleet view of the plan register. */
