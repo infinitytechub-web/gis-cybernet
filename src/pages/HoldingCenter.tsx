@@ -546,6 +546,11 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
     mutationFn: async () => {
       const problem = validateDetaineeForm(form);
       if (problem) throw new Error(problem);
+      form = {
+        ...form,
+        phone: assertContactPhoneList(form.phone, "Phone"),
+        next_of_kin_phone: assertContactPhoneList(form.next_of_kin_phone, "Next of Kin (NoK) Phone"),
+      };
       const payload: any = { ...form };
       if (canApprove) {
         payload.statement_approved_by = approver.id;
@@ -666,6 +671,11 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
     mutationFn: async () => {
       const problem = validateDetaineeForm(form);
       if (problem) throw new Error(problem);
+      form = {
+        ...form,
+        phone: assertContactPhoneList(form.phone, "Phone"),
+        next_of_kin_phone: assertContactPhoneList(form.next_of_kin_phone, "Next of Kin (NoK) Phone"),
+      };
       let photo_url: string | null = null;
       if (photoFile) {
         const path = `${Date.now()}-${photoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
