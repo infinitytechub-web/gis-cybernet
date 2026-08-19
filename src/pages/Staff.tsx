@@ -49,6 +49,9 @@ export default function Staff() {
   const canManage = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // Hierarchical RBAC — command postings the signed-in user may assign.
+  const { tree: orgTree, scope: orgScope } = useOrgScope();
+  const orgRows = useMemo(() => flattenOrgTree(orgTree), [orgTree]);
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
