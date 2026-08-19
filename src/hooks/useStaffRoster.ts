@@ -33,6 +33,8 @@ export interface RosterMember {
   /** Today's attendance status (present/late/absent/excused) or null if unmarked. */
   attendance_today: string | null;
   attendance_check_in: string | null;
+  /** Today's clock-out time, null while the officer is still on duty. */
+  attendance_check_out: string | null;
   /** Days marked present or late in the last 30 days, and days recorded. */
   attendance_present_30d: number;
   attendance_days_30d: number;
@@ -102,7 +104,7 @@ export function useStaffRoster() {
         supabase.from("patrol_logs").select("patrol_leader_id").limit(5000),
         supabase
           .from("attendances")
-          .select("profile_id, date, status, check_in")
+          .select("profile_id, date, status, check_in, check_out")
           .gte("date", windowStart)
           .lte("date", todayKey)
           .limit(20000),
@@ -123,7 +125,7 @@ export function useStaffRoster() {
       }
 
       // Attendance: today's mark plus a 30-day presence tally per profile.
-      const attToday = new Map<string, { status: string | null; check_in: string | null }>();
+      const attToday = new Map<string, { status: string | null; check_in: string | null; check_out: string | null }>();
       const attTally = new Map<string, { present: number; days: number }>();
       for (const a of attRows ?? []) {
         if (!a.profile_id) continue;
@@ -132,7 +134,11 @@ export function useStaffRoster() {
         if (a.status === "present" || a.status === "late") t.present += 1;
         attTally.set(a.profile_id, t);
         if (a.date === todayKey) {
-          attToday.set(a.profile_id, { status: (a.status as string) ?? null, check_in: a.check_in ?? null });
+          attToday.set(a.profile_id, {
+            status: (a.status as string) ?? null,
+            check_in: a.check_in ?? null,
+            check_out: (a as any).check_out ?? null,
+          });
         }
       }
 
@@ -162,6 +168,7 @@ export function useStaffRoster() {
           patrols_led: patrolsByLeader.get(p.id) ?? 0,
           attendance_today: attToday.get(p.id)?.status ?? null,
           attendance_check_in: attToday.get(p.id)?.check_in ?? null,
+          attendance_check_out: attToday.get(p.id)?.check_out ?? null,
           attendance_present_30d: attTally.get(p.id)?.present ?? 0,
           attendance_days_30d: attTally.get(p.id)?.days ?? 0,
           date_joined_service: joined,
