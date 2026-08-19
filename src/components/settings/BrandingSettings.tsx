@@ -155,7 +155,8 @@ export function BrandingSettings() {
 
   const changedKeys = useMemo(() => {
     if (!row) return [] as string[];
-    return EDITABLE_KEYS.filter((k) => (form[k] ?? "") !== ((row as any)[k] ?? "")).map(String);
+    const baseline = { ...BRANDING_DEFAULTS, ...row } as Record<string, unknown>;
+    return EDITABLE_KEYS.filter((k) => (form[k] ?? "") !== (baseline[k as string] ?? "")).map(String);
   }, [form, row]);
   const dirty = changedKeys.length > 0;
 
