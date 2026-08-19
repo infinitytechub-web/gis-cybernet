@@ -59,7 +59,7 @@ const SECTIONS: ConsoleSection[] = [
     title: "Branding & communications",
     description: "System identity, logos, theme and announcements.",
     items: [
-      { title: "Branding Management", description: "Names, logos, favicon, theme colours, contacts and footer.", url: "/settings?tab=branding", icon: Palette, tier: "admin" },
+      { title: "Branding Management", description: "Names, logos, favicon, theme colours, login screen, email branding and footer.", url: "/branding", icon: Palette, tier: "admin" },
       { title: "Announcements", description: "Publish org-wide or department notices with attachments.", url: "/announcements", icon: Megaphone, tier: "command" },
     ],
   },
