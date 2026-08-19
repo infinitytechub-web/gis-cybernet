@@ -12112,6 +12112,10 @@ export type Database = {
         Args: { _reason?: string; _session_id: string }
         Returns: boolean
       }
+      roster_clock_action: {
+        Args: { _action: string; _notes?: string; _profile_id: string }
+        Returns: Json
+      }
       run_security_hygiene_scan: { Args: never; Returns: Json }
       search_approval_audit: {
         Args: {
