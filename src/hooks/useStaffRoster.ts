@@ -136,29 +136,42 @@ export function useStaffRoster() {
         }
       }
 
-      const rows: RosterMember[] = (profiles ?? []).map((p: any) => ({
-        id: p.id,
-        user_id: p.user_id ?? null,
-        staff_id: p.staff_id ?? null,
-        full_name:
-          [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.staff_id || "Unnamed",
-        rank: p.ranks?.name ?? null,
-        department: p.departments?.name ?? null,
-        org_unit_id: p.org_unit_id ?? null,
-        branch: p.org_units?.name ?? null,
-        unit: p.unit ?? null,
-        phone: p.phone ?? null,
-        email: p.email ?? null,
-        photo_url: p.photo_url ?? null,
-        photo_signed_url: null,
-        status: p.status ?? null,
-        roles: (p.user_id ? rolesByUser.get(p.user_id) : undefined) ?? [],
-        patrols_led: patrolsByLeader.get(p.id) ?? 0,
-        attendance_today: attToday.get(p.id)?.status ?? null,
-        attendance_check_in: attToday.get(p.id)?.check_in ?? null,
-        attendance_present_30d: attTally.get(p.id)?.present ?? 0,
-        attendance_days_30d: attTally.get(p.id)?.days ?? 0,
-      }));
+      const rows: RosterMember[] = (profiles ?? []).map((p: any) => {
+        const joined = p.date_joined_service ?? null;
+        const tenure = yearsOfService(joined, today);
+        const retirement = p.date_of_birth
+          ? timeUntilRetirement(p.date_of_birth, p.retirement_age ?? 60, today)
+          : null;
+        return {
+          id: p.id,
+          user_id: p.user_id ?? null,
+          staff_id: p.staff_id ?? null,
+          full_name:
+            [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.staff_id || "Unnamed",
+          rank: p.ranks?.name ?? null,
+          department: p.departments?.name ?? null,
+          org_unit_id: p.org_unit_id ?? null,
+          branch: p.org_units?.name ?? null,
+          unit: p.unit ?? null,
+          phone: p.phone ?? null,
+          email: p.email ?? null,
+          photo_url: p.photo_url ?? null,
+          photo_signed_url: null,
+          status: p.status ?? null,
+          roles: (p.user_id ? rolesByUser.get(p.user_id) : undefined) ?? [],
+          patrols_led: patrolsByLeader.get(p.id) ?? 0,
+          attendance_today: attToday.get(p.id)?.status ?? null,
+          attendance_check_in: attToday.get(p.id)?.check_in ?? null,
+          attendance_present_30d: attTally.get(p.id)?.present ?? 0,
+          attendance_days_30d: attTally.get(p.id)?.days ?? 0,
+          date_joined_service: joined,
+          service_years: tenure.years,
+          service_months: tenure.months,
+          service_label: joined ? formatService(tenure.years, tenure.months) : null,
+          years_to_retirement: retirement ? (retirement.retired ? 0 : retirement.years) : null,
+          retired: retirement?.retired ?? false,
+        };
+      });
 
       // Sign photos in parallel; failures degrade to initials.
       await Promise.all(
