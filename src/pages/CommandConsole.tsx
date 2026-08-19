@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
@@ -32,6 +32,7 @@ import CyberIncidentsTab from "@/components/command/CyberIncidentsTab";
 import ProcurementTab from "@/components/command/ProcurementTab";
 import PatrolLogTab from "@/components/command/PatrolLogTab";
 import PatrolPlanTab from "@/components/command/PatrolPlanTab";
+import StaffRosterTab from "@/components/command/StaffRosterTab";
 
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
@@ -285,6 +286,9 @@ export default function CommandConsole() {
             <TabsTrigger value="patrol-plans">
               <CalendarClock className="mr-1 h-4 w-4" aria-hidden="true" />Patrol plans
             </TabsTrigger>
+            <TabsTrigger value="roster">
+              <Users className="mr-1 h-4 w-4" aria-hidden="true" />Staff roster
+            </TabsTrigger>
             <TabsTrigger value="procurement">
               <ShoppingCart className="mr-1 h-4 w-4" aria-hidden="true" />Procurement
             </TabsTrigger>
@@ -317,6 +321,14 @@ export default function CommandConsole() {
         </TabsContent>
 
         {/* ── Procurement: request → approve → receive → audit ──────────── */}
+        {/* ── Staff roster (roles, branch, contacts, photos) ───────────── */}
+        <TabsContent value="roster" className="mt-4">
+          <StaffRosterTab
+            orgUnitId={branch === "all" ? undefined : branch}
+            branchName={branch === "all" ? undefined : orgUnitPath(units, branch) || undefined}
+          />
+        </TabsContent>
+
         <TabsContent value="procurement" className="mt-4">
           <ProcurementTab />
         </TabsContent>
