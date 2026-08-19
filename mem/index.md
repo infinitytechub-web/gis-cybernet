@@ -5,3 +5,4 @@
 - [Session Management](mem://features/session-management) — user_sessions registry + /admin/sessions console, single/all sign-out, immutable session_action_audit
 - [Command Console](mem://features/command-console) — /command-console live alert feed, incident register, regional/sector readiness dashboards
 - [District Patrol Zones](mem://features/district-patrol-zones) — ghana_districts (260 official ADM2 boundaries) drive fleet geofences; seeded practice zones purged, demo zone kept
+- [Command Staff Roster](mem://features/staff-roster-command) — /command-console roster tab (photos/roles/contacts), inline role designation, user_roles keys on profiles.user_id
