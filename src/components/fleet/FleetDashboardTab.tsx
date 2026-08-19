@@ -635,12 +635,17 @@ interface VehicleUsageRow {
   patrol_count: number;
   patrol_distance_km: number;
   patrol_fuel_litres: number;
+  patrol_hours: number;
+  avg_hours_per_patrol: number | null;
+  km_per_hour: number | null;
+  litres_per_hour: number | null;
   refuel_litres: number;
   refuel_cost_ghs: number;
   last_odometer_reading: number | null;
   last_reading_at: string | null;
   km_per_litre: number | null;
 }
+
 
 /** Odometer log and fuel tracking per vehicle, sourced from patrol logs and refuel entries. */
 function VehicleUsageCard({ days }: { days: number }) {
