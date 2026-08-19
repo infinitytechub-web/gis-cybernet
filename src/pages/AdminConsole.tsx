@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Building2, Crown, FileSpreadsheet, Gauge, History, KeyRound, LayoutGrid, Lock,
+  Building2, Crown, MonitorSmartphone, FileSpreadsheet, Gauge, History, KeyRound, LayoutGrid, Lock,
   Megaphone, Palette, ScrollText, Shield, ShieldCheck, Siren, Trash2, UserCog, Users,
 } from "lucide-react";
 
@@ -38,6 +38,7 @@ const SECTIONS: ConsoleSection[] = [
     title: "Identity & access",
     description: "Roles, delegated command privileges and the access matrix.",
     items: [
+      { title: "Session Management", description: "See active sessions and sign devices out of the system.", url: "/admin/sessions", icon: MonitorSmartphone, tier: "command" },
       { title: "Command Roles & Grants", description: "Assign command-tier roles and delegate individual capabilities.", url: "/command-roles", icon: Crown, tier: "command" },
       { title: "Role Assignments", description: "Manage every staff member's application role.", url: "/role-assignments", icon: UserCog, tier: "command" },
       { title: "Admin Access Matrix", description: "Printable matrix of what each role can reach.", url: "/admin-access-matrix", icon: Shield, tier: "command" },
