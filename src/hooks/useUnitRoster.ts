@@ -53,8 +53,10 @@ function precedenceOf(member: RosterMember): number {
 }
 
 export function useUnitRoster() {
-  const { units, loading: unitsLoading } = useOrgUnits();
+  const unitsQuery = useOrgUnits();
+  const units = unitsQuery.data ?? [];
   const rosterQuery = useStaffRoster();
+
 
   const rows = useMemo<UnitRosterRow[]>(() => {
     const roster = rosterQuery.data ?? [];
