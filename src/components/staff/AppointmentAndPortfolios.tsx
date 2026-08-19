@@ -22,7 +22,7 @@ const APPOINTMENT_ROLES = [
   "shift_leader","special_duties","front_desk","oic","2ic","shift_supervisor",
   "deputy_shift_supervisor","official","enquiry","storekeeper","procurement_officer",
   "staff_officer","ipse_supervisor","ipse_deputy_supervisor","head_of_administration",
-  "chief_staff_officer","head_of_processing","deputy_head_of_processing","medical_officer",
+  "chief_staff_officer","command_officer","head_of_processing","deputy_head_of_processing","medical_officer",
 ] as const;
 
 const labelFor = (r: string) =>
