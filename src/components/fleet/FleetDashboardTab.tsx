@@ -21,7 +21,10 @@ import { Activity, Fuel, MapPinned, BellRing, Gauge, AlertTriangle, CalendarCloc
 import { Link } from "react-router-dom";
 import { formatDate } from "@/lib/date-format";
 import { usePatrolPlans, isPlanOpen } from "@/hooks/usePatrolPlans";
-import { usePatrolLogs } from "@/hooks/usePatrolLogs";
+import { usePatrolLogs, type PatrolLog } from "@/hooks/usePatrolLogs";
+import { PatrolVehicleLogDialog } from "@/components/fleet/PatrolVehicleLogDialog";
+import { Button } from "@/components/ui/button";
+import { useRbac } from "@/hooks/useRbac";
 import {
   usePatrolGpsActivity,
   PATROL_GPS_MATCH_LABELS,
@@ -473,6 +476,11 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
     },
     staleTime: 300_000,
   });
+  // Only fleet-authorised staff may annotate a patrol's vehicle usage; RLS is
+  // the real gate, this just hides an action that would always fail.
+  const { can } = useRbac();
+  const canRecord = can("fleet");
+  const [editing, setEditing] = useState<PatrolLog | null>(null);
   const submitted = logs.filter((l) => (l.status ?? "").toLowerCase() !== "draft");
   const rows = submitted.slice(0, 15);
   const personnel = submitted.reduce((s, l) => s + (l.personnel_count ?? 0), 0);
@@ -507,8 +515,12 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
           {Math.max(days, 30)} days · {personnel} officers deployed · {incidents} incident
           {incidents === 1 ? "" : "s"} · {withVehicle} vehicle-borne, {submitted.length - withVehicle} on foot ·{" "}
           {loggedKm.toFixed(1)} km on the odometer, {loggedLitres.toFixed(1)} L fuel used.
-          Recorded in{" "}
-          <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>.
+          {canRecord
+            ? " Use Record vehicle to log the assigned vehicle, odometer out/in and fuel used."
+            : " Recorded in "}
+          {!canRecord && (
+            <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -534,6 +546,7 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                   <TableHead className="text-right">Incidents</TableHead>
                   <TableHead>Details</TableHead>
                   <TableHead>Status</TableHead>
+                  {canRecord && <TableHead className="text-right">Vehicle log</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -589,6 +602,19 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                         <span className="capitalize">{l.status}</span>
                       </Badge>
                     </TableCell>
+                    {canRecord && (
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditing(l)}
+                          aria-label={`Record vehicle log for ${l.patrol_reference}`}
+                        >
+                          <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
+                          {l.vehicle_id ? "Update" : "Record"} vehicle
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -596,6 +622,7 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
           </div>
         )}
       </CardContent>
+      <PatrolVehicleLogDialog log={editing} onClose={() => setEditing(null)} />
     </Card>
   );
 }
