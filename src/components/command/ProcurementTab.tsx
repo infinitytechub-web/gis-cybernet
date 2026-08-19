@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import {
   ShoppingCart, Plus, Loader2, Search, CheckCircle2, XCircle, PackageCheck, History,
-  Image as ImageIcon, Trash2, Send,
+  Image as ImageIcon, Trash2, Send, Wallet, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatDateTime } from "@/lib/date-format";
@@ -35,6 +35,7 @@ import {
   useCreateProcurementRequest, useSubmitProcurementRequest, useDecideProcurementRequest,
   useReceiveProcurementRequest, useUploadProcurementPhotos, useDeleteProcurementPhoto,
   useIsStorekeeperTier, isProcurementOpen, validateProcurementPhoto, useStockItemOptions,
+  useProcurementBudgets, useProcurementUnitOptions, useSaveProcurementBudget,
   PROCUREMENT_PRIORITIES, type ProcurementRequest, type ProcurementPhoto,
 } from "@/hooks/useProcurementRequests";
 import { useAuth } from "@/hooks/useAuth";
