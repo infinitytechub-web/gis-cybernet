@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { getStoredSessionKey } from "@/hooks/useSessionRegistry";
 import { formatDateTime } from "@/lib/date-format";
+import { buildId, buildTooltip } from "@/lib/build-version";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
