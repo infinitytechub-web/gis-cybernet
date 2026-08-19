@@ -29,12 +29,14 @@ import {
 } from "@/components/ui/dialog";
 import {
   Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog, CalendarCheck,
+  Hourglass,
 } from "lucide-react";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABEL, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 import {
-  useStaffRoster, useGrantRole, useRevokeRole, useKeyAppointments,
+  useStaffRoster, useGrantRole, useRevokeRole, useKeyAppointments, formatService,
   ROSTER_ASSIGNABLE_ROLES, KEY_APPOINTMENTS, type RosterMember,
 } from "@/hooks/useStaffRoster";
 
