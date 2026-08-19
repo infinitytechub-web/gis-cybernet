@@ -440,6 +440,28 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                         )}
                         {!r.phone && !r.email && "—"}
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {r.date_joined_service ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 font-medium">
+                              <Hourglass className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                              {formatService(r.service_years, r.service_months)}
+                            </span>
+                            <div className="text-xs text-muted-foreground">
+                              Joined {new Date(r.date_joined_service).toLocaleDateString("en-GB")}
+                            </div>
+                            {r.retired ? (
+                              <div className="text-xs text-destructive">Past retirement age</div>
+                            ) : r.years_to_retirement !== null && r.years_to_retirement <= 2 ? (
+                              <div className="text-xs text-amber-700 dark:text-amber-300">
+                                Retires in {r.years_to_retirement}y
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Not recorded</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {r.attendance_today ? (
                           <div className="space-y-0.5">
