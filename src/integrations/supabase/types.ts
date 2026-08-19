@@ -886,6 +886,133 @@ export type Database = {
           },
         ]
       }
+      command_alert_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          alert_id: string
+          assigned_to: string | null
+          created_at: string
+          from_status:
+            | Database["public"]["Enums"]["command_alert_status"]
+            | null
+          id: string
+          note: string | null
+          to_status: Database["public"]["Enums"]["command_alert_status"] | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          alert_id: string
+          assigned_to?: string | null
+          created_at?: string
+          from_status?:
+            | Database["public"]["Enums"]["command_alert_status"]
+            | null
+          id?: string
+          note?: string | null
+          to_status?: Database["public"]["Enums"]["command_alert_status"] | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          alert_id?: string
+          assigned_to?: string | null
+          created_at?: string
+          from_status?:
+            | Database["public"]["Enums"]["command_alert_status"]
+            | null
+          id?: string
+          note?: string | null
+          to_status?: Database["public"]["Enums"]["command_alert_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "command_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      command_alerts: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to: string | null
+          category: string
+          closed_at: string | null
+          closed_by: string | null
+          closing_notes: string | null
+          created_at: string
+          created_by: string
+          detail: string | null
+          due_at: string | null
+          id: string
+          location: string | null
+          org_unit_id: string | null
+          reference: string
+          severity: Database["public"]["Enums"]["command_alert_severity"]
+          source_ref: string | null
+          status: Database["public"]["Enums"]["command_alert_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          category?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_notes?: string | null
+          created_at?: string
+          created_by?: string
+          detail?: string | null
+          due_at?: string | null
+          id?: string
+          location?: string | null
+          org_unit_id?: string | null
+          reference: string
+          severity?: Database["public"]["Enums"]["command_alert_severity"]
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["command_alert_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          category?: string
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_notes?: string | null
+          created_at?: string
+          created_by?: string
+          detail?: string | null
+          due_at?: string | null
+          id?: string
+          location?: string | null
+          org_unit_id?: string | null
+          reference?: string
+          severity?: Database["public"]["Enums"]["command_alert_severity"]
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["command_alert_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_alerts_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_role_audit: {
         Row: {
           action: string
@@ -10665,6 +10792,10 @@ export type Database = {
         Returns: boolean
       }
       can_use_recycle_bin: { Args: { _user_id: string }; Returns: boolean }
+      can_view_command_alert: {
+        Args: { _alert_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_view_org_unit: {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
@@ -10681,6 +10812,36 @@ export type Database = {
       }
       clear_failed_login_attempts: {
         Args: { _staff_id: string }
+        Returns: undefined
+      }
+      command_alert_add_note: {
+        Args: { _alert_id: string; _note: string }
+        Returns: undefined
+      }
+      command_alert_assign: {
+        Args: { _alert_id: string; _assigned_to: string; _note?: string }
+        Returns: undefined
+      }
+      command_alert_create: {
+        Args: {
+          _assigned_to?: string
+          _category?: string
+          _detail?: string
+          _due_at?: string
+          _location?: string
+          _org_unit_id?: string
+          _severity?: Database["public"]["Enums"]["command_alert_severity"]
+          _source_ref?: string
+          _title: string
+        }
+        Returns: string
+      }
+      command_alert_set_status: {
+        Args: {
+          _alert_id: string
+          _note?: string
+          _status: Database["public"]["Enums"]["command_alert_status"]
+        }
         Returns: undefined
       }
       command_authority_level: { Args: { _user_id: string }; Returns: number }
@@ -11510,6 +11671,13 @@ export type Database = {
         | "monthly"
         | "quarterly"
         | "annually"
+      command_alert_severity: "critical" | "high" | "medium" | "low" | "info"
+      command_alert_status:
+        | "new"
+        | "assigned"
+        | "in_progress"
+        | "escalated"
+        | "closed"
       firewall_action: "allow" | "warn" | "quarantine" | "block"
       firewall_event_layer: "file" | "url" | "auth" | "waf"
       firewall_quarantine_status: "pending" | "released" | "blocked" | "expired"
@@ -11742,6 +11910,14 @@ export const Constants = {
         "monthly",
         "quarterly",
         "annually",
+      ],
+      command_alert_severity: ["critical", "high", "medium", "low", "info"],
+      command_alert_status: [
+        "new",
+        "assigned",
+        "in_progress",
+        "escalated",
+        "closed",
       ],
       firewall_action: ["allow", "warn", "quarantine", "block"],
       firewall_event_layer: ["file", "url", "auth", "waf"],
