@@ -289,6 +289,8 @@ export type Database = {
           announcement_file_retention_enabled: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
+          biometric_login_enabled: boolean
+          biometric_stepup_required: boolean
           company_name: string
           contact_address: string | null
           contact_email: string | null
@@ -334,6 +336,8 @@ export type Database = {
           announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
+          biometric_login_enabled?: boolean
+          biometric_stepup_required?: boolean
           company_name?: string
           contact_address?: string | null
           contact_email?: string | null
@@ -379,6 +383,8 @@ export type Database = {
           announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
+          biometric_login_enabled?: boolean
+          biometric_stepup_required?: boolean
           company_name?: string
           contact_address?: string | null
           contact_email?: string | null
@@ -11562,6 +11568,195 @@ export type Database = {
           },
         ]
       }
+      webauthn_audit: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          credential_id: string | null
+          detail: string | null
+          device_fingerprint: string | null
+          device_label: string | null
+          event: string
+          id: string
+          ip_address: string | null
+          staff_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          credential_id?: string | null
+          detail?: string | null
+          device_fingerprint?: string | null
+          device_label?: string | null
+          event: string
+          id?: string
+          ip_address?: string | null
+          staff_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          credential_id?: string | null
+          detail?: string | null
+          device_fingerprint?: string | null
+          device_label?: string | null
+          event?: string
+          id?: string
+          ip_address?: string | null
+          staff_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      webauthn_challenges: {
+        Row: {
+          challenge: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          purpose: string
+          staff_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          challenge: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          purpose: string
+          staff_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          challenge?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          staff_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      webauthn_credentials: {
+        Row: {
+          aaguid: string | null
+          backed_up: boolean
+          created_at: string
+          credential_id: string
+          device_label: string
+          id: string
+          last_used_at: string | null
+          public_key: string
+          revoked_at: string | null
+          revoked_by: string | null
+          sign_count: number
+          transports: string[]
+          updated_at: string
+          user_id: string
+          user_verified: boolean
+        }
+        Insert: {
+          aaguid?: string | null
+          backed_up?: boolean
+          created_at?: string
+          credential_id: string
+          device_label?: string
+          id?: string
+          last_used_at?: string | null
+          public_key: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sign_count?: number
+          transports?: string[]
+          updated_at?: string
+          user_id: string
+          user_verified?: boolean
+        }
+        Update: {
+          aaguid?: string | null
+          backed_up?: boolean
+          created_at?: string
+          credential_id?: string
+          device_label?: string
+          id?: string
+          last_used_at?: string | null
+          public_key?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          sign_count?: number
+          transports?: string[]
+          updated_at?: string
+          user_id?: string
+          user_verified?: boolean
+        }
+        Relationships: []
+      }
+      webauthn_stepup_tokens: {
+        Row: {
+          action: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          method: string
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          method?: string
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          method?: string
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webauthn_user_settings: {
+        Row: {
+          biometric_login_enabled: boolean
+          consented_at: string | null
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          biometric_login_enabled?: boolean
+          consented_at?: string | null
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          biometric_login_enabled?: boolean
+          consented_at?: string | null
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       front_desk_visa_extensions_view: {
@@ -12744,6 +12939,57 @@ export type Database = {
           total: number
           verified: number
         }[]
+      }
+      webauthn_admin_list_credentials: {
+        Args: never
+        Returns: {
+          backed_up: boolean
+          created_at: string
+          device_label: string
+          full_name: string
+          id: string
+          last_used_at: string
+          revoked_at: string
+          staff_id: string
+          user_id: string
+        }[]
+      }
+      webauthn_consume_stepup: {
+        Args: { _action: string; _token_hash: string }
+        Returns: boolean
+      }
+      webauthn_list_my_credentials: {
+        Args: never
+        Returns: {
+          backed_up: boolean
+          created_at: string
+          device_label: string
+          id: string
+          last_used_at: string
+        }[]
+      }
+      webauthn_log_event: {
+        Args: {
+          _credential_id?: string
+          _detail?: string
+          _device_fingerprint?: string
+          _device_label?: string
+          _event: string
+          _ip_address?: string
+          _staff_id?: string
+          _user_agent?: string
+        }
+        Returns: undefined
+      }
+      webauthn_my_status: { Args: never; Returns: Json }
+      webauthn_prune_expired: { Args: never; Returns: number }
+      webauthn_revoke_credential: {
+        Args: { _id: string; _reason?: string }
+        Returns: undefined
+      }
+      webauthn_set_enabled: {
+        Args: { _consent?: boolean; _enabled: boolean }
+        Returns: boolean
       }
     }
     Enums: {
