@@ -936,6 +936,47 @@ export type Database = {
           },
         ]
       }
+      command_alert_photos: {
+        Row: {
+          alert_id: string
+          caption: string | null
+          content_type: string | null
+          created_at: string
+          id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          alert_id: string
+          caption?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by?: string
+        }
+        Update: {
+          alert_id?: string
+          caption?: string | null
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_alert_photos_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "command_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_alerts: {
         Row: {
           assigned_at: string | null
@@ -1268,15 +1309,19 @@ export type Database = {
           detected_at: string | null
           id: string
           impact_assessment: string | null
+          impact_level: string
           incident_number: string
           incident_type: string
+          org_unit_id: string | null
           reported_at: string
           reported_by: string
           resolution_notes: string | null
           resolved_at: string | null
+          resolved_by: string | null
           severity: string
           source: string | null
           status: string
+          threat_source: string | null
           title: string
           updated_at: string
         }
@@ -1288,15 +1333,19 @@ export type Database = {
           detected_at?: string | null
           id?: string
           impact_assessment?: string | null
-          incident_number: string
+          impact_level?: string
+          incident_number?: string
           incident_type?: string
+          org_unit_id?: string | null
           reported_at?: string
           reported_by: string
           resolution_notes?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           severity?: string
           source?: string | null
           status?: string
+          threat_source?: string | null
           title: string
           updated_at?: string
         }
@@ -1308,19 +1357,31 @@ export type Database = {
           detected_at?: string | null
           id?: string
           impact_assessment?: string | null
+          impact_level?: string
           incident_number?: string
           incident_type?: string
+          org_unit_id?: string | null
           reported_at?: string
           reported_by?: string
           resolution_notes?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
           severity?: string
           source?: string | null
           status?: string
+          threat_source?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cyber_incidents_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cyber_investigations: {
         Row: {
@@ -10857,6 +10918,8 @@ export type Database = {
           source: string
         }[]
       }
+      command_dashboard: { Args: { _days?: number }; Returns: Json }
+      command_reach_units: { Args: { _user_id: string }; Returns: string[] }
       compute_interlink_next_run: {
         Args: {
           _day_of_month: number
@@ -11340,6 +11403,7 @@ export type Database = {
         }
         Returns: number
       }
+      next_cyber_incident_number: { Args: never; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
         Args: {
