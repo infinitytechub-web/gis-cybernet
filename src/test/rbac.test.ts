@@ -83,3 +83,25 @@ describe("access decisions", () => {
     expect(canAccessPath("/staff/123", staff)).toBe(canAccessModule("staff", staff));
   });
 });
+
+describe("Command Officer role", () => {
+  const co = { role: "command_officer" as const };
+  const supervisor = { role: "supervisor" as const };
+
+  it("can open the Command Console", () => {
+    expect(canAccessModule("command-console", co)).toBe(true);
+    expect(canAccessPath("/command-console", co)).toBe(true);
+  });
+
+  it("matches the existing command tier on every command module", () => {
+    for (const m of MODULES.filter((m) => m.tier === "command")) {
+      expect(canAccessModule(m.key, co), `${m.key}`).toBe(canAccessModule(m.key, supervisor));
+    }
+  });
+
+  it("is not granted admin-only modules", () => {
+    for (const m of MODULES.filter((m) => m.tier === "admin")) {
+      expect(canAccessModule(m.key, co), `${m.key} must stay admin-only`).toBe(false);
+    }
+  });
+});
