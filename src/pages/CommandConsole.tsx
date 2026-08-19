@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import CommandInboxTab from "@/components/command/CommandInboxTab";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
   useCommandConsoleFeed, useBranchFilter, rollupByCommand,
@@ -70,6 +72,7 @@ function SeverityBadge({ severity }: { severity: ConsoleSeverity }) {
 }
 
 export default function CommandConsole() {
+  const { isAdminOrSupervisor } = useAuth();
   const { units, tree, scope, loading: orgLoading } = useOrgScope();
   const [branch, setBranch] = useState<string | "all">("all");
   const [source, setSource] = useState<ConsoleSource | "all">("all");
@@ -261,6 +264,9 @@ export default function CommandConsole() {
             <TabsTrigger value="incidents">
               <ListFilter className="mr-1 h-4 w-4" aria-hidden="true" />Incident list
             </TabsTrigger>
+            <TabsTrigger value="inbox">
+              <Inbox className="mr-1 h-4 w-4" aria-hidden="true" />Inbox
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Gauge className="mr-1 h-4 w-4" aria-hidden="true" />Status dashboards
             </TabsTrigger>
@@ -355,6 +361,11 @@ export default function CommandConsole() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Inbox ─────────────────────────────────────────────────────── */}
+        <TabsContent value="inbox" className="mt-4">
+          <CommandInboxTab units={units} tree={tree} canManage={isAdminOrSupervisor} />
         </TabsContent>
 
         {/* ── Status dashboards ─────────────────────────────────────────── */}
