@@ -37,6 +37,8 @@ import { getSignedPhotoUrl } from "@/lib/photo-utils";
 import { AgeDisplay } from "@/components/ui/age-display";
 import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
+import { useOrgScope } from "@/hooks/useOrgScope";
+import { flattenOrgTree } from "@/lib/org-hierarchy";
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
@@ -47,6 +49,9 @@ export default function Staff() {
   const canManage = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // Hierarchical RBAC — command postings the signed-in user may assign.
+  const { tree: orgTree, scope: orgScope } = useOrgScope();
+  const orgRows = useMemo(() => flattenOrgTree(orgTree), [orgTree]);
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -73,6 +78,7 @@ export default function Staff() {
   const [shiftGroup, setShiftGroup] = useState("");
   const [rankId, setRankId] = useState("");
   const [deptId, setDeptId] = useState("");
+  const [orgUnitId, setOrgUnitId] = useState("");
   const [status, setStatus] = useState<StaffStatus>("active");
   const [ghanaCardNumber, setGhanaCardNumber] = useState("");
   const [email, setEmail] = useState("");
@@ -152,6 +158,7 @@ export default function Staff() {
     setCurrentAppointment("");
     setPortfolioIds([]);
     setInitialPortfolioIds([]);
+    setOrgUnitId("");
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -189,6 +196,7 @@ export default function Staff() {
     setShiftGroup(s.shift_group || "");
     setRankId(s.rank_id || "");
     setDeptId(s.department_id || "");
+    setOrgUnitId(s.org_unit_id || "");
     setStatus(s.status);
     setGhanaCardNumber(s.ghana_card_number || "");
     setEmail(s.email || "");
@@ -293,6 +301,7 @@ export default function Staff() {
         shift_group: shiftGroup || null,
         rank_id: rankId || null,
         department_id: deptId || null,
+        org_unit_id: orgUnitId || null,
         status,
         ghana_card_number: ghanaCardNumber || null,
         email: email || null,
@@ -761,6 +770,23 @@ export default function Staff() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="col-span-2">
+                <Label>Command posting</Label>
+                <Select value={orgUnitId || "none"} onValueChange={(v) => setOrgUnitId(v === "none" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Select command" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Unassigned —</SelectItem>
+                    {orgRows.map((o) => (
+                      <SelectItem key={o.id} value={o.id} disabled={!orgScope.canManage(o.id)}>
+                        {"— ".repeat(o.depth)}{o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Determines which commands can view and edit this record (this command and everything above it in the chain).
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

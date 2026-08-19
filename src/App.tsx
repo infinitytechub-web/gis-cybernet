@@ -39,6 +39,7 @@ const StaffDirectory = lazy(() => import("./pages/StaffDirectory"));
 const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
+const OrgStructure = lazy(() => import("./pages/OrgStructure"));
 const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
@@ -237,6 +238,7 @@ function App() {
           <Route path="/recycle-bin" element={<ProtectedRoute module="recycle-bin"><Layout><RecycleBin /></Layout></ProtectedRoute>} />
           <Route path="/announcements/retention" element={<ProtectedRoute module="retention-policy"><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
           <Route path="/interlink" element={<ProtectedRoute module="interlink"><Layout><Interlink /></Layout></ProtectedRoute>} />
+          <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
           <Route path="/commands" element={<ProtectedRoute module="commands"><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/command/:slug" element={<ProtectedRoute module="commands"><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />

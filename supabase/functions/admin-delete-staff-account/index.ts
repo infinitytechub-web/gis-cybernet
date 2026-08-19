@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 import { hasStaffAdminAuthority, STAFF_ADMIN_DENIED } from "../_shared/staff-admin-auth.ts";
+import { canAccessStaffProfile, orgScopeDeniedResponse } from "../_shared/org-scope.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,6 +69,12 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Hierarchical RBAC — the target must sit inside the caller's command scope
+    // (Regional Command → Sector → District → Station → Unit). Admins bypass.
+    if (!(await canAccessStaffProfile(admin, user.id, profileId))) {
+      return orgScopeDeniedResponse(corsHeaders);
     }
 
     // Lookup profile
