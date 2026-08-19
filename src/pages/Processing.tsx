@@ -178,6 +178,9 @@ export default function Processing() {
           <TabsTrigger value="permits" className="gap-1 text-xs sm:text-sm">
             <IdCard className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Permits
           </TabsTrigger>
+          <TabsTrigger value="passport" className="gap-1 text-xs sm:text-sm">
+            <BookOpen className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> Passports
+          </TabsTrigger>
           {showApprovals && (
             <TabsTrigger value="approvals" className="gap-1 text-xs sm:text-sm">
               <ShieldCheck className="h-4 w-4 text-rose-600 dark:text-rose-400" /> Approvals
@@ -190,6 +193,8 @@ export default function Processing() {
         <TabsContent value="visa"><ProcessingVisaApplications /></TabsContent>
         <TabsContent value="extensions"><ProcessingVisaExtensions /></TabsContent>
         <TabsContent value="permits"><ProcessingPermits /></TabsContent>
+        <TabsContent value="passport"><ProcessingPassportApplications /></TabsContent>
+
         {showApprovals && <TabsContent value="approvals"><ApprovalsQueue /></TabsContent>}
         <TabsContent value="audit"><ProcessingAuditLog /></TabsContent>
       </Tabs>
