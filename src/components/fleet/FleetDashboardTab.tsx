@@ -21,6 +21,11 @@ import { Activity, Fuel, MapPinned, BellRing, Gauge, AlertTriangle, CalendarCloc
 import { Link } from "react-router-dom";
 import { formatDate } from "@/lib/date-format";
 import { usePatrolPlans, isPlanOpen } from "@/hooks/usePatrolPlans";
+import {
+  usePatrolGpsActivity,
+  PATROL_GPS_MATCH_LABELS,
+  type PatrolGpsMatch,
+} from "@/hooks/usePatrolGpsActivity";
 import { ALERT_TYPE_LABELS, VEHICLE_STATUS_LABELS, type AlertType, type VehicleStatus } from "@/lib/fleet";
 
 interface DashboardVehicle {
