@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3, Wrench } from "lucide-react";
+import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3, Wrench, Satellite } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
 import {
@@ -26,6 +26,7 @@ import { FleetCommsTab } from "@/components/fleet/FleetCommsTab";
 import { FleetImmobilizerTab } from "@/components/fleet/FleetImmobilizerTab";
 import { FleetDashboardTab } from "@/components/fleet/FleetDashboardTab";
 import { FleetMaintenanceTab } from "@/components/fleet/FleetMaintenanceTab";
+import { FleetGpsFeedTab } from "@/components/fleet/FleetGpsFeedTab";
 import { useFleetMessages, useFleetMessagesRealtime, unreadFor } from "@/hooks/useFleetComms";
 
 function Kpi({
@@ -151,8 +152,14 @@ export default function Fleet() {
                 <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />Immobiliser
               </TabsTrigger>
             )}
+            {canManage && (
+              <TabsTrigger value="gps-feed">
+                <Satellite className="mr-1 h-4 w-4" aria-hidden="true" />GPS feed
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
+
 
         <TabsContent value="live" className="mt-4">
           <FleetLiveTab
@@ -210,6 +217,13 @@ export default function Fleet() {
             <FleetImmobilizerTab vehicles={vehicles} canManage={canManage} />
           </TabsContent>
         )}
+
+        {canManage && (
+          <TabsContent value="gps-feed" className="mt-4">
+            <FleetGpsFeedTab vehicles={vehicles} canManage={canManage} isAdmin={isAdmin} />
+          </TabsContent>
+        )}
+
       </Tabs>
     </div>
   );

@@ -11785,6 +11785,15 @@ export type Database = {
         }
         Returns: number
       }
+      fleet_create_ingest_key: {
+        Args: { _label: string; _vehicle_id?: string }
+        Returns: {
+          api_key: string
+          id: string
+          label: string
+          vehicle_id: string
+        }[]
+      }
       fleet_dashboard: { Args: { _days?: number }; Returns: Json }
       fleet_deactivate_district_zones: {
         Args: { _delete?: boolean; _district_ids: string[] }
@@ -11798,6 +11807,25 @@ export type Database = {
         Args: { _lat1: number; _lat2: number; _lng1: number; _lng2: number }
         Returns: number
       }
+      fleet_feed_readiness: {
+        Args: never
+        Returns: {
+          call_sign: string
+          device_id: string
+          driver_name: string
+          feed_state: string
+          fuel_readings_24h: number
+          geofence_events_7d: number
+          has_key: boolean
+          last_position_at: string
+          org_unit_id: string
+          org_unit_name: string
+          positions_24h: number
+          registration_number: string
+          status: string
+          vehicle_id: string
+        }[]
+      }
       fleet_flag_offline_devices: {
         Args: { _minutes?: number }
         Returns: number
@@ -11809,6 +11837,19 @@ export type Database = {
           _lng: number
         }
         Returns: boolean
+      }
+      fleet_list_ingest_keys: {
+        Args: never
+        Returns: {
+          active: boolean
+          call_sign: string
+          created_at: string
+          id: string
+          label: string
+          last_used_at: string
+          registration_number: string
+          vehicle_id: string
+        }[]
       }
       fleet_maintenance_status: {
         Args: never
@@ -11879,6 +11920,10 @@ export type Database = {
       fleet_set_immobilizer: {
         Args: { _lock: boolean; _reason: string; _vehicle_id: string }
         Returns: string
+      }
+      fleet_set_ingest_key_active: {
+        Args: { _active: boolean; _id: string }
+        Returns: undefined
       }
       fleet_summary: { Args: never; Returns: Json }
       fleet_vehicle_usage: {
