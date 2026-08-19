@@ -1,0 +1,171 @@
+/**
+ * STAFF ROSTER — one query that assembles the operational roster used by the
+ * Command Console and the Unit Dashboard: who is posted where, what roles they
+ * hold, how to reach them, their photo, and how many patrols they have led.
+ *
+ * Role rows live in `user_roles` keyed by the auth user id, which maps to
+ * `profiles.user_id` (NOT `profiles.id`) — the roster resolves that for callers.
+ */
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { getSignedPhotoUrl } from "@/lib/photo-utils";
+import type { AppRole } from "@/lib/types";
+
+export interface RosterMember {
+  id: string;                 // profiles.id
+  user_id: string | null;     // auth user id (role key)
+  staff_id: string | null;
+  full_name: string;
+  rank: string | null;
+  department: string | null;
+  org_unit_id: string | null;
+  branch: string | null;      // org unit name
+  unit: string | null;        // free-text posting
+  phone: string | null;
+  email: string | null;
+  photo_url: string | null;
+  photo_signed_url: string | null;
+  status: string | null;
+  roles: AppRole[];
+  patrols_led: number;
+}
+
+/** Roles that can be designated from the roster (operational + command tier). */
+export const ROSTER_ASSIGNABLE_ROLES: AppRole[] = [
+  "oic",
+  "2ic",
+  "chief_staff_officer",
+  "head_of_administration",
+  "staff_officer",
+  "command_officer",
+  "supervisor",
+  "deputy_supervisor",
+  "shift_leader",
+  "front_desk",
+  "storekeeper",
+  "procurement_officer",
+  "medical_officer",
+  "special_duties",
+  "staff",
+];
+
+/** Key appointments surfaced as filled / vacant tiles on the roster. */
+export const KEY_APPOINTMENTS: AppRole[] = ["oic", "2ic", "storekeeper", "procurement_officer"];
+
+export function useStaffRoster() {
+  return useQuery({
+    queryKey: ["staff-roster"],
+    staleTime: 60_000,
+    queryFn: async (): Promise<RosterMember[]> => {
+      const [{ data: profiles, error }, { data: roleRows }, { data: patrolRows }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select(
+            "id, user_id, staff_id, first_name, last_name, phone, email, photo_url, status, unit, org_unit_id, ranks(name, abbreviation), departments(name), org_units(name)",
+          )
+          .order("last_name")
+          .limit(2000),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("patrol_logs").select("patrol_leader_id").limit(5000),
+      ]);
+      if (error) throw error;
+
+      const rolesByUser = new Map<string, AppRole[]>();
+      for (const r of roleRows ?? []) {
+        const list = rolesByUser.get(r.user_id) ?? [];
+        list.push(r.role as AppRole);
+        rolesByUser.set(r.user_id, list);
+      }
+
+      const patrolsByLeader = new Map<string, number>();
+      for (const p of patrolRows ?? []) {
+        if (!p.patrol_leader_id) continue;
+        patrolsByLeader.set(p.patrol_leader_id, (patrolsByLeader.get(p.patrol_leader_id) ?? 0) + 1);
+      }
+
+      const rows: RosterMember[] = (profiles ?? []).map((p: any) => ({
+        id: p.id,
+        user_id: p.user_id ?? null,
+        staff_id: p.staff_id ?? null,
+        full_name:
+          [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.staff_id || "Unnamed",
+        rank: p.ranks?.name ?? null,
+        department: p.departments?.name ?? null,
+        org_unit_id: p.org_unit_id ?? null,
+        branch: p.org_units?.name ?? null,
+        unit: p.unit ?? null,
+        phone: p.phone ?? null,
+        email: p.email ?? null,
+        photo_url: p.photo_url ?? null,
+        photo_signed_url: null,
+        status: p.status ?? null,
+        roles: (p.user_id ? rolesByUser.get(p.user_id) : undefined) ?? [],
+        patrols_led: patrolsByLeader.get(p.id) ?? 0,
+      }));
+
+      // Sign photos in parallel; failures degrade to initials.
+      await Promise.all(
+        rows.map(async (r) => {
+          if (r.photo_url) {
+            try {
+              r.photo_signed_url = await getSignedPhotoUrl(r.photo_url);
+            } catch {
+              r.photo_signed_url = null;
+            }
+          }
+        }),
+      );
+
+      return rows;
+    },
+  });
+}
+
+/** Grant a role to a staff member (idempotent — duplicates are ignored). */
+export function useGrantRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert({ user_id: userId, role }, { onConflict: "user_id,role", ignoreDuplicates: true });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["staff-roster"] });
+      qc.invalidateQueries({ queryKey: ["command-roster"] });
+    },
+  });
+}
+
+/** Revoke a role from a staff member. */
+export function useRevokeRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["staff-roster"] });
+      qc.invalidateQueries({ queryKey: ["command-roster"] });
+    },
+  });
+}
+
+/** Holders of each key appointment, for the vacancy tiles. */
+export function useKeyAppointments(roster: RosterMember[]) {
+  return useMemo(
+    () =>
+      KEY_APPOINTMENTS.map((role) => ({
+        role,
+        holders: roster.filter((r) => r.roles.includes(role)),
+      })),
+    [roster],
+  );
+}
