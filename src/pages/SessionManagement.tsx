@@ -62,6 +62,8 @@ const ACTION_LABEL: Record<string, string> = {
   logout_session: "Session logged out",
   logout_all: "All sessions signed out",
   fleet_panic: "Fleet panic / SOS",
+  fleet_immobilize: "Vehicle immobilised",
+  fleet_mobilize: "Vehicle immobiliser released",
 };
 
 
