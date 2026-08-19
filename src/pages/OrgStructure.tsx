@@ -236,7 +236,7 @@ export default function OrgStructure() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Regional Commands down to Units. Access to staff records and command
-            data follows this tree — every level sees itself and everything below
+            data follows this tree: Every level sees itself and everything below
             it, and nothing above or beside it.
           </p>
         </div>
