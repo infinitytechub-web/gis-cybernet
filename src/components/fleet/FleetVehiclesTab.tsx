@@ -25,6 +25,7 @@ import {
   type FleetVehicle, type VehicleStatus,
 } from "@/lib/fleet";
 import { FleetVehicleImportDialog } from "@/components/fleet/FleetVehicleImportDialog";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 
 /** Relative "last heard from" label for tracker check-ins. */
 function lastSeenLabel(at: string | null): string {
@@ -108,15 +109,18 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
         .select("id, first_name, last_name, staff_id")
         .eq("status", "active")
         .order("last_name")
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return (data ?? []).map((d) => ({
         id: d.id,
-        staff_id: d.staff_id,
+        staff_id: d.staff_id ?? "",
+        first_name: d.first_name ?? "",
+        last_name: d.last_name ?? "",
         full_name: [d.first_name, d.last_name].filter(Boolean).join(" ").trim() || d.staff_id || "Unnamed",
       }));
     },
   });
+
 
   const unitsQuery = useQuery({
     queryKey: ["fleet", "org-units"],
@@ -385,18 +389,17 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
             </div>
             <div className="space-y-1">
               <Label htmlFor="fv-driver">Assigned driver</Label>
-              <Select value={form.assigned_driver_id} onValueChange={(v) => setForm({ ...form, assigned_driver_id: v })}>
-                <SelectTrigger id="fv-driver"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
-                  {(driversQuery.data ?? []).map((d: any) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.full_name} {d.staff_id ? `(${d.staff_id})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <StaffCombobox
+                staff={driversQuery.data ?? []}
+                value={form.assigned_driver_id === "none" ? "" : form.assigned_driver_id}
+                onValueChange={(v) => setForm({ ...form, assigned_driver_id: v || "none" })}
+                includeAllOption
+                allOptionLabel="Unassigned"
+                placeholder="Search driver by name or staff ID…"
+                className="w-full"
+              />
             </div>
+
             <div className="space-y-1">
               <Label htmlFor="fv-unit">Assigned unit</Label>
               <Select value={form.org_unit_id} onValueChange={(v) => setForm({ ...form, org_unit_id: v })}>
