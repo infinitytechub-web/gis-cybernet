@@ -388,18 +388,17 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
             </div>
             <div className="space-y-1">
               <Label htmlFor="fv-driver">Assigned driver</Label>
-              <Select value={form.assigned_driver_id} onValueChange={(v) => setForm({ ...form, assigned_driver_id: v })}>
-                <SelectTrigger id="fv-driver"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
-                  {(driversQuery.data ?? []).map((d: any) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.full_name} {d.staff_id ? `(${d.staff_id})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <StaffCombobox
+                staff={driversQuery.data ?? []}
+                value={form.assigned_driver_id === "none" ? "" : form.assigned_driver_id}
+                onValueChange={(v) => setForm({ ...form, assigned_driver_id: v || "none" })}
+                includeAllOption
+                allOptionLabel="Unassigned"
+                placeholder="Search driver by name or staff ID…"
+                className="w-full"
+              />
             </div>
+
             <div className="space-y-1">
               <Label htmlFor="fv-unit">Assigned unit</Label>
               <Select value={form.org_unit_id} onValueChange={(v) => setForm({ ...form, org_unit_id: v })}>
