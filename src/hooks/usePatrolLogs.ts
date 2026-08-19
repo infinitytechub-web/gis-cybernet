@@ -267,3 +267,25 @@ export function useDeletePatrolPhoto() {
     },
   });
 }
+
+/** Profile ids for the patrol-leader picker (profiles.id, not user_id). */
+export function usePatrolStaffOptions(enabled = true) {
+  return useQuery({
+    queryKey: ["patrol-logs", "staff-options"],
+    enabled,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id, status")
+        .order("last_name");
+      if (error) throw error;
+      return (data ?? []).map((p) => ({
+        id: p.id,
+        first_name: p.first_name ?? "",
+        last_name: p.last_name ?? "",
+        staff_id: p.staff_id ?? "",
+      }));
+    },
+  });
+}
