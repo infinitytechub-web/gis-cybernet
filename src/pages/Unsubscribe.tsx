@@ -40,8 +40,10 @@ export default function Unsubscribe() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
-          <CardTitle>Email Preferences</CardTitle>
-          <CardDescription>GIS Cybernet notification system</CardDescription>
+          <CardTitle asChild>
+            <h1>Email Unsubscribe</h1>
+          </CardTitle>
+          <CardDescription>Manage your GIS Cybernet notification preferences</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {state === "validating" && (<div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Validating link…</div>)}
