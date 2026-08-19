@@ -409,6 +409,8 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
 
 export default function Operations() {
   const { role, user } = useAuth();
+  /** Only command/supervisory roles may advance an operation's status. */
+  const canManage = !!role && ALLOWED_ROLES.includes(role);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [period, setPeriod] = useState("monthly");
