@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, MailCheck, MailX, ShieldX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 type State = "validating" | "valid" | "already" | "invalid" | "submitting" | "done" | "error";
 
@@ -12,6 +13,14 @@ export default function Unsubscribe() {
   const token = params.get("token") ?? "";
   const [state, setState] = useState<State>("validating");
   const [message, setMessage] = useState<string>("");
+
+  usePageMeta({
+    title: "Email Unsubscribe — GAR-ASC-Cybernet",
+    description:
+      "Unsubscribe from GAR-ASC-Cybernet notification emails. Confirm your request to stop receiving system notifications from the Ghana Immigration Service HRM platform.",
+    path: "/unsubscribe",
+  });
+
 
   useEffect(() => {
     if (!token) { setState("invalid"); setMessage("Missing token."); return; }
@@ -40,8 +49,8 @@ export default function Unsubscribe() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="max-w-md w-full">
         <CardHeader>
-          <CardTitle>Email Preferences</CardTitle>
-          <CardDescription>GIS Cybernet notification system</CardDescription>
+          <h1 className="text-2xl font-semibold leading-none tracking-tight">Email Unsubscribe</h1>
+          <CardDescription>Manage your GIS Cybernet notification preferences</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {state === "validating" && (<div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Validating link…</div>)}
