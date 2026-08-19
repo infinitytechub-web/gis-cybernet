@@ -5323,6 +5323,91 @@ export type Database = {
           },
         ]
       }
+      org_unit_assignments: {
+        Row: {
+          can_manage: boolean
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          org_unit_id: string
+          revoked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_manage?: boolean
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          org_unit_id: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_manage?: boolean
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          org_unit_id?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_unit_assignments_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_units: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          parent_id: string | null
+          type: Database["public"]["Enums"]["org_unit_type"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_id?: string | null
+          type: Database["public"]["Enums"]["org_unit_type"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_id?: string | null
+          type?: Database["public"]["Enums"]["org_unit_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       otp_codes: {
         Row: {
           code_hash: string | null
@@ -6670,6 +6755,7 @@ export type Database = {
           login_enabled: boolean
           marital_status: string | null
           office: string | null
+          org_unit_id: string | null
           phone: string | null
           photo_url: string | null
           rank_id: string | null
@@ -6703,6 +6789,7 @@ export type Database = {
           login_enabled?: boolean
           marital_status?: string | null
           office?: string | null
+          org_unit_id?: string | null
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
@@ -6736,6 +6823,7 @@ export type Database = {
           login_enabled?: boolean
           marital_status?: string | null
           office?: string | null
+          org_unit_id?: string | null
           phone?: string | null
           photo_url?: string | null
           rank_id?: string | null
@@ -6757,6 +6845,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
           {
@@ -9811,6 +9906,10 @@ export type Database = {
           }
       can_access_detention: { Args: { _uid: string }; Returns: boolean }
       can_access_report_file: { Args: { _file_path: string }; Returns: boolean }
+      can_access_staff_profile: {
+        Args: { _profile_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_export_hrm: { Args: { _kind: string }; Returns: boolean }
       can_export_interlink_logs: {
@@ -9819,6 +9918,10 @@ export type Database = {
       }
       can_manage_appraisals: { Args: { _uid: string }; Returns: boolean }
       can_manage_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_org_unit: {
+        Args: { _org_unit_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_shift_connection_action: {
         Args: { _action: string }
@@ -10109,6 +10212,10 @@ export type Database = {
         Args: { _capability: string; _user_id: string }
         Returns: boolean
       }
+      has_org_access: {
+        Args: { _org_unit_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -10277,6 +10384,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      org_unit_ancestors: { Args: { _node: string }; Returns: string[] }
+      org_unit_descendants: { Args: { _root: string }; Returns: string[] }
       override_shift_assignment: {
         Args: {
           _effective_date: string
@@ -10478,6 +10587,7 @@ export type Database = {
           department_id: string
         }[]
       }
+      user_org_scope: { Args: { _user_id: string }; Returns: string[] }
       verify_interlink_approval_chain: {
         Args: never
         Returns: {
@@ -10573,6 +10683,13 @@ export type Database = {
         | "waf_pattern"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
+      org_unit_type:
+        | "national"
+        | "regional"
+        | "sector"
+        | "district"
+        | "station"
+        | "unit"
       presence_event_type: "heartbeat" | "prune" | "online" | "offline"
       scheduled_delivery_status: "pending" | "sent" | "failed" | "cancelled"
       shift_pattern: "8h" | "12h" | "custom"
@@ -10777,6 +10894,14 @@ export const Constants = {
       ],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
+      org_unit_type: [
+        "national",
+        "regional",
+        "sector",
+        "district",
+        "station",
+        "unit",
+      ],
       presence_event_type: ["heartbeat", "prune", "online", "offline"],
       scheduled_delivery_status: ["pending", "sent", "failed", "cancelled"],
       shift_pattern: ["8h", "12h", "custom"],
