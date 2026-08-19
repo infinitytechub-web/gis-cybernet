@@ -32,6 +32,7 @@ import {
   sumPending,
 } from "@/lib/application-queues";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
+import { navDescription } from "@/lib/nav-descriptions";
 
 const commandItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
