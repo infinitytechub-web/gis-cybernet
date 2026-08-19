@@ -261,6 +261,9 @@ export default function CommandConsole() {
             <TabsTrigger value="incidents">
               <ListFilter className="mr-1 h-4 w-4" aria-hidden="true" />Incident list
             </TabsTrigger>
+            <TabsTrigger value="inbox">
+              <Inbox className="mr-1 h-4 w-4" aria-hidden="true" />Inbox
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Gauge className="mr-1 h-4 w-4" aria-hidden="true" />Status dashboards
             </TabsTrigger>
