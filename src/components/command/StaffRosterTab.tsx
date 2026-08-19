@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog, CalendarCheck,
-  Hourglass,
+  Hourglass, LogIn, LogOut, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +39,7 @@ import {
   useStaffRoster, useGrantRole, useRevokeRole, useKeyAppointments, formatService,
   ROSTER_ASSIGNABLE_ROLES, KEY_APPOINTMENTS, type RosterMember,
 } from "@/hooks/useStaffRoster";
+import { useRosterClock } from "@/hooks/useRosterClock";
 
 const STATUS_CLASS: Record<string, string> = {
   active: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
@@ -76,6 +77,23 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
   const { data: roster = [], isLoading } = useStaffRoster();
   const grant = useGrantRole();
   const revoke = useRevokeRole();
+  const clock = useRosterClock();
+  const [clocking, setClocking] = useState<string | null>(null);
+
+  /** Who this signed-in officer may clock: themselves, or anyone when command tier. */
+  const canClock = (r: RosterMember) =>
+    Boolean(canManageRoles || (r.user_id && user?.id && r.user_id === user.id));
+
+  async function runClock(r: RosterMember, action: "check_in" | "check_out") {
+    setClocking(r.id + action);
+    try {
+      await clock.mutateAsync({ profileId: r.id, action, name: r.full_name });
+    } catch {
+      /* toast handled in the hook */
+    } finally {
+      setClocking(null);
+    }
+  }
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | AppRole>("all");
@@ -367,7 +385,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[900px]">
+              <Table className="min-w-[1040px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Staff</TableHead>
@@ -377,6 +395,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                     <TableHead>Contact</TableHead>
                     <TableHead>Service years</TableHead>
                     <TableHead>Attendance today</TableHead>
+                    <TableHead>Clock in / out</TableHead>
                     <TableHead className="text-right">Patrols led</TableHead>
                     <TableHead>Status</TableHead>
                     {canManageRoles && <TableHead className="text-right">Designate</TableHead>}
@@ -479,6 +498,41 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                           <span className="text-xs text-muted-foreground">Unmarked</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {!canClock(r) ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : r.attendance_check_out ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                            Out {timeOf(r.attendance_check_out)}
+                          </span>
+                        ) : r.attendance_check_in ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={clocking === r.id + "check_out"}
+                            onClick={() => runClock(r, "check_out")}
+                          >
+                            <LogOut className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                            {clocking === r.id + "check_out" ? "Saving…" : "Clock out"}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            disabled={clocking === r.id + "check_in"}
+                            onClick={() => runClock(r, "check_in")}
+                          >
+                            <LogIn className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                            {clocking === r.id + "check_in" ? "Saving…" : "Clock in"}
+                          </Button>
+                        )}
+                        {r.attendance_today === "late" && (
+                          <div className="mt-1 inline-flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-300">
+                            <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                            Late arrival flagged
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {r.patrols_led > 0 ? (
                           <span className="inline-flex items-center gap-1 text-sm">
@@ -509,7 +563,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                   ))}
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={canManageRoles ? 10 : 9} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={canManageRoles ? 11 : 10} className="py-8 text-center text-muted-foreground">
                         No staff match these filters.
                       </TableCell>
                     </TableRow>
@@ -520,7 +574,9 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
           )}
           {!compact && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Attendance is today's clock-in record; patrol counts come from the patrol log.{" "}
+              Clocking in marks today's attendance automatically — arrivals past the shift start
+              plus grace are flagged <span className="font-medium">late</span>, and clock-outs before
+              the shift ends raise an early-departure alert. Patrol counts come from the patrol log.{" "}
               <Link to="/command-console?tab=dashboard" className="hover:underline">
                 Command dashboard
               </Link>{" · "}
