@@ -21,7 +21,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Inbox, Plus, UserCheck, CheckCircle2, History, Loader2, Search } from "lucide-react";
+import {
+  Inbox, Plus, UserCheck, CheckCircle2, History, Loader2, Search, Image as ImageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   useAlertPhotos, useUploadAlertPhotos, useDeleteAlertPhoto, validatePhoto,
