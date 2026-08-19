@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { vehicleLabel, type FleetVehicle } from "@/lib/fleet";
 import {
+import { DateInput } from "@/components/ui/date-input";
+import { formatDate } from "@/lib/date-format";
   SERVICE_TYPES, DUE_LABEL, DUE_TONE,
   useMaintenanceRecords, useMaintenanceSchedules, useMaintenanceStatus,
   useSaveMaintenanceRecord, useDeleteMaintenanceRecord,
@@ -33,8 +35,7 @@ interface Props {
   canManage: boolean;
 }
 
-const ddmmyyyy = (d?: string | null) =>
-  d ? new Date(`${d}T00:00:00`).toLocaleDateString("en-GB") : "—";
+const ddmmyyyy = (d?: string | null) => (d ? formatDate(`${d}T00:00:00`) : "—");
 const num = (v: string) => (v.trim() === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 
 const EMPTY_LOG = {
@@ -489,8 +490,8 @@ export function FleetMaintenanceTab({ vehicles, canManage }: Props) {
             </div>
             <div>
               <Label htmlFor="m-date">Service date</Label>
-              <Input
-                id="m-date" type="date" value={logForm.service_date}
+              <DateInput
+                id="m-date" value={logForm.service_date}
                 onChange={(e) => setLogForm((f) => ({ ...f, service_date: e.target.value }))}
               />
             </div>
@@ -620,8 +621,8 @@ export function FleetMaintenanceTab({ vehicles, canManage }: Props) {
             </div>
             <div>
               <Label htmlFor="s-last-date">Last service date</Label>
-              <Input
-                id="s-last-date" type="date" value={schedForm.last_service_date}
+              <DateInput
+                id="s-last-date" value={schedForm.last_service_date}
                 onChange={(e) => setSchedForm((f) => ({ ...f, last_service_date: e.target.value }))}
               />
             </div>

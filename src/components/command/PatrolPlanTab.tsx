@@ -30,6 +30,7 @@ import { orgUnitPath, type OrgUnit } from "@/lib/org-hierarchy";
 import { useGhanaDistricts, useFleetVehicles } from "@/hooks/useFleet";
 import { usePatrolStaffOptions } from "@/hooks/usePatrolLogs";
 import {
+import { DateInput } from "@/components/ui/date-input";
   usePatrolPlans, useCreatePatrolPlan, useUpdatePatrolPlan,
   useAssignPatrolPlan, useStartPatrolPlan, useClosePatrolPlan, useDeletePatrolPlan,
   isPlanOpen, PLAN_TYPES,
@@ -401,9 +402,8 @@ export default function PatrolPlanTab({
 
             <div className="space-y-1.5">
               <Label htmlFor="plan-date">Planned date</Label>
-              <Input
+              <DateInput
                 id="plan-date"
-                type="date"
                 value={form.planned_date}
                 onChange={(e) => setForm((f) => ({ ...f, planned_date: e.target.value }))}
               />

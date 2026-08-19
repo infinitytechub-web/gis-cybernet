@@ -19,6 +19,7 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import { useUnitRoster, type UnitRosterRow } from "@/hooks/useUnitRoster";
 import { ORG_UNIT_TYPE_LABELS, ORG_UNIT_TYPES, type OrgUnitType } from "@/lib/org-hierarchy";
 import { roleLabel } from "@/lib/role-labels";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 
 function initials(name: string) {
   return name
@@ -138,7 +139,7 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                 getData={() => ({
                   title: "Unit Roster — Order of Battle",
                   filename: `unit_roster_${new Date().toISOString().slice(0, 10)}`,
-                  subtitle: `${filtered.length} units · Generated ${new Date().toLocaleString("en-GB")}`,
+                  subtitle: `${filtered.length} units · Generated ${formatDateTime(new Date())}`,
                   headers: [
                     "Unit", "Code", "Level", "Posting path", "Commander", "Staff ID", "Command role",
                     "Rank", "Date joined service", "Years of service", "Phone", "Email",
@@ -154,7 +155,7 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                     r.commander_role ? roleLabel(r.commander_role) : "—",
                     r.commander?.rank ?? "—",
                     r.commander?.date_joined_service
-                      ? new Date(r.commander.date_joined_service).toLocaleDateString("en-GB")
+                      ? formatDate(r.commander.date_joined_service)
                       : "—",
                     r.commander?.service_label ?? "—",
                     r.commander?.phone ?? "—",
@@ -223,7 +224,7 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                           <div className="text-xs font-medium">{r.commander.service_label}</div>
                           {r.commander.date_joined_service && (
                             <div className="text-xs text-muted-foreground">
-                              Joined {new Date(r.commander.date_joined_service).toLocaleDateString("en-GB")}
+                              Joined {formatDate(r.commander.date_joined_service)}
                             </div>
                           )}
                         </>

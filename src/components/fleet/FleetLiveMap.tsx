@@ -9,6 +9,7 @@ import "leaflet/dist/leaflet.css";
 import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
 import { MapTilesStatusBanner } from "@/components/maps/MapTilesStatusBanner";
 import {
+import { formatDateTime } from "@/lib/date-format";
   FLEET_DEFAULT_CENTER,
   MOTION_HEX,
   MOTION_LABELS,
@@ -53,7 +54,7 @@ function vehicleIcon(vehicle: FleetVehicle, focused: boolean) {
 
 function popupHtml(vehicle: FleetVehicle) {
   const state = motionState(vehicle);
-  const seen = vehicle.last_seen_at ? new Date(vehicle.last_seen_at).toLocaleString("en-GB") : "never";
+  const seen = vehicle.last_seen_at ? formatDateTime(vehicle.last_seen_at) : "never";
   const rows: Array<[string, string]> = [
     ["Status", MOTION_LABELS[state]],
     ["Speed", vehicle.last_speed_kph != null ? `${Math.round(Number(vehicle.last_speed_kph))} km/h` : "—"],

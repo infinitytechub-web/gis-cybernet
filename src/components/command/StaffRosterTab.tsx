@@ -43,6 +43,7 @@ import {
 } from "@/hooks/useStaffRoster";
 import { useRosterClock, validateClockPhoto } from "@/hooks/useRosterClock";
 import { RosterClockInForm } from "@/components/command/RosterClockInForm";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 
 const STATUS_CLASS: Record<string, string> = {
   active: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
@@ -388,7 +389,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
               getData={() => ({
                 title: "Staff Roster",
                 filename: `staff_roster_${new Date().toISOString().slice(0, 10)}`,
-                subtitle: `${branchName ?? "Whole command"} · ${rows.length} staff · Generated ${new Date().toLocaleString("en-GB")}`,
+                subtitle: `${branchName ?? "Whole command"} · ${rows.length} staff · Generated ${formatDateTime(new Date())}`,
                 headers: [
                   "Staff ID", "Name", "Rank", "Branch", "Unit / department", "Roles",
                   "Phone", "Email", "Date joined service", "Years of service",
@@ -404,7 +405,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                   r.phone ?? "—",
                   r.email ?? "—",
                   r.date_joined_service
-                    ? new Date(r.date_joined_service).toLocaleDateString("en-GB")
+                    ? formatDate(r.date_joined_service)
                     : "—",
                   r.service_label ?? "—",
                   r.retired
@@ -507,7 +508,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                               {formatService(r.service_years, r.service_months)}
                             </span>
                             <div className="text-xs text-muted-foreground">
-                              Joined {new Date(r.date_joined_service).toLocaleDateString("en-GB")}
+                              Joined {formatDate(r.date_joined_service)}
                             </div>
                             {r.retired ? (
                               <div className="text-xs text-destructive">Past retirement age</div>
