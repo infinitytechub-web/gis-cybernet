@@ -108,15 +108,18 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
         .select("id, first_name, last_name, staff_id")
         .eq("status", "active")
         .order("last_name")
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return (data ?? []).map((d) => ({
         id: d.id,
-        staff_id: d.staff_id,
+        staff_id: d.staff_id ?? "",
+        first_name: d.first_name ?? "",
+        last_name: d.last_name ?? "",
         full_name: [d.first_name, d.last_name].filter(Boolean).join(" ").trim() || d.staff_id || "Unnamed",
       }));
     },
   });
+
 
   const unitsQuery = useQuery({
     queryKey: ["fleet", "org-units"],
