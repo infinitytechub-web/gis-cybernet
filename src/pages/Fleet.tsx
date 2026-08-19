@@ -26,6 +26,7 @@ import { FleetCommsTab } from "@/components/fleet/FleetCommsTab";
 import { FleetImmobilizerTab } from "@/components/fleet/FleetImmobilizerTab";
 import { FleetDashboardTab } from "@/components/fleet/FleetDashboardTab";
 import { FleetMaintenanceTab } from "@/components/fleet/FleetMaintenanceTab";
+import { FleetGpsFeedTab } from "@/components/fleet/FleetGpsFeedTab";
 import { useFleetMessages, useFleetMessagesRealtime, unreadFor } from "@/hooks/useFleetComms";
 
 function Kpi({
