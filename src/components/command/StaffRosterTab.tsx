@@ -108,12 +108,36 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
       if (attendanceFilter === "unmarked" && r.attendance_today) return false;
       if (attendanceFilter !== "all" && attendanceFilter !== "unmarked"
         && r.attendance_today !== attendanceFilter) return false;
+      if (serviceFilter !== "all") {
+        if (serviceFilter === "unrecorded" && r.date_joined_service) return false;
+        if (serviceFilter !== "unrecorded") {
+          if (!r.date_joined_service) return false;
+          const y = r.service_years;
+          if (serviceFilter === "lt5" && y >= 5) return false;
+          if (serviceFilter === "5to10" && (y < 5 || y >= 10)) return false;
+          if (serviceFilter === "10to20" && (y < 10 || y >= 20)) return false;
+          if (serviceFilter === "gte20" && y < 20) return false;
+          if (serviceFilter === "retiring" && !(r.years_to_retirement !== null && r.years_to_retirement <= 2)) return false;
+        }
+      }
       if (!q) return true;
       return [r.full_name, r.staff_id, r.rank, r.branch, r.unit, r.phone, r.email]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [scoped, search, statusFilter, branchFilter, roleFilter, attendanceFilter, orgUnitId]);
+  }, [scoped, search, statusFilter, branchFilter, roleFilter, attendanceFilter, serviceFilter, orgUnitId]);
+
+  /** Service (tenure) roll-up: average years and how many are near retirement. */
+  const service = useMemo(() => {
+    const withDate = scoped.filter((r) => r.date_joined_service);
+    const total = withDate.reduce((s, r) => s + r.service_years + r.service_months / 12, 0);
+    return {
+      recorded: withDate.length,
+      average: withDate.length ? total / withDate.length : null,
+      retiringSoon: scoped.filter((r) => r.years_to_retirement !== null && r.years_to_retirement <= 2).length,
+    };
+  }, [scoped]);
+
 
   /** Today's attendance roll-up across the scoped roster. */
   const attendance = useMemo(() => {
