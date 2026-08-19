@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, ExternalLink, Mail, Phone, ShieldCheck, Users } from "lucide-react";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { useUnitRoster, type UnitRosterRow } from "@/hooks/useUnitRoster";
 import { ORG_UNIT_TYPE_LABELS, ORG_UNIT_TYPES, type OrgUnitType } from "@/lib/org-hierarchy";
 import { roleLabel } from "@/lib/role-labels";
