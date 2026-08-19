@@ -185,6 +185,20 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                     </td>
                     <td className="py-2 pr-3">{r.commander?.rank ?? "—"}</td>
                     <td className="py-2 pr-3">
+                      {r.commander?.service_label ? (
+                        <>
+                          <div className="text-xs font-medium">{r.commander.service_label}</div>
+                          {r.commander.date_joined_service && (
+                            <div className="text-xs text-muted-foreground">
+                              Joined {new Date(r.commander.date_joined_service).toLocaleDateString("en-GB")}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">
                       <div className="text-xs">{r.unit_path}</div>
                       {r.commander?.unit && (
                         <div className="text-xs text-muted-foreground">Posted: {r.commander.unit}</div>
