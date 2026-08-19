@@ -118,6 +118,7 @@ export const MODULES: ModuleDef[] = [
   { key: "command-vault", label: "Command Vault", tier: "command", roles: COMMAND, paths: ["/command-vault", "/command-vault/gps"] },
   { key: "interlink", label: "Interlink", tier: "command", roles: COMMAND, paths: ["/interlink"] },
   { key: "commands", label: "Commands Administration", tier: "command", roles: COMMAND, paths: ["/commands", "/command/:slug"] },
+  { key: "command-console", label: "Command Console", tier: "command", roles: COMMAND, paths: ["/command-console"] },
 
   // ── Staff administration ────────────────────────────────────────────────
   { key: "staff-approvals-pending", label: "Pending Staff Approvals", tier: "command", roles: COMMAND, paths: ["/staff-approvals/pending"] },
