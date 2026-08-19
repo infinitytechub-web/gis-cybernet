@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { generateSecurePassword } from "../_shared/csprng-password.ts";
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
 import { hasStaffAdminAuthority, STAFF_ADMIN_DENIED } from "../_shared/staff-admin-auth.ts";
+import { partitionProfilesByScope } from "../_shared/org-scope.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,6 +84,7 @@ Deno.serve(async (req) => {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    let callerId: string | null = null;
     {
       const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
@@ -93,6 +95,7 @@ Deno.serve(async (req) => {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      callerId = user.id;
       if (!(await hasStaffAdminAuthority(adminClient, user.id))) {
         return new Response(JSON.stringify({ error: STAFF_ADMIN_DENIED }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -114,7 +117,20 @@ Deno.serve(async (req) => {
 
     if (pErr) throw pErr;
 
-    if (!profiles || profiles.length === 0) {
+    // Hierarchical RBAC — only provision accounts for staff inside the caller's
+    // command scope (System Administrators keep full reach).
+    let scopedProfiles = profiles ?? [];
+    if (callerId && scopedProfiles.length > 0) {
+      const { allowed } = await partitionProfilesByScope(
+        adminClient,
+        callerId,
+        scopedProfiles.map((p: any) => p.id),
+      );
+      const allowedSet = new Set(allowed);
+      scopedProfiles = scopedProfiles.filter((p: any) => allowedSet.has(p.id));
+    }
+
+    if (!scopedProfiles || scopedProfiles.length === 0) {
       return new Response(
         JSON.stringify({ created: [], errors: [], total: 0, message: "All active staff already have accounts" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -130,11 +146,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Step 3: Creating accounts for ${profiles.length} staff...`);
+    console.log(`Step 3: Creating accounts for ${scopedProfiles.length} staff...`);
     const created: Array<{ staffId: string; name: string; username: string; password: string }> = [];
     const errors: Array<{ staffId: string; error: string }> = [];
 
-    for (const profile of profiles) {
+    for (const profile of scopedProfiles) {
       try {
         const username = makeUsername(profile.first_name, profile.last_name, existingUsernames);
         const email = `${username}@gis.local`;
@@ -180,7 +196,7 @@ Deno.serve(async (req) => {
 
     console.log(`Done: ${created.length} created, ${errors.length} errors`);
     return new Response(
-      JSON.stringify({ created, errors, total: profiles.length }),
+      JSON.stringify({ created, errors, total: scopedProfiles.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
