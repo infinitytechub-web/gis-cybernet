@@ -410,10 +410,111 @@ export function FleetDashboardTab({ canManage }: Props) {
         </CardContent>
       </Card>
 
+      <SubmittedPatrolLogsCard days={Number(days)} />
+
       <PatrolGpsActivityCard days={Number(days)} />
 
       <PatrolPlanCommitments />
     </div>
+  );
+}
+
+/** Submitted patrol log entries — district, strength and incidents, vehicle or foot. */
+function SubmittedPatrolLogsCard({ days }: { days: number }) {
+  const { data: logs = [], isLoading, isError } = usePatrolLogs(Math.max(days, 30));
+  const submitted = logs.filter((l) => (l.status ?? "").toLowerCase() !== "draft");
+  const rows = submitted.slice(0, 15);
+  const personnel = submitted.reduce((s, l) => s + (l.personnel_count ?? 0), 0);
+  const incidents = submitted.reduce((s, l) => s + (l.incidents_count ?? 0), 0);
+  const withVehicle = submitted.filter((l) => l.vehicle_id).length;
+
+  const statusTone = (status: string) =>
+    ({
+      submitted: "border-primary/40 text-primary",
+      reviewed: "border-primary/40 text-primary",
+      closed: "text-muted-foreground",
+    })[(status ?? "").toLowerCase()] ?? "text-muted-foreground";
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ClipboardList className="h-4 w-4 text-primary" aria-hidden="true" />
+          Submitted patrol logs
+        </CardTitle>
+        <CardDescription>
+          {submitted.length} submitted patrol{submitted.length === 1 ? "" : "s"} in the last{" "}
+          {Math.max(days, 30)} days · {personnel} officers deployed · {incidents} incident
+          {incidents === 1 ? "" : "s"} · {withVehicle} vehicle-borne, {submitted.length - withVehicle} on foot.
+          Recorded in{" "}
+          <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading && <p className="text-sm text-muted-foreground">Loading patrol logs…</p>}
+        {isError && <p className="text-sm text-destructive">Patrol logs could not be loaded.</p>}
+        {!isLoading && !isError && rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">No submitted patrols in this period.</p>
+        )}
+        {rows.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table className="min-w-[820px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Date / time</TableHead>
+                  <TableHead>District</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Strength</TableHead>
+                  <TableHead className="text-right">Incidents</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((l) => (
+                  <TableRow key={l.id}>
+                    <TableCell className="font-mono text-xs">{l.patrol_reference}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(l.patrol_date)}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {(l.start_time ?? "").slice(0, 5)}
+                        {l.end_time ? `–${l.end_time.slice(0, 5)}` : ""}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {l.district_name ?? "—"}
+                      {!l.vehicle_id && (
+                        <span className="ml-2 text-xs text-muted-foreground">foot patrol</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="capitalize">
+                      {(l.patrol_type ?? "—").replace(/_/g, " ")}
+                    </TableCell>
+                    <TableCell className="text-right">{l.personnel_count ?? 0}</TableCell>
+                    <TableCell
+                      className={`text-right ${(l.incidents_count ?? 0) > 0 ? "font-medium text-destructive" : ""}`}
+                    >
+                      {l.incidents_count ?? 0}
+                    </TableCell>
+                    <TableCell className="max-w-[260px] text-xs text-muted-foreground">
+                      <span className="line-clamp-2">
+                        {l.incidents || l.route_summary || l.observations || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={statusTone(l.status)}>
+                        <span className="capitalize">{l.status}</span>
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
