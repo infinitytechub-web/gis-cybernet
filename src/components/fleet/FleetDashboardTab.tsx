@@ -597,6 +597,19 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
                         <span className="capitalize">{l.status}</span>
                       </Badge>
                     </TableCell>
+                    {canRecord && (
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditing(l)}
+                          aria-label={`Record vehicle log for ${l.patrol_reference}`}
+                        >
+                          <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
+                          {l.vehicle_id ? "Update" : "Record"} vehicle
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -604,6 +617,7 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
           </div>
         )}
       </CardContent>
+      <PatrolVehicleLogDialog log={editing} onClose={() => setEditing(null)} />
     </Card>
   );
 }
