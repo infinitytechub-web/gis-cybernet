@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Pencil, Trash2, MapPinned } from "lucide-react";
 import { format } from "date-fns";
 import { SEVERITY_CLASSES, parsePolygon, type FleetGeofence } from "@/lib/fleet";
+import { DistrictZonesCard } from "./DistrictZonesCard";
 
 interface Props {
   geofences: FleetGeofence[];
@@ -150,6 +151,8 @@ export function FleetGeofencesTab({ geofences, canManage }: Props) {
 
   return (
     <div className="space-y-4">
+      <DistrictZonesCard geofences={geofences} canManage={canManage} />
+
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -191,7 +194,14 @@ export function FleetGeofencesTab({ geofences, canManage }: Props) {
                 {geofences.map((g) => (
                   <TableRow key={g.id}>
                     <TableCell>
-                      <div className="font-medium">{g.name}</div>
+                      <div className="flex items-center gap-2 font-medium">
+                        {g.name}
+                        {g.district_id && (
+                          <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
+                            District
+                          </Badge>
+                        )}
+                      </div>
                       {g.description && <div className="text-xs text-muted-foreground">{g.description}</div>}
                     </TableCell>
                     <TableCell className="text-sm">
