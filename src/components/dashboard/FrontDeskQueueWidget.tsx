@@ -3,11 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Stamp, FileText, BookOpen, ClipboardList } from "lucide-react";
+import { Shield, HelpCircle, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNewItemAlert } from "@/hooks/useNewItemAlert";
 import { toast } from "sonner";
+import { FRONT_DESK_TABLES, countPendingByTable } from "@/lib/application-queues";
 
+/** Front Desk queue: only the modules the Front Desk page actually owns. */
 export default function FrontDeskQueueWidget() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -20,39 +22,23 @@ export default function FrontDeskQueueWidget() {
   const { flash, checkForNewItems } = useNewItemAlert(handleNewItems);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("frontdesk-widget-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "visa_applications" }, () => {
+    const channel = supabase.channel("frontdesk-widget-realtime");
+    FRONT_DESK_TABLES.forEach((table) => {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
         queryClient.invalidateQueries({ queryKey: ["frontdesk-queue-counts"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["frontdesk-queue-counts"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["frontdesk-queue-counts"] });
-      })
-      .subscribe();
+      });
+    });
+    channel.subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
   const { data } = useQuery({
     queryKey: ["frontdesk-queue-counts"],
-    queryFn: async () => {
-      const [visaRes, extRes, passRes] = await Promise.all([
-        supabase.from("visa_applications").select("id", { count: "exact", head: true }),
-        supabase.from("visa_extensions").select("id", { count: "exact", head: true }),
-        supabase.from("passport_applications").select("id", { count: "exact", head: true }),
-      ]);
-      return {
-        visa: visaRes.count ?? 0,
-        extensions: extRes.count ?? 0,
-        passport: passRes.count ?? 0,
-      };
-    },
+    queryFn: () => countPendingByTable(FRONT_DESK_TABLES),
     refetchInterval: 60_000,
   });
 
-  const total = data ? data.visa + data.extensions + data.passport : 0;
+  const total = data ? Object.values(data).reduce((a, b) => a + b, 0) : 0;
 
   useEffect(() => {
     if (data) checkForNewItems(total);
@@ -61,9 +47,8 @@ export default function FrontDeskQueueWidget() {
   if (!data || total === 0) return null;
 
   const queues = [
-    { label: "Visa Apps", count: data.visa, icon: Stamp, color: "text-blue-600 dark:text-blue-400", tab: "visa" },
-    { label: "Extensions", count: data.extensions, icon: FileText, color: "text-purple-600 dark:text-purple-400", tab: "extensions" },
-    { label: "Passports", count: data.passport, icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400", tab: "passport" },
+    { label: "Official", count: data.official_applications ?? 0, icon: Shield, color: "text-cyan-600 dark:text-cyan-400", tab: "official" },
+    { label: "Enquiry", count: data.enquiry_applications ?? 0, icon: HelpCircle, color: "text-lime-600 dark:text-lime-400", tab: "enquiry" },
   ];
 
   return (
@@ -72,7 +57,7 @@ export default function FrontDeskQueueWidget() {
         <CardTitle className="text-sm flex items-center gap-2">
           <ClipboardList className="h-4 w-4 text-lime-600 dark:text-lime-400" />
           Front Desk
-          <Badge variant="outline" className={`ml-auto text-[10px] transition-colors ${flash ? "bg-lime-500 text-white border-lime-500" : ""}`}>{total} total</Badge>
+          <Badge variant="outline" className={`ml-auto text-[10px] transition-colors ${flash ? "bg-lime-500 text-white border-lime-500" : ""}`}>{total} pending</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
