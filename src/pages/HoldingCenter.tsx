@@ -35,6 +35,8 @@ import { checkDetaineeDuplicates, type DuplicateMatch } from "@/lib/detention-du
 import { softDelete } from "@/lib/recycle-bin";
 import { AgeDisplay } from "@/components/ui/age-display";
 import { formatDate, formatDateTime, ageLabel, ageGroup, DATE_FORMAT_HINT } from "@/lib/date-format";
+import { canSeeField, displayField, type FieldContext, type SensitiveField } from "@/lib/field-visibility";
+
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDays, subMonths, startOfDay } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
