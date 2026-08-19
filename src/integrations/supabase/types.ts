@@ -11929,14 +11929,18 @@ export type Database = {
       fleet_vehicle_usage: {
         Args: { _days?: number }
         Returns: {
+          avg_hours_per_patrol: number
           call_sign: string
+          km_per_hour: number
           km_per_litre: number
           last_odometer_reading: number
           last_reading_at: string
+          litres_per_hour: number
           odometer_km: number
           patrol_count: number
           patrol_distance_km: number
           patrol_fuel_litres: number
+          patrol_hours: number
           refuel_cost_ghs: number
           refuel_litres: number
           registration_number: string
