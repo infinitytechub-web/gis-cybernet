@@ -83,7 +83,12 @@ export function useRosterClock() {
       return data as unknown as ClockResult;
     },
     onSuccess: (res, vars) => {
+      // Refresh every surface that reports attendance: roster columns, the
+      // Command Dashboard "Staff attendance today" KPI and unit roll-ups.
       qc.invalidateQueries({ queryKey: ["staff-roster"] });
+      qc.invalidateQueries({ queryKey: ["command-roster"] });
+      qc.invalidateQueries({ queryKey: ["command-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["unit-roster"] });
       qc.invalidateQueries({ queryKey: ["my-attendance"] });
       qc.invalidateQueries({ queryKey: ["attendance"] });
       qc.invalidateQueries({ queryKey: ["unit-dashboard"] });
