@@ -127,7 +127,7 @@ export function useProcurementRequests(days = 180, enabled = true) {
 
       const { data: items, error: itemsErr } = await supabase
         .from("purchase_requisition_items")
-        .select("id, requisition_id, item_name, description, quantity, unit, estimated_unit_cost, received_qty")
+        .select("id, requisition_id, item_name, description, quantity, unit, estimated_unit_cost, received_qty, inventory_item_id")
         .in("requisition_id", reqs.map((r) => r.id));
       if (itemsErr) throw itemsErr;
 
