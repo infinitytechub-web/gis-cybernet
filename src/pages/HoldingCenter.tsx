@@ -426,24 +426,27 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
 }
 
 /* ----------------- PRINT HELPER ----------------- */
-function printDetentionRecord(r: any) {
+function printDetentionRecord(r: any, viewer: FieldContext = { role: null }) {
   const esc = (s: any) => String(s ?? "—").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const isDark = document.documentElement.classList.contains("dark");
   const bg = isDark ? "#1e293b" : "#fff";
   const fg = isDark ? "#e2e8f0" : "#1e293b";
   const border = isDark ? "#334155" : "#e2e8f0";
+  // Confidentiality: identity, contact and next-of-kin values are redacted on
+  // the printout unless the printing officer has a need-to-know for them.
+  const f = (field: SensitiveField, value: any) => displayField(field, value, viewer);
   const rows: [string, any][] = [
     ["Full Name", `${r.first_name} ${r.last_name}`],
     ["Alias", r.alias],
     ["Gender", r.gender],
-    ["Date of Birth", formatDate(r.date_of_birth)],
+    ["Date of Birth", canSeeField("detainee_identity", viewer) ? formatDate(r.date_of_birth) : "••/••/••••"],
     ["Age", ageLabel(r.date_of_birth)],
     ["Nationality", r.nationality],
     ["Country of Origin", r.country_of_origin],
     ["ID Type", r.id_type],
-    ["ID Number", r.id_number],
-    ["Phone", r.phone],
-    ["Home Address", r.home_address],
+    ["ID Number", f("detainee_identity", r.id_number)],
+    ["Phone", f("detainee_contact", r.phone)],
+    ["Home Address", f("detainee_contact", r.home_address)],
     ["Type of Offense", r.crime_type],
     ["Charge Description", r.charge_description],
     ["Location of Arrest", r.location_of_arrest],
@@ -456,12 +459,13 @@ function printDetentionRecord(r: any) {
     ["Referred from", referralDisplay(r.referred_from, r.referred_from_other)],
     ["Referred to", referralDisplay(r.referred_to, r.referred_to_other)],
     ["Statement Approved by", r.statement_approved_by_name],
-    ["Next of Kin (NoK)", r.next_of_kin],
-    ["Next of Kin (NoK) Phone", r.next_of_kin_phone],
-    ["Emergency Contact", r.emergency_contact],
-    ["Medical Alerts", r.medical_alerts],
+    ["Next of Kin (NoK)", f("next_of_kin", r.next_of_kin)],
+    ["Next of Kin (NoK) Phone", f("next_of_kin", r.next_of_kin_phone)],
+    ["Emergency Contact", f("detainee_contact", r.emergency_contact)],
+    ["Medical Alerts", f("medical_record", r.medical_alerts)],
     ["Notes", r.notes],
   ];
+
   const html = `<!DOCTYPE html><html><head><title>Detention Record — ${esc(r.first_name)} ${esc(r.last_name)}</title>
 <style>
   @media print { @page { size: portrait; margin: 14mm; } }
