@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import StaffRosterTab from "@/components/command/StaffRosterTab";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Users, Lock, Gavel, Truck, ShieldAlert, Footprints } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -156,7 +157,9 @@ export default function UnitDashboard() {
               </TabsList>
             </div>
 
-            <TabsContent value="staff" className="mt-4">
+            <TabsContent value="staff" className="mt-4 space-y-4">
+              {/* Roster view: photos, roles and contact details for this unit */}
+              {unitId && <StaffRosterTab orgUnitId={unitId} branchName={data.unit?.name ?? undefined} compact />}
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Staff posted to this unit</CardTitle></CardHeader>
                 <CardContent className="overflow-x-auto">
