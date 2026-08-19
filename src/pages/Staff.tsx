@@ -434,11 +434,17 @@ export default function Staff() {
   const bulk = useBulkSelection(filtered);
 
   const buildStaffExportRows = () =>
-    filtered.map((s) => [
-      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
-      s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—",
-      s.gender ?? "—", s.status, s.phone ?? "—",
-    ]);
+    filtered.map((s) => {
+      const joined = (s as any).date_joined_service as string | null;
+      const tenure = yearsOfService(joined ?? null);
+      return [
+        s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
+        s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—",
+        s.gender ?? "—", s.status, s.phone ?? "—",
+        joined ? format(new Date(joined), "dd/MM/yyyy") : "—",
+        joined ? formatService(tenure.years, tenure.months) : "—",
+      ];
+    });
 
   const statusColor = (s: string) => {
     switch (s) {
