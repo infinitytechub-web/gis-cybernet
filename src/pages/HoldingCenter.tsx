@@ -933,10 +933,11 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               {record.notes && <Field label="Notes" value={record.notes} full />}
             </Section>
             <Section title="Next of Kin (NoK) / Emergency">
-              <Field label="Next of Kin (NoK)" value={record.next_of_kin} />
-              <Field label="Next of Kin (NoK) Phone" value={record.next_of_kin_phone} />
-              <Field label="Emergency Contact" value={record.emergency_contact} full />
+              <Field label="Next of Kin (NoK)" value={<Sensitive field="next_of_kin" value={record.next_of_kin} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Next of Kin (NoK) Phone" value={<Sensitive field="next_of_kin" value={record.next_of_kin_phone} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Emergency Contact" value={<Sensitive field="detainee_contact" value={record.emergency_contact} revealable entityType="detention_record" recordId={record.id} />} full />
             </Section>
+
             <Section title="Status audit trail">
               <div className="col-span-2">
                 <StatusHistoryList entity="detention_records" recordId={record.id} />
