@@ -296,13 +296,21 @@ export type Database = {
           contact_website: string | null
           created_at: string
           dashboard_logo_url: string | null
+          email_footer_text: string | null
+          email_from_name: string | null
+          email_header_color: string | null
+          email_logo_url: string | null
+          email_reply_to: string | null
+          email_signature: string | null
           enable_system_health_widget: boolean
           enforce_password_change: boolean
           favicon_url: string | null
           footer_text: string
           header_text: string | null
           id: string
+          login_background_url: string | null
           login_logo_url: string | null
+          login_tagline: string | null
           logo_url: string | null
           mfa_required_roles: string[]
           min_password_length: number
@@ -333,13 +341,21 @@ export type Database = {
           contact_website?: string | null
           created_at?: string
           dashboard_logo_url?: string | null
+          email_footer_text?: string | null
+          email_from_name?: string | null
+          email_header_color?: string | null
+          email_logo_url?: string | null
+          email_reply_to?: string | null
+          email_signature?: string | null
           enable_system_health_widget?: boolean
           enforce_password_change?: boolean
           favicon_url?: string | null
           footer_text?: string
           header_text?: string | null
           id?: string
+          login_background_url?: string | null
           login_logo_url?: string | null
+          login_tagline?: string | null
           logo_url?: string | null
           mfa_required_roles?: string[]
           min_password_length?: number
@@ -370,13 +386,21 @@ export type Database = {
           contact_website?: string | null
           created_at?: string
           dashboard_logo_url?: string | null
+          email_footer_text?: string | null
+          email_from_name?: string | null
+          email_header_color?: string | null
+          email_logo_url?: string | null
+          email_reply_to?: string | null
+          email_signature?: string | null
           enable_system_health_widget?: boolean
           enforce_password_change?: boolean
           favicon_url?: string | null
           footer_text?: string
           header_text?: string | null
           id?: string
+          login_background_url?: string | null
           login_logo_url?: string | null
+          login_tagline?: string | null
           logo_url?: string | null
           mfa_required_roles?: string[]
           min_password_length?: number
