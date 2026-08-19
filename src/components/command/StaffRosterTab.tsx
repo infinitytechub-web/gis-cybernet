@@ -241,6 +241,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
       )}
 
 
+      {/* ── Key appointments: filled or vacant ───────────────────────────── */}
       {!compact && (
         <Card>
           <CardHeader className="pb-3">
