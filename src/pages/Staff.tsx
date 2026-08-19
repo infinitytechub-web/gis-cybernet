@@ -52,8 +52,15 @@ export default function Staff() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // Hierarchical RBAC — command postings the signed-in user may assign.
-  const { tree: orgTree, scope: orgScope } = useOrgScope();
+  const { units: orgUnits, tree: orgTree, scope: orgScope } = useOrgScope();
   const orgRows = useMemo(() => flattenOrgTree(orgTree), [orgTree]);
+  /** Units this user may post staff to — admins/command tier see the whole tree. */
+  const assignableUnits = useMemo(
+    () => (isAdminOrSupervisor ? orgUnits : orgUnits.filter((u) => orgScope.scopeIds.has(u.id))),
+    [orgUnits, orgScope, isAdminOrSupervisor],
+  );
+  const [assignUnitOpen, setAssignUnitOpen] = useState(false);
+
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
