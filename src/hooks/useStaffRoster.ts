@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
+import { yearsOfService, timeUntilRetirement } from "@/lib/postings-analytics";
 import type { AppRole } from "@/lib/types";
 
 export interface RosterMember {
@@ -35,7 +36,28 @@ export interface RosterMember {
   /** Days marked present or late in the last 30 days, and days recorded. */
   attendance_present_30d: number;
   attendance_days_30d: number;
+  /* ── Service (tenure) ─────────────────────────────────────────────────── */
+  /** Date the officer joined the service (ISO date) or null if unrecorded. */
+  date_joined_service: string | null;
+  /** Full calendar years of service, 0 when unrecorded. */
+  service_years: number;
+  /** Residual months after the full years. */
+  service_months: number;
+  /** Human label, e.g. "10y 4m" or null when unrecorded. */
+  service_label: string | null;
+  /** Whole years until retirement (dob + retirement age); null when unknown. */
+  years_to_retirement: number | null;
+  /** True once past the retirement date. */
+  retired: boolean;
 }
+
+/** Format a tenure as "10y 4m" (or "4m" / "—"). */
+export function formatService(years: number, months: number): string {
+  if (years <= 0 && months <= 0) return "—";
+  if (years <= 0) return `${months}m`;
+  return months > 0 ? `${years}y ${months}m` : `${years}y`;
+}
+
 
 /** Roles that can be designated from the roster (operational + command tier). */
 export const ROSTER_ASSIGNABLE_ROLES: AppRole[] = [
