@@ -515,8 +515,12 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
           {Math.max(days, 30)} days · {personnel} officers deployed · {incidents} incident
           {incidents === 1 ? "" : "s"} · {withVehicle} vehicle-borne, {submitted.length - withVehicle} on foot ·{" "}
           {loggedKm.toFixed(1)} km on the odometer, {loggedLitres.toFixed(1)} L fuel used.
-          Recorded in{" "}
-          <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>.
+          {canRecord
+            ? " Use Record vehicle to log the assigned vehicle, odometer out/in and fuel used."
+            : " Recorded in "}
+          {!canRecord && (
+            <Link to="/command-console?tab=patrols" className="underline">Command Console → Patrol log</Link>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
