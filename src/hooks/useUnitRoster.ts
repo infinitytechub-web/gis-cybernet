@@ -116,7 +116,7 @@ export function useUnitRoster() {
 
   return {
     rows,
-    loading: unitsLoading || rosterQuery.isLoading,
+    loading: unitsQuery.isLoading || rosterQuery.isLoading,
     error: rosterQuery.error as Error | null,
     refetch: rosterQuery.refetch,
   };
