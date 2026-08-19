@@ -37,6 +37,84 @@ export function useFleetVehicles(enabled = true) {
   });
 }
 
+export type GhanaDistrict = {
+  id: string;
+  name: string;
+  code: string;
+  region: string;
+  category: string;
+  centroid_lat: number;
+  centroid_lng: number;
+};
+
+/** Reference register of every Ghanaian district (official ADM2 boundaries). */
+export function useGhanaDistricts(enabled = true) {
+  return useQuery({
+    queryKey: ["fleet", "ghana-districts"],
+    enabled,
+    staleTime: 60 * 60 * 1000,
+    queryFn: async (): Promise<GhanaDistrict[]> => {
+      const { data, error } = await supabase
+        .from("ghana_districts")
+        .select("id, name, code, region, category, centroid_lat, centroid_lng")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+/** Copies official district boundaries into the live geofence register. */
+export function useActivateDistrictZones() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (districtIds: string[]) => {
+      const { data, error } = await supabase.rpc("fleet_activate_district_zones", {
+        _district_ids: districtIds,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (count) => {
+      toast({
+        title: `${count} district patrol area${count === 1 ? "" : "s"} activated`,
+        description: "Zone entry and exit is now tracked for these districts.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["fleet"] });
+    },
+    onError: (error: any) =>
+      toast({
+        title: "Could not activate district patrol areas",
+        description: error?.message,
+        variant: "destructive",
+      }),
+  });
+}
+
+export function useDeactivateDistrictZones() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ districtIds, remove }: { districtIds: string[]; remove?: boolean }) => {
+      const { data, error } = await supabase.rpc("fleet_deactivate_district_zones", {
+        _district_ids: districtIds,
+        _delete: remove ?? false,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (count) => {
+      toast({ title: `${count} district patrol area${count === 1 ? "" : "s"} removed` });
+      queryClient.invalidateQueries({ queryKey: ["fleet"] });
+    },
+    onError: (error: any) =>
+      toast({
+        title: "Could not update district patrol areas",
+        description: error?.message,
+        variant: "destructive",
+      }),
+  });
+}
+
 export function useFleetGeofences(enabled = true) {
   return useQuery({
     queryKey: ["fleet", "geofences"],
