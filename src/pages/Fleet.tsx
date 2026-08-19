@@ -21,6 +21,7 @@ import { FleetGeofencesTab } from "@/components/fleet/FleetGeofencesTab";
 import { FleetAlertsTab } from "@/components/fleet/FleetAlertsTab";
 import { FleetFuelTab } from "@/components/fleet/FleetFuelTab";
 import { FleetReplayTab } from "@/components/fleet/FleetReplayTab";
+import { FleetOfflineStatus } from "@/components/fleet/FleetOfflineStatus";
 
 function Kpi({
   icon: Icon, label, value, hint, tone,
