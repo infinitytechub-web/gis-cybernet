@@ -3,11 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileSearch, Stamp, FileText, BookOpen } from "lucide-react";
+import { FileSearch, Stamp, FileText, BookOpen, IdCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNewItemAlert } from "@/hooks/useNewItemAlert";
 import { toast } from "sonner";
+import { PROCESSING_TABLES, countPendingByTable } from "@/lib/application-queues";
 
+/** Processing queue: pending work per module the Processing page owns. */
 export default function ProcessingQueueWidget() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -20,39 +22,23 @@ export default function ProcessingQueueWidget() {
   const { flash, checkForNewItems } = useNewItemAlert(handleNewItems);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("processing-widget-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "visa_applications" }, () => {
+    const channel = supabase.channel("processing-widget-realtime");
+    PROCESSING_TABLES.forEach((table) => {
+      channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
         queryClient.invalidateQueries({ queryKey: ["processing-queue-counts"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "visa_extensions" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["processing-queue-counts"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "passport_applications" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["processing-queue-counts"] });
-      })
-      .subscribe();
+      });
+    });
+    channel.subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
   const { data } = useQuery({
     queryKey: ["processing-queue-counts"],
-    queryFn: async () => {
-      const [visaRes, extRes, passRes] = await Promise.all([
-        supabase.from("visa_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
-        supabase.from("visa_extensions").select("id", { count: "exact", head: true }).in("status", ["submitted", "under_review"]),
-        supabase.from("passport_applications").select("id", { count: "exact", head: true }).in("status", ["submitted", "processing"]),
-      ]);
-      return {
-        visa: visaRes.count ?? 0,
-        extensions: extRes.count ?? 0,
-        passport: passRes.count ?? 0,
-      };
-    },
+    queryFn: () => countPendingByTable(PROCESSING_TABLES),
     refetchInterval: 60_000,
   });
 
-  const total = data ? data.visa + data.extensions + data.passport : 0;
+  const total = data ? Object.values(data).reduce((a, b) => a + b, 0) : 0;
 
   useEffect(() => {
     if (data) checkForNewItems(total);
@@ -61,9 +47,10 @@ export default function ProcessingQueueWidget() {
   if (!data || total === 0) return null;
 
   const queues = [
-    { label: "Visa Apps", count: data.visa, icon: Stamp, color: "text-blue-600 dark:text-blue-400", tab: "visa" },
-    { label: "Extensions", count: data.extensions, icon: FileText, color: "text-purple-600 dark:text-purple-400", tab: "extensions" },
-    { label: "Passports", count: data.passport, icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400", tab: "passport" },
+    { label: "E-Visa Apps", count: data.visa_applications ?? 0, icon: Stamp, color: "text-blue-600 dark:text-blue-400", tab: "visa" },
+    { label: "Extensions", count: data.visa_extensions ?? 0, icon: FileText, color: "text-purple-600 dark:text-purple-400", tab: "extensions" },
+    { label: "Permits", count: data.permits ?? 0, icon: IdCard, color: "text-teal-600 dark:text-teal-400", tab: "permits" },
+    { label: "Passports", count: data.passport_applications ?? 0, icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400", tab: "passport" },
   ];
 
   return (
