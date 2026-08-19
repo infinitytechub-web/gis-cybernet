@@ -239,7 +239,8 @@ export function FleetDashboardTab({ canManage }: Props) {
             <CardTitle className="text-base">Uptime &amp; patrol activity</CardTitle>
             <CardDescription>Vehicles reporting positions each day, with alert volume.</CardDescription>
           </CardHeader>
-          <CardContent className="h-72">
+          <CardContent>
+            <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={daily}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -255,6 +256,7 @@ export function FleetDashboardTab({ canManage }: Props) {
                   stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -263,7 +265,8 @@ export function FleetDashboardTab({ canManage }: Props) {
             <CardTitle className="text-base">Alert resolution by type</CardTitle>
             <CardDescription>Closed against outstanding alerts for the period.</CardDescription>
           </CardHeader>
-          <CardContent className="h-72">
+          <CardContent>
+            <div className="h-[280px]">
             {byType.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">No alerts raised in this period.</p>
             ) : (
@@ -279,6 +282,7 @@ export function FleetDashboardTab({ canManage }: Props) {
                 </BarChart>
               </ResponsiveContainer>
             )}
+            </div>
           </CardContent>
         </Card>
       </div>
