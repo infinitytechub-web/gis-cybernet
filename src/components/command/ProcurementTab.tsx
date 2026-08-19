@@ -281,7 +281,7 @@ function RaiseRequestDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="pr-needed">Needed by</Label>
-              <DateInput id="pr-needed" value={neededBy} onChange={setNeededBy} />
+              <DateInput id="pr-needed" value={neededBy} onChange={(e) => setNeededBy(e.target.value)} />
             </div>
           </div>
 
