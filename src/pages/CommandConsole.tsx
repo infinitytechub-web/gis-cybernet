@@ -9,7 +9,7 @@
  * additionally scoped to the signed-in officer's branch of the hierarchy.
  */
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -262,7 +262,7 @@ export default function CommandConsole() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="dashboard">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto">
           <TabsList>
             <TabsTrigger value="dashboard">
