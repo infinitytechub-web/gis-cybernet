@@ -186,7 +186,9 @@ export function UnitStaffPickerDialog({
       qc.invalidateQueries({ queryKey: ["command-roster"] });
       qc.invalidateQueries({ queryKey: ["staff"] });
       qc.invalidateQueries({ queryKey: ["org-units"] });
+      onAssigned?.(targetUnit, n);
     },
+
     onError: (e: any) => toast.error(e.message || "Reassignment failed"),
   });
 
