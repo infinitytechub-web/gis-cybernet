@@ -375,6 +375,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                     <TableHead>Branch / unit</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Contact</TableHead>
+                    <TableHead>Service years</TableHead>
                     <TableHead>Attendance today</TableHead>
                     <TableHead className="text-right">Patrols led</TableHead>
                     <TableHead>Status</TableHead>
