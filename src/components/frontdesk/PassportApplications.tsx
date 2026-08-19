@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -83,7 +84,7 @@ export default function PassportApplications() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, processed_by: user?.id };
+      const payload = { ...form, phone: assertContactPhoneList(form.phone, "Telephone"), processed_by: user?.id };
 
       let previousStatus: string | null = null;
       if (editId) {
