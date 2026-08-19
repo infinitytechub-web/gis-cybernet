@@ -75,6 +75,55 @@ export function FleetFuelTab({ vehicles, canManage }: Props) {
 
   const lowFuel = vehicles.filter(isLowFuel);
 
+  /** Odometer-based consumption log: distance since previous reading + km/L. */
+  const consumptionLog = useMemo(() => {
+    const asc = readings
+      .slice()
+      .sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
+    const lastOdo = new Map<string, number>();
+    const rows: {
+      id: string; when: string; reg: string; event: string;
+      odometer: number | null; distance: number | null;
+      litres: number | null; kmPerLitre: number | null;
+    }[] = [];
+    let totalKm = 0;
+    let totalLitres = 0;
+
+    for (const r of asc) {
+      const odo = r.odometer_km != null ? Number(r.odometer_km) : null;
+      const litres = r.delta_litres != null ? Number(r.delta_litres) : null;
+      let distance: number | null = null;
+      if (odo != null) {
+        const prev = lastOdo.get(r.vehicle_id);
+        if (prev != null && odo > prev) distance = odo - prev;
+        lastOdo.set(r.vehicle_id, odo);
+      }
+      const kmPerLitre =
+        distance != null && litres != null && litres > 0 && r.event_type === "refuel"
+          ? distance / litres
+          : null;
+      if (distance != null) totalKm += distance;
+      if (litres != null && r.event_type === "refuel") totalLitres += litres;
+
+      rows.push({
+        id: r.id,
+        when: format(new Date(r.recorded_at), "dd/MM/yyyy HH:mm"),
+        reg: vehicles.find((v) => v.id === r.vehicle_id)?.registration_number ?? "—",
+        event: r.event_type,
+        odometer: odo,
+        distance,
+        litres,
+        kmPerLitre,
+      });
+    }
+
+    return {
+      rows: rows.reverse().slice(0, 60),
+      totals: { km: totalKm, litres: totalLitres },
+    };
+  }, [readings, vehicles]);
+
+
   const openLog = () => {
     setLogForm({
       vehicle_id: vehicleId !== "all" ? vehicleId : vehicles[0]?.id ?? "",
