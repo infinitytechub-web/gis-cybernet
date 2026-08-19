@@ -347,6 +347,7 @@ export default function ProcurementTab() {
         />
       )}
     </Card>
+    </div>
   );
 }
 
@@ -376,15 +377,21 @@ function RaiseRequestDialog({
   const [neededBy, setNeededBy] = useState("");
   const [lines, setLines] = useState<DraftLine[]>([{ ...emptyLine }]);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [orgUnitId, setOrgUnitId] = useState("");
+  const { data: units = [] } = useProcurementUnitOptions(open);
+  const { data: budgets = [] } = useProcurementBudgets(new Date().getFullYear(), open);
 
   const reset = () => {
     setTitle(""); setDescription(""); setPriority("normal"); setNeededBy("");
-    setLines([{ ...emptyLine }]); setPhotos([]);
+    setLines([{ ...emptyLine }]); setPhotos([]); setOrgUnitId("");
   };
 
   const estimate = lines.reduce(
     (s, l) => s + (Number(l.quantity) || 0) * (Number(l.estimated_unit_cost) || 0), 0,
   );
+
+  const selectedBudget = budgets.find((b) => b.org_unit_id === orgUnitId && b.budget_amount > 0) ?? null;
+  const overspend = !!selectedBudget && estimate > selectedBudget.remaining;
 
   const save = async (submit: boolean) => {
     if (!title.trim()) { toast.error("A request title is required"); return; }
@@ -404,6 +411,7 @@ function RaiseRequestDialog({
         description: description.trim() || undefined,
         priority,
         needed_by: neededBy || null,
+        org_unit_id: orgUnitId || null,
         items,
         photos,
         submit,
@@ -449,6 +457,37 @@ function RaiseRequestDialog({
               <Label htmlFor="pr-needed">Needed by</Label>
               <DateInput id="pr-needed" value={neededBy} onChange={(e) => setNeededBy(e.target.value)} />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pr-unit">Charged to unit / branch</Label>
+            <Select value={orgUnitId} onValueChange={setOrgUnitId}>
+              <SelectTrigger id="pr-unit">
+                <SelectValue placeholder="Select the unit whose budget this draws on" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}{u.code ? ` (${u.code})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedBudget ? (
+              <p className={`text-xs ${overspend ? "text-destructive" : "text-muted-foreground"}`}>
+                {overspend && <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />}
+                Budget {money(selectedBudget.budget_amount)} · committed {money(selectedBudget.committed)} ·
+                pending {money(selectedBudget.pending)} · remaining {money(selectedBudget.remaining)}
+                {overspend
+                  ? ` — this request of ${money(estimate)} exceeds the remaining budget`
+                  : ""}
+              </p>
+            ) : orgUnitId ? (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="mr-1 inline h-3 w-3" aria-hidden="true" />
+                No {new Date().getFullYear()} budget allocated to this unit yet — spend will show as unfunded.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
