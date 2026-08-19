@@ -4,3 +4,4 @@
 - [Unit Roster](mem://features/unit-roster) — Command Console unit/commander/rank/posting/contact table; /unit-dashboard?unit= deep link
 - [Patrol Odometer & Fuel](mem://features/fleet-odometer-fuel) — patrol_logs odometer/fuel fields, fleet_vehicle_usage RPC, Fleet Dashboard usage card
 - [Roster Clock In/Out](mem://features/roster-clock) — roster_clock_action RPC, shift-window late/early alerts, Clock column on staff roster
+- [Fleet Maintenance & Budgets](mem://features/fleet-maintenance-and-budgets) — Maintenance tab/card, patrol vehicle column, clock reason+photo, per-unit procurement budgets
