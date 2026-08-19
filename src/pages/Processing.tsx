@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import ProcessingVisaApplications from "@/components/processing/ProcessingVisaApplications";
 import ProcessingVisaExtensions from "@/components/processing/ProcessingVisaExtensions";
 import ProcessingPermits from "@/components/processing/ProcessingPermits";
+import ProcessingPassportApplications from "@/components/processing/ProcessingPassportApplications";
 import ApprovalsQueue from "@/components/processing/ApprovalsQueue";
 import ProcessingAuditLog from "@/components/processing/ProcessingAuditLog";
 import { CountryCombobox } from "@/components/ui/country-combobox";
