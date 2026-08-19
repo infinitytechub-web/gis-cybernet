@@ -23,6 +23,9 @@ import {
 } from "@/components/ui/table";
 import { Inbox, Plus, UserCheck, CheckCircle2, History, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
+import {
+  useAlertPhotos, useUploadAlertPhotos, useDeleteAlertPhoto, validatePhoto,
+} from "@/hooks/useAlertPhotos";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDateTime } from "@/lib/date-format";
 import { ORG_UNIT_TYPE_LABELS, flattenOrgTree, orgUnitPath } from "@/lib/org-hierarchy";
@@ -290,6 +293,8 @@ function RaiseAlertDialog({
   open, onOpenChange, tree, staff,
 }: { open: boolean; onOpenChange: (v: boolean) => void; tree: OrgTreeNode[]; staff: StaffLite[] }) {
   const create = useCreateCommandAlert();
+  const uploadPhotos = useUploadAlertPhotos();
+  const [photos, setPhotos] = useState<File[]>([]);
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [severity, setSeverity] = useState<CommandAlertSeverity>("medium");
@@ -303,12 +308,12 @@ function RaiseAlertDialog({
 
   const reset = () => {
     setTitle(""); setDetail(""); setSeverity("medium"); setCategory("general");
-    setOrgUnitId("none"); setLocation(""); setAssignedTo(null); setDueAt("");
+    setOrgUnitId("none"); setLocation(""); setAssignedTo(null); setDueAt(""); setPhotos([]);
   };
 
   const submit = async () => {
     try {
-      await create.mutateAsync({
+      const alertId = await create.mutateAsync({
         title,
         detail: detail || null,
         severity,
@@ -318,6 +323,14 @@ function RaiseAlertDialog({
         assigned_to: assignedTo,
         due_at: dueAt ? new Date(dueAt).toISOString() : null,
       });
+      if (photos.length > 0 && alertId) {
+        try {
+          await uploadPhotos.mutateAsync({ alertId, files: photos });
+        } catch (e) {
+          // The alert itself is saved; surface the photo problem separately.
+          toast.error(`Alert raised, but photos failed: ${errMessage(e)}`);
+        }
+      }
       toast.success("Command alert raised");
       reset();
       onOpenChange(false);
@@ -396,13 +409,32 @@ function RaiseAlertDialog({
             <Label htmlFor="ca-due">Due by</Label>
             <Input id="ca-due" type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
           </div>
+          <div className="sm:col-span-2 space-y-1">
+            <Label htmlFor="ca-photos">Photos</Label>
+            <Input
+              id="ca-photos"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={(e) => {
+                const picked = Array.from(e.target.files ?? []);
+                const bad = picked.map(validatePhoto).find(Boolean);
+                if (bad) { toast.error(bad); return; }
+                setPhotos(picked);
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              JPEG, PNG or WebP up to 10 MB each. Stored privately against this alert.
+              {photos.length > 0 ? ` ${photos.length} selected.` : ""}
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} disabled={create.isPending || !title.trim()}>
             {create.isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />}
-            Raise alert
+            {uploadPhotos.isPending ? "Uploading photos…" : "Raise alert"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -566,6 +598,8 @@ function AlertDetailDialog({
             </div>
           )}
 
+          <AlertPhotoSection alertId={alert.id} canManage={canManage} />
+
           <div className="space-y-2">
             <p className="flex items-center gap-2 text-sm font-medium">
               <History className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -606,5 +640,97 @@ function AlertDetailDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Photos attached to an alert. Objects live in a private bucket, so each image
+ * is fetched through a short-lived signed URL rather than a public link.
+ */
+function AlertPhotoSection({ alertId, canManage }: { alertId: string; canManage: boolean }) {
+  const { data: photos = [], isLoading } = useAlertPhotos(alertId);
+  const upload = useUploadAlertPhotos();
+  const remove = useDeleteAlertPhoto();
+
+  const add = async (files: File[]) => {
+    const bad = files.map(validatePhoto).find(Boolean);
+    if (bad) { toast.error(bad); return; }
+    try {
+      await upload.mutateAsync({ alertId, files });
+      toast.success("Photos attached");
+    } catch (e) {
+      toast.error(errMessage(e));
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="flex items-center gap-2 text-sm font-medium">
+        <ImageIcon className="h-4 w-4 text-primary" aria-hidden="true" />
+        Photos {photos.length > 0 && <span className="text-muted-foreground">({photos.length})</span>}
+      </p>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading photos…</p>
+      ) : photos.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No photos attached.</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {photos.map((ph) => (
+            <figure key={ph.id} className="overflow-hidden rounded-md border">
+              {ph.signedUrl ? (
+                <a href={ph.signedUrl} target="_blank" rel="noreferrer">
+                  <img
+                    src={ph.signedUrl}
+                    alt={ph.caption || "Incident photo"}
+                    loading="lazy"
+                    className="h-28 w-full object-cover"
+                  />
+                </a>
+              ) : (
+                <div className="flex h-28 items-center justify-center bg-muted text-xs text-muted-foreground">
+                  Preview unavailable
+                </div>
+              )}
+              <figcaption className="flex items-center justify-between gap-1 p-1 text-[11px] text-muted-foreground">
+                <span className="truncate">{formatDateTime(ph.created_at)}</span>
+                {canManage && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-1 text-destructive"
+                    onClick={async () => {
+                      try {
+                        await remove.mutateAsync({ photo: ph });
+                        toast.success("Photo removed");
+                      } catch (e) {
+                        toast.error(errMessage(e));
+                      }
+                    }}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      )}
+
+      {canManage && (
+        <Input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          aria-label="Attach photos to this alert"
+          disabled={upload.isPending}
+          onChange={(e) => {
+            const picked = Array.from(e.target.files ?? []);
+            if (picked.length) void add(picked);
+            e.target.value = "";
+          }}
+        />
+      )}
+    </div>
   );
 }
