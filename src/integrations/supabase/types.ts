@@ -11974,6 +11974,7 @@ export type Database = {
         }
         Returns: Json
       }
+      patrol_gps_activity: { Args: { _days?: number }; Returns: Json }
       procurement_actor_name: { Args: { _uid: string }; Returns: string }
       procurement_inventory: { Args: { _days?: number }; Returns: Json }
       procurement_request_decide: {
