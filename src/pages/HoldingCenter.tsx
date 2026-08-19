@@ -36,6 +36,8 @@ import { softDelete } from "@/lib/recycle-bin";
 import { AgeDisplay } from "@/components/ui/age-display";
 import { formatDate, formatDateTime, ageLabel, ageGroup, DATE_FORMAT_HINT } from "@/lib/date-format";
 import { canSeeField, displayField, type FieldContext, type SensitiveField } from "@/lib/field-visibility";
+import { Sensitive } from "@/components/Sensitive";
+
 
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDays, subMonths, startOfDay } from "date-fns";
