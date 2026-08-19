@@ -833,6 +833,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
   const qc = useQueryClient();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const canCommand = ["admin", "oic", "2ic"].includes(role || "");
+  const viewer: FieldContext = { role: role as any };
+
 
   useEffect(() => {
     if (record.photo_url) {
