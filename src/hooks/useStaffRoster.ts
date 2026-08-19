@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
+import { yearsOfService, timeUntilRetirement } from "@/lib/postings-analytics";
 import type { AppRole } from "@/lib/types";
 
 export interface RosterMember {
@@ -35,7 +36,28 @@ export interface RosterMember {
   /** Days marked present or late in the last 30 days, and days recorded. */
   attendance_present_30d: number;
   attendance_days_30d: number;
+  /* ── Service (tenure) ─────────────────────────────────────────────────── */
+  /** Date the officer joined the service (ISO date) or null if unrecorded. */
+  date_joined_service: string | null;
+  /** Full calendar years of service, 0 when unrecorded. */
+  service_years: number;
+  /** Residual months after the full years. */
+  service_months: number;
+  /** Human label, e.g. "10y 4m" or null when unrecorded. */
+  service_label: string | null;
+  /** Whole years until retirement (dob + retirement age); null when unknown. */
+  years_to_retirement: number | null;
+  /** True once past the retirement date. */
+  retired: boolean;
 }
+
+/** Format a tenure as "10y 4m" (or "4m" / "—"). */
+export function formatService(years: number, months: number): string {
+  if (years <= 0 && months <= 0) return "—";
+  if (years <= 0) return `${months}m`;
+  return months > 0 ? `${years}y ${months}m` : `${years}y`;
+}
+
 
 /** Roles that can be designated from the roster (operational + command tier). */
 export const ROSTER_ASSIGNABLE_ROLES: AppRole[] = [
@@ -72,7 +94,7 @@ export function useStaffRoster() {
         supabase
           .from("profiles")
           .select(
-            "id, user_id, staff_id, first_name, last_name, phone, email, photo_url, status, unit, org_unit_id, ranks(name, abbreviation), departments(name), org_units(name)",
+            "id, user_id, staff_id, first_name, last_name, phone, email, photo_url, status, unit, org_unit_id, date_joined_service, date_of_birth, retirement_age, ranks(name, abbreviation), departments(name), org_units(name)",
           )
           .order("last_name")
           .limit(2000),
@@ -114,29 +136,42 @@ export function useStaffRoster() {
         }
       }
 
-      const rows: RosterMember[] = (profiles ?? []).map((p: any) => ({
-        id: p.id,
-        user_id: p.user_id ?? null,
-        staff_id: p.staff_id ?? null,
-        full_name:
-          [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.staff_id || "Unnamed",
-        rank: p.ranks?.name ?? null,
-        department: p.departments?.name ?? null,
-        org_unit_id: p.org_unit_id ?? null,
-        branch: p.org_units?.name ?? null,
-        unit: p.unit ?? null,
-        phone: p.phone ?? null,
-        email: p.email ?? null,
-        photo_url: p.photo_url ?? null,
-        photo_signed_url: null,
-        status: p.status ?? null,
-        roles: (p.user_id ? rolesByUser.get(p.user_id) : undefined) ?? [],
-        patrols_led: patrolsByLeader.get(p.id) ?? 0,
-        attendance_today: attToday.get(p.id)?.status ?? null,
-        attendance_check_in: attToday.get(p.id)?.check_in ?? null,
-        attendance_present_30d: attTally.get(p.id)?.present ?? 0,
-        attendance_days_30d: attTally.get(p.id)?.days ?? 0,
-      }));
+      const rows: RosterMember[] = (profiles ?? []).map((p: any) => {
+        const joined = p.date_joined_service ?? null;
+        const tenure = yearsOfService(joined, today);
+        const retirement = p.date_of_birth
+          ? timeUntilRetirement(p.date_of_birth, p.retirement_age ?? 60, today)
+          : null;
+        return {
+          id: p.id,
+          user_id: p.user_id ?? null,
+          staff_id: p.staff_id ?? null,
+          full_name:
+            [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.staff_id || "Unnamed",
+          rank: p.ranks?.name ?? null,
+          department: p.departments?.name ?? null,
+          org_unit_id: p.org_unit_id ?? null,
+          branch: p.org_units?.name ?? null,
+          unit: p.unit ?? null,
+          phone: p.phone ?? null,
+          email: p.email ?? null,
+          photo_url: p.photo_url ?? null,
+          photo_signed_url: null,
+          status: p.status ?? null,
+          roles: (p.user_id ? rolesByUser.get(p.user_id) : undefined) ?? [],
+          patrols_led: patrolsByLeader.get(p.id) ?? 0,
+          attendance_today: attToday.get(p.id)?.status ?? null,
+          attendance_check_in: attToday.get(p.id)?.check_in ?? null,
+          attendance_present_30d: attTally.get(p.id)?.present ?? 0,
+          attendance_days_30d: attTally.get(p.id)?.days ?? 0,
+          date_joined_service: joined,
+          service_years: tenure.years,
+          service_months: tenure.months,
+          service_label: joined ? formatService(tenure.years, tenure.months) : null,
+          years_to_retirement: retirement ? (retirement.retired ? 0 : retirement.years) : null,
+          retired: retirement?.retired ?? false,
+        };
+      });
 
       // Sign photos in parallel; failures degrade to initials.
       await Promise.all(

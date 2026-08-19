@@ -29,12 +29,14 @@ import {
 } from "@/components/ui/dialog";
 import {
   Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog, CalendarCheck,
+  Hourglass,
 } from "lucide-react";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABEL, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 import {
-  useStaffRoster, useGrantRole, useRevokeRole, useKeyAppointments,
+  useStaffRoster, useGrantRole, useRevokeRole, useKeyAppointments, formatService,
   ROSTER_ASSIGNABLE_ROLES, KEY_APPOINTMENTS, type RosterMember,
 } from "@/hooks/useStaffRoster";
 
@@ -80,6 +82,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
   const [branchFilter, setBranchFilter] = useState<string>(orgUnitId ?? "all");
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [attendanceFilter, setAttendanceFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [designating, setDesignating] = useState<RosterMember | null>(null);
   const [pendingRole, setPendingRole] = useState<AppRole | "">("");
 
@@ -105,12 +108,36 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
       if (attendanceFilter === "unmarked" && r.attendance_today) return false;
       if (attendanceFilter !== "all" && attendanceFilter !== "unmarked"
         && r.attendance_today !== attendanceFilter) return false;
+      if (serviceFilter !== "all") {
+        if (serviceFilter === "unrecorded" && r.date_joined_service) return false;
+        if (serviceFilter !== "unrecorded") {
+          if (!r.date_joined_service) return false;
+          const y = r.service_years;
+          if (serviceFilter === "lt5" && y >= 5) return false;
+          if (serviceFilter === "5to10" && (y < 5 || y >= 10)) return false;
+          if (serviceFilter === "10to20" && (y < 10 || y >= 20)) return false;
+          if (serviceFilter === "gte20" && y < 20) return false;
+          if (serviceFilter === "retiring" && !(r.years_to_retirement !== null && r.years_to_retirement <= 2)) return false;
+        }
+      }
       if (!q) return true;
       return [r.full_name, r.staff_id, r.rank, r.branch, r.unit, r.phone, r.email]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [scoped, search, statusFilter, branchFilter, roleFilter, attendanceFilter, orgUnitId]);
+  }, [scoped, search, statusFilter, branchFilter, roleFilter, attendanceFilter, serviceFilter, orgUnitId]);
+
+  /** Service (tenure) roll-up: average years and how many are near retirement. */
+  const service = useMemo(() => {
+    const withDate = scoped.filter((r) => r.date_joined_service);
+    const total = withDate.reduce((s, r) => s + r.service_years + r.service_months / 12, 0);
+    return {
+      recorded: withDate.length,
+      average: withDate.length ? total / withDate.length : null,
+      retiringSoon: scoped.filter((r) => r.years_to_retirement !== null && r.years_to_retirement <= 2).length,
+    };
+  }, [scoped]);
+
 
   /** Today's attendance roll-up across the scoped roster. */
   const attendance = useMemo(() => {
@@ -215,6 +242,13 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                 {attendance.present} present · {attendance.late} late · {attendance.absent} absent ·{" "}
                 {attendance.excused} excused · {Math.max(attendance.strength - attendance.marked, 0)} unmarked
               </span>
+              <span className="inline-flex items-center gap-1">
+                <Hourglass className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                {service.average === null
+                  ? "Service not recorded"
+                  : `${service.average.toFixed(1)} yrs average service`}
+                {service.retiringSoon > 0 ? ` · ${service.retiringSoon} retiring within 2 yrs` : ""}
+              </span>
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -277,6 +311,53 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                 <SelectItem value="unmarked">Unmarked today</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={serviceFilter} onValueChange={setServiceFilter}>
+              <SelectTrigger className="w-40" aria-label="Filter by years of service">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any service</SelectItem>
+                <SelectItem value="lt5">Under 5 years</SelectItem>
+                <SelectItem value="5to10">5 – 10 years</SelectItem>
+                <SelectItem value="10to20">10 – 20 years</SelectItem>
+                <SelectItem value="gte20">20+ years</SelectItem>
+                <SelectItem value="retiring">Retiring ≤ 2 years</SelectItem>
+                <SelectItem value="unrecorded">Service unrecorded</SelectItem>
+              </SelectContent>
+            </Select>
+            <ExportMenu
+              label="Export roster"
+              getData={() => ({
+                title: "Staff Roster",
+                filename: `staff_roster_${new Date().toISOString().slice(0, 10)}`,
+                subtitle: `${branchName ?? "Whole command"} · ${rows.length} staff · Generated ${new Date().toLocaleString("en-GB")}`,
+                headers: [
+                  "Staff ID", "Name", "Rank", "Branch", "Unit / department", "Roles",
+                  "Phone", "Email", "Date joined service", "Years of service",
+                  "Years to retirement", "Attendance today", "Patrols led", "Status",
+                ],
+                rows: rows.map((r) => [
+                  r.staff_id ?? "—",
+                  r.full_name,
+                  r.rank ?? "—",
+                  r.branch ?? "—",
+                  r.unit ?? r.department ?? "—",
+                  r.roles.map((role) => ROLE_LABEL[role] ?? roleLabel(role)).join(", ") || "None",
+                  r.phone ?? "—",
+                  r.email ?? "—",
+                  r.date_joined_service
+                    ? new Date(r.date_joined_service).toLocaleDateString("en-GB")
+                    : "—",
+                  r.service_label ?? "—",
+                  r.retired
+                    ? "Retired"
+                    : r.years_to_retirement === null ? "—" : String(r.years_to_retirement),
+                  r.attendance_today ?? "Unmarked",
+                  String(r.patrols_led),
+                  (r.status ?? "—").replace(/_/g, " "),
+                ]),
+              })}
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -286,7 +367,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Staff</TableHead>
@@ -294,6 +375,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                     <TableHead>Branch / unit</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Contact</TableHead>
+                    <TableHead>Service years</TableHead>
                     <TableHead>Attendance today</TableHead>
                     <TableHead className="text-right">Patrols led</TableHead>
                     <TableHead>Status</TableHead>
@@ -358,6 +440,28 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                         )}
                         {!r.phone && !r.email && "—"}
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {r.date_joined_service ? (
+                          <div className="space-y-0.5">
+                            <span className="inline-flex items-center gap-1 font-medium">
+                              <Hourglass className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                              {formatService(r.service_years, r.service_months)}
+                            </span>
+                            <div className="text-xs text-muted-foreground">
+                              Joined {new Date(r.date_joined_service).toLocaleDateString("en-GB")}
+                            </div>
+                            {r.retired ? (
+                              <div className="text-xs text-destructive">Past retirement age</div>
+                            ) : r.years_to_retirement !== null && r.years_to_retirement <= 2 ? (
+                              <div className="text-xs text-amber-700 dark:text-amber-300">
+                                Retires in {r.years_to_retirement}y
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Not recorded</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {r.attendance_today ? (
                           <div className="space-y-0.5">
@@ -405,7 +509,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                   ))}
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={canManageRoles ? 9 : 8} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={canManageRoles ? 10 : 9} className="py-8 text-center text-muted-foreground">
                         No staff match these filters.
                       </TableCell>
                     </TableRow>

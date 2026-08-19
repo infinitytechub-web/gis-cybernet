@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, ExternalLink, Mail, Phone, ShieldCheck, Users } from "lucide-react";
+import { ExportMenu } from "@/components/ui/export-menu";
 import { useUnitRoster, type UnitRosterRow } from "@/hooks/useUnitRoster";
 import { ORG_UNIT_TYPE_LABELS, ORG_UNIT_TYPES, type OrgUnitType } from "@/lib/org-hierarchy";
 import { roleLabel } from "@/lib/role-labels";
@@ -132,6 +133,38 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                 className="w-[240px]"
                 aria-label="Search unit roster"
               />
+              <ExportMenu
+                label="Export units"
+                getData={() => ({
+                  title: "Unit Roster — Order of Battle",
+                  filename: `unit_roster_${new Date().toISOString().slice(0, 10)}`,
+                  subtitle: `${filtered.length} units · Generated ${new Date().toLocaleString("en-GB")}`,
+                  headers: [
+                    "Unit", "Code", "Level", "Posting path", "Commander", "Staff ID", "Command role",
+                    "Rank", "Date joined service", "Years of service", "Phone", "Email",
+                    "Posted strength", "Branch strength", "Status",
+                  ],
+                  rows: filtered.map((r) => [
+                    r.unit_name,
+                    r.unit_code ?? "—",
+                    ORG_UNIT_TYPE_LABELS[r.unit_type] ?? r.unit_type,
+                    r.unit_path,
+                    r.commander?.full_name ?? "Vacant",
+                    r.commander?.staff_id ?? "—",
+                    r.commander_role ? roleLabel(r.commander_role) : "—",
+                    r.commander?.rank ?? "—",
+                    r.commander?.date_joined_service
+                      ? new Date(r.commander.date_joined_service).toLocaleDateString("en-GB")
+                      : "—",
+                    r.commander?.service_label ?? "—",
+                    r.commander?.phone ?? "—",
+                    r.commander?.email ?? "—",
+                    String(r.strength),
+                    String(r.branch_strength),
+                    r.is_active ? "Active" : "Inactive",
+                  ]),
+                })}
+              />
             </div>
           )}
         </div>
@@ -146,13 +179,14 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
           <p className="py-8 text-center text-sm text-muted-foreground">No units match these filters.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-sm">
+            <table className="w-full min-w-[900px] text-sm">
               <caption className="sr-only">Units with commander, rank, posting and contact details</caption>
               <thead>
                 <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th scope="col" className="py-2 pr-3">Unit</th>
                   <th scope="col" className="py-2 pr-3">Commander</th>
                   <th scope="col" className="py-2 pr-3">Rank</th>
+                  <th scope="col" className="py-2 pr-3">Service years</th>
                   <th scope="col" className="py-2 pr-3">Posting</th>
                   <th scope="col" className="py-2 pr-3">Contact</th>
                   <th scope="col" className="py-2 pr-3">Strength</th>
@@ -183,6 +217,20 @@ export default function UnitRosterTab({ compact = false }: { compact?: boolean }
                       )}
                     </td>
                     <td className="py-2 pr-3">{r.commander?.rank ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      {r.commander?.service_label ? (
+                        <>
+                          <div className="text-xs font-medium">{r.commander.service_label}</div>
+                          {r.commander.date_joined_service && (
+                            <div className="text-xs text-muted-foreground">
+                              Joined {new Date(r.commander.date_joined_service).toLocaleDateString("en-GB")}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="py-2 pr-3">
                       <div className="text-xs">{r.unit_path}</div>
                       {r.commander?.unit && (

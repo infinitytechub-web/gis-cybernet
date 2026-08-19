@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { yearsOfService } from "@/lib/postings-analytics";
+import { formatService } from "@/hooks/useStaffRoster";
 import type { ProfileWithRelations } from "@/lib/types";
 import { BulkImportDialog } from "@/components/staff/BulkImportDialog";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
@@ -434,11 +436,17 @@ export default function Staff() {
   const bulk = useBulkSelection(filtered);
 
   const buildStaffExportRows = () =>
-    filtered.map((s) => [
-      s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
-      s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—",
-      s.gender ?? "—", s.status, s.phone ?? "—",
-    ]);
+    filtered.map((s) => {
+      const joined = (s as any).date_joined_service as string | null;
+      const tenure = yearsOfService(joined ?? null);
+      return [
+        s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
+        s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—",
+        s.gender ?? "—", s.status, s.phone ?? "—",
+        joined ? format(new Date(joined), "dd/MM/yyyy") : "—",
+        joined ? formatService(tenure.years, tenure.months) : "—",
+      ];
+    });
 
   const statusColor = (s: string) => {
     switch (s) {
@@ -462,7 +470,7 @@ export default function Staff() {
               getData={() => ({
                 title: "Staff / Employee Report",
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"],
+                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone", "Date Joined Service", "Years of Service"],
                 rows: buildStaffExportRows(),
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
