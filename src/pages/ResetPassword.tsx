@@ -9,8 +9,15 @@ import { toast } from "sonner";
 import { KeyRound, CheckCircle } from "lucide-react";
 import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
 import gisLogo from "@/assets/gis-logo-192.webp";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function ResetPassword() {
+  usePageMeta({
+    title: "Set a New Password — GAR-ASC-Cybernet",
+    description:
+      "Set a new password for your GAR-ASC-Cybernet HRM account. Passwords must meet Ghana Immigration Service security strength requirements before they are accepted.",
+    path: "/reset-password",
+  });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
