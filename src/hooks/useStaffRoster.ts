@@ -29,6 +29,12 @@ export interface RosterMember {
   status: string | null;
   roles: AppRole[];
   patrols_led: number;
+  /** Today's attendance status (present/late/absent/excused) or null if unmarked. */
+  attendance_today: string | null;
+  attendance_check_in: string | null;
+  /** Days marked present or late in the last 30 days, and days recorded. */
+  attendance_present_30d: number;
+  attendance_days_30d: number;
 }
 
 /** Roles that can be designated from the roster (operational + command tier). */
@@ -58,7 +64,11 @@ export function useStaffRoster() {
     queryKey: ["staff-roster"],
     staleTime: 60_000,
     queryFn: async (): Promise<RosterMember[]> => {
-      const [{ data: profiles, error }, { data: roleRows }, { data: patrolRows }] = await Promise.all([
+      const today = new Date();
+      const todayKey = today.toISOString().slice(0, 10);
+      const windowStart = new Date(today.getTime() - 29 * 86_400_000).toISOString().slice(0, 10);
+
+      const [{ data: profiles, error }, { data: roleRows }, { data: patrolRows }, { data: attRows }] = await Promise.all([
         supabase
           .from("profiles")
           .select(
@@ -68,6 +78,12 @@ export function useStaffRoster() {
           .limit(2000),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("patrol_logs").select("patrol_leader_id").limit(5000),
+        supabase
+          .from("attendances")
+          .select("profile_id, date, status, check_in")
+          .gte("date", windowStart)
+          .lte("date", todayKey)
+          .limit(20000),
       ]);
       if (error) throw error;
 
@@ -82,6 +98,20 @@ export function useStaffRoster() {
       for (const p of patrolRows ?? []) {
         if (!p.patrol_leader_id) continue;
         patrolsByLeader.set(p.patrol_leader_id, (patrolsByLeader.get(p.patrol_leader_id) ?? 0) + 1);
+      }
+
+      // Attendance: today's mark plus a 30-day presence tally per profile.
+      const attToday = new Map<string, { status: string | null; check_in: string | null }>();
+      const attTally = new Map<string, { present: number; days: number }>();
+      for (const a of attRows ?? []) {
+        if (!a.profile_id) continue;
+        const t = attTally.get(a.profile_id) ?? { present: 0, days: 0 };
+        t.days += 1;
+        if (a.status === "present" || a.status === "late") t.present += 1;
+        attTally.set(a.profile_id, t);
+        if (a.date === todayKey) {
+          attToday.set(a.profile_id, { status: (a.status as string) ?? null, check_in: a.check_in ?? null });
+        }
       }
 
       const rows: RosterMember[] = (profiles ?? []).map((p: any) => ({
@@ -102,6 +132,10 @@ export function useStaffRoster() {
         status: p.status ?? null,
         roles: (p.user_id ? rolesByUser.get(p.user_id) : undefined) ?? [],
         patrols_led: patrolsByLeader.get(p.id) ?? 0,
+        attendance_today: attToday.get(p.id)?.status ?? null,
+        attendance_check_in: attToday.get(p.id)?.check_in ?? null,
+        attendance_present_30d: attTally.get(p.id)?.present ?? 0,
+        attendance_days_30d: attTally.get(p.id)?.days ?? 0,
       }));
 
       // Sign photos in parallel; failures degrade to initials.
