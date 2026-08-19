@@ -12219,7 +12219,9 @@ export type Database = {
           favicon_url: string
           footer_text: string
           header_text: string
+          login_background_url: string
           login_logo_url: string
+          login_tagline: string
           logo_url: string
           org_name: string
           primary_color: string
