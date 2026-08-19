@@ -85,7 +85,9 @@ const allStaffItems = [
 
 const logisticsItems = [
   { title: "Stores & Inventory", url: "/stores", icon: Package, iconColor: "text-amber-700 dark:text-amber-500" },
+  { title: "Fleet Management", url: "/fleet", icon: Truck, iconColor: "text-blue-700 dark:text-blue-400" },
 ];
+
 
 const financeItems = [
   { title: "Procurement Unit", url: "/procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400" },
