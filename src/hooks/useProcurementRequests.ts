@@ -193,7 +193,13 @@ export interface NewRequestInput {
   priority: string;
   needed_by?: string | null;
   notes?: string;
-  items: { item_name: string; quantity: number; unit: string; estimated_unit_cost: number }[];
+  items: {
+    item_name: string;
+    quantity: number;
+    unit: string;
+    estimated_unit_cost: number;
+    inventory_item_id?: string | null;
+  }[];
   photos?: File[];
   submit?: boolean;
 }
