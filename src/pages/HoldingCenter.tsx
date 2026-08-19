@@ -144,6 +144,8 @@ export default function HoldingCenter() {
 
 /* ----------------- LIST ----------------- */
 function RecordsList({ status, canCreate, isArchive = false, userId, role, onSelect }: { status: string[]; canCreate: boolean; isArchive?: boolean; userId?: string; role: string | null; onSelect: (r: any) => void }) {
+  /** Only command tier may change a custody status. */
+  const canCommand = ["admin", "oic", "2ic"].includes(role || "");
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterGender, setFilterGender] = useState("all");
