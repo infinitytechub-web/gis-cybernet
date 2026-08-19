@@ -82,6 +82,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
   const [branchFilter, setBranchFilter] = useState<string>(orgUnitId ?? "all");
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [attendanceFilter, setAttendanceFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [designating, setDesignating] = useState<RosterMember | null>(null);
   const [pendingRole, setPendingRole] = useState<AppRole | "">("");
 
