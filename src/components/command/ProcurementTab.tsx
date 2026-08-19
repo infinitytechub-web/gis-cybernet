@@ -34,7 +34,7 @@ import {
   useProcurementRequests, useProcurementTrail, useProcurementPhotos,
   useCreateProcurementRequest, useSubmitProcurementRequest, useDecideProcurementRequest,
   useReceiveProcurementRequest, useUploadProcurementPhotos, useDeleteProcurementPhoto,
-  useIsStorekeeperTier, isProcurementOpen, validateProcurementPhoto,
+  useIsStorekeeperTier, isProcurementOpen, validateProcurementPhoto, useStockItemOptions,
   PROCUREMENT_PRIORITIES, type ProcurementRequest, type ProcurementPhoto,
 } from "@/hooks/useProcurementRequests";
 import { useAuth } from "@/hooks/useAuth";
@@ -215,6 +215,7 @@ function RaiseRequestDialog({
   open, onOpenChange,
 }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const create = useCreateProcurementRequest();
+  const { data: stockOptions = [] } = useStockItemOptions(open);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("normal");
@@ -240,6 +241,7 @@ function RaiseRequestDialog({
         quantity: Number(l.quantity) || 1,
         unit: l.unit.trim() || "pcs",
         estimated_unit_cost: Number(l.estimated_unit_cost) || 0,
+        inventory_item_id: l.inventory_item_id || null,
       }));
     if (items.length === 0) { toast.error("Add at least one item line"); return; }
     try {
@@ -333,6 +335,42 @@ function RaiseRequestDialog({
                   >
                     <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                   </Button>
+                  <div className="col-span-11">
+                    <Select
+                      value={l.inventory_item_id || NO_STOCK}
+                      onValueChange={(v) =>
+                        setLines((p) =>
+                          p.map((x, i) => {
+                            if (i !== idx) return x;
+                            if (v === NO_STOCK) return { ...x, inventory_item_id: "" };
+                            const opt = stockOptions.find((o) => o.id === v);
+                            return {
+                              ...x,
+                              inventory_item_id: v,
+                              item_name: x.item_name.trim() || opt?.name || "",
+                              unit: opt?.unit || x.unit,
+                              estimated_unit_cost:
+                                Number(x.estimated_unit_cost) > 0
+                                  ? x.estimated_unit_cost
+                                  : String(opt?.unit_cost ?? 0),
+                            };
+                          }),
+                        )
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs" aria-label={`Item ${idx + 1} stock link`}>
+                        <SelectValue placeholder="Link to stock item (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_STOCK}>Not linked to stock</SelectItem>
+                        {stockOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>
+                            {o.name}{o.sku ? ` (${o.sku})` : ""} — {o.qty_on_hand} {o.unit} on hand
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               ))}
             </div>
