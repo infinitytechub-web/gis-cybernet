@@ -129,6 +129,7 @@ export const MODULES: ModuleDef[] = [
   { key: "staff-mapping-import", label: "Staff Mapping Import", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-mapping-import"] },
   { key: "role-assignments", label: "Role Assignments", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/role-assignments"] },
   { key: "command-roles", label: "Command Roles & Grants", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/command-roles"] },
+  { key: "unit-dashboard", label: "Unit Dashboard", tier: "all-staff", roles: "all", paths: ["/unit-dashboard"] },
   { key: "org-structure", label: "Command Structure", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/org-structure"] },
 
   // ── Administration, security & audit ────────────────────────────────────
