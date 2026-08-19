@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route } from "lucide-react";
+import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
 import {
@@ -22,6 +22,9 @@ import { FleetAlertsTab } from "@/components/fleet/FleetAlertsTab";
 import { FleetFuelTab } from "@/components/fleet/FleetFuelTab";
 import { FleetReplayTab } from "@/components/fleet/FleetReplayTab";
 import { FleetOfflineStatus } from "@/components/fleet/FleetOfflineStatus";
+import { FleetCommsTab } from "@/components/fleet/FleetCommsTab";
+import { FleetImmobilizerTab } from "@/components/fleet/FleetImmobilizerTab";
+import { useFleetMessages, useFleetMessagesRealtime, unreadFor } from "@/hooks/useFleetComms";
 
 function Kpi({
   icon: Icon, label, value, hint, tone,
@@ -56,11 +59,16 @@ export default function Fleet() {
   const geofencesQuery = useFleetGeofences(canManage);
   const alertsQuery = useFleetAlerts("all");
   const summaryQuery = useFleetSummary(canManage);
+  useFleetMessagesRealtime(true);
+  const messagesQuery = useFleetMessages("all");
 
   const vehicles = vehiclesQuery.data ?? [];
   const geofences = geofencesQuery.data ?? [];
   const alerts = alertsQuery.data ?? [];
   const summary = summaryQuery.data ?? {};
+
+  const unreadFromDrivers = unreadFor(messagesQuery.data ?? [], "driver_to_command");
+  const immobilised = vehicles.filter((v) => v.immobilized).length;
 
   const openAlerts = alerts.filter((a) => a.status === "new").length;
   const openPanic = alerts.filter((a) => a.status === "new" && a.alert_type === "panic").length;
@@ -84,6 +92,12 @@ export default function Fleet() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <FleetOfflineStatus />
+          {immobilised > 0 && (
+            <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
+              <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />
+              {immobilised} immobilised
+            </Badge>
+          )}
           {openPanic > 0 && (
             <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
               <Siren className="mr-1 h-4 w-4 animate-pulse" aria-hidden="true" />
@@ -120,6 +134,15 @@ export default function Fleet() {
               {openAlerts > 0 && <Badge variant="outline" className="ml-2">{openAlerts}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="fuel"><Fuel className="mr-1 h-4 w-4" aria-hidden="true" />Fuel</TabsTrigger>
+            <TabsTrigger value="comms">
+              <MessageSquare className="mr-1 h-4 w-4" aria-hidden="true" />In-cab comms
+              {unreadFromDrivers > 0 && <Badge variant="outline" className="ml-2">{unreadFromDrivers}</Badge>}
+            </TabsTrigger>
+            {canManage && (
+              <TabsTrigger value="immobiliser">
+                <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />Immobiliser
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -129,6 +152,7 @@ export default function Fleet() {
             geofences={geofences}
             focusVehicleId={focusVehicleId}
             onFocusVehicle={setFocusVehicleId}
+            canManage={canManage}
           />
         </TabsContent>
 
@@ -158,6 +182,16 @@ export default function Fleet() {
         <TabsContent value="fuel" className="mt-4">
           <FleetFuelTab vehicles={vehicles} canManage={canManage} />
         </TabsContent>
+
+        <TabsContent value="comms" className="mt-4">
+          <FleetCommsTab vehicles={vehicles} canManage={canManage} initialVehicleId={focusVehicleId} />
+        </TabsContent>
+
+        {canManage && (
+          <TabsContent value="immobiliser" className="mt-4">
+            <FleetImmobilizerTab vehicles={vehicles} canManage={canManage} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

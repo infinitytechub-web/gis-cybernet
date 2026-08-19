@@ -73,6 +73,7 @@ const AdminAccessMatrix = lazy(() => import("./pages/AdminAccessMatrix"));
 const CommandRoleAudit = lazy(() => import("./pages/CommandRoleAudit"));
 const Stores = lazy(() => import("./pages/Stores"));
 const Fleet = lazy(() => import("./pages/Fleet"));
+const InCab = lazy(() => import("./pages/InCab"));
 const CommandConsole = lazy(() => import("./pages/CommandConsole"));
 
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
@@ -221,6 +222,7 @@ function App() {
           <Route path="/command-role-audit" element={<ProtectedRoute module="command-role-audit"><Layout><CommandRoleAudit /></Layout></ProtectedRoute>} />
           <Route path="/stores" element={<ProtectedRoute module="stores"><Layout><Stores /></Layout></ProtectedRoute>} />
           <Route path="/fleet" element={<ProtectedRoute module="fleet"><Layout><Fleet /></Layout></ProtectedRoute>} />
+          <Route path="/in-cab" element={<ProtectedRoute module="in-cab"><Layout><InCab /></Layout></ProtectedRoute>} />
           <Route path="/command-console" element={<ProtectedRoute module="command-console"><Layout><CommandConsole /></Layout></ProtectedRoute>} />
 
           <Route path="/holding" element={<ProtectedRoute module="detention"><Layout><HoldingCenter /></Layout></ProtectedRoute>} />

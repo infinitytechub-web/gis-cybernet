@@ -71,6 +71,7 @@ export const MODULES: ModuleDef[] = [
   { key: "holidays", label: "Holidays", tier: "all-staff", roles: "all", paths: ["/holidays"] },
   { key: "announcements", label: "Announcements", feature: "Announcements", tier: "all-staff", roles: "all", paths: ["/announcements"] },
   { key: "quarantine", label: "Quarantine Inbox", tier: "all-staff", roles: "all", paths: ["/quarantine"] },
+  { key: "in-cab", label: "In-Cab Console", tier: "all-staff", roles: "all", paths: ["/in-cab"] },
   { key: "appraisals", label: "Staff Appraisals", tier: "all-staff", roles: "all", paths: ["/appraisals", "/appraisals/officer/:staffProfileId"] },
   { key: "verify-export", label: "Verify Export", tier: "all-staff", roles: "all", paths: ["/verify-export"] },
   { key: "change-password", label: "Change Password", tier: "all-staff", roles: "all", paths: ["/change-password"] },
