@@ -94,7 +94,7 @@ export function useStaffRoster() {
         supabase
           .from("profiles")
           .select(
-            "id, user_id, staff_id, first_name, last_name, phone, email, photo_url, status, unit, org_unit_id, ranks(name, abbreviation), departments(name), org_units(name)",
+            "id, user_id, staff_id, first_name, last_name, phone, email, photo_url, status, unit, org_unit_id, date_joined_service, date_of_birth, retirement_age, ranks(name, abbreviation), departments(name), org_units(name)",
           )
           .order("last_name")
           .limit(2000),
