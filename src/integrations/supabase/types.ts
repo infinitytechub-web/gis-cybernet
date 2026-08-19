@@ -3188,6 +3188,62 @@ export type Database = {
           },
         ]
       }
+      fleet_immobilizer_commands: {
+        Row: {
+          command: string
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          issued_by_label: string | null
+          lat: number | null
+          lng: number | null
+          reason: string
+          result_note: string | null
+          speed_kph: number | null
+          status: string
+          vehicle_id: string
+        }
+        Insert: {
+          command: string
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          issued_by_label?: string | null
+          lat?: number | null
+          lng?: number | null
+          reason: string
+          result_note?: string | null
+          speed_kph?: number | null
+          status?: string
+          vehicle_id: string
+        }
+        Update: {
+          command?: string
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          issued_by_label?: string | null
+          lat?: number | null
+          lng?: number | null
+          reason?: string
+          result_note?: string | null
+          speed_kph?: number | null
+          status?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_immobilizer_commands_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fleet_ingest_keys: {
         Row: {
           active: boolean
@@ -3225,6 +3281,65 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fleet_ingest_keys_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_messages: {
+        Row: {
+          acknowledged_at: string | null
+          body: string
+          created_at: string
+          direction: string
+          id: string
+          lat: number | null
+          lng: number | null
+          priority: string
+          read_at: string | null
+          read_by: string | null
+          sender_id: string | null
+          sender_label: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          body: string
+          created_at?: string
+          direction: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          priority?: string
+          read_at?: string | null
+          read_by?: string | null
+          sender_id?: string | null
+          sender_label?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          body?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          priority?: string
+          read_at?: string | null
+          read_by?: string | null
+          sender_id?: string | null
+          sender_label?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_messages_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "fleet_vehicles"
@@ -3303,11 +3418,18 @@ export type Database = {
           call_sign: string | null
           created_at: string
           created_by: string | null
+          demo_step: number
           department_id: string | null
           device_id: string | null
           fuel_capacity_litres: number | null
           fuel_drop_threshold_pct: number
           id: string
+          immobilized: boolean
+          immobilized_at: string | null
+          immobilized_by: string | null
+          immobilizer_reason: string | null
+          immobilizer_state: string
+          is_demo: boolean
           last_boot_open: boolean | null
           last_door_open: boolean | null
           last_fuel_level_pct: number | null
@@ -3335,11 +3457,18 @@ export type Database = {
           call_sign?: string | null
           created_at?: string
           created_by?: string | null
+          demo_step?: number
           department_id?: string | null
           device_id?: string | null
           fuel_capacity_litres?: number | null
           fuel_drop_threshold_pct?: number
           id?: string
+          immobilized?: boolean
+          immobilized_at?: string | null
+          immobilized_by?: string | null
+          immobilizer_reason?: string | null
+          immobilizer_state?: string
+          is_demo?: boolean
           last_boot_open?: boolean | null
           last_door_open?: boolean | null
           last_fuel_level_pct?: number | null
@@ -3367,11 +3496,18 @@ export type Database = {
           call_sign?: string | null
           created_at?: string
           created_by?: string | null
+          demo_step?: number
           department_id?: string | null
           device_id?: string | null
           fuel_capacity_litres?: number | null
           fuel_drop_threshold_pct?: number
           id?: string
+          immobilized?: boolean
+          immobilized_at?: string | null
+          immobilized_by?: string | null
+          immobilizer_reason?: string | null
+          immobilizer_state?: string
+          is_demo?: boolean
           last_boot_open?: boolean | null
           last_door_open?: boolean | null
           last_fuel_level_pct?: number | null
@@ -10698,6 +10834,10 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: undefined
       }
+      fleet_demo_tick: {
+        Args: { _event?: string; _vehicle_id?: string }
+        Returns: Json
+      }
       fleet_distance_m: {
         Args: { _lat1: number; _lat2: number; _lng1: number; _lng2: number }
         Returns: number
@@ -10714,6 +10854,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      fleet_mark_messages_read: {
+        Args: { _direction?: string; _vehicle_id: string }
+        Returns: number
+      }
       fleet_point_in_polygon: {
         Args: { _lat: number; _lng: number; _polygon: Json }
         Returns: boolean
@@ -10727,6 +10871,17 @@ export type Database = {
         }
         Returns: string
       }
+      fleet_send_message: {
+        Args: {
+          _body: string
+          _direction?: string
+          _lat?: number
+          _lng?: number
+          _priority?: string
+          _vehicle_id: string
+        }
+        Returns: string
+      }
       fleet_set_alert_status: {
         Args: {
           _alert_id: string
@@ -10734,6 +10889,10 @@ export type Database = {
           _status: Database["public"]["Enums"]["fleet_alert_status"]
         }
         Returns: undefined
+      }
+      fleet_set_immobilizer: {
+        Args: { _lock: boolean; _reason: string; _vehicle_id: string }
+        Returns: string
       }
       fleet_summary: { Args: never; Returns: Json }
       generate_asset_tag: { Args: never; Returns: string }
