@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.generate_patrol_plan_reference() FROM PUBLIC, anon, authenticated;

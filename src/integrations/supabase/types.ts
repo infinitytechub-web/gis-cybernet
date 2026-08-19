@@ -6705,6 +6705,136 @@ export type Database = {
           },
         ]
       }
+      patrol_plans: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_to: string | null
+          closed_at: string | null
+          closed_by: string | null
+          closure_notes: string | null
+          created_at: string
+          created_by: string
+          district_id: string | null
+          district_name: string | null
+          end_time: string | null
+          id: string
+          objective: string | null
+          org_unit_id: string | null
+          outcome: string | null
+          patrol_log_id: string | null
+          patrol_type: string
+          personnel_count: number
+          plan_reference: string
+          planned_date: string
+          route_summary: string | null
+          start_time: string
+          status: string
+          title: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_notes?: string | null
+          created_at?: string
+          created_by: string
+          district_id?: string | null
+          district_name?: string | null
+          end_time?: string | null
+          id?: string
+          objective?: string | null
+          org_unit_id?: string | null
+          outcome?: string | null
+          patrol_log_id?: string | null
+          patrol_type?: string
+          personnel_count?: number
+          plan_reference?: string
+          planned_date?: string
+          route_summary?: string | null
+          start_time?: string
+          status?: string
+          title: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_to?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_notes?: string | null
+          created_at?: string
+          created_by?: string
+          district_id?: string | null
+          district_name?: string | null
+          end_time?: string | null
+          id?: string
+          objective?: string | null
+          org_unit_id?: string | null
+          outcome?: string | null
+          patrol_log_id?: string | null
+          patrol_type?: string
+          personnel_count?: number
+          plan_reference?: string
+          planned_date?: string
+          route_summary?: string | null
+          start_time?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrol_plans_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrol_plans_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrol_plans_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrol_plans_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrol_plans_patrol_log_id_fkey"
+            columns: ["patrol_log_id"]
+            isOneToOne: false
+            referencedRelation: "patrol_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patrol_plans_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_staff_matches: {
         Row: {
           created_at: string

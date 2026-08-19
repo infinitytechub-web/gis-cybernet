@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
@@ -31,6 +31,7 @@ import CommandDashboardTab from "@/components/command/CommandDashboardTab";
 import CyberIncidentsTab from "@/components/command/CyberIncidentsTab";
 import ProcurementTab from "@/components/command/ProcurementTab";
 import PatrolLogTab from "@/components/command/PatrolLogTab";
+import PatrolPlanTab from "@/components/command/PatrolPlanTab";
 
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
@@ -281,6 +282,9 @@ export default function CommandConsole() {
             <TabsTrigger value="patrols">
               <Footprints className="mr-1 h-4 w-4" aria-hidden="true" />Patrol log
             </TabsTrigger>
+            <TabsTrigger value="patrol-plans">
+              <CalendarClock className="mr-1 h-4 w-4" aria-hidden="true" />Patrol plans
+            </TabsTrigger>
             <TabsTrigger value="procurement">
               <ShoppingCart className="mr-1 h-4 w-4" aria-hidden="true" />Procurement
             </TabsTrigger>
@@ -305,6 +309,11 @@ export default function CommandConsole() {
         {/* ── Patrol log (date, time, district, incidents, photos) ────── */}
         <TabsContent value="patrols" className="mt-4">
           <PatrolLogTab units={units} canReview={isAdminOrSupervisor} homeUnitId={homeUnitId} />
+        </TabsContent>
+
+        {/* ── Patrol plans (create, assign, close; linked to fleet) ───── */}
+        <TabsContent value="patrol-plans" className="mt-4">
+          <PatrolPlanTab units={units} canManage={isAdminOrSupervisor} homeUnitId={homeUnitId} />
         </TabsContent>
 
         {/* ── Procurement: request → approve → receive → audit ──────────── */}
