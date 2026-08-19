@@ -367,7 +367,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Staff</TableHead>
