@@ -154,9 +154,35 @@ export function validateGhanaPhoneList(input: string): {
     .filter(Boolean);
   const results = parts.map(validateGhanaPhone);
   const errors = results
-    .map((r, i) => (r.valid ? null : `${parts[i]}: ${r.error ?? "invalid number"}`))
+    .map((r, i) =>
+      r.valid && !r.suspicious ? null : `${parts[i]}: ${r.error ?? "invalid number"}`,
+    )
     .filter((e): e is string => e !== null);
   return { valid: errors.length === 0, results, errors };
+}
+
+/**
+ * Throws a user-facing Error when any number in a (possibly comma-separated)
+ * field is not a genuine Ghana mobile number. Empty input is allowed unless
+ * `required` is set. Returns the canonical value to persist ("" when blank).
+ */
+export function assertGhanaPhoneList(
+  input: string | null | undefined,
+  label = "Phone",
+  required = false,
+): string {
+  const raw = (input ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join(", ");
+  if (!raw) {
+    if (required) throw new Error(`${label} is required`);
+    return "";
+  }
+  const { valid, errors } = validateGhanaPhoneList(raw);
+  if (!valid) throw new Error(`${label} — ${errors.join("; ")}`);
+  return normalizeGhanaPhoneList(raw);
 }
 
 /** Normalise a list for persistence — returns the canonical local forms. */
