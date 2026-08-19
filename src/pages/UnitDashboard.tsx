@@ -8,6 +8,7 @@
  * an administrator, so a staff member only ever sees their own unit's data.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,15 +52,29 @@ export default function UnitDashboard() {
     return [...list].sort((a, b) => orgUnitPath(units, a.id).localeCompare(orgUnitPath(units, b.id)));
   }, [units, scope, isCommandTier]);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedUnit = searchParams.get("unit");
   const [unitId, setUnitId] = useState<string | null>(null);
 
+  /** Deep link from the Command Console unit roster: /unit-dashboard?unit=<id> */
   useEffect(() => {
-    if (unitId || selectableUnits.length === 0) return;
+    if (!requestedUnit || requestedUnit === unitId) return;
+    if (selectableUnits.some((u) => u.id === requestedUnit)) setUnitId(requestedUnit);
+  }, [requestedUnit, unitId, selectableUnits]);
+
+  useEffect(() => {
+    if (unitId || requestedUnit || selectableUnits.length === 0) return;
     const preferred = homeUnitId && selectableUnits.some((u) => u.id === homeUnitId)
       ? homeUnitId
       : selectableUnits[0].id;
     setUnitId(preferred);
-  }, [unitId, selectableUnits, homeUnitId]);
+  }, [unitId, requestedUnit, selectableUnits, homeUnitId]);
+
+  /** Keep the URL in step so the view stays shareable/bookmarkable. */
+  const selectUnit = (id: string) => {
+    setUnitId(id);
+    setSearchParams({ unit: id }, { replace: true });
+  };
 
   const query = useUnitDashboard(unitId);
   const data = query.data;
@@ -80,7 +95,7 @@ export default function UnitDashboard() {
           <label htmlFor="unit-filter" className="mb-1 block text-xs font-medium text-muted-foreground">
             Unit filter
           </label>
-          <Select value={unitId ?? undefined} onValueChange={setUnitId}>
+          <Select value={unitId ?? undefined} onValueChange={selectUnit}>
             <SelectTrigger id="unit-filter" aria-label="Unit filter">
               <SelectValue placeholder={scopeLoading ? "Loading units…" : "Select a unit"} />
             </SelectTrigger>
