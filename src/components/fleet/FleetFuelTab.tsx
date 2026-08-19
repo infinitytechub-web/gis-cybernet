@@ -282,6 +282,87 @@ export function FleetFuelTab({ vehicles, canManage }: Props) {
         </Card>
       </div>
 
+      {/* ── Consumption log: odometer readings and km/L per entry ─────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Fuel consumption log</CardTitle>
+          <CardDescription>
+            Odometer readings per entry, distance covered since the previous reading and fuel economy.
+            Log the odometer with every refuel to keep the consumption chart accurate.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-3 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Distance logged</p>
+              <p className="text-lg font-semibold">{consumptionLog.totals.km.toFixed(0)} km</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Fuel drawn</p>
+              <p className="text-lg font-semibold">{consumptionLog.totals.litres.toFixed(1)} L</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">Fleet economy</p>
+              <p className="text-lg font-semibold">
+                {consumptionLog.totals.litres > 0 && consumptionLog.totals.km > 0
+                  ? `${(consumptionLog.totals.km / consumptionLog.totals.litres).toFixed(2)} km/L`
+                  : "—"}
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>When</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Event</TableHead>
+                  <TableHead className="text-right">Odometer (km)</TableHead>
+                  <TableHead className="text-right">Distance (km)</TableHead>
+                  <TableHead className="text-right">Litres</TableHead>
+                  <TableHead className="text-right">Economy</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {consumptionLog.rows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                      No odometer readings for this period yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {consumptionLog.rows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="whitespace-nowrap text-sm">{row.when}</TableCell>
+                    <TableCell>{row.reg}</TableCell>
+                    <TableCell className="capitalize">{row.event}</TableCell>
+                    <TableCell className="text-right">
+                      {row.odometer != null ? row.odometer.toFixed(0) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.distance != null ? row.distance.toFixed(0) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.litres != null ? row.litres.toFixed(1) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {row.kmPerLitre != null ? (
+                        <Badge variant={row.kmPerLitre < 4 ? "destructive" : "outline"}>
+                          {row.kmPerLitre.toFixed(2)} km/L
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+
       <Dialog open={logOpen} onOpenChange={setLogOpen}>
         <DialogContent>
           <DialogHeader>
