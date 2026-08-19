@@ -85,3 +85,41 @@ export function normalizeGhanaPhoneList(
   }
   return { value: out.length ? out.join(", ") : null };
 }
+
+/* Contact-form validation: Ghana-strict, international-tolerant.
+   Mirrors src/lib/ghana-phone.ts and SQL gh_phone_contact_check. */
+
+export function isForeignDialled(input: string): boolean {
+  const s = String(input ?? "").replace(/[^\d+]/g, "");
+  if (!s.startsWith("+") && !s.startsWith("00")) return false;
+  const digits = s.replace(/\D/g, "").replace(/^00/, "");
+  return !digits.startsWith("233");
+}
+
+export function validateContactPhone(input: string | null | undefined): { valid: boolean; canonical: string; error: string | null } {
+  const raw = String(input ?? "").replace(/[^\d+]/g, "");
+  if (!raw) return { valid: false, canonical: "", error: "Phone number is required" };
+  if (isForeignDialled(raw)) {
+    const digits = raw.replace(/\D/g, "").replace(/^00/, "");
+    if (digits.length < 8 || digits.length > 15) return { valid: false, canonical: "", error: "International numbers must have 8–15 digits" };
+    if (/^(\d)\1+$/.test(digits)) return { valid: false, canonical: "", error: "This number looks fabricated" };
+    return { valid: true, canonical: `+${digits}`, error: null };
+  }
+  const local = normalizeGhanaPhone(raw);
+  if (!local || !isValidGhanaPhone(local)) return { valid: false, canonical: "", error: "Not a licensed Ghana mobile number" };
+  if (isSuspiciousGhanaPhone(local)) return { valid: false, canonical: "", error: "This number looks fabricated" };
+  return { valid: true, canonical: local, error: null };
+}
+
+export function assertContactPhoneList(input: string | null | undefined, label = "Phone"): string {
+  const parts = String(input ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 0) return "";
+  const bad: string[] = [];
+  const canonical = parts.map((p) => {
+    const r = validateContactPhone(p);
+    if (!r.valid) bad.push(`${p}: ${r.error}`);
+    return r.canonical || p;
+  });
+  if (bad.length) throw new Error(`${label} — ${bad.join("; ")}`);
+  return canonical.join(", ");
+}

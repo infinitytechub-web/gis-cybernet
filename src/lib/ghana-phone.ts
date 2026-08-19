@@ -197,3 +197,98 @@ export function normalizeGhanaPhoneList(input: string): string {
 
 export const GHANA_PHONE_PLACEHOLDER = "0XX XXX XXXX";
 export const GHANA_PHONE_HINT = "10 digits — MTN, Telecel or AirtelTigo";
+
+/* ------------------------------------------------------------------ *
+ * Contact-form validation (Ghana-strict, international-tolerant)
+ *
+ * Biodata forms across Front Desk / Processing / Detention capture the
+ * numbers of foreign nationals too, so a bare 10-digit local number or a
+ * +233 number is held to the full Ghana rules (licensed prefix, correct
+ * length, not fabricated) while an explicit foreign dialling code is
+ * accepted after a sanity check. Mirrors gh_phone_contact_check in SQL.
+ * ------------------------------------------------------------------ */
+
+export interface ContactPhoneResult {
+  /** Canonical value to persist. */
+  canonical: string;
+  kind: "ghana" | "international";
+  valid: boolean;
+  error: string | null;
+}
+
+/** True when the input explicitly carries a non-Ghana international code. */
+function isForeignDialled(raw: string): boolean {
+  const s = stripPhone(raw);
+  if (!s.startsWith("+") && !s.startsWith("00")) return false;
+  const digits = s.replace(/\D/g, "").replace(/^00/, "");
+  return !digits.startsWith("233");
+}
+
+const REPEATED_ALL = /^(\d)\1+$/;
+
+export function validateContactPhone(input: string): ContactPhoneResult {
+  const raw = stripPhone(input);
+  if (!raw) return { canonical: "", kind: "ghana", valid: false, error: "Phone number is required" };
+
+  if (isForeignDialled(raw)) {
+    const digits = raw.replace(/\D/g, "").replace(/^00/, "");
+    if (digits.length < 8 || digits.length > 15) {
+      return {
+        canonical: "",
+        kind: "international",
+        valid: false,
+        error: "International numbers must have 8–15 digits including the country code.",
+      };
+    }
+    if (REPEATED_ALL.test(digits) || /^123456/.test(digits.slice(-6))) {
+      return { canonical: "", kind: "international", valid: false, error: "This number looks fabricated." };
+    }
+    return { canonical: `+${digits}`, kind: "international", valid: true, error: null };
+  }
+
+  const gh = validateGhanaPhone(raw);
+  return {
+    canonical: gh.valid && !gh.suspicious ? gh.local : "",
+    kind: "ghana",
+    valid: gh.valid && !gh.suspicious,
+    error: gh.valid && !gh.suspicious ? null : gh.error ?? "Invalid number",
+  };
+}
+
+export function isValidContactPhone(input: string): boolean {
+  return validateContactPhone(input).valid;
+}
+
+export function validateContactPhoneList(input: string): { valid: boolean; errors: string[]; canonical: string } {
+  const parts = (input ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  const results = parts.map(validateContactPhone);
+  const errors = results
+    .map((r, i) => (r.valid ? null : `${parts[i]}: ${r.error ?? "invalid number"}`))
+    .filter((e): e is string => e !== null);
+  return {
+    valid: errors.length === 0,
+    errors,
+    canonical: results.map((r, i) => r.canonical || parts[i]).join(", "),
+  };
+}
+
+/**
+ * Throws a user-facing Error when any number in a (possibly comma-separated)
+ * contact field is invalid or looks forged. Returns the canonical value.
+ */
+export function assertContactPhoneList(
+  input: string | null | undefined,
+  label = "Phone",
+  required = false,
+): string {
+  const raw = (input ?? "").split(",").map((p) => p.trim()).filter(Boolean).join(", ");
+  if (!raw) {
+    if (required) throw new Error(`${label} is required`);
+    return "";
+  }
+  const { valid, errors, canonical } = validateContactPhoneList(raw);
+  if (!valid) throw new Error(`${label} — ${errors.join("; ")}`);
+  return canonical;
+}
+
+export const CONTACT_PHONE_HINT = "Ghana: 10 digits (MTN, Telecel, AirtelTigo) · Foreign: +<country code>";
