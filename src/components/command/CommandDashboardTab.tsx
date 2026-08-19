@@ -255,6 +255,22 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
                           </div>
                           <div className="text-xs text-muted-foreground">{b.cyber_total} logged</div>
                         </TableCell>
+                        <TableCell className="w-[190px]">
+                          <div className="text-sm font-medium">{b.proc_total ?? 0} raised</div>
+                          <div className="text-xs text-muted-foreground">
+                            {b.proc_pending ?? 0} pending · {b.proc_approved ?? 0} approved ·{" "}
+                            {b.proc_received ?? 0} received
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {money(Number(b.proc_committed ?? 0))} committed ·{" "}
+                            {Number(b.proc_items_received ?? 0)}/{Number(b.proc_items_ordered ?? 0)} units in
+                          </div>
+                          {(b.proc_pending ?? 0) > 0 && (
+                            <Badge variant="outline" className="mt-1 border-warning/40 bg-warning/10 text-xs">
+                              awaiting approval
+                            </Badge>
+                          )}
+                        </TableCell>
                       </TableRow>
                     );
                   })
