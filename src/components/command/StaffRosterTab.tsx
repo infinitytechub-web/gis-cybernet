@@ -28,7 +28,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog,
+  Users, Search, Phone, Mail, ShieldCheck, X, Footprints, ExternalLink, UserCog, CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABEL, roleLabel } from "@/lib/role-labels";
@@ -44,6 +44,16 @@ const STATUS_CLASS: Record<string, string> = {
   study_leave: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   transferred: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
 };
+
+const ATTENDANCE_CLASS: Record<string, string> = {
+  present: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  late: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  absent: "border-destructive/40 bg-destructive/10 text-destructive",
+  excused: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+};
+
+const timeOf = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : null;
 
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((n) => n[0]).join("").toUpperCase() || "?";
@@ -69,6 +79,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
   const [roleFilter, setRoleFilter] = useState<"all" | AppRole>("all");
   const [branchFilter, setBranchFilter] = useState<string>(orgUnitId ?? "all");
   const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [attendanceFilter, setAttendanceFilter] = useState<string>("all");
   const [designating, setDesignating] = useState<RosterMember | null>(null);
   const [pendingRole, setPendingRole] = useState<AppRole | "">("");
 
@@ -91,12 +102,30 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (!orgUnitId && branchFilter !== "all" && r.org_unit_id !== branchFilter) return false;
       if (roleFilter !== "all" && !r.roles.includes(roleFilter)) return false;
+      if (attendanceFilter === "unmarked" && r.attendance_today) return false;
+      if (attendanceFilter !== "all" && attendanceFilter !== "unmarked"
+        && r.attendance_today !== attendanceFilter) return false;
       if (!q) return true;
       return [r.full_name, r.staff_id, r.rank, r.branch, r.unit, r.phone, r.email]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [scoped, search, statusFilter, branchFilter, roleFilter, orgUnitId]);
+  }, [scoped, search, statusFilter, branchFilter, roleFilter, attendanceFilter, orgUnitId]);
+
+  /** Today's attendance roll-up across the scoped roster. */
+  const attendance = useMemo(() => {
+    const active = scoped.filter((r) => r.status === "active");
+    const present = active.filter((r) => r.attendance_today === "present").length;
+    const late = active.filter((r) => r.attendance_today === "late").length;
+    const absent = active.filter((r) => r.attendance_today === "absent").length;
+    const excused = active.filter((r) => r.attendance_today === "excused").length;
+    const marked = present + late + absent + excused;
+    return {
+      strength: active.length,
+      present, late, absent, excused, marked,
+      rate: active.length ? Math.round(((present + late) / active.length) * 100) : null,
+    };
+  }, [scoped]);
 
   const appointments = useKeyAppointments(scoped);
 
@@ -176,8 +205,16 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
               <Users className="h-5 w-5 text-primary" aria-hidden="true" />
               Staff roster
             </CardTitle>
-            <CardDescription>
-              {rows.length} of {scoped.length} staff{branchName ? ` — ${branchName}` : ""}
+            <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>{rows.length} of {scoped.length} staff{branchName ? ` — ${branchName}` : ""}</span>
+              <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                <CalendarCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                {attendance.rate === null ? "—" : `${attendance.rate}%`} on duty today
+              </span>
+              <span>
+                {attendance.present} present · {attendance.late} late · {attendance.absent} absent ·{" "}
+                {attendance.excused} excused · {Math.max(attendance.strength - attendance.marked, 0)} unmarked
+              </span>
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -227,6 +264,19 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                 <SelectItem value="all">All statuses</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={attendanceFilter} onValueChange={setAttendanceFilter}>
+              <SelectTrigger className="w-40" aria-label="Filter by attendance today">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any attendance</SelectItem>
+                <SelectItem value="present">Present today</SelectItem>
+                <SelectItem value="late">Late today</SelectItem>
+                <SelectItem value="absent">Absent today</SelectItem>
+                <SelectItem value="excused">Excused today</SelectItem>
+                <SelectItem value="unmarked">Unmarked today</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -244,6 +294,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                     <TableHead>Branch / unit</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Contact</TableHead>
+                    <TableHead>Attendance today</TableHead>
                     <TableHead className="text-right">Patrols led</TableHead>
                     <TableHead>Status</TableHead>
                     {canManageRoles && <TableHead className="text-right">Designate</TableHead>}
@@ -307,6 +358,23 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                         )}
                         {!r.phone && !r.email && "—"}
                       </TableCell>
+                      <TableCell>
+                        {r.attendance_today ? (
+                          <div className="space-y-0.5">
+                            <Badge variant="outline" className={ATTENDANCE_CLASS[r.attendance_today] ?? ""}>
+                              {r.attendance_today}
+                              {timeOf(r.attendance_check_in) ? ` · ${timeOf(r.attendance_check_in)}` : ""}
+                            </Badge>
+                            <div className="text-xs text-muted-foreground">
+                              {r.attendance_days_30d > 0
+                                ? `${r.attendance_present_30d}/${r.attendance_days_30d} days (30d)`
+                                : "No 30-day record"}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Unmarked</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {r.patrols_led > 0 ? (
                           <span className="inline-flex items-center gap-1 text-sm">
@@ -337,7 +405,7 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                   ))}
                   {rows.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={canManageRoles ? 8 : 7} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={canManageRoles ? 9 : 8} className="py-8 text-center text-muted-foreground">
                         No staff match these filters.
                       </TableCell>
                     </TableRow>
@@ -348,7 +416,10 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
           )}
           {!compact && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Patrol counts come from the patrol log.{" "}
+              Attendance is today's clock-in record; patrol counts come from the patrol log.{" "}
+              <Link to="/command-console?tab=dashboard" className="hover:underline">
+                Command dashboard
+              </Link>{" · "}
               <Link to="/unit-dashboard" className="inline-flex items-center gap-1 hover:underline">
                 Unit dashboard <ExternalLink className="h-3 w-3" aria-hidden="true" />
               </Link>

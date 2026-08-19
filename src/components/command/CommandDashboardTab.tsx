@@ -6,6 +6,7 @@
  * signed-in officer's branch reach server-side.
  */
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -36,8 +37,12 @@ function toneFor(v: number | null) {
 }
 
 function Kpi({
-  icon: Icon, label, value, hint,
-}: { icon: typeof Users; label: string; value: string; hint: string }) {
+  icon: Icon, label, value, hint, to, toLabel,
+}: {
+  icon: typeof Users; label: string; value: string; hint: string;
+  /** Optional deep link rendered under the hint (e.g. into the staff roster). */
+  to?: string; toLabel?: string;
+}) {
   return (
     <Card>
       <CardContent className="flex items-start gap-3 p-4">
@@ -48,11 +53,17 @@ function Kpi({
           <p className="text-2xl font-semibold leading-tight">{value}</p>
           <p className="text-sm font-medium">{label}</p>
           <p className="truncate text-xs text-muted-foreground">{hint}</p>
+          {to && (
+            <Link to={to} className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+              {toLabel ?? "Open"}
+            </Link>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 }
+
 
 export default function CommandDashboardTab({ branchName }: { branchName?: string }) {
   const { data, isLoading, error } = useCommandDashboard(30);
@@ -132,6 +143,8 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
           label="Staff attendance today"
           value={isLoading ? "…" : pct(totals.attendance)}
           hint={`${totals.present} of ${totals.staff} posted staff checked in`}
+          to="/command-console?tab=roster"
+          toLabel="Open staff roster"
         />
         <Kpi
           icon={Truck}

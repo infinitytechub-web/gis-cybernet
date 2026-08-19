@@ -9,7 +9,7 @@
  * additionally scoped to the signed-in officer's branch of the hierarchy.
  */
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,16 @@ export default function CommandConsole() {
   const [severity, setSeverity] = useState<ConsoleSeverity | "all">("all");
   const [state, setState] = useState<"open" | "closed" | "all">("open");
   const [search, setSearch] = useState("");
+
+  // Tab selection lives in the URL so dashboard KPIs can deep-link (?tab=roster).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") ?? "dashboard";
+  const setActiveTab = (tab: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    setSearchParams(next, { replace: true });
+  };
+
 
   const { items, isLoading, isFetching, error, refetch, dataUpdatedAt } =
     useCommandConsoleFeed(true);
@@ -262,7 +272,7 @@ export default function CommandConsole() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="dashboard">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto">
           <TabsList>
             <TabsTrigger value="dashboard">
