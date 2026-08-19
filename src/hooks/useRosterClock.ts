@@ -14,6 +14,17 @@ import { toast } from "sonner";
 
 export type ClockAction = "check_in" | "check_out";
 
+export const ATTENDANCE_PHOTO_BUCKET = "attendance-photos";
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+/** Returns an error string when the chosen photo is not an acceptable image. */
+export function validateClockPhoto(file: File): string | null {
+  if (!ALLOWED_PHOTO_TYPES.includes(file.type)) return "Photo must be a JPEG, PNG or WebP image";
+  if (file.size > MAX_PHOTO_BYTES) return "Photo must be 8 MB or smaller";
+  return null;
+}
+
 export interface ClockResult {
   attendance_id: string;
   profile_id: string;
@@ -27,6 +38,8 @@ export interface ClockResult {
   grace_minutes: number;
   late_minutes: number;
   early_minutes: number;
+  reason: string | null;
+  photo_path: string | null;
   on_behalf: boolean;
   /** "ok" | "late" | "early" */
   severity: string;
@@ -40,13 +53,31 @@ export function useRosterClock() {
       profileId: string;
       action: ClockAction;
       notes?: string;
+      /** Why the officer is clocking now — required when acting for someone else. */
+      reason?: string;
+      /** Optional proof-of-presence photo, stored privately. */
+      photo?: File | null;
       /** Only used for the toast copy. */
       name?: string;
     }): Promise<ClockResult> => {
+      let photoPath: string | null = null;
+      if (vars.photo) {
+        const invalid = validateClockPhoto(vars.photo);
+        if (invalid) throw new Error(invalid);
+        const ext = vars.photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        photoPath = `${vars.profileId}/${vars.action}-${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from(ATTENDANCE_PHOTO_BUCKET)
+          .upload(photoPath, vars.photo, { contentType: vars.photo.type, upsert: false });
+        if (upErr) throw new Error(`Photo upload failed: ${upErr.message}`);
+      }
+
       const { data, error } = await supabase.rpc("roster_clock_action", {
         _profile_id: vars.profileId,
         _action: vars.action,
         _notes: vars.notes ?? null,
+        _reason: vars.reason?.trim() || null,
+        _photo_path: photoPath,
       } as any);
       if (error) throw error;
       return data as unknown as ClockResult;
