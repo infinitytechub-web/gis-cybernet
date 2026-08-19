@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3, Wrench } from "lucide-react";
+import { Truck, Radio, MapPinned, BellRing, Fuel, Siren, Route, MessageSquare, ShieldAlert, BarChart3, Wrench, Satellite } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
 import {
