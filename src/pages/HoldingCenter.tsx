@@ -908,14 +908,15 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
           <TabsContent value="bio" className="space-y-3">
             <Section title="Identification">
               <Field label="Gender" value={record.gender} />
-              <Field label="Date of Birth" value={formatDate(record.date_of_birth)} />
+              <Field label="Date of Birth" value={canSeeField("detainee_identity", viewer) ? formatDate(record.date_of_birth) : "••/••/••••"} />
               <Field label="Age" value={ageLabel(record.date_of_birth)} />
               <Field label="Nationality" value={record.nationality} />
               <Field label="Country of Origin" value={record.country_of_origin} />
               <Field label="ID Type" value={record.id_type} />
-              <Field label="ID Number" value={record.id_number} />
-              <Field label="Phone" value={record.phone} />
-              <Field label="Home Address" value={record.home_address} full />
+              <Field label="ID Number" value={<Sensitive field="detainee_identity" value={record.id_number} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Phone" value={<Sensitive field="detainee_contact" value={record.phone} revealable entityType="detention_record" recordId={record.id} />} />
+              <Field label="Home Address" value={<Sensitive field="detainee_contact" value={record.home_address} revealable entityType="detention_record" recordId={record.id} />} full />
+
             </Section>
             <Section title="Case">
               <Field label="Type of Offense" value={record.crime_type} />
