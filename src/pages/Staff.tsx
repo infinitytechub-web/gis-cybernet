@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +41,7 @@ import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { flattenOrgTree } from "@/lib/org-hierarchy";
+import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
@@ -52,8 +53,15 @@ export default function Staff() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // Hierarchical RBAC — command postings the signed-in user may assign.
-  const { tree: orgTree, scope: orgScope } = useOrgScope();
+  const { units: orgUnits, tree: orgTree, scope: orgScope } = useOrgScope();
   const orgRows = useMemo(() => flattenOrgTree(orgTree), [orgTree]);
+  /** Units this user may post staff to — admins/command tier see the whole tree. */
+  const assignableUnits = useMemo(
+    () => (isAdminOrSupervisor ? orgUnits : orgUnits.filter((u) => orgScope.scopeIds.has(u.id))),
+    [orgUnits, orgScope, isAdminOrSupervisor],
+  );
+  const [assignUnitOpen, setAssignUnitOpen] = useState(false);
+
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -465,7 +473,7 @@ export default function Staff() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {canManage && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <ExportMenu
               getData={() => ({
                 title: "Staff / Employee Report",
@@ -475,6 +483,9 @@ export default function Staff() {
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
+            <Button variant="outline" size="sm" onClick={() => setAssignUnitOpen(true)} className="gap-1">
+              <Building2 className="h-4 w-4" /> Assign to unit
+            </Button>
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-1">
                 <Upload className="h-4 w-4" /> Import
@@ -488,6 +499,20 @@ export default function Staff() {
           </div>
         )}
       </div>
+
+      <UnitStaffPickerDialog
+        open={assignUnitOpen}
+        onOpenChange={setAssignUnitOpen}
+        units={orgUnits}
+        selectableUnits={assignableUnits}
+        defaultOrgUnitId={null}
+        canManage={canManage}
+        onAssigned={(unitId) => {
+          setAssignUnitOpen(false);
+          navigate(`/unit-dashboard?unit=${unitId}`);
+        }}
+      />
+
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

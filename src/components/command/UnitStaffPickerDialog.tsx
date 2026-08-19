@@ -60,6 +60,7 @@ export function UnitStaffPickerDialog({
   defaultOrgUnitId,
   canManage,
   onSelect,
+  onAssigned,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -72,7 +73,10 @@ export function UnitStaffPickerDialog({
   canManage: boolean;
   /** Optional single-select callback (row click). */
   onSelect?: (staff: DirectoryStaff) => void;
+  /** Fired after a successful posting with the target unit id and staff count. */
+  onAssigned?: (orgUnitId: string, count: number) => void;
 }) {
+
   const qc = useQueryClient();
   const listRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
@@ -182,7 +186,9 @@ export function UnitStaffPickerDialog({
       qc.invalidateQueries({ queryKey: ["command-roster"] });
       qc.invalidateQueries({ queryKey: ["staff"] });
       qc.invalidateQueries({ queryKey: ["org-units"] });
+      onAssigned?.(targetUnit, n);
     },
+
     onError: (e: any) => toast.error(e.message || "Reassignment failed"),
   });
 
