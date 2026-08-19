@@ -1,8 +1,9 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot, Radio, Palette
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot, Radio, Palette, ChevronRight
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { NavLink } from "@/components/NavLink";
@@ -16,6 +17,7 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarFooter, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
@@ -48,19 +50,35 @@ const personnelItems = [
   { title: "Roles / Designations", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
 ];
 
-const workforceItems = [
+const myDutyItems = [
   { title: "My Shift Tracker", url: "/my-shift", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400" },
   { title: "In-Cab Console", url: "/in-cab", icon: Radio, iconColor: "text-sky-700 dark:text-sky-400" },
+];
+
+const attendanceItems = [
   { title: "Attendance", url: "/attendance", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400" },
   { title: "Office Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
+];
+
+const rosterItems = [
   { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400" },
   { title: "Guard Schedule", url: "/guard-schedule", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
+];
+
+const leaveItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
+];
+
+const postingItems = [
   { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400" },
   { title: "Transfer History", url: "/postings/history", icon: ArrowRightLeft, iconColor: "text-violet-700 dark:text-violet-300" },
+];
+
+const appraisalItems = [
   { title: "Staff Appraisals", url: "/appraisals", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
 ];
+
 
 const staffApprovalsItem = { title: "Staff Approvals", url: "/staff-approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" };
 const shiftWindowAuditItem = { title: "Shift Rules Audit", url: "/shift-window-audit", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
@@ -103,27 +121,45 @@ const financeItems = [
   { title: "Procurement Unit", url: "/procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400" },
 ];
 
-const adminItems = [
+// Administration is grouped into sub-menus so no single list becomes a wall of links.
+const adminEntryItems = [
   { title: "Admin Console", url: "/admin", icon: LayoutGrid, iconColor: "text-primary" },
-  { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
-  { title: "Roster Import", url: "/roster/import", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300" },
-  { title: "Guard PDF Import", url: "/guard-schedule/import", icon: FileSpreadsheet, iconColor: "text-emerald-700 dark:text-emerald-300" },
+];
+
+const adminApprovalItems = [
   { title: "Pending Staff Approvals", url: "/staff-approvals/pending", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Account Approvals", url: "/staff-approvals/accounts", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Profile Change Approvals", url: "/staff-approvals/profile-changes", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Shift Rotation Approvals", url: "/shift-rotation-approvals", icon: ShieldCheck, iconColor: "text-secondary" },
-  { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
-  { title: "Session Management", url: "/admin/sessions", icon: MonitorSmartphone, iconColor: "text-cyan-700 dark:text-cyan-300" },
-  { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },
-  { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
-  { title: "Command Role Audit", url: "/command-role-audit", icon: History, iconColor: "text-primary" },
-  { title: "Role Assignments", url: "/role-assignments", icon: UserCog, iconColor: "text-amber-700 dark:text-amber-300" },
-  { title: "Staff Mapping Import", url: "/staff-mapping-import", icon: Building2, iconColor: "text-purple-700 dark:text-purple-300" },
-  { title: "Audit Log Dashboard", url: "/audit-log", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
-  { title: "RUM Analytics", url: "/rum-analytics", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400" },
-  { title: "Branding Settings", url: "/branding", icon: Palette, iconColor: "text-chart-1" },
-  { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
+
+const adminAccessItems = [
+  { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Role Assignments", url: "/role-assignments", icon: UserCog, iconColor: "text-amber-700 dark:text-amber-300" },
+  { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
+  { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },
+  { title: "Session Management", url: "/admin/sessions", icon: MonitorSmartphone, iconColor: "text-cyan-700 dark:text-cyan-300" },
+];
+
+const adminSecurityItems = [
+  { title: "Audit Log Dashboard", url: "/audit-log", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
+  { title: "Command Role Audit", url: "/command-role-audit", icon: History, iconColor: "text-primary" },
+];
+
+const adminDataItems = [
+  { title: "Roster Import", url: "/roster/import", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300" },
+  { title: "Guard PDF Import", url: "/guard-schedule/import", icon: FileSpreadsheet, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Staff Mapping Import", url: "/staff-mapping-import", icon: Building2, iconColor: "text-purple-700 dark:text-purple-300" },
+  { title: "RUM Analytics", url: "/rum-analytics", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400" },
+];
+
+const adminConfigItems = [
+  { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
+  { title: "Branding Settings", url: "/branding", icon: Palette, iconColor: "text-chart-1" },
+  { title: "Security Settings", url: "/settings?area=security", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "System Settings", url: "/settings?area=system", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400" },
+];
+
 
 // Restricted to command tier — manages tenant-wide shift platform integrations.
 const integrationsItems = [
@@ -141,6 +177,31 @@ const recycleBinItems = [
 ];
 
 type NavItem = { title: string; url: string; icon: any; iconColor: string; badge?: "frontdesk" | "processing" };
+/** A click-to-expand parent menu inside a sidebar group. */
+type NavSection = { label: string; icon: any; iconColor: string; items: NavItem[] };
+
+const slugifyLabel = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const OPEN_GROUPS_KEY = "cybernet.sidebar.openGroups";
+
+const readOpenGroups = (): Record<string, boolean> => {
+  try {
+    const raw = localStorage.getItem(OPEN_GROUPS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+};
+
+// Workforce Operations sub-menus — keeps the longest group scroll-free.
+const workforceSections: NavSection[] = [
+  { label: "My Duty", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400", items: myDutyItems },
+  { label: "Attendance & Shifts", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400", items: attendanceItems },
+  { label: "Rosters & Schedules", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", items: rosterItems },
+  { label: "Leave & Holidays", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400", items: leaveItems },
+  { label: "Postings & Transfers", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", items: postingItems },
+];
+
 
 export function AppSidebar() {
   const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
@@ -148,6 +209,24 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, role } = useAuth();
   const { canPath } = useRbac();
+
+  // Parent menus remember whether the user left them open, per browser profile.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(readOpenGroups);
+
+  /** The branch holding the current route always opens, whatever was stored. */
+  const isGroupOpen = (label: string, items: NavItem[]) =>
+    items.some((item) => isActiveRoute(item.url)) || openGroups[label] === true;
+
+  const toggleGroup = (label: string, items: NavItem[]) => {
+    const next = { ...openGroups, [label]: !isGroupOpen(label, items) };
+    setOpenGroups(next);
+    try {
+      localStorage.setItem(OPEN_GROUPS_KEY, JSON.stringify(next));
+    } catch {
+      /* storage unavailable — state stays in memory only */
+    }
+  };
+
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -220,83 +299,174 @@ export function AppSidebar() {
   };
 
   const isActiveRoute = (url: string) => {
-    if (url === "/") return location.pathname === "/";
-    return location.pathname === url || location.pathname.startsWith(url + "/");
+    const path = url.split("?")[0];
+    if (path === "/") return location.pathname === "/";
+    return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
-  const renderGroup = (label: string, allItems: NavItem[]) => {
-    // RBAC: hide destinations the signed-in account cannot reach, and drop the
-    // whole group when nothing in it is permitted.
-    const items = allItems.filter((item) => canPath(item.url));
-    if (items.length === 0) return null;
+  const renderItem = (item: NavItem) => {
+    const active = isActiveRoute(item.url);
+    const badgeCount =
+      item.badge === "processing" ? processingCount :
+      item.badge === "frontdesk" ? frontDeskCount : null;
+    const ariaLabel = collapsed
+      ? `${item.title}${active ? ", current page" : ""}${badgeCount ? `, ${badgeCount} pending` : ""}`
+      : undefined;
+    const description = navDescription(item.url);
+    const link = (
+      <NavLink
+        to={item.url}
+        end={item.url === "/"}
+        onClick={handleNavClick}
+        aria-current={active ? "page" : undefined}
+        aria-label={ariaLabel}
+        className={`group/nav relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
+          active
+            ? "ring-2 ring-sidebar-primary bg-sidebar-primary/10 text-sidebar-primary"
+            : ""
+        }`}
+        activeClassName="font-medium"
+      >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-sidebar-primary opacity-0 transition-all duration-150 group-hover/nav:h-4/5 group-hover/nav:opacity-100"
+        />
+        <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
+        {!collapsed && <span>{item.title}</span>}
+        {renderBadge(item)}
+      </NavLink>
+    );
     return (
-    <SidebarGroup key={label}>
-      <SidebarGroupLabel className="text-sidebar-foreground/50">{label}</SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => {
-            const active = isActiveRoute(item.url);
-            const badgeCount =
-              item.badge === "processing" ? processingCount :
-              item.badge === "frontdesk" ? frontDeskCount : null;
-            const ariaLabel = collapsed
-              ? `${item.title}${active ? ", current page" : ""}${badgeCount ? `, ${badgeCount} pending` : ""}`
-              : undefined;
-            const description = navDescription(item.url);
-            const link = (
-              <NavLink
-                to={item.url}
-                end={item.url === "/"}
-                onClick={handleNavClick}
-                aria-current={active ? "page" : undefined}
-                aria-label={ariaLabel}
-                className={`group/nav relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
-                  active
-                    ? "ring-2 ring-sidebar-primary bg-sidebar-primary/10 text-sidebar-primary"
-                    : ""
-                }`}
-                activeClassName="font-medium"
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-sidebar-primary opacity-0 transition-all duration-150 group-hover/nav:h-4/5 group-hover/nav:opacity-100"
-                />
-                <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
-                {!collapsed && <span>{item.title}</span>}
-                {renderBadge(item)}
-              </NavLink>
-            );
-            return (
-              <SidebarMenuItem key={item.title}>
-                <Tooltip delayDuration={200}>
-                  <TooltipTrigger asChild>
-                    <SidebarMenuButton asChild>{link}</SidebarMenuButton>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className={`max-w-[16rem] ${
-                      active
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
-                        : ""
-                    }`}
-                  >
-                    <span className="block font-semibold">{item.title}</span>
-                    {description && (
-                      <span className="mt-0.5 block text-xs font-normal opacity-90">{description}</span>
-                    )}
-                    {active && <span className="sr-only"> (current page)</span>}
-                  </TooltipContent>
-                </Tooltip>
-              </SidebarMenuItem>
-
-            );
-
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+      <SidebarMenuItem key={item.title}>
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton asChild>{link}</SidebarMenuButton>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            className={`max-w-[16rem] ${
+              active
+                ? "bg-sidebar-primary text-sidebar-primary-foreground border-sidebar-primary"
+                : ""
+            }`}
+          >
+            <span className="block font-semibold">{item.title}</span>
+            {description && (
+              <span className="mt-0.5 block text-xs font-normal opacity-90">{description}</span>
+            )}
+            {active && <span className="sr-only"> (current page)</span>}
+          </TooltipContent>
+        </Tooltip>
+      </SidebarMenuItem>
     );
   };
+
+  /** Pending-work badge shown on a collapsed parent so notifications stay visible. */
+  const parentBadge = (items: NavItem[]) => {
+    const total = items.reduce((sum, it) => {
+      if (it.badge === "processing") return sum + (processingCount ?? 0);
+      if (it.badge === "frontdesk") return sum + (frontDeskCount ?? 0);
+      return sum;
+    }, 0);
+    if (total <= 0) return null;
+    return (
+      <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] justify-center px-1.5 text-[10px]">
+        {total}
+      </Badge>
+    );
+  };
+
+  /** Click-to-expand parent menu wrapping its own submenu items. */
+  const renderCollapsibleParent = (
+    label: string,
+    items: NavItem[],
+    ParentIcon: any,
+    iconColor: string,
+  ) => {
+    const open = isGroupOpen(label, items);
+    const contentId = `nav-group-${slugifyLabel(label)}`;
+    const description = navDescription(label);
+    return (
+      <Collapsible key={label} open={open} onOpenChange={() => toggleGroup(label, items)}>
+        <SidebarMenuItem>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                  aria-expanded={open}
+                  aria-controls={contentId}
+                  className="group/nav hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                >
+                  <ParentIcon className={`mr-2 h-4 w-4 ${iconColor}`} aria-hidden="true" />
+                  <span className="truncate">{label}</span>
+                  {!open && parentBadge(items)}
+                  <ChevronRight
+                    aria-hidden="true"
+                    className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+                  />
+                </SidebarMenuButton>
+              </CollapsibleTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-[16rem]">
+              <span className="block font-semibold">{label}</span>
+              <span className="mt-0.5 block text-xs font-normal opacity-90">
+                {description ?? `${items.length} item${items.length === 1 ? "" : "s"}`}
+              </span>
+            </TooltipContent>
+          </Tooltip>
+          <CollapsibleContent id={contentId}>
+            <SidebarMenu className="ml-3 border-l border-sidebar-border pl-2">
+              {items.map(renderItem)}
+            </SidebarMenu>
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
+    );
+  };
+
+  /**
+   * Renders one sidebar group. Groups with more than four permitted items — or
+   * with explicit sub-menus — become click-to-expand parents; short groups stay
+   * flat. In icon-collapsed mode everything renders flat so icons stay reachable.
+   */
+  const renderGroup = (label: string, allItems: NavItem[], sections: NavSection[] = []) => {
+    // RBAC: hide destinations the signed-in account cannot reach, and drop the
+    // whole group when nothing in it is permitted.
+    const permitted = (items: NavItem[]) => items.filter((item) => canPath(item.url.split("?")[0]));
+    const items = permitted(allItems);
+    const liveSections = sections
+      .map((s) => ({ ...s, items: permitted(s.items) }))
+      .filter((s) => s.items.length > 0);
+    const total = items.length + liveSections.reduce((n, s) => n + s.items.length, 0);
+    if (total === 0) return null;
+
+    const flatten = [...items, ...liveSections.flatMap((s) => s.items)];
+    const useAccordion = !collapsed && (liveSections.length > 0 || items.length > 4);
+
+    return (
+      <SidebarGroup key={label}>
+        {(!useAccordion || liveSections.length > 0) && (
+          <SidebarGroupLabel className="text-sidebar-foreground/50">{label}</SidebarGroupLabel>
+        )}
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {!useAccordion && flatten.map(renderItem)}
+            {useAccordion && liveSections.length === 0 &&
+              renderCollapsibleParent(label, items, items[0].icon, items[0].iconColor)}
+            {useAccordion && liveSections.length > 0 && (
+              <>
+                {items.map(renderItem)}
+                {liveSections.map((section) =>
+                  renderCollapsibleParent(section.label, section.items, section.icon, section.iconColor),
+                )}
+              </>
+            )}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  };
+
 
   return (
     <TooltipProvider>
@@ -318,9 +488,19 @@ export function AppSidebar() {
         {renderGroup("Personnel Management", personnelItems)}
         {renderGroup(
           "Workforce Operations",
-          (role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
-            ? [...workforceItems, staffApprovalsItem]
-            : workforceItems,
+          [],
+          [
+            ...workforceSections,
+            {
+              label: "Appraisals & Approvals",
+              icon: Award,
+              iconColor: "text-amber-600 dark:text-amber-400",
+              items:
+                (role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
+                  ? [...appraisalItems, staffApprovalsItem]
+                  : appraisalItems,
+            },
+          ],
         )}
         {renderGroup("Immigration Services", immigrationItems)}
         {renderGroup("Security & Enforcement", securityItems)}
@@ -334,14 +514,23 @@ export function AppSidebar() {
         {role === "admin" && renderGroup("Confidentiality", confidentialityItems)}
         {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
         {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") &&
-          renderGroup(
-            "Administration",
-            (role === "admin")
-              ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem, ipBlocksItem]
-              : (role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer")
-                ? [...adminItems, shiftWindowAuditItem, sensitiveAccessLogItem]
-                : adminItems,
-          )}
+          renderGroup("Administration", adminEntryItems, [
+            { label: "Approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300", items: adminApprovalItems },
+            { label: "Access & Roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400", items: adminAccessItems },
+            {
+              label: "Security & Audit",
+              icon: ScrollText,
+              iconColor: "text-fuchsia-700 dark:text-fuchsia-300",
+              items:
+                role === "admin"
+                  ? [...adminSecurityItems, sensitiveAccessLogItem, shiftWindowAuditItem, ipBlocksItem]
+                  : (role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer")
+                    ? [...adminSecurityItems, sensitiveAccessLogItem, shiftWindowAuditItem]
+                    : adminSecurityItems,
+            },
+            { label: "Data & Imports", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300", items: adminDataItems },
+            { label: "Configuration", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400", items: adminConfigItems },
+          ])}
       </SidebarContent>
 
       <SidebarFooter className="p-4">

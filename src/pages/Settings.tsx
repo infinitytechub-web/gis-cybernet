@@ -96,47 +96,73 @@ const roleColors: Record<AppRole, string> = {
   medical_officer: "bg-rose-500/15 text-rose-700 border-rose-500/20",
 };
 
+/**
+ * Settings tabs, grouped into two areas so the page is navigable:
+ * "security" (identity, access, monitoring, logging) and "system"
+ * (organization, configuration, integrations, maintenance).
+ */
+const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; area: "security" | "system" }[] = [
+  { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
+  { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
+  { value: "2fa", label: "2FA", icon: KeyRound, iconClass: "text-chart-5", area: "security" },
+  { value: "mfa-recovery", label: "MFA Recovery", icon: KeyRound, iconClass: "text-amber-600", area: "security" },
+  { value: "lockouts", label: "Lockouts", icon: ShieldAlert, iconClass: "text-destructive", area: "security" },
+  { value: "locked-accounts", label: "Locked Accounts", icon: Unlock, iconClass: "text-emerald-600", area: "security" },
+  { value: "login-audit", label: "Login Audit", icon: History, iconClass: "text-destructive", area: "security" },
+  { value: "presence", label: "Presence Log", icon: Activity, iconClass: "text-primary", area: "security" },
+  { value: "firewall", label: "Firewall", icon: ShieldCheck, iconClass: "text-emerald-600", area: "security" },
+  { value: "firewall-alerts", label: "Firewall Alerts", icon: ShieldAlert, iconClass: "text-amber-600", area: "security" },
+  { value: "security-audit", label: "Security Audit", icon: History, iconClass: "text-emerald-600", area: "security" },
+  { value: "security-updates", label: "Security Updates", icon: ShieldCheck, iconClass: "text-emerald-700", area: "security" },
+  { value: "hrm-dlp", label: "HRM Export DLP", icon: ShieldCheck, iconClass: "text-emerald-700", area: "security" },
+  { value: "recycle", label: "Recycle Bin", icon: Trash2, iconClass: "text-destructive", area: "security" },
+
+  { value: "system", label: "System Info", icon: Database, iconClass: "text-primary", area: "system" },
+  { value: "app-settings", label: "App Settings", icon: Settings2, iconClass: "text-chart-4", area: "system" },
+  { value: "branding", label: "Branding", icon: Palette, iconClass: "text-chart-1", area: "system" },
+  { value: "interlink-brand", label: "Interlink Branding", icon: Network, iconClass: "text-indigo-500", area: "system" },
+  { value: "portfolios", label: "Portfolios", icon: Briefcase, iconClass: "text-primary", area: "system" },
+  { value: "accounts", label: "Accounts", icon: UserPlus, iconClass: "text-chart-2", area: "system" },
+  { value: "rotation", label: "Shift Rotation", icon: Layers, iconClass: "text-primary", area: "system" },
+  { value: "shift-connections", label: "Shift Connections", icon: Link2, iconClass: "text-chart-3", area: "system" },
+  { value: "shift-conn-perms", label: "Shift Conn. Perms", icon: KeyRound, iconClass: "text-primary", area: "system" },
+  { value: "email-test", label: "Email Test", icon: MailCheck, iconClass: "text-primary", area: "system" },
+  { value: "backup", label: "System Backup", icon: DatabaseBackup, iconClass: "text-primary", area: "system" },
+];
+
 export default function Settings() {
   const { isAdmin, loading: authLoading } = useAuth();
 
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
+  const areaParam = searchParams.get("area") === "system" ? "system" : searchParams.get("area") === "security" ? "security" : null;
+
+  // Show only the requested area's tabs; without an area, show everything.
+  const visibleTabs = TAB_DEFS.filter(
+    (t) => !areaParam || t.area === areaParam || t.value === tabParam,
+  );
+  const initialTab = tabParam && visibleTabs.some((t) => t.value === tabParam)
+    ? tabParam
+    : visibleTabs[0]?.value ?? "roles";
 
   if (!authLoading && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const heading = areaParam === "security" ? "Security Settings" : areaParam === "system" ? "System Settings" : "Settings";
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-secondary">System Settings</h1>
-      <Tabs defaultValue={tabParam ?? "roles"} className="space-y-4">
+      <h1 className="text-2xl font-bold text-secondary">{heading}</h1>
+      <Tabs defaultValue={initialTab} className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="roles" className="gap-1.5"><Shield className="h-4 w-4 text-destructive" /> User Roles</TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-1.5"><Grid3X3 className="h-4 w-4 text-chart-1" /> Permissions</TabsTrigger>
-          <TabsTrigger value="portfolios" className="gap-1.5"><Briefcase className="h-4 w-4 text-primary" /> Portfolios</TabsTrigger>
-          <TabsTrigger value="accounts" className="gap-1.5"><UserPlus className="h-4 w-4 text-chart-2" /> Accounts</TabsTrigger>
-          <TabsTrigger value="app-settings" className="gap-1.5"><Settings2 className="h-4 w-4 text-chart-4" /> App Settings</TabsTrigger>
-          <TabsTrigger value="branding" className="gap-1.5"><Palette className="h-4 w-4 text-chart-1" /> Branding</TabsTrigger>
-          <TabsTrigger value="lockouts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-destructive" /> Lockouts</TabsTrigger>
-          <TabsTrigger value="locked-accounts" className="gap-1.5"><Unlock className="h-4 w-4 text-emerald-600" /> Locked Accounts</TabsTrigger>
-          <TabsTrigger value="login-audit" className="gap-1.5"><History className="h-4 w-4 text-destructive" /> Login Audit</TabsTrigger>
-          <TabsTrigger value="presence" className="gap-1.5"><Activity className="h-4 w-4 text-primary" /> Presence Log</TabsTrigger>
-          <TabsTrigger value="shift-connections" className="gap-1.5"><Link2 className="h-4 w-4 text-chart-3" /> Shift Connections</TabsTrigger>
-          <TabsTrigger value="shift-conn-perms" className="gap-1.5"><KeyRound className="h-4 w-4 text-primary" /> Shift Conn. Perms</TabsTrigger>
-          <TabsTrigger value="recycle" className="gap-1.5"><Trash2 className="h-4 w-4 text-destructive" /> Recycle Bin</TabsTrigger>
-          <TabsTrigger value="system" className="gap-1.5"><Database className="h-4 w-4 text-primary" /> System Info</TabsTrigger>
-          <TabsTrigger value="2fa" className="gap-1.5"><KeyRound className="h-4 w-4 text-chart-5" /> 2FA</TabsTrigger>
-          <TabsTrigger value="interlink-brand" className="gap-1.5"><Network className="h-4 w-4 text-indigo-500" /> Interlink Branding</TabsTrigger>
-          <TabsTrigger value="rotation" className="gap-1.5"><Layers className="h-4 w-4 text-primary" /> Shift Rotation</TabsTrigger>
-          <TabsTrigger value="backup" className="gap-1.5"><DatabaseBackup className="h-4 w-4 text-primary" /> System Backup</TabsTrigger>
-          <TabsTrigger value="email-test" className="gap-1.5"><MailCheck className="h-4 w-4 text-primary" /> Email Test</TabsTrigger>
-          <TabsTrigger value="firewall" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-600" /> Firewall</TabsTrigger>
-          <TabsTrigger value="firewall-alerts" className="gap-1.5"><ShieldAlert className="h-4 w-4 text-amber-600" /> Firewall Alerts</TabsTrigger>
-          <TabsTrigger value="security-audit" className="gap-1.5"><History className="h-4 w-4 text-emerald-600" /> Security Audit</TabsTrigger>
-          <TabsTrigger value="hrm-dlp" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-700" /> HRM Export DLP</TabsTrigger>
-          <TabsTrigger value="mfa-recovery" className="gap-1.5"><KeyRound className="h-4 w-4 text-amber-600" /> MFA Recovery</TabsTrigger>
-          <TabsTrigger value="security-updates" className="gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-700" /> Security Updates</TabsTrigger>
+          {visibleTabs.map((t) => (
+            <TabsTrigger key={t.value} value={t.value} className="gap-1.5">
+              <t.icon className={`h-4 w-4 ${t.iconClass}`} /> {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
+
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
