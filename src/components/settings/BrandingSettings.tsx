@@ -20,15 +20,17 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Loader2, Palette, Save, RotateCcw, ShieldAlert, Upload, Trash2, Image as ImageIcon, Eye, Building2, Phone } from "lucide-react";
+import { Loader2, Palette, Save, RotateCcw, ShieldAlert, Upload, Trash2, Image as ImageIcon, Eye, Building2, Phone, Mail } from "lucide-react";
 
-type ImageField = "logo_url" | "favicon_url" | "login_logo_url" | "dashboard_logo_url";
+type ImageField = "logo_url" | "favicon_url" | "login_logo_url" | "dashboard_logo_url" | "login_background_url" | "email_logo_url";
 
 const IMAGE_FIELDS: { key: ImageField; label: string; hint: string; recommended: string; min: number; max: number }[] = [
   { key: "logo_url", label: "System logo", hint: "Shown in the sidebar header.", recommended: "512 × 512 px", min: 64, max: 2048 },
   { key: "favicon_url", label: "Favicon", hint: "Browser tab icon. Square PNG/SVG/ICO.", recommended: "64 × 64 px", min: 16, max: 512 },
   { key: "login_logo_url", label: "Login screen logo", hint: "Displayed above the sign-in form.", recommended: "600 × 600 px", min: 96, max: 2048 },
   { key: "dashboard_logo_url", label: "Dashboard logo", hint: "Displayed on the dashboard welcome banner.", recommended: "512 × 512 px", min: 64, max: 2048 },
+  { key: "login_background_url", label: "Login background", hint: "Optional full-screen image behind the sign-in card.", recommended: "1920 × 1080 px", min: 640, max: 4096 },
+  { key: "email_logo_url", label: "Email logo", hint: "Shown in the header of outgoing system emails.", recommended: "400 × 120 px", min: 48, max: 1600 },
 ];
 
 const COLOR_FIELDS: { key: "primary_color" | "secondary_color" | "accent_color"; label: string; hint: string }[] = [
@@ -36,6 +38,8 @@ const COLOR_FIELDS: { key: "primary_color" | "secondary_color" | "accent_color";
   { key: "secondary_color", label: "Secondary color", hint: "Headings and sidebar brand." },
   { key: "accent_color", label: "Accent color", hint: "Header title and highlights." },
 ];
+
+const EMAIL_HINT = "Applies to newly sent emails — already-queued messages keep their original branding.";
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
@@ -90,12 +94,16 @@ const EDITABLE_KEYS: (keyof Branding)[] = [
   "footer_text", "contact_email", "contact_phone", "contact_address", "contact_website",
   "logo_url", "favicon_url", "login_logo_url", "dashboard_logo_url",
   "primary_color", "secondary_color", "accent_color",
+  "login_tagline", "login_background_url",
+  "email_from_name", "email_reply_to", "email_header_color", "email_logo_url",
+  "email_footer_text", "email_signature",
 ];
 
 const SELECT_COLS =
   "id, org_name, system_label, company_name, logo_url, favicon_url, login_logo_url, dashboard_logo_url, " +
   "primary_color, secondary_color, accent_color, footer_text, system_description, header_text, " +
-  "contact_email, contact_phone, contact_address, contact_website";
+  "contact_email, contact_phone, contact_address, contact_website, login_tagline, login_background_url, " +
+  "email_from_name, email_reply_to, email_header_color, email_logo_url, email_footer_text, email_signature";
 
 interface Row extends Branding { id: string }
 
@@ -140,7 +148,7 @@ export function BrandingSettings() {
       if (alive) setPreviews(Object.fromEntries(entries));
     })();
     return () => { alive = false; };
-  }, [form.logo_url, form.favicon_url, form.login_logo_url, form.dashboard_logo_url]);
+  }, [form.logo_url, form.favicon_url, form.login_logo_url, form.dashboard_logo_url, form.login_background_url, form.email_logo_url]);
 
   const set = <K extends keyof Branding>(key: K, value: Branding[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -206,6 +214,9 @@ export function BrandingSettings() {
       if (form.contact_email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contact_email.trim())) {
         throw new Error("Contact email is not a valid address.");
       }
+      if (form.email_reply_to.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email_reply_to.trim())) {
+        throw new Error("Email reply-to is not a valid address.");
+      }
       if (form.contact_website.trim() && !/^(https?:\/\/)?[\w.-]+\.[a-z]{2,}([/?#].*)?$/i.test(form.contact_website.trim())) {
         throw new Error("Contact website is not a valid URL.");
       }
@@ -228,6 +239,14 @@ export function BrandingSettings() {
         contact_phone: assertGhanaPhoneList(form.contact_phone, "Contact phone") || null,
         contact_address: form.contact_address.trim() || null,
         contact_website: form.contact_website.trim() || null,
+        login_tagline: form.login_tagline.trim() || null,
+        login_background_url: form.login_background_url,
+        email_from_name: form.email_from_name.trim() || null,
+        email_reply_to: form.email_reply_to.trim() || null,
+        email_header_color: form.email_header_color.trim() || BRANDING_DEFAULTS.email_header_color,
+        email_logo_url: form.email_logo_url,
+        email_footer_text: form.email_footer_text.trim() || null,
+        email_signature: form.email_signature.trim() || null,
       };
 
       const { error } = await supabase
@@ -488,6 +507,89 @@ export function BrandingSettings() {
             <Label htmlFor="brand-footer">Footer information</Label>
             <Input id="brand-footer" value={form.footer_text} maxLength={200} disabled={!isAdmin}
               onChange={(e) => set("footer_text", e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Login screen branding */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><Eye className="h-4 w-4 text-chart-5" /> Login screen</CardTitle>
+          <CardDescription>Sign-in page tagline and optional background image. Applied immediately for new visitors.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="brand-login-tagline">Login tagline</Label>
+            <Input id="brand-login-tagline" value={form.login_tagline} maxLength={160} disabled={!isAdmin}
+              placeholder="Authorized personnel only — all access is monitored."
+              onChange={(e) => set("login_tagline", e.target.value)} />
+          </div>
+          <div className="rounded-lg border overflow-hidden">
+            <div className="relative flex items-center justify-center p-6"
+              style={previews.login_background_url
+                ? { backgroundImage: `url(${previews.login_background_url})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : { background: `hsl(${form.secondary_color})` }}>
+              <div className="rounded-md bg-background/95 px-4 py-3 text-center">
+                <p className="text-sm font-semibold">{form.org_name} {form.system_label}</p>
+                {form.login_tagline && <p className="text-[11px] text-muted-foreground">{form.login_tagline}</p>}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Email branding */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base"><Mail className="h-4 w-4 text-chart-2" /> Email branding</CardTitle>
+          <CardDescription>{EMAIL_HINT}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="brand-email-from">Sender display name</Label>
+            <Input id="brand-email-from" value={form.email_from_name} maxLength={80} disabled={!isAdmin}
+              placeholder="Cybernet HRM System" onChange={(e) => set("email_from_name", e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="brand-email-reply">Reply-to address</Label>
+            <Input id="brand-email-reply" type="email" value={form.email_reply_to} maxLength={160} disabled={!isAdmin}
+              placeholder="noreply@example.gov.gh" onChange={(e) => set("email_reply_to", e.target.value)} />
+          </div>
+          <div className="space-y-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-[auto,1fr] items-end gap-3">
+            <input type="color" aria-label="Email header color" value={hslToHex(form.email_header_color)} disabled={!isAdmin}
+              onChange={(e) => set("email_header_color", hexToHsl(e.target.value))}
+              className="h-10 w-14 rounded-md border bg-background p-1" />
+            <div className="space-y-1.5">
+              <Label htmlFor="brand-email-color">Email header color</Label>
+              <Input id="brand-email-color" value={form.email_header_color} disabled={!isAdmin}
+                placeholder="220 80% 18%" onChange={(e) => set("email_header_color", e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="brand-email-footer">Email footer text</Label>
+            <Textarea id="brand-email-footer" rows={2} value={form.email_footer_text} maxLength={300} disabled={!isAdmin}
+              placeholder="This is an automated message from the Cybernet HRM System."
+              onChange={(e) => set("email_footer_text", e.target.value)} />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="brand-email-signature">Email signature</Label>
+            <Textarea id="brand-email-signature" rows={2} value={form.email_signature} maxLength={300} disabled={!isAdmin}
+              placeholder="Administration Office" onChange={(e) => set("email_signature", e.target.value)} />
+          </div>
+          {/* Email preview */}
+          <div className="sm:col-span-2 rounded-lg border overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2" style={{ background: `hsl(${form.email_header_color})` }}>
+              {previews.email_logo_url
+                ? <img src={previews.email_logo_url} alt="" className="h-6 object-contain" />
+                : <span className="text-xs font-semibold text-white">{form.org_name} {form.system_label}</span>}
+            </div>
+            <div className="p-3 text-xs text-muted-foreground space-y-1">
+              <p className="text-foreground">Sample notification body.</p>
+              {form.email_signature && <p className="whitespace-pre-line">{form.email_signature}</p>}
+            </div>
+            <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground">
+              {form.email_footer_text || form.footer_text}
+            </div>
           </div>
         </CardContent>
       </Card>
