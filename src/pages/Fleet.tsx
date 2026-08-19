@@ -217,6 +217,13 @@ export default function Fleet() {
             <FleetImmobilizerTab vehicles={vehicles} canManage={canManage} />
           </TabsContent>
         )}
+
+        {canManage && (
+          <TabsContent value="gps-feed" className="mt-4">
+            <FleetGpsFeedTab vehicles={vehicles} canManage={canManage} isAdmin={isAdmin} />
+          </TabsContent>
+        )}
+
       </Tabs>
     </div>
   );
