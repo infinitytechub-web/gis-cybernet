@@ -242,6 +242,13 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                 {attendance.present} present · {attendance.late} late · {attendance.absent} absent ·{" "}
                 {attendance.excused} excused · {Math.max(attendance.strength - attendance.marked, 0)} unmarked
               </span>
+              <span className="inline-flex items-center gap-1">
+                <Hourglass className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                {service.average === null
+                  ? "Service not recorded"
+                  : `${service.average.toFixed(1)} yrs average service`}
+                {service.retiringSoon > 0 ? ` · ${service.retiringSoon} retiring within 2 yrs` : ""}
+              </span>
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
