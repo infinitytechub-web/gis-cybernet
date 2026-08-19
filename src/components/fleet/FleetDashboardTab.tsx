@@ -145,6 +145,26 @@ export function FleetDashboardTab({ canManage }: Props) {
     },
   });
 
+  // Assigned-unit lookup so every registered vehicle can be traced to its unit.
+  const unitsQuery = useQuery({
+    queryKey: ["fleet", "dashboard", "vehicle-units"],
+    enabled: canManage,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase
+        .from("fleet_vehicles")
+        .select("id, org_unit_id, org_units:org_unit_id (name, code)")
+        .limit(1000);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const row of (data ?? []) as any[]) {
+        const unit = row.org_units;
+        if (unit?.name) map[row.id] = unit.code ? `${unit.name} (${unit.code})` : unit.name;
+      }
+      return map;
+    },
+  });
+
+
   if (!canManage) {
     return (
       <Card>
@@ -369,10 +389,11 @@ export function FleetDashboardTab({ canManage }: Props) {
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[820px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Vehicle</TableHead>
+                    <TableHead>Assigned unit</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Uptime</TableHead>
                     <TableHead className="text-right">Hours online</TableHead>
@@ -389,6 +410,12 @@ export function FleetDashboardTab({ canManage }: Props) {
                         {v.registration_number}
                         {v.call_sign && <span className="ml-2 text-xs text-muted-foreground">{v.call_sign}</span>}
                       </TableCell>
+                      <TableCell className="text-xs">
+                        {unitsQuery.data?.[v.vehicle_id] ?? (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </TableCell>
+
                       <TableCell>
                         <Badge variant="outline">{VEHICLE_STATUS_LABELS[v.status] ?? v.status}</Badge>
                       </TableCell>
