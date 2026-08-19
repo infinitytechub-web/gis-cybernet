@@ -63,7 +63,8 @@ export default function UnitDashboard() {
   }, [requestedUnit, unitId, selectableUnits]);
 
   useEffect(() => {
-    if (unitId || requestedUnit || selectableUnits.length === 0) return;
+    if (unitId || selectableUnits.length === 0) return;
+    if (requestedUnit && selectableUnits.some((u) => u.id === requestedUnit)) return;
     const preferred = homeUnitId && selectableUnits.some((u) => u.id === homeUnitId)
       ? homeUnitId
       : selectableUnits[0].id;
