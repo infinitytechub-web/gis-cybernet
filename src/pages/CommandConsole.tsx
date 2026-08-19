@@ -23,10 +23,12 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
+import CommandDashboardTab from "@/components/command/CommandDashboardTab";
+import CyberIncidentsTab from "@/components/command/CyberIncidentsTab";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
   useCommandConsoleFeed, useBranchFilter, rollupByCommand,
