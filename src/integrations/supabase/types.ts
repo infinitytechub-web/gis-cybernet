@@ -3973,6 +3973,143 @@ export type Database = {
         }
         Relationships: []
       }
+      fuel_request_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          request_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_requests: {
+        Row: {
+          branch: string | null
+          created_at: string
+          estimated_cost_ghs: number | null
+          fuel_type: string
+          id: string
+          issued_at: string | null
+          issued_by: string | null
+          litres_issued: number | null
+          litres_requested: number
+          odometer_km: number | null
+          org_unit_id: string | null
+          purpose: string
+          request_number: string
+          requested_by: string | null
+          requested_by_name: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          status: string
+          updated_at: string
+          urgency: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          branch?: string | null
+          created_at?: string
+          estimated_cost_ghs?: number | null
+          fuel_type?: string
+          id?: string
+          issued_at?: string | null
+          issued_by?: string | null
+          litres_issued?: number | null
+          litres_requested: number
+          odometer_km?: number | null
+          org_unit_id?: string | null
+          purpose: string
+          request_number: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          branch?: string | null
+          created_at?: string
+          estimated_cost_ghs?: number | null
+          fuel_type?: string
+          id?: string
+          issued_at?: string | null
+          issued_by?: string | null
+          litres_issued?: number | null
+          litres_requested?: number
+          odometer_km?: number | null
+          org_unit_id?: string | null
+          purpose?: string
+          request_number?: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          status?: string
+          updated_at?: string
+          urgency?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_requests_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_requests_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ghana_districts: {
         Row: {
           category: string
@@ -11549,6 +11686,7 @@ export type Database = {
         Args: { _profile_id: string; _user_id: string }
         Returns: boolean
       }
+      can_approve_fuel_request: { Args: { _user_id: string }; Returns: boolean }
       can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_export_hrm: { Args: { _kind: string }; Returns: boolean }
       can_export_interlink_logs: {
@@ -11946,6 +12084,30 @@ export type Database = {
           registration_number: string
           vehicle_id: string
         }[]
+      }
+      fuel_request_create: {
+        Args: {
+          _branch?: string
+          _estimated_cost_ghs?: number
+          _fuel_type?: string
+          _litres: number
+          _odometer_km?: number
+          _org_unit_id?: string
+          _purpose: string
+          _urgency?: string
+          _vehicle_id: string
+        }
+        Returns: string
+      }
+      fuel_request_set_status: {
+        Args: {
+          _action: string
+          _litres_issued?: number
+          _note?: string
+          _odometer_km?: number
+          _request_id: string
+        }
+        Returns: string
       }
       generate_asset_tag: { Args: never; Returns: string }
       get_effective_attendance_window: {

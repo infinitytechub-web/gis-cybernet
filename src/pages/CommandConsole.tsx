@@ -23,13 +23,14 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Users, Building2,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Users, Building2, Fuel,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
 import CommandDashboardTab from "@/components/command/CommandDashboardTab";
 import CyberIncidentsTab from "@/components/command/CyberIncidentsTab";
 import ProcurementTab from "@/components/command/ProcurementTab";
+import { FuelRequestsTab } from "@/components/command/FuelRequestsTab";
 import PatrolLogTab from "@/components/command/PatrolLogTab";
 import PatrolPlanTab from "@/components/command/PatrolPlanTab";
 import UnitRosterTab from "@/components/command/UnitRosterTab";
@@ -306,6 +307,9 @@ export default function CommandConsole() {
             <TabsTrigger value="procurement">
               <ShoppingCart className="mr-1 h-4 w-4" aria-hidden="true" />Procurement
             </TabsTrigger>
+            <TabsTrigger value="fuel-requests">
+              <Fuel className="mr-1 h-4 w-4" aria-hidden="true" />Fuel requests
+            </TabsTrigger>
             <TabsTrigger value="status">
               <Gauge className="mr-1 h-4 w-4" aria-hidden="true" />Status dashboards
             </TabsTrigger>
@@ -350,6 +354,14 @@ export default function CommandConsole() {
 
         <TabsContent value="procurement" className="mt-4">
           <ProcurementTab />
+        </TabsContent>
+
+        {/* ── Fuel requests: raise → approve → issue → audit ──────────── */}
+        <TabsContent value="fuel-requests" className="mt-4">
+          <FuelRequestsTab
+            canApprove={isAdminOrSupervisor}
+            branchName={branch === "all" ? undefined : orgUnitPath(units, branch) || undefined}
+          />
         </TabsContent>
 
 

@@ -7,3 +7,4 @@
 - [Roster Clock In/Out](mem://features/roster-clock) — roster_clock_action RPC, shift-window late/early alerts, Clock column on staff roster
 - [Fleet Maintenance & Budgets](mem://features/fleet-maintenance-and-budgets) — Maintenance tab/card, patrol vehicle column, clock reason+photo, per-unit procurement budgets
 - [Fleet GPS Feed](mem://features/fleet-gps-feed) — /fleet GPS feed tab: show-once hashed tracker keys, fleet_feed_readiness live/stale/silent onboarding
+- [Fuel Requests](mem://features/fuel-requests) — Command console fuel approval chain + Fleet fuel consumption log with odometer economy
