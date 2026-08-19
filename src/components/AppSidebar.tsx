@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck
 } from "lucide-react";
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,7 +85,9 @@ const allStaffItems = [
 
 const logisticsItems = [
   { title: "Stores & Inventory", url: "/stores", icon: Package, iconColor: "text-amber-700 dark:text-amber-500" },
+  { title: "Fleet Management", url: "/fleet", icon: Truck, iconColor: "text-blue-700 dark:text-blue-400" },
 ];
+
 
 const financeItems = [
   { title: "Procurement Unit", url: "/procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400" },

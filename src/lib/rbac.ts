@@ -100,6 +100,8 @@ export const MODULES: ModuleDef[] = [
   { key: "misd", label: "MISD / CYBER", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/misd"] },
   { key: "health-lab", label: "Health Lab+", tier: "module", roles: [...COMMAND, "medical_officer"], paths: ["/health-lab"] },
   { key: "stores", label: "Stores & Inventory", tier: "module", roles: [...COMMAND, "storekeeper"], paths: ["/stores"] },
+  { key: "fleet", label: "Fleet Management", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "storekeeper"], paths: ["/fleet"] },
+
   { key: "procurement", label: "Procurement Unit", tier: "module", roles: [...COMMAND, "procurement_officer"], paths: ["/procurement"] },
 
   // ── Reporting & analytics ───────────────────────────────────────────────

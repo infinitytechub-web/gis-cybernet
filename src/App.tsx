@@ -71,6 +71,8 @@ const AdminConsole = lazy(() => import("./pages/AdminConsole"));
 const AdminAccessMatrix = lazy(() => import("./pages/AdminAccessMatrix"));
 const CommandRoleAudit = lazy(() => import("./pages/CommandRoleAudit"));
 const Stores = lazy(() => import("./pages/Stores"));
+const Fleet = lazy(() => import("./pages/Fleet"));
+
 const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
 const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
@@ -216,6 +218,8 @@ function App() {
           <Route path="/admin-access-matrix" element={<ProtectedRoute module="admin-access-matrix"><Layout><AdminAccessMatrix /></Layout></ProtectedRoute>} />
           <Route path="/command-role-audit" element={<ProtectedRoute module="command-role-audit"><Layout><CommandRoleAudit /></Layout></ProtectedRoute>} />
           <Route path="/stores" element={<ProtectedRoute module="stores"><Layout><Stores /></Layout></ProtectedRoute>} />
+          <Route path="/fleet" element={<ProtectedRoute module="fleet"><Layout><Fleet /></Layout></ProtectedRoute>} />
+
           <Route path="/holding" element={<ProtectedRoute module="detention"><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
           <Route path="/procurement" element={<ProtectedRoute module="procurement"><Layout><Procurement /></Layout></ProtectedRoute>} />
           <Route path="/misd" element={<ProtectedRoute module="misd"><Layout><Misd /></Layout></ProtectedRoute>} />

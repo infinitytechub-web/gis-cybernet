@@ -2922,6 +2922,497 @@ export type Database = {
         }
         Relationships: []
       }
+      fleet_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: Database["public"]["Enums"]["fleet_alert_type"]
+          created_at: string
+          fuel_level_pct: number | null
+          geofence_id: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          message: string
+          metadata: Json
+          occurred_at: string
+          raised_by: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["fleet_alert_severity"]
+          speed_kph: number | null
+          status: Database["public"]["Enums"]["fleet_alert_status"]
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: Database["public"]["Enums"]["fleet_alert_type"]
+          created_at?: string
+          fuel_level_pct?: number | null
+          geofence_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          message: string
+          metadata?: Json
+          occurred_at?: string
+          raised_by?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["fleet_alert_severity"]
+          speed_kph?: number | null
+          status?: Database["public"]["Enums"]["fleet_alert_status"]
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: Database["public"]["Enums"]["fleet_alert_type"]
+          created_at?: string
+          fuel_level_pct?: number | null
+          geofence_id?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          message?: string
+          metadata?: Json
+          occurred_at?: string
+          raised_by?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["fleet_alert_severity"]
+          speed_kph?: number | null
+          status?: Database["public"]["Enums"]["fleet_alert_status"]
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_alerts_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_geofences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_alerts_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_fuel_readings: {
+        Row: {
+          cost_ghs: number | null
+          created_at: string
+          delta_litres: number | null
+          event_type: Database["public"]["Enums"]["fleet_fuel_event"]
+          id: string
+          lat: number | null
+          level_pct: number | null
+          litres: number | null
+          lng: number | null
+          notes: string | null
+          odometer_km: number | null
+          recorded_at: string
+          recorded_by: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          cost_ghs?: number | null
+          created_at?: string
+          delta_litres?: number | null
+          event_type?: Database["public"]["Enums"]["fleet_fuel_event"]
+          id?: string
+          lat?: number | null
+          level_pct?: number | null
+          litres?: number | null
+          lng?: number | null
+          notes?: string | null
+          odometer_km?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          cost_ghs?: number | null
+          created_at?: string
+          delta_litres?: number | null
+          event_type?: Database["public"]["Enums"]["fleet_fuel_event"]
+          id?: string
+          lat?: number | null
+          level_pct?: number | null
+          litres?: number | null
+          lng?: number | null
+          notes?: string | null
+          odometer_km?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_fuel_readings_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_geofence_events: {
+        Row: {
+          alert_id: string | null
+          created_at: string
+          event_type: string
+          geofence_id: string
+          id: string
+          lat: number | null
+          lng: number | null
+          occurred_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          alert_id?: string | null
+          created_at?: string
+          event_type: string
+          geofence_id: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          occurred_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          alert_id?: string | null
+          created_at?: string
+          event_type?: string
+          geofence_id?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          occurred_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_geofence_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_geofence_events_geofence_id_fkey"
+            columns: ["geofence_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_geofences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_geofence_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_geofences: {
+        Row: {
+          active: boolean
+          center_lat: number | null
+          center_lng: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          kind: Database["public"]["Enums"]["fleet_geofence_kind"]
+          name: string
+          org_unit_id: string | null
+          polygon: Json | null
+          radius_m: number | null
+          severity: Database["public"]["Enums"]["fleet_alert_severity"]
+          trigger_on: Database["public"]["Enums"]["fleet_geofence_trigger"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          center_lat?: number | null
+          center_lng?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["fleet_geofence_kind"]
+          name: string
+          org_unit_id?: string | null
+          polygon?: Json | null
+          radius_m?: number | null
+          severity?: Database["public"]["Enums"]["fleet_alert_severity"]
+          trigger_on?: Database["public"]["Enums"]["fleet_geofence_trigger"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          center_lat?: number | null
+          center_lng?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["fleet_geofence_kind"]
+          name?: string
+          org_unit_id?: string | null
+          polygon?: Json | null
+          radius_m?: number | null
+          severity?: Database["public"]["Enums"]["fleet_alert_severity"]
+          trigger_on?: Database["public"]["Enums"]["fleet_geofence_trigger"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_geofences_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_ingest_keys: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          key_hash: string
+          label: string
+          last_used_at: string | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_hash: string
+          label: string
+          last_used_at?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_hash?: string
+          label?: string
+          last_used_at?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_ingest_keys_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_positions: {
+        Row: {
+          altitude_m: number | null
+          created_at: string
+          fuel_level_pct: number | null
+          heading: number | null
+          id: string
+          ignition: boolean | null
+          lat: number
+          lng: number
+          odometer_km: number | null
+          recorded_at: string
+          satellites: number | null
+          source: string
+          speed_kph: number | null
+          vehicle_id: string
+        }
+        Insert: {
+          altitude_m?: number | null
+          created_at?: string
+          fuel_level_pct?: number | null
+          heading?: number | null
+          id?: string
+          ignition?: boolean | null
+          lat: number
+          lng: number
+          odometer_km?: number | null
+          recorded_at?: string
+          satellites?: number | null
+          source?: string
+          speed_kph?: number | null
+          vehicle_id: string
+        }
+        Update: {
+          altitude_m?: number | null
+          created_at?: string
+          fuel_level_pct?: number | null
+          heading?: number | null
+          id?: string
+          ignition?: boolean | null
+          lat?: number
+          lng?: number
+          odometer_km?: number | null
+          recorded_at?: string
+          satellites?: number | null
+          source?: string
+          speed_kph?: number | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_positions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_vehicles: {
+        Row: {
+          assigned_driver_id: string | null
+          call_sign: string | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          device_id: string | null
+          fuel_capacity_litres: number | null
+          fuel_drop_threshold_pct: number
+          id: string
+          last_fuel_level_pct: number | null
+          last_heading: number | null
+          last_ignition: boolean | null
+          last_lat: number | null
+          last_lng: number | null
+          last_seen_at: string | null
+          last_speed_kph: number | null
+          low_fuel_threshold_pct: number
+          make: string | null
+          model: string | null
+          model_year: number | null
+          notes: string | null
+          odometer_km: number
+          org_unit_id: string | null
+          registration_number: string
+          speed_limit_kph: number
+          status: Database["public"]["Enums"]["fleet_vehicle_status"]
+          updated_at: string
+          vehicle_type: string
+        }
+        Insert: {
+          assigned_driver_id?: string | null
+          call_sign?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          device_id?: string | null
+          fuel_capacity_litres?: number | null
+          fuel_drop_threshold_pct?: number
+          id?: string
+          last_fuel_level_pct?: number | null
+          last_heading?: number | null
+          last_ignition?: boolean | null
+          last_lat?: number | null
+          last_lng?: number | null
+          last_seen_at?: string | null
+          last_speed_kph?: number | null
+          low_fuel_threshold_pct?: number
+          make?: string | null
+          model?: string | null
+          model_year?: number | null
+          notes?: string | null
+          odometer_km?: number
+          org_unit_id?: string | null
+          registration_number: string
+          speed_limit_kph?: number
+          status?: Database["public"]["Enums"]["fleet_vehicle_status"]
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Update: {
+          assigned_driver_id?: string | null
+          call_sign?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          device_id?: string | null
+          fuel_capacity_litres?: number | null
+          fuel_drop_threshold_pct?: number
+          id?: string
+          last_fuel_level_pct?: number | null
+          last_heading?: number | null
+          last_ignition?: boolean | null
+          last_lat?: number | null
+          last_lng?: number | null
+          last_seen_at?: string | null
+          last_speed_kph?: number | null
+          low_fuel_threshold_pct?: number
+          make?: string | null
+          model?: string | null
+          model_year?: number | null
+          notes?: string | null
+          odometer_km?: number
+          org_unit_id?: string | null
+          registration_number?: string
+          speed_limit_kph?: number
+          status?: Database["public"]["Enums"]["fleet_vehicle_status"]
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_vehicles_assigned_driver_id_fkey"
+            columns: ["assigned_driver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_vehicles_assigned_driver_id_fkey"
+            columns: ["assigned_driver_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_vehicles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_vehicles_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forced_signouts: {
         Row: {
           block_id: string | null
@@ -10014,6 +10505,7 @@ export type Database = {
       }
       can_manage_appraisals: { Args: { _uid: string }; Returns: boolean }
       can_manage_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_fleet: { Args: { _user_id: string }; Returns: boolean }
       can_manage_org_unit: {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
@@ -10190,6 +10682,44 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: undefined
       }
+      fleet_distance_m: {
+        Args: { _lat1: number; _lat2: number; _lng1: number; _lng2: number }
+        Returns: number
+      }
+      fleet_flag_offline_devices: {
+        Args: { _minutes?: number }
+        Returns: number
+      }
+      fleet_geofence_contains: {
+        Args: {
+          _geofence: Database["public"]["Tables"]["fleet_geofences"]["Row"]
+          _lat: number
+          _lng: number
+        }
+        Returns: boolean
+      }
+      fleet_point_in_polygon: {
+        Args: { _lat: number; _lng: number; _polygon: Json }
+        Returns: boolean
+      }
+      fleet_raise_panic: {
+        Args: {
+          _lat?: number
+          _lng?: number
+          _note?: string
+          _vehicle_id: string
+        }
+        Returns: string
+      }
+      fleet_set_alert_status: {
+        Args: {
+          _alert_id: string
+          _notes?: string
+          _status: Database["public"]["Enums"]["fleet_alert_status"]
+        }
+        Returns: undefined
+      }
+      fleet_summary: { Args: never; Returns: Json }
       generate_asset_tag: { Args: never; Returns: string }
       get_effective_attendance_window: {
         Args: { _shift_id: string }
@@ -10816,6 +11346,26 @@ export type Database = {
         | "ip_cidr"
         | "asn"
         | "waf_pattern"
+      fleet_alert_severity: "info" | "warning" | "critical"
+      fleet_alert_status: "new" | "acknowledged" | "resolved" | "dismissed"
+      fleet_alert_type:
+        | "panic"
+        | "geofence_enter"
+        | "geofence_exit"
+        | "speeding"
+        | "fuel_drop"
+        | "fuel_low"
+        | "device_offline"
+        | "ignition_on"
+        | "harsh_driving"
+      fleet_fuel_event: "reading" | "refuel" | "drain"
+      fleet_geofence_kind: "circle" | "polygon"
+      fleet_geofence_trigger: "enter" | "exit" | "both"
+      fleet_vehicle_status:
+        | "active"
+        | "maintenance"
+        | "grounded"
+        | "decommissioned"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
       org_unit_type:
@@ -11026,6 +11576,28 @@ export const Constants = {
         "ip_cidr",
         "asn",
         "waf_pattern",
+      ],
+      fleet_alert_severity: ["info", "warning", "critical"],
+      fleet_alert_status: ["new", "acknowledged", "resolved", "dismissed"],
+      fleet_alert_type: [
+        "panic",
+        "geofence_enter",
+        "geofence_exit",
+        "speeding",
+        "fuel_drop",
+        "fuel_low",
+        "device_offline",
+        "ignition_on",
+        "harsh_driving",
+      ],
+      fleet_fuel_event: ["reading", "refuel", "drain"],
+      fleet_geofence_kind: ["circle", "polygon"],
+      fleet_geofence_trigger: ["enter", "exit", "both"],
+      fleet_vehicle_status: [
+        "active",
+        "maintenance",
+        "grounded",
+        "decommissioned",
       ],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
