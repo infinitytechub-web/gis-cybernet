@@ -101,6 +101,7 @@ const adminItems = [
   { title: "Profile Change Approvals", url: "/staff-approvals/profile-changes", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Shift Rotation Approvals", url: "/shift-rotation-approvals", icon: ShieldCheck, iconColor: "text-secondary" },
   { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },
   { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Command Role Audit", url: "/command-role-audit", icon: History, iconColor: "text-primary" },
   { title: "Role Assignments", url: "/role-assignments", icon: UserCog, iconColor: "text-amber-700 dark:text-amber-300" },
