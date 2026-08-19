@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,6 +82,7 @@ export default function VisaApplications() {
     mutationFn: async () => {
       const payload = {
         ...form,
+        phone: assertContactPhoneList(form.phone, "Telephone"),
         entry_date: form.entry_date || null,
         exit_date: form.exit_date || null,
         date_of_birth: form.date_of_birth || null,
@@ -256,7 +258,7 @@ export default function VisaApplications() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>Entry Date</Label><DateInput  value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
                 <div><Label>Exit Date</Label><DateInput  value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
               </div>

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
+import { ContactPhoneInput } from "@/components/ui/contact-phone-input";
 
 export type ContactEntry = {
   id?: string;
@@ -39,6 +40,8 @@ interface ListProps {
   className?: string;
   /** Enforce Ghana mobile validation (MTN / Telecel / AirtelTigo). */
   ghana?: boolean;
+  /** Ghana rules for local/+233 numbers, sanity-checked foreign numbers allowed. */
+  ghanaAware?: boolean;
 }
 
 type Props = StructuredProps | ListProps;
@@ -120,7 +123,7 @@ function StructuredContacts({ value, onChange, className }: StructuredProps) {
   );
 }
 
-function ListContacts({ value, onChange, placeholder, className, ghana }: ListProps) {
+function ListContacts({ value, onChange, placeholder, className, ghana, ghanaAware }: ListProps) {
   // Keep empty entries so users can add multiple slots and fill them in any order.
   // Only trim/collapse on persistence (handled by callers when storing).
   const items = React.useMemo(() => {
@@ -152,6 +155,10 @@ function ListContacts({ value, onChange, placeholder, className, ghana }: ListPr
           {ghana ? (
             <div className="flex-1">
               <GhanaPhoneInput value={v} onChange={(next) => update(idx, next)} compact />
+            </div>
+          ) : ghanaAware ? (
+            <div className="flex-1">
+              <ContactPhoneInput value={v} onChange={(next) => update(idx, next)} compact />
             </div>
           ) : (
             <Input

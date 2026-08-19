@@ -15,3 +15,27 @@ Enforcement layers:
 
 Detainee/next-of-kin foreign numbers are intentionally NOT Ghana-restricted (detention_records.phone, next_of_kin_phone).
 Tests: `src/test/ghana-phone.test.ts`.
+
+## Contact forms (biodata) — Ghana-strict, international-tolerant
+
+Front Desk / Processing applicants and detainees can be foreign nationals, so those
+fields use the *contact* validator instead of the strict staff one:
+
+- Client: `validateContactPhone` / `assertContactPhoneList` (`src/lib/ghana-phone.ts`),
+  UI component `ContactPhoneInput`, and `<MultiContactInput mode="list" ghanaAware />`.
+- Edge functions: `validateContactPhone` / `assertContactPhoneList` in `supabase/functions/_shared/ghana-phone.ts`.
+- SQL: `gh_phone_is_foreign_dialled`, `gh_phone_contact_canonical`,
+  `gh_phone_contact_canonical_list`, and the generic BEFORE INSERT/UPDATE trigger
+  `gh_phone_guard_contact_columns(<col>, ...)`.
+
+Rules: local or +233 numbers must pass the full Ghana check (10 digits, licensed
+MTN/Telecel/AirtelTigo prefix, not fabricated); an explicit foreign dialling code is
+accepted when it has 8–15 digits and is not a repeated/sequential pattern. Stored
+canonically (`0XXXXXXXXX` for Ghana, `+<digits>` for foreign).
+
+Trigger-guarded columns: `detention_records(phone, next_of_kin_phone)`,
+`detention_bail_records(bailee_phone, surety_phone)`, `permits(phone)`,
+`visa_applications(phone)`, `visa_extensions(phone)`, `passport_applications(phone)`,
+`official_applications(phone)`, `enquiry_applications(phone)` — plus the existing
+strict guards on `profiles`, `profile_contacts`, host phones, suppliers, vendors,
+visitor log and `app_settings.contact_phone`.

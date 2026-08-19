@@ -10299,6 +10299,18 @@ export type Database = {
       }
       get_security_threat_summary: { Args: never; Returns: Json }
       get_user_department_id: { Args: { _user_id: string }; Returns: string }
+      gh_phone_contact_canonical: {
+        Args: { _input: string; _label: string }
+        Returns: string
+      }
+      gh_phone_contact_canonical_list: {
+        Args: { _input: string; _label: string }
+        Returns: string
+      }
+      gh_phone_is_foreign_dialled: {
+        Args: { _input: string }
+        Returns: boolean
+      }
       gh_phone_is_suspicious: { Args: { _input: string }; Returns: boolean }
       gh_phone_is_valid: { Args: { _input: string }; Returns: boolean }
       gh_phone_network: { Args: { _input: string }; Returns: string }

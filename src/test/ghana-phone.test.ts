@@ -7,6 +7,9 @@ import {
   isValidGhanaPhone,
   isSuspiciousGhanaPhone,
   assertGhanaPhoneList,
+  validateContactPhone,
+  isValidContactPhone,
+  assertContactPhoneList,
 } from "@/lib/ghana-phone";
 
 describe("Ghana telephone validation", () => {
@@ -62,5 +65,33 @@ describe("Ghana telephone validation", () => {
     expect(() => assertGhanaPhoneList("", "Phone", true)).toThrow();
     expect(() => assertGhanaPhoneList("0221234567")).toThrow();
     expect(() => assertGhanaPhoneList("0241111111")).toThrow();
+  });
+});
+
+describe("contact phone validation (Ghana-strict, international-tolerant)", () => {
+  it("accepts genuine Ghana numbers and canonicalises them", () => {
+    expect(validateContactPhone("020 326 9678")).toMatchObject({ valid: true, kind: "ghana", canonical: "0203269678" });
+    expect(validateContactPhone("+233 24 856 3902")).toMatchObject({ valid: true, kind: "ghana", canonical: "0248563902" });
+  });
+
+  it("rejects unlicensed prefixes, wrong lengths and forged Ghana patterns", () => {
+    expect(isValidContactPhone("0211234567")).toBe(false);
+    expect(isValidContactPhone("02003269678")).toBe(false);
+    expect(isValidContactPhone("0241111111")).toBe(false);
+    expect(isValidContactPhone("0241234567")).toBe(false);
+  });
+
+  it("accepts sanity-checked foreign numbers for non-Ghanaian applicants", () => {
+    expect(validateContactPhone("+44 7700 900731")).toMatchObject({ valid: true, kind: "international", canonical: "+447700900731" });
+    expect(isValidContactPhone("+2348012345670")).toBe(true);
+    expect(isValidContactPhone("+1111111111")).toBe(false);
+    expect(isValidContactPhone("+44 77")).toBe(false);
+  });
+
+  it("validates comma-separated lists and reports every bad entry", () => {
+    expect(assertContactPhoneList("020 326 9678, +44 7700 900731")).toBe("0203269678, +447700900731");
+    expect(() => assertContactPhoneList("0211234567", "Telephone")).toThrow(/Telephone/);
+    expect(assertContactPhoneList("", "Telephone")).toBe("");
+    expect(() => assertContactPhoneList("", "Telephone", true)).toThrow(/required/);
   });
 });

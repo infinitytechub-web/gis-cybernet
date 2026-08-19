@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { assertGhanaPhoneList } from "@/lib/ghana-phone";
+import { assertGhanaPhoneList, assertContactPhoneList } from "@/lib/ghana-phone";
+import { ContactPhoneInput } from "@/components/ui/contact-phone-input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
@@ -545,7 +546,11 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
     mutationFn: async () => {
       const problem = validateDetaineeForm(form);
       if (problem) throw new Error(problem);
-      const payload: any = { ...form };
+      const phones = {
+        phone: assertContactPhoneList(form.phone, "Phone"),
+        next_of_kin_phone: assertContactPhoneList(form.next_of_kin_phone, "Next of Kin (NoK) Phone"),
+      };
+      const payload: any = { ...form, ...phones };
       if (canApprove) {
         payload.statement_approved_by = approver.id;
         payload.statement_approved_by_name = approver.label;
@@ -582,7 +587,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
                   <SelectContent>{["Single","Married","Divorced","Widowed","Separated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
+              <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
               <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
               <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
               <div><Label>ID Type</Label>
@@ -594,7 +599,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
               <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
               <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
               <div><Label>Next of Kin (NoK)</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
-              <div><Label>Next of Kin (NoK) Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK) Phone</Label><ContactPhoneInput value={form.next_of_kin_phone} onChange={(v) => setForm(p => ({ ...p, next_of_kin_phone: v }))} compact /></div>
               <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
             </div>
           </div>
@@ -665,6 +670,10 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
     mutationFn: async () => {
       const problem = validateDetaineeForm(form);
       if (problem) throw new Error(problem);
+      const phones = {
+        phone: assertContactPhoneList(form.phone, "Phone"),
+        next_of_kin_phone: assertContactPhoneList(form.next_of_kin_phone, "Next of Kin (NoK) Phone"),
+      };
       let photo_url: string | null = null;
       if (photoFile) {
         const path = `${Date.now()}-${photoFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
@@ -672,7 +681,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
         if (upErr) throw upErr;
         photo_url = path;
       }
-      const payload: any = { ...form, photo_url, created_by: userId };
+      const payload: any = { ...form, ...phones, photo_url, created_by: userId };
       if (canApprove && approver.id) {
         payload.statement_approved_by = approver.id;
         payload.statement_approved_by_name = approver.label;
@@ -736,7 +745,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
                   <SelectContent>{["Single","Married","Divorced","Widowed","Separated"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
+              <div className="md:col-span-2"><Label>Phone(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} /></div>
               <div><Label>Nationality</Label><CountryCombobox value={form.nationality} onValueChange={v => setForm(p => ({ ...p, nationality: v }))} /></div>
               <div><Label>Country of Origin</Label><CountryCombobox value={form.country_of_origin} onValueChange={v => setForm(p => ({ ...p, country_of_origin: v }))} /></div>
               <div><Label>ID Type</Label>
@@ -748,7 +757,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div className="col-span-2"><Label>ID Number</Label><Input value={form.id_number} onChange={e => setForm(p => ({ ...p, id_number: e.target.value }))} /></div>
               <div className="col-span-3"><Label>Home Address</Label><Input value={form.home_address} onChange={e => setForm(p => ({ ...p, home_address: e.target.value }))} /></div>
               <div><Label>Next of Kin (NoK)</Label><Input value={form.next_of_kin} onChange={e => setForm(p => ({ ...p, next_of_kin: e.target.value }))} /></div>
-              <div><Label>Next of Kin (NoK) Phone</Label><Input value={form.next_of_kin_phone} onChange={e => setForm(p => ({ ...p, next_of_kin_phone: e.target.value }))} /></div>
+              <div><Label>Next of Kin (NoK) Phone</Label><ContactPhoneInput value={form.next_of_kin_phone} onChange={(v) => setForm(p => ({ ...p, next_of_kin_phone: v }))} compact /></div>
               <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={e => setForm(p => ({ ...p, emergency_contact: e.target.value }))} /></div>
             </div>
             <div>

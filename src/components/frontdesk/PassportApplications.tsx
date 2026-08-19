@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -83,7 +84,7 @@ export default function PassportApplications() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { ...form, processed_by: user?.id };
+      const payload = { ...form, phone: assertContactPhoneList(form.phone, "Telephone"), processed_by: user?.id };
 
       let previousStatus: string | null = null;
       if (editId) {
@@ -247,7 +248,7 @@ export default function PassportApplications() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
                 <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
                 <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>

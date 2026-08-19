@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { assertContactPhoneList } from "@/lib/ghana-phone";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,6 +82,7 @@ export default function EnquiryApplications() {
       const payload = {
         ...form,
         date_of_birth: form.date_of_birth || null,
+        phone: assertContactPhoneList(form.phone, "Telephone"),
         processed_by: user?.id,
       };
       let previousStatus: string | null = null;
@@ -209,7 +211,7 @@ export default function EnquiryApplications() {
                     <SelectContent><SelectItem value="single">Single</SelectItem><SelectItem value="married">Married</SelectItem><SelectItem value="divorced">Divorced</SelectItem><SelectItem value="widowed">Widowed</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-2"><Label>Telephone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="md:col-span-2"><Label>Telephone(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
               </div>
               <div><Label>Home Address</Label><Textarea value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">
