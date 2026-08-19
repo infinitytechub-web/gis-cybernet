@@ -42,6 +42,7 @@ import {
   ROSTER_ASSIGNABLE_ROLES, KEY_APPOINTMENTS, type RosterMember,
 } from "@/hooks/useStaffRoster";
 import { useRosterClock, validateClockPhoto } from "@/hooks/useRosterClock";
+import { RosterClockInForm } from "@/components/command/RosterClockInForm";
 
 const STATUS_CLASS: Record<string, string> = {
   active: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
@@ -221,8 +222,26 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
     }
   }
 
+  /** Rows the signed-in officer may clock, and their own row when on roster. */
+  const clockable = useMemo(() => scoped.filter(canClock), [scoped, canManageRoles, user?.id]);
+  const selfMember = useMemo(
+    () => scoped.find((r) => r.user_id && user?.id && r.user_id === user.id) ?? null,
+    [scoped, user?.id],
+  );
+
   return (
     <div className="space-y-4">
+      {/* ── Clock-in form: marks today's attendance ───────────────────────── */}
+      {(clockable.length > 0 || selfMember) && (
+        <RosterClockInForm
+          clockable={clockable}
+          canClockOthers={canManageRoles}
+          selfMember={selfMember}
+          summary={attendance}
+        />
+      )}
+
+
       {/* ── Key appointments: filled or vacant ───────────────────────────── */}
       {!compact && (
         <Card>
