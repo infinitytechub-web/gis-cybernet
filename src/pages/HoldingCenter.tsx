@@ -39,35 +39,23 @@ import { format, formatDistanceToNow, differenceInHours, differenceInDays, subDa
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
 import { SelectGroup, SelectLabel } from "@/components/ui/select";
 import { DateInput } from "@/components/ui/date-input";
+import { StatusWorkflowControl, StatusHistoryList } from "@/components/shared/StatusWorkflowControl";
+import { statusLabelFor, statusMeta, statusOptions } from "@/lib/status-workflows";
 
 
 const PIE_COLORS = ["hsl(var(--primary))", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6"];
-const STATUS_COLORS: Record<string, string> = {
-  in_custody: "bg-rose-100 text-rose-800 dark:bg-rose-950/40",
-  bail: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40",
-  released: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40",
-  repatriated: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
-  deported: "bg-purple-100 text-purple-800 dark:bg-purple-950/40",
-  transferred: "bg-blue-100 text-blue-800 dark:bg-blue-950/40",
-  court: "bg-amber-100 text-amber-800 dark:bg-amber-950/40",
-  escaped: "bg-red-200 text-red-900 dark:bg-red-950/60",
-};
 /**
- * Custody status labels. Legacy rows stored the value `deported`; the module now
- * uses `repatriated` and both render as "Repatriated" everywhere in the UI,
- * reports and exports.
+ * Custody status colours + labels come from the shared workflow registry
+ * (src/lib/status-workflows.ts), so the table, detail sheet, analytics,
+ * reports and exports always agree. Legacy rows stored `deported`; both that
+ * and `repatriated` render as "Repatriated".
  */
-const STATUS_LABELS: Record<string, string> = {
-  in_custody: "In Custody",
-  bail: "Bail",
-  released: "Released",
-  repatriated: "Repatriated",
-  deported: "Repatriated",
-  transferred: "Transferred",
-  court: "Court",
-  escaped: "Escaped",
-};
-const statusLabel = (s?: string | null) => (s ? STATUS_LABELS[s] ?? s.replace(/_/g, " ") : "—");
+const STATUS_COLORS: Record<string, string> = Object.fromEntries(
+  statusOptions("detention_records")
+    .concat([{ value: "deported", label: "Repatriated", badgeClass: statusMeta("detention_records", "deported").badgeClass, dotClass: "" }])
+    .map((o) => [o.value, o.badgeClass]),
+);
+const statusLabel = (s?: string | null) => statusLabelFor("detention_records", s);
 const ARCHIVE_REVIEW_LABELS: Record<string, string> = {
   pending: "Pending review",
   approved: "Approved",
@@ -79,13 +67,9 @@ const ARCHIVE_REVIEW_COLORS: Record<string, string> = {
   denied: "bg-red-100 text-red-900 dark:bg-red-950/50 dark:text-red-200",
 };
 const ARCHIVE_STATUSES = ["released", "bail", "repatriated", "deported", "transferred", "court", "escaped"];
-const RELEASE_OUTCOMES = [
-  { value: "released", label: "Released" },
-  { value: "bail", label: "Bail Granted" },
-  { value: "repatriated", label: "Repatriated" },
-  { value: "transferred", label: "Transferred" },
-  { value: "court", label: "Sent to Court" },
-];
+const RELEASE_OUTCOMES = statusOptions("detention_records")
+  .filter((o) => o.value !== "in_custody")
+  .map((o) => ({ value: o.value, label: o.value === "bail" ? "Bail Granted" : o.value === "court" ? "Sent to Court" : o.label }));
 /** Referral option lists live in detention-options.ts (shared with the bail form). */
 
 const RISK_COLORS: Record<string, string> = {
@@ -298,7 +282,16 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
                     <TableCell>{r.crime_type}</TableCell>
                     <TableCell className="font-mono">{r.cell_number || "—"}</TableCell>
                     <TableCell><Badge className={RISK_COLORS[r.risk_level]}>{r.risk_level}</Badge></TableCell>
-                    <TableCell><Badge className={STATUS_COLORS[r.status]}>{statusLabel(r.status)}</Badge></TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <StatusWorkflowControl
+                        entity="detention_records"
+                        recordId={r.id}
+                        status={r.status}
+                        canChange={canCommand}
+                        compact
+                        invalidateKeys={[["detention_records"], ["detention-detail", r.id]]}
+                      />
+                    </TableCell>
                     <TableCell className="text-xs whitespace-nowrap">{formatDistanceToNow(new Date(r.intake_at), { addSuffix: false })}</TableCell>
                     {isArchive && (
                       <TableCell className="whitespace-nowrap">
@@ -846,10 +839,16 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
   const release = useMutation({
     mutationFn: async ({ outcome, reason }: { outcome: string; reason: string }) => {
       if (!canCommand) throw new Error("Only command can release");
-      const { error } = await supabase.from("detention_records").update({ status: outcome, released_at: new Date().toISOString(), released_by: userId, release_reason: reason }).eq("id", record.id);
+      if (!reason.trim()) throw new Error("A reason is required when a detainee leaves custody");
+      const { error } = await supabase.rpc("set_record_status", {
+        _entity: "detention_records",
+        _id: record.id,
+        _status: outcome,
+        _reason: reason.trim(),
+      });
       if (error) throw error;
     },
-    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success(`Detainee marked as ${statusLabel(vars.outcome)}`); onClose(); },
+    onSuccess: (_d, vars) => { qc.invalidateQueries({ queryKey: ["detention_records"] }); qc.invalidateQueries({ queryKey: ["detention-detail", record.id] }); qc.invalidateQueries({ queryKey: ["status-history", "detention_records", record.id] }); toast.success(`Detainee marked as ${statusLabel(vars.outcome)}`); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -865,7 +864,14 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
             <div className="flex-1 text-left">
               <div>{record.first_name} {record.last_name} {record.alias && <span className="text-sm text-muted-foreground">aka "{record.alias}"</span>}</div>
               <div className="flex gap-1.5 mt-1">
-                <Badge className={STATUS_COLORS[record.status]}>{statusLabel(record.status)}</Badge>
+                <StatusWorkflowControl
+                  entity="detention_records"
+                  recordId={record.id}
+                  status={record.status}
+                  canChange={canCommand}
+                  compact
+                  invalidateKeys={[["detention_records"], ["detention-detail", record.id]]}
+                />
                 <Badge className={RISK_COLORS[record.risk_level]}>{record.risk_level} risk</Badge>
                 {record.medical_alerts && <Badge variant="outline" className="border-rose-400"><Heart className="h-3 w-3 mr-1 text-rose-500" />Medical</Badge>}
               </div>
@@ -912,6 +918,11 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
               <Field label="Next of Kin (NoK)" value={record.next_of_kin} />
               <Field label="Next of Kin (NoK) Phone" value={record.next_of_kin_phone} />
               <Field label="Emergency Contact" value={record.emergency_contact} full />
+            </Section>
+            <Section title="Status audit trail">
+              <div className="col-span-2">
+                <StatusHistoryList entity="detention_records" recordId={record.id} />
+              </div>
             </Section>
             {record.status === "in_custody" && canCommand && <ReleaseAction onRelease={(outcome, reason) => release.mutate({ outcome, reason })} pending={release.isPending} />}
           </TabsContent>
