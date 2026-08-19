@@ -1,7 +1,7 @@
 /**
  * District patrol areas.
  *
- * Every Ghanaian district (all 261 MMDAs, official ADM2 boundaries) is held in
+ * Every Ghanaian district (official ADM2 boundaries, 260 districts) is held in
  * `ghana_districts` as a reference outline. Commands activate the districts they
  * actually patrol, which copies the boundary into `fleet_geofences` so uptime
  * and zone-compliance reporting is measured against real administrative areas
