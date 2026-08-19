@@ -103,7 +103,7 @@ export default function Processing() {
   }
 
   const showApprovals = !!role && APPROVALS_ROLES.includes(role);
-  const colsClass = showApprovals ? "grid w-full grid-cols-5" : "grid w-full grid-cols-4";
+  const colsClass = showApprovals ? "grid w-full grid-cols-6" : "grid w-full grid-cols-5";
 
   return (
     <div className="space-y-6">
