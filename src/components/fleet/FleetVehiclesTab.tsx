@@ -25,6 +25,7 @@ import {
   type FleetVehicle, type VehicleStatus,
 } from "@/lib/fleet";
 import { FleetVehicleImportDialog } from "@/components/fleet/FleetVehicleImportDialog";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
 
 /** Relative "last heard from" label for tracker check-ins. */
 function lastSeenLabel(at: string | null): string {
