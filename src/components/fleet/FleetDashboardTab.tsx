@@ -393,6 +393,7 @@ export function FleetDashboardTab({ canManage }: Props) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Vehicle</TableHead>
+                    <TableHead>Assigned unit</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Uptime</TableHead>
                     <TableHead className="text-right">Hours online</TableHead>
@@ -409,6 +410,12 @@ export function FleetDashboardTab({ canManage }: Props) {
                         {v.registration_number}
                         {v.call_sign && <span className="ml-2 text-xs text-muted-foreground">{v.call_sign}</span>}
                       </TableCell>
+                      <TableCell className="text-xs">
+                        {unitsQuery.data?.[v.vehicle_id] ?? (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </TableCell>
+
                       <TableCell>
                         <Badge variant="outline">{VEHICLE_STATUS_LABELS[v.status] ?? v.status}</Badge>
                       </TableCell>
