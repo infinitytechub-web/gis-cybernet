@@ -41,10 +41,16 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DateInput } from "@/components/ui/date-input";
+import { StatusWorkflowControl } from "@/components/shared/StatusWorkflowControl";
+import { statusLabelFor, statusMeta, statusOptions } from "@/lib/status-workflows";
 
 const ALLOWED_ROLES = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"];
 const SEVERITY_COLORS: Record<string, string> = { low: "bg-green-100 text-green-800", medium: "bg-yellow-100 text-yellow-800", high: "bg-orange-100 text-orange-800", critical: "bg-red-100 text-red-800" };
-const STATUS_COLORS: Record<string, string> = { open: "bg-blue-100 text-blue-800", in_progress: "bg-amber-100 text-amber-800", closed: "bg-muted text-muted-foreground", resolved: "bg-green-100 text-green-800" };
+/** Status colours/labels come from the shared workflow registry (src/lib/status-workflows.ts). */
+const STATUS_COLORS: Record<string, string> = Object.fromEntries(
+  statusOptions("operations").map((o) => [o.value, o.badgeClass]),
+);
+const opStatusLabel = (s?: string | null) => statusLabelFor("operations", s);
 const PIE_COLORS = ["#3b82f6", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#ec4899", "#06b6d4"];
 
 const OPERATION_TYPES = [
@@ -58,7 +64,7 @@ const OPERATION_TYPES = [
 ];
 
 const SEVERITIES = ["low", "medium", "high", "critical"];
-const STATUSES = ["open", "in_progress", "closed", "resolved"];
+const STATUSES = statusOptions("operations").map((o) => o.value);
 
 type OperationRecord = {
   id: string;
@@ -310,7 +316,7 @@ function OperationForm({ form, setForm, onSubmit, onCancel, isPending, submitLab
           <Label>Status *</Label>
           <Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>)}</SelectContent>
+            <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{opStatusLabel(s)}</SelectItem>)}</SelectContent>
           </Select>
         </div>
       </div>
@@ -645,7 +651,7 @@ export default function Operations() {
   const statusBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
     filtered.forEach(op => { map[op.status] = (map[op.status] || 0) + 1; });
-    return Object.entries(map).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
+    return Object.entries(map).map(([name, value]) => ({ name: opStatusLabel(name), value }));
   }, [filtered]);
 
   const trendData = useMemo(() => {
@@ -749,7 +755,7 @@ export default function Operations() {
       op.severity,
       String(op.suspects_count),
       String(op.arrests_count),
-      op.status.replace(/_/g, " "),
+      opStatusLabel(op.status),
       op.outcome || "—",
     ]);
     return {
@@ -929,7 +935,7 @@ export default function Operations() {
                     {recentOps.map((op, idx) => (
                       <div key={op.id} className="flex gap-3">
                         <div className="flex flex-col items-center">
-                          <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${op.status === "open" ? "bg-blue-500" : op.status === "in_progress" ? "bg-amber-500" : op.status === "resolved" ? "bg-green-500" : "bg-muted-foreground"}`} />
+                          <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${statusMeta("operations", op.status).dotClass}`} />
                           {idx < recentOps.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
                         </div>
                         <div className="flex-1 pb-4">
@@ -943,7 +949,7 @@ export default function Operations() {
                           <div className="flex gap-2 mt-1">
                             <span className="text-[10px] text-muted-foreground">{op.suspects_count} suspects</span>
                             <span className="text-[10px] text-muted-foreground">{op.arrests_count} arrests</span>
-                            <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[op.status] || ""}`}>{op.status.replace(/_/g, " ")}</Badge>
+                            <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[op.status] || ""}`}>{opStatusLabel(op.status)}</Badge>
                           </div>
                         </div>
                       </div>
@@ -1090,7 +1096,7 @@ export default function Operations() {
               <SelectTrigger className="w-[120px]"><SelectValue placeholder="Status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace(/_/g, " ")}</SelectItem>)}
+                {STATUSES.map(s => <SelectItem key={s} value={s}>{opStatusLabel(s)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filterOfficer} onValueChange={setFilterOfficer}>
@@ -1202,7 +1208,15 @@ export default function Operations() {
                         <TableCell><Badge className={SEVERITY_COLORS[op.severity] || ""}>{op.severity}</Badge></TableCell>
                         <TableCell className="text-right">{op.suspects_count}</TableCell>
                         <TableCell className="text-right font-medium">{op.arrests_count}</TableCell>
-                        <TableCell><Badge className={STATUS_COLORS[op.status] || ""}>{op.status.replace(/_/g, " ")}</Badge></TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <StatusWorkflowControl
+                            entity="operations"
+                            recordId={op.id}
+                            status={op.status}
+                            canChange={canManage}
+                            invalidateKeys={[["operations-data"], ["dashboard-operations"]]}
+                          />
+                        </TableCell>
                         <TableCell className="text-center">
                           <OperationRowActions
                             op={op as unknown as OpRecord}
