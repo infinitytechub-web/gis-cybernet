@@ -29,6 +29,8 @@ import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
 import CommandDashboardTab from "@/components/command/CommandDashboardTab";
 import CyberIncidentsTab from "@/components/command/CyberIncidentsTab";
+import ProcurementTab from "@/components/command/ProcurementTab";
+
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
   useCommandConsoleFeed, useBranchFilter, rollupByCommand,
