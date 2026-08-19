@@ -132,6 +132,8 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
           label="Staff attendance today"
           value={isLoading ? "…" : pct(totals.attendance)}
           hint={`${totals.present} of ${totals.staff} posted staff checked in`}
+          to="/command-console?tab=roster"
+          toLabel="Open staff roster"
         />
         <Kpi
           icon={Truck}
