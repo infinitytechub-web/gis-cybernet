@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Users, Truck, Fuel, Siren, ShieldAlert } from "lucide-react";
+import { Users, Truck, Fuel, Siren, ShieldAlert, ShoppingCart, ClipboardCheck, PackageCheck } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
 import { ORG_UNIT_TYPE_LABELS, type OrgUnitType } from "@/lib/org-hierarchy";
 import {
@@ -22,6 +22,10 @@ import {
 
 function pct(v: number | null) {
   return v === null ? "—" : `${v}%`;
+}
+
+function money(v: number) {
+  return `GHS ${Number(v || 0).toLocaleString("en-GH", { maximumFractionDigits: 0 })}`;
 }
 
 function toneFor(v: number | null) {
@@ -198,7 +202,7 @@ export default function CommandDashboardTab({ branchName }: { branchName?: strin
                   </TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                       No commands in your reach yet.
                     </TableCell>
                   </TableRow>
