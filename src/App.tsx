@@ -13,6 +13,7 @@ import { lazy, Suspense } from "react";
 // login page must not pay that cost.
 const Layout = lazy(() => import("@/components/Layout").then(m => ({ default: m.Layout })));
 import { useForcedSignoutWatcher } from "@/hooks/useForcedSignoutWatcher";
+import { useSessionRegistry } from "@/hooks/useSessionRegistry";
 import { useAuth } from "@/hooks/useAuth";
 // IdleWarningDialog pulls in Radix AlertDialog + Progress. Defer it until a
 // user is actually signed in — the unauthenticated /login route never needs it.
@@ -40,6 +41,7 @@ const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
+const SessionManagement = lazy(() => import("./pages/SessionManagement"));
 const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
@@ -131,6 +133,7 @@ function PageLoader() {
 
 function ForcedSignoutMount() {
   useForcedSignoutWatcher();
+  useSessionRegistry();
   return null;
 }
 
@@ -238,6 +241,7 @@ function App() {
           <Route path="/recycle-bin" element={<ProtectedRoute module="recycle-bin"><Layout><RecycleBin /></Layout></ProtectedRoute>} />
           <Route path="/announcements/retention" element={<ProtectedRoute module="retention-policy"><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
           <Route path="/interlink" element={<ProtectedRoute module="interlink"><Layout><Interlink /></Layout></ProtectedRoute>} />
+          <Route path="/admin/sessions" element={<ProtectedRoute module="session-management"><Layout><SessionManagement /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
           <Route path="/commands" element={<ProtectedRoute module="commands"><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/command/:slug" element={<ProtectedRoute module="commands"><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />

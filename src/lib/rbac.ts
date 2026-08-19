@@ -130,6 +130,7 @@ export const MODULES: ModuleDef[] = [
 
   // ── Administration, security & audit ────────────────────────────────────
   { key: "admin-console", label: "Admin Console", tier: "command", roles: COMMAND, paths: ["/admin"] },
+  { key: "session-management", label: "Session Management", tier: "command", roles: COMMAND, paths: ["/admin/sessions"] },
   { key: "admin-access-matrix", label: "Admin Access Matrix", tier: "command", roles: COMMAND, paths: ["/admin-access-matrix"] },
   { key: "admin-shift-rotations", label: "Shift Rotations Administration", tier: "command", roles: COMMAND, paths: ["/admin/shift-rotations"] },
   { key: "audit-log", label: "Audit Log Dashboard", tier: "command", roles: COMMAND, paths: ["/audit-log"] },
