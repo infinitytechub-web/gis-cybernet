@@ -476,6 +476,11 @@ function SubmittedPatrolLogsCard({ days }: { days: number }) {
     },
     staleTime: 300_000,
   });
+  // Only fleet-authorised staff may annotate a patrol's vehicle usage; RLS is
+  // the real gate, this just hides an action that would always fail.
+  const { can } = useRbac();
+  const canRecord = can("fleet");
+  const [editing, setEditing] = useState<PatrolLog | null>(null);
   const submitted = logs.filter((l) => (l.status ?? "").toLowerCase() !== "draft");
   const rows = submitted.slice(0, 15);
   const personnel = submitted.reduce((s, l) => s + (l.personnel_count ?? 0), 0);
