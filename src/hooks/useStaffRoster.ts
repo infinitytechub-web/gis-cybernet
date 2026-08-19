@@ -33,6 +33,8 @@ export interface RosterMember {
   /** Today's attendance status (present/late/absent/excused) or null if unmarked. */
   attendance_today: string | null;
   attendance_check_in: string | null;
+  /** Today's clock-out time, null while the officer is still on duty. */
+  attendance_check_out: string | null;
   /** Days marked present or late in the last 30 days, and days recorded. */
   attendance_present_30d: number;
   attendance_days_30d: number;
