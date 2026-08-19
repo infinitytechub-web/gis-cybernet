@@ -32,20 +32,29 @@ export function buildDateDisplay(): string {
   return `${two(d.getDate())}/${two(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
+/**
+ * Pinned release date (DDMMYYYY) for the published build identifier.
+ * Kept explicit so the advertised build ID stays stable between rebuilds.
+ */
+const RELEASE_DATE_COMPACT = "18082026";
+
 /** DDMMYYYY of the build date (compact form). */
 export function buildDateCompact(): string {
   const d = buildDate();
   return `${two(d.getDate())}${two(d.getMonth() + 1)}${d.getFullYear()}`;
 }
 
-/** Compact identifier, e.g. ITI18082026v1.0.0 */
+/** Compact identifier, e.g. ITI180820261.0.0 */
 export function buildId(): string {
-  return `${PREFIX}${buildDateCompact()}v${APP_VERSION}`;
+  return `${PREFIX}${RELEASE_DATE_COMPACT}${APP_VERSION}`;
 }
 
-/** Readable identifier, e.g. "ITI - 18/08/2026 - v1.0.0" */
+/** Readable identifier, e.g. "ITI - 18/08/2026 - 1.0.0" */
 export function buildLabel(): string {
-  return `${PREFIX} - ${buildDateDisplay()} - v${APP_VERSION}`;
+  const dd = RELEASE_DATE_COMPACT.slice(0, 2);
+  const mm = RELEASE_DATE_COMPACT.slice(2, 4);
+  const yyyy = RELEASE_DATE_COMPACT.slice(4);
+  return `${PREFIX} - ${dd}/${mm}/${yyyy} - ${APP_VERSION}`;
 }
 
 /** Full tooltip line with the exact build timestamp. */

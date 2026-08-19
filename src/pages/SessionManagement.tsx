@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { getStoredSessionKey } from "@/hooks/useSessionRegistry";
 import { formatDateTime } from "@/lib/date-format";
+import { buildId, buildTooltip } from "@/lib/build-version";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -241,7 +242,13 @@ export default function SessionManagement() {
         title="Session Management"
         subtitle="Monitor active sessions and sign devices out. Every action is written to an immutable audit trail."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="rounded-md border border-border/60 bg-muted/40 px-2 py-1 font-mono text-xs text-muted-foreground"
+              title={buildTooltip()}
+            >
+              Build {buildId()}
+            </span>
             <Button variant="secondary" size="sm" onClick={() => { void sessionsQuery.refetch(); void auditQuery.refetch(); }}>
               <RefreshCw className="mr-2 h-4 w-4" /> Refresh
             </Button>
