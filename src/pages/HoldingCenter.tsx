@@ -546,12 +546,11 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
     mutationFn: async () => {
       const problem = validateDetaineeForm(form);
       if (problem) throw new Error(problem);
-      form = {
-        ...form,
+      const phones = {
         phone: assertContactPhoneList(form.phone, "Phone"),
         next_of_kin_phone: assertContactPhoneList(form.next_of_kin_phone, "Next of Kin (NoK) Phone"),
       };
-      const payload: any = { ...form };
+      const payload: any = { ...form, ...phones };
       if (canApprove) {
         payload.statement_approved_by = approver.id;
         payload.statement_approved_by_name = approver.label;
@@ -671,8 +670,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
     mutationFn: async () => {
       const problem = validateDetaineeForm(form);
       if (problem) throw new Error(problem);
-      form = {
-        ...form,
+      const phones = {
         phone: assertContactPhoneList(form.phone, "Phone"),
         next_of_kin_phone: assertContactPhoneList(form.next_of_kin_phone, "Next of Kin (NoK) Phone"),
       };
@@ -683,7 +681,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
         if (upErr) throw upErr;
         photo_url = path;
       }
-      const payload: any = { ...form, photo_url, created_by: userId };
+      const payload: any = { ...form, ...phones, photo_url, created_by: userId };
       if (canApprove && approver.id) {
         payload.statement_approved_by = approver.id;
         payload.statement_approved_by_name = approver.label;
