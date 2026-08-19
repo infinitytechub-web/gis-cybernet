@@ -17,10 +17,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
-import { Activity, Fuel, MapPinned, BellRing, Gauge, AlertTriangle, CalendarClock } from "lucide-react";
+import { Activity, Fuel, MapPinned, BellRing, Gauge, AlertTriangle, CalendarClock, ClipboardList } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatDate } from "@/lib/date-format";
 import { usePatrolPlans, isPlanOpen } from "@/hooks/usePatrolPlans";
+import { usePatrolLogs } from "@/hooks/usePatrolLogs";
 import {
   usePatrolGpsActivity,
   PATROL_GPS_MATCH_LABELS,
