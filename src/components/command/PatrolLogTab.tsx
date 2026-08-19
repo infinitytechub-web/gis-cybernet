@@ -60,6 +60,9 @@ const emptyForm = () => ({
   patrol_leader_id: "",
   personnel_count: 1,
   vehicle_id: "",
+  odometer_start_km: "",
+  odometer_end_km: "",
+  fuel_used_litres: "",
   route_summary: "",
   incidents_count: 0,
   incidents: "",
@@ -126,6 +129,9 @@ export default function PatrolLogTab({
       patrol_leader_id: l.patrol_leader_id ?? "",
       personnel_count: l.personnel_count ?? 0,
       vehicle_id: l.vehicle_id ?? "",
+      odometer_start_km: l.odometer_start_km != null ? String(l.odometer_start_km) : "",
+      odometer_end_km: l.odometer_end_km != null ? String(l.odometer_end_km) : "",
+      fuel_used_litres: l.fuel_used_litres != null ? String(l.fuel_used_litres) : "",
       route_summary: l.route_summary ?? "",
       incidents_count: l.incidents_count ?? 0,
       incidents: l.incidents ?? "",
@@ -151,6 +157,17 @@ export default function PatrolLogTab({
       toast.error("Patrol start time is required");
       return;
     }
+    const num = (v: string) => (v.trim() === "" ? null : Number(v));
+    const odoStart = num(form.odometer_start_km);
+    const odoEnd = num(form.odometer_end_km);
+    if (!form.vehicle_id && (odoStart != null || odoEnd != null || num(form.fuel_used_litres) != null)) {
+      toast.error("Attach a vehicle before recording odometer or fuel usage");
+      return;
+    }
+    if (odoStart != null && odoEnd != null && odoEnd < odoStart) {
+      toast.error("Odometer end reading cannot be lower than the start reading");
+      return;
+    }
     const payload = {
       patrol_date: form.patrol_date,
       start_time: form.start_time,
@@ -161,6 +178,9 @@ export default function PatrolLogTab({
       patrol_leader_id: form.patrol_leader_id || null,
       personnel_count: Number(form.personnel_count) || 0,
       vehicle_id: form.vehicle_id || null,
+      odometer_start_km: form.vehicle_id ? odoStart : null,
+      odometer_end_km: form.vehicle_id ? odoEnd : null,
+      fuel_used_litres: form.vehicle_id ? num(form.fuel_used_litres) : null,
       route_summary: form.route_summary || null,
       incidents_count: Number(form.incidents_count) || 0,
       incidents: form.incidents || null,
@@ -453,6 +473,53 @@ export default function PatrolLogTab({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="patrol-odo-start">Odometer start (km)</Label>
+              <Input
+                id="patrol-odo-start"
+                type="number"
+                min={0}
+                step="0.1"
+                disabled={!form.vehicle_id}
+                value={form.odometer_start_km}
+                onChange={(e) => setForm((f) => ({ ...f, odometer_start_km: e.target.value }))}
+                placeholder={form.vehicle_id ? "e.g. 48210" : "Attach a vehicle first"}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="patrol-odo-end">Odometer end (km)</Label>
+              <Input
+                id="patrol-odo-end"
+                type="number"
+                min={0}
+                step="0.1"
+                disabled={!form.vehicle_id}
+                value={form.odometer_end_km}
+                onChange={(e) => setForm((f) => ({ ...f, odometer_end_km: e.target.value }))}
+                placeholder={form.vehicle_id ? "e.g. 48297" : "Attach a vehicle first"}
+              />
+              {form.odometer_start_km && form.odometer_end_km && (
+                <p className="text-xs text-muted-foreground">
+                  Distance: {Math.max(Number(form.odometer_end_km) - Number(form.odometer_start_km), 0).toFixed(1)} km
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="patrol-fuel">Fuel used (litres)</Label>
+              <Input
+                id="patrol-fuel"
+                type="number"
+                min={0}
+                step="0.1"
+                disabled={!form.vehicle_id}
+                value={form.fuel_used_litres}
+                onChange={(e) => setForm((f) => ({ ...f, fuel_used_litres: e.target.value }))}
+                placeholder={form.vehicle_id ? "e.g. 12.5" : "Attach a vehicle first"}
+              />
             </div>
 
             <div className="space-y-1.5">
