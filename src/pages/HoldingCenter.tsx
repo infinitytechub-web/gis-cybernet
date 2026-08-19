@@ -342,7 +342,7 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
                             </Button>
                           </>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => printDetentionRecord(r)} title="Print">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => printDetentionRecord(r, { role: role as any })} title="Print">
                           <Printer className="h-3.5 w-3.5" />
                         </Button>
                         {canModify && (
