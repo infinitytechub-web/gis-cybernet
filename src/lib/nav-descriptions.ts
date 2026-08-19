@@ -79,9 +79,24 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/interlink": "Dispatch, schedule and audit inter-agency correspondence.",
   "/commands": "Confidentiality commands and their assigned officers.",
   "/recycle-bin": "Recover or permanently remove deleted records.",
+  "/settings?area=security": "Authentication, MFA, lockouts, firewall and security audit settings.",
+  "/settings?area=system": "Organization info, branding, integrations, backup and maintenance.",
+
+  // Parent (click-to-expand) menu labels.
+  "My Duty": "Your own shift tracking and in-cab console.",
+  "Attendance & Shifts": "Daily attendance marks and office shift windows.",
+  "Rosters & Schedules": "Duty roster and guard schedule builders.",
+  "Leave & Holidays": "Leave and pass requests plus the holiday calendar.",
+  "Postings & Transfers": "Raise postings and transfers, and review their history.",
+  "Appraisals & Approvals": "Performance appraisals and requests awaiting your decision.",
+  Approvals: "Staff, account, profile and rotation requests awaiting a decision.",
+  "Access & Roles": "Roles, command authority, access matrix and sessions.",
+  "Security & Audit": "Audit trails, sensitive access and network blocks.",
+  "Data & Imports": "Bulk imports and system performance monitoring.",
+  Configuration: "Announcements, branding, security and system settings.",
 };
 
-/** Description for a route, or undefined when none is defined. */
+/** Description for a route path or parent menu label, or undefined when none is defined. */
 export function navDescription(url: string): string | undefined {
   return NAV_DESCRIPTIONS[url];
 }
