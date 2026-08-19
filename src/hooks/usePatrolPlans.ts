@@ -145,11 +145,12 @@ export function useUpdatePatrolPlan() {
   return useMutation({
     mutationFn: async (input: { id: string } & Partial<PatrolPlanInput>) => {
       const { id, ...patch } = input;
-      const row: Record<string, unknown> = { ...patch };
-      if (patch.assigned_to) {
-        row.assigned_by = user?.id ?? null;
-        row.assigned_at = new Date().toISOString();
-      }
+      const row = {
+        ...patch,
+        ...(patch.assigned_to
+          ? { assigned_by: user?.id ?? null, assigned_at: new Date().toISOString() }
+          : {}),
+      };
       const { error } = await supabase.from("patrol_plans").update(row).eq("id", id);
       if (error) throw error;
     },
