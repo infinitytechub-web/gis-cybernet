@@ -152,8 +152,14 @@ export default function Fleet() {
                 <ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" />Immobiliser
               </TabsTrigger>
             )}
+            {canManage && (
+              <TabsTrigger value="gps-feed">
+                <Satellite className="mr-1 h-4 w-4" aria-hidden="true" />GPS feed
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
+
 
         <TabsContent value="live" className="mt-4">
           <FleetLiveTab
