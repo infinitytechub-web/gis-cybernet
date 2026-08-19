@@ -468,7 +468,7 @@ export default function Staff() {
               getData={() => ({
                 title: "Staff / Employee Report",
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"],
+                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone", "Date Joined Service", "Years of Service"],
                 rows: buildStaffExportRows(),
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
