@@ -664,22 +664,24 @@ function VehicleUsageCard({ days }: { days: number }) {
   const totalKm = rows.reduce((s, r) => s + Number(r.patrol_distance_km ?? 0), 0);
   const totalLitres = rows.reduce((s, r) => s + Number(r.refuel_litres ?? 0), 0);
   const totalCost = rows.reduce((s, r) => s + Number(r.refuel_cost_ghs ?? 0), 0);
+  const totalHours = rows.reduce((s, r) => s + Number(r.patrol_hours ?? 0), 0);
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Gauge className="h-4 w-4 text-primary" aria-hidden="true" />
-          Vehicle odometer log &amp; fuel tracking
+          Vehicle odometer, fuel &amp; hours used
         </CardTitle>
         <CardDescription>
-          Patrol mileage and refuelling over the last {days} days · {totalKm.toFixed(1)} km patrolled ·{" "}
-          {totalLitres.toFixed(1)} L refuelled · GHS {totalCost.toFixed(2)} fuel spend. Readings come from the
-          odometer fields on each{" "}
+          Usage over the last {days} days · {totalKm.toFixed(1)} km patrolled · {totalHours.toFixed(1)} h on
+          patrol · {totalLitres.toFixed(1)} L refuelled · GHS {totalCost.toFixed(2)} fuel spend. Readings come
+          from the odometer, fuel and start/end times on each{" "}
           <Link to="/command-console?tab=patrols" className="underline">patrol log</Link> and from{" "}
           <Link to="/fleet?tab=fuel" className="underline">fuel entries</Link>.
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         {isLoading && <p className="text-sm text-muted-foreground">Loading vehicle usage…</p>}
         {isError && <p className="text-sm text-destructive">Vehicle usage could not be loaded.</p>}
