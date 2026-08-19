@@ -11280,6 +11280,13 @@ export type Database = {
         Args: { _lat: number; _lng: number; _polygon: Json }
         Returns: boolean
       }
+      fleet_polygon_points: {
+        Args: { _polygon: Json }
+        Returns: {
+          lat: number
+          lng: number
+        }[]
+      }
       fleet_raise_panic: {
         Args: {
           _lat?: number
