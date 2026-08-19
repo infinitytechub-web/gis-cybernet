@@ -150,7 +150,7 @@ export function PatrolVehicleLogDialog({ log, onClose }: Props) {
             {selected && (
               <p className="text-xs text-muted-foreground">
                 Vehicle odometer on record: {Number(selected.odometer_km ?? 0).toLocaleString()} km
-                {selected.fuel_level_pct != null ? ` · fuel ${selected.fuel_level_pct}%` : ""}
+                {selected.last_fuel_level_pct != null ? ` · fuel ${selected.last_fuel_level_pct}%` : ""}
               </p>
             )}
           </div>
