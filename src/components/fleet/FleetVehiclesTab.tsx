@@ -24,6 +24,7 @@ import {
   motionState, MOTION_CLASSES, MOTION_LABELS, vehicleLabel, isLowFuel,
   type FleetVehicle, type VehicleStatus,
 } from "@/lib/fleet";
+import { FleetVehicleImportDialog } from "@/components/fleet/FleetVehicleImportDialog";
 
 /** Relative "last heard from" label for tracker check-ins. */
 function lastSeenLabel(at: string | null): string {
@@ -238,6 +239,7 @@ export function FleetVehiclesTab({ vehicles, canManage, isAdmin }: Props) {
               ))}
             </SelectContent>
           </Select>
+          {canManage && <FleetVehicleImportDialog />}
           {canManage && (
             <Button onClick={startCreate}>
               <Plus className="mr-1 h-4 w-4" aria-hidden="true" /> Add vehicle
