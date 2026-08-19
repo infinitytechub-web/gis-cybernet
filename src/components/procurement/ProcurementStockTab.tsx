@@ -95,7 +95,9 @@ export default function ProcurementStockTab() {
     const csv = [head, ...rows]
       .map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(","))
       .join("\n");
-    triggerDownload(new Blob([csv], { type: "text/csv;charset=utf-8" }), "procurement-inventory.csv");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    triggerDownload(url, "procurement-inventory.csv");
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   };
 
   return (
