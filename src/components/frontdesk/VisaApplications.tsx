@@ -256,7 +256,7 @@ export default function VisaApplications() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>Entry Date</Label><DateInput  value={form.entry_date} onChange={(e) => setForm({ ...form, entry_date: e.target.value })} /></div>
                 <div><Label>Exit Date</Label><DateInput  value={form.exit_date} onChange={(e) => setForm({ ...form, exit_date: e.target.value })} /></div>
               </div>

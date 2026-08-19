@@ -263,7 +263,7 @@ export default function VisaExtensions() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div className="col-span-2"><Label>Nationality *</Label><CountryCombobox value={form.nationality} onValueChange={(v) => setForm({ ...form, nationality: v })} required /></div>
                 <div><Label>Permit Type *</Label>
                   <Select value={form.permit_type} onValueChange={(v) => setForm({ ...form, permit_type: v })}>

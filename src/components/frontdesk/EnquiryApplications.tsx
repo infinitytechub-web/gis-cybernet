@@ -209,7 +209,7 @@ export default function EnquiryApplications() {
                     <SelectContent><SelectItem value="single">Single</SelectItem><SelectItem value="married">Married</SelectItem><SelectItem value="divorced">Divorced</SelectItem><SelectItem value="widowed">Widowed</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div className="md:col-span-2"><Label>Telephone(s)</Label><MultiContactInput mode="list" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
+                <div className="md:col-span-2"><Label>Telephone(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
               </div>
               <div><Label>Home Address</Label><Textarea value={form.home_address} onChange={(e) => setForm({ ...form, home_address: e.target.value })} rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">
