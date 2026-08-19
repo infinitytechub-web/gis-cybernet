@@ -22,6 +22,8 @@ import {
   Plus, TrendingUp, AlertCircle, CheckCircle2, Clock, X, Trash2, FileBarChart,
 } from "lucide-react";
 import { ProcurementReportsTab } from "@/components/procurement/ProcurementReportsTab";
+import ProcurementStockTab from "@/components/procurement/ProcurementStockTab";
+import ProcurementTab from "@/components/command/ProcurementTab";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid,
   PieChart, Pie, Cell, Legend, LineChart, Line,
@@ -197,7 +199,9 @@ export default function Procurement() {
         <ScrollArea className="w-full whitespace-nowrap">
           <TabsList className="inline-flex bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/50 p-1">
             <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><TrendingUp className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Analytics</TabsTrigger>
-            <TabsTrigger value="requisitions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Requisitions</TabsTrigger>
+            <TabsTrigger value="requests" className="data-[state=active]:bg-emerald-700 data-[state=active]:text-white"><Plus className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Requests</TabsTrigger>
+           <TabsTrigger value="stock" className="data-[state=active]:bg-lime-700 data-[state=active]:text-white"><Package className="h-4 w-4 mr-1 text-lime-700 dark:text-lime-400" />Inventory</TabsTrigger>
+           <TabsTrigger value="requisitions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Requisitions</TabsTrigger>
             <TabsTrigger value="rfqs" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-indigo-700 dark:text-indigo-400" />RFQs</TabsTrigger>
             <TabsTrigger value="pos" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"><ShoppingCart className="h-4 w-4 mr-1 text-amber-700 dark:text-amber-400" />Purchase Orders</TabsTrigger>
             <TabsTrigger value="invoices" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"><Receipt className="h-4 w-4 mr-1 text-violet-700 dark:text-violet-400" />Invoices</TabsTrigger>
@@ -278,6 +282,8 @@ export default function Procurement() {
           </div>
         </TabsContent>
 
+        <TabsContent value="requests"><ProcurementTab /></TabsContent>
+        <TabsContent value="stock"><ProcurementStockTab /></TabsContent>
         <TabsContent value="requisitions"><RequisitionsTab requisitions={requisitions} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="rfqs"><RfqsTab rfqs={rfqs} vendors={vendors} canManage={canManage} userId={user?.id} /></TabsContent>
         <TabsContent value="pos"><PosTab pos={pos} vendors={vendors} canManage={canManage} userId={user?.id} /></TabsContent>
