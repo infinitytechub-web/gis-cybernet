@@ -18,6 +18,8 @@ import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { validateGhanaPhoneList } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { DateInput } from "@/components/ui/date-input";
+import { BiometricSettings } from "@/components/settings/BiometricSettings";
+
 
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
