@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
+import { Shield, Users, Eye, EyeOff, KeyRound, ArrowLeft, Fingerprint, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/ForgotPasswordDialog";
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { getMyClientIp } from "@/lib/client-ip";
 import { getTrustedMac } from "@/lib/trusted-mac";
+import { biometricLogin, biometricsAvailable } from "@/lib/webauthn";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
@@ -38,6 +39,8 @@ export default function Login() {
   const [mfaStep, setMfaStep] = useState<null | "totp">(null);
   const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
+  const [canBiometric, setCanBiometric] = useState(false);
+  const [bioLoading, setBioLoading] = useState(false);
   const { signIn, signOut, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -331,6 +334,34 @@ export default function Login() {
       <Button type="submit" className={`w-full ${buttonClass || ""}`} disabled={isLoading} aria-busy={isLoading}>
         {isLoading ? "Signing in..." : (buttonText || "Sign In")}
       </Button>
+      {canBiometric && (
+        <>
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-card px-2 text-xs text-muted-foreground">or</span>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            onClick={handleBiometricLogin}
+            disabled={bioLoading || isLoading}
+            aria-busy={bioLoading}
+          >
+            {bioLoading
+              ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              : <Fingerprint className="h-4 w-4" aria-hidden="true" />}
+            {bioLoading ? "Waiting for your device…" : "Sign in with fingerprint or Face ID"}
+          </Button>
+          <p className="text-center text-[11px] text-muted-foreground">
+            Uses this device's secure biometrics. No fingerprint or face data leaves your device.
+          </p>
+        </>
+      )}
       <div className="text-center space-y-1">
         <ForgotPasswordDialog />
         <div>
