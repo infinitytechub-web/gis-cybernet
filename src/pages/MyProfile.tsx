@@ -316,6 +316,9 @@ export default function MyProfile() {
           )}
         </CardContent>
       </Card>
+
+      <BiometricSettings />
     </div>
+
   );
 }
