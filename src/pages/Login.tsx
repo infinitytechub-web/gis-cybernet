@@ -231,6 +231,76 @@ export default function Login() {
     setPassword("");
   }, [signOut]);
 
+  // ---- Biometric (WebAuthn / FIDO2 passkey) sign-in ---------------------
+  // The device performs the fingerprint / Face ID check locally; only a signed
+  // assertion reaches the server. Falls back to the password form whenever the
+  // device, browser or account cannot use biometrics.
+  useEffect(() => {
+    void biometricsAvailable().then(setCanBiometric);
+  }, []);
+
+  const handleBiometricLogin = useCallback(async () => {
+    const trimmedId = staffId.trim();
+    if (!trimmedId) {
+      toast({
+        title: "Enter your ID first",
+        description: "Type your Staff/Admin ID, then use biometric sign-in.",
+      });
+      return;
+    }
+    setBioLoading(true);
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+    try {
+      const fp = await getDeviceFingerprint().catch(() => null);
+      const result = await biometricLogin(trimmedId, fp);
+
+      if (result.status === "not_enrolled") {
+        toast({
+          title: "No biometric device registered",
+          description: "Sign in with your password, then enrol this device under My Profile → Biometric sign-in.",
+        });
+        return;
+      }
+      if (result.status === "cancelled") return;
+
+      const { error } = await supabase.auth.verifyOtp({
+        type: "magiclink",
+        token_hash: result.tokenHash,
+      });
+      if (error) throw error;
+
+      await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
+
+      if (result.mfaSatisfied) {
+        const ip = await getMyClientIp();
+        void supabase.rpc("record_mfa_challenge", {
+          _outcome: "success",
+          _factor_id: "webauthn",
+          _staff_id: trimmedId,
+          _ip_address: ip,
+          _device_fingerprint: fp,
+          _user_agent: ua,
+        });
+      }
+
+      const { data: { user: freshUser } } = await supabase.auth.getUser();
+      if (freshUser?.user_metadata?.must_change_password === true) {
+        navigate("/change-password", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Biometric sign-in failed",
+        description: e?.message || "Use your password instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setBioLoading(false);
+    }
+  }, [staffId, navigate, toast]);
+
+
   const renderLoginForm = (idLabel: string, idPlaceholder: string, buttonClass?: string, buttonText?: string, mode: "staff" | "admin" = "staff") => {
     const idFieldId = `login-${mode}-id`;
     const pwFieldId = `login-${mode}-password`;
