@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Unlock, ShieldCheck, Briefcase, Palette } from "lucide-react";
+import { Shield, Users, Database, Activity, UserPlus, Grid3X3, Settings2, KeyRound, Search, ShieldAlert, Trash2, History, Link2, Network, Layers, DatabaseBackup, MailCheck, Fingerprint, Unlock, ShieldCheck, Briefcase, Palette } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
@@ -34,6 +34,7 @@ import { HrmExportDlpPanel } from "@/components/settings/HrmExportDlpPanel";
 import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
+import { BiometricAdminPanel } from "@/components/security/BiometricAdminPanel";
 import { toast } from "sonner";
 import { Navigate, useSearchParams } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -105,6 +106,7 @@ const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; ar
   { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
   { value: "2fa", label: "2FA", icon: KeyRound, iconClass: "text-chart-5", area: "security" },
+  { value: "biometrics", label: "Biometrics", icon: Fingerprint, iconClass: "text-primary", area: "security" },
   { value: "mfa-recovery", label: "MFA Recovery", icon: KeyRound, iconClass: "text-amber-600", area: "security" },
   { value: "lockouts", label: "Lockouts", icon: ShieldAlert, iconClass: "text-destructive", area: "security" },
   { value: "locked-accounts", label: "Locked Accounts", icon: Unlock, iconClass: "text-emerald-600", area: "security" },
@@ -191,6 +193,7 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
+        <TabsContent value="biometrics"><BiometricAdminPanel /></TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
         <TabsContent value="rotation" className="space-y-4">
           <Card>
