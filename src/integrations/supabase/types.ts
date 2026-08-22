@@ -310,18 +310,29 @@ export type Database = {
           footer_text: string
           header_text: string | null
           id: string
+          lockout_auto_unlock_minutes: number | null
+          lockout_threshold: number
+          lockout_window_minutes: number
           login_background_url: string | null
           login_logo_url: string | null
           login_tagline: string | null
           logo_url: string | null
+          max_concurrent_sessions: number
+          mfa_grace_days: number
           mfa_required_roles: string[]
           min_password_length: number
           org_name: string
+          password_min_strength: number
+          password_require_lower: boolean
+          password_require_number: boolean
+          password_require_symbol: boolean
+          password_require_upper: boolean
           primary_color: string
           secondary_color: string
           security_scan_enabled: boolean
           security_scan_frequency: string
           security_scan_last_run_at: string | null
+          session_absolute_hours: number
           system_description: string | null
           system_label: string
           updated_at: string
@@ -357,18 +368,29 @@ export type Database = {
           footer_text?: string
           header_text?: string | null
           id?: string
+          lockout_auto_unlock_minutes?: number | null
+          lockout_threshold?: number
+          lockout_window_minutes?: number
           login_background_url?: string | null
           login_logo_url?: string | null
           login_tagline?: string | null
           logo_url?: string | null
+          max_concurrent_sessions?: number
+          mfa_grace_days?: number
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
+          password_min_strength?: number
+          password_require_lower?: boolean
+          password_require_number?: boolean
+          password_require_symbol?: boolean
+          password_require_upper?: boolean
           primary_color?: string
           secondary_color?: string
           security_scan_enabled?: boolean
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
+          session_absolute_hours?: number
           system_description?: string | null
           system_label?: string
           updated_at?: string
@@ -404,18 +426,29 @@ export type Database = {
           footer_text?: string
           header_text?: string | null
           id?: string
+          lockout_auto_unlock_minutes?: number | null
+          lockout_threshold?: number
+          lockout_window_minutes?: number
           login_background_url?: string | null
           login_logo_url?: string | null
           login_tagline?: string | null
           logo_url?: string | null
+          max_concurrent_sessions?: number
+          mfa_grace_days?: number
           mfa_required_roles?: string[]
           min_password_length?: number
           org_name?: string
+          password_min_strength?: number
+          password_require_lower?: boolean
+          password_require_number?: boolean
+          password_require_symbol?: boolean
+          password_require_upper?: boolean
           primary_color?: string
           secondary_color?: string
           security_scan_enabled?: boolean
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
+          session_absolute_hours?: number
           system_description?: string | null
           system_label?: string
           updated_at?: string
@@ -11831,6 +11864,73 @@ export type Database = {
       }
     }
     Functions: {
+      access_policy: {
+        Args: never
+        Returns: {
+          accent_color: string
+          allow_self_registration: boolean
+          announcement_file_cleanup_last_run_at: string | null
+          announcement_file_cleanup_mode: string
+          announcement_file_retention_days_department: number
+          announcement_file_retention_days_global: number
+          announcement_file_retention_enabled: boolean
+          auto_logout_minutes: number
+          auto_logout_warning_seconds: number
+          biometric_login_enabled: boolean
+          biometric_stepup_required: boolean
+          company_name: string
+          contact_address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          contact_website: string | null
+          created_at: string
+          dashboard_logo_url: string | null
+          email_footer_text: string | null
+          email_from_name: string | null
+          email_header_color: string | null
+          email_logo_url: string | null
+          email_reply_to: string | null
+          email_signature: string | null
+          enable_system_health_widget: boolean
+          enforce_password_change: boolean
+          favicon_url: string | null
+          footer_text: string
+          header_text: string | null
+          id: string
+          lockout_auto_unlock_minutes: number | null
+          lockout_threshold: number
+          lockout_window_minutes: number
+          login_background_url: string | null
+          login_logo_url: string | null
+          login_tagline: string | null
+          logo_url: string | null
+          max_concurrent_sessions: number
+          mfa_grace_days: number
+          mfa_required_roles: string[]
+          min_password_length: number
+          org_name: string
+          password_min_strength: number
+          password_require_lower: boolean
+          password_require_number: boolean
+          password_require_symbol: boolean
+          password_require_upper: boolean
+          primary_color: string
+          secondary_color: string
+          security_scan_enabled: boolean
+          security_scan_frequency: string
+          security_scan_last_run_at: string | null
+          session_absolute_hours: number
+          system_description: string | null
+          system_label: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_purge_shift_connections: { Args: never; Returns: number }
       admin_quick_search: { Args: { _q: string }; Returns: Json }
       admin_recovery_consume_backup_code: {
@@ -12366,6 +12466,7 @@ export type Database = {
         }[]
       }
       get_misd_department_id: { Args: never; Returns: string }
+      get_password_policy: { Args: never; Returns: Json }
       get_profile_protected_fields: {
         Args: { _user_id: string }
         Returns: {
@@ -12613,6 +12714,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_mfa_policy: { Args: never; Returns: Json }
       next_cyber_incident_number: { Args: never; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
@@ -12912,6 +13014,7 @@ export type Database = {
         }[]
       }
       user_org_scope: { Args: { _user_id: string }; Returns: string[] }
+      validate_password_policy: { Args: { _password: string }; Returns: Json }
       verify_interlink_approval_chain: {
         Args: never
         Returns: {
