@@ -12466,6 +12466,7 @@ export type Database = {
         }[]
       }
       get_misd_department_id: { Args: never; Returns: string }
+      get_password_policy: { Args: never; Returns: Json }
       get_profile_protected_fields: {
         Args: { _user_id: string }
         Returns: {
@@ -12713,6 +12714,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_mfa_policy: { Args: never; Returns: Json }
       next_cyber_incident_number: { Args: never; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
