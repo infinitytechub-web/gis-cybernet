@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
+import { AccessPolicySettings } from "@/components/settings/AccessPolicySettings";
+
 import { AppSettings } from "@/components/settings/AppSettings";
 import { BrandingSettings } from "@/components/settings/BrandingSettings";
 import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttemptsPanel";
