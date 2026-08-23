@@ -72,17 +72,10 @@ export default function Login() {
     try {
       const trimmedId = staffId.trim();
 
-      // Check server-side lockout first
-      const { data: locked } = await supabase.rpc("is_staff_locked", { _staff_id: trimmedId });
-      if (locked === true) {
-        toast({
-          title: "Account Locked",
-          description: "This account is locked. Please contact an administrator to unlock it.",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
+      // Lockout state is checked together with the ID lookup below (the
+      // lockout RPCs are not callable anonymously, so the hardened edge
+      // function performs them with elevated privileges).
+
 
       // Best-effort client IP lookup (cached per session — used by admin alert trigger)
       const clientIp: string | null = await getMyClientIp();

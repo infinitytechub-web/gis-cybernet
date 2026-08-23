@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
+import { AccessPolicySettings } from "@/components/settings/AccessPolicySettings";
+
 import { AppSettings } from "@/components/settings/AppSettings";
 import { BrandingSettings } from "@/components/settings/BrandingSettings";
 import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttemptsPanel";
@@ -105,6 +107,8 @@ const roleColors: Record<AppRole, string> = {
 const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; area: "security" | "system" }[] = [
   { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
+  { value: "access-policy", label: "Access Policy", icon: ShieldCheck, iconClass: "text-chart-5", area: "security" },
+
   { value: "2fa", label: "2FA", icon: KeyRound, iconClass: "text-chart-5", area: "security" },
   { value: "biometrics", label: "Biometrics", icon: Fingerprint, iconClass: "text-primary", area: "security" },
   { value: "mfa-recovery", label: "MFA Recovery", icon: KeyRound, iconClass: "text-amber-600", area: "security" },
@@ -168,6 +172,8 @@ export default function Settings() {
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
+        <TabsContent value="access-policy"><AccessPolicySettings /></TabsContent>
+
         <TabsContent value="portfolios"><PortfoliosTab /></TabsContent>
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
