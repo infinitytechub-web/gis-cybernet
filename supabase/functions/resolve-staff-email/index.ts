@@ -67,6 +67,32 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
+  const action = typeof (body as { action?: unknown }).action === "string"
+    ? String((body as { action?: unknown }).action)
+    : "resolve";
+
+  // Lockout bookkeeping runs here (service role) because the underlying RPCs
+  // are not executable by anonymous visitors.
+  if (action === "record_failure") {
+    const { data } = await supabase.rpc("record_failed_login", {
+      _staff_id: raw,
+      _ip_address: ip,
+    });
+    const r = (data ?? {}) as { attempts?: number; locked?: boolean; remaining?: number };
+    return new Response(
+      JSON.stringify({ attempts: r.attempts ?? null, locked: r.locked ?? false, remaining: r.remaining ?? 0 }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
+  if (action === "clear_failures") {
+    await supabase.rpc("clear_failed_login_attempts", { _staff_id: raw });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const { data: email, error } = await supabase.rpc("get_email_by_staff_id", {
     _staff_id: raw,
   });
@@ -95,7 +121,28 @@ Deno.serve(async (req) => {
     });
   }
 
-  return new Response(JSON.stringify({ email }), {
+  // Report the current lockout state and the configured threshold so the
+  // login screen can show accurate, policy-driven messages.
+  let locked = false;
+  let threshold: number | null = null;
+  let autoUnlockMinutes: number | null = null;
+  try {
+    const [{ data: lockedData }, { data: settings }] = await Promise.all([
+      supabase.rpc("is_staff_locked", { _staff_id: raw }),
+      supabase
+        .from("app_settings")
+        .select("lockout_threshold, lockout_auto_unlock_minutes")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    locked = lockedData === true;
+    threshold = (settings as { lockout_threshold?: number } | null)?.lockout_threshold ?? null;
+    autoUnlockMinutes =
+      (settings as { lockout_auto_unlock_minutes?: number | null } | null)?.lockout_auto_unlock_minutes ?? null;
+  } catch { /* best effort — never block login on policy lookup */ }
+
+  return new Response(JSON.stringify({ email, locked, threshold, auto_unlock_minutes: autoUnlockMinutes }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
