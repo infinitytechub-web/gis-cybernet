@@ -12,6 +12,7 @@ import { Shield, ShieldAlert, KeyRound, Clock, Loader2, Save, Info } from "lucid
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { logSecurityEvent } from "@/lib/security-audit";
 
 /** Roles that can be placed under a mandatory-MFA requirement. */
 const MFA_ROLE_CHOICES: { value: string; label: string }[] = [
@@ -159,12 +160,12 @@ export function AccessPolicySettings() {
         if (!same) changes[FIELD_LABELS[key as string] ?? String(key)] = { from: before, to: after };
       }
       if (Object.keys(changes).length > 0) {
-        await (supabase as any).rpc("log_security_event", {
-          _category: "account",
-          _action: "access_policy_updated",
-          _severity: "warn",
-          _subject: "Access policy",
-          _details: { changes },
+        await logSecurityEvent({
+          category: "account",
+          action: "access_policy_updated",
+          severity: "warn",
+          subject: "Access policy",
+          details: { changes },
         });
       }
       return Object.keys(changes).length;
