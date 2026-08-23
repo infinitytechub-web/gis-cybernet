@@ -170,6 +170,8 @@ export default function Settings() {
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
+        <TabsContent value="access-policy"><AccessPolicySettings /></TabsContent>
+
         <TabsContent value="portfolios"><PortfoliosTab /></TabsContent>
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
