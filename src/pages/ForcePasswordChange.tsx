@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toast } from "sonner";
 import { KeyRound, Eye, EyeOff } from "lucide-react";
-import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { PasswordRules } from "@/components/ui/password-rules";
+import { checkPassword, usePasswordPolicy, validatePasswordServerSide } from "@/lib/password-policy";
 import gisLogo from "@/assets/gis-logo-192.webp";
 
 export default function ForcePasswordChange() {
@@ -19,15 +21,13 @@ export default function ForcePasswordChange() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const policy = usePasswordPolicy();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    if (getStrength(password) < 4) {
-      toast.error("Password must be at least 'Strong'. Add uppercase, lowercase, numbers, and special characters.");
+    const local = checkPassword(password, policy);
+    if (!local.ok) {
+      toast.error(local.errors[0]);
       return;
     }
     if (password !== confirmPassword) {
@@ -37,6 +37,12 @@ export default function ForcePasswordChange() {
 
     setIsLoading(true);
     try {
+      // Confirm against the policy as stored on the server.
+      const serverErrors = await validatePasswordServerSide(password, policy);
+      if (serverErrors.length > 0) {
+        toast.error(serverErrors[0]);
+        return;
+      }
       // Update password
       const { error: pwErr } = await supabase.auth.updateUser({ password });
       if (pwErr) throw pwErr;
@@ -81,6 +87,7 @@ export default function ForcePasswordChange() {
                 </button>
               </div>
               <PasswordStrength password={password} />
+              <PasswordRules password={password} policy={policy} className="mt-1.5" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-pw">Confirm Password</Label>

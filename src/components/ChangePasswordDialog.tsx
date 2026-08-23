@@ -7,15 +7,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { KeyRound, Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
+import { PasswordStrength } from "@/components/ui/password-strength";
+import { PasswordRules } from "@/components/ui/password-rules";
+import { checkPassword, usePasswordPolicy, validatePasswordServerSide } from "@/lib/password-policy";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  newPassword: z.string().min(1, "New password is required"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
-}).refine((data) => getStrength(data.newPassword) >= 4, {
-  message: "Password must be at least 'Strong'. Add uppercase, lowercase, numbers, and special characters.",
-  path: ["newPassword"],
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -31,6 +30,7 @@ export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sideb
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const policy = usePasswordPolicy();
 
   const resetForm = () => {
     setCurrentPassword("");
@@ -56,6 +56,13 @@ export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sideb
       return;
     }
 
+    // Enforce the configured password policy (server rules mirrored locally).
+    const local = checkPassword(newPassword, policy);
+    if (!local.ok) {
+      setErrors({ newPassword: local.errors[0] });
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Verify current password by re-authenticating
@@ -68,6 +75,12 @@ export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sideb
       });
       if (signInError) {
         setErrors({ currentPassword: "Current password is incorrect" });
+        return;
+      }
+
+      const serverErrors = await validatePasswordServerSide(newPassword, policy);
+      if (serverErrors.length > 0) {
+        setErrors({ newPassword: serverErrors[0] });
         return;
       }
 
@@ -138,6 +151,7 @@ export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sideb
               </button>
             </div>
             <PasswordStrength password={newPassword} />
+              <PasswordRules password={newPassword} policy={policy} className="mt-1.5" />
             {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword}</p>}
           </div>
           <div className="space-y-2">
