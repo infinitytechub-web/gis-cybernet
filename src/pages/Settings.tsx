@@ -105,6 +105,8 @@ const roleColors: Record<AppRole, string> = {
 const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; area: "security" | "system" }[] = [
   { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
+  { value: "access-policy", label: "Access Policy", icon: ShieldCheck, iconClass: "text-chart-5", area: "security" },
+
   { value: "2fa", label: "2FA", icon: KeyRound, iconClass: "text-chart-5", area: "security" },
   { value: "biometrics", label: "Biometrics", icon: Fingerprint, iconClass: "text-primary", area: "security" },
   { value: "mfa-recovery", label: "MFA Recovery", icon: KeyRound, iconClass: "text-amber-600", area: "security" },
