@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Cake, PartyPopper, BellRing } from "lucide-react";
 import { format, differenceInCalendarDays, setYear } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
 
 type Bday = {
   id: string;
@@ -23,6 +24,10 @@ type Bday = {
  * and a banner alert appears at the top of the card.
  */
 export default function BirthdayWidget() {
+  const { role } = useAuth();
+  // Unmasked employee IDs are need-to-know: only the administration tier sees
+  // them alongside a birth date. Everyone else gets name + day/month only.
+  const showStaffId = role === "admin" || role === "oic" || role === "2ic";
   const today = new Date();
   const month = today.getMonth() + 1;
 
@@ -95,7 +100,7 @@ export default function BirthdayWidget() {
                   <PartyPopper className="h-3.5 w-3.5" /> Today
                 </div>
                 {todays.map((b) => (
-                  <BirthdayRow key={b.id} b={b} variant="today" />
+                  <BirthdayRow key={b.id} b={b} variant="today" showStaffId={showStaffId} />
                 ))}
               </div>
             )}
@@ -105,7 +110,7 @@ export default function BirthdayWidget() {
                   Upcoming
                 </div>
                 {upcoming.map((b) => (
-                  <BirthdayRow key={b.id} b={b} variant={b.isHeadsUp ? "headsup" : "default"} />
+                  <BirthdayRow key={b.id} b={b} variant={b.isHeadsUp ? "headsup" : "default"} showStaffId={showStaffId} />
                 ))}
               </div>
             )}
@@ -113,7 +118,7 @@ export default function BirthdayWidget() {
               <div className="space-y-1.5">
                 <div className="text-xs font-semibold text-muted-foreground">Earlier this month</div>
                 {passed.map((b) => (
-                  <BirthdayRow key={b.id} b={b} variant="passed" />
+                  <BirthdayRow key={b.id} b={b} variant="passed" showStaffId={showStaffId} />
                 ))}
               </div>
             )}
@@ -127,9 +132,11 @@ export default function BirthdayWidget() {
 function BirthdayRow({
   b,
   variant,
+  showStaffId,
 }: {
   b: Bday & { daysAway: number; isToday: boolean; isHeadsUp: boolean };
   variant: "today" | "headsup" | "default" | "passed";
+  showStaffId?: boolean;
 }) {
   const ringClass =
     variant === "today"
@@ -162,8 +169,10 @@ function BirthdayRow({
       </div>
       <div className="flex-1 min-w-0">
         <div className="truncate font-medium">
-          {b.first_name} {b.last_name}{" "}
-          <span className="text-muted-foreground font-normal">{b.staff_id}</span>
+          {b.first_name} {b.last_name}
+          {showStaffId && (
+            <span className="ml-1 text-muted-foreground font-normal">{b.staff_id}</span>
+          )}
         </div>
         <div className="text-[11px] text-muted-foreground flex items-center gap-1">
           {format(new Date(b.date_of_birth), "do MMMM")}{" "}
