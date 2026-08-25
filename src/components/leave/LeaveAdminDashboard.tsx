@@ -36,7 +36,7 @@ export function LeaveAdminDashboard() {
     queryFn: async () => {
       let q = supabase
         .from("leave_requests")
-        .select("id, type, status, start_date, end_date, reason, created_at, department_id, shift_group, profiles(first_name, last_name, staff_id)")
+        .select("id, type, status, start_date, end_date, reason, created_at, decided_at, department_id, shift_group, profiles!leave_requests_profile_id_fkey(first_name, last_name, staff_id), approver:profiles!leave_requests_approved_by_fkey(first_name, last_name)")
         .order("created_at", { ascending: false })
         .limit(500);
       if (deptFilter !== "all") q = q.eq("department_id", deptFilter);
