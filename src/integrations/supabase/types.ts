@@ -9909,6 +9909,54 @@ export type Database = {
         }
         Relationships: []
       }
+      security_monitor_webhooks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          id: string
+          kind: string
+          label: string
+          last_error: string | null
+          last_sent_at: string | null
+          last_status: string | null
+          min_severity: string
+          throttle_minutes: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          kind?: string
+          label: string
+          last_error?: string | null
+          last_sent_at?: string | null
+          last_status?: string | null
+          min_severity?: string
+          throttle_minutes?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          id?: string
+          kind?: string
+          label?: string
+          last_error?: string | null
+          last_sent_at?: string | null
+          last_status?: string | null
+          min_severity?: string
+          throttle_minutes?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       security_scan_runs: {
         Row: {
           error_count: number
@@ -13257,6 +13305,38 @@ export type Database = {
         Returns: undefined
       }
       security_monitor_scan: { Args: never; Returns: Json }
+      security_monitor_webhook_delete: {
+        Args: { _id: string }
+        Returns: undefined
+      }
+      security_monitor_webhook_save: {
+        Args: {
+          _enabled: boolean
+          _id: string
+          _kind: string
+          _label: string
+          _min_severity: string
+          _throttle_minutes: number
+          _url: string
+        }
+        Returns: string
+      }
+      security_monitor_webhooks_list: {
+        Args: never
+        Returns: {
+          created_at: string
+          enabled: boolean
+          id: string
+          kind: string
+          label: string
+          last_error: string
+          last_sent_at: string
+          last_status: string
+          min_severity: string
+          throttle_minutes: number
+          url_preview: string
+        }[]
+      }
       security_policy_dashboard: { Args: { _hours?: number }; Returns: Json }
       send_appraisal_reminders: {
         Args: { _period_month?: number; _period_year: number }
