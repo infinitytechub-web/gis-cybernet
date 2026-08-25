@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_lockout_events: {
+        Row: {
+          attempts: number
+          created_at: string
+          full_name: string | null
+          id: string
+          ip_address: string | null
+          locked_at: string
+          profile_id: string | null
+          staff_id: string
+          threshold: number
+          window_minutes: number
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          ip_address?: string | null
+          locked_at?: string
+          profile_id?: string | null
+          staff_id: string
+          threshold?: number
+          window_minutes?: number
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          ip_address?: string | null
+          locked_at?: string
+          profile_id?: string | null
+          staff_id?: string
+          threshold?: number
+          window_minutes?: number
+        }
+        Relationships: []
+      }
       account_unlock_audit: {
         Row: {
           created_at: string
@@ -12931,6 +12970,7 @@ export type Database = {
         }[]
       }
       security_audit_create_anchor: { Args: never; Returns: string }
+      security_policy_dashboard: { Args: { _hours?: number }; Returns: Json }
       send_appraisal_reminders: {
         Args: { _period_month?: number; _period_year: number }
         Returns: {
