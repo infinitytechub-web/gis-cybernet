@@ -237,8 +237,9 @@ export default function SecurityMonitoring() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <SecurityHero
+        icon={ShieldAlert}
         title="Security Monitoring & Alerting"
-        description="Threshold-based detection of suspicious role changes, authorization failures and unusual upload access."
+        subtitle="Threshold-based detection of suspicious role changes, authorization failures and unusual upload access."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
