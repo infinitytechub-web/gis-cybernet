@@ -109,7 +109,10 @@ export default function Login() {
         "resolve-staff-email",
         { body: { staff_id: trimmedId } },
       );
-      const emailData = (lookupData as { email?: string } | null)?.email ?? null;
+      const lookup = (lookupData ?? null) as
+        | { email?: string; locked?: boolean; threshold?: number | null; auto_unlock_minutes?: number | null }
+        | null;
+      const emailData = lookup?.email ?? null;
       if (lookupErr || !emailData) {
         // record_failed_login already logged inside the edge function — no
         // need to double-log here. Surface a toast so the user isn't stuck
@@ -122,10 +125,25 @@ export default function Login() {
         throw new Error("Invalid ID or password");
       }
 
+      // Policy-driven lockout: refuse the attempt outright while locked.
+      if (lookup?.locked) {
+        toast({
+          title: "Account Locked",
+          description: lookup.auto_unlock_minutes
+            ? `Too many failed attempts. Try again in ${lookup.auto_unlock_minutes} minute${lookup.auto_unlock_minutes === 1 ? "" : "s"}.`
+            : "Too many failed attempts. Contact an administrator to unlock this account.",
+          variant: "destructive",
+        });
+        throw new Error("Account locked");
+      }
+
       try {
         await signIn(emailData as string, password);
-        // Clear failed attempts on success
-        await supabase.rpc("clear_failed_login_attempts", { _staff_id: trimmedId });
+        // Clear failed attempts on success (service-role side — anon cannot
+        // execute the lockout RPCs directly).
+        await supabase.functions.invoke("resolve-staff-email", {
+          body: { staff_id: trimmedId, action: "clear_failures" },
+        });
 
         // Admins are required to complete 2FA after primary authentication.
         // Non-admins continue straight to the app shell.
@@ -149,13 +167,18 @@ export default function Login() {
           navigate("/", { replace: true });
         }
       } catch (signInErr) {
-        // Record failed attempt server-side
-        const { data: result } = await supabase.rpc("record_failed_login", { _staff_id: trimmedId, _ip_address: clientIp });
-        const r = result as { attempts?: number; locked?: boolean; remaining?: number } | null;
+        // Record failed attempt server-side, against the configured policy.
+        const { data: failData } = await supabase.functions.invoke("resolve-staff-email", {
+          body: { staff_id: trimmedId, action: "record_failure" },
+        });
+        const r = (failData ?? null) as { attempts?: number; locked?: boolean; remaining?: number } | null;
+        const threshold = lookup?.threshold ?? null;
         if (r?.locked) {
           toast({
             title: "Account Locked",
-            description: "Account locked after 3 failed attempts. Contact an administrator to unlock.",
+            description: threshold
+              ? `Account locked after ${threshold} failed attempts. Contact an administrator to unlock.`
+              : "Account locked after too many failed attempts. Contact an administrator to unlock.",
             variant: "destructive",
           });
         } else {
@@ -167,6 +190,7 @@ export default function Login() {
         }
         throw signInErr;
       }
+
     } catch {
       // Suppressed; handled above
     } finally {
