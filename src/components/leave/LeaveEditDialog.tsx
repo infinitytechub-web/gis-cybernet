@@ -100,7 +100,7 @@ export function LeaveEditDialog({ request, onClose }: Props) {
               </div>
               <div>
                 <Label htmlFor="leave-edit-end">End date</Label>
-                <Input id="leave-edit-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <DateInput id="leave-edit-end" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
             <div>
