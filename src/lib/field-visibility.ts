@@ -87,6 +87,10 @@ export const SENSITIVE_FIELDS: Record<SensitiveField, FieldDef> = {
   ghana_card: { group: "identity", label: "Ghana Card number", roles: COMMAND, mask: "tail" },
   date_of_birth: { group: "identity", label: "Date of birth", roles: [...COMMAND, ...SHIFT_LEADERSHIP], mask: "date" },
   passport_number: { group: "identity", label: "Passport number", roles: [...COMMAND, "front_desk", "head_of_processing", "deputy_head_of_processing"], mask: "tail" },
+  // Employee/staff numbers are directly re-identifying, so general screens show
+  // a partially masked form. Full IDs stay with the administration tier
+  // (Admin Console) plus the record owner and delegated grants.
+  staff_identifier: { group: "identity", label: "Employee ID", roles: [], mask: "id" },
 
   // ── Medical ──────────────────────────────────────────────────────────────
   medical_record: { group: "medical", label: "Medical record", roles: [...ADMIN_TIER, "medical_officer"], mask: "full" },
