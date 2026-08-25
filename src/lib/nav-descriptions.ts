@@ -73,6 +73,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/settings": "System settings, security policies and thresholds.",
   "/shift-window-audit": "Changes to attendance windows and shift rules.",
   "/security-audit-log": "Lockouts, two-factor events and session revocations, with CSV export.",
+  "/admin/phone-validation": "Active Ghana and international phone rules, with a troubleshooting checker.",
   "/sensitive-access-log": "Who read sensitive records, and when.",
   "/ip-blocks": "Blocked IP addresses and devices.",
   "/attendance/connections": "Third-party attendance platform integrations.",
