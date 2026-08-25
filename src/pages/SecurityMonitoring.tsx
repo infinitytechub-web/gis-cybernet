@@ -14,10 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, ShieldAlert, ShieldCheck, UserCog, KeyRound, FileWarning, Download } from "lucide-react";
+import { Loader2, RefreshCw, ShieldAlert, ShieldCheck, UserCog, KeyRound, FileWarning, Download, Radio } from "lucide-react";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCell } from "@/lib/csv-safe";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { SecurityWebhooksCard } from "@/components/security/SecurityWebhooksCard";
+import { useSecurityAlertStream } from "@/hooks/useSecurityAlertStream";
 
 type Settings = {
   id: string;
@@ -94,10 +96,19 @@ export default function SecurityMonitoring() {
     },
   });
 
+  const { live, setLive, connected, lastEventAt } = useSecurityAlertStream({
+    enabled: allowed,
+    onAlert: (a: any) => {
+      const label = RULES[a?.rule_key]?.label ?? a?.rule_key ?? "Security alert";
+      const severity = String(a?.severity ?? "").toUpperCase();
+      toast.warning(`${severity}: ${label}`, { description: a?.subject_label ?? undefined });
+    },
+  });
+
   const { data: alerts = [], isLoading: loadingAlerts } = useQuery({
     queryKey: ["security-monitor-alerts"],
     enabled: allowed,
-    refetchInterval: 60_000,
+    refetchInterval: live ? false : 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("security_monitor_alerts" as any)
@@ -332,10 +343,29 @@ export default function SecurityMonitoring() {
         </CardContent>
       </Card>
 
+      <SecurityWebhooksCard canEdit={isAdmin} />
+
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
-          <CardTitle className="text-base">Alerts</CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="text-base">Alerts</CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <Radio
+                className={`h-3.5 w-3.5 ${live && connected ? "animate-pulse text-primary" : "text-muted-foreground"}`}
+                aria-hidden
+              />
+              {live
+                ? connected
+                  ? `Live — streaming new alerts${lastEventAt ? ` · last update ${fmtDateTime(lastEventAt)}` : ""}`
+                  : "Live — connecting…"
+                : "Live mode off — list refreshes every minute"}
+            </CardDescription>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 pr-1">
+              <Switch id="live-mode" checked={live} onCheckedChange={setLive} />
+              <Label htmlFor="live-mode" className="text-xs">Real-time</Label>
+            </div>
             <Select value={ruleFilter} onValueChange={setRuleFilter}>
               <SelectTrigger className="w-[220px]"><SelectValue placeholder="Rule" /></SelectTrigger>
               <SelectContent>
