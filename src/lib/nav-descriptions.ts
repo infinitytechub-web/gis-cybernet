@@ -22,6 +22,8 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/guard-schedule": "Guard duty schedule builder with export and publishing.",
   "/leave": "Apply for leave or pass and follow approval progress.",
   "/holidays": "Public and station holidays used in scheduling.",
+  "/payments": "Record payment requests and track their settlement status.",
+  "/loans": "Submit staff loan applications and follow review decisions.",
   "/postings": "Raise and approve postings, transfers and reassignments.",
   "/postings/history": "Full history of past postings and transfers.",
   "/appraisals": "Staff performance appraisals and scoring.",
