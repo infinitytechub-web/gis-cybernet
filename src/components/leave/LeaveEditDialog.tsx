@@ -95,7 +95,8 @@ export function LeaveEditDialog({ request, onClose }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="leave-edit-start">Start date</Label>
-                <Input id="leave-edit-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <DateInput id="leave-edit-start" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+
               </div>
               <div>
                 <Label htmlFor="leave-edit-end">End date</Label>
