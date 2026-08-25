@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DEFAULT_STAFF_ID_MASK_RULES,
+  normalizeStaffIdMaskRules,
+  type StaffIdMaskRules,
+} from "@/lib/staff-id-mask";
 
 interface AppSettings {
   org_name: string;
@@ -8,6 +13,7 @@ interface AppSettings {
   enforce_password_change: boolean;
   min_password_length: number;
   allow_self_registration: boolean;
+  staff_id_mask_rules: StaffIdMaskRules;
 }
 
 const defaults: AppSettings = {
@@ -17,6 +23,7 @@ const defaults: AppSettings = {
   enforce_password_change: true,
   min_password_length: 8,
   allow_self_registration: false,
+  staff_id_mask_rules: DEFAULT_STAFF_ID_MASK_RULES,
 };
 
 export function useAppSettings() {
@@ -29,7 +36,11 @@ export function useAppSettings() {
       if (error || !data) return defaults;
       const row = Array.isArray(data) ? data[0] : data;
       if (!row) return defaults;
-      return { ...defaults, ...(row as AppSettings) };
+      return {
+        ...defaults,
+        ...(row as AppSettings),
+        staff_id_mask_rules: normalizeStaffIdMaskRules((row as any).staff_id_mask_rules),
+      };
     },
     staleTime: 5 * 60 * 1000,
     retry: false,
