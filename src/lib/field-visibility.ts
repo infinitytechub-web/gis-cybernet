@@ -39,6 +39,7 @@ export type SensitiveField =
   | "ghana_card"
   | "date_of_birth"
   | "passport_number"
+  | "staff_identifier"
   // medical
   | "medical_record"
   | "medical_diagnosis"
