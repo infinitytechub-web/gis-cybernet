@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useStaffIdDisplay } from "@/hooks/useStaffIdDisplay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock } from "lucide-react";
@@ -19,6 +20,7 @@ interface AlertRow {
 
 export default function RetirementAlertWidget() {
   const { isAdminOrSupervisor } = useAuth();
+  const { formatStaffId } = useStaffIdDisplay();
   const navigate = useNavigate();
 
   const { data: alerts = [], isLoading, dataUpdatedAt } = useQuery({
