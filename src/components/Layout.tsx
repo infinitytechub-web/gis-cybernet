@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { QuickScroll } from "@/components/ui/quick-scroll";
-import { buildId, buildTooltip } from "@/lib/build-version";
+import { useBuildRelease } from "@/hooks/useBuildRelease";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
@@ -23,6 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const branding = useBranding();
   const { company_name, footer_text } = branding;
   const { isAdmin } = useAuth();
+  const build = useBuildRelease();
   const [clock, setClock] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
@@ -83,7 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <footer className="hidden lg:flex items-center justify-center gap-2 border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
             <span>{footer_text}</span>
             <span aria-hidden="true" className="opacity-40">·</span>
-            <span className="font-mono" title={buildTooltip()}>{buildId()}</span>
+            <span className="font-mono" title={build.tooltip}>{build.versionId}</span>
           </footer>
           <MobileBottomNav />
         </div>

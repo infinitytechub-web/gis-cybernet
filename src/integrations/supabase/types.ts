@@ -317,6 +317,48 @@ export type Database = {
           },
         ]
       }
+      app_build_releases: {
+        Row: {
+          app_version: string | null
+          build_date: string
+          build_time: string
+          created_at: string
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          registered_by: string | null
+          seq: number
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          build_date: string
+          build_time: string
+          created_at?: string
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          registered_by?: string | null
+          seq: number
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          app_version?: string | null
+          build_date?: string
+          build_time?: string
+          created_at?: string
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          registered_by?: string | null
+          seq?: number
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           accent_color: string
@@ -5872,6 +5914,48 @@ export type Database = {
           },
         ]
       }
+      loan_applications: {
+        Row: {
+          amount: number
+          applicant_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          phone: string
+          purpose: string | null
+          repayment_months: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          applicant_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          phone: string
+          purpose?: string | null
+          repayment_months?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          applicant_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string
+          purpose?: string | null
+          repayment_months?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       map_access_audit: {
         Row: {
           id: string
@@ -7219,6 +7303,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          method: string
+          notes: string | null
+          payer_name: string
+          phone: string
+          purpose: string | null
+          reference: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          notes?: string | null
+          payer_name: string
+          phone: string
+          purpose?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          notes?: string | null
+          payer_name?: string
+          phone?: string
+          purpose?: string | null
+          reference?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       pending_staff_matches: {
         Row: {
@@ -12892,6 +13021,33 @@ export type Database = {
         Returns: string
       }
       redact_old_job_passwords: { Args: never; Returns: undefined }
+      register_app_build: {
+        Args: {
+          p_app_version?: string
+          p_build_time?: string
+          p_fingerprint: string
+          p_prefix?: string
+        }
+        Returns: {
+          app_version: string | null
+          build_date: string
+          build_time: string
+          created_at: string
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          registered_by: string | null
+          seq: number
+          updated_at: string
+          version_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "app_build_releases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       register_session: {
         Args: {
           _fingerprint?: string

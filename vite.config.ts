@@ -8,18 +8,32 @@ const require = createRequire(import.meta.url);
 const pkg = require("./package.json") as { version?: string };
 
 // https://vitejs.dev/config/
-// Build identity — ITI - DD/MM/YYYY - Version (e.g. ITI18082026v1.0.0).
+// Build identity — ITIDDMMYYYY-NN. The sequence (NN) is assigned automatically
+// by the backend the first time a freshly deployed build is loaded; the
+// fingerprint below is what makes each build uniquely identifiable.
 const BUILD_TIME = new Date().toISOString();
 const APP_VERSION = pkg.version && pkg.version !== "0.0.0" ? pkg.version : "1.0.0";
 const two = (n: number) => String(n).padStart(2, "0");
 const BUILT = new Date(BUILD_TIME);
 const BUILD_ID = `ITI${two(BUILT.getUTCDate())}${two(BUILT.getUTCMonth() + 1)}${BUILT.getUTCFullYear()}v${APP_VERSION}`;
 
+/** Short, stable-per-build fingerprint (build instant + version). */
+function shortHash(input: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+const BUILD_FINGERPRINT = `${APP_VERSION}-${shortHash(`${BUILD_TIME}|${APP_VERSION}`)}-${BUILT.getTime().toString(36)}`;
+
 export default defineConfig(({ mode }) => ({
   define: {
     __APP_BUILD_ID__: JSON.stringify(BUILD_ID),
     __APP_BUILD_TIME__: JSON.stringify(BUILD_TIME),
     __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __APP_BUILD_FINGERPRINT__: JSON.stringify(BUILD_FINGERPRINT),
   },
   server: {
     host: "::",

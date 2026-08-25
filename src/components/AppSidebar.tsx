@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
-  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot, Radio, Palette, ChevronRight
+  CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot, Radio, Palette, ChevronRight, CreditCard, Landmark
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -68,6 +68,11 @@ const rosterItems = [
 const leaveItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
+];
+
+const paymentsLoansItems = [
+  { title: "Payments", url: "/payments", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400" },
+  { title: "Loans", url: "/loans", icon: Landmark, iconColor: "text-amber-700 dark:text-amber-300" },
 ];
 
 const postingItems = [
@@ -200,6 +205,7 @@ const workforceSections: NavSection[] = [
   { label: "Attendance & Shifts", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400", items: attendanceItems },
   { label: "Rosters & Schedules", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", items: rosterItems },
   { label: "Leave & Holidays", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400", items: leaveItems },
+  { label: "Payments & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: paymentsLoansItems },
   { label: "Postings & Transfers", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", items: postingItems },
 ];
 

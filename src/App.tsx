@@ -55,6 +55,8 @@ const QuarantineInbox = lazy(() => import("./pages/QuarantineInbox"));
 const IpBlocks = lazy(() => import("./pages/IpBlocks"));
 const ShiftConnections = lazy(() => import("./pages/ShiftConnections"));
 const LeaveRequests = lazy(() => import("./pages/LeaveRequests"));
+const Payments = lazy(() => import("./pages/Payments"));
+const Loans = lazy(() => import("./pages/Loans"));
 const Holidays = lazy(() => import("./pages/Holidays"));
 const PostingsTransfers = lazy(() => import("./pages/PostingsTransfers"));
 const PostingsHistory = lazy(() => import("./pages/PostingsHistory"));
@@ -205,6 +207,8 @@ function App() {
           <Route path="/quarantine" element={<ProtectedRoute module="quarantine"><Layout><QuarantineInbox /></Layout></ProtectedRoute>} />
           <Route path="/ip-blocks" element={<ProtectedRoute module="ip-blocks"><Layout><IpBlocks /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute module="leave"><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute module="payments"><Layout><Payments /></Layout></ProtectedRoute>} />
+          <Route path="/loans" element={<ProtectedRoute module="loans"><Layout><Loans /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute module="holidays"><Layout><Holidays /></Layout></ProtectedRoute>} />
           <Route path="/postings" element={<ProtectedRoute module="postings"><Layout><PostingsTransfers /></Layout></ProtectedRoute>} />
           <Route path="/postings/history" element={<ProtectedRoute module="postings"><Layout><PostingsHistory /></Layout></ProtectedRoute>} />
