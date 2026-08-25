@@ -151,6 +151,7 @@ export const MODULES: ModuleDef[] = [
   { key: "shift-window-audit", label: "Shift Rules Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/shift-window-audit"] },
   { key: "rum-analytics", label: "RUM Analytics", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/rum-analytics"] },
   { key: "security-audit-log", label: "Security Audit Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/security-audit-log"] },
+  { key: "phone-validation-rules", label: "Phone Validation Rules", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/phone-validation"] },
   { key: "sensitive-access-log", label: "Sensitive Access Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/sensitive-access-log"] },
   { key: "ip-blocks", label: "IP & Device Blocks", tier: "admin", roles: ADMIN_ONLY, paths: ["/ip-blocks"] },
 
