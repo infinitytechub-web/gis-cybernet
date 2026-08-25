@@ -201,7 +201,7 @@ async function generatePDF({ title, filename, headers, rows, subtitle, meta, ima
 }
 
 function generateCSV({ filename, headers, rows, title, subtitle, meta }: ExportOptions) {
-  const escape = (c: string) => `"${(c ?? "").replace(/"/g, '""')}"`;
+  const escape = (c: string) => csvCellQuoted(c);
   const lines: string[] = [];
   lines.push(escape("Cybernet HRM System"));
   lines.push(escape(title));

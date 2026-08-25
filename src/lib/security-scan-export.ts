@@ -28,11 +28,7 @@ export interface ExportRun {
   findings?: ExportFinding[];
 }
 
-const csvCell = (v: unknown) => {
-  const s = v == null ? "" : String(v);
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-};
+import { csvCell } from "@/lib/csv-safe";
 
 export function exportRunAsCsv(run: ExportRun, history: ExportRun[]) {
   const lines: string[] = [];

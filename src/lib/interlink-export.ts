@@ -12,11 +12,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-function csvCell(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  const s = Array.isArray(v) ? v.join("; ") : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+import { csvCell } from "@/lib/csv-safe";
 
 function buildCSV(headers: string[], rows: (string | number | null | undefined)[][]) {
   return [headers.map(csvCell).join(","), ...rows.map((r) => r.map(csvCell).join(","))].join("\n");

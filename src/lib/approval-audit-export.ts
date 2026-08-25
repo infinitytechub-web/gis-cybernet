@@ -102,13 +102,8 @@ function formatPrimitive(v: unknown): string {
   return JSON.stringify(v);
 }
 
-/** RFC-4180 CSV cell quoting. */
-function csvCell(v: string | number | null | undefined): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
+/** RFC-4180 CSV cell quoting + formula-injection sanitisation. */
+import { csvCell } from "@/lib/csv-safe";
 
 export async function exportAuditAsCSV(
   entityType: AuditEntityType,

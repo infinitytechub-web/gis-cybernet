@@ -137,9 +137,4 @@ export async function exportHrmPdf(opts: {
   return true;
 }
 
-function csvCell(v: string | number | null | undefined): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
+import { csvCell } from "@/lib/csv-safe";
