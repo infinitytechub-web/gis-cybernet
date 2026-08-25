@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { buildId, buildTooltip } from "@/lib/build-version";
+import { useBuildRelease } from "@/hooks/useBuildRelease";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/hooks/useBranding";
 import { roleLabel } from "@/lib/role-labels";
@@ -33,8 +33,8 @@ export default function Dashboard() {
             Signed in as {roleLabel(role)}
           </p>
         </div>
-        <Badge variant="outline" className="font-mono text-[10px] whitespace-nowrap sm:text-xs" title={buildTooltip()}>
-          {buildId()}
+        <Badge variant="outline" className="font-mono text-[10px] whitespace-nowrap sm:text-xs" title={build.tooltip}>
+          {build.versionId}
         </Badge>
       </header>
 
