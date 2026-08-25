@@ -12579,6 +12579,10 @@ export type Database = {
           vehicle_id: string
         }[]
       }
+      fleet_vehicle_visible: {
+        Args: { _user_id: string; _vehicle_id: string }
+        Returns: boolean
+      }
       fuel_request_create: {
         Args: {
           _branch?: string
