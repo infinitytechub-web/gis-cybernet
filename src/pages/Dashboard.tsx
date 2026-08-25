@@ -43,7 +43,7 @@ export default function Dashboard() {
         <div className="flex flex-wrap items-center gap-2">
           {isAdminTier && (
             <Link
-              to="/admin-console"
+              to="/admin"
               className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
