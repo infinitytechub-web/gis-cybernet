@@ -12970,6 +12970,21 @@ export type Database = {
         }[]
       }
       security_audit_create_anchor: { Args: never; Returns: string }
+      security_event_feed: {
+        Args: { _from?: string; _limit?: number; _to?: string }
+        Returns: {
+          action: string
+          actor_name: string
+          category: string
+          detail: string
+          id: string
+          ip_address: string
+          occurred_at: string
+          severity: string
+          staff_id: string
+          subject_name: string
+        }[]
+      }
       security_policy_dashboard: { Args: { _hours?: number }; Returns: Json }
       send_appraisal_reminders: {
         Args: { _period_month?: number; _period_year: number }

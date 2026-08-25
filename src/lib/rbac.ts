@@ -148,6 +148,7 @@ export const MODULES: ModuleDef[] = [
   { key: "command-role-audit", label: "Command Role Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/command-role-audit"] },
   { key: "shift-window-audit", label: "Shift Rules Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/shift-window-audit"] },
   { key: "rum-analytics", label: "RUM Analytics", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/rum-analytics"] },
+  { key: "security-audit-log", label: "Security Audit Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/security-audit-log"] },
   { key: "sensitive-access-log", label: "Sensitive Access Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/sensitive-access-log"] },
   { key: "ip-blocks", label: "IP & Device Blocks", tier: "admin", roles: ADMIN_ONLY, paths: ["/ip-blocks"] },
 
