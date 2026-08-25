@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, Webhook, Pencil } from "lucide-react";
+import { Loader2, Plus, Trash2, Webhook, Pencil, ShieldCheck, ShieldOff, KeyRound } from "lucide-react";
 
 type WebhookRow = {
   id: string;
@@ -32,6 +32,10 @@ type WebhookRow = {
   last_status: string | null;
   last_error: string | null;
   created_at: string;
+  has_signing_secret: boolean;
+  max_attempts: number;
+  pending_deliveries: number;
+  dead_deliveries: number;
 };
 
 const fmtDateTime = (v?: string | null) => {
@@ -50,6 +54,10 @@ type Draft = {
   min_severity: "medium" | "high" | "critical";
   throttle_minutes: number;
   enabled: boolean;
+  signing_secret: string;
+  clear_signing_secret: boolean;
+  max_attempts: number;
+  had_secret: boolean;
 };
 
 const emptyDraft: Draft = {
@@ -60,6 +68,10 @@ const emptyDraft: Draft = {
   min_severity: "high",
   throttle_minutes: 15,
   enabled: true,
+  signing_secret: "",
+  clear_signing_secret: false,
+  max_attempts: 5,
+  had_secret: false,
 };
 
 export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
@@ -86,6 +98,9 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
         _min_severity: d.min_severity,
         _throttle_minutes: d.throttle_minutes,
         _enabled: d.enabled,
+        _signing_secret: d.signing_secret.trim() ? d.signing_secret.trim() : null,
+        _clear_signing_secret: d.clear_signing_secret,
+        _max_attempts: d.max_attempts,
       });
       if (error) throw error;
     },
@@ -136,6 +151,7 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
                 <TableHead>Label</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>URL</TableHead>
+                <TableHead>Signature</TableHead>
                 <TableHead>Min severity</TableHead>
                 <TableHead>Throttle</TableHead>
                 <TableHead>Last delivery</TableHead>
@@ -146,13 +162,13 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={canEdit ? 8 : 7}>
+                  <TableCell colSpan={canEdit ? 9 : 8}>
                     <Loader2 className="h-4 w-4 animate-spin" />
                   </TableCell>
                 </TableRow>
               ) : hooks.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={canEdit ? 8 : 7} className="text-sm text-muted-foreground">
+                  <TableCell colSpan={canEdit ? 9 : 8} className="text-sm text-muted-foreground">
                     No delivery destinations configured — alerts are only emailed to administrators.
                   </TableCell>
                 </TableRow>
@@ -164,6 +180,17 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
                       <Badge variant="secondary">{h.kind === "slack" ? "Slack" : "Generic JSON"}</Badge>
                     </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">{h.url_preview}</TableCell>
+                    <TableCell>
+                      {h.has_signing_secret ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <ShieldCheck className="h-3 w-3" aria-hidden /> HMAC
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1 text-muted-foreground">
+                          <ShieldOff className="h-3 w-3" aria-hidden /> Unsigned
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={h.min_severity === "critical" ? "destructive" : "outline"}>
                         {h.min_severity}
@@ -187,6 +214,16 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
                       ) : (
                         <Badge variant="outline">Awaiting first alert</Badge>
                       )}
+                      {(h.pending_deliveries > 0 || h.dead_deliveries > 0) && (
+                        <div className="mt-1 space-x-1">
+                          {h.pending_deliveries > 0 && (
+                            <Badge variant="outline">{h.pending_deliveries} queued</Badge>
+                          )}
+                          {h.dead_deliveries > 0 && (
+                            <Badge variant="destructive">{h.dead_deliveries} dead-letter</Badge>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     {canEdit && (
                       <TableCell className="space-x-2 text-right">
@@ -202,6 +239,10 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
                               min_severity: h.min_severity,
                               throttle_minutes: h.throttle_minutes,
                               enabled: h.enabled,
+                              signing_secret: "",
+                              clear_signing_secret: false,
+                              max_attempts: h.max_attempts ?? 5,
+                              had_secret: !!h.has_signing_secret,
                             })
                           }
                         >
@@ -289,6 +330,69 @@ export function SecurityWebhooksCard({ canEdit }: { canEdit: boolean }) {
                     }
                   />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="hook-secret" className="flex items-center gap-2">
+                  <KeyRound className="h-3.5 w-3.5" aria-hidden /> Signing secret (HMAC-SHA256)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="hook-secret"
+                    value={draft.signing_secret}
+                    disabled={draft.clear_signing_secret}
+                    onChange={(e) => setDraft({ ...draft, signing_secret: e.target.value })}
+                    placeholder={draft.had_secret ? "Secret set — leave blank to keep" : "At least 16 characters"}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setDraft({
+                        ...draft,
+                        clear_signing_secret: false,
+                        signing_secret: Array.from(crypto.getRandomValues(new Uint8Array(24)))
+                          .map((b) => b.toString(16).padStart(2, "0"))
+                          .join(""),
+                      })
+                    }
+                  >
+                    Generate
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Requests are signed as <code>X-Cybernet-Signature: sha256=HMAC(secret, timestamp + "." + body)</code>{" "}
+                  with the timestamp in <code>X-Cybernet-Timestamp</code>. Copy the secret to the receiving endpoint —
+                  it cannot be read back later.
+                </p>
+                {draft.had_secret && (
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={draft.clear_signing_secret}
+                      onChange={(e) =>
+                        setDraft({ ...draft, clear_signing_secret: e.target.checked, signing_secret: "" })
+                      }
+                    />
+                    Remove the existing secret (deliveries will be sent unsigned)
+                  </label>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="hook-attempts">Max delivery attempts before dead-letter</Label>
+                <Input
+                  id="hook-attempts"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={String(draft.max_attempts)}
+                  onChange={(e) =>
+                    setDraft({ ...draft, max_attempts: Math.min(10, Math.max(1, Number(e.target.value) || 1)) })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Failed deliveries retry with exponential backoff (30s, 1m, 2m … capped at 30m), then move to the
+                  dead-letter queue.
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <Switch

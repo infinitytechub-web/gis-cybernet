@@ -19,6 +19,7 @@ import { downloadCSVString } from "@/lib/download-utils";
 import { csvCell } from "@/lib/csv-safe";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { SecurityWebhooksCard } from "@/components/security/SecurityWebhooksCard";
+import { SecurityDeliveryQueueCard } from "@/components/security/SecurityDeliveryQueueCard";
 import { useSecurityAlertStream } from "@/hooks/useSecurityAlertStream";
 
 type Settings = {
@@ -344,6 +345,8 @@ export default function SecurityMonitoring() {
       </Card>
 
       <SecurityWebhooksCard canEdit={isAdmin} />
+
+      <SecurityDeliveryQueueCard canEdit={isAdmin} />
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
