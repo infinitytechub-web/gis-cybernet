@@ -25,10 +25,8 @@ import CommandTierAnalyticsTabs from "@/components/dashboard/CommandTierAnalytic
 import { useOversightDashboardData, usePersonalDashboardData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
 
-const CHART_COLORS = [
-  "hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--success))",
-  "hsl(var(--warning))", "hsl(var(--destructive))", "hsl(var(--info))",
-];
+
+
 
 const statusTone = (s: string) =>
   s === "approved" ? "bg-success/15 text-success" : s === "rejected" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning";
