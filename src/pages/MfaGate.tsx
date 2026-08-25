@@ -51,7 +51,7 @@ export default function MfaGate() {
   };
 
   useEffect(() => {
-    if (!user || !isAdmin) return;
+    if (!user) return;
     // If the admin still owes a password change (e.g. recovery temp password),
     // route them through the change-password flow before the MFA gate so they
     // can rotate the secret first.
@@ -60,6 +60,15 @@ export default function MfaGate() {
       return;
     }
     (async () => {
+      // MFA requirement is policy-driven (Security Settings → Access Policy):
+      // a role only becomes mandatory once its enrolment grace period ends.
+      const { data: policy } = await (supabase as any).rpc("my_mfa_policy");
+      const p = (policy ?? null) as { required?: boolean; in_grace?: boolean } | null;
+      const required = p ? p.required === true && p.in_grace !== true : isAdmin;
+      if (!required) {
+        navigate(from, { replace: true });
+        return;
+      }
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (aal?.currentLevel === "aal2") {
         navigate(from, { replace: true });
@@ -76,6 +85,7 @@ export default function MfaGate() {
       }
     })();
   }, [user, isAdmin, navigate, from]);
+
 
   useEffect(() => {
     if (!qrCanvasRef.current || !qrUri || phase !== "verify-enrol") return;
@@ -97,7 +107,9 @@ export default function MfaGate() {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to={from} replace />;
+  // Requirement is resolved by policy in the effect above (which redirects
+  // users whose role is exempt or still inside its enrolment grace period).
+
 
   const buildFriendlyName = () => {
     const iso = new Date().toISOString().replace(/[:.]/g, "-");
