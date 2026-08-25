@@ -239,6 +239,16 @@ export default function AdminConsole() {
 
       <SystemInformationPanel />
 
+      {/* High-risk live data, moved off the general dashboard: security and
+          intrusion metrics, system integrity, and tactical operations. */}
+      {isAdminTier && (
+        <div className="space-y-6">
+          <AdminSecurityBand />
+          <RestrictedOperationsBand />
+        </div>
+      )}
+
+
       {AREAS.map((area) => {
         const sections = area.sections
           .map((section) => ({ ...section, items: section.items.filter(visible) }))
