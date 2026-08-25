@@ -9810,6 +9810,105 @@ export type Database = {
           },
         ]
       }
+      security_monitor_alerts: {
+        Row: {
+          acknowledge_note: string | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          details: Json
+          event_count: number
+          id: string
+          rule_key: string
+          severity: string
+          subject_key: string
+          subject_label: string | null
+          subject_user_id: string | null
+          threshold: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          acknowledge_note?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          details?: Json
+          event_count?: number
+          id?: string
+          rule_key: string
+          severity?: string
+          subject_key?: string
+          subject_label?: string | null
+          subject_user_id?: string | null
+          threshold?: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          acknowledge_note?: string | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          details?: Json
+          event_count?: number
+          id?: string
+          rule_key?: string
+          severity?: string
+          subject_key?: string
+          subject_label?: string | null
+          subject_user_id?: string | null
+          threshold?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      security_monitor_settings: {
+        Row: {
+          authz_failure_threshold: number
+          authz_failure_window_minutes: number
+          created_at: string
+          email_alerts: boolean
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          role_change_threshold: number
+          role_change_window_minutes: number
+          updated_at: string
+          upload_access_threshold: number
+          upload_access_window_minutes: number
+        }
+        Insert: {
+          authz_failure_threshold?: number
+          authz_failure_window_minutes?: number
+          created_at?: string
+          email_alerts?: boolean
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          role_change_threshold?: number
+          role_change_window_minutes?: number
+          updated_at?: string
+          upload_access_threshold?: number
+          upload_access_window_minutes?: number
+        }
+        Update: {
+          authz_failure_threshold?: number
+          authz_failure_window_minutes?: number
+          created_at?: string
+          email_alerts?: boolean
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          role_change_threshold?: number
+          role_change_window_minutes?: number
+          updated_at?: string
+          upload_access_threshold?: number
+          upload_access_window_minutes?: number
+        }
+        Relationships: []
+      }
       security_scan_runs: {
         Row: {
           error_count: number
@@ -13153,6 +13252,11 @@ export type Database = {
           subject_name: string
         }[]
       }
+      security_monitor_acknowledge: {
+        Args: { _alert_id: string; _note?: string }
+        Returns: undefined
+      }
+      security_monitor_scan: { Args: never; Returns: Json }
       security_policy_dashboard: { Args: { _hours?: number }; Returns: Json }
       send_appraisal_reminders: {
         Args: { _period_month?: number; _period_year: number }
