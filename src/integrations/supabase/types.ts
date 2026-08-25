@@ -9920,7 +9920,9 @@ export type Database = {
           last_error: string | null
           last_sent_at: string | null
           last_status: string | null
+          max_attempts: number
           min_severity: string
+          signing_secret: string | null
           throttle_minutes: number
           updated_at: string
           url: string
@@ -9935,7 +9937,9 @@ export type Database = {
           last_error?: string | null
           last_sent_at?: string | null
           last_status?: string | null
+          max_attempts?: number
           min_severity?: string
+          signing_secret?: string | null
           throttle_minutes?: number
           updated_at?: string
           url: string
@@ -9950,7 +9954,9 @@ export type Database = {
           last_error?: string | null
           last_sent_at?: string | null
           last_status?: string | null
+          max_attempts?: number
           min_severity?: string
+          signing_secret?: string | null
           throttle_minutes?: number
           updated_at?: string
           url?: string
@@ -10001,6 +10007,68 @@ export type Database = {
           warn_count?: number
         }
         Relationships: []
+      }
+      security_webhook_deliveries: {
+        Row: {
+          alert_count: number
+          attempts: number
+          created_at: string
+          dead_at: string | null
+          delivered_at: string | null
+          id: string
+          last_error: string | null
+          last_status: string | null
+          lease_until: string | null
+          next_attempt_at: string
+          payload: Json
+          status: string
+          top_severity: string | null
+          updated_at: string
+          webhook_id: string
+        }
+        Insert: {
+          alert_count?: number
+          attempts?: number
+          created_at?: string
+          dead_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_status?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string
+          payload: Json
+          status?: string
+          top_severity?: string | null
+          updated_at?: string
+          webhook_id: string
+        }
+        Update: {
+          alert_count?: number
+          attempts?: number
+          created_at?: string
+          dead_at?: string | null
+          delivered_at?: string | null
+          id?: string
+          last_error?: string | null
+          last_status?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          status?: string
+          top_severity?: string | null
+          updated_at?: string
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_webhook_deliveries_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "security_monitor_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sensitive_table_access_log: {
         Row: {
@@ -13311,11 +13379,14 @@ export type Database = {
       }
       security_monitor_webhook_save: {
         Args: {
+          _clear_signing_secret?: boolean
           _enabled: boolean
           _id: string
           _kind: string
           _label: string
+          _max_attempts?: number
           _min_severity: string
+          _signing_secret?: string
           _throttle_minutes: number
           _url: string
         }
@@ -13325,19 +13396,63 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          dead_deliveries: number
           enabled: boolean
+          has_signing_secret: boolean
           id: string
           kind: string
           label: string
           last_error: string
           last_sent_at: string
           last_status: string
+          max_attempts: number
           min_severity: string
+          pending_deliveries: number
           throttle_minutes: number
           url_preview: string
         }[]
       }
       security_policy_dashboard: { Args: { _hours?: number }; Returns: Json }
+      security_webhook_claim_deliveries: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          id: string
+          kind: string
+          max_attempts: number
+          payload: Json
+          signing_secret: string
+          url: string
+          webhook_id: string
+        }[]
+      }
+      security_webhook_deliveries_list: {
+        Args: { _limit?: number; _status?: string }
+        Returns: {
+          alert_count: number
+          attempts: number
+          created_at: string
+          dead_at: string
+          delivered_at: string
+          id: string
+          last_error: string
+          last_status: string
+          max_attempts: number
+          next_attempt_at: string
+          status: string
+          top_severity: string
+          webhook_id: string
+          webhook_label: string
+        }[]
+      }
+      security_webhook_delivery_action: {
+        Args: { _action: string; _id: string }
+        Returns: undefined
+      }
+      security_webhook_settle_delivery: {
+        Args: { _error?: string; _id: string; _ok: boolean; _status: string }
+        Returns: string
+      }
       send_appraisal_reminders: {
         Args: { _period_month?: number; _period_year: number }
         Returns: {
