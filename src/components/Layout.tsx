@@ -23,6 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const branding = useBranding();
   const { company_name, footer_text } = branding;
   const { isAdmin } = useAuth();
+  const build = useBuildRelease();
   const [clock, setClock] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setClock(new Date()), 1000);
