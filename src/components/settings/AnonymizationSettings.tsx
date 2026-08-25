@@ -139,11 +139,17 @@ export function AnonymizationSettings() {
         .update({ staff_id_mask_rules: payload as any })
         .eq("id", data.id);
       if (error) throw error;
-      await logSecurityEvent("anonymization_rules_updated", {
-        full_roles: payload.full_roles,
-        default: payload.default,
-        role_overrides: Object.keys(payload.role_overrides),
-        context_overrides: Object.keys(payload.context_overrides),
+      await logSecurityEvent({
+        category: "dlp",
+        action: "anonymization_rules_updated",
+        severity: "warn",
+        subject: "staff_id_mask_rules",
+        details: {
+          full_roles: payload.full_roles,
+          default: payload.default,
+          role_overrides: Object.keys(payload.role_overrides),
+          context_overrides: Object.keys(payload.context_overrides),
+        },
       });
     },
     onSuccess: () => {
