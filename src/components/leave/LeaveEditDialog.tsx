@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateInput } from "@/components/ui/date-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -94,11 +95,12 @@ export function LeaveEditDialog({ request, onClose }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="leave-edit-start">Start date</Label>
-                <Input id="leave-edit-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <DateInput id="leave-edit-start" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+
               </div>
               <div>
                 <Label htmlFor="leave-edit-end">End date</Label>
-                <Input id="leave-edit-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <DateInput id="leave-edit-end" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
             <div>
