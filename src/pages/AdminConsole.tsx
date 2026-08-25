@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import {
   Building2, Crown, MonitorSmartphone, FileSpreadsheet, Gauge, History, KeyRound, LayoutGrid, Lock,
   Megaphone, Palette, ScrollText, Shield, ShieldCheck, Siren, Trash2, UserCog, Users,
-  Activity, DatabaseBackup, FolderLock, Layers, Link2, MailCheck, Settings2, ShieldAlert, Unlock,
+  Activity, DatabaseBackup, FolderLock, Layers, Link2, MailCheck, Phone, Settings2, ShieldAlert, Unlock,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
