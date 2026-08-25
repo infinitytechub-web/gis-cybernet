@@ -70,7 +70,7 @@ const leaveItems = [
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
 ];
 
-const financeItems = [
+const paymentsLoansItems = [
   { title: "Payments", url: "/payments", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400" },
   { title: "Loans", url: "/loans", icon: Landmark, iconColor: "text-amber-700 dark:text-amber-300" },
 ];
@@ -205,7 +205,7 @@ const workforceSections: NavSection[] = [
   { label: "Attendance & Shifts", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400", items: attendanceItems },
   { label: "Rosters & Schedules", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", items: rosterItems },
   { label: "Leave & Holidays", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400", items: leaveItems },
-  { label: "Payments & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: financeItems },
+  { label: "Payments & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: paymentsLoansItems },
   { label: "Postings & Transfers", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", items: postingItems },
 ];
 
