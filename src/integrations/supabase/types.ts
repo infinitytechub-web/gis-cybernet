@@ -414,6 +414,7 @@ export type Database = {
           security_scan_frequency: string
           security_scan_last_run_at: string | null
           session_absolute_hours: number
+          staff_id_mask_rules: Json
           system_description: string | null
           system_label: string
           updated_at: string
@@ -472,6 +473,7 @@ export type Database = {
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
           session_absolute_hours?: number
+          staff_id_mask_rules?: Json
           system_description?: string | null
           system_label?: string
           updated_at?: string
@@ -530,6 +532,7 @@ export type Database = {
           security_scan_frequency?: string
           security_scan_last_run_at?: string | null
           session_absolute_hours?: number
+          staff_id_mask_rules?: Json
           system_description?: string | null
           system_label?: string
           updated_at?: string
@@ -12091,6 +12094,7 @@ export type Database = {
           security_scan_frequency: string
           security_scan_last_run_at: string | null
           session_absolute_hours: number
+          staff_id_mask_rules: Json
           system_description: string | null
           system_label: string
           updated_at: string
@@ -12670,6 +12674,7 @@ export type Database = {
           org_name: string
           primary_color: string
           secondary_color: string
+          staff_id_mask_rules: Json
           system_label: string
         }[]
       }
