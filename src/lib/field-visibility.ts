@@ -159,6 +159,15 @@ export function maskValue(field: SensitiveField, value: unknown): string {
     }
     case "date":
       return "••/••/••••";
+    case "id": {
+      // Consistent partial masking: keep the leading series characters and the
+      // final two, e.g. "GIS-004521" → "GIS•••••21".
+      const compact = raw.replace(/\s+/g, "");
+      if (compact.length <= 4) return REDACTED;
+      const head = compact.slice(0, 3);
+      const tail = compact.slice(-2);
+      return `${head}${"•".repeat(Math.max(3, compact.length - 5))}${tail}`;
+    }
     case "full":
     default:
       return REDACTED;
