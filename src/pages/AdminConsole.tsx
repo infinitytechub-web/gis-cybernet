@@ -10,6 +10,9 @@ import { useRbac } from "@/hooks/useRbac";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { CapabilitySelfCheckPanel } from "@/components/admin/CapabilitySelfCheckPanel";
 import { SystemInformationPanel } from "@/components/admin/SystemInformationPanel";
+import AdminSecurityBand from "@/components/dashboard/AdminSecurityBand";
+import RestrictedOperationsBand from "@/components/dashboard/RestrictedOperationsBand";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -203,9 +206,14 @@ const AREAS: ConsoleArea[] = [
 ];
 
 export default function AdminConsole() {
-  const { isAdmin, canManageCommandTier, isAdminOrSupervisor } = useAuth();
+  const { isAdmin, canManageCommandTier, isAdminOrSupervisor, role } = useAuth();
   const { canPath } = useRbac();
   const allowed = isAdmin || canManageCommandTier || isAdminOrSupervisor;
+  // Administration tier — the only roles allowed to see security, system
+  // integrity and tactical operations data.
+  const isAdminTier = role === "admin" || role === "oic" || role === "2ic";
+
+
 
   if (!allowed) {
     return (
@@ -233,6 +241,16 @@ export default function AdminConsole() {
       {(isAdmin || canManageCommandTier) && <CapabilitySelfCheckPanel />}
 
       <SystemInformationPanel />
+
+      {/* High-risk live data, moved off the general dashboard: security and
+          intrusion metrics, system integrity, and tactical operations. */}
+      {isAdminTier && (
+        <div className="space-y-6">
+          <AdminSecurityBand />
+          <RestrictedOperationsBand />
+        </div>
+      )}
+
 
       {AREAS.map((area) => {
         const sections = area.sections

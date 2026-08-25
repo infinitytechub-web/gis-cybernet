@@ -17,23 +17,16 @@ import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidge
 import AttendanceLogWidget from "@/components/dashboard/AttendanceLogWidget";
 import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget";
 import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
-import LowStockWidget from "@/components/dashboard/LowStockWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget";
 import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
-import InterlinkWidget from "@/components/dashboard/InterlinkWidget";
-import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
-import StaffAppraisalsWidget from "@/components/dashboard/StaffAppraisalsWidget";
 import RetirementAlertWidget from "@/components/dashboard/RetirementAlertWidget";
 import CommandTierAnalyticsTabs from "@/components/dashboard/CommandTierAnalyticsTabs";
-import OnlineNowPanel from "@/components/dashboard/OnlineNowPanel";
 import { useOversightDashboardData, usePersonalDashboardData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
 
-const CHART_COLORS = [
-  "hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--success))",
-  "hsl(var(--warning))", "hsl(var(--destructive))", "hsl(var(--info))",
-];
+
+
 
 const statusTone = (s: string) =>
   s === "approved" ? "bg-success/15 text-success" : s === "rejected" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning";
@@ -100,17 +93,13 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
         {can("attendance") && <AttendanceLogWidget />}
         {can("processing") && <ProcessingQueueWidget />}
         {can("front-desk") && <FrontDeskQueueWidget />}
-        {can("stores") && <LowStockWidget />}
         {can("health-lab") && <HealthLabWidget />}
-        {can("fleet") && <LiveGpsMapWidget />}
-        {can("interlink") && <InterlinkWidget />}
         {can("reports") && <ApprovedReportsWidget variant="standard" />}
         {can("reports") && <ApprovedReportsWidget variant="ipse" />}
         {can("scheduled-files") && <ScheduledReportsWidget />}
-        {can("appraisals") && <StaffAppraisalsWidget />}
         {can("staff") && <RetirementAlertWidget />}
         {can("analytics") && <CommandTierAnalyticsTabs />}
-        <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
+
       </DashboardSection>
 
       <DashboardSection id="workforce" title="Workforce analytics" icon={TrendingUp}>
@@ -136,46 +125,36 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
             </CardContent>
           </Card>
 
+          {/* Aggregated only — the full per-department allocation breakdown is
+              restricted to the Admin Console. */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-primary" aria-hidden="true" />
-                Staff by department
-                <Badge variant="outline" className="ml-auto text-[10px]">{deptDistribution.length} depts</Badge>
+                Workforce spread
               </CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[280px] overflow-y-auto p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Department</TableHead>
-                    <TableHead className="w-16 text-right text-xs">Count</TableHead>
-                    <TableHead className="hidden text-xs sm:table-cell">Distribution</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {deptDistribution.map((dept, i) => {
-                    const maxVal = deptDistribution[0]?.value || 1;
-                    const pct = Math.round((dept.value / (c.activeStaff || 1)) * 100);
-                    return (
-                      <TableRow key={dept.name} className="cursor-pointer transition-colors hover:bg-accent/50" onClick={() => navigate(`/directory?dept=${dept.id}`)}>
-                        <TableCell className="py-1.5 text-xs font-medium text-primary underline-offset-2 hover:underline">{dept.name}</TableCell>
-                        <TableCell className="py-1.5 text-right text-xs font-semibold">{dept.value}</TableCell>
-                        <TableCell className="hidden py-1.5 sm:table-cell">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                              <div className="h-full rounded-full" style={{ width: `${(dept.value / maxVal) * 100}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                            </div>
-                            <span className="w-8 text-[10px] text-muted-foreground">{pct}%</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div>
+                <div className="text-xl font-bold tabular-nums">{deptDistribution.length}</div>
+                <p className="text-xs text-muted-foreground">departments staffed</p>
+              </div>
+              <div>
+                <div className="text-xl font-bold tabular-nums">{c.activeStaff}</div>
+                <p className="text-xs text-muted-foreground">active staff</p>
+              </div>
+              <div>
+                <div className="text-xl font-bold tabular-nums">
+                  {deptDistribution.length ? Math.round(c.activeStaff / deptDistribution.length) : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">average per department</p>
+              </div>
+              <p className="col-span-2 text-[11px] text-muted-foreground sm:col-span-3">
+                Detailed department allocations are available in the Admin Console.
+              </p>
             </CardContent>
           </Card>
+
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

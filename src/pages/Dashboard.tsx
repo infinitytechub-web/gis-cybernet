@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useBuildRelease } from "@/hooks/useBuildRelease";
 import { useAuth } from "@/hooks/useAuth";
@@ -5,17 +7,21 @@ import { useBranding } from "@/hooks/useBranding";
 import { roleLabel } from "@/lib/role-labels";
 import StaffDashboard from "@/components/dashboard/StaffDashboard";
 import CommandDashboard from "@/components/dashboard/CommandDashboard";
-import AdminSecurityBand from "@/components/dashboard/AdminSecurityBand";
 
 /**
- * Dashboard — one fixed information hierarchy, three role compositions:
+ * Dashboard — one fixed information hierarchy, two role compositions:
  *
- *   Header → Key figures → Action needed → (Administration) → Operations →
+ *   Header → Key figures → Action needed → Operations →
  *   Workforce analytics → Information
  *
  * Staff and lower-privileged roles get the personal composition only. Command
- * tier adds oversight and operational queues. Admin / OIC / 2IC additionally
- * get the restricted administration & security band.
+ * tier adds oversight and the operational queues it owns.
+ *
+ * High-risk surfaces are deliberately NOT part of any dashboard composition:
+ * security/intrusion metrics, system-integrity and performance data, access
+ * control configuration, tactical GPS operations, dispatch traffic, individual
+ * appraisal ratings and full department allocations live in the Admin Console
+ * (Admin / OIC / 2IC only). General staff see aggregated figures instead.
  */
 export default function Dashboard() {
   const { role, isAdminOrSupervisor } = useAuth();
@@ -34,16 +40,24 @@ export default function Dashboard() {
             Signed in as {roleLabel(role)}
           </p>
         </div>
-        <Badge variant="outline" className="font-mono text-[10px] whitespace-nowrap sm:text-xs" title={build.tooltip}>
-          {build.versionId}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdminTier && (
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              Security &amp; restricted data
+            </Link>
+          )}
+          <Badge variant="outline" className="font-mono text-[10px] whitespace-nowrap sm:text-xs" title={build.tooltip}>
+            {build.versionId}
+          </Badge>
+        </div>
       </header>
 
-      {isAdminOrSupervisor ? (
-        <CommandDashboard>{isAdminTier && <AdminSecurityBand />}</CommandDashboard>
-      ) : (
-        <StaffDashboard />
-      )}
+      {isAdminOrSupervisor ? <CommandDashboard /> : <StaffDashboard />}
     </div>
   );
 }
+
