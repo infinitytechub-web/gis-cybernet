@@ -210,7 +210,7 @@ export default function AdminConsole() {
   // integrity and tactical operations data.
   const isAdminTier = role === "admin" || role === "oic" || role === "2ic";
 
-  const allowed = isAdmin || canManageCommandTier || isAdminOrSupervisor;
+
 
   if (!allowed) {
     return (
