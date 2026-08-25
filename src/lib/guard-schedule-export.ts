@@ -2,6 +2,7 @@
 import * as XLSX from "xlsx";
 import { downloadBlob } from "@/lib/download-utils";
 import { formatDateTime } from "@/lib/date-format";
+import { csvCell } from "@/lib/csv-safe";
 
 export type Assignment = {
   id: string;

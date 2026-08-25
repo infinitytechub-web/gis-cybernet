@@ -4,6 +4,7 @@
 // user actually clicks Export.
 import { format } from "date-fns";
 import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 export type ExportFormat = "pdf" | "csv" | "excel" | "word";
 
