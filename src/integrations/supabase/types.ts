@@ -5788,6 +5788,7 @@ export type Database = {
           attachment_path: string | null
           comments: string | null
           created_at: string
+          decided_at: string | null
           department_id: string | null
           end_date: string
           id: string
@@ -5804,6 +5805,7 @@ export type Database = {
           attachment_path?: string | null
           comments?: string | null
           created_at?: string
+          decided_at?: string | null
           department_id?: string | null
           end_date: string
           id?: string
@@ -5820,6 +5822,7 @@ export type Database = {
           attachment_path?: string | null
           comments?: string | null
           created_at?: string
+          decided_at?: string | null
           department_id?: string | null
           end_date?: string
           id?: string
