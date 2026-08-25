@@ -10,6 +10,9 @@ import { useRbac } from "@/hooks/useRbac";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { CapabilitySelfCheckPanel } from "@/components/admin/CapabilitySelfCheckPanel";
 import { SystemInformationPanel } from "@/components/admin/SystemInformationPanel";
+import AdminSecurityBand from "@/components/dashboard/AdminSecurityBand";
+import RestrictedOperationsBand from "@/components/dashboard/RestrictedOperationsBand";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
