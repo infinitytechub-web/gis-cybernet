@@ -145,7 +145,7 @@ export default function PostingsTransfersWidget() {
 
   const headers = ["Staff ID", "Name", "Date Joined", "Station(s)", "Phone", "DOB", "Appointment", "Years in Service", "Time Until Retirement"];
   const exportRows = filtered.map((r) => [
-    formatStaffId(r.staffId), r.name,
+    formatStaffId(r.staffId, { context: "export" }), r.name,
     r.dateJoined ? format(new Date(r.dateJoined), "dd/MM/yyyy") : "—",
     r.stations, r.phone,
     r.dob ? format(new Date(r.dob), "dd/MM/yyyy") : "—",
