@@ -17,16 +17,11 @@ import DailyOccurrencesWidget from "@/components/dashboard/DailyOccurrencesWidge
 import AttendanceLogWidget from "@/components/dashboard/AttendanceLogWidget";
 import ProcessingQueueWidget from "@/components/dashboard/ProcessingQueueWidget";
 import FrontDeskQueueWidget from "@/components/dashboard/FrontDeskQueueWidget";
-import LowStockWidget from "@/components/dashboard/LowStockWidget";
 import HealthLabWidget from "@/components/dashboard/HealthLabWidget";
 import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget";
 import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
-import InterlinkWidget from "@/components/dashboard/InterlinkWidget";
-import LiveGpsMapWidget from "@/components/dashboard/LiveGpsMapWidget";
-import StaffAppraisalsWidget from "@/components/dashboard/StaffAppraisalsWidget";
 import RetirementAlertWidget from "@/components/dashboard/RetirementAlertWidget";
 import CommandTierAnalyticsTabs from "@/components/dashboard/CommandTierAnalyticsTabs";
-import OnlineNowPanel from "@/components/dashboard/OnlineNowPanel";
 import { useOversightDashboardData, usePersonalDashboardData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
 
