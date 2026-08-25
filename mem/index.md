@@ -8,3 +8,4 @@
 - [Command Staff Roster](mem://features/staff-roster-command) — /command-console roster tab (photos/roles/contacts), inline role designation, user_roles keys on profiles.user_id
 - [Least-Privilege Dashboards](mem://features/least-privilege-dashboard) — Role-specific dashboard compositions, field masking via Sensitive, admin-tier-only security modules
 - [Sidebar & Admin Console](mem://ui/sidebar-and-admin-console) — Collapsible sidebar parents w/ persisted state; /admin + /settings split into Security vs System areas
+- [Security Policy Dashboard](mem://features/security-policy-dashboard) — Access-policy widget (locked/at-risk/lockouts/session revocations), staff self-service MFA, MFA roles + 7-day grace
