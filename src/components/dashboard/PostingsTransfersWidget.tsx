@@ -16,6 +16,7 @@ import { exportReport } from "@/lib/export-utils";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useStaffIdDisplay } from "@/hooks/useStaffIdDisplay";
 import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { BulkActionBar } from "@/components/shared/BulkActionBar";
 
@@ -125,6 +126,8 @@ export default function PostingsTransfersWidget() {
     onError: (e: any) => toast.error(e.message || "Bulk archive failed"),
   });
 
+  const { formatStaffId } = useStaffIdDisplay();
+
   const filtered = useMemo(() => {
     if (!q.trim()) return rows;
     const needle = q.toLowerCase();
@@ -142,7 +145,7 @@ export default function PostingsTransfersWidget() {
 
   const headers = ["Staff ID", "Name", "Date Joined", "Station(s)", "Phone", "DOB", "Appointment", "Years in Service", "Time Until Retirement"];
   const exportRows = filtered.map((r) => [
-    r.staffId, r.name,
+    formatStaffId(r.staffId), r.name,
     r.dateJoined ? format(new Date(r.dateJoined), "dd/MM/yyyy") : "—",
     r.stations, r.phone,
     r.dob ? format(new Date(r.dob), "dd/MM/yyyy") : "—",
@@ -232,7 +235,7 @@ export default function PostingsTransfersWidget() {
                         />
                       </TableCell>
                     )}
-                    <TableCell className="text-xs font-mono">{r.staffId}</TableCell>
+                    <TableCell className="text-xs font-mono">{formatStaffId(r.staffId)}</TableCell>
                     <TableCell className="text-xs font-medium">{r.name}</TableCell>
                     <TableCell className="text-xs">{r.dateJoined ? format(new Date(r.dateJoined), "dd/MM/yyyy") : "—"}</TableCell>
                     <TableCell className="text-xs">{r.stations}</TableCell>

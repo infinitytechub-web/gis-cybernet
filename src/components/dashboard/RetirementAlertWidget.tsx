@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useStaffIdDisplay } from "@/hooks/useStaffIdDisplay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock } from "lucide-react";
@@ -19,6 +20,7 @@ interface AlertRow {
 
 export default function RetirementAlertWidget() {
   const { isAdminOrSupervisor } = useAuth();
+  const { formatStaffId } = useStaffIdDisplay();
   const navigate = useNavigate();
 
   const { data: alerts = [], isLoading, dataUpdatedAt } = useQuery({
@@ -108,7 +110,7 @@ export default function RetirementAlertWidget() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{a.name}</div>
-                    <div className="text-xs text-muted-foreground font-mono">{a.staffId}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{formatStaffId(a.staffId)}</div>
                   </div>
                   <div className="text-right">
                     <div className={`text-xs font-semibold ${isRed ? "text-red-700 dark:text-red-300" : "text-orange-700 dark:text-orange-300"}`}>

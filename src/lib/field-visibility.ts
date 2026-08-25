@@ -39,6 +39,7 @@ export type SensitiveField =
   | "ghana_card"
   | "date_of_birth"
   | "passport_number"
+  | "staff_identifier"
   // medical
   | "medical_record"
   | "medical_diagnosis"
@@ -73,7 +74,7 @@ interface FieldDef {
   /** Roles with a standing need-to-know for the full value. */
   roles: AppRole[];
   /** How the masked form is rendered. */
-  mask: "tail" | "email" | "full" | "date";
+  mask: "tail" | "email" | "full" | "date" | "id";
 }
 
 export const SENSITIVE_FIELDS: Record<SensitiveField, FieldDef> = {
@@ -86,6 +87,10 @@ export const SENSITIVE_FIELDS: Record<SensitiveField, FieldDef> = {
   ghana_card: { group: "identity", label: "Ghana Card number", roles: COMMAND, mask: "tail" },
   date_of_birth: { group: "identity", label: "Date of birth", roles: [...COMMAND, ...SHIFT_LEADERSHIP], mask: "date" },
   passport_number: { group: "identity", label: "Passport number", roles: [...COMMAND, "front_desk", "head_of_processing", "deputy_head_of_processing"], mask: "tail" },
+  // Employee/staff numbers are directly re-identifying, so general screens show
+  // a partially masked form. Full IDs stay with the administration tier
+  // (Admin Console) plus the record owner and delegated grants.
+  staff_identifier: { group: "identity", label: "Employee ID", roles: [], mask: "id" },
 
   // ── Medical ──────────────────────────────────────────────────────────────
   medical_record: { group: "medical", label: "Medical record", roles: [...ADMIN_TIER, "medical_officer"], mask: "full" },
@@ -154,6 +159,15 @@ export function maskValue(field: SensitiveField, value: unknown): string {
     }
     case "date":
       return "••/••/••••";
+    case "id": {
+      // Consistent partial masking: keep the leading series characters and the
+      // final two, e.g. "GIS-004521" → "GIS•••••21".
+      const compact = raw.replace(/\s+/g, "");
+      if (compact.length <= 4) return REDACTED;
+      const head = compact.slice(0, 3);
+      const tail = compact.slice(-2);
+      return `${head}${"•".repeat(Math.max(3, compact.length - 5))}${tail}`;
+    }
     case "full":
     default:
       return REDACTED;
