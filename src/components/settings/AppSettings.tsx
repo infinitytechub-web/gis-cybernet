@@ -131,17 +131,9 @@ export function AppSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base"><Shield className="h-4 w-4 text-destructive" /> Security Policy</CardTitle>
-          <CardDescription>Password and authentication policies for all users.</CardDescription>
+          <CardDescription>Registration control. Lockout thresholds, password complexity, session limits and MFA policy live in Security Settings → Access Policy.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Force Password Change on First Login</p>
-              <p className="text-xs text-muted-foreground">Users must set their own password before accessing the system.</p>
-            </div>
-            <Switch checked={enforcePasswordChange} onCheckedChange={setEnforcePasswordChange} />
-          </div>
-          <Separator />
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Allow Self-Registration</p>
@@ -153,36 +145,13 @@ export function AppSettings() {
             </div>
           </div>
           <Separator />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="min-pw">Minimum Password Length</Label>
-              <Input id="min-pw" type="number" min={6} max={32} value={minPasswordLength} onChange={(e) => setMinPasswordLength(Number(e.target.value))} />
-            </div>
-          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5" />
+            Account lockout, password rules, idle/absolute session limits and MFA enforcement are configured on the <span className="font-medium">Access Policy</span> tab.
+          </p>
         </CardContent>
       </Card>
 
-      {/* Session */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4 text-chart-4" /> Session</CardTitle>
-          <CardDescription>Auto-logout after inactivity. Default: 5 minutes with a 30-second warning.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="auto-logout">Auto-Logout After (minutes)</Label>
-              <Input id="auto-logout" type="number" min={1} max={480} value={autoLogout} onChange={(e) => setAutoLogout(Number(e.target.value))} />
-              <p className="text-xs text-muted-foreground">Users will be signed out after this period of inactivity.</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="auto-logout-warn">Warning Before Logout (seconds)</Label>
-              <Input id="auto-logout-warn" type="number" min={5} max={300} value={autoLogoutWarn} onChange={(e) => setAutoLogoutWarn(Number(e.target.value))} />
-              <p className="text-xs text-muted-foreground">A toast appears this many seconds before the session ends.</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Telemetry */}
       <Card>
