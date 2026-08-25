@@ -203,8 +203,13 @@ const AREAS: ConsoleArea[] = [
 ];
 
 export default function AdminConsole() {
-  const { isAdmin, canManageCommandTier, isAdminOrSupervisor } = useAuth();
+  const { isAdmin, canManageCommandTier, isAdminOrSupervisor, role } = useAuth();
   const { canPath } = useRbac();
+  const allowed = isAdmin || canManageCommandTier || isAdminOrSupervisor;
+  // Administration tier — the only roles allowed to see security, system
+  // integrity and tactical operations data.
+  const isAdminTier = role === "admin" || role === "oic" || role === "2ic";
+
   const allowed = isAdmin || canManageCommandTier || isAdminOrSupervisor;
 
   if (!allowed) {
