@@ -107,7 +107,9 @@ export default function MfaGate() {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to={from} replace />;
+  // Requirement is resolved by policy in the effect above (which redirects
+  // users whose role is exempt or still inside its enrolment grace period).
+
 
   const buildFriendlyName = () => {
     const iso = new Date().toISOString().replace(/[:.]/g, "-");
