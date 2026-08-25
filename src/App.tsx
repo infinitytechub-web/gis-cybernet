@@ -51,6 +51,7 @@ const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals")
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
 const SensitiveAccessLog = lazy(() => import("./pages/SensitiveAccessLog"));
 const SecurityAuditLog = lazy(() => import("./pages/SecurityAuditLog"));
+const SecurityMonitoring = lazy(() => import("./pages/SecurityMonitoring"));
 const PhoneValidationRules = lazy(() => import("./pages/PhoneValidationRules"));
 const QuarantineInbox = lazy(() => import("./pages/QuarantineInbox"));
 const IpBlocks = lazy(() => import("./pages/IpBlocks"));
@@ -203,6 +204,7 @@ function App() {
           <Route path="/attendance/connections" element={<ProtectedRoute module="shift-connections"><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals" element={<ProtectedRoute module="staff-request-approvals"><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />
           <Route path="/shift-window-audit" element={<ProtectedRoute module="shift-window-audit"><Layout><ShiftWindowAudit /></Layout></ProtectedRoute>} />
+          <Route path="/security-monitoring" element={<ProtectedRoute module="security-monitoring"><Layout><SecurityMonitoring /></Layout></ProtectedRoute>} />
           <Route path="/security-audit-log" element={<ProtectedRoute module="security-audit-log"><Layout><SecurityAuditLog /></Layout></ProtectedRoute>} />
           <Route path="/admin/phone-validation" element={<ProtectedRoute module="phone-validation-rules"><Layout><PhoneValidationRules /></Layout></ProtectedRoute>} />
           <Route path="/sensitive-access-log" element={<ProtectedRoute module="sensitive-access-log"><Layout><SensitiveAccessLog /></Layout></ProtectedRoute>} />
