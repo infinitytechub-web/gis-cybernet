@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.block_lockout_event_mutation() FROM PUBLIC, anon, authenticated;

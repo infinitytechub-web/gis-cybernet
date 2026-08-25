@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
 import SecurityThreatsWidget from "@/components/dashboard/SecurityThreatsWidget";
+import SecurityPolicyWidget from "@/components/dashboard/SecurityPolicyWidget";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import { useSystemHealthData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
@@ -27,6 +28,7 @@ export default function AdminSecurityBand() {
     >
       <AdminQuickSearchWidget />
       {can("ip-blocks") && <SecurityThreatsWidget />}
+      {can("session-management") && <SecurityPolicyWidget />}
       {healthWidgetEnabled && can("settings") && <SystemHealthCheckWidget />}
 
       {systemHealth && (

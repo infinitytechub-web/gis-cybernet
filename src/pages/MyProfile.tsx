@@ -19,6 +19,7 @@ import { validateGhanaPhoneList } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { DateInput } from "@/components/ui/date-input";
 import { BiometricSettings } from "@/components/settings/BiometricSettings";
+import StaffMfaSettings from "@/components/settings/StaffMfaSettings";
 
 
 const EDITABLE_FIELDS = [
@@ -318,6 +319,8 @@ export default function MyProfile() {
           )}
         </CardContent>
       </Card>
+
+      <StaffMfaSettings />
 
       <BiometricSettings />
     </div>
