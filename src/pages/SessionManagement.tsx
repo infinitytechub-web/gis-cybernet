@@ -88,6 +88,7 @@ function deviceLabel(ua: string | null): string {
 export default function SessionManagement() {
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const canManageAll = isAdmin || isAdminOrSupervisor;
+  const build = useBuildRelease();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

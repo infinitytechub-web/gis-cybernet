@@ -20,6 +20,7 @@ import AdminSecurityBand from "@/components/dashboard/AdminSecurityBand";
 export default function Dashboard() {
   const { role, isAdminOrSupervisor } = useAuth();
   const { company_name } = useBranding();
+  const build = useBuildRelease();
   const isAdminTier = role === "admin" || role === "oic" || role === "2ic";
 
   return (
