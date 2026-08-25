@@ -42,11 +42,7 @@ Deno.serve(async (req) => {
     if (scanError) return json({ error: "Scan failed", detail: scanError.message }, 500);
 
     const created = Number((scan as any)?.alerts_created ?? 0);
-    if (created === 0) return json({ ...(scan as any), emailed: 0 });
-
-    const { data: settings } = await supabase
-      .from("security_monitor_settings").select("email_alerts").limit(1).maybeSingle();
-    if (!settings?.email_alerts) return json({ ...(scan as any), emailed: 0, reason: "email alerts disabled" });
+    if (created === 0) return json({ ...(scan as any), emailed: 0, webhooks: 0 });
 
     const { data: alerts } = await supabase
       .from("security_monitor_alerts")
@@ -54,7 +50,16 @@ Deno.serve(async (req) => {
       .gte("created_at", startedAt)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (!alerts || alerts.length === 0) return json({ ...(scan as any), emailed: 0 });
+    if (!alerts || alerts.length === 0) return json({ ...(scan as any), emailed: 0, webhooks: 0 });
+
+    // ---- Webhook delivery (severity filtered + throttled per destination) ----
+    const webhookResult = await deliverWebhooks(supabase, alerts);
+
+    const { data: settings } = await supabase
+      .from("security_monitor_settings").select("email_alerts").limit(1).maybeSingle();
+    if (!settings?.email_alerts) {
+      return json({ ...(scan as any), emailed: 0, reason: "email alerts disabled", ...webhookResult });
+    }
 
     const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
     const ids = (admins ?? []).map((a) => a.user_id);
