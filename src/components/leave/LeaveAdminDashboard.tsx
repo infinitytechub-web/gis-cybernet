@@ -36,7 +36,7 @@ export function LeaveAdminDashboard() {
     queryFn: async () => {
       let q = supabase
         .from("leave_requests")
-        .select("id, type, status, start_date, end_date, reason, created_at, department_id, shift_group, profiles(first_name, last_name, staff_id)")
+        .select("id, type, status, start_date, end_date, reason, created_at, decided_at, department_id, shift_group, profiles!leave_requests_profile_id_fkey(first_name, last_name, staff_id), approver:profiles!leave_requests_approved_by_fkey(first_name, last_name)")
         .order("created_at", { ascending: false })
         .limit(500);
       if (deptFilter !== "all") q = q.eq("department_id", deptFilter);
@@ -101,45 +101,34 @@ export function LeaveAdminDashboard() {
         <LeaveApprovalQueue />
       ) : (
         <>
-          {/* Stat cards */}
+          {/* Stat cards — click to filter by status */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <CalendarOff className="h-8 w-8 text-primary" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.total}</div>
-                  <div className="text-xs text-muted-foreground">Total</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <Clock className="h-8 w-8 text-amber-600" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.pending}</div>
-                  <div className="text-xs text-muted-foreground">Pending</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.approved}</div>
-                  <div className="text-xs text-muted-foreground">Approved</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <XCircle className="h-8 w-8 text-destructive" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.rejected}</div>
-                  <div className="text-xs text-muted-foreground">Rejected</div>
-                </div>
-              </CardContent>
-            </Card>
+            {([
+              { key: "all", label: "Total", value: counts.total, Icon: CalendarOff, tone: "text-primary" },
+              { key: "pending", label: "Pending", value: counts.pending, Icon: Clock, tone: "text-amber-600" },
+              { key: "approved", label: "Approved", value: counts.approved, Icon: CheckCircle2, tone: "text-emerald-600" },
+              { key: "rejected", label: "Rejected", value: counts.rejected, Icon: XCircle, tone: "text-destructive" },
+            ] as const).map(({ key, label, value, Icon, tone }) => (
+              <Card
+                key={key}
+                role="button"
+                tabIndex={0}
+                aria-pressed={statusFilter === key}
+                onClick={() => setStatusFilter(key)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStatusFilter(key); } }}
+                className={`cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${statusFilter === key ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Icon className={`h-8 w-8 ${tone}`} />
+                  <div>
+                    <div className="text-2xl font-bold">{value}</div>
+                    <div className="text-xs text-muted-foreground">{label}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-2">
@@ -208,12 +197,19 @@ export function LeaveAdminDashboard() {
                         <TableCell className="text-sm">{r.shift_group ?? "—"}</TableCell>
                         <TableCell className="capitalize text-sm">{r.type}</TableCell>
                         <TableCell className="text-xs">
-                          {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
+                          {format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}
                         </TableCell>
                         <TableCell>{days}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge>
+                          {r.status !== "pending" && (r.approver || r.decided_at) && (
+                            <div className="text-[11px] text-muted-foreground mt-1">
+                              {r.approver ? `${r.approver.first_name ?? ""} ${r.approver.last_name ?? ""}`.trim() : "—"}
+                              {r.decided_at ? ` — ${format(new Date(r.decided_at), "dd/MM/yyyy HH:mm")}` : ""}
+                            </div>
+                          )}
                         </TableCell>
+
                       </TableRow>
                     );
                   })
