@@ -41,10 +41,6 @@ export function AppSettings() {
 
   const [orgName, setOrgName] = useState("");
   const [systemLabel, setSystemLabel] = useState("");
-  const [autoLogout, setAutoLogout] = useState(5);
-  const [autoLogoutWarn, setAutoLogoutWarn] = useState(30);
-  const [enforcePasswordChange, setEnforcePasswordChange] = useState(true);
-  const [minPasswordLength, setMinPasswordLength] = useState(8);
   const [allowSelfRegistration, setAllowSelfRegistration] = useState(false);
   const [enableHealthWidget, setEnableHealthWidget] = useState(true);
 
@@ -52,10 +48,6 @@ export function AppSettings() {
     if (settings) {
       setOrgName(settings.org_name);
       setSystemLabel(settings.system_label);
-      setAutoLogout(settings.auto_logout_minutes);
-      setAutoLogoutWarn(settings.auto_logout_warning_seconds ?? 30);
-      setEnforcePasswordChange(settings.enforce_password_change);
-      setMinPasswordLength(settings.min_password_length);
       setAllowSelfRegistration(settings.allow_self_registration);
       setEnableHealthWidget(settings.enable_system_health_widget ?? true);
     }
@@ -64,30 +56,20 @@ export function AppSettings() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!settings?.id) throw new Error("No settings row found");
-      if (autoLogout < 1 || autoLogout > 480) {
-        throw new Error("Auto-logout must be between 1 and 480 minutes.");
-      }
-      if (autoLogoutWarn < 5 || autoLogoutWarn > 300) {
-        throw new Error("Warning lead time must be between 5 and 300 seconds.");
-      }
-      if (autoLogoutWarn >= autoLogout * 60) {
-        throw new Error("Warning lead time must be shorter than the inactivity window.");
-      }
+      // Lockout / password / session fields are owned by the Access Policy tab
+      // so the two panels can never overwrite each other's values.
       const { error } = await supabase
         .from("app_settings")
         .update({
           org_name: orgName,
           system_label: systemLabel,
-          auto_logout_minutes: autoLogout,
-          auto_logout_warning_seconds: autoLogoutWarn,
-          enforce_password_change: enforcePasswordChange,
-          min_password_length: minPasswordLength,
           allow_self_registration: allowSelfRegistration,
           enable_system_health_widget: enableHealthWidget,
         })
         .eq("id", settings.id);
       if (error) throw error;
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["app-settings"] });
       toast.success("Settings saved successfully.");
