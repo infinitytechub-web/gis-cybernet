@@ -108,7 +108,7 @@ export default function RetirementAlertWidget() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{a.name}</div>
-                    <div className="text-xs text-muted-foreground font-mono">{a.staffId}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{formatStaffId(a.staffId)}</div>
                   </div>
                   <div className="text-right">
                     <div className={`text-xs font-semibold ${isRed ? "text-red-700 dark:text-red-300" : "text-orange-700 dark:text-orange-300"}`}>
