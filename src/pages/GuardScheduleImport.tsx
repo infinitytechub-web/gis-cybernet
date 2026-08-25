@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { formatDateTime } from "@/lib/date-format";
 import {
+import { csvCellQuoted } from "@/lib/csv-safe";
   exportScheduleXlsx,
   exportScheduleCsv,
   type Assignment,
@@ -1224,12 +1225,12 @@ export default function GuardScheduleImport() {
                 const lines = [header.join(",")].concat(
                   diffIssues.map((d) => [
                     d.index + 1,
-                    `"${(d.row.name ?? "").replace(/"/g, '""')}"`,
+                    csvCellQuoted((d.row.name ?? "")),
                     d.row.serial_no ?? "",
                     d.field,
-                    `"${(d.got ?? "").replace(/"/g, '""')}"`,
-                    `"${(d.expected ?? "").replace(/"/g, '""')}"`,
-                    `"${(d.suggestion ?? "").replace(/"/g, '""')}"`,
+                    csvCellQuoted((d.got ?? "")),
+                    csvCellQuoted((d.expected ?? "")),
+                    csvCellQuoted((d.suggestion ?? "")),
                   ].join(",")),
                 );
                 const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });

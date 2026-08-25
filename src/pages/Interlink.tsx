@@ -35,6 +35,7 @@ import { SchedulesTab } from "@/components/interlink/SchedulesTab";
 import { AttachmentRulesTab } from "@/components/interlink/AttachmentRulesTab";
 import { ApprovalsTab } from "@/components/interlink/ApprovalsTab";
 import { EmailStatusPanel } from "@/components/interlink/EmailStatusPanel";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 // ───────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -1471,7 +1472,7 @@ async function buildReportBlob(
   opts: { title: string; headers: string[]; rows: string[][]; filename: string }
 ): Promise<Blob> {
   if (fmt === "csv") {
-    const escape = (c: string) => `"${(c ?? "").replace(/"/g, '""')}"`;
+    const escape = (c: string) => csvCellQuoted((c ?? ""));
     const lines = [escape("Cybernet HRM System"), escape(opts.title), ""];
     lines.push(opts.headers.map(escape).join(","));
     opts.rows.forEach((r) => lines.push(r.map(escape).join(",")));

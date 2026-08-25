@@ -16,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { csvCell } from "@/lib/csv-safe";
 
 type Outcome = {
   rowIndex: number;
@@ -73,7 +74,7 @@ const TEMPLATE_SAMPLE_ROWS: string[][] = [
 
 function downloadTemplate(format: "csv" | "xlsx") {
   if (format === "csv") {
-    const lines = [TEMPLATE_HEADERS.join(","), ...TEMPLATE_SAMPLE_ROWS.map((r) => r.map((v) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v).join(","))];
+    const lines = [TEMPLATE_HEADERS.join(","), ...TEMPLATE_SAMPLE_ROWS.map((r) => r.map((v) => csvCell(v)).join(","))];
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -122,7 +123,7 @@ export function BulkStaffUploadDialog({ trigger }: Props) {
     const lines = [header.join(",")];
     const esc = (v: any) => {
       const s = v === null || v === undefined ? "" : String(v);
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      return csvCell(s);
     };
     for (const o of previewResult.outcomes) {
       if (o.diff && Object.keys(o.diff).length) {

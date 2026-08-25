@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 const PIE_COLORS = ["hsl(var(--primary))", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
 
@@ -161,7 +162,7 @@ export function StoresReportsTab() {
       sections.forEach(s => {
         lines.push(`"# ${s.title}"`);
         lines.push(s.headers.map(h => `"${h}"`).join(","));
-        s.rows.forEach(r => lines.push(r.map(c => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")));
+        s.rows.forEach(r => lines.push(r.map(c => csvCellQuoted((c ?? "").toString())).join(",")));
         lines.push("");
       });
       const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });

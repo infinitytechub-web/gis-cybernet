@@ -17,6 +17,7 @@ import { Package, Search, AlertTriangle, PackageCheck, Coins, Download } from "l
 import { formatDateTime } from "@/lib/date-format";
 import { triggerDownload } from "@/lib/download-utils";
 import { useProcurementStock, type ProcurementStockItem } from "@/hooks/useProcurementRequests";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 const money = (n: number) =>
   new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 2 })
@@ -93,7 +94,7 @@ export default function ProcurementStockTab() {
       i.last_pr_number ?? "",
     ]);
     const csv = [head, ...rows]
-      .map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(","))
+      .map((r) => r.map((c) => csvCellQuoted(String(c ?? ""))).join(","))
       .join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     triggerDownload(url, "procurement-inventory.csv");

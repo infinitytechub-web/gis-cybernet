@@ -28,6 +28,7 @@ import { downloadBlob, downloadCSVString } from "@/lib/download-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatDateTime } from "@/lib/date-format";
+import { csvCell } from "@/lib/csv-safe";
 
 const FREQS = ["hourly", "daily", "weekly", "monthly"] as const;
 type Freq = typeof FREQS[number] | "any";
@@ -182,7 +183,7 @@ export function ComplianceExportFilters() {
       const esc = (v: any) => {
         if (v === null || v === undefined) return "";
         const s = String(v);
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        return csvCell(s);
       };
       const lines = [header.map(esc).join(",")];
       for (const r of composed.rows) {

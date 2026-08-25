@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollText, Download as DownloadIcon, Upload, Eye, Shield, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 const ACTIONS: { value: string; label: string }[] = [
   { value: "all", label: "All actions" },
@@ -77,7 +78,7 @@ export function FileAuditTrailDialog({ fileId, trigger }: Props) {
         r.announcement_files?.title ?? r.file_id ?? "",
         JSON.stringify(r.metadata ?? {}).replace(/"/g, "'"),
       ];
-      lines.push(cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","));
+      lines.push(cells.map((c) => csvCellQuoted(String(c))).join(","));
     }
     const blob = new Blob([lines.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);

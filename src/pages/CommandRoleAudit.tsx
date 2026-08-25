@@ -19,11 +19,12 @@ import { ROLE_LABEL, COMMAND_TIER_ROLES, roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { csvCell } from "@/lib/csv-safe";
 
 function toCsv(headers: string[], rows: (string | number | null | undefined)[][]) {
   const escape = (v: any) => {
     const s = v == null ? "" : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    return csvCell(s);
   };
   return [headers.map(escape).join(","), ...rows.map((r) => r.map(escape).join(","))].join("\n");
 }

@@ -52,6 +52,7 @@ import {
 import { PowerOff, FileJson, FileSpreadsheet, Power, ShieldAlert } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useShiftConnectionPermissions } from "@/hooks/useShiftConnectionPermissions";
+import { csvCell } from "@/lib/csv-safe";
 
 interface ConnectionRow {
   id: string;
@@ -76,7 +77,7 @@ const ALL = "__all__";
 
 function esc(v: string | number | null | undefined): string {
   const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return csvCell(s);
 }
 
 export function ShiftConnectionsAuditPanel() {

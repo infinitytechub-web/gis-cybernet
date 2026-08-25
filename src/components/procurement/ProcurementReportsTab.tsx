@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
+import { csvCellQuoted } from "@/lib/csv-safe";
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -325,7 +326,7 @@ export function ProcurementReportsTab() {
           lines.push(`"# ${s.title}"`);
           lines.push(s.headers.map((h) => `"${h}"`).join(","));
           s.rows.forEach((r) =>
-            lines.push(r.map((c) => `"${(c ?? "").toString().replace(/"/g, '""')}"`).join(",")),
+            lines.push(r.map((c) => csvCellQuoted((c ?? "").toString())).join(",")),
           );
           lines.push("");
         });

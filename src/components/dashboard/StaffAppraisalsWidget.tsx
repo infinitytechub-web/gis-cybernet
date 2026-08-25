@@ -14,6 +14,7 @@ import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -158,7 +159,7 @@ export default function StaffAppraisalsWidget() {
           r.has_appraisal ? "Yes" : "No", r.appraisal_status ?? "",
           r.total_score?.toString() ?? "", String(r.duplicate_attempts ?? 0),
           r.last_attempt_at ? format(new Date(r.last_attempt_at), "yyyy-MM-dd HH:mm") : "",
-        ].map((c) => `"${String(c).replace(/"/g, '""')}"`);
+        ].map((c) => csvCellQuoted(String(c)));
         lines.push(cells.join(","));
       }
       downloadCSVString(lines.join("\n"), `appraisal-coverage-${periodSuffix}.csv`);

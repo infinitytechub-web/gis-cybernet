@@ -11,6 +11,7 @@ import { Activity, RefreshCw, Loader2, Search, Heart, Scissors, Filter, Trash2, 
 import { format, formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { downloadCSVString } from "@/lib/download-utils";
+import { csvCell } from "@/lib/csv-safe";
 
 const RETENTION_STORAGE_KEY = "presence_events.retention_days";
 const DEFAULT_RETENTION_DAYS = 7;
@@ -177,7 +178,7 @@ export function PresenceEventsPanel() {
   const escapeCsv = (v: unknown): string => {
     if (v === null || v === undefined) return "";
     const s = String(v);
-    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    return csvCell(s);
   };
 
   const exportCsv = () => {
