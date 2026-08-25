@@ -197,12 +197,19 @@ export function LeaveAdminDashboard() {
                         <TableCell className="text-sm">{r.shift_group ?? "—"}</TableCell>
                         <TableCell className="capitalize text-sm">{r.type}</TableCell>
                         <TableCell className="text-xs">
-                          {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
+                          {format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}
                         </TableCell>
                         <TableCell>{days}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge>
+                          {r.status !== "pending" && (r.approver || r.decided_at) && (
+                            <div className="text-[11px] text-muted-foreground mt-1">
+                              {r.approver ? `${r.approver.first_name ?? ""} ${r.approver.last_name ?? ""}`.trim() : "—"}
+                              {r.decided_at ? ` — ${format(new Date(r.decided_at), "dd/MM/yyyy HH:mm")}` : ""}
+                            </div>
+                          )}
                         </TableCell>
+
                       </TableRow>
                     );
                   })
