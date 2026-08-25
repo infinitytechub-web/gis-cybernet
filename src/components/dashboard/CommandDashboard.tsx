@@ -100,17 +100,13 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
         {can("attendance") && <AttendanceLogWidget />}
         {can("processing") && <ProcessingQueueWidget />}
         {can("front-desk") && <FrontDeskQueueWidget />}
-        {can("stores") && <LowStockWidget />}
         {can("health-lab") && <HealthLabWidget />}
-        {can("fleet") && <LiveGpsMapWidget />}
-        {can("interlink") && <InterlinkWidget />}
         {can("reports") && <ApprovedReportsWidget variant="standard" />}
         {can("reports") && <ApprovedReportsWidget variant="ipse" />}
         {can("scheduled-files") && <ScheduledReportsWidget />}
-        {can("appraisals") && <StaffAppraisalsWidget />}
         {can("staff") && <RetirementAlertWidget />}
         {can("analytics") && <CommandTierAnalyticsTabs />}
-        <div id="online-now" className="scroll-mt-20"><OnlineNowPanel /></div>
+
       </DashboardSection>
 
       <DashboardSection id="workforce" title="Workforce analytics" icon={TrendingUp}>
