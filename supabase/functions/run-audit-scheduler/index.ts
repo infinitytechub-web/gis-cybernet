@@ -12,10 +12,13 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Neutralise spreadsheet formula injection: cells starting with = + - @ or a
+// leading tab/CR are prefixed with an apostrophe before RFC-4180 quoting.
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  let s = String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 function toCsv(headers: string[], rows: (string | number | null)[][]): string {

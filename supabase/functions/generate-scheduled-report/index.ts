@@ -113,7 +113,12 @@ serve(async (req) => {
     // Generate CSV content (lightweight server-side format)
     const csvHeader = headers.join(",");
     const csvRows = rows.map((r) =>
-      r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      r.map((cell) => {
+        let s = String(cell ?? "");
+        // Prevent spreadsheet formula injection in exported reports.
+        if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+        return `"${s.replace(/"/g, '""')}"`;
+      }).join(",")
     );
     const csvContent = [csvHeader, ...csvRows].join("\n");
     const csvBlob = new TextEncoder().encode(csvContent);
