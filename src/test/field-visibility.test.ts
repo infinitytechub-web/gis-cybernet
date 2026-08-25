@@ -68,4 +68,15 @@ describe("field-level visibility", () => {
   it("denies everything when there is no role", () => {
     for (const f of ALL) expect(canSeeField(f, { role: null }), f).toBe(false);
   });
+
+  it("partially masks employee IDs for general viewers only", () => {
+    expect(displayField("staff_identifier", "GIS-004521", admin)).toBe("GIS-004521");
+    const masked = displayField("staff_identifier", "GIS-004521", staff);
+    expect(masked).toBe("GIS•••••21");
+    expect(masked).not.toContain("0045");
+    // Owners always see their own identifier.
+    expect(displayField("staff_identifier", "GIS-004521", { ...staff, isOwner: true })).toBe("GIS-004521");
+    // Masking is stable for the same input wherever it is rendered.
+    expect(maskValue("staff_identifier", "GIS-004521")).toBe(masked);
+  });
 });
