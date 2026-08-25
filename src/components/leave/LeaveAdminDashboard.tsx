@@ -101,45 +101,34 @@ export function LeaveAdminDashboard() {
         <LeaveApprovalQueue />
       ) : (
         <>
-          {/* Stat cards */}
+          {/* Stat cards — click to filter by status */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <CalendarOff className="h-8 w-8 text-primary" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.total}</div>
-                  <div className="text-xs text-muted-foreground">Total</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <Clock className="h-8 w-8 text-amber-600" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.pending}</div>
-                  <div className="text-xs text-muted-foreground">Pending</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.approved}</div>
-                  <div className="text-xs text-muted-foreground">Approved</div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <XCircle className="h-8 w-8 text-destructive" />
-                <div>
-                  <div className="text-2xl font-bold">{counts.rejected}</div>
-                  <div className="text-xs text-muted-foreground">Rejected</div>
-                </div>
-              </CardContent>
-            </Card>
+            {([
+              { key: "all", label: "Total", value: counts.total, Icon: CalendarOff, tone: "text-primary" },
+              { key: "pending", label: "Pending", value: counts.pending, Icon: Clock, tone: "text-amber-600" },
+              { key: "approved", label: "Approved", value: counts.approved, Icon: CheckCircle2, tone: "text-emerald-600" },
+              { key: "rejected", label: "Rejected", value: counts.rejected, Icon: XCircle, tone: "text-destructive" },
+            ] as const).map(({ key, label, value, Icon, tone }) => (
+              <Card
+                key={key}
+                role="button"
+                tabIndex={0}
+                aria-pressed={statusFilter === key}
+                onClick={() => setStatusFilter(key)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStatusFilter(key); } }}
+                className={`cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${statusFilter === key ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Icon className={`h-8 w-8 ${tone}`} />
+                  <div>
+                    <div className="text-2xl font-bold">{value}</div>
+                    <div className="text-xs text-muted-foreground">{label}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+
 
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-2">
