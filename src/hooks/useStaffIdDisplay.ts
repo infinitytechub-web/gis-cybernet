@@ -1,32 +1,47 @@
 import { useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRbac } from "@/hooks/useRbac";
-import { canSeeField, displayField } from "@/lib/field-visibility";
+import { useAppSettings } from "@/hooks/useAppSettings";
+import {
+  applyStaffIdPattern,
+  resolveStaffIdPattern,
+  type StaffIdContext,
+} from "@/lib/staff-id-mask";
 
 /**
- * Consistent employee-ID anonymisation for general screens.
+ * Employee-ID anonymisation driven by the configurable rules in
+ * Settings → Security → Anonymisation.
  *
- * Returns a formatter that yields the full staff ID only for the
- * administration tier (Admin Console surfaces), the record owner, or an active
- * delegated `field:identity` grant — everyone else gets the partially masked
- * form (`GIS•••••21`). Use it for table cells, sublabels and exports so the
- * same identifier never appears unmasked on one widget and masked on another.
+ * The formatter resolves the pattern for the current viewer's role and the
+ * render context (dashboard tile, directory table, export, print), so the same
+ * identifier is anonymised identically everywhere it appears.
  */
-export function useStaffIdDisplay() {
+export function useStaffIdDisplay(defaultContext: StaffIdContext = "dashboard") {
   const { role, user } = useAuth();
   const { capabilities } = useRbac();
+  const { staff_id_mask_rules: rules } = useAppSettings();
 
-  const canSeeFull = canSeeField("staff_identifier", { role, capabilities });
+  const hasIdentityGrant = capabilities?.includes("field:identity") ?? false;
 
   const format = useCallback(
-    (staffId: unknown, opts?: { ownerUserId?: string | null }) =>
-      displayField("staff_identifier", staffId, {
-        role,
-        capabilities,
-        isOwner: !!opts?.ownerUserId && opts.ownerUserId === user?.id,
-      }),
-    [role, capabilities, user?.id],
+    (
+      staffId: unknown,
+      opts?: { ownerUserId?: string | null; context?: StaffIdContext },
+    ) =>
+      applyStaffIdPattern(
+        staffId,
+        resolveStaffIdPattern(rules, {
+          role,
+          context: opts?.context ?? defaultContext,
+          isOwner: !!opts?.ownerUserId && opts.ownerUserId === user?.id,
+          hasIdentityGrant,
+        }),
+      ),
+    [rules, role, user?.id, hasIdentityGrant, defaultContext],
   );
 
-  return { formatStaffId: format, canSeeFullStaffId: canSeeFull };
+  const canSeeFullStaffId =
+    resolveStaffIdPattern(rules, { role, context: defaultContext, hasIdentityGrant }).mode === "full";
+
+  return { formatStaffId: format, canSeeFullStaffId, staffIdRules: rules };
 }
