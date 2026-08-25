@@ -8,3 +8,4 @@
 - [Fleet Maintenance & Budgets](mem://features/fleet-maintenance-and-budgets) — Maintenance tab/card, patrol vehicle column, clock reason+photo, per-unit procurement budgets
 - [Fleet GPS Feed](mem://features/fleet-gps-feed) — /fleet GPS feed tab: show-once hashed tracker keys, fleet_feed_readiness live/stale/silent onboarding
 - [Fuel Requests](mem://features/fuel-requests) — Command console fuel approval chain + Fleet fuel consumption log with odometer economy
+- [Dashboard Restricted Surfaces](mem://features/dashboard-restricted-surfaces) — Security/system-integrity/tactical GPS/dispatch/appraisal/dept-allocation widgets live only in Admin Console (admin, oic, 2ic)
