@@ -103,6 +103,7 @@ const AREAS: ConsoleArea[] = [
         items: [
           { title: "Firewall Settings", description: "File, URL, auth and WAF layer enforcement rules.", url: "/settings?area=security&tab=firewall", icon: ShieldCheck, tier: "admin" },
           { title: "Security Alerts", description: "Who gets notified, and for which severities.", url: "/settings?area=security&tab=firewall-alerts", icon: ShieldAlert, tier: "admin" },
+          { title: "Security Monitoring", description: "Alerts on suspicious role changes, authorization failures and unusual file access.", url: "/security-monitoring", icon: ShieldAlert, tier: "admin" },
           { title: "Security Updates", description: "Outstanding security actions and hardening status.", url: "/settings?area=security&tab=security-updates", icon: ShieldCheck, tier: "admin" },
         ],
       },
