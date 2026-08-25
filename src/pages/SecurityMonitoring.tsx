@@ -96,6 +96,15 @@ export default function SecurityMonitoring() {
     },
   });
 
+  const { live, setLive, connected, lastEventAt } = useSecurityAlertStream({
+    enabled: allowed,
+    onAlert: (a: any) => {
+      const label = RULES[a?.rule_key]?.label ?? a?.rule_key ?? "Security alert";
+      const severity = String(a?.severity ?? "").toUpperCase();
+      toast.warning(`${severity}: ${label}`, { description: a?.subject_label ?? undefined });
+    },
+  });
+
   const { data: alerts = [], isLoading: loadingAlerts } = useQuery({
     queryKey: ["security-monitor-alerts"],
     enabled: allowed,
@@ -108,15 +117,6 @@ export default function SecurityMonitoring() {
         .limit(300);
       if (error) throw error;
       return (data ?? []) as unknown as Alert[];
-    },
-  });
-
-  const { live, setLive, connected, lastEventAt } = useSecurityAlertStream({
-    enabled: allowed,
-    onAlert: (a: any) => {
-      const label = RULES[a?.rule_key]?.label ?? a?.rule_key ?? "Security alert";
-      const severity = String(a?.severity ?? "").toUpperCase();
-      toast.warning(`${severity}: ${label}`, { description: a?.subject_label ?? undefined });
     },
   });
 
