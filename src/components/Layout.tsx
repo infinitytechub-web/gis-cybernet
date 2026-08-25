@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { WelcomeBanner } from "@/components/WelcomeBanner";
 import { QuickScroll } from "@/components/ui/quick-scroll";
-import { buildId, buildTooltip } from "@/lib/build-version";
+import { useBuildRelease } from "@/hooks/useBuildRelease";
 
 import { OnlineNowBadge } from "@/components/OnlineNowBadge";
 import { SystemAuditTray } from "@/components/SystemAuditTray";
