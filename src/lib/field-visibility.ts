@@ -74,7 +74,7 @@ interface FieldDef {
   /** Roles with a standing need-to-know for the full value. */
   roles: AppRole[];
   /** How the masked form is rendered. */
-  mask: "tail" | "email" | "full" | "date";
+  mask: "tail" | "email" | "full" | "date" | "id";
 }
 
 export const SENSITIVE_FIELDS: Record<SensitiveField, FieldDef> = {
