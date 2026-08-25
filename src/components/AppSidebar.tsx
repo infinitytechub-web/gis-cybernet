@@ -82,6 +82,7 @@ const appraisalItems = [
 
 const staffApprovalsItem = { title: "Staff Approvals", url: "/staff-approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" };
 const shiftWindowAuditItem = { title: "Shift Rules Audit", url: "/shift-window-audit", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
+const securityAuditLogItem = { title: "Security Audit Log", url: "/security-audit-log", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
 const sensitiveAccessLogItem = { title: "Sensitive Access Log", url: "/sensitive-access-log", icon: ScrollText, iconColor: "text-rose-700 dark:text-rose-300" };
 const ipBlocksItem = { title: "IP & Device Blocks", url: "/ip-blocks", icon: Ban, iconColor: "text-destructive" };
 
@@ -523,9 +524,9 @@ export function AppSidebar() {
               iconColor: "text-fuchsia-700 dark:text-fuchsia-300",
               items:
                 role === "admin"
-                  ? [...adminSecurityItems, sensitiveAccessLogItem, shiftWindowAuditItem, ipBlocksItem]
+                  ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, shiftWindowAuditItem, ipBlocksItem]
                   : (role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer")
-                    ? [...adminSecurityItems, sensitiveAccessLogItem, shiftWindowAuditItem]
+                    ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, shiftWindowAuditItem]
                     : adminSecurityItems,
             },
             { label: "Data & Imports", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300", items: adminDataItems },
