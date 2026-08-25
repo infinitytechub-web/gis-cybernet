@@ -12,6 +12,7 @@ import { Eye, Loader2, ShieldCheck, Download } from "lucide-react";
 import { format } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { csvCell } from "@/lib/csv-safe";
 
 export default function SensitiveAccessLog() {
   const { isAdmin, is2ic, isOic } = useAuth();
@@ -105,7 +106,7 @@ export default function SensitiveAccessLog() {
               onClick={() => {
                 const esc = (v: any) => {
                   const s = v === null || v === undefined ? "" : String(v);
-                  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                  return csvCell(s);
                 };
                 const headers = ["When", "User", "User ID", "Table", "Action", "Records", "Reason", "Filters"];
                 const lines = [headers.join(",")];

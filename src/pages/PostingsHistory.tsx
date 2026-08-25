@@ -17,6 +17,7 @@ import { exportReport } from "@/lib/export-utils";
 import { downloadCSVString } from "@/lib/download-utils";
 import { PostingAuditTrailDialog } from "@/components/postings/PostingAuditTrailDialog";
 import { DateInput } from "@/components/ui/date-input";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 export default function PostingsHistory() {
   const { isAdminOrSupervisor } = useAuth();
@@ -103,7 +104,7 @@ export default function PostingsHistory() {
   };
 
   const quickCSV = () => {
-    const csv = [headers.join(","), ...exportRows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))].join("\n");
+    const csv = [headers.join(","), ...exportRows.map((r) => r.map((c) => csvCellQuoted(String(c))).join(","))].join("\n");
     downloadCSVString(csv, `transfer-history-${format(new Date(), "yyyy-MM-dd")}.csv`);
   };
 

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -172,7 +173,7 @@ export default function AppraisalCoverageReport() {
         r.has_appraisal ? "Yes" : "No", r.appraisal_status ?? "",
         r.total_score?.toString() ?? "", String(r.duplicate_attempts),
         r.last_attempt_at ? format(new Date(r.last_attempt_at), "yyyy-MM-dd HH:mm") : "",
-      ].map((c) => `"${String(c).replace(/"/g, '""')}"`);
+      ].map((c) => csvCellQuoted(String(c)));
       lines.push(cells.join(","));
     }
     downloadCSVString(lines.join("\n"), `appraisal-coverage-${year}${month ? `-${String(month).padStart(2,"0")}` : "-annual"}.csv`);

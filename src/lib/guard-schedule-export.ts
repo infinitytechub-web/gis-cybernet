@@ -2,6 +2,7 @@
 import * as XLSX from "xlsx";
 import { downloadBlob } from "@/lib/download-utils";
 import { formatDateTime } from "@/lib/date-format";
+import { csvCell } from "@/lib/csv-safe";
 
 export type Assignment = {
   id: string;
@@ -72,10 +73,7 @@ export function exportScheduleCsv(header: ScheduleHeader, assignments: Assignmen
     return;
   }
   const cols = Object.keys(rows[0]);
-  const escape = (v: any) => {
-    const s = String(v ?? "");
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
+  const escape = (v: any) => csvCell(v);
   const header_row = cols.join(",");
   const body = rows.map((r) => cols.map((c) => escape((r as any)[c])).join(",")).join("\n");
   const meta =

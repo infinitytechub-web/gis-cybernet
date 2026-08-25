@@ -14,6 +14,7 @@ import { downloadCSVString, downloadBlob } from "@/lib/download-utils";
 import { toast } from "sonner";
 import { SecurityHero, securityButtonClass, securityButtonSolidClass } from "@/components/security/SecurityHero";
 import { formatDateTime } from "@/lib/date-format";
+import { csvCell } from "@/lib/csv-safe";
 
 interface RouteRow {
   id: string;
@@ -33,7 +34,7 @@ interface AuditRow {
 
 function csvEscape(v: unknown) {
   const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return csvCell(s);
 }
 
 async function sha256Hex(data: string | ArrayBuffer): Promise<string> {

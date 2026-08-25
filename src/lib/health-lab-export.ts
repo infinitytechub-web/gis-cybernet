@@ -111,10 +111,7 @@ export async function exportHealthReportDOCX(report: any) {
 }
 
 // ─── List exports for filtered/paginated views ────────────────────────────
-function csvCell(v: any): string {
-  const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
+import { csvCell } from "@/lib/csv-safe";
 
 function downloadCSV(filename: string, rows: string[][]) {
   const csv = rows.map((r) => r.map(csvCell).join(",")).join("\n");

@@ -21,6 +21,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatDateTime } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
@@ -324,7 +325,7 @@ export default function DutyRosterImport() {
     if (!previewPlan) { toast.error("Preview not ready"); return; }
     const header = ["Shift", "Staff Name", "Staff ID", "Department", "Office", "Current Shift", "Will Become", "Status"];
     const lines = [header.join(",")];
-    const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+    const esc = (v: string) => csvCellQuoted((v ?? ""));
     previewPlan.matches.forEach((m) => {
       lines.push([
         m.shift,

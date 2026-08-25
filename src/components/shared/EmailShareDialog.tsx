@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { recordPdfBase64, buildRecordPdf, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
+import { csvCellQuoted } from "@/lib/csv-safe";
 
 interface EmailShareDialogProps {
   open: boolean;
@@ -385,7 +386,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
       toast.error("No recipients to export");
       return;
     }
-    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const escape = (v: string) => csvCellQuoted(v);
     const csv =
       "role,email\n" + rows.map((r) => `${escape(r.role)},${escape(r.email)}`).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });

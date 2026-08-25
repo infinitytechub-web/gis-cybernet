@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import { formatDateTime } from "@/lib/date-format";
+import { csvCell } from "@/lib/csv-safe";
 
 type AppRole =
   | "admin" | "supervisor" | "staff" | "deputy_supervisor" | "deputy_shift_leader"
@@ -61,7 +62,7 @@ const labelFor = (r: string) => (ROLE_LABEL as Record<string, string>)[r] ?? r.r
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
   const s = String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return csvCell(s);
 }
 
 function exportAuditCsv(rows: any[]) {

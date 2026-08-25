@@ -12,7 +12,7 @@ import { Gauge, AlertTriangle, Activity, RefreshCw, TrendingDown, Download, Prin
 function downloadCsv(filename: string, rows: (string | number)[][], preamble: string[][] = []) {
   const esc = (v: string | number) => {
     const s = String(v ?? "");
-    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    return csvCell(s);
   };
   const all = [...preamble, ...(preamble.length ? [[""]] : []), ...rows];
   const csv = all.map((r) => r.map(esc).join(",")).join("\r\n");
@@ -39,6 +39,7 @@ import {
   Legend,
 } from "recharts";
 import { format, subHours } from "date-fns";
+import { csvCell } from "@/lib/csv-safe";
 
 type RumEvent = {
   id: number;

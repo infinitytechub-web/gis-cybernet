@@ -60,6 +60,7 @@ import {
   type GpsExportSource,
 } from "@/lib/gps-server-export";
 import { DateInput } from "@/components/ui/date-input";
+import { csvCell } from "@/lib/csv-safe";
 
 type SourceKey = "operations" | "enforcement_operations" | "cyber_incidents" | "inventory_items";
 
@@ -1042,7 +1043,7 @@ export default function GpsAddresses() {
   const csvEscape = (val: string) => {
     if (val == null) return "";
     const s = String(val);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    return csvCell(s);
   };
 
   const buildCsv = () => {

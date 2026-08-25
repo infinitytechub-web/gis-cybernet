@@ -18,12 +18,7 @@ export interface AuditExportRow {
   target_label: string;
 }
 
-function csvCell(v: string | number | null | undefined): string {
-  if (v === null || v === undefined) return "";
-  const s = String(v);
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
+import { csvCell } from "@/lib/csv-safe";
 
 export function exportComplianceAuditCSV(rows: AuditExportRow[]): { count: number } {
   const headers = ["Timestamp", "Batch", "Kind", "Outcome", "File", "Size (KB)", "MIME", "Performed by", "Target staff", "Error"];

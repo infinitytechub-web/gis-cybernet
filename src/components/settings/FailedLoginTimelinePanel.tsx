@@ -12,6 +12,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { lookupIp, formatGeo, type IpGeo } from "@/lib/ip-geolocation";
 import { downloadCSVString } from "@/lib/download-utils";
 import { toast } from "sonner";
+import { csvCell } from "@/lib/csv-safe";
 
 interface AttemptRow {
   id: string;
@@ -175,7 +176,7 @@ export function FailedLoginTimelinePanel() {
     }
     const esc = (v: unknown) => {
       const s = v === null || v === undefined ? "" : String(v);
-      return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      return csvCell(s);
     };
     const headers = [
       "Attempted At (ISO)",
