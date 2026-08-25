@@ -51,6 +51,7 @@ const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals")
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
 const SensitiveAccessLog = lazy(() => import("./pages/SensitiveAccessLog"));
 const SecurityAuditLog = lazy(() => import("./pages/SecurityAuditLog"));
+const PhoneValidationRules = lazy(() => import("./pages/PhoneValidationRules"));
 const QuarantineInbox = lazy(() => import("./pages/QuarantineInbox"));
 const IpBlocks = lazy(() => import("./pages/IpBlocks"));
 const ShiftConnections = lazy(() => import("./pages/ShiftConnections"));
