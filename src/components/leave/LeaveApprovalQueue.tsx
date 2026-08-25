@@ -9,22 +9,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, differenceInDays } from "date-fns";
-import { Search, CheckCircle2, XCircle, Clock, FileText, Download } from "lucide-react";
+import {
+  Search, CheckCircle2, XCircle, Clock, FileText, Download, MoreHorizontal,
+  Pencil, Trash2, RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 import { generateLeaveLetter, downloadPdf } from "@/lib/branded-letter-pdf";
+import { LeaveEditDialog } from "./LeaveEditDialog";
+import { softDelete } from "@/lib/recycle-bin";
 
 export function LeaveApprovalQueue() {
-  const { user } = useAuth();
+  const { user, isAdmin, isOic, isAdminOrSupervisor } = useAuth();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [editRequest, setEditRequest] = useState<any>(null);
+  const [deleteRequest, setDeleteRequest] = useState<any>(null);
   const [comments, setComments] = useState("");
+
+  /** Role-based capabilities — server-side triggers/RLS enforce the same rules. */
+  const canReview = isAdminOrSupervisor;                 // approve / reject
+  const canEditPending = isAdminOrSupervisor;            // edit while pending
+  const canDelete = isAdmin || isOic;                    // soft delete (Recycle Bin)
+  const canRevert = isAdmin;                             // put a decided request back to pending
 
   const { data: adminProfile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -45,7 +65,7 @@ export function LeaveApprovalQueue() {
     queryFn: async () => {
       let query = supabase
         .from("leave_requests")
-        .select("*, profiles(first_name, last_name, staff_id, shift_group)")
+        .select("*, profiles!leave_requests_profile_id_fkey(first_name, last_name, staff_id, shift_group), approver:profiles!leave_requests_approved_by_fkey(first_name, last_name, staff_id)")
         .order("created_at", { ascending: false });
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter as "pending" | "approved" | "rejected");
@@ -56,23 +76,24 @@ export function LeaveApprovalQueue() {
     },
   });
 
-  const approveMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: "approved" | "rejected" }) => {
-      const { error } = await supabase
-        .from("leave_requests")
-        .update({
-          status: action,
-          approved_by: adminProfile?.id ?? null,
-          comments: comments || null,
-        })
-        .eq("id", id);
+  const decisionMutation = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: "approved" | "rejected" | "pending" }) => {
+      if (action === "rejected" && !comments.trim()) {
+        throw new Error("A comment is required when rejecting a request.");
+      }
+      const payload: Record<string, unknown> = { status: action };
+      if (action !== "pending") {
+        payload.approved_by = adminProfile?.id ?? null;
+        payload.comments = comments || null;
+      }
+      const { error } = await supabase.from("leave_requests").update(payload as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: async (_, { action }) => {
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-admin-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["approval-audit"] });
-      // Send notification to the staff member
-      if (selectedRequest) {
+      if (selectedRequest && action !== "pending") {
         const userId = await getUserIdFromProfileId(selectedRequest.profile_id);
         if (userId) {
           await createNotification({
@@ -86,9 +107,27 @@ export function LeaveApprovalQueue() {
       }
       setSelectedRequest(null);
       setComments("");
-      toast.success(`Leave request ${action}`);
+      toast.success(action === "pending" ? "Request reverted to pending" : `Leave request ${action}`);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e?.message ?? "Action failed"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (r: any) => {
+      await softDelete({
+        table: "leave_requests",
+        id: r.id,
+        label: `${r.type} leave — ${r.profiles?.last_name ?? ""}, ${r.profiles?.first_name ?? ""}`.trim(),
+        context: `${format(new Date(r.start_date), "dd/MM/yyyy")} – ${format(new Date(r.end_date), "dd/MM/yyyy")} · ${r.status}`,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-admin-dashboard"] });
+      setDeleteRequest(null);
+      toast.success("Request moved to the Recycle Bin");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Delete failed"),
   });
 
   const filtered = requests.filter((r: any) => {
@@ -106,37 +145,58 @@ export function LeaveApprovalQueue() {
     }
   };
 
+  const downloadLetter = (r: any) => {
+    const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+    const doc = generateLeaveLetter({
+      staffName: `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
+      staffId: r.profiles?.staff_id ?? "—",
+      type: r.type,
+      startDate: r.start_date,
+      endDate: r.end_date,
+      days,
+      status: r.status,
+      reason: r.reason ?? undefined,
+      comments: r.comments ?? undefined,
+      reference: `LV-${r.id.slice(0, 8).toUpperCase()}`,
+    });
+    downloadPdf(doc, `leave-${r.profiles?.staff_id ?? r.id.slice(0, 6)}.pdf`);
+  };
+
+  const decidedBy = (r: any) => {
+    if (r.status === "pending") return null;
+    const name = r.approver ? `${r.approver.first_name ?? ""} ${r.approver.last_name ?? ""}`.trim() : "";
+    const when = r.decided_at ? format(new Date(r.decided_at), "dd/MM/yyyy HH:mm") : null;
+    if (!name && !when) return null;
+    return `${r.status === "approved" ? "Approved" : "Rejected"} by ${name || "—"}${when ? ` — ${when}` : ""}`;
+  };
+
   return (
     <div className="space-y-4">
-      {/* Summary */}
+      {/* Summary — clickable status filters */}
       <div className="grid grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <Clock className="h-8 w-8 text-amber-600" />
-            <div>
-              <div className="text-2xl font-bold">{pendingCount}</div>
-              <div className="text-xs text-muted-foreground">Pending</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-            <div>
-              <div className="text-2xl font-bold">{requests.filter((r: any) => r.status === "approved").length}</div>
-              <div className="text-xs text-muted-foreground">Approved</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <XCircle className="h-8 w-8 text-destructive" />
-            <div>
-              <div className="text-2xl font-bold">{requests.filter((r: any) => r.status === "rejected").length}</div>
-              <div className="text-xs text-muted-foreground">Rejected</div>
-            </div>
-          </CardContent>
-        </Card>
+        {([
+          { key: "pending", label: "Pending", value: pendingCount, Icon: Clock, tone: "text-amber-600" },
+          { key: "approved", label: "Approved", value: requests.filter((r: any) => r.status === "approved").length, Icon: CheckCircle2, tone: "text-emerald-600" },
+          { key: "rejected", label: "Rejected", value: requests.filter((r: any) => r.status === "rejected").length, Icon: XCircle, tone: "text-destructive" },
+        ] as const).map(({ key, label, value, Icon, tone }) => (
+          <Card
+            key={key}
+            role="button"
+            tabIndex={0}
+            aria-pressed={statusFilter === key}
+            onClick={() => setStatusFilter(key)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStatusFilter(key); } }}
+            className={`cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${statusFilter === key ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <Icon className={`h-8 w-8 ${tone}`} />
+              <div>
+                <div className="text-2xl font-bold">{value}</div>
+                <div className="text-xs text-muted-foreground">{label}</div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Controls */}
@@ -160,8 +220,8 @@ export function LeaveApprovalQueue() {
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
-        <div className="rounded-lg border overflow-auto">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Staff</TableHead>
@@ -180,6 +240,8 @@ export function LeaveApprovalQueue() {
               ) : (
                 filtered.map((r: any) => {
                   const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+                  const isPending = r.status === "pending";
+                  const showMenu = canReview || canEditPending || canDelete;
                   return (
                     <TableRow key={r.id}>
                       <TableCell>
@@ -188,43 +250,71 @@ export function LeaveApprovalQueue() {
                       </TableCell>
                       <TableCell className="capitalize">{r.type}</TableCell>
                       <TableCell className="hidden sm:table-cell text-xs">
-                        {format(new Date(r.start_date), "dd MMM")} – {format(new Date(r.end_date), "dd/MM/yy")}
+                        {format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{days}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className={statusColor(r.status)}>{r.status}</Badge>
+                        {decidedBy(r) && (
+                          <div className="text-[11px] text-muted-foreground mt-1">{decidedBy(r)}</div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {r.status === "pending" && (
-                            <Button variant="outline" size="sm" onClick={() => { setSelectedRequest(r); setComments(""); }}>
-                              <FileText className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {(r.status === "approved" || r.status === "rejected") && (
+                          {isPending && canReview && (
                             <Button
                               variant="outline"
                               size="sm"
-                              title="Download letter"
-                              onClick={() => {
-                                const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
-                                const doc = generateLeaveLetter({
-                                  staffName: `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
-                                  staffId: r.profiles?.staff_id ?? "—",
-                                  type: r.type,
-                                  startDate: r.start_date,
-                                  endDate: r.end_date,
-                                  days,
-                                  status: r.status,
-                                  reason: r.reason ?? undefined,
-                                  comments: r.comments ?? undefined,
-                                  reference: `LV-${r.id.slice(0, 8).toUpperCase()}`,
-                                });
-                                downloadPdf(doc, `leave-${r.profiles?.staff_id ?? r.id.slice(0,6)}.pdf`);
-                              }}
+                              title="Review request"
+                              onClick={() => { setSelectedRequest(r); setComments(r.comments ?? ""); }}
                             >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {!isPending && (
+                            <Button variant="outline" size="sm" title="Download letter" onClick={() => downloadLetter(r)}>
                               <Download className="h-4 w-4" />
                             </Button>
+                          )}
+                          {showMenu && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" aria-label="Request actions">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {isPending && canEditPending && (
+                                  <DropdownMenuItem onClick={() => setEditRequest(r)}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit
+                                  </DropdownMenuItem>
+                                )}
+                                {isPending && canReview && (
+                                  <>
+                                    <DropdownMenuItem
+                                      onClick={() => { setSelectedRequest(r); setComments(r.comments ?? ""); }}
+                                    >
+                                      <CheckCircle2 className="h-4 w-4 mr-2" /> Approve / Reject
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                {!isPending && canRevert && (
+                                  <DropdownMenuItem
+                                    onClick={() => { setComments(""); decisionMutation.mutate({ id: r.id, action: "pending" }); }}
+                                  >
+                                    <RotateCcw className="h-4 w-4 mr-2" /> Revert to pending
+                                  </DropdownMenuItem>
+                                )}
+                                {canDelete && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-destructive" onClick={() => setDeleteRequest(r)}>
+                                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       </TableCell>
@@ -266,6 +356,13 @@ export function LeaveApprovalQueue() {
                   <span className="text-muted-foreground">Days:</span>
                   <p className="font-medium">{differenceInDays(new Date(selectedRequest.end_date), new Date(selectedRequest.start_date)) + 1}</p>
                 </div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Status:</span>{" "}
+                  <Badge variant="secondary" className={statusColor(selectedRequest.status)}>{selectedRequest.status}</Badge>
+                  {decidedBy(selectedRequest) && (
+                    <p className="text-xs text-muted-foreground mt-1">{decidedBy(selectedRequest)}</p>
+                  )}
+                </div>
               </div>
               {selectedRequest.reason && (
                 <div className="text-sm">
@@ -274,34 +371,67 @@ export function LeaveApprovalQueue() {
                 </div>
               )}
               <div>
-                <Label>Comments (optional)</Label>
-                <Textarea value={comments} onChange={(e) => setComments(e.target.value)} rows={2} placeholder="Add admin comments..." />
+                <Label htmlFor="leave-review-comments">Comments (required when rejecting)</Label>
+                <Textarea
+                  id="leave-review-comments"
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  rows={2}
+                  placeholder="Add officer comments..."
+                />
               </div>
               <div className="border-t pt-3">
                 <h4 className="text-sm font-semibold mb-1">Approval History</h4>
                 <ApprovalAuditTrail entityType="leave_request" entityId={selectedRequest.id} />
               </div>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 gap-1"
-                  onClick={() => approveMutation.mutate({ id: selectedRequest.id, action: "approved" })}
-                  disabled={approveMutation.isPending}
-                >
-                  <CheckCircle2 className="h-4 w-4" /> Approve
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="flex-1 gap-1"
-                  onClick={() => approveMutation.mutate({ id: selectedRequest.id, action: "rejected" })}
-                  disabled={approveMutation.isPending}
-                >
-                  <XCircle className="h-4 w-4" /> Reject
-                </Button>
-              </div>
+              {canReview && selectedRequest.status === "pending" && (
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1 gap-1"
+                    onClick={() => decisionMutation.mutate({ id: selectedRequest.id, action: "approved" })}
+                    disabled={decisionMutation.isPending}
+                  >
+                    <CheckCircle2 className="h-4 w-4" /> Approve
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    className="flex-1 gap-1"
+                    onClick={() => decisionMutation.mutate({ id: selectedRequest.id, action: "rejected" })}
+                    disabled={decisionMutation.isPending}
+                  >
+                    <XCircle className="h-4 w-4" /> Reject
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit dialog */}
+      <LeaveEditDialog request={editRequest} onClose={() => setEditRequest(null)} />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteRequest} onOpenChange={(open) => { if (!open) setDeleteRequest(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this leave / pass request?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The request will be moved to the Recycle Bin (restorable by Admin / OIC) and the deletion is
+              recorded in the audit trail. It is not permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); if (deleteRequest) deleteMutation.mutate(deleteRequest); }}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Move to Recycle Bin"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
