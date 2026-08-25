@@ -199,6 +199,7 @@ const AREAS: ConsoleArea[] = [
         items: [
           { title: "System Backup", description: "Run and schedule backups with an audited history.", url: "/settings?area=system&tab=backup", icon: DatabaseBackup, tier: "admin" },
           { title: "RUM Analytics", description: "Real-user performance and error monitoring.", url: "/rum-analytics", icon: Gauge, tier: "command" },
+          { title: "Phone Validation Rules", description: "Active Ghana and international number rules, with a troubleshooting checker.", url: "/admin/phone-validation", icon: Phone, tier: "admin" },
         ],
       },
     ],
