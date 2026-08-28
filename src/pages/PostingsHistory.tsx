@@ -83,7 +83,7 @@ export default function PostingsHistory() {
     toDept: r.to_dept?.name ?? "—",
     effective: r.effective_date,
     status: r.status ?? "—",
-    reason: r.reason ?? "—",
+    reason: r.remarks ?? "—",
   })), [rows]);
 
   const headers = ["Staff ID", "Name", "From", "To", "Effective Date", "Status", "Reason"];
