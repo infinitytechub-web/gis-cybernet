@@ -57,7 +57,7 @@ export default function PostingsHistory() {
       let q = supabase
         .from("postings_transfers")
         .select(`
-          id, effective_date, status, reason, approved_by, created_at,
+          id, effective_date, status, remarks, approved_by, created_at,
           profile:profiles!postings_transfers_profile_id_fkey(id, staff_id, first_name, last_name),
           from_dept:departments!postings_transfers_from_department_id_fkey(id, name),
           to_dept:departments!postings_transfers_to_department_id_fkey(id, name)
@@ -83,7 +83,7 @@ export default function PostingsHistory() {
     toDept: r.to_dept?.name ?? "—",
     effective: r.effective_date,
     status: r.status ?? "—",
-    reason: r.reason ?? "—",
+    reason: r.remarks ?? "—",
   })), [rows]);
 
   const headers = ["Staff ID", "Name", "From", "To", "Effective Date", "Status", "Reason"];
