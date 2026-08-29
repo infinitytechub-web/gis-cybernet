@@ -1,6 +1,14 @@
 import L from "leaflet";
 import { createGoogleLayer } from "./google-tile-layer";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  getProviderMode,
+  googleRecentlyFailed,
+  markGoogleFailed,
+  setProviderMode,
+  subscribeProviderPreference,
+  type MapProviderMode,
+} from "./map-provider-preference";
 
 /**
  * Adds a Google-Maps-powered Streets / Satellite / Hybrid / Terrain base-layer
@@ -9,8 +17,14 @@ import { supabase } from "@/integrations/supabase/client";
  * remain available under "Streets (OSM)" / "Satellite (Esri)" as a no-key
  * fallback so the map still works if the proxy is unreachable.
  *
- * Returns the initially-active base layer (already added to the map).
+ * The stored provider preference (see map-provider-preference) decides which
+ * source is used first: a pinned provider always wins, and in Auto mode Google
+ * is skipped while a recent Google failure is remembered.
+ *
+ * Returns a handle with the initially-active base layer plus `applyProvider`
+ * so a UI control can drive the map.
  */
+
 export function addBaseLayerSwitcher(
   map: L.Map,
   opts: {
