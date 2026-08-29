@@ -13630,6 +13630,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      webauthn_admin_reset_user: {
+        Args: { _reason: string; _user_id: string }
+        Returns: number
+      }
       webauthn_admin_set_enrollment_policy: {
         Args: { _grace_days: number; _required: boolean; _roles: string[] }
         Returns: Json
