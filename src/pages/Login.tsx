@@ -16,6 +16,7 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { getMyClientIp } from "@/lib/client-ip";
 import { getTrustedMac } from "@/lib/trusted-mac";
 import { biometricLogin, biometricsAvailable } from "@/lib/webauthn";
+import { executeRecaptcha, getRecaptchaConfig, preloadRecaptcha } from "@/lib/recaptcha";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
