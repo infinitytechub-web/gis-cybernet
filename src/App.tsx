@@ -148,13 +148,14 @@ function ForcedSignoutMount() {
   return null;
 }
 
-/** Mount idle-timeout dialog only when a user is signed in. */
+/** Mount idle-timeout dialog and biometric enrollment prompt when signed in. */
 function AuthenticatedExtras() {
   const { user } = useAuth();
   if (!user) return null;
   return (
     <Suspense fallback={null}>
       <IdleWarningDialog />
+      <BiometricEnrollmentGate />
     </Suspense>
   );
 }
