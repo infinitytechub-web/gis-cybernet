@@ -112,12 +112,14 @@ Deno.serve(async (req) => {
       } catch (e) {
         SESSIONS.delete("streets");
         const msg = (e as Error).message ?? "";
-        const disabled = /SERVICE_DISABLED|accessNotConfigured|has not been used in project|Map Tiles API/i.test(msg);
+        // A 404 "Requested entity was not found" from createSession also means
+        // the Map Tiles API is not enabled/available for the key's project.
+        const disabled = /SERVICE_DISABLED|accessNotConfigured|has not been used in project|Map Tiles API|404|notFound|NOT_FOUND/i.test(msg);
         const blocked = /API_KEY_SERVICE_BLOCKED|are blocked|PERMISSION_DENIED|forbidden|API key not valid|API_KEY_INVALID/i.test(msg);
         const reason = disabled ? "api_disabled" : blocked ? "key_blocked" : "unknown";
         const message =
           reason === "api_disabled"
-            ? "Google Map Tiles API is disabled for this project. Enable it in Google Cloud Console, then refresh."
+            ? "Google Map Tiles API is not enabled for the configured API key's project (Google returned NOT_FOUND). Enable 'Map Tiles API' and billing for that project, then refresh."
             : reason === "key_blocked"
               ? "Google blocked this API key for the Map Tiles API. In Google Cloud Console: enable 'Map Tiles API', remove API restrictions on the key (or whitelist tile.googleapis.com), and ensure billing is active."
               : "Google tile service is unavailable. Falling back to OSM/Esri layers.";
