@@ -1036,6 +1036,7 @@ export type Database = {
       biometric_reminder_settings: {
         Row: {
           batch_size: number
+          created_at: string
           enabled: boolean
           grace_body: string
           grace_interval_days: number
@@ -1057,6 +1058,7 @@ export type Database = {
         }
         Insert: {
           batch_size?: number
+          created_at?: string
           enabled?: boolean
           grace_body?: string
           grace_interval_days?: number
@@ -1078,6 +1080,7 @@ export type Database = {
         }
         Update: {
           batch_size?: number
+          created_at?: string
           enabled?: boolean
           grace_body?: string
           grace_interval_days?: number
@@ -12500,10 +12503,16 @@ export type Database = {
         Returns: Json
       }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
+      biometric_reminder_mark: {
+        Args: { _detail?: string; _log_id: string; _ok: boolean }
+        Returns: undefined
+      }
+      biometric_reminder_run: { Args: { _force?: boolean }; Returns: Json }
       biometric_reminder_update_settings: {
         Args: { _patch: Json }
         Returns: {
           batch_size: number
+          created_at: string
           enabled: boolean
           grace_body: string
           grace_interval_days: number
