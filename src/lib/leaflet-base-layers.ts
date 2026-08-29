@@ -224,6 +224,10 @@ export function addBaseLayerSwitcher(
     }
   });
 
+  // True while we are applying a stored/UI-driven preference, so the handler
+  // below does not treat the programmatic switch as a manual pick.
+  let applyingPreference = false;
+
   // Manual selection resets the failover state for the newly chosen source and
   // is remembered as a pinned provider preference.
   map.on("baselayerchange", (e: L.LayersControlEvent) => {
@@ -241,8 +245,6 @@ export function addBaseLayerSwitcher(
   });
 
   // ── Provider switcher support ────────────────────────────────────────────
-  let applyingPreference = false;
-
   /** Switches the map to the layer implied by a provider mode. */
   const applyProvider = (mode: MapProviderMode) => {
     const name =
