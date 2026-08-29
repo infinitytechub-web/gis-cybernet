@@ -133,6 +133,9 @@ export function AccessPolicySettings() {
         max_concurrent_sessions: Number(v("max_concurrent_sessions")),
         mfa_required_roles: requiredRoles,
         mfa_grace_days: Number(v("mfa_grace_days")),
+        recaptcha_enabled: Boolean(v("recaptcha_enabled")),
+        recaptcha_site_key: String(v("recaptcha_site_key") ?? "").trim() || null,
+        recaptcha_min_score: Number(v("recaptcha_min_score") ?? 0.5),
       };
 
       // Client-side sanity checks with clear messages (the database also
@@ -149,6 +152,11 @@ export function AccessPolicySettings() {
         throw new Error("Idle warning lead time must be shorter than the idle timeout.");
       if (next.session_absolute_hours! > 0 && next.session_absolute_hours! * 60 <= next.auto_logout_minutes!)
         throw new Error("Maximum session length must be longer than the idle timeout.");
+      if (next.recaptcha_min_score! < 0 || next.recaptcha_min_score! > 1)
+        throw new Error("reCAPTCHA minimum score must be between 0.0 and 1.0.");
+      if (next.recaptcha_enabled && !next.recaptcha_site_key)
+        throw new Error("Add a reCAPTCHA v3 site key before enabling bot protection.");
+
 
       const { error } = await supabase
         .from("app_settings")
