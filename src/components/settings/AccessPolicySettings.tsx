@@ -75,6 +75,9 @@ const FIELD_LABELS: Record<string, string> = {
   max_concurrent_sessions: "Maximum simultaneous devices",
   mfa_required_roles: "Roles requiring MFA",
   mfa_grace_days: "MFA enrolment grace period (days)",
+  recaptcha_enabled: "Bot protection (reCAPTCHA v3)",
+  recaptcha_site_key: "reCAPTCHA site key",
+  recaptcha_min_score: "reCAPTCHA minimum score",
 };
 
 export function AccessPolicySettings() {
