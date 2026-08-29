@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logSecurityEvent } from "@/lib/security-audit";
+import { resetRecaptchaConfigCache } from "@/lib/recaptcha";
 
 /** Roles that can be placed under a mandatory-MFA requirement. */
 const MFA_ROLE_CHOICES: { value: string; label: string }[] = [
