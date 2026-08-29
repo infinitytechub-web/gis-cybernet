@@ -61,6 +61,16 @@ export default function Login() {
     return () => cic(handle);
   }, []);
 
+  // Invisible bot protection (reCAPTCHA v3). Warm the script up so the first
+  // sign-in is not delayed, and show the required Google attribution notice.
+  useEffect(() => {
+    void getRecaptchaConfig().then((c) => {
+      setCaptchaActive(c.enabled);
+      if (c.enabled) preloadRecaptcha();
+    });
+  }, []);
+
+
   useEffect(() => {
     if (!loading && user) {
       navigate("/", { replace: true });
