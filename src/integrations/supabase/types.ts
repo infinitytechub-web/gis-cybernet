@@ -824,6 +824,20 @@ export type Database = {
             referencedRelation: "attendances"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attendance_edit_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_edit_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
         ]
       }
       attendance_report_recipients: {
@@ -6640,7 +6654,22 @@ export type Database = {
           unit_name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "misd_unit_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "misd_unit_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       night_guard_activity_log: {
         Row: {
@@ -11092,7 +11121,15 @@ export type Database = {
           performed_by_name?: string | null
           shift_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shift_window_override_audit_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shifts: {
         Row: {
@@ -12686,6 +12723,10 @@ export type Database = {
       can_manage_procurement: { Args: { _user_id: string }; Returns: boolean }
       can_manage_sessions: { Args: { _user_id: string }; Returns: boolean }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
+      can_see_org_unit: {
+        Args: { _org_unit_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_shift_connection_action: {
         Args: { _action: string }
         Returns: boolean

@@ -130,12 +130,25 @@ export default function ProcessingPassportApplications() {
       if (!reviewApp?.id) return [];
       const { data, error } = await supabase
         .from("mfa_review_audit")
-        .select("*, reviewer:reviewer_id(first_name, last_name, staff_id)")
+        .select("*")
         .eq("application_id", reviewApp.id)
         .order("reviewed_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      return data ?? [];
+      const rows = (data ?? []) as any[];
+
+      // `reviewer_id` references the auth user, not `profiles`, so resolve the
+      // reviewer names separately instead of via a PostgREST embed.
+      const reviewerIds = Array.from(
+        new Set(rows.map((r) => r.reviewer_id).filter(Boolean)),
+      ) as string[];
+      if (reviewerIds.length === 0) return rows;
+      const { data: reviewers } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name, staff_id")
+        .in("user_id", reviewerIds);
+      const byUser = new Map((reviewers ?? []).map((r: any) => [r.user_id, r]));
+      return rows.map((r) => ({ ...r, reviewer: byUser.get(r.reviewer_id) ?? null }));
     },
     enabled: !!reviewApp?.id && open,
   });

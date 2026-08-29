@@ -63,9 +63,9 @@ type ShiftChangeRequest = {
   affected_date: string;
   request_type: string;
   current_shift_id: string | null;
-  target_shift_id: string | null;
-  custom_start_time: string | null;
-  custom_end_time: string | null;
+  requested_shift_id: string | null;
+  requested_start_time: string | null;
+  requested_end_time: string | null;
   reason: string;
   status: Status;
   reviewed_at: string | null;
@@ -73,7 +73,7 @@ type ShiftChangeRequest = {
   created_at: string;
   profiles?: StaffMini | null;
   current_shift?: { name: string } | null;
-  target_shift?: { name: string } | null;
+  requested_shift?: { name: string } | null;
 };
 
 type AttendanceEditRequest = {
@@ -137,7 +137,7 @@ export default function StaffRequestApprovals() {
       let q = supabase
         .from("shift_change_requests")
         .select(
-          "id, profile_id, requested_by, affected_date, request_type, current_shift_id, target_shift_id, custom_start_time, custom_end_time, reason, status, reviewed_at, review_comment, created_at, profiles:profile_id(id, first_name, last_name, staff_id), current_shift:current_shift_id(name), target_shift:target_shift_id(name)",
+          "id, profile_id, requested_by, affected_date, request_type, current_shift_id, requested_shift_id, requested_start_time, requested_end_time, reason, status, reviewed_at, review_comment, created_at, profiles:profile_id(id, first_name, last_name, staff_id), current_shift:current_shift_id(name), requested_shift:requested_shift_id(name)",
         )
         .gte("affected_date", from)
         .lte("affected_date", to)
@@ -396,9 +396,9 @@ export default function StaffRequestApprovals() {
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <div>Type: <span className="font-medium capitalize text-foreground">{r.request_type}</span></div>
                       <div>
-                        Current: {r.current_shift?.name ?? "—"} → Target: {r.target_shift?.name ??
-                          (r.custom_start_time && r.custom_end_time
-                            ? `${r.custom_start_time.slice(0,5)}–${r.custom_end_time.slice(0,5)}`
+                        Current: {r.current_shift?.name ?? "—"} → Target: {r.requested_shift?.name ??
+                          (r.requested_start_time && r.requested_end_time
+                            ? `${r.requested_start_time.slice(0,5)}–${r.requested_end_time.slice(0,5)}`
                             : "—")}
                       </div>
                     </div>
