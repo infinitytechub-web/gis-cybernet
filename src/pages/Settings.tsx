@@ -206,6 +206,8 @@ export default function Settings() {
         <TabsContent value="biometrics" className="space-y-4">
           <BiometricEnrollmentPolicyCard />
           <BiometricAdminPanel />
+          <BiometricAuditLogCard />
+
         </TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
         <TabsContent value="rotation" className="space-y-4">
