@@ -432,6 +432,19 @@ export default function Login() {
           </a>
         </div>
       </div>
+      {captchaActive && (
+        <p className="text-center text-[10px] leading-snug text-muted-foreground">
+          Protected by reCAPTCHA — this site is checked for automated sign-in attempts. Google's{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline">
+            Privacy Policy
+          </a>{" "}
+          and{" "}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline">
+            Terms
+          </a>{" "}
+          apply.
+        </p>
+      )}
     </form>
     );
   };
