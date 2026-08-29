@@ -42,6 +42,7 @@ export default function Login() {
   const [otp, setOtp] = useState("");
   const [canBiometric, setCanBiometric] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
+  const [captchaActive, setCaptchaActive] = useState(false);
   const { signIn, signOut, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
