@@ -20,16 +20,28 @@
 
 const ALLOWED_ORIGINS = new Set<string>([
   "https://gis-cybernet.lovable.app",
+  "https://giscybernethrm.lovable.app",
   "https://id-preview--692c4eca-6e41-4cba-adea-1f7b7852b00c.lovable.app",
+  // Production custom domain(s).
+  "https://admin.infinitytechub.com",
+  "https://infinitytechub.com",
+  "https://www.infinitytechub.com",
   // Sandbox / preview shells used by Lovable.
   "https://lovable.dev",
   "https://app.lovable.dev",
+  // Extra origins for future custom domains, comma-separated.
+  ...(Deno.env.get("CSRF_ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
 ]);
 
 const ALLOWED_ORIGIN_SUFFIXES = [
   ".lovable.app",
   ".lovableproject.com",
+  ".infinitytechub.com",
 ];
+
 
 /** Header that the client-side wrapper attaches to every state-changing call. */
 export const CSRF_HEADER = "x-cybernet-app";

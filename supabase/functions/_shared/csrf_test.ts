@@ -114,6 +114,16 @@ Deno.test("assertCsrfSafe: any *.lovable.app origin is accepted with header", ()
   assert(r.ok);
 });
 
+Deno.test("assertCsrfSafe: production custom domain is accepted with header", () => {
+  for (const origin of ["https://admin.infinitytechub.com", "https://infinitytechub.com"]) {
+    const r = assertCsrfSafe(new Request("https://x.test/", {
+      method: "POST",
+      headers: { origin, [CSRF_HEADER]: CSRF_HEADER_VALUE },
+    }));
+    assert(r.ok, `expected ${origin} to be accepted`);
+  }
+});
+
 Deno.test("assertCsrfSafe: Referer is honoured when Origin is missing", () => {
   const r = assertCsrfSafe(new Request("https://x.test/", {
     method: "POST",
