@@ -38,6 +38,7 @@ import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
 import { BiometricAdminPanel } from "@/components/security/BiometricAdminPanel";
+import { BiometricEnrollmentPolicyCard } from "@/components/security/BiometricEnrollmentPolicyCard";
 import { toast } from "sonner";
 import { Navigate, useSearchParams } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
