@@ -94,6 +94,10 @@ export default function TrustedDevices() {
   const [target, setTarget] = useState<DeviceRow | null>(null);
   const [bulkTarget, setBulkTarget] = useState<DeviceRow | null>(null);
   const [reason, setReason] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectionOpen, setSelectionOpen] = useState(false);
+  const [selectionReasons, setSelectionReasons] = useState<Record<string, string>>({});
+  const [applyToAll, setApplyToAll] = useState("");
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery<DeviceRow[]>({
     queryKey: ["mfa-trusted-devices", includeRevoked],
