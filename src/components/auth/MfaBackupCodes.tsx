@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { downloadBlob } from "@/lib/download-utils";
 import { logSecurityEvent } from "@/lib/security-audit";
 import { formatDateTime } from "@/lib/date-format";
+import MfaStepUpDialog, { hasVerifiedMfaSession, isAal2Required } from "@/components/auth/MfaStepUpDialog";
 
 const AUTO_HIDE_SECONDS = 60;
 
@@ -21,6 +22,7 @@ export default function MfaBackupCodes() {
   const [showCodes, setShowCodes] = useState<string[] | null>(null);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(AUTO_HIDE_SECONDS);
+  const [stepUpOpen, setStepUpOpen] = useState(false);
   const timerRef = useRef<number | null>(null);
 
   // Wipe codes from memory the instant the dialog is dismissed (any reason).
@@ -72,17 +74,31 @@ export default function MfaBackupCodes() {
 
   const generate = useMutation({
     mutationFn: async () => {
+      // Server refuses without a verified 2FA session — elevate first (AAL2).
+      if (!(await hasVerifiedMfaSession())) {
+        setConfirmRegen(false);
+        setStepUpOpen(true);
+        return null;
+      }
       const { data, error } = await supabase.rpc("mfa_generate_backup_codes");
       if (error) throw error;
       return ((data as any[]) ?? []).map(r => r.code);
     },
     onSuccess: (codes) => {
+      if (!codes) return;
       setShowCodes(codes);
       setConfirmRegen(false);
       qc.invalidateQueries({ queryKey: ["mfa-backup-remaining"] });
       logSecurityEvent({ category: "mfa", action: "backup_codes_visible", severity: "warn" });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      if (isAal2Required(e)) {
+        setConfirmRegen(false);
+        setStepUpOpen(true);
+        return;
+      }
+      toast.error(e.message);
+    },
   });
 
   const copyAll = () => {
@@ -126,6 +142,13 @@ export default function MfaBackupCodes() {
           </Alert>
         )}
       </CardContent>
+
+      <MfaStepUpDialog
+        open={stepUpOpen}
+        onOpenChange={setStepUpOpen}
+        action="generating backup codes"
+        onVerified={() => generate.mutate()}
+      />
 
       <Dialog open={!!showCodes} onOpenChange={(o) => !o && dismissCodes()}>
         <DialogContent>
