@@ -465,6 +465,71 @@ export function AccessPolicySettings() {
         </CardContent>
       </Card>
 
+      {/* Bot protection (reCAPTCHA v3) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bot className="h-4 w-4 text-chart-2" /> Bot Protection (reCAPTCHA v3)
+          </CardTitle>
+          <CardDescription>
+            Invisible Google reCAPTCHA v3 scoring on the sign-in screen. No puzzles for staff —
+            requests that score below the threshold are rejected on the server.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Enable bot protection on sign-in</p>
+              <p className="text-xs text-muted-foreground">
+                Requires a v3 site key below and the reCAPTCHA secret key configured on the server.
+              </p>
+            </div>
+            <Switch
+              checked={Boolean(v("recaptcha_enabled"))}
+              onCheckedChange={(c) => set("recaptcha_enabled", c)}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="recaptcha-site-key">Site key (public)</Label>
+              <Input
+                id="recaptcha-site-key"
+                placeholder="6Lxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                autoComplete="off"
+                value={String(v("recaptcha_site_key") ?? "")}
+                onChange={(e) => set("recaptcha_site_key", e.target.value as never)}
+              />
+              <p className="text-xs text-muted-foreground">
+                From Google reCAPTCHA admin console, type "reCAPTCHA v3". Safe to store here.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="recaptcha-min-score">Minimum score (0.0 – 1.0)</Label>
+              <Input
+                id="recaptcha-min-score"
+                type="number"
+                min={0}
+                max={1}
+                step={0.1}
+                value={Number(v("recaptcha_min_score") ?? 0.5)}
+                onChange={(e) => set("recaptcha_min_score", Number(e.target.value))}
+              />
+              <p className="text-xs text-muted-foreground">
+                1.0 = very likely human. 0.5 is Google's recommended starting point; raise it only if
+                you see automated attempts getting through.
+              </p>
+            </div>
+          </div>
+          {Boolean(v("recaptcha_enabled")) && !String(v("recaptcha_site_key") ?? "").trim() && (
+            <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] gap-1">
+              <ShieldAlert className="h-3 w-3" /> Enabled but no site key — protection stays off
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+
+
+
       <Button
         onClick={() => saveMutation.mutate()}
         disabled={saveMutation.isPending}
