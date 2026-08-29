@@ -62,6 +62,7 @@ export const MODULES: ModuleDef[] = [
   // ── Open to every authenticated staff member ────────────────────────────
   { key: "dashboard", label: "Dashboard", feature: "Dashboard", tier: "all-staff", roles: "all", paths: ["/dashboard", "/"] },
   { key: "my-profile", label: "My Profile", tier: "all-staff", roles: "all", paths: ["/my-profile"] },
+  { key: "biometric-enrollment", label: "Biometric Enrollment", tier: "all-staff", roles: "all", paths: ["/biometric-enrollment"] },
   { key: "my-portal", label: "My Portal", tier: "all-staff", roles: "all", paths: ["/my-portal"] },
   { key: "my-shift", label: "My Shift Tracker", tier: "all-staff", roles: "all", paths: ["/my-shift"] },
   { key: "staff-directory", label: "Staff Directory", feature: "Staff Directory", tier: "all-staff", roles: "all", paths: ["/directory"] },
