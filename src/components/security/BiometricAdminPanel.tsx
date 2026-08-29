@@ -1,16 +1,23 @@
 /**
  * Administrator oversight of every enrolled biometric credential.
- * Admins can review enrolled devices per staff member and revoke any of them.
+ * Admins can review enrolled devices per staff member, revoke a single device
+ * or reset a staff member's enrollment entirely so they can enrol again.
+ * Both actions require a confirmation and a written reason (audited).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Fingerprint, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Fingerprint, RefreshCw, Trash2, RotateCcw, Loader2 } from "lucide-react";
 import { formatDate } from "@/lib/date-format";
 
 interface AdminCredential {
@@ -25,11 +32,19 @@ interface AdminCredential {
   revoked_at: string | null;
 }
 
+/** Pending admin action awaiting confirmation + reason. */
+type PendingAction =
+  | { kind: "revoke"; row: AdminCredential }
+  | { kind: "reset"; userId: string; staffName: string; deviceCount: number };
+
 export function BiometricAdminPanel() {
   const { toast } = useToast();
   const [rows, setRows] = useState<AdminCredential[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,18 +66,72 @@ export function BiometricAdminPanel() {
     );
   }, [rows, query]);
 
-  const revoke = useCallback(async (row: AdminCredential) => {
-    const { error } = await supabase.rpc("webauthn_revoke_credential", {
-      _id: row.id,
-      _reason: "Revoked by an administrator",
+  /** Active device count per staff member, for the reset action. */
+  const activeByUser = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of rows) {
+      if (r.revoked_at) continue;
+      map.set(r.user_id, (map.get(r.user_id) ?? 0) + 1);
+    }
+    return map;
+  }, [rows]);
+
+  const openRevoke = useCallback((row: AdminCredential) => {
+    setReason("");
+    setPending({ kind: "revoke", row });
+  }, []);
+
+  const openReset = useCallback((row: AdminCredential) => {
+    setReason("");
+    setPending({
+      kind: "reset",
+      userId: row.user_id,
+      staffName: row.full_name ?? row.staff_id ?? "this staff member",
+      deviceCount: activeByUser.get(row.user_id) ?? 0,
     });
-    if (error) {
-      toast({ title: "Could not revoke", description: error.message, variant: "destructive" });
+  }, [activeByUser]);
+
+  const confirmAction = useCallback(async () => {
+    if (!pending) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < 5) {
+      toast({ title: "Reason required", description: "Enter at least 5 characters.", variant: "destructive" });
       return;
     }
-    toast({ title: "Credential revoked", description: `${row.device_label} can no longer sign in.` });
-    await load();
-  }, [load, toast]);
+    setBusy(true);
+    try {
+      if (pending.kind === "revoke") {
+        const { error } = await supabase.rpc("webauthn_revoke_credential", {
+          _id: pending.row.id,
+          _reason: `Admin revoke: ${trimmed}`,
+        });
+        if (error) throw new Error(error.message);
+        toast({
+          title: "Device removed",
+          description: `${pending.row.device_label} can no longer sign in with biometrics.`,
+        });
+      } else {
+        const { data, error } = await supabase.rpc("webauthn_admin_reset_user", {
+          _user_id: pending.userId,
+          _reason: trimmed,
+        });
+        if (error) throw new Error(error.message);
+        const removed = Number(data ?? 0);
+        toast({
+          title: "Enrollment reset",
+          description: `${removed} device${removed === 1 ? "" : "s"} removed. ${pending.staffName} can enrol again from their own device.`,
+        });
+      }
+      setPending(null);
+      setReason("");
+      await load();
+    } catch (e) {
+      toast({ title: "Action failed", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  }, [pending, reason, load, toast]);
+
 
   const active = rows.filter((r) => !r.revoked_at).length;
 
