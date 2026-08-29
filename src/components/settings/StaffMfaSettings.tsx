@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, ShieldAlert, Clock } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
+import { Button } from "@/components/ui/button";
+import MfaStepUpDialog, { hasVerifiedMfaSession } from "@/components/auth/MfaStepUpDialog";
 
 interface MfaPolicy {
   required?: boolean;
@@ -23,6 +25,8 @@ interface MfaPolicy {
 export default function StaffMfaSettings() {
   const { user } = useAuth();
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
+  const [aal2, setAal2] = useState<boolean | null>(null);
+  const [stepUpOpen, setStepUpOpen] = useState(false);
 
   const { data: policy } = useQuery<MfaPolicy>({
     queryKey: ["my-mfa-policy", user?.id],
@@ -39,6 +43,9 @@ export default function StaffMfaSettings() {
     supabase.auth.mfa.listFactors().then(({ data }) => {
       if (!active) return;
       setEnrolled(!!data?.totp?.some((f) => f.status === "verified") || (data?.totp?.length ?? 0) > 0);
+    });
+    hasVerifiedMfaSession().then((ok) => {
+      if (active) setAal2(ok);
     });
     return () => {
       active = false;
@@ -65,7 +72,24 @@ export default function StaffMfaSettings() {
         {required && (
           <Badge variant="destructive" className="text-[11px]">Required for your role</Badge>
         )}
+        {enrolled && aal2 === true && (
+          <Badge variant="outline" className="gap-1 text-[11px]">
+            <ShieldCheck className="h-3 w-3 text-success" /> Verified 2FA session
+          </Badge>
+        )}
+        {enrolled && aal2 === false && (
+          <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setStepUpOpen(true)}>
+            Start verified 2FA session
+          </Button>
+        )}
       </div>
+
+      <MfaStepUpDialog
+        open={stepUpOpen}
+        onOpenChange={setStepUpOpen}
+        action="managing your two-factor settings"
+        onVerified={() => setAal2(true)}
+      />
 
       {required && enrolled === false && (
         <Alert variant={inGrace ? "default" : "destructive"}>
