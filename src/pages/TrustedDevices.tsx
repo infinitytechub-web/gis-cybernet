@@ -265,6 +265,23 @@ export default function TrustedDevices() {
             </p>
           )}
 
+          {selectedIds.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 p-3">
+              <p className="text-xs">
+                <span className="font-semibold">{selectedIds.length}</span> device(s) selected across{" "}
+                <span className="font-semibold">{affectedStaff.length}</span> staff member(s).
+              </p>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setSelectedIds([])}>
+                  Clear selection
+                </Button>
+                <Button size="sm" className="h-7 gap-1 text-[11px]" onClick={openSelectionDialog}>
+                  <ShieldOff className="h-3 w-3" /> Revoke selected
+                </Button>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading devices…
@@ -278,6 +295,14 @@ export default function TrustedDevices() {
               <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={(c) => toggleAll(c === true)}
+                        aria-label="Select all revocable devices"
+                        disabled={revocableRows.length === 0}
+                      />
+                    </TableHead>
                     <TableHead>Staff</TableHead>
                     <TableHead>Device</TableHead>
                     <TableHead>Trusted</TableHead>
@@ -290,8 +315,17 @@ export default function TrustedDevices() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} data-state={selectedIds.includes(r.id) ? "selected" : undefined}>
                       <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(r.id)}
+                          onCheckedChange={(c) => toggleRow(r.id, c === true)}
+                          disabled={!!r.revoked_at}
+                          aria-label={`Select device for ${r.staff_name || "unknown staff"}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+
                         <div className="font-medium">{r.staff_name || "Unknown staff"}</div>
                         <div className="text-xs text-muted-foreground">{r.staff_identifier || "—"}</div>
                       </TableCell>
