@@ -112,8 +112,18 @@ export function addBaseLayerSwitcher(
       }
     });
   };
-  logAccess(def);
-  map.on("baselayerchange", (e: L.LayersControlEvent) => logAccess(e.name));
+  logAccess(initialName);
+
+  // Broadcast which concrete source is actually rendering, so the provider
+  // switcher UI can show e.g. "Auto — OpenStreetMap".
+  const announce = (name: string) => {
+    try {
+      window.dispatchEvent(new CustomEvent("map-provider-effective", { detail: { name } }));
+    } catch { /* ignore */ }
+  };
+  announce(initialName);
+  map.on("baselayerchange", (e: L.LayersControlEvent) => { logAccess(e.name); announce(e.name); });
+
 
   // ── Automatic tile failover ──────────────────────────────────────────────
   // Each Google view has an ordered chain of no-key alternatives. When the
