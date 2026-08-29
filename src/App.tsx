@@ -20,6 +20,9 @@ import { useAuth } from "@/hooks/useAuth";
 const IdleWarningDialog = lazy(() =>
   import("@/components/IdleWarningDialog").then(m => ({ default: m.IdleWarningDialog }))
 );
+const BiometricEnrollmentGate = lazy(() =>
+  import("@/components/security/BiometricEnrollmentGate").then(m => ({ default: m.BiometricEnrollmentGate }))
+);
 
 // Eagerly loaded (entry/LCP page only)
 import Index from "./pages/Index";
@@ -148,13 +151,14 @@ function ForcedSignoutMount() {
   return null;
 }
 
-/** Mount idle-timeout dialog only when a user is signed in. */
+/** Mount idle-timeout dialog and biometric enrollment prompt when signed in. */
 function AuthenticatedExtras() {
   const { user } = useAuth();
   if (!user) return null;
   return (
     <Suspense fallback={null}>
       <IdleWarningDialog />
+      <BiometricEnrollmentGate />
     </Suspense>
   );
 }

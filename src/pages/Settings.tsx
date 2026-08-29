@@ -38,6 +38,7 @@ import { MfaRecoveryPanel } from "@/components/settings/MfaRecoveryPanel";
 import { SecurityUpdatesPanel } from "@/components/settings/SecurityUpdatesPanel";
 import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
 import { BiometricAdminPanel } from "@/components/security/BiometricAdminPanel";
+import { BiometricEnrollmentPolicyCard } from "@/components/security/BiometricEnrollmentPolicyCard";
 import { toast } from "sonner";
 import { Navigate, useSearchParams } from "react-router-dom";
 import type { AppRole } from "@/lib/types";
@@ -202,7 +203,10 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
-        <TabsContent value="biometrics"><BiometricAdminPanel /></TabsContent>
+        <TabsContent value="biometrics" className="space-y-4">
+          <BiometricEnrollmentPolicyCard />
+          <BiometricAdminPanel />
+        </TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
         <TabsContent value="rotation" className="space-y-4">
           <Card>

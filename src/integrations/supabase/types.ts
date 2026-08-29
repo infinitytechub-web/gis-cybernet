@@ -370,7 +370,11 @@ export type Database = {
           announcement_file_retention_enabled: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
+          biometric_enrollment_enforced_at: string | null
+          biometric_enrollment_grace_days: number
+          biometric_enrollment_required: boolean
           biometric_login_enabled: boolean
+          biometric_required_roles: Database["public"]["Enums"]["app_role"][]
           biometric_stepup_required: boolean
           company_name: string
           contact_address: string | null
@@ -432,7 +436,11 @@ export type Database = {
           announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
+          biometric_enrollment_enforced_at?: string | null
+          biometric_enrollment_grace_days?: number
+          biometric_enrollment_required?: boolean
           biometric_login_enabled?: boolean
+          biometric_required_roles?: Database["public"]["Enums"]["app_role"][]
           biometric_stepup_required?: boolean
           company_name?: string
           contact_address?: string | null
@@ -494,7 +502,11 @@ export type Database = {
           announcement_file_retention_enabled?: boolean
           auto_logout_minutes?: number
           auto_logout_warning_seconds?: number
+          biometric_enrollment_enforced_at?: string | null
+          biometric_enrollment_grace_days?: number
+          biometric_enrollment_required?: boolean
           biometric_login_enabled?: boolean
+          biometric_required_roles?: Database["public"]["Enums"]["app_role"][]
           biometric_stepup_required?: boolean
           company_name?: string
           contact_address?: string | null
@@ -12274,7 +12286,11 @@ export type Database = {
           announcement_file_retention_enabled: boolean
           auto_logout_minutes: number
           auto_logout_warning_seconds: number
+          biometric_enrollment_enforced_at: string | null
+          biometric_enrollment_grace_days: number
+          biometric_enrollment_required: boolean
           biometric_login_enabled: boolean
+          biometric_required_roles: Database["public"]["Enums"]["app_role"][]
           biometric_stepup_required: boolean
           company_name: string
           contact_address: string | null
@@ -13585,6 +13601,21 @@ export type Database = {
           verified: number
         }[]
       }
+      webauthn_admin_enrollment_report: {
+        Args: never
+        Returns: {
+          compliance: string
+          department: string
+          device_count: number
+          first_enrolled_at: string
+          full_name: string
+          last_used_at: string
+          required: boolean
+          roles: string[]
+          staff_id: string
+          user_id: string
+        }[]
+      }
       webauthn_admin_list_credentials: {
         Args: never
         Returns: {
@@ -13598,6 +13629,10 @@ export type Database = {
           staff_id: string
           user_id: string
         }[]
+      }
+      webauthn_admin_set_enrollment_policy: {
+        Args: { _grace_days: number; _required: boolean; _roles: string[] }
+        Returns: Json
       }
       webauthn_consume_stepup: {
         Args: { _action: string; _token_hash: string }
@@ -13626,6 +13661,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      webauthn_my_enrollment_status: { Args: never; Returns: Json }
       webauthn_my_status: { Args: never; Returns: Json }
       webauthn_prune_expired: { Args: never; Returns: number }
       webauthn_revoke_credential: {
