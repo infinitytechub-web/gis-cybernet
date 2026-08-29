@@ -192,12 +192,25 @@ export function BiometricAdminPanel() {
                       : <Badge>Active</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
-                    {!r.revoked_at && (
-                      <Button variant="outline" size="sm" onClick={() => revoke(r)} aria-label={`Revoke ${r.device_label}`}>
-                        <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
-                        Revoke
-                      </Button>
-                    )}
+                    <div className="flex justify-end gap-2">
+                      {!r.revoked_at && (
+                        <Button variant="outline" size="sm" onClick={() => openRevoke(r)} aria-label={`Remove ${r.device_label}`}>
+                          <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
+                          Remove
+                        </Button>
+                      )}
+                      {(activeByUser.get(r.user_id) ?? 0) > 0 && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => openReset(r)}
+                          aria-label={`Reset all passkeys for ${r.full_name ?? r.staff_id ?? "staff member"}`}
+                        >
+                          <RotateCcw className="mr-1 h-4 w-4" aria-hidden="true" />
+                          Reset all
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -205,7 +218,45 @@ export function BiometricAdminPanel() {
           </Table>
         </div>
       </CardContent>
+
+      <Dialog open={!!pending} onOpenChange={(o) => { if (!o && !busy) { setPending(null); setReason(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {pending?.kind === "reset" ? "Reset biometric enrollment" : "Remove enrolled device"}
+            </DialogTitle>
+            <DialogDescription>
+              {pending?.kind === "reset"
+                ? `This removes all ${pending.deviceCount} enrolled device${pending.deviceCount === 1 ? "" : "s"} for ${pending.staffName}. They will sign in with their password and can enrol again from their own device.`
+                : pending?.kind === "revoke"
+                ? `${pending.row.device_label} will no longer sign in with biometrics for ${pending.row.full_name ?? "this staff member"}. The device can be enrolled again by its owner.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="biometric-reset-reason">Reason (recorded in the audit trail)</Label>
+            <Textarea
+              id="biometric-reset-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Staff member lost the enrolled phone"
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPending(null); setReason(""); }} disabled={busy}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmAction} disabled={busy || reason.trim().length < 5}>
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+              {pending?.kind === "reset" ? "Reset enrollment" : "Remove device"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
+
   );
 }
 
