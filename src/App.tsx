@@ -20,6 +20,9 @@ import { useAuth } from "@/hooks/useAuth";
 const IdleWarningDialog = lazy(() =>
   import("@/components/IdleWarningDialog").then(m => ({ default: m.IdleWarningDialog }))
 );
+const BiometricEnrollmentGate = lazy(() =>
+  import("@/components/security/BiometricEnrollmentGate").then(m => ({ default: m.BiometricEnrollmentGate }))
+);
 
 // Eagerly loaded (entry/LCP page only)
 import Index from "./pages/Index";
