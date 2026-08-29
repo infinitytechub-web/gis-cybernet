@@ -146,6 +146,7 @@ const adminAccessItems = [
   { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },
   { title: "Session Management", url: "/admin/sessions", icon: MonitorSmartphone, iconColor: "text-cyan-700 dark:text-cyan-300" },
+  { title: "Trusted 2FA Devices", url: "/admin/trusted-devices", icon: MonitorSmartphone, iconColor: "text-emerald-700 dark:text-emerald-300" },
 ];
 
 const adminSecurityItems = [

@@ -63,6 +63,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/shift-rotation-approvals": "Approve proposed shift rotation changes.",
   "/command-roles": "Grant or revoke command-tier authority.",
   "/admin/sessions": "Active sessions, lockouts and forced sign-outs.",
+  "/admin/trusted-devices": "Devices staff remembered for 2FA step-up — review and revoke.",
   "/org-structure": "Command hierarchy and key appointments.",
   "/admin-access-matrix": "Fine-tune which roles can reach each module.",
   "/command-role-audit": "Audit trail of command role grants and removals.",

@@ -46,6 +46,7 @@ const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
 const UnitDashboard = lazy(() => import("./pages/UnitDashboard"));
 const SessionManagement = lazy(() => import("./pages/SessionManagement"));
+const TrustedDevices = lazy(() => import("./pages/TrustedDevices"));
 const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
@@ -269,6 +270,7 @@ function App() {
           <Route path="/announcements/retention" element={<ProtectedRoute module="retention-policy"><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
           <Route path="/interlink" element={<ProtectedRoute module="interlink"><Layout><Interlink /></Layout></ProtectedRoute>} />
           <Route path="/admin/sessions" element={<ProtectedRoute module="session-management"><Layout><SessionManagement /></Layout></ProtectedRoute>} />
+          <Route path="/admin/trusted-devices" element={<ProtectedRoute module="trusted-devices"><Layout><TrustedDevices /></Layout></ProtectedRoute>} />
           <Route path="/unit-dashboard" element={<ProtectedRoute module="unit-dashboard"><Layout><UnitDashboard /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
           <Route path="/commands" element={<ProtectedRoute module="commands"><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
