@@ -145,6 +145,7 @@ export const MODULES: ModuleDef[] = [
   // Admin / OIC / 2IC only. Other command-tier roles need a delegated grant.
   { key: "admin-console", label: "Admin Console", tier: "command", roles: COMMAND, paths: ["/admin"] },
   { key: "session-management", label: "Session Management", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/sessions"] },
+  { key: "trusted-devices", label: "Trusted 2FA Devices", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/trusted-devices"] },
   { key: "admin-access-matrix", label: "Admin Access Matrix", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin-access-matrix"] },
   { key: "admin-shift-rotations", label: "Shift Rotations Administration", tier: "command", roles: COMMAND, paths: ["/admin/shift-rotations"] },
   { key: "audit-log", label: "Audit Log Dashboard", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/audit-log"] },

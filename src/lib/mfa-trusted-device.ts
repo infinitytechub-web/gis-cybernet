@@ -4,6 +4,7 @@
 // prompts are skipped until it expires. Grants never replace server-side AAL2
 // checks — actions the backend guards still require a real verified session.
 import { getDeviceFingerprint } from "@/lib/device-fingerprint";
+import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "cybernet.mfa.trusted-device";
 
@@ -39,7 +40,10 @@ export function clearTrustedDevice() {
   }
 }
 
-/** Persists a grant for this user on this device. */
+/**
+ * Registers the grant server-side (audited, revocable by admins) and mirrors it
+ * locally so the prompt can be skipped without a round trip.
+ */
 export async function rememberTrustedDevice(userId: string, hours = DEFAULT_TRUSTED_DEVICE_HOURS) {
   const capped = Math.min(Math.max(hours, 1), MAX_TRUSTED_DEVICE_HOURS);
   const grant: TrustGrant = {
@@ -47,6 +51,14 @@ export async function rememberTrustedDevice(userId: string, hours = DEFAULT_TRUS
     fingerprint: await getDeviceFingerprint(),
     expiresAt: Date.now() + capped * 60 * 60 * 1000,
   };
+  const { error } = await supabase.rpc("mfa_register_trusted_device" as never, {
+    _fingerprint_hash: grant.fingerprint,
+    _hours: capped,
+    _label: null,
+    _user_agent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 240) : null,
+  } as never);
+  if (error) throw error;
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(grant));
   } catch {
@@ -68,7 +80,17 @@ export async function getTrustedDeviceGrant(userId: string | undefined | null) {
     clearTrustedDevice();
     return null;
   }
-  return { expiresAt: new Date(grant.expiresAt) };
+
+  // Authoritative check — an administrator may have revoked this device.
+  const { data, error } = await supabase.rpc("mfa_trusted_device_check" as never, {
+    _fingerprint_hash: grant.fingerprint,
+  } as never);
+  if (error) return { expiresAt: new Date(grant.expiresAt) }; // offline: fall back to local expiry
+  if (!data) {
+    clearTrustedDevice();
+    return null;
+  }
+  return { expiresAt: new Date(data as unknown as string) };
 }
 
 export async function isTrustedDevice(userId: string | undefined | null) {

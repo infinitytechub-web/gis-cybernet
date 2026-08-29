@@ -120,7 +120,7 @@ describe("least privilege — audit-sensitive modules", () => {
       "dashboard", "my-profile", "my-portal", "my-shift", "staff-directory",
       "excuse-duty", "leave", "attendance", "holidays", "announcements",
       "quarantine", "appraisals", "verify-export", "change-password",
-      "payments", "loans",
+      "payments", "loans", "biometric-enrollment",
     ]);
     const unexpected = MODULES.filter((m) => m.roles === "all" && !allowed.has(m.key)).map((m) => m.key);
     expect(unexpected, `modules open to everyone: ${unexpected.join(", ")}`).toEqual([]);
