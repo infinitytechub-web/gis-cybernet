@@ -9,6 +9,7 @@ import { formatDateTime } from "@/lib/date-format";
 import TwoFactorSetup from "@/components/auth/TwoFactorSetup";
 import { Button } from "@/components/ui/button";
 import MfaStepUpDialog, { hasVerifiedMfaSession } from "@/components/auth/MfaStepUpDialog";
+import { clearTrustedDevice, getTrustedDeviceGrant } from "@/lib/mfa-trusted-device";
 
 interface MfaPolicy {
   required?: boolean;
@@ -27,6 +28,7 @@ export default function StaffMfaSettings() {
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
   const [aal2, setAal2] = useState<boolean | null>(null);
   const [stepUpOpen, setStepUpOpen] = useState(false);
+  const [trustedUntil, setTrustedUntil] = useState<Date | null>(null);
 
   const { data: policy } = useQuery<MfaPolicy>({
     queryKey: ["my-mfa-policy", user?.id],
@@ -46,6 +48,9 @@ export default function StaffMfaSettings() {
     });
     hasVerifiedMfaSession().then((ok) => {
       if (active) setAal2(ok);
+    });
+    getTrustedDeviceGrant(user?.id).then((grant) => {
+      if (active) setTrustedUntil(grant?.expiresAt ?? null);
     });
     return () => {
       active = false;
@@ -88,8 +93,34 @@ export default function StaffMfaSettings() {
         open={stepUpOpen}
         onOpenChange={setStepUpOpen}
         action="managing your two-factor settings"
-        onVerified={() => setAal2(true)}
+        onVerified={() => {
+          setAal2(true);
+          getTrustedDeviceGrant(user?.id).then((g) => setTrustedUntil(g?.expiresAt ?? null));
+        }}
       />
+
+      {trustedUntil && (
+        <Alert>
+          <ShieldCheck className="h-4 w-4" />
+          <AlertTitle>This device is remembered</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center gap-2 text-xs">
+            <span>
+              Step-up prompts are skipped on this browser until {formatDateTime(trustedUntil.toISOString())}.
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[11px]"
+              onClick={() => {
+                clearTrustedDevice();
+                setTrustedUntil(null);
+              }}
+            >
+              Forget this device
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {required && enrolled === false && (
         <Alert variant={inGrace ? "default" : "destructive"}>
