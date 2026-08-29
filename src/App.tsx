@@ -107,6 +107,7 @@ const HealthLab = lazy(() => import("./pages/HealthLab"));
 const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 const MyExcuseDutySubmissions = lazy(() => import("./pages/MyExcuseDutySubmissions"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
+const BiometricEnrollment = lazy(() => import("./pages/BiometricEnrollment"));
 const Appraisals = lazy(() => import("./pages/Appraisals"));
 const AppraisalCoverageReport = lazy(() => import("./pages/AppraisalCoverageReport"));
 const AppraisalDetail = lazy(() => import("./pages/AppraisalDetail"));
