@@ -994,6 +994,114 @@ export type Database = {
         }
         Relationships: []
       }
+      biometric_reminder_log: {
+        Row: {
+          channel: string
+          created_at: string
+          days_left: number | null
+          deadline: string | null
+          detail: string | null
+          id: string
+          kind: string
+          status: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          days_left?: number | null
+          deadline?: string | null
+          detail?: string | null
+          id?: string
+          kind: string
+          status?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          days_left?: number | null
+          deadline?: string | null
+          detail?: string | null
+          id?: string
+          kind?: string
+          status?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      biometric_reminder_settings: {
+        Row: {
+          batch_size: number
+          created_at: string
+          enabled: boolean
+          grace_body: string
+          grace_interval_days: number
+          grace_lead_days: number
+          grace_subject: string
+          id: string
+          last_run_at: string | null
+          last_run_summary: Json | null
+          lease_until: string | null
+          notify_email: boolean
+          notify_in_app: boolean
+          overdue_body: string
+          overdue_interval_days: number
+          overdue_subject: string
+          paused_reason: string | null
+          send_hour_utc: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          batch_size?: number
+          created_at?: string
+          enabled?: boolean
+          grace_body?: string
+          grace_interval_days?: number
+          grace_lead_days?: number
+          grace_subject?: string
+          id?: string
+          last_run_at?: string | null
+          last_run_summary?: Json | null
+          lease_until?: string | null
+          notify_email?: boolean
+          notify_in_app?: boolean
+          overdue_body?: string
+          overdue_interval_days?: number
+          overdue_subject?: string
+          paused_reason?: string | null
+          send_hour_utc?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          batch_size?: number
+          created_at?: string
+          enabled?: boolean
+          grace_body?: string
+          grace_interval_days?: number
+          grace_lead_days?: number
+          grace_subject?: string
+          id?: string
+          last_run_at?: string | null
+          last_run_summary?: Json | null
+          lease_until?: string | null
+          notify_email?: boolean
+          notify_in_app?: boolean
+          overdue_body?: string
+          overdue_interval_days?: number
+          overdue_subject?: string
+          paused_reason?: string | null
+          send_hour_utc?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           certificate_number: string | null
@@ -12395,6 +12503,42 @@ export type Database = {
         Returns: Json
       }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
+      biometric_reminder_mark: {
+        Args: { _detail?: string; _log_id: string; _ok: boolean }
+        Returns: undefined
+      }
+      biometric_reminder_run: { Args: { _force?: boolean }; Returns: Json }
+      biometric_reminder_update_settings: {
+        Args: { _patch: Json }
+        Returns: {
+          batch_size: number
+          created_at: string
+          enabled: boolean
+          grace_body: string
+          grace_interval_days: number
+          grace_lead_days: number
+          grace_subject: string
+          id: string
+          last_run_at: string | null
+          last_run_summary: Json | null
+          lease_until: string | null
+          notify_email: boolean
+          notify_in_app: boolean
+          overdue_body: string
+          overdue_interval_days: number
+          overdue_subject: string
+          paused_reason: string | null
+          send_hour_utc: number
+          updated_at: string
+          updated_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "biometric_reminder_settings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       block_ip:
         | {
             Args: {

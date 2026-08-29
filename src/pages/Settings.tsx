@@ -40,6 +40,8 @@ import { PortfoliosTab } from "@/components/settings/PortfoliosTab";
 import { BiometricAdminPanel } from "@/components/security/BiometricAdminPanel";
 import { BiometricEnrollmentPolicyCard } from "@/components/security/BiometricEnrollmentPolicyCard";
 import { BiometricAuditLogCard } from "@/components/security/BiometricAuditLogCard";
+import { BiometricReminderCard } from "@/components/security/BiometricReminderCard";
+
 
 import { toast } from "sonner";
 import { Navigate, useSearchParams } from "react-router-dom";
@@ -207,8 +209,10 @@ export default function Settings() {
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
         <TabsContent value="biometrics" className="space-y-4">
           <BiometricEnrollmentPolicyCard />
+          <BiometricReminderCard />
           <BiometricAdminPanel />
           <BiometricAuditLogCard />
+
 
         </TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
