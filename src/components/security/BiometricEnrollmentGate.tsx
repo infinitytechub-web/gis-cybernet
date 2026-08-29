@@ -60,8 +60,11 @@ export function BiometricEnrollmentGate() {
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("webauthn_my_enrollment_status");
     if (error) return;
-    setStatus((data as unknown as EnrollmentStatus) ?? null);
+    const next = (data as unknown as EnrollmentStatus) ?? null;
+    setStatus(next);
+    if (next) void logBiometricEnrollmentEvent("status_change", describeCompliance(next));
   }, []);
+
 
   useEffect(() => {
     if (!user) return;
