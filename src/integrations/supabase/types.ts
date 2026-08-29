@@ -409,6 +409,9 @@ export type Database = {
           password_require_symbol: boolean
           password_require_upper: boolean
           primary_color: string
+          recaptcha_enabled: boolean
+          recaptcha_min_score: number
+          recaptcha_site_key: string | null
           secondary_color: string
           security_scan_enabled: boolean
           security_scan_frequency: string
@@ -468,6 +471,9 @@ export type Database = {
           password_require_symbol?: boolean
           password_require_upper?: boolean
           primary_color?: string
+          recaptcha_enabled?: boolean
+          recaptcha_min_score?: number
+          recaptcha_site_key?: string | null
           secondary_color?: string
           security_scan_enabled?: boolean
           security_scan_frequency?: string
@@ -527,6 +533,9 @@ export type Database = {
           password_require_symbol?: boolean
           password_require_upper?: boolean
           primary_color?: string
+          recaptcha_enabled?: boolean
+          recaptcha_min_score?: number
+          recaptcha_site_key?: string | null
           secondary_color?: string
           security_scan_enabled?: boolean
           security_scan_frequency?: string
@@ -12304,6 +12313,9 @@ export type Database = {
           password_require_symbol: boolean
           password_require_upper: boolean
           primary_color: string
+          recaptcha_enabled: boolean
+          recaptcha_min_score: number
+          recaptcha_site_key: string | null
           secondary_color: string
           security_scan_enabled: boolean
           security_scan_frequency: string
@@ -12931,6 +12943,14 @@ export type Database = {
           select_policies: number
           table_name: string
           total_policies: number
+        }[]
+      }
+      get_recaptcha_config: {
+        Args: never
+        Returns: {
+          enabled: boolean
+          min_score: number
+          site_key: string
         }[]
       }
       get_security_threat_summary: { Args: never; Returns: Json }
