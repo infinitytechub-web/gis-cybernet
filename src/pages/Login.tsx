@@ -136,17 +136,26 @@ export default function Login() {
       const emailData = lookup?.email ?? null;
 
       // The edge function answers 403 with a captcha message when the request
-      // looks automated — surface that instead of the generic credential error.
-      const captchaBlocked =
-        typeof lookup?.error === "string" && /verification|automated/i.test(lookup.error);
-      if (captchaBlocked) {
-        toast({
-          title: "Verification failed",
-          description: lookup!.error as string,
-          variant: "destructive",
-        });
+      // looks automated. On a non-2xx status invoke() puts the body on the
+      // error context, so check both places.
+      let captchaMessage: string | null =
+        typeof lookup?.error === "string" && /verification|automated/i.test(lookup.error)
+          ? lookup.error
+          : null;
+      if (!captchaMessage && lookupErr) {
+        try {
+          const res = (lookupErr as { context?: Response }).context;
+          if (res && typeof res.json === "function") {
+            const payload = await res.clone().json();
+            if (res.status === 403 && typeof payload?.error === "string") captchaMessage = payload.error;
+          }
+        } catch { /* fall through to the generic message */ }
+      }
+      if (captchaMessage) {
+        toast({ title: "Verification failed", description: captchaMessage, variant: "destructive" });
         throw new Error("Captcha rejected");
       }
+
 
       if (lookupErr || !emailData) {
         // record_failed_login already logged inside the edge function — no
