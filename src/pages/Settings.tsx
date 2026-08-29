@@ -202,7 +202,10 @@ export default function Settings() {
         </TabsContent>
         <TabsContent value="system"><SystemInfoTab /></TabsContent>
         <TabsContent value="2fa"><TwoFactorSetup /></TabsContent>
-        <TabsContent value="biometrics"><BiometricAdminPanel /></TabsContent>
+        <TabsContent value="biometrics" className="space-y-4">
+          <BiometricEnrollmentPolicyCard />
+          <BiometricAdminPanel />
+        </TabsContent>
         <TabsContent value="interlink-brand"><InterlinkBrandingSettings /></TabsContent>
         <TabsContent value="rotation" className="space-y-4">
           <Card>
