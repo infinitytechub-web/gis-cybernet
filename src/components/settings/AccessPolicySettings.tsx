@@ -52,6 +52,10 @@ interface PolicyRow {
   // mfa
   mfa_required_roles: string[] | null;
   mfa_grace_days: number;
+  // bot protection
+  recaptcha_enabled: boolean;
+  recaptcha_site_key: string | null;
+  recaptcha_min_score: number;
 }
 
 const FIELD_LABELS: Record<string, string> = {
