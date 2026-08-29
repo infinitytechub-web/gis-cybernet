@@ -108,10 +108,9 @@ export function BiometricEnrollmentGate() {
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !blocking) snooze(); }}>
       <DialogContent
-        className="sm:max-w-lg"
+        className={blocking ? "sm:max-w-lg [&>button]:hidden" : "sm:max-w-lg"}
         onInteractOutside={(e) => { if (blocking) e.preventDefault(); }}
         onEscapeKeyDown={(e) => { if (blocking) e.preventDefault(); }}
-        hideClose={blocking as unknown as undefined}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
