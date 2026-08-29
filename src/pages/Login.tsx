@@ -115,16 +115,39 @@ export default function Login() {
         }
       }
 
+      // Invisible reCAPTCHA v3 token (null when protection is switched off).
+      const captchaToken = await executeRecaptcha("login");
+
       // Look up the auth email from the Staff/Admin ID via the hardened edge
-      // function (rate-limited, audited, no direct anon DB access).
+      // function (rate-limited, audited, captcha-gated, no direct anon DB access).
       const { data: lookupData, error: lookupErr } = await supabase.functions.invoke(
         "resolve-staff-email",
-        { body: { staff_id: trimmedId } },
+        { body: { staff_id: trimmedId, recaptcha_token: captchaToken } },
       );
       const lookup = (lookupData ?? null) as
-        | { email?: string; locked?: boolean; threshold?: number | null; auto_unlock_minutes?: number | null }
+        | {
+            email?: string;
+            locked?: boolean;
+            threshold?: number | null;
+            auto_unlock_minutes?: number | null;
+            error?: string;
+          }
         | null;
       const emailData = lookup?.email ?? null;
+
+      // The edge function answers 403 with a captcha message when the request
+      // looks automated — surface that instead of the generic credential error.
+      const captchaBlocked =
+        typeof lookup?.error === "string" && /verification|automated/i.test(lookup.error);
+      if (captchaBlocked) {
+        toast({
+          title: "Verification failed",
+          description: lookup!.error as string,
+          variant: "destructive",
+        });
+        throw new Error("Captcha rejected");
+      }
+
       if (lookupErr || !emailData) {
         // record_failed_login already logged inside the edge function — no
         // need to double-log here. Surface a toast so the user isn't stuck
@@ -136,6 +159,7 @@ export default function Login() {
         });
         throw new Error("Invalid ID or password");
       }
+
 
       // Policy-driven lockout: refuse the attempt outright while locked.
       if (lookup?.locked) {
