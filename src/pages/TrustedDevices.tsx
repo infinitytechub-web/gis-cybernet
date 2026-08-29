@@ -129,6 +129,59 @@ export default function TrustedDevices() {
     setBulkTarget(null);
   };
 
+  const revocableRows = useMemo(() => rows.filter((r) => !r.revoked_at), [rows]);
+  const selectedRows = useMemo(
+    () => (data ?? []).filter((r) => selectedIds.includes(r.id)),
+    [data, selectedIds],
+  );
+  const allSelected = revocableRows.length > 0 && revocableRows.every((r) => selectedIds.includes(r.id));
+  const affectedStaff = useMemo(
+    () => Array.from(new Set(selectedRows.map((r) => r.staff_name || "Unknown staff"))),
+    [selectedRows],
+  );
+  const missingReasons = selectedRows.filter(
+    (r) => (selectionReasons[r.id] ?? "").trim().length < 5,
+  ).length;
+
+  const toggleRow = (id: string, checked: boolean) =>
+    setSelectedIds((prev) => (checked ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)));
+
+  const toggleAll = (checked: boolean) =>
+    setSelectedIds(checked ? revocableRows.map((r) => r.id) : []);
+
+  const openSelectionDialog = () => {
+    setSelectionReasons(Object.fromEntries(selectedIds.map((id) => [id, ""])));
+    setApplyToAll("");
+    setSelectionOpen(true);
+  };
+
+  const revokeSelected = useMutation({
+    mutationFn: async () => {
+      const items = selectedRows.map((r) => ({
+        device_id: r.id,
+        reason: (selectionReasons[r.id] ?? "").trim(),
+      }));
+      const { data, error } = await supabase.rpc("mfa_revoke_trusted_devices_bulk" as never, {
+        _items: items,
+      } as never);
+      if (error) throw error;
+      return (data as unknown as number) ?? 0;
+    },
+    onSuccess: (count) => {
+      toast({
+        title: "Devices revoked",
+        description: `${count} device(s) revoked. Each revocation was written to the security audit log.`,
+      });
+      setSelectionOpen(false);
+      setSelectedIds([]);
+      setSelectionReasons({});
+      invalidate();
+    },
+    onError: (e: any) =>
+      toast({ title: "Bulk revoke failed", description: e.message, variant: "destructive" }),
+  });
+
+
   const revokeOne = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.rpc("mfa_revoke_trusted_device" as never, {
