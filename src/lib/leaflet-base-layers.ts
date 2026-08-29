@@ -69,8 +69,34 @@ export function addBaseLayerSwitcher(
     "Terrain (OTM)": opentopo,
   };
 
-  const initial = baseLayers[def] ?? gStreets;
+  // Map a pinned provider mode onto a concrete layer name for the requested view.
+  const nonGoogleNameFor = (mode: MapProviderMode): string | null => {
+    if (mode === "osm") return "Streets (OSM)";
+    if (mode === "esri") return "Satellite (Esri)";
+    if (mode === "opentopo") return "Terrain (OTM)";
+    return null;
+  };
+  // In Auto mode, the no-key equivalent of the requested Google view.
+  const autoFallbackNameFor = (view: string): string =>
+    view === "Satellite" || view === "Hybrid"
+      ? "Satellite (Esri)"
+      : view === "Terrain"
+        ? "Terrain (OTM)"
+        : "Streets (OSM)";
+
+  const startMode = getProviderMode();
+  let initialName = def as string;
+  if (startMode === "google") {
+    initialName = def;
+  } else if (startMode !== "auto") {
+    initialName = nonGoogleNameFor(startMode) ?? def;
+  } else if (googleRecentlyFailed()) {
+    initialName = autoFallbackNameFor(def);
+  }
+
+  const initial = baseLayers[initialName] ?? gStreets;
   initial.addTo(map);
+
 
   const layersControl = L.control.layers(baseLayers, undefined, { position: "topright", collapsed: true }).addTo(map);
 
