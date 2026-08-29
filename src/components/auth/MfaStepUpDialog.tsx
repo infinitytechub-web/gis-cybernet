@@ -119,7 +119,7 @@ export default function MfaStepUpDialog({
             category: "mfa",
             action: "stepup_device_remembered",
             severity: "warn",
-            detail: `Trusted for ${rememberHours}h`,
+            details: { trusted_hours: rememberHours },
           });
         }
       }
