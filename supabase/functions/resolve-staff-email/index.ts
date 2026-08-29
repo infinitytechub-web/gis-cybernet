@@ -5,6 +5,7 @@
 //   - Audit row in `failed_login_attempts` for every lookup
 //   - Generic error responses to avoid leaking which staff IDs exist
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyRecaptcha } from "../_shared/recaptcha.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
