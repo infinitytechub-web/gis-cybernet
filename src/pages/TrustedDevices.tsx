@@ -424,6 +424,81 @@ export default function TrustedDevices() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={selectionOpen} onOpenChange={(o) => { if (!o) setSelectionOpen(false); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Revoke {selectedIds.length} selected device(s)</DialogTitle>
+            <DialogDescription>
+              Scope: {selectedIds.length} device(s) belonging to {affectedStaff.length} staff member(s)
+              {affectedStaff.length > 0 && ` — ${affectedStaff.slice(0, 4).join(", ")}${affectedStaff.length > 4 ? "…" : ""}`}.
+              Each device needs its own reason (min 5 characters) before revocation is allowed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-[220px] flex-1">
+                <Label htmlFor="apply-all-reason" className="text-xs">Apply one reason to all</Label>
+                <Input
+                  id="apply-all-reason"
+                  value={applyToAll}
+                  onChange={(e) => setApplyToAll(e.target.value)}
+                  placeholder="e.g. Device trust withdrawn — security review"
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={applyToAll.trim().length < 5}
+                onClick={() =>
+                  setSelectionReasons(Object.fromEntries(selectedIds.map((id) => [id, applyToAll])))
+                }
+              >
+                Apply to all
+              </Button>
+            </div>
+
+            <div className="max-h-[320px] space-y-3 overflow-y-auto pr-1">
+              {selectedRows.map((r) => (
+                <div key={r.id} className="rounded-md border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-medium">{r.staff_name || "Unknown staff"}</span>
+                    <span className="text-muted-foreground">
+                      {r.label || browserLabel(r.user_agent)} · expires {formatDateTime(r.expires_at)}
+                    </span>
+                  </div>
+                  <Label htmlFor={`reason-${r.id}`} className="sr-only">Revocation reason</Label>
+                  <Textarea
+                    id={`reason-${r.id}`}
+                    className="mt-2"
+                    rows={2}
+                    value={selectionReasons[r.id] ?? ""}
+                    onChange={(e) =>
+                      setSelectionReasons((prev) => ({ ...prev, [r.id]: e.target.value }))
+                    }
+                    placeholder="Reason for revoking this device"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectionOpen(false)}>Cancel</Button>
+            <Button
+              disabled={missingReasons > 0 || revokeSelected.isPending}
+              onClick={() => revokeSelected.mutate()}
+              className="gap-1"
+            >
+              {revokeSelected.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {missingReasons > 0
+                ? `${missingReasons} reason(s) missing`
+                : `Revoke ${selectedIds.length} device(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
