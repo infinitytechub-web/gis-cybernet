@@ -323,6 +323,8 @@ export default function MyProfile() {
 
       <StaffMfaSettings />
 
+      <MyTrustedDevices />
+
       <BiometricSettings />
     </div>
 
