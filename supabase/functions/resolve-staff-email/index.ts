@@ -72,6 +72,23 @@ Deno.serve(async (req) => {
     ? String((body as { action?: unknown }).action)
     : "resolve";
 
+  // reCAPTCHA v3 gate on the sign-in lookup — the only anonymous entry point
+  // into the login flow. Skipped automatically when protection is switched off.
+  if (action === "resolve") {
+    const captcha = await verifyRecaptcha(
+      supabase as never,
+      (body as { recaptcha_token?: unknown }).recaptcha_token,
+      "login",
+      ip,
+    );
+    if (!captcha.ok) {
+      return new Response(JSON.stringify({ error: captcha.message ?? "Bot verification failed" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
   // Lockout bookkeeping runs here (service role) because the underlying RPCs
   // are not executable by anonymous visitors.
   if (action === "record_failure") {
