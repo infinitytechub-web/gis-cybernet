@@ -42,6 +42,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/health-lab": "Medical records, appointments and health inventory.",
 
   "/my-profile": "View and request changes to your own profile.",
+  "/biometric-enrollment": "Register this device for fingerprint or Face ID sign-in.",
   "/my-portal": "Your personal inbox of requests, files and notices.",
   "/excuse-duty": "Submit an excuse duty (sick leave) form.",
   "/excuse-duty/mine": "Your submitted excuse duty forms and their status.",

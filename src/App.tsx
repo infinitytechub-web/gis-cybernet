@@ -107,6 +107,7 @@ const HealthLab = lazy(() => import("./pages/HealthLab"));
 const ExcuseDutyForm = lazy(() => import("./pages/ExcuseDutyForm"));
 const MyExcuseDutySubmissions = lazy(() => import("./pages/MyExcuseDutySubmissions"));
 const MyProfile = lazy(() => import("./pages/MyProfile"));
+const BiometricEnrollment = lazy(() => import("./pages/BiometricEnrollment"));
 const Appraisals = lazy(() => import("./pages/Appraisals"));
 const AppraisalCoverageReport = lazy(() => import("./pages/AppraisalCoverageReport"));
 const AppraisalDetail = lazy(() => import("./pages/AppraisalDetail"));
@@ -249,6 +250,7 @@ function App() {
           <Route path="/excuse-duty" element={<ProtectedRoute module="excuse-duty"><Layout><ExcuseDutyForm /></Layout></ProtectedRoute>} />
           <Route path="/excuse-duty/mine" element={<ProtectedRoute module="excuse-duty"><Layout><MyExcuseDutySubmissions /></Layout></ProtectedRoute>} />
           <Route path="/my-profile" element={<ProtectedRoute module="my-profile"><Layout><MyProfile /></Layout></ProtectedRoute>} />
+          <Route path="/biometric-enrollment" element={<ProtectedRoute module="biometric-enrollment"><Layout><BiometricEnrollment /></Layout></ProtectedRoute>} />
           <Route path="/appraisals" element={<ProtectedRoute module="appraisals"><Layout><Appraisals /></Layout></ProtectedRoute>} />
           <Route path="/appraisals/coverage" element={<ProtectedRoute module="appraisal-coverage"><Layout><AppraisalCoverageReport /></Layout></ProtectedRoute>} />
           <Route path="/appraisals/officer/:staffProfileId" element={<ProtectedRoute module="appraisals"><Layout><AppraisalDetail /></Layout></ProtectedRoute>} />

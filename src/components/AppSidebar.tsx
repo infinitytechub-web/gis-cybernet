@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
   CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot, Radio, Palette, ChevronRight, CreditCard, Landmark
-} from "lucide-react";
+, Fingerprint } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -111,6 +111,7 @@ const healthItems = [
 
 const allStaffItems = [
   { title: "My Profile", url: "/my-profile", icon: UserCog, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Biometric Enrollment", url: "/biometric-enrollment", icon: Fingerprint, iconColor: "text-indigo-600 dark:text-indigo-400" },
   { title: "My Portal", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
   { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
   { title: "My Submissions", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
