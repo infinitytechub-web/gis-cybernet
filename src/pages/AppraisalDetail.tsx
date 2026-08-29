@@ -80,14 +80,27 @@ export default function AppraisalDetail() {
     queryFn: async () => {
       let q = supabase
         .from("staff_appraisal_audit" as any)
-        .select("*, actor:actor_id(first_name, last_name, staff_id)")
+        .select("*")
         .eq("staff_profile_id", staffProfileId!)
         .eq("period_year", year)
         .order("created_at", { ascending: false });
       q = month == null ? q.is("period_month", null) : q.eq("period_month", month);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as any[];
+      const rows = (data ?? []) as any[];
+
+      // `actor_id` references the auth user, not `profiles`, so it cannot be
+      // embedded by PostgREST — resolve the actor names in a second query.
+      const actorIds = Array.from(
+        new Set(rows.map((r) => r.actor_id).filter(Boolean)),
+      ) as string[];
+      if (actorIds.length === 0) return rows;
+      const { data: actors } = await supabase
+        .from("profiles")
+        .select("user_id, first_name, last_name, staff_id")
+        .in("user_id", actorIds);
+      const byUser = new Map((actors ?? []).map((a: any) => [a.user_id, a]));
+      return rows.map((r) => ({ ...r, actor: byUser.get(r.actor_id) ?? null }));
     },
   });
 

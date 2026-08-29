@@ -94,7 +94,7 @@ export default function MyProfile() {
       if (!profile?.id) return [];
       const { data, error } = await supabase
         .from("profile_change_requests")
-        .select("*, reviewer:reviewer_id(first_name, last_name)")
+        .select("*")
         .eq("profile_id", profile.id)
         .order("created_at", { ascending: false })
         .limit(10);
