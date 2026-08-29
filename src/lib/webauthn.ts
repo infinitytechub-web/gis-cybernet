@@ -82,27 +82,62 @@ async function invoke<T>(fn: string, body: Record<string, unknown>): Promise<T> 
   return data as T;
 }
 
+/** Best-effort audit logging; never blocks the enrollment flow. */
+export async function logBiometricEnrollmentEvent(
+  event: "enroll_attempt" | "enroll_failure" | "status_change",
+  detail?: string,
+  deviceLabel?: string,
+): Promise<void> {
+  try {
+    await supabase.rpc("webauthn_log_enrollment_event", {
+      _event: event,
+      _detail: detail ?? null,
+      _device_label: deviceLabel ?? null,
+    });
+  } catch {
+    /* audit logging must never break the user flow */
+  }
+}
+
 /** Enrol the current device for the signed-in user. Requires explicit consent. */
 export async function enrollBiometric(consent: boolean, label?: string): Promise<string> {
+  const deviceLabel = label ?? currentDeviceLabel();
   if (!consent) throw new Error("Consent is required before biometric enrollment");
   if (!(await biometricsAvailable())) {
+    await logBiometricEnrollmentEvent(
+      "enroll_failure",
+      "Device does not support platform authenticators",
+      deviceLabel,
+    );
     throw new Error("This device does not support fingerprint or Face ID sign-in");
   }
 
-  const { options } = await invoke<{ options: Record<string, unknown> }>(
-    "webauthn-register-options",
-    {},
-  );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const attResponse = await startRegistration({ optionsJSON: options as any });
+  await logBiometricEnrollmentEvent("enroll_attempt", "Enrollment started", deviceLabel);
 
-  const result = await invoke<{ verified: boolean; device_label: string }>(
-    "webauthn-register-verify",
-    { response: attResponse, consent: true, device_label: label ?? currentDeviceLabel() },
-  );
-  if (!result.verified) throw new Error("Enrollment could not be verified");
-  return result.device_label;
+  try {
+    const { options } = await invoke<{ options: Record<string, unknown> }>(
+      "webauthn-register-options",
+      {},
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const attResponse = await startRegistration({ optionsJSON: options as any });
+
+    const result = await invoke<{ verified: boolean; device_label: string }>(
+      "webauthn-register-verify",
+      { response: attResponse, consent: true, device_label: deviceLabel },
+    );
+    if (!result.verified) throw new Error("Enrollment could not be verified");
+    return result.device_label;
+  } catch (err) {
+    await logBiometricEnrollmentEvent(
+      "enroll_failure",
+      err instanceof Error ? err.message : "Enrollment failed",
+      deviceLabel,
+    );
+    throw err;
+  }
 }
+
 
 export type BiometricLoginResult =
   | { status: "not_enrolled" }

@@ -13638,6 +13638,21 @@ export type Database = {
         Args: { _grace_days: number; _required: boolean; _roles: string[] }
         Returns: Json
       }
+      webauthn_audit_feed: {
+        Args: { _events?: string[]; _limit?: number; _since?: string }
+        Returns: {
+          actor_id: string
+          actor_name: string
+          created_at: string
+          detail: string
+          device_label: string
+          event: string
+          id: string
+          staff_identifier: string
+          staff_name: string
+          user_id: string
+        }[]
+      }
       webauthn_consume_stepup: {
         Args: { _action: string; _token_hash: string }
         Returns: boolean
@@ -13651,6 +13666,10 @@ export type Database = {
           id: string
           last_used_at: string
         }[]
+      }
+      webauthn_log_enrollment_event: {
+        Args: { _detail?: string; _device_label?: string; _event: string }
+        Returns: undefined
       }
       webauthn_log_event: {
         Args: {

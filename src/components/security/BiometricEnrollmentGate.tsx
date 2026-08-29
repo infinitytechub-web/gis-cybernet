@@ -25,7 +25,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Fingerprint, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
-import { biometricsAvailable, currentDeviceLabel, enrollBiometric } from "@/lib/webauthn";
+import {
+  biometricsAvailable,
+  currentDeviceLabel,
+  enrollBiometric,
+  logBiometricEnrollmentEvent,
+} from "@/lib/webauthn";
 import { formatDate } from "@/lib/date-format";
 
 export interface EnrollmentStatus {
@@ -41,7 +46,16 @@ export interface EnrollmentStatus {
   overdue: boolean;
 }
 
+/** Human-readable compliance state, written to the biometric audit log. */
+export function describeCompliance(s: EnrollmentStatus): string {
+  if (!s.policy_required || !s.required_for_me) return "Not required for this account";
+  if (s.enrolled) return `Compliant — ${s.device_count} device(s) enrolled`;
+  if (s.overdue) return `Overdue — grace period ended${s.deadline ? ` ${s.deadline}` : ""}`;
+  return `In grace period — ${s.days_left} day(s) left${s.deadline ? ` (deadline ${s.deadline})` : ""}`;
+}
+
 const SNOOZE_KEY = "cybernet.biometric-enrollment.snoozed";
+
 
 export function BiometricEnrollmentGate() {
   const { user } = useAuth();
@@ -60,8 +74,11 @@ export function BiometricEnrollmentGate() {
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("webauthn_my_enrollment_status");
     if (error) return;
-    setStatus((data as unknown as EnrollmentStatus) ?? null);
+    const next = (data as unknown as EnrollmentStatus) ?? null;
+    setStatus(next);
+    if (next) void logBiometricEnrollmentEvent("status_change", describeCompliance(next));
   }, []);
+
 
   useEffect(() => {
     if (!user) return;
@@ -76,7 +93,9 @@ export function BiometricEnrollmentGate() {
       /* non-persistent session storage is acceptable */
     }
     setSnoozed(true);
+    void logBiometricEnrollmentEvent("status_change", "Enrollment prompt postponed during grace period");
   }, []);
+
 
   const handleEnroll = useCallback(async () => {
     setBusy(true);
