@@ -15,11 +15,36 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { logSecurityEvent } from "@/lib/security-audit";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DEFAULT_TRUSTED_DEVICE_HOURS,
+  TRUSTED_DEVICE_DURATIONS,
+  isTrustedDevice,
+  rememberTrustedDevice,
+} from "@/lib/mfa-trusted-device";
 
 /** True when the current session has already completed a 2FA challenge. */
 export async function hasVerifiedMfaSession(): Promise<boolean> {
   const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   return data?.currentLevel === "aal2";
+}
+
+/**
+ * True when step-up can be skipped for a client-side gate: either the session
+ * is already AAL2, or this device carries an unexpired "remember" grant.
+ * Server-guarded actions must keep using hasVerifiedMfaSession() instead.
+ */
+export async function isStepUpSatisfied(userId?: string | null): Promise<boolean> {
+  if (await hasVerifiedMfaSession()) return true;
+  return isTrustedDevice(userId);
 }
 
 /** Recognises the server-side "AAL2 required" refusal. */
@@ -35,6 +60,8 @@ interface MfaStepUpDialogProps {
   onVerified: () => void;
   /** Short description of the action being protected. */
   action?: string;
+  /** Offer the "remember this device" option (default true). */
+  allowRemember?: boolean;
 }
 
 /**
@@ -47,10 +74,13 @@ export default function MfaStepUpDialog({
   onOpenChange,
   onVerified,
   action = "this action",
+  allowRemember = true,
 }: MfaStepUpDialogProps) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [noFactor, setNoFactor] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [rememberHours, setRememberHours] = useState<number>(DEFAULT_TRUSTED_DEVICE_HOURS);
 
   const reset = () => {
     setCode("");
@@ -80,6 +110,19 @@ export default function MfaStepUpDialog({
         code: code.replace(/\D/g, ""),
       });
       if (verifyError) throw verifyError;
+
+      if (allowRemember && remember) {
+        const { data: session } = await supabase.auth.getUser();
+        if (session?.user?.id) {
+          await rememberTrustedDevice(session.user.id, rememberHours);
+          logSecurityEvent({
+            category: "mfa",
+            action: "stepup_device_remembered",
+            severity: "warn",
+            detail: `Trusted for ${rememberHours}h`,
+          });
+        }
+      }
 
       logSecurityEvent({ category: "mfa", action: "session_stepup_verified", severity: "warn" });
       toast.success("Verified 2FA session active");
@@ -130,6 +173,43 @@ export default function MfaStepUpDialog({
                 ))}
               </InputOTPGroup>
             </InputOTP>
+          </div>
+        )}
+
+        {!noFactor && allowRemember && (
+          <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="mfa-remember-device"
+                checked={remember}
+                onCheckedChange={(v) => setRemember(v === true)}
+              />
+              <Label htmlFor="mfa-remember-device" className="text-xs font-medium">
+                Remember this device
+              </Label>
+            </div>
+            {remember && (
+              <div className="flex items-center gap-2">
+                <Select
+                  value={String(rememberHours)}
+                  onValueChange={(v) => setRememberHours(Number(v))}
+                >
+                  <SelectTrigger className="h-8 w-28 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TRUSTED_DEVICE_DURATIONS.map((h) => (
+                      <SelectItem key={h} value={String(h)} className="text-xs">
+                        {h} hours
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-[11px] text-muted-foreground">
+                  Skips this prompt on this browser only.
+                </span>
+              </div>
+            )}
           </div>
         )}
 
