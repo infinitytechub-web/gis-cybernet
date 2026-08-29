@@ -158,12 +158,18 @@ export function addBaseLayerSwitcher(
   };
 
   // Which chain we are currently walking, and how far along.
-  let chainKey = googleLayers.get(initial) ?? "streets";
-  let chainIndex = -1; // -1 = still on the Google source
+  const viewChainKey = (name: string) =>
+    name === "Satellite" ? "satellite" : name === "Hybrid" ? "hybrid" : name === "Terrain" ? "terrain" : "streets";
+  let chainKey = googleLayers.get(initial) ?? viewChainKey(def);
+  // -1 = still on the Google source; otherwise the index within the chain.
+  let chainIndex = googleLayers.has(initial)
+    ? -1
+    : Math.max(-1, (chains[chainKey] ?? []).findIndex((c) => c.layer === initial));
   let switching = false;
 
   const notify = (from: string, to: string) => {
     logAccess(`${to} [auto-failover]`);
+    announce(to);
     try {
       window.dispatchEvent(new CustomEvent("map-tiles-failover", { detail: { from, to } }));
       // Legacy event kept so existing banners keep working.
@@ -194,6 +200,10 @@ export function addBaseLayerSwitcher(
     let activeGoogle: L.Layer | null = null;
     googleLayers.forEach((_view, l) => { if (map.hasLayer(l)) activeGoogle = l; });
     if (!activeGoogle) return;
+    // Remember the failure so later maps/reloads skip Google in Auto mode.
+    markGoogleFailed();
+    // A user who explicitly pinned Google stays on Google.
+    if (getProviderMode() === "google") return;
     chainKey = googleLayers.get(activeGoogle) ?? "streets";
     chainIndex = -1;
     advance("Google");
@@ -214,19 +224,58 @@ export function addBaseLayerSwitcher(
     }
   });
 
-  // Manual selection resets the failover state for the newly chosen source.
+  // Manual selection resets the failover state for the newly chosen source and
+  // is remembered as a pinned provider preference.
   map.on("baselayerchange", (e: L.LayersControlEvent) => {
     if (switching) return;
     const view = googleLayers.get(e.layer as L.Layer);
-    chainKey = view ?? "streets";
+    chainKey = view ?? viewChainKey(def);
     chainIndex = view ? -1 : (chains[chainKey] ?? []).findIndex((c) => c.layer === e.layer);
     errorCount = 0;
+    if (!applyingPreference) {
+      if (view) setProviderMode("google");
+      else if (e.layer === osmStreets) setProviderMode("osm");
+      else if (e.layer === esriSat) setProviderMode("esri");
+      else if (e.layer === opentopo) setProviderMode("opentopo");
+    }
   });
 
-  map.on("unload", () => window.removeEventListener("google-tiles-failed", onGoogleFailed));
+  // ── Provider switcher support ────────────────────────────────────────────
+  let applyingPreference = false;
 
-  return initial;
+  /** Switches the map to the layer implied by a provider mode. */
+  const applyProvider = (mode: MapProviderMode) => {
+    const name =
+      mode === "google"
+        ? def
+        : mode === "auto"
+          ? (googleRecentlyFailed() ? autoFallbackNameFor(def) : def)
+          : nonGoogleNameFor(mode) ?? def;
+    const layer = baseLayers[name];
+    if (!layer) return;
+    applyingPreference = true;
+    Object.values(baseLayers).forEach((l) => { if (map.hasLayer(l)) map.removeLayer(l); });
+    layer.addTo(map);
+    chainKey = googleLayers.get(layer) ?? viewChainKey(def);
+    chainIndex = googleLayers.has(layer)
+      ? -1
+      : Math.max(-1, (chains[chainKey] ?? []).findIndex((c) => c.layer === layer));
+    errorCount = 0;
+    logAccess(name);
+    announce(name);
+    setTimeout(() => { applyingPreference = false; }, 0);
+  };
+
+  const unsubscribe = subscribeProviderPreference((pref) => applyProvider(pref.mode));
+
+  map.on("unload", () => {
+    window.removeEventListener("google-tiles-failed", onGoogleFailed);
+    unsubscribe();
+  });
+
+  return { layer: initial, layersControl, applyProvider, dispose: unsubscribe };
 }
+
 
 /**
  * Attaches automatic tile failover to a map that manages its own base layer
