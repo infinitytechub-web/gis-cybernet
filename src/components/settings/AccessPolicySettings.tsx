@@ -189,6 +189,7 @@ export function AccessPolicySettings() {
       queryClient.invalidateQueries({ queryKey: ["access-policy"] });
       queryClient.invalidateQueries({ queryKey: ["app-settings"] });
       queryClient.invalidateQueries({ queryKey: ["password-policy"] });
+      resetRecaptchaConfigCache();
       toast.success(changed ? `Access policy saved (${changed} change${changed === 1 ? "" : "s"}).` : "No changes to save.");
     },
     onError: (e: any) => toast.error(e.message || "Failed to save the access policy."),
