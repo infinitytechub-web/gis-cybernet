@@ -93,7 +93,9 @@ export function BiometricEnrollmentGate() {
       /* non-persistent session storage is acceptable */
     }
     setSnoozed(true);
+    void logBiometricEnrollmentEvent("status_change", "Enrollment prompt postponed during grace period");
   }, []);
+
 
   const handleEnroll = useCallback(async () => {
     setBusy(true);
