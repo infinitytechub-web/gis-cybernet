@@ -8,6 +8,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { addBaseLayerSwitcher } from "@/lib/leaflet-base-layers";
 import { MapTilesStatusBanner } from "@/components/maps/MapTilesStatusBanner";
+import { MapProviderSwitcher } from "@/components/maps/MapProviderSwitcher";
 import { formatDateTime } from "@/lib/date-format";
 import {
   FLEET_DEFAULT_CENTER,
@@ -189,6 +190,9 @@ export function FleetLiveMap({
 
   return (
     <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-end">
+        <MapProviderSwitcher />
+      </div>
       <MapTilesStatusBanner />
       <div className="relative overflow-hidden rounded-lg border border-border">
         <div ref={containerRef} style={{ height }} aria-label="Live fleet map" role="application" />
