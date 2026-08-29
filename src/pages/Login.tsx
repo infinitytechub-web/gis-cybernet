@@ -16,6 +16,7 @@ import { getDeviceFingerprint } from "@/lib/device-fingerprint";
 import { getMyClientIp } from "@/lib/client-ip";
 import { getTrustedMac } from "@/lib/trusted-mac";
 import { biometricLogin, biometricsAvailable } from "@/lib/webauthn";
+import { executeRecaptcha, getRecaptchaConfig, preloadRecaptcha } from "@/lib/recaptcha";
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
@@ -41,6 +42,7 @@ export default function Login() {
   const [otp, setOtp] = useState("");
   const [canBiometric, setCanBiometric] = useState(false);
   const [bioLoading, setBioLoading] = useState(false);
+  const [captchaActive, setCaptchaActive] = useState(false);
   const { signIn, signOut, user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,6 +60,16 @@ export default function Login() {
     });
     return () => cic(handle);
   }, []);
+
+  // Invisible bot protection (reCAPTCHA v3). Warm the script up so the first
+  // sign-in is not delayed, and show the required Google attribution notice.
+  useEffect(() => {
+    void getRecaptchaConfig().then((c) => {
+      setCaptchaActive(c.enabled);
+      if (c.enabled) preloadRecaptcha();
+    });
+  }, []);
+
 
   useEffect(() => {
     if (!loading && user) {
@@ -103,16 +115,48 @@ export default function Login() {
         }
       }
 
+      // Invisible reCAPTCHA v3 token (null when protection is switched off).
+      const captchaToken = await executeRecaptcha("login");
+
       // Look up the auth email from the Staff/Admin ID via the hardened edge
-      // function (rate-limited, audited, no direct anon DB access).
+      // function (rate-limited, audited, captcha-gated, no direct anon DB access).
       const { data: lookupData, error: lookupErr } = await supabase.functions.invoke(
         "resolve-staff-email",
-        { body: { staff_id: trimmedId } },
+        { body: { staff_id: trimmedId, recaptcha_token: captchaToken } },
       );
       const lookup = (lookupData ?? null) as
-        | { email?: string; locked?: boolean; threshold?: number | null; auto_unlock_minutes?: number | null }
+        | {
+            email?: string;
+            locked?: boolean;
+            threshold?: number | null;
+            auto_unlock_minutes?: number | null;
+            error?: string;
+          }
         | null;
       const emailData = lookup?.email ?? null;
+
+      // The edge function answers 403 with a captcha message when the request
+      // looks automated. On a non-2xx status invoke() puts the body on the
+      // error context, so check both places.
+      let captchaMessage: string | null =
+        typeof lookup?.error === "string" && /verification|automated/i.test(lookup.error)
+          ? lookup.error
+          : null;
+      if (!captchaMessage && lookupErr) {
+        try {
+          const res = (lookupErr as { context?: Response }).context;
+          if (res && typeof res.json === "function") {
+            const payload = await res.clone().json();
+            if (res.status === 403 && typeof payload?.error === "string") captchaMessage = payload.error;
+          }
+        } catch { /* fall through to the generic message */ }
+      }
+      if (captchaMessage) {
+        toast({ title: "Verification failed", description: captchaMessage, variant: "destructive" });
+        throw new Error("Captcha rejected");
+      }
+
+
       if (lookupErr || !emailData) {
         // record_failed_login already logged inside the edge function — no
         // need to double-log here. Surface a toast so the user isn't stuck
@@ -124,6 +168,7 @@ export default function Login() {
         });
         throw new Error("Invalid ID or password");
       }
+
 
       // Policy-driven lockout: refuse the attempt outright while locked.
       if (lookup?.locked) {
@@ -387,6 +432,19 @@ export default function Login() {
           </a>
         </div>
       </div>
+      {captchaActive && (
+        <p className="text-center text-[10px] leading-snug text-muted-foreground">
+          Protected by reCAPTCHA — this site is checked for automated sign-in attempts. Google's{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="underline">
+            Privacy Policy
+          </a>{" "}
+          and{" "}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="underline">
+            Terms
+          </a>{" "}
+          apply.
+        </p>
+      )}
     </form>
     );
   };

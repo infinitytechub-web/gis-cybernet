@@ -8,11 +8,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, ShieldAlert, KeyRound, Clock, Loader2, Save, Info } from "lucide-react";
+import { Shield, ShieldAlert, KeyRound, Clock, Loader2, Save, Info, Bot } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { logSecurityEvent } from "@/lib/security-audit";
+import { resetRecaptchaConfigCache } from "@/lib/recaptcha";
 
 /** Roles that can be placed under a mandatory-MFA requirement. */
 const MFA_ROLE_CHOICES: { value: string; label: string }[] = [
@@ -52,6 +53,10 @@ interface PolicyRow {
   // mfa
   mfa_required_roles: string[] | null;
   mfa_grace_days: number;
+  // bot protection
+  recaptcha_enabled: boolean;
+  recaptcha_site_key: string | null;
+  recaptcha_min_score: number;
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -71,6 +76,9 @@ const FIELD_LABELS: Record<string, string> = {
   max_concurrent_sessions: "Maximum simultaneous devices",
   mfa_required_roles: "Roles requiring MFA",
   mfa_grace_days: "MFA enrolment grace period (days)",
+  recaptcha_enabled: "Bot protection (reCAPTCHA v3)",
+  recaptcha_site_key: "reCAPTCHA site key",
+  recaptcha_min_score: "reCAPTCHA minimum score",
 };
 
 export function AccessPolicySettings() {
@@ -126,6 +134,9 @@ export function AccessPolicySettings() {
         max_concurrent_sessions: Number(v("max_concurrent_sessions")),
         mfa_required_roles: requiredRoles,
         mfa_grace_days: Number(v("mfa_grace_days")),
+        recaptcha_enabled: Boolean(v("recaptcha_enabled")),
+        recaptcha_site_key: String(v("recaptcha_site_key") ?? "").trim() || null,
+        recaptcha_min_score: Number(v("recaptcha_min_score") ?? 0.5),
       };
 
       // Client-side sanity checks with clear messages (the database also
@@ -142,6 +153,11 @@ export function AccessPolicySettings() {
         throw new Error("Idle warning lead time must be shorter than the idle timeout.");
       if (next.session_absolute_hours! > 0 && next.session_absolute_hours! * 60 <= next.auto_logout_minutes!)
         throw new Error("Maximum session length must be longer than the idle timeout.");
+      if (next.recaptcha_min_score! < 0 || next.recaptcha_min_score! > 1)
+        throw new Error("reCAPTCHA minimum score must be between 0.0 and 1.0.");
+      if (next.recaptcha_enabled && !next.recaptcha_site_key)
+        throw new Error("Add a reCAPTCHA v3 site key before enabling bot protection.");
+
 
       const { error } = await supabase
         .from("app_settings")
@@ -174,6 +190,7 @@ export function AccessPolicySettings() {
       queryClient.invalidateQueries({ queryKey: ["access-policy"] });
       queryClient.invalidateQueries({ queryKey: ["app-settings"] });
       queryClient.invalidateQueries({ queryKey: ["password-policy"] });
+      resetRecaptchaConfigCache();
       toast.success(changed ? `Access policy saved (${changed} change${changed === 1 ? "" : "s"}).` : "No changes to save.");
     },
     onError: (e: any) => toast.error(e.message || "Failed to save the access policy."),
@@ -464,6 +481,71 @@ export function AccessPolicySettings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Bot protection (reCAPTCHA v3) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bot className="h-4 w-4 text-chart-2" /> Bot Protection (reCAPTCHA v3)
+          </CardTitle>
+          <CardDescription>
+            Invisible Google reCAPTCHA v3 scoring on the sign-in screen. No puzzles for staff —
+            requests that score below the threshold are rejected on the server.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Enable bot protection on sign-in</p>
+              <p className="text-xs text-muted-foreground">
+                Requires a v3 site key below and the reCAPTCHA secret key configured on the server.
+              </p>
+            </div>
+            <Switch
+              checked={Boolean(v("recaptcha_enabled"))}
+              onCheckedChange={(c) => set("recaptcha_enabled", c)}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="recaptcha-site-key">Site key (public)</Label>
+              <Input
+                id="recaptcha-site-key"
+                placeholder="6Lxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                autoComplete="off"
+                value={String(v("recaptcha_site_key") ?? "")}
+                onChange={(e) => set("recaptcha_site_key", e.target.value as never)}
+              />
+              <p className="text-xs text-muted-foreground">
+                From Google reCAPTCHA admin console, type "reCAPTCHA v3". Safe to store here.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="recaptcha-min-score">Minimum score (0.0 – 1.0)</Label>
+              <Input
+                id="recaptcha-min-score"
+                type="number"
+                min={0}
+                max={1}
+                step={0.1}
+                value={Number(v("recaptcha_min_score") ?? 0.5)}
+                onChange={(e) => set("recaptcha_min_score", Number(e.target.value))}
+              />
+              <p className="text-xs text-muted-foreground">
+                1.0 = very likely human. 0.5 is Google's recommended starting point; raise it only if
+                you see automated attempts getting through.
+              </p>
+            </div>
+          </div>
+          {Boolean(v("recaptcha_enabled")) && !String(v("recaptcha_site_key") ?? "").trim() && (
+            <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px] gap-1">
+              <ShieldAlert className="h-3 w-3" /> Enabled but no site key — protection stays off
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+
+
 
       <Button
         onClick={() => saveMutation.mutate()}
