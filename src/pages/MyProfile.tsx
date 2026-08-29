@@ -20,6 +20,7 @@ import { logAdminAudit } from "@/lib/admin-audit";
 import { DateInput } from "@/components/ui/date-input";
 import { BiometricSettings } from "@/components/settings/BiometricSettings";
 import StaffMfaSettings from "@/components/settings/StaffMfaSettings";
+import MyTrustedDevices from "@/components/settings/MyTrustedDevices";
 
 
 const EDITABLE_FIELDS = [
@@ -321,6 +322,8 @@ export default function MyProfile() {
       </Card>
 
       <StaffMfaSettings />
+
+      <MyTrustedDevices />
 
       <BiometricSettings />
     </div>

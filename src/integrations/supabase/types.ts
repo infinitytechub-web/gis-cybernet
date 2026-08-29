@@ -6552,6 +6552,57 @@ export type Database = {
         }
         Relationships: []
       }
+      mfa_trusted_devices_archive: {
+        Row: {
+          archived_at: string
+          created_at: string | null
+          expires_at: string | null
+          fingerprint_hash: string
+          id: string
+          ip: string | null
+          label: string | null
+          last_used_at: string | null
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          trusted_hours: number | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          created_at?: string | null
+          expires_at?: string | null
+          fingerprint_hash: string
+          id: string
+          ip?: string | null
+          label?: string | null
+          last_used_at?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          trusted_hours?: number | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          created_at?: string | null
+          expires_at?: string | null
+          fingerprint_hash?: string
+          id?: string
+          ip?: string | null
+          label?: string | null
+          last_used_at?: string | null
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          trusted_hours?: number | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       misd_unit_assignments: {
         Row: {
           assigned_at: string
@@ -13331,6 +13382,26 @@ export type Database = {
           code: string
         }[]
       }
+      mfa_my_trusted_devices: {
+        Args: { _include_revoked?: boolean }
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          label: string
+          last_used_at: string
+          revoke_reason: string
+          revoked_at: string
+          revoked_by_self: boolean
+          trusted_hours: number
+          user_agent: string
+        }[]
+      }
+      mfa_purge_expired_trusted_devices: {
+        Args: { _archive_after_days?: number }
+        Returns: Json
+      }
       mfa_register_trusted_device: {
         Args: {
           _fingerprint_hash: string
@@ -13347,6 +13418,10 @@ export type Database = {
       mfa_revoke_trusted_device: {
         Args: { _device_id: string; _reason: string }
         Returns: boolean
+      }
+      mfa_revoke_trusted_devices_bulk: {
+        Args: { _items: Json }
+        Returns: number
       }
       mfa_trusted_device_check: {
         Args: { _fingerprint_hash: string }

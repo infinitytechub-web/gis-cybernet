@@ -28,6 +28,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DeviceRow {
   id: string;
@@ -85,6 +94,10 @@ export default function TrustedDevices() {
   const [target, setTarget] = useState<DeviceRow | null>(null);
   const [bulkTarget, setBulkTarget] = useState<DeviceRow | null>(null);
   const [reason, setReason] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectionOpen, setSelectionOpen] = useState(false);
+  const [selectionReasons, setSelectionReasons] = useState<Record<string, string>>({});
+  const [applyToAll, setApplyToAll] = useState("");
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery<DeviceRow[]>({
     queryKey: ["mfa-trusted-devices", includeRevoked],
@@ -115,6 +128,59 @@ export default function TrustedDevices() {
     setTarget(null);
     setBulkTarget(null);
   };
+
+  const revocableRows = useMemo(() => rows.filter((r) => !r.revoked_at), [rows]);
+  const selectedRows = useMemo(
+    () => (data ?? []).filter((r) => selectedIds.includes(r.id)),
+    [data, selectedIds],
+  );
+  const allSelected = revocableRows.length > 0 && revocableRows.every((r) => selectedIds.includes(r.id));
+  const affectedStaff = useMemo(
+    () => Array.from(new Set(selectedRows.map((r) => r.staff_name || "Unknown staff"))),
+    [selectedRows],
+  );
+  const missingReasons = selectedRows.filter(
+    (r) => (selectionReasons[r.id] ?? "").trim().length < 5,
+  ).length;
+
+  const toggleRow = (id: string, checked: boolean) =>
+    setSelectedIds((prev) => (checked ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)));
+
+  const toggleAll = (checked: boolean) =>
+    setSelectedIds(checked ? revocableRows.map((r) => r.id) : []);
+
+  const openSelectionDialog = () => {
+    setSelectionReasons(Object.fromEntries(selectedIds.map((id) => [id, ""])));
+    setApplyToAll("");
+    setSelectionOpen(true);
+  };
+
+  const revokeSelected = useMutation({
+    mutationFn: async () => {
+      const items = selectedRows.map((r) => ({
+        device_id: r.id,
+        reason: (selectionReasons[r.id] ?? "").trim(),
+      }));
+      const { data, error } = await supabase.rpc("mfa_revoke_trusted_devices_bulk" as never, {
+        _items: items,
+      } as never);
+      if (error) throw error;
+      return (data as unknown as number) ?? 0;
+    },
+    onSuccess: (count) => {
+      toast({
+        title: "Devices revoked",
+        description: `${count} device(s) revoked. Each revocation was written to the security audit log.`,
+      });
+      setSelectionOpen(false);
+      setSelectedIds([]);
+      setSelectionReasons({});
+      invalidate();
+    },
+    onError: (e: any) =>
+      toast({ title: "Bulk revoke failed", description: e.message, variant: "destructive" }),
+  });
+
 
   const revokeOne = useMutation({
     mutationFn: async () => {
@@ -199,6 +265,23 @@ export default function TrustedDevices() {
             </p>
           )}
 
+          {selectedIds.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary/5 p-3">
+              <p className="text-xs">
+                <span className="font-semibold">{selectedIds.length}</span> device(s) selected across{" "}
+                <span className="font-semibold">{affectedStaff.length}</span> staff member(s).
+              </p>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="ghost" className="h-7 text-[11px]" onClick={() => setSelectedIds([])}>
+                  Clear selection
+                </Button>
+                <Button size="sm" className="h-7 gap-1 text-[11px]" onClick={openSelectionDialog}>
+                  <ShieldOff className="h-3 w-3" /> Revoke selected
+                </Button>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading devices…
@@ -212,6 +295,14 @@ export default function TrustedDevices() {
               <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8">
+                      <Checkbox
+                        checked={allSelected}
+                        onCheckedChange={(c) => toggleAll(c === true)}
+                        aria-label="Select all revocable devices"
+                        disabled={revocableRows.length === 0}
+                      />
+                    </TableHead>
                     <TableHead>Staff</TableHead>
                     <TableHead>Device</TableHead>
                     <TableHead>Trusted</TableHead>
@@ -224,8 +315,17 @@ export default function TrustedDevices() {
                 </TableHeader>
                 <TableBody>
                   {rows.map((r) => (
-                    <TableRow key={r.id}>
+                    <TableRow key={r.id} data-state={selectedIds.includes(r.id) ? "selected" : undefined}>
                       <TableCell>
+                        <Checkbox
+                          checked={selectedIds.includes(r.id)}
+                          onCheckedChange={(c) => toggleRow(r.id, c === true)}
+                          disabled={!!r.revoked_at}
+                          aria-label={`Select device for ${r.staff_name || "unknown staff"}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+
                         <div className="font-medium">{r.staff_name || "Unknown staff"}</div>
                         <div className="text-xs text-muted-foreground">{r.staff_identifier || "—"}</div>
                       </TableCell>
@@ -324,6 +424,81 @@ export default function TrustedDevices() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={selectionOpen} onOpenChange={(o) => { if (!o) setSelectionOpen(false); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Revoke {selectedIds.length} selected device(s)</DialogTitle>
+            <DialogDescription>
+              Scope: {selectedIds.length} device(s) belonging to {affectedStaff.length} staff member(s)
+              {affectedStaff.length > 0 && ` — ${affectedStaff.slice(0, 4).join(", ")}${affectedStaff.length > 4 ? "…" : ""}`}.
+              Each device needs its own reason (min 5 characters) before revocation is allowed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-[220px] flex-1">
+                <Label htmlFor="apply-all-reason" className="text-xs">Apply one reason to all</Label>
+                <Input
+                  id="apply-all-reason"
+                  value={applyToAll}
+                  onChange={(e) => setApplyToAll(e.target.value)}
+                  placeholder="e.g. Device trust withdrawn — security review"
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={applyToAll.trim().length < 5}
+                onClick={() =>
+                  setSelectionReasons(Object.fromEntries(selectedIds.map((id) => [id, applyToAll])))
+                }
+              >
+                Apply to all
+              </Button>
+            </div>
+
+            <div className="max-h-[320px] space-y-3 overflow-y-auto pr-1">
+              {selectedRows.map((r) => (
+                <div key={r.id} className="rounded-md border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-medium">{r.staff_name || "Unknown staff"}</span>
+                    <span className="text-muted-foreground">
+                      {r.label || browserLabel(r.user_agent)} · expires {formatDateTime(r.expires_at)}
+                    </span>
+                  </div>
+                  <Label htmlFor={`reason-${r.id}`} className="sr-only">Revocation reason</Label>
+                  <Textarea
+                    id={`reason-${r.id}`}
+                    className="mt-2"
+                    rows={2}
+                    value={selectionReasons[r.id] ?? ""}
+                    onChange={(e) =>
+                      setSelectionReasons((prev) => ({ ...prev, [r.id]: e.target.value }))
+                    }
+                    placeholder="Reason for revoking this device"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectionOpen(false)}>Cancel</Button>
+            <Button
+              disabled={missingReasons > 0 || revokeSelected.isPending}
+              onClick={() => revokeSelected.mutate()}
+              className="gap-1"
+            >
+              {revokeSelected.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {missingReasons > 0
+                ? `${missingReasons} reason(s) missing`
+                : `Revoke ${selectedIds.length} device(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
