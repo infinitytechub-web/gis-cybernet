@@ -59,8 +59,8 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      // Admins bypass the AAL2 session requirement for password updates.
+      await updateOwnCredentials({ password });
       setDone(true);
       toast.success("Password updated successfully");
       setTimeout(() => navigate("/login"), 2000);
