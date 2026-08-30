@@ -294,15 +294,28 @@ Deno.serve(async (req) => {
     // Validate caller is admin
     const authHeader = req.headers.get("Authorization") ?? "";
     if (authHeader && !authHeader.includes(serviceRoleKey)) {
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
       const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } },
       });
-      const { data: { user } } = await userClient.auth.getUser();
+      // Primary: resolve the user from the bearer token. Fall back to claim
+      // verification (asymmetric signing keys) before rejecting the call.
+      let user: { id: string } | null = null;
+      const direct = await userClient.auth.getUser(token);
+      if (direct.data?.user) {
+        user = direct.data.user;
+      } else {
+        const claims = await userClient.auth.getClaims(token);
+        const sub = (claims as any)?.data?.claims?.sub;
+        if (sub) user = { id: sub };
+        else console.error("caller_auth_failed", direct.error?.message ?? "no claims");
+      }
       if (!user) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
       if (!(await hasStaffAdminAuthority(adminClient, user.id))) {
         return new Response(JSON.stringify({ error: STAFF_ADMIN_DENIED }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
