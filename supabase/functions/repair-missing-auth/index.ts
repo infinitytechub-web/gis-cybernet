@@ -160,6 +160,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Audit trail — counts and context only, never password values.
+    await admin.from("system_audit_log").insert({
+      action: "bulk_credentials_repaired",
+      entity_type: "staff_credentials",
+      entity_id: null,
+      performed_by: user.id,
+      details: {
+        source: "repair_missing_auth",
+        accounts_created: created.filter((c) => c.action === "created").length,
+        accounts_linked: created.filter((c) => c.action === "linked").length,
+        failures: errors.length,
+        total_considered: (profiles ?? []).length,
+        repaired_at: new Date().toISOString(),
+      },
+    });
+
+
     return new Response(
       JSON.stringify({ created, errors, total: (profiles ?? []).length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
