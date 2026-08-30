@@ -115,6 +115,57 @@ export function BulkCreateAccounts() {
     }, 3000);
   };
 
+  /**
+   * Presents a generation result for administrator verification. Passwords are
+   * masked until explicitly revealed and export stays locked until the
+   * administrator confirms the credentials belong to the intended accounts.
+   */
+  const showResults = (
+    created: CreatedAccount[],
+    errs: Array<{ staffId: string; error: string }>,
+    totalCount: number,
+    source: string,
+  ) => {
+    setResults(created);
+    setErrors(errs);
+    setTotal(totalCount);
+    setRevealed({});
+    setRevealAll(false);
+    setVerified(false);
+    if (created.length > 0) {
+      // Never log password values — counts and context only.
+      logAdminAudit("staff_credentials", "generated", {
+        source,
+        accounts: created.length,
+        failures: errs.length,
+        total: totalCount,
+      });
+    }
+  };
+
+  /** Wipes credentials from component memory. */
+  const clearResults = () => {
+    setResults(null);
+    setErrors([]);
+    setRevealed({});
+    setRevealAll(false);
+    setVerified(false);
+  };
+
+  const toggleReveal = (staffId: string) => {
+    setRevealed((prev) => ({ ...prev, [staffId]: !prev[staffId] }));
+  };
+
+  const handleRevealAll = () => {
+    const next = !revealAll;
+    setRevealAll(next);
+    setRevealed({});
+    if (next) {
+      logAdminAudit("staff_credentials", "revealed", { accounts: results?.length ?? 0, scope: "all" });
+    }
+  };
+
+
   const handleBulkCreate = async () => {
     setIsLoading(true);
     setResults(null);
