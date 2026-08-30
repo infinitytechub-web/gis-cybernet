@@ -84,9 +84,8 @@ export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sideb
         return;
       }
 
-      // Update password
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+      // Update password (admins bypass the AAL2 session requirement)
+      await updateOwnCredentials({ password: newPassword });
 
       toast.success("Password updated successfully");
       resetForm();
