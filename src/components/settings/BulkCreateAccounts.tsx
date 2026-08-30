@@ -242,16 +242,22 @@ export function BulkCreateAccounts() {
     }
   };
 
+  /**
+   * Export payload for the credentials sheet. Only offered after the
+   * administrator has verified the list (see `verified`), and only in CSV /
+   * Excel — the formats intended for controlled distribution.
+   */
   const getCredentialsExportData = () => {
-    if (!results?.length) return null;
+    if (!results?.length || !verified) return null;
     return {
-      title: "Staff Login Credentials",
+      title: "Staff Login Credentials — CONFIDENTIAL",
       filename: `staff-credentials-${new Date().toISOString().slice(0, 10)}`,
-      subtitle: `${results.length} accounts generated`,
-      headers: ["Staff ID", "Name", "Username", "Default Password"],
+      subtitle: `CONFIDENTIAL — ${results.length} temporary credentials. Distribute securely; staff must change the password at first login.`,
+      headers: ["Staff ID", "Name", "Username", "Temporary Password"],
       rows: results.map((r) => [r.staffId, r.name, r.username, r.password]),
     };
   };
+
 
   const handleRepair = async () => {
     setIsRepairing(true);
