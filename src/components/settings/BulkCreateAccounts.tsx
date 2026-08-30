@@ -270,9 +270,8 @@ export function BulkCreateAccounts() {
         throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
-      setResults(data.created ?? []);
-      setErrors(data.errors ?? []);
-      setTotal(data.total ?? 0);
+      showResults(data.created ?? [], data.errors ?? [], data.total ?? 0, "repair_missing_auth");
+
       const createdCount = data.created?.length ?? 0;
       const errorCount = data.errors?.length ?? 0;
       if (createdCount > 0 && errorCount > 0) {
