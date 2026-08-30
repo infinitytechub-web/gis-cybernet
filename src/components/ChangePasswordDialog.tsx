@@ -10,6 +10,7 @@ import { z } from "zod";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { PasswordRules } from "@/components/ui/password-rules";
 import { checkPassword, usePasswordPolicy, validatePasswordServerSide } from "@/lib/password-policy";
+import { updateOwnCredentials } from "@/lib/admin-credentials";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
