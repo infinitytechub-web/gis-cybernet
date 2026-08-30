@@ -10,3 +10,4 @@
 - [Fuel Requests](mem://features/fuel-requests) — Command console fuel approval chain + Fleet fuel consumption log with odometer economy
 - [Dashboard Restricted Surfaces](mem://features/dashboard-restricted-surfaces) — Security/system-integrity/tactical GPS/dispatch/appraisal/dept-allocation widgets live only in Admin Console (admin, oic, 2ic)
 - [Bulk Credential Handling](mem://features/bulk-credential-handling) — masked temp passwords, verification-gated CSV/Excel export, client+server credential audit trail
+- [Bot Protection](mem://features/bot-protection) — reCAPTCHA v3 login gate; fail-open on config/browser errors, required site-key domains
