@@ -47,11 +47,18 @@ export default function ForcePasswordChange() {
       // Update password (admins bypass the AAL2 session requirement)
       await updateOwnCredentials({ password });
 
-      // Clear the flag
+      // Clear the flag. The password change may have rotated the session, so a
+      // failure here must not surface as an error — sign in again instead.
       const { error: metaErr } = await supabase.auth.updateUser({
         data: { must_change_password: false },
       });
-      if (metaErr) throw metaErr;
+      if (metaErr) {
+        toast.success("Password updated. Please sign in with your new password.");
+        await supabase.auth.signOut().catch(() => undefined);
+        navigate("/login", { replace: true });
+        return;
+      }
+
 
       // Pick up the refreshed metadata so the forced-change gate releases.
       await supabase.auth.refreshSession().catch(() => {});
