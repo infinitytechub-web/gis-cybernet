@@ -90,9 +90,8 @@ export function BulkCreateAccounts() {
           return;
         }
         const r = result as any;
-        setResults(r?.created ?? []);
-        setErrors(r?.errors ?? []);
-        setTotal(r?.total ?? 0);
+        showResults(r?.created ?? [], r?.errors ?? [], r?.total ?? 0, "reset_and_regenerate");
+
 
         if (r?.created?.length > 0) {
           const errCount = r?.errors?.length ?? 0;
