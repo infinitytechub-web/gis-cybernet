@@ -14,6 +14,20 @@ export function isAal2Error(error: unknown): boolean {
   return /aal2|assurance level|insufficient_aal|reauthentication/i.test(msg);
 }
 
+/** True when the auth error means the access token no longer maps to a session. */
+export function isSessionMissingError(error: unknown): boolean {
+  const anyErr = error as { message?: string; code?: string; status?: number } | null;
+  const msg = anyErr?.message ?? "";
+  const code = anyErr?.code ?? "";
+  return (
+    /session (not found|missing)|auth session missing|missing sub claim|bad_jwt|invalid claim/i.test(msg) ||
+    /session_not_found|bad_jwt/i.test(code)
+  );
+}
+
+const SESSION_LOST_MESSAGE =
+  "Your sign-in session is no longer valid. Please sign in again and retry the password change.";
+
 /** True when the signed-in user holds the `admin` role. */
 export async function currentUserIsAdmin(): Promise<boolean> {
   const { data: userData } = await supabase.auth.getUser();
@@ -40,7 +54,9 @@ async function adminSelfUpdate(payload: { email?: string; password?: string }): 
 
 /**
  * Updates the signed-in user's email and/or password. Admins bypass AAL2:
- * either directly (when the normal call refuses) or up-front when known.
+ * the change is applied through the Auth Admin API, which also revokes the
+ * current session — so we immediately re-establish one with the new
+ * credentials, otherwise every follow-up call fails with "Auth session missing".
  */
 export async function updateOwnCredentials(payload: {
   email?: string;
@@ -51,21 +67,45 @@ export async function updateOwnCredentials(payload: {
   const { email, password, preferAdminBypass } = payload;
   if (!email && !password) return { viaAdminBypass: false };
 
-  if (preferAdminBypass) {
+  // A live session is required for BOTH paths (the edge function authorises
+  // the caller from the bearer token). Fail with a clear message instead of a
+  // raw "Auth session missing" / 403 session_not_found from the Auth API.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData?.session ?? null;
+  if (!session?.access_token) throw new Error(SESSION_LOST_MESSAGE);
+  const currentEmail = session.user?.email ?? undefined;
+
+  /** Re-establish a session after the Admin API revoked the old one. */
+  const restoreSession = async () => {
+    if (!password) return;
+    const signInEmail = email ?? currentEmail;
+    if (!signInEmail) return;
+    const { data: fresh } = await supabase.auth.getSession();
+    if (fresh?.session?.access_token) {
+      // Confirm the token still resolves to a live session server-side.
+      const { error: probeErr } = await supabase.auth.getUser();
+      if (!probeErr) return;
+    }
+    await supabase.auth.signInWithPassword({ email: signInEmail, password }).catch(() => undefined);
+  };
+
+  const runBypass = async () => {
     await adminSelfUpdate({ email, password });
+    await restoreSession();
     return { viaAdminBypass: true };
-  }
+  };
+
+  const isAdmin = preferAdminBypass ? true : await currentUserIsAdmin();
+  // Admins always go through the Admin API — attempting the user-scoped call
+  // first only produces 401 insufficient_aal / 403 session_not_found noise.
+  if (isAdmin) return runBypass();
 
   const { error } = await supabase.auth.updateUser({
     ...(email ? { email } : {}),
     ...(password ? { password } : {}),
   });
   if (!error) return { viaAdminBypass: false };
-
-  // Admins are exempt from the AAL2 requirement — retry via the Admin API.
-  if (isAal2Error(error) && (await currentUserIsAdmin())) {
-    await adminSelfUpdate({ email, password });
-    return { viaAdminBypass: true };
-  }
+  if (isSessionMissingError(error)) throw new Error(SESSION_LOST_MESSAGE);
   throw error;
 }
+
