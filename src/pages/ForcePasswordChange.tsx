@@ -43,15 +43,17 @@ export default function ForcePasswordChange() {
         toast.error(serverErrors[0]);
         return;
       }
-      // Update password
-      const { error: pwErr } = await supabase.auth.updateUser({ password });
-      if (pwErr) throw pwErr;
+      // Update password (admins bypass the AAL2 session requirement)
+      await updateOwnCredentials({ password });
 
       // Clear the flag
       const { error: metaErr } = await supabase.auth.updateUser({
         data: { must_change_password: false },
       });
       if (metaErr) throw metaErr;
+
+      // Pick up the refreshed metadata so the forced-change gate releases.
+      await supabase.auth.refreshSession().catch(() => {});
 
       toast.success("Password updated! Welcome to GIS HRM.");
       navigate("/dashboard", { replace: true });
