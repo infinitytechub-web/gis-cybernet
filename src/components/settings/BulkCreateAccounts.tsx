@@ -6,10 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { extractEdgeFunctionError } from "@/lib/edge-function-error";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 interface CreatedAccount {
   staffId: string;
@@ -17,6 +19,8 @@ interface CreatedAccount {
   username: string;
   password: string;
 }
+
+const MASK = "••••••••••••";
 
 export function BulkCreateAccounts() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +31,11 @@ export function BulkCreateAccounts() {
   const [total, setTotal] = useState(0);
   const [jobProgress, setJobProgress] = useState(0);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [revealAll, setRevealAll] = useState(false);
+  const [verified, setVerified] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
 
   useEffect(() => {
     return () => {
