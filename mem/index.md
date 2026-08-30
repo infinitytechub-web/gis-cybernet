@@ -12,3 +12,4 @@
 - [MFA Trusted Devices](mem://features/mfa-trusted-devices) — AAL2 step-up remember-device grants, mfa_trusted_devices table/RPCs, /admin/trusted-devices review & revoke
 - [Bulk Credential Handling](mem://features/bulk-credential-handling) — masked temp passwords, verification-gated CSV/Excel export, client+server credential audit trail
 - [Bot Protection](mem://features/bot-protection) — reCAPTCHA v3 login gate; fail-open on config/browser errors, required site-key domains
+- [Admin AAL2 Bypass](mem://auth/admin-aal2-bypass) — admins skip AAL2 for own email/password via updateOwnCredentials + admin-self-credentials function

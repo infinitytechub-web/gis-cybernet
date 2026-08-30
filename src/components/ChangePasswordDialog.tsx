@@ -10,6 +10,7 @@ import { z } from "zod";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { PasswordRules } from "@/components/ui/password-rules";
 import { checkPassword, usePasswordPolicy, validatePasswordServerSide } from "@/lib/password-policy";
+import { updateOwnCredentials } from "@/lib/admin-credentials";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -84,9 +85,8 @@ export function ChangePasswordDialog({ variant = "sidebar" }: { variant?: "sideb
         return;
       }
 
-      // Update password
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+      // Update password (admins bypass the AAL2 session requirement)
+      await updateOwnCredentials({ password: newPassword });
 
       toast.success("Password updated successfully");
       resetForm();

@@ -10,6 +10,7 @@ import { KeyRound, CheckCircle } from "lucide-react";
 import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
 import gisLogo from "@/assets/gis-logo-192.webp";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { updateOwnCredentials } from "@/lib/admin-credentials";
 
 export default function ResetPassword() {
   usePageMeta({
@@ -59,8 +60,8 @@ export default function ResetPassword() {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      // Admins bypass the AAL2 session requirement for password updates.
+      await updateOwnCredentials({ password });
       setDone(true);
       toast.success("Password updated successfully");
       setTimeout(() => navigate("/login"), 2000);

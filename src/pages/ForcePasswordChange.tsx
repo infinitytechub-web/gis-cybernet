@@ -11,6 +11,7 @@ import { KeyRound, Eye, EyeOff } from "lucide-react";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { PasswordRules } from "@/components/ui/password-rules";
 import { checkPassword, usePasswordPolicy, validatePasswordServerSide } from "@/lib/password-policy";
+import { updateOwnCredentials } from "@/lib/admin-credentials";
 import gisLogo from "@/assets/gis-logo-192.webp";
 
 export default function ForcePasswordChange() {
@@ -43,15 +44,17 @@ export default function ForcePasswordChange() {
         toast.error(serverErrors[0]);
         return;
       }
-      // Update password
-      const { error: pwErr } = await supabase.auth.updateUser({ password });
-      if (pwErr) throw pwErr;
+      // Update password (admins bypass the AAL2 session requirement)
+      await updateOwnCredentials({ password });
 
       // Clear the flag
       const { error: metaErr } = await supabase.auth.updateUser({
         data: { must_change_password: false },
       });
       if (metaErr) throw metaErr;
+
+      // Pick up the refreshed metadata so the forced-change gate releases.
+      await supabase.auth.refreshSession().catch(() => {});
 
       toast.success("Password updated! Welcome to GIS HRM.");
       navigate("/dashboard", { replace: true });
