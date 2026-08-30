@@ -216,9 +216,8 @@ export function BulkCreateAccounts() {
         pollJob(data.job_id);
       } else {
         // Legacy direct response
-        setResults(data.created ?? []);
-        setErrors(data.errors ?? []);
-        setTotal(data.total ?? 0);
+        showResults(data.created ?? [], data.errors ?? [], data.total ?? 0, "reset_and_regenerate");
+
         setIsResetting(false);
 
         if (data.created?.length > 0) {
