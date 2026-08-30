@@ -79,11 +79,18 @@ export async function verifyRecaptcha(
     };
 
     if (result.success !== true) {
+      // Diagnostics only — no token or secret material is logged.
+      console.error("recaptcha_siteverify_failed", JSON.stringify({
+        codes: result["error-codes"] ?? [],
+        expectedAction,
+      }));
       return { ok: false, message: "Bot verification failed. Reload the page and try again." };
     }
     if (expectedAction && result.action && result.action !== expectedAction) {
+      console.error("recaptcha_action_mismatch", JSON.stringify({ got: result.action, expectedAction }));
       return { ok: false, message: "Bot verification failed. Reload the page and try again." };
     }
+
     const score = typeof result.score === "number" ? result.score : 0;
     if (score < minScore) {
       return {
