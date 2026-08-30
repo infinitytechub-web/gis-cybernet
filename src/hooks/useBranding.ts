@@ -32,7 +32,7 @@ export interface Branding {
 /** Fallbacks used before the row loads, or if the request fails. */
 export const BRANDING_DEFAULTS: Branding = {
   org_name: "Cybernet",
-  system_label: "HRM System",
+  system_label: "Cybernet HRM System",
   company_name: "Ghana Immigration Service",
   logo_url: null,
   favicon_url: null,

@@ -15,9 +15,9 @@ export default function Unsubscribe() {
   const [message, setMessage] = useState<string>("");
 
   usePageMeta({
-    title: "Email Unsubscribe — GAR-ASC-Cybernet",
+    title: "Email Unsubscribe — Cybernet HRM System",
     description:
-      "Unsubscribe from GAR-ASC-Cybernet notification emails. Confirm your request to stop receiving system notifications from the Ghana Immigration Service HRM platform.",
+      "Unsubscribe from Cybernet HRM System notification emails. Confirm your request to stop receiving system notifications from the Ghana Immigration Service HRM platform.",
     path: "/unsubscribe",
   });
 

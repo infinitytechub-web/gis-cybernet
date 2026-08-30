@@ -26,9 +26,9 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 export default function Login() {
   const branding = useBranding();
   usePageMeta({
-    title: "Staff Sign In — GAR-ASC-Cybernet HRM",
+    title: "Staff Sign In — Cybernet HRM System",
     description:
-      "Secure staff sign-in for the GAR-ASC-Cybernet HRM system. Authorised Ghana Immigration Service personnel can access rosters, attendance and operations records.",
+      "Secure staff sign-in for the Cybernet HRM System. Authorised Ghana Immigration Service personnel can access rosters, attendance and operations records.",
     path: "/login",
   });
 

@@ -13,9 +13,9 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function ResetPassword() {
   usePageMeta({
-    title: "Set a New Password — GAR-ASC-Cybernet",
+    title: "Set a New Password — Cybernet HRM System",
     description:
-      "Set a new password for your GAR-ASC-Cybernet HRM account. Passwords must meet Ghana Immigration Service security strength requirements before they are accepted.",
+      "Set a new password for your Cybernet HRM System account. Passwords must meet Ghana Immigration Service security strength requirements before they are accepted.",
     path: "/reset-password",
   });
   const [password, setPassword] = useState("");
