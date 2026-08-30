@@ -11,6 +11,7 @@ import { KeyRound, Eye, EyeOff } from "lucide-react";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { PasswordRules } from "@/components/ui/password-rules";
 import { checkPassword, usePasswordPolicy, validatePasswordServerSide } from "@/lib/password-policy";
+import { updateOwnCredentials } from "@/lib/admin-credentials";
 import gisLogo from "@/assets/gis-logo-192.webp";
 
 export default function ForcePasswordChange() {
