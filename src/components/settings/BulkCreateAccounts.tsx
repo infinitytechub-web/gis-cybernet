@@ -395,22 +395,67 @@ export function BulkCreateAccounts() {
                 </Badge>
               )}
               {results.length > 0 && (
-                <ExportMenu
-                  getData={getCredentialsExportData}
-                  label="Download"
-                  size="sm"
-                  variant="outline"
-                />
+                <>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleRevealAll}>
+                    {revealAll ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {revealAll ? "Hide all" : "Reveal all"}
+                  </Button>
+                  <ExportMenu
+                    getData={getCredentialsExportData}
+                    label="Download"
+                    size="sm"
+                    variant="outline"
+                    formats={["csv", "excel"]}
+                    disabled={!verified}
+                    onExported={(fmt) =>
+                      logAdminAudit("staff_credentials", "exported", {
+                        format: fmt,
+                        accounts: results.length,
+                      })
+                    }
+                  />
+                </>
               )}
-              <Button variant="ghost" size="sm" onClick={() => setResults(null)}>
+              <Button variant="ghost" size="sm" onClick={clearResults}>
                 Back
               </Button>
             </div>
 
             {results.length > 0 && (
               <>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    Verify before export
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Check each row so every temporary password is matched to the intended staff account.
+                    Passwords are masked until revealed, are never stored in plain text, and cannot be
+                    retrieved after you leave this screen. Staff must set their own password at first login.
+                  </p>
+                  <label className="flex items-start gap-2 text-xs font-medium cursor-pointer">
+                    <Checkbox
+                      checked={verified}
+                      onCheckedChange={(v) => {
+                        const next = v === true;
+                        setVerified(next);
+                        if (next) {
+                          logAdminAudit("staff_credentials", "verified", { accounts: results.length });
+                        }
+                      }}
+                      aria-label="Confirm credential verification"
+                    />
+                    <span>
+                      I have verified these credentials against the intended staff accounts and I am
+                      authorised to export them for secure distribution.
+                    </span>
+                  </label>
+                  {!verified && (
+                    <p className="text-xs text-destructive">Download is disabled until verification is confirmed.</p>
+                  )}
+                </div>
                 <p className="text-xs text-destructive font-medium">
-                  ⚠️ Save these credentials now — passwords cannot be retrieved later.
+                  ⚠️ Export these credentials now — passwords cannot be retrieved later.
                 </p>
                 <div className="rounded-lg border max-h-[400px] overflow-auto">
                   <Table>
@@ -419,25 +464,46 @@ export function BulkCreateAccounts() {
                         <TableHead>Staff ID</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Username</TableHead>
-                        <TableHead>Password</TableHead>
-                        <TableHead className="w-[60px]"></TableHead>
+                        <TableHead>Temporary Password</TableHead>
+                        <TableHead className="w-[96px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {results.map((account) => (
-                        <TableRow key={account.staffId}>
-                          <TableCell className="font-mono text-xs">{account.staffId}</TableCell>
-                          <TableCell className="font-medium">{account.name}</TableCell>
-                          <TableCell className="font-mono text-xs">{account.username}</TableCell>
-                          <TableCell className="font-mono text-xs">{account.password}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyCredentials(account)}>
-                              <Copy className="h-3.5 w-3.5" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {results.map((account) => {
+                        const show = revealAll || !!revealed[account.staffId];
+                        return (
+                          <TableRow key={account.staffId}>
+                            <TableCell className="font-mono text-xs">{account.staffId}</TableCell>
+                            <TableCell className="font-medium">{account.name}</TableCell>
+                            <TableCell className="font-mono text-xs">{account.username}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {show ? account.password : MASK}
+                            </TableCell>
+                            <TableCell className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => toggleReveal(account.staffId)}
+                                aria-label={show ? `Hide password for ${account.name}` : `Show password for ${account.name}`}
+                              >
+                                {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => copyCredentials(account)}
+                                aria-label={`Copy credentials for ${account.name}`}
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
+
                   </Table>
                 </div>
               </>
