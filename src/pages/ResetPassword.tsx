@@ -10,6 +10,7 @@ import { KeyRound, CheckCircle } from "lucide-react";
 import { PasswordStrength, getStrength } from "@/components/ui/password-strength";
 import gisLogo from "@/assets/gis-logo-192.webp";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { updateOwnCredentials } from "@/lib/admin-credentials";
 
 export default function ResetPassword() {
   usePageMeta({
