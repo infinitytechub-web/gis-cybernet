@@ -118,7 +118,9 @@ export async function verifyRecaptcha(
     }
     return { ok: true, score };
   } catch {
-    // Google unreachable — fail closed while protection is switched on.
-    return { ok: false, message: "Bot verification is unavailable right now. Please try again." };
+    // Google unreachable — log and skip rather than locking every user out.
+    console.error("recaptcha_siteverify_unreachable", JSON.stringify({ expectedAction }));
+    return { ok: true, skipped: true };
   }
+
 }
