@@ -6,10 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UserPlus, Copy, CheckCircle, AlertTriangle, RefreshCw, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { extractEdgeFunctionError } from "@/lib/edge-function-error";
+import { logAdminAudit } from "@/lib/admin-audit";
 
 interface CreatedAccount {
   staffId: string;
@@ -17,6 +19,8 @@ interface CreatedAccount {
   username: string;
   password: string;
 }
+
+const MASK = "••••••••••••";
 
 export function BulkCreateAccounts() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +31,11 @@ export function BulkCreateAccounts() {
   const [total, setTotal] = useState(0);
   const [jobProgress, setJobProgress] = useState(0);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [revealAll, setRevealAll] = useState(false);
+  const [verified, setVerified] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
 
   useEffect(() => {
     return () => {
@@ -82,9 +90,8 @@ export function BulkCreateAccounts() {
           return;
         }
         const r = result as any;
-        setResults(r?.created ?? []);
-        setErrors(r?.errors ?? []);
-        setTotal(r?.total ?? 0);
+        showResults(r?.created ?? [], r?.errors ?? [], r?.total ?? 0, "reset_and_regenerate");
+
 
         if (r?.created?.length > 0) {
           const errCount = r?.errors?.length ?? 0;
@@ -108,6 +115,57 @@ export function BulkCreateAccounts() {
     }, 3000);
   };
 
+  /**
+   * Presents a generation result for administrator verification. Passwords are
+   * masked until explicitly revealed and export stays locked until the
+   * administrator confirms the credentials belong to the intended accounts.
+   */
+  const showResults = (
+    created: CreatedAccount[],
+    errs: Array<{ staffId: string; error: string }>,
+    totalCount: number,
+    source: string,
+  ) => {
+    setResults(created);
+    setErrors(errs);
+    setTotal(totalCount);
+    setRevealed({});
+    setRevealAll(false);
+    setVerified(false);
+    if (created.length > 0) {
+      // Never log password values — counts and context only.
+      logAdminAudit("staff_credentials", "generated", {
+        source,
+        accounts: created.length,
+        failures: errs.length,
+        total: totalCount,
+      });
+    }
+  };
+
+  /** Wipes credentials from component memory. */
+  const clearResults = () => {
+    setResults(null);
+    setErrors([]);
+    setRevealed({});
+    setRevealAll(false);
+    setVerified(false);
+  };
+
+  const toggleReveal = (staffId: string) => {
+    setRevealed((prev) => ({ ...prev, [staffId]: !prev[staffId] }));
+  };
+
+  const handleRevealAll = () => {
+    const next = !revealAll;
+    setRevealAll(next);
+    setRevealed({});
+    if (next) {
+      logAdminAudit("staff_credentials", "revealed", { accounts: results?.length ?? 0, scope: "all" });
+    }
+  };
+
+
   const handleBulkCreate = async () => {
     setIsLoading(true);
     setResults(null);
@@ -120,9 +178,8 @@ export function BulkCreateAccounts() {
       }
       if ((data as any)?.error) throw new Error((data as any).error);
 
-      setResults(data.created ?? []);
-      setErrors(data.errors ?? []);
-      setTotal(data.total ?? 0);
+      showResults(data.created ?? [], data.errors ?? [], data.total ?? 0, "bulk_create");
+
 
       const createdCount = data.created?.length ?? 0;
       const errorCount = data.errors?.length ?? 0;
@@ -159,9 +216,8 @@ export function BulkCreateAccounts() {
         pollJob(data.job_id);
       } else {
         // Legacy direct response
-        setResults(data.created ?? []);
-        setErrors(data.errors ?? []);
-        setTotal(data.total ?? 0);
+        showResults(data.created ?? [], data.errors ?? [], data.total ?? 0, "reset_and_regenerate");
+
         setIsResetting(false);
 
         if (data.created?.length > 0) {
@@ -186,16 +242,22 @@ export function BulkCreateAccounts() {
     }
   };
 
+  /**
+   * Export payload for the credentials sheet. Only offered after the
+   * administrator has verified the list (see `verified`), and only in CSV /
+   * Excel — the formats intended for controlled distribution.
+   */
   const getCredentialsExportData = () => {
-    if (!results?.length) return null;
+    if (!results?.length || !verified) return null;
     return {
-      title: "Staff Login Credentials",
+      title: "Staff Login Credentials — CONFIDENTIAL",
       filename: `staff-credentials-${new Date().toISOString().slice(0, 10)}`,
-      subtitle: `${results.length} accounts generated`,
-      headers: ["Staff ID", "Name", "Username", "Default Password"],
+      subtitle: `CONFIDENTIAL — ${results.length} temporary credentials. Distribute securely; staff must change the password at first login.`,
+      headers: ["Staff ID", "Name", "Username", "Temporary Password"],
       rows: results.map((r) => [r.staffId, r.name, r.username, r.password]),
     };
   };
+
 
   const handleRepair = async () => {
     setIsRepairing(true);
@@ -208,9 +270,8 @@ export function BulkCreateAccounts() {
         throw new Error(msg);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
-      setResults(data.created ?? []);
-      setErrors(data.errors ?? []);
-      setTotal(data.total ?? 0);
+      showResults(data.created ?? [], data.errors ?? [], data.total ?? 0, "repair_missing_auth");
+
       const createdCount = data.created?.length ?? 0;
       const errorCount = data.errors?.length ?? 0;
       if (createdCount > 0 && errorCount > 0) {
@@ -334,22 +395,67 @@ export function BulkCreateAccounts() {
                 </Badge>
               )}
               {results.length > 0 && (
-                <ExportMenu
-                  getData={getCredentialsExportData}
-                  label="Download"
-                  size="sm"
-                  variant="outline"
-                />
+                <>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleRevealAll}>
+                    {revealAll ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {revealAll ? "Hide all" : "Reveal all"}
+                  </Button>
+                  <ExportMenu
+                    getData={getCredentialsExportData}
+                    label="Download"
+                    size="sm"
+                    variant="outline"
+                    formats={["csv", "excel"]}
+                    disabled={!verified}
+                    onExported={(fmt) =>
+                      logAdminAudit("staff_credentials", "exported", {
+                        format: fmt,
+                        accounts: results.length,
+                      })
+                    }
+                  />
+                </>
               )}
-              <Button variant="ghost" size="sm" onClick={() => setResults(null)}>
+              <Button variant="ghost" size="sm" onClick={clearResults}>
                 Back
               </Button>
             </div>
 
             {results.length > 0 && (
               <>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    Verify before export
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Check each row so every temporary password is matched to the intended staff account.
+                    Passwords are masked until revealed, are never stored in plain text, and cannot be
+                    retrieved after you leave this screen. Staff must set their own password at first login.
+                  </p>
+                  <label className="flex items-start gap-2 text-xs font-medium cursor-pointer">
+                    <Checkbox
+                      checked={verified}
+                      onCheckedChange={(v) => {
+                        const next = v === true;
+                        setVerified(next);
+                        if (next) {
+                          logAdminAudit("staff_credentials", "verified", { accounts: results.length });
+                        }
+                      }}
+                      aria-label="Confirm credential verification"
+                    />
+                    <span>
+                      I have verified these credentials against the intended staff accounts and I am
+                      authorised to export them for secure distribution.
+                    </span>
+                  </label>
+                  {!verified && (
+                    <p className="text-xs text-destructive">Download is disabled until verification is confirmed.</p>
+                  )}
+                </div>
                 <p className="text-xs text-destructive font-medium">
-                  ⚠️ Save these credentials now — passwords cannot be retrieved later.
+                  ⚠️ Export these credentials now — passwords cannot be retrieved later.
                 </p>
                 <div className="rounded-lg border max-h-[400px] overflow-auto">
                   <Table>
@@ -358,25 +464,46 @@ export function BulkCreateAccounts() {
                         <TableHead>Staff ID</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Username</TableHead>
-                        <TableHead>Password</TableHead>
-                        <TableHead className="w-[60px]"></TableHead>
+                        <TableHead>Temporary Password</TableHead>
+                        <TableHead className="w-[96px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {results.map((account) => (
-                        <TableRow key={account.staffId}>
-                          <TableCell className="font-mono text-xs">{account.staffId}</TableCell>
-                          <TableCell className="font-medium">{account.name}</TableCell>
-                          <TableCell className="font-mono text-xs">{account.username}</TableCell>
-                          <TableCell className="font-mono text-xs">{account.password}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyCredentials(account)}>
-                              <Copy className="h-3.5 w-3.5" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {results.map((account) => {
+                        const show = revealAll || !!revealed[account.staffId];
+                        return (
+                          <TableRow key={account.staffId}>
+                            <TableCell className="font-mono text-xs">{account.staffId}</TableCell>
+                            <TableCell className="font-medium">{account.name}</TableCell>
+                            <TableCell className="font-mono text-xs">{account.username}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {show ? account.password : MASK}
+                            </TableCell>
+                            <TableCell className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => toggleReveal(account.staffId)}
+                                aria-label={show ? `Hide password for ${account.name}` : `Show password for ${account.name}`}
+                              >
+                                {show ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => copyCredentials(account)}
+                                aria-label={`Copy credentials for ${account.name}`}
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
+
                   </Table>
                 </div>
               </>

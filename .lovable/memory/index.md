@@ -9,3 +9,4 @@
 - [Fleet GPS Feed](mem://features/fleet-gps-feed) — /fleet GPS feed tab: show-once hashed tracker keys, fleet_feed_readiness live/stale/silent onboarding
 - [Fuel Requests](mem://features/fuel-requests) — Command console fuel approval chain + Fleet fuel consumption log with odometer economy
 - [Dashboard Restricted Surfaces](mem://features/dashboard-restricted-surfaces) — Security/system-integrity/tactical GPS/dispatch/appraisal/dept-allocation widgets live only in Admin Console (admin, oic, 2ic)
+- [Bulk Credential Handling](mem://features/bulk-credential-handling) — masked temp passwords, verification-gated CSV/Excel export, client+server credential audit trail

@@ -317,6 +317,20 @@ Deno.serve(async (req) => {
         .single();
       if (jobError) throw jobError;
 
+      // Audit trail — records who initiated the mass credential regeneration.
+      await adminClient.from("system_audit_log").insert({
+        action: "bulk_credentials_reset_started",
+        entity_type: "staff_credentials",
+        entity_id: job.id,
+        performed_by: user.id,
+        details: {
+          source: "reset_and_create_accounts",
+          job_id: job.id,
+          started_at: new Date().toISOString(),
+        },
+      });
+
+
       // Start reset phase in background, then first batch
       EdgeRuntime.waitUntil((async () => {
         try {
