@@ -235,6 +235,24 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Done: ${created.length} created, ${errors.length} errors`);
+
+    // Audit trail — counts and context only, never password values.
+    await adminClient.from("system_audit_log").insert({
+      action: "bulk_credentials_generated",
+      entity_type: "staff_credentials",
+      entity_id: null,
+      performed_by: callerId,
+      details: {
+        source: "bulk_create_accounts",
+        role_granted: requestedRole,
+        accounts_created: created.length,
+        failures: errors.length,
+        total_considered: scopedProfiles.length,
+        targeted: !!targetIds,
+        generated_at: new Date().toISOString(),
+      },
+    });
+
     return new Response(
       JSON.stringify({ created, errors, total: scopedProfiles.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
