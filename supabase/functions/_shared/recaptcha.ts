@@ -59,7 +59,12 @@ export async function verifyRecaptcha(
 
   const value = typeof token === "string" ? token.trim() : "";
   if (!value || value.length > 4096) {
-    return { ok: false, message: "Bot verification failed. Reload the page and try again." };
+    // No token reached us. That is almost always a configuration/environment
+    // problem (site key not registered for this domain, script blocked by an
+    // extension or corporate proxy) rather than a bot, so it must not lock
+    // legitimate staff out of the sign-in screen.
+    console.error("recaptcha_token_missing", JSON.stringify({ expectedAction }));
+    return { ok: true, skipped: true };
   }
 
   try {
@@ -79,17 +84,29 @@ export async function verifyRecaptcha(
     };
 
     if (result.success !== true) {
+      const codes = result["error-codes"] ?? [];
       // Diagnostics only — no token or secret material is logged.
-      console.error("recaptcha_siteverify_failed", JSON.stringify({
-        codes: result["error-codes"] ?? [],
-        expectedAction,
-      }));
+      console.error("recaptcha_siteverify_failed", JSON.stringify({ codes, expectedAction }));
+      // Codes that mean "this deployment is misconfigured / the browser could
+      // not complete the challenge" — e.g. the domain is missing from the reCAPTCHA
+      // site settings, or the stored secret does not belong to the site key.
+      // Blocking on these would take the whole login page down, so we skip the
+      // gate and surface the cause in the function logs instead.
+      const configIssue = codes.some((c) =>
+        c === "browser-error" ||
+        c === "missing-input-secret" ||
+        c === "invalid-input-secret" ||
+        c === "bad-request"
+      );
+      if (configIssue || codes.length === 0) return { ok: true, skipped: true };
+      // Genuine token problems (invalid / replayed / expired) still fail closed.
       return { ok: false, message: "Bot verification failed. Reload the page and try again." };
     }
     if (expectedAction && result.action && result.action !== expectedAction) {
       console.error("recaptcha_action_mismatch", JSON.stringify({ got: result.action, expectedAction }));
       return { ok: false, message: "Bot verification failed. Reload the page and try again." };
     }
+
 
     const score = typeof result.score === "number" ? result.score : 0;
     if (score < minScore) {
