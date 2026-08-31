@@ -32,16 +32,7 @@ export function AccessDenied({ moduleKey, label }: AccessDeniedProps) {
             <strong>{name ?? "this module"}</strong>. If you believe you should have access,
             contact a System Administrator to have the permission assigned.
           </p>
-          {Array.isArray(roles) && roles.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs font-medium">Permitted roles:</span>
-              {roles.map((r) => (
-                <Badge key={r} variant="outline" className="text-[10px]">
-                  {roleLabel(r)}
-                </Badge>
-              ))}
-            </div>
-          )}
+          
           <div className="flex gap-2 pt-1">
             <Button asChild size="sm" variant="secondary">
               <Link to="/dashboard">Back to dashboard</Link>
