@@ -2,12 +2,9 @@ import { Link } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { allowedRoles } from "@/lib/rbac";
-import { roleLabel } from "@/lib/role-labels";
 
 interface AccessDeniedProps {
-  /** Module key from the RBAC registry — drives the label and role list. */
+  /** Module key from the RBAC registry — drives the label. */
   moduleKey?: string;
   /** Fallback label when no module key is supplied. */
   label?: string;
@@ -16,9 +13,9 @@ interface AccessDeniedProps {
 /**
  * Shown whenever a signed-in user reaches a module their role, privileges or
  * delegated grants do not cover — including via a direct URL or bookmark.
+ * Authorised users never see this screen; it renders only on a denied check.
  */
 export function AccessDenied({ moduleKey, label }: AccessDeniedProps) {
-  const roles = moduleKey ? allowedRoles(moduleKey) : [];
   const name = label ?? (moduleKey ? undefined : "this area");
 
   return (
