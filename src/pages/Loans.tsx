@@ -22,7 +22,7 @@ interface LoanRow {
   applicant_name: string;
   phone: string;
   amount: number;
-  term_months: number;
+  repayment_months: number;
   purpose: string | null;
   status: string;
   created_at: string;
@@ -50,7 +50,7 @@ export default function Loans() {
     queryFn: async (): Promise<LoanRow[]> => {
       const { data, error } = await (supabase as any)
         .from("loan_applications")
-        .select("id, applicant_name, phone, amount, term_months, purpose, status, created_at")
+        .select("id, applicant_name, phone, amount, repayment_months, purpose, status, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -70,7 +70,7 @@ export default function Loans() {
         applicant_name: applicantName.trim(),
         phone: canonicalPhone,
         amount: value,
-        term_months: term,
+        repayment_months: term,
         purpose: purpose.trim() || null,
         created_by: user?.id ?? null,
       });
@@ -178,7 +178,7 @@ export default function Loans() {
                     <TableCell className="font-medium">{row.applicant_name}</TableCell>
                     <TableCell className="font-mono text-xs">{row.phone.startsWith("0") ? formatGhanaPhone(row.phone) : row.phone}</TableCell>
                     <TableCell className="text-right tabular-nums">GHS {Number(row.amount).toFixed(2)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{row.term_months} mo</TableCell>
+                    <TableCell className="text-right tabular-nums">{row.repayment_months} mo</TableCell>
                     <TableCell className="max-w-[220px] truncate" title={row.purpose ?? ""}>{row.purpose ?? "—"}</TableCell>
                     <TableCell><Badge variant={row.status === "approved" ? "default" : row.status === "rejected" ? "destructive" : "outline"}>{row.status}</Badge></TableCell>
                     <TableCell className="whitespace-nowrap">{formatDateTime(row.created_at)}</TableCell>

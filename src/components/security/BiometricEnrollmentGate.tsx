@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Fingerprint, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Fingerprint, Loader2, LogOut, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   biometricsAvailable,
   currentDeviceLabel,
@@ -55,10 +55,11 @@ export function describeCompliance(s: EnrollmentStatus): string {
 }
 
 const SNOOZE_KEY = "cybernet.biometric-enrollment.snoozed";
+const LAST_LOGGED_KEY = "cybernet.biometric-enrollment.last-logged";
 
 
 export function BiometricEnrollmentGate() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [status, setStatus] = useState<EnrollmentStatus | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -76,7 +77,19 @@ export function BiometricEnrollmentGate() {
     if (error) return;
     const next = (data as unknown as EnrollmentStatus) ?? null;
     setStatus(next);
-    if (next) void logBiometricEnrollmentEvent("status_change", describeCompliance(next));
+    if (!next) return;
+    // Only log when the compliance state actually changed — avoids one audit row
+    // per user per app load.
+    const summary = describeCompliance(next);
+    try {
+      if (sessionStorage.getItem(LAST_LOGGED_KEY) === summary) return;
+      sessionStorage.setItem(LAST_LOGGED_KEY, summary);
+    } catch {
+      /* non-persistent session storage is acceptable */
+    }
+    if (next.policy_required && next.required_for_me) {
+      void logBiometricEnrollmentEvent("status_change", summary);
+    }
   }, []);
 
 
@@ -179,6 +192,12 @@ export function BiometricEnrollmentGate() {
         )}
 
         <DialogFooter className="gap-2">
+          {blocking && (
+            <Button variant="outline" onClick={() => void signOut()}>
+              <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
+              Sign out
+            </Button>
+          )}
           {!blocking && (
             <Button variant="outline" onClick={snooze}>
               Remind me later
