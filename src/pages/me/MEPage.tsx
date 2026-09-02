@@ -47,7 +47,7 @@ function formatValue(value: unknown, key: string) {
   if (value === null || value === undefined || value === "") return "—";
   if (key.endsWith("_at") || key === "created_at" || key === "updated_at") return new Date(String(value)).toLocaleDateString("en-GB");
   if (typeof value === "number" && ["percent_complete", "score", "performance_score", "health_score"].includes(key)) return `${Math.round(value)}%`;
-  return String(value).replaceAll("_", " ");
+  return String(value).replace(/_/g, " ");
 }
 
 function Stat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Activity }) {
