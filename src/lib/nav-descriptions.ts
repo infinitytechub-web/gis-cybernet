@@ -121,6 +121,11 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "Security & Audit": "Audit trails, sensitive access and network blocks.",
   "Data & Imports": "Bulk imports and system performance monitoring.",
   Configuration: "Announcements, branding, security and system settings.",
+  "Strategy & Delivery": "Objectives, programmes, projects and workplans.",
+  "Measurement & Evidence": "KPIs, results, field reports, GIS and evidence.",
+  "Risk & Assurance": "Risks, incidents, corrective actions and approvals.",
+  "Resources & Oversight": "Resources, budgets, reports, analytics and audit.",
+  "M&E and Project Management": "Monitoring, evaluation, project and performance management.",
 };
 
 /** Description for a route path or parent menu label, or undefined when none is defined. */
