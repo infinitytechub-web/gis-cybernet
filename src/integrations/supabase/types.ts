@@ -6126,6 +6126,3165 @@ export type Database = {
         }
         Relationships: []
       }
+      me_activities: {
+        Row: {
+          actual_cost: number | null
+          actual_end: string | null
+          actual_start: string | null
+          archived_at: string | null
+          classification: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          district_id: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          parent_id: string | null
+          percent_complete: number
+          planned_cost: number | null
+          planned_end: string | null
+          planned_start: string | null
+          priority: string
+          project_id: string
+          ref_code: string | null
+          region: string | null
+          status: string
+          updated_at: string
+          workstream_id: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_end?: string | null
+          actual_start?: string | null
+          archived_at?: string | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          percent_complete?: number
+          planned_cost?: number | null
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: string
+          project_id: string
+          ref_code?: string | null
+          region?: string | null
+          status?: string
+          updated_at?: string
+          workstream_id?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_end?: string | null
+          actual_start?: string | null
+          archived_at?: string | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          percent_complete?: number
+          planned_cost?: number | null
+          planned_end?: string | null
+          planned_start?: string | null
+          priority?: string
+          project_id?: string
+          ref_code?: string | null
+          region?: string | null
+          status?: string
+          updated_at?: string
+          workstream_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_activities_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_activities_workstream_id_fkey"
+            columns: ["workstream_id"]
+            isOneToOne: false
+            referencedRelation: "me_workstreams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_approval_steps: {
+        Row: {
+          acted_at: string | null
+          action: string | null
+          approval_id: string
+          approver_user_id: string | null
+          comment: string | null
+          created_at: string
+          delegated_to: string | null
+          id: string
+          step_order: number
+          step_role: string | null
+        }
+        Insert: {
+          acted_at?: string | null
+          action?: string | null
+          approval_id: string
+          approver_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          delegated_to?: string | null
+          id?: string
+          step_order: number
+          step_role?: string | null
+        }
+        Update: {
+          acted_at?: string | null
+          action?: string | null
+          approval_id?: string
+          approver_user_id?: string | null
+          comment?: string | null
+          created_at?: string
+          delegated_to?: string | null
+          id?: string
+          step_order?: number
+          step_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_approval_steps_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "me_approvals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_approvals: {
+        Row: {
+          classification: string
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          due_date: string | null
+          id: string
+          is_demo: boolean
+          org_unit_id: string | null
+          record_id: string
+          record_type: string
+          requested_by: string | null
+          status: string
+          updated_at: string
+          workflow_key: string
+        }
+        Insert: {
+          classification?: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          due_date?: string | null
+          id?: string
+          is_demo?: boolean
+          org_unit_id?: string | null
+          record_id: string
+          record_type: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          workflow_key?: string
+        }
+        Update: {
+          classification?: string
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          due_date?: string | null
+          id?: string
+          is_demo?: boolean
+          org_unit_id?: string | null
+          record_id?: string
+          record_type?: string
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          workflow_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_approvals_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_budget_lines: {
+        Row: {
+          approved_amount: number
+          budget_id: string
+          category: string | null
+          committed_amount: number
+          created_at: string
+          description: string
+          id: string
+          is_demo: boolean
+          line_code: string | null
+          revised_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_amount?: number
+          budget_id: string
+          category?: string | null
+          committed_amount?: number
+          created_at?: string
+          description: string
+          id?: string
+          is_demo?: boolean
+          line_code?: string | null
+          revised_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_amount?: number
+          budget_id?: string
+          category?: string | null
+          committed_amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          is_demo?: boolean
+          line_code?: string | null
+          revised_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_budget_lines_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "me_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_budgets: {
+        Row: {
+          approved_amount: number
+          classification: string
+          committed_amount: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          department_id: string | null
+          external_ref: string | null
+          fiscal_year: number
+          funding_source: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          objective_id: string | null
+          org_unit_id: string | null
+          program_id: string | null
+          project_id: string | null
+          ref_code: string | null
+          region: string | null
+          revised_amount: number | null
+          status: string
+          sync_status: string
+          synced_at: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          approved_amount?: number
+          classification?: string
+          committed_amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          department_id?: string | null
+          external_ref?: string | null
+          fiscal_year: number
+          funding_source?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          revised_amount?: number | null
+          status?: string
+          sync_status?: string
+          synced_at?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          approved_amount?: number
+          classification?: string
+          committed_amount?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          department_id?: string | null
+          external_ref?: string | null
+          fiscal_year?: number
+          funding_source?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          revised_amount?: number | null
+          status?: string
+          sync_status?: string
+          synced_at?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_budgets_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_budgets_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_budgets_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_budgets_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_corrective_actions: {
+        Row: {
+          action_type: string
+          classification: string
+          closed_at: string | null
+          closure_evidence_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          incident_id: string | null
+          is_demo: boolean
+          issue_id: string | null
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          project_id: string | null
+          ref_code: string | null
+          region: string | null
+          risk_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          verification_notes: string | null
+        }
+        Insert: {
+          action_type?: string
+          classification?: string
+          closed_at?: string | null
+          closure_evidence_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          incident_id?: string | null
+          is_demo?: boolean
+          issue_id?: string | null
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          risk_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          verification_notes?: string | null
+        }
+        Update: {
+          action_type?: string
+          classification?: string
+          closed_at?: string | null
+          closure_evidence_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          incident_id?: string | null
+          is_demo?: boolean
+          issue_id?: string | null
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          risk_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          verification_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_ca_incident_fk"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "me_incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_closure_evidence_id_fkey"
+            columns: ["closure_evidence_id"]
+            isOneToOne: false
+            referencedRelation: "me_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "me_issues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_corrective_actions_risk_id_fkey"
+            columns: ["risk_id"]
+            isOneToOne: false
+            referencedRelation: "me_risks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_dependencies: {
+        Row: {
+          created_at: string
+          dependency_type: string
+          from_id: string
+          from_type: string
+          id: string
+          is_demo: boolean
+          lag_days: number
+          to_id: string
+          to_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dependency_type?: string
+          from_id: string
+          from_type: string
+          id?: string
+          is_demo?: boolean
+          lag_days?: number
+          to_id: string
+          to_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dependency_type?: string
+          from_id?: string
+          from_type?: string
+          id?: string
+          is_demo?: boolean
+          lag_days?: number
+          to_id?: string
+          to_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      me_event_rules: {
+        Row: {
+          actions: Json
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          escalate_after_hours: number | null
+          event_key: string
+          id: string
+          is_active: boolean
+          is_demo: boolean
+          last_run_at: string | null
+          name: string
+          recipient_roles: string[]
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          escalate_after_hours?: number | null
+          event_key: string
+          id?: string
+          is_active?: boolean
+          is_demo?: boolean
+          last_run_at?: string | null
+          name: string
+          recipient_roles?: string[]
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          escalate_after_hours?: number | null
+          event_key?: string
+          id?: string
+          is_active?: boolean
+          is_demo?: boolean
+          last_run_at?: string | null
+          name?: string
+          recipient_roles?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      me_evidence: {
+        Row: {
+          classification: string
+          content_hash: string | null
+          created_at: string
+          evidence_date: string | null
+          evidence_type: string
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          id: string
+          is_demo: boolean
+          mime_type: string | null
+          org_unit_id: string | null
+          related_id: string
+          related_type: string
+          retention_status: string
+          source: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+          verification_notes: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          classification?: string
+          content_hash?: string | null
+          created_at?: string
+          evidence_date?: string | null
+          evidence_type?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_demo?: boolean
+          mime_type?: string | null
+          org_unit_id?: string | null
+          related_id: string
+          related_type: string
+          retention_status?: string
+          source?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          classification?: string
+          content_hash?: string | null
+          created_at?: string
+          evidence_date?: string | null
+          evidence_type?: string
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          is_demo?: boolean
+          mime_type?: string | null
+          org_unit_id?: string | null
+          related_id?: string
+          related_type?: string
+          retention_status?: string
+          source?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_evidence_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_evidence_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_evidence_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_expenditures: {
+        Row: {
+          activity_id: string | null
+          amount: number
+          approved_by: string | null
+          budget_id: string | null
+          budget_line_id: string | null
+          created_at: string
+          description: string
+          expenditure_type: string
+          external_ref: string | null
+          id: string
+          invoice_ref: string | null
+          is_demo: boolean
+          paid_by: string | null
+          payment_ref: string | null
+          project_id: string | null
+          purchase_order_id: string | null
+          requested_by: string | null
+          spend_date: string
+          status: string
+          sync_status: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          amount: number
+          approved_by?: string | null
+          budget_id?: string | null
+          budget_line_id?: string | null
+          created_at?: string
+          description: string
+          expenditure_type?: string
+          external_ref?: string | null
+          id?: string
+          invoice_ref?: string | null
+          is_demo?: boolean
+          paid_by?: string | null
+          payment_ref?: string | null
+          project_id?: string | null
+          purchase_order_id?: string | null
+          requested_by?: string | null
+          spend_date?: string
+          status?: string
+          sync_status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          amount?: number
+          approved_by?: string | null
+          budget_id?: string | null
+          budget_line_id?: string | null
+          created_at?: string
+          description?: string
+          expenditure_type?: string
+          external_ref?: string | null
+          id?: string
+          invoice_ref?: string | null
+          is_demo?: boolean
+          paid_by?: string | null
+          payment_ref?: string | null
+          project_id?: string | null
+          purchase_order_id?: string | null
+          requested_by?: string | null
+          spend_date?: string
+          status?: string
+          sync_status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_expenditures_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_expenditures_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "me_budgets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_expenditures_budget_line_id_fkey"
+            columns: ["budget_line_id"]
+            isOneToOne: false
+            referencedRelation: "me_budget_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_expenditures_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_expenditures_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_expenditures_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_field_reports: {
+        Row: {
+          activity_id: string | null
+          classification: string
+          created_at: string
+          department_id: string | null
+          district_id: string | null
+          id: string
+          is_demo: boolean
+          latitude: number | null
+          location_accuracy_m: number | null
+          longitude: number | null
+          measure_id: string | null
+          officer_profile_id: string | null
+          org_unit_id: string | null
+          payload: Json
+          period_id: string | null
+          program_id: string | null
+          project_id: string | null
+          ref_code: string | null
+          region: string | null
+          report_type: string
+          reported_at: string
+          reviewer_notes: string | null
+          signature_data: string | null
+          status: string
+          submitted_by: string | null
+          summary: string | null
+          template_id: string | null
+          template_version: number | null
+          title: string
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          classification?: string
+          created_at?: string
+          department_id?: string | null
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          latitude?: number | null
+          location_accuracy_m?: number | null
+          longitude?: number | null
+          measure_id?: string | null
+          officer_profile_id?: string | null
+          org_unit_id?: string | null
+          payload?: Json
+          period_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          report_type?: string
+          reported_at?: string
+          reviewer_notes?: string | null
+          signature_data?: string | null
+          status?: string
+          submitted_by?: string | null
+          summary?: string | null
+          template_id?: string | null
+          template_version?: number | null
+          title: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          classification?: string
+          created_at?: string
+          department_id?: string | null
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          latitude?: number | null
+          location_accuracy_m?: number | null
+          longitude?: number | null
+          measure_id?: string | null
+          officer_profile_id?: string | null
+          org_unit_id?: string | null
+          payload?: Json
+          period_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          report_type?: string
+          reported_at?: string
+          reviewer_notes?: string | null
+          signature_data?: string | null
+          status?: string
+          submitted_by?: string | null
+          summary?: string | null
+          template_id?: string | null
+          template_version?: number | null
+          title?: string
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_field_reports_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_measure_id_fkey"
+            columns: ["measure_id"]
+            isOneToOne: false
+            referencedRelation: "me_measures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_officer_profile_id_fkey"
+            columns: ["officer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_officer_profile_id_fkey"
+            columns: ["officer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "me_reporting_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "me_form_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_field_reports_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_form_templates: {
+        Row: {
+          classification: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_demo: boolean
+          name: string
+          report_type: string
+          requires_evidence: boolean
+          requires_gps: boolean
+          schema: Json
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_demo?: boolean
+          name: string
+          report_type?: string
+          requires_evidence?: boolean
+          requires_gps?: boolean
+          schema?: Json
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_demo?: boolean
+          name?: string
+          report_type?: string
+          requires_evidence?: boolean
+          requires_gps?: boolean
+          schema?: Json
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      me_framework_rows: {
+        Row: {
+          assumptions: string | null
+          created_at: string
+          framework_id: string
+          id: string
+          is_demo: boolean
+          means_of_verification: string | null
+          measure_id: string | null
+          owner_profile_id: string | null
+          parent_id: string | null
+          result_level: string
+          result_statement: string
+          risk_note: string | null
+          sort_order: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          assumptions?: string | null
+          created_at?: string
+          framework_id: string
+          id?: string
+          is_demo?: boolean
+          means_of_verification?: string | null
+          measure_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          result_level: string
+          result_statement: string
+          risk_note?: string | null
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          assumptions?: string | null
+          created_at?: string
+          framework_id?: string
+          id?: string
+          is_demo?: boolean
+          means_of_verification?: string | null
+          measure_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          result_level?: string
+          result_statement?: string
+          risk_note?: string | null
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_framework_rows_framework_id_fkey"
+            columns: ["framework_id"]
+            isOneToOne: false
+            referencedRelation: "me_frameworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_framework_rows_measure_id_fkey"
+            columns: ["measure_id"]
+            isOneToOne: false
+            referencedRelation: "me_measures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_framework_rows_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_framework_rows_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_framework_rows_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "me_framework_rows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_frameworks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          objective_id: string | null
+          program_id: string | null
+          project_id: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          objective_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          objective_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_frameworks_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_frameworks_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_frameworks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_incidents: {
+        Row: {
+          classification: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          district_id: string | null
+          escalated_at: string | null
+          id: string
+          incident_type: string
+          investigation_summary: string | null
+          is_demo: boolean
+          issue_id: string | null
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
+          occurred_at: string
+          org_unit_id: string | null
+          program_id: string | null
+          project_id: string | null
+          ref_code: string | null
+          region: string | null
+          reporting_profile_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          response_summary: string | null
+          risk_id: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          escalated_at?: string | null
+          id?: string
+          incident_type?: string
+          investigation_summary?: string | null
+          is_demo?: boolean
+          issue_id?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          occurred_at?: string
+          org_unit_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          reporting_profile_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          response_summary?: string | null
+          risk_id?: string | null
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          escalated_at?: string | null
+          id?: string
+          incident_type?: string
+          investigation_summary?: string | null
+          is_demo?: boolean
+          issue_id?: string | null
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
+          occurred_at?: string
+          org_unit_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          reporting_profile_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          response_summary?: string | null
+          risk_id?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_incidents_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "me_issues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_reporting_profile_id_fkey"
+            columns: ["reporting_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_reporting_profile_id_fkey"
+            columns: ["reporting_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_incidents_risk_id_fkey"
+            columns: ["risk_id"]
+            isOneToOne: false
+            referencedRelation: "me_risks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_issues: {
+        Row: {
+          classification: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          is_demo: boolean
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          priority: string
+          program_id: string | null
+          project_id: string | null
+          ref_code: string | null
+          region: string | null
+          resolved_at: string | null
+          risk_id: string | null
+          root_cause: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_demo?: boolean
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          priority?: string
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          resolved_at?: string | null
+          risk_id?: string | null
+          root_cause?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_demo?: boolean
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          priority?: string
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          resolved_at?: string | null
+          risk_id?: string | null
+          root_cause?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_issues_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_issues_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_issues_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_issues_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_issues_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_issues_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_issues_risk_id_fkey"
+            columns: ["risk_id"]
+            isOneToOne: false
+            referencedRelation: "me_risks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_measures: {
+        Row: {
+          activity_id: string | null
+          archived_at: string | null
+          baseline_date: string | null
+          baseline_value: number | null
+          calculation_method: string | null
+          classification: string
+          collection_method: string | null
+          created_at: string
+          created_by: string | null
+          data_source: string | null
+          definition: string | null
+          department_id: string | null
+          direction: string
+          id: string
+          is_demo: boolean
+          measure_class: string
+          name: string
+          objective_id: string | null
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          program_id: string | null
+          project_id: string | null
+          ref_code: string
+          region: string | null
+          reporting_frequency: string
+          requires_evidence: boolean
+          result_level: string | null
+          status: string
+          threshold_amber: number
+          threshold_green: number
+          unit: string | null
+          updated_at: string
+          value_type: string
+          verifier_profile_id: string | null
+          version: number
+        }
+        Insert: {
+          activity_id?: string | null
+          archived_at?: string | null
+          baseline_date?: string | null
+          baseline_value?: number | null
+          calculation_method?: string | null
+          classification?: string
+          collection_method?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_source?: string | null
+          definition?: string | null
+          department_id?: string | null
+          direction?: string
+          id?: string
+          is_demo?: boolean
+          measure_class?: string
+          name: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code: string
+          region?: string | null
+          reporting_frequency?: string
+          requires_evidence?: boolean
+          result_level?: string | null
+          status?: string
+          threshold_amber?: number
+          threshold_green?: number
+          unit?: string | null
+          updated_at?: string
+          value_type?: string
+          verifier_profile_id?: string | null
+          version?: number
+        }
+        Update: {
+          activity_id?: string | null
+          archived_at?: string | null
+          baseline_date?: string | null
+          baseline_value?: number | null
+          calculation_method?: string | null
+          classification?: string
+          collection_method?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_source?: string | null
+          definition?: string | null
+          department_id?: string | null
+          direction?: string
+          id?: string
+          is_demo?: boolean
+          measure_class?: string
+          name?: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string
+          region?: string | null
+          reporting_frequency?: string
+          requires_evidence?: boolean
+          result_level?: string | null
+          status?: string
+          threshold_amber?: number
+          threshold_green?: number
+          unit?: string | null
+          updated_at?: string
+          value_type?: string
+          verifier_profile_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_measures_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_verifier_profile_id_fkey"
+            columns: ["verifier_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_measures_verifier_profile_id_fkey"
+            columns: ["verifier_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_milestones: {
+        Row: {
+          achieved_date: string | null
+          created_at: string
+          criticality: string
+          description: string | null
+          due_date: string
+          id: string
+          is_demo: boolean
+          name: string
+          owner_profile_id: string | null
+          program_id: string | null
+          project_id: string
+          requires_approval: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          achieved_date?: string | null
+          created_at?: string
+          criticality?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          is_demo?: boolean
+          name: string
+          owner_profile_id?: string | null
+          program_id?: string | null
+          project_id: string
+          requires_approval?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          achieved_date?: string | null
+          created_at?: string
+          criticality?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          is_demo?: boolean
+          name?: string
+          owner_profile_id?: string | null
+          program_id?: string | null
+          project_id?: string
+          requires_approval?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_milestones_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_milestones_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_milestones_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_milestones_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_objectives: {
+        Row: {
+          archived_at: string | null
+          budget_amount: number | null
+          classification: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          district_id: string | null
+          end_date: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          parent_id: string | null
+          performance_score: number | null
+          pillar_id: string | null
+          priority: string
+          ref_code: string
+          region: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          archived_at?: string | null
+          budget_amount?: number | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          end_date?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          performance_score?: number | null
+          pillar_id?: string | null
+          priority?: string
+          ref_code: string
+          region?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          archived_at?: string | null
+          budget_amount?: number | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          end_date?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          performance_score?: number | null
+          pillar_id?: string | null
+          priority?: string
+          ref_code?: string
+          region?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_objectives_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_objectives_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_objectives_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_objectives_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_objectives_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_objectives_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_objectives_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "me_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_pillars: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_demo: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_demo?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_demo?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      me_programs: {
+        Row: {
+          archived_at: string | null
+          budget_amount: number | null
+          charter: string | null
+          classification: string
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          director_profile_id: string | null
+          district_id: string | null
+          end_date: string | null
+          health: string
+          id: string
+          is_demo: boolean
+          name: string
+          objective_id: string | null
+          org_unit_id: string | null
+          performance_score: number | null
+          ref_code: string
+          region: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          archived_at?: string | null
+          budget_amount?: number | null
+          charter?: string | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          director_profile_id?: string | null
+          district_id?: string | null
+          end_date?: string | null
+          health?: string
+          id?: string
+          is_demo?: boolean
+          name: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          performance_score?: number | null
+          ref_code: string
+          region?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          archived_at?: string | null
+          budget_amount?: number | null
+          charter?: string | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          director_profile_id?: string | null
+          district_id?: string | null
+          end_date?: string | null
+          health?: string
+          id?: string
+          is_demo?: boolean
+          name?: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          performance_score?: number | null
+          ref_code?: string
+          region?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_programs_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_programs_director_profile_id_fkey"
+            columns: ["director_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_programs_director_profile_id_fkey"
+            columns: ["director_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_programs_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_programs_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_programs_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_projects: {
+        Row: {
+          actual_end_date: string | null
+          actual_start_date: string | null
+          archived_at: string | null
+          budget_amount: number | null
+          charter: string | null
+          classification: string
+          created_at: string
+          created_by: string | null
+          deliverables: string | null
+          department_id: string | null
+          description: string | null
+          district_id: string | null
+          end_date: string | null
+          health: string
+          health_score: number | null
+          id: string
+          is_demo: boolean
+          latitude: number | null
+          longitude: number | null
+          manager_profile_id: string | null
+          name: string
+          objective_id: string | null
+          org_unit_id: string | null
+          percent_complete: number
+          performance_score: number | null
+          priority: string
+          program_id: string | null
+          ref_code: string
+          region: string | null
+          revised_budget_amount: number | null
+          scope: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          archived_at?: string | null
+          budget_amount?: number | null
+          charter?: string | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          deliverables?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          end_date?: string | null
+          health?: string
+          health_score?: number | null
+          id?: string
+          is_demo?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          manager_profile_id?: string | null
+          name: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          percent_complete?: number
+          performance_score?: number | null
+          priority?: string
+          program_id?: string | null
+          ref_code: string
+          region?: string | null
+          revised_budget_amount?: number | null
+          scope?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          actual_end_date?: string | null
+          actual_start_date?: string | null
+          archived_at?: string | null
+          budget_amount?: number | null
+          charter?: string | null
+          classification?: string
+          created_at?: string
+          created_by?: string | null
+          deliverables?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          end_date?: string | null
+          health?: string
+          health_score?: number | null
+          id?: string
+          is_demo?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          manager_profile_id?: string | null
+          name?: string
+          objective_id?: string | null
+          org_unit_id?: string | null
+          percent_complete?: number
+          performance_score?: number | null
+          priority?: string
+          program_id?: string | null
+          ref_code?: string
+          region?: string | null
+          revised_budget_amount?: number | null
+          scope?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_projects_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_projects_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_projects_manager_profile_id_fkey"
+            columns: ["manager_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_projects_manager_profile_id_fkey"
+            columns: ["manager_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_projects_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_projects_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_projects_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_reporting_periods: {
+        Row: {
+          created_at: string
+          end_date: string
+          fiscal_year: number
+          id: string
+          is_demo: boolean
+          is_open: boolean
+          name: string
+          period_type: string
+          start_date: string
+          submission_deadline: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          fiscal_year: number
+          id?: string
+          is_demo?: boolean
+          is_open?: boolean
+          name: string
+          period_type?: string
+          start_date: string
+          submission_deadline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          fiscal_year?: number
+          id?: string
+          is_demo?: boolean
+          is_open?: boolean
+          name?: string
+          period_type?: string
+          start_date?: string
+          submission_deadline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      me_resource_allocations: {
+        Row: {
+          activity_id: string | null
+          allocated_from: string | null
+          allocated_to: string | null
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          external_ref: string | null
+          id: string
+          inventory_item_id: string | null
+          is_demo: boolean
+          label: string | null
+          notes: string | null
+          org_unit_id: string | null
+          profile_id: string | null
+          program_id: string | null
+          project_id: string | null
+          quantity: number
+          region: string | null
+          resource_category: string
+          status: string
+          updated_at: string
+          utilization_percent: number | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          activity_id?: string | null
+          allocated_from?: string | null
+          allocated_to?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          external_ref?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          is_demo?: boolean
+          label?: string | null
+          notes?: string | null
+          org_unit_id?: string | null
+          profile_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          quantity?: number
+          region?: string | null
+          resource_category: string
+          status?: string
+          updated_at?: string
+          utilization_percent?: number | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          activity_id?: string | null
+          allocated_from?: string | null
+          allocated_to?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          external_ref?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          is_demo?: boolean
+          label?: string | null
+          notes?: string | null
+          org_unit_id?: string | null
+          profile_id?: string | null
+          program_id?: string | null
+          project_id?: string | null
+          quantity?: number
+          region?: string | null
+          resource_category?: string
+          status?: string
+          updated_at?: string
+          utilization_percent?: number | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_resource_allocations_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_resource_allocations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_results: {
+        Row: {
+          created_at: string
+          data_quality_status: string
+          district_id: string | null
+          id: string
+          is_demo: boolean
+          measure_id: string
+          narrative: string | null
+          org_unit_id: string | null
+          period_id: string
+          region: string | null
+          reported_at: string | null
+          reported_by: string | null
+          reported_value: number | null
+          target_id: string | null
+          updated_at: string
+          verification_notes: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+          verified_value: number | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          data_quality_status?: string
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          measure_id: string
+          narrative?: string | null
+          org_unit_id?: string | null
+          period_id: string
+          region?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          reported_value?: number | null
+          target_id?: string | null
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_value?: number | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          data_quality_status?: string
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          measure_id?: string
+          narrative?: string | null
+          org_unit_id?: string | null
+          period_id?: string
+          region?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          reported_value?: number | null
+          target_id?: string | null
+          updated_at?: string
+          verification_notes?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_value?: number | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_results_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_measure_id_fkey"
+            columns: ["measure_id"]
+            isOneToOne: false
+            referencedRelation: "me_measures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "me_reporting_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "me_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_results_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_risks: {
+        Row: {
+          activity_id: string | null
+          category: string
+          classification: string
+          contingency: string | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          district_id: string | null
+          due_date: string | null
+          id: string
+          impact: number
+          is_demo: boolean
+          last_reviewed_at: string | null
+          mitigation: string | null
+          objective_id: string | null
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          probability: number
+          program_id: string | null
+          project_id: string | null
+          ref_code: string | null
+          region: string | null
+          risk_level: string
+          risk_score: number | null
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          activity_id?: string | null
+          category?: string
+          classification?: string
+          contingency?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          due_date?: string | null
+          id?: string
+          impact?: number
+          is_demo?: boolean
+          last_reviewed_at?: string | null
+          mitigation?: string | null
+          objective_id?: string | null
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          probability?: number
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          risk_level?: string
+          risk_score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          activity_id?: string | null
+          category?: string
+          classification?: string
+          contingency?: string | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          district_id?: string | null
+          due_date?: string | null
+          id?: string
+          impact?: number
+          is_demo?: boolean
+          last_reviewed_at?: string | null
+          mitigation?: string | null
+          objective_id?: string | null
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          probability?: number
+          program_id?: string | null
+          project_id?: string | null
+          ref_code?: string | null
+          region?: string | null
+          risk_level?: string
+          risk_score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_risks_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_objective_id_fkey"
+            columns: ["objective_id"]
+            isOneToOne: false
+            referencedRelation: "me_objectives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "me_programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_risks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_scores: {
+        Row: {
+          calculated_at: string
+          calculation_status: string
+          components: Json
+          created_at: string
+          formula_version: string
+          id: string
+          is_demo: boolean
+          period_id: string | null
+          scope_id: string | null
+          scope_label: string | null
+          scope_type: string
+          score: number
+          weights: Json
+        }
+        Insert: {
+          calculated_at?: string
+          calculation_status?: string
+          components?: Json
+          created_at?: string
+          formula_version?: string
+          id?: string
+          is_demo?: boolean
+          period_id?: string | null
+          scope_id?: string | null
+          scope_label?: string | null
+          scope_type: string
+          score: number
+          weights?: Json
+        }
+        Update: {
+          calculated_at?: string
+          calculation_status?: string
+          components?: Json
+          created_at?: string
+          formula_version?: string
+          id?: string
+          is_demo?: boolean
+          period_id?: string | null
+          scope_id?: string | null
+          scope_label?: string | null
+          scope_type?: string
+          score?: number
+          weights?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_scores_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "me_reporting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+          version?: number
+        }
+        Relationships: []
+      }
+      me_targets: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          district_id: string | null
+          id: string
+          is_demo: boolean
+          measure_id: string
+          notes: string | null
+          org_unit_id: string | null
+          period_id: string
+          region: string | null
+          target_value: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          measure_id: string
+          notes?: string | null
+          org_unit_id?: string | null
+          period_id: string
+          region?: string | null
+          target_value: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          district_id?: string | null
+          id?: string
+          is_demo?: boolean
+          measure_id?: string
+          notes?: string | null
+          org_unit_id?: string | null
+          period_id?: string
+          region?: string | null
+          target_value?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_targets_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "ghana_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_targets_measure_id_fkey"
+            columns: ["measure_id"]
+            isOneToOne: false
+            referencedRelation: "me_measures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_targets_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_targets_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "me_reporting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_tasks: {
+        Row: {
+          activity_id: string | null
+          actual_hours: number | null
+          actual_start: string | null
+          archived_at: string | null
+          assigned_team: string | null
+          classification: string
+          completed_at: string | null
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          due_date: string | null
+          estimated_hours: number | null
+          id: string
+          is_demo: boolean
+          name: string
+          org_unit_id: string | null
+          owner_profile_id: string | null
+          parent_id: string | null
+          percent_complete: number
+          planned_start: string | null
+          priority: string
+          project_id: string
+          region: string | null
+          requires_approval: boolean
+          status: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          activity_id?: string | null
+          actual_hours?: number | null
+          actual_start?: string | null
+          archived_at?: string | null
+          assigned_team?: string | null
+          classification?: string
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_hours?: number | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          percent_complete?: number
+          planned_start?: string | null
+          priority?: string
+          project_id: string
+          region?: string | null
+          requires_approval?: boolean
+          status?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Update: {
+          activity_id?: string | null
+          actual_hours?: number | null
+          actual_start?: string | null
+          archived_at?: string | null
+          assigned_team?: string | null
+          classification?: string
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          due_date?: string | null
+          estimated_hours?: number | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          org_unit_id?: string | null
+          owner_profile_id?: string | null
+          parent_id?: string | null
+          percent_complete?: number
+          planned_start?: string | null
+          priority?: string
+          project_id?: string
+          region?: string | null
+          requires_approval?: boolean
+          status?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_tasks_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "me_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_tasks_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_tasks_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_tasks_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_tasks_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_tasks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "me_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_verifications: {
+        Row: {
+          created_at: string
+          decision: string
+          id: string
+          notes: string | null
+          related_id: string
+          related_type: string
+          verified_by: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          id?: string
+          notes?: string | null
+          related_id: string
+          related_type: string
+          verified_by: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          id?: string
+          notes?: string | null
+          related_id?: string
+          related_type?: string
+          verified_by?: string
+        }
+        Relationships: []
+      }
+      me_workstreams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_demo: boolean
+          lead_profile_id: string | null
+          name: string
+          project_id: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          lead_profile_id?: string | null
+          name: string
+          project_id: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          lead_profile_id?: string | null
+          name?: string
+          project_id?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_workstreams_lead_profile_id_fkey"
+            columns: ["lead_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_workstreams_lead_profile_id_fkey"
+            columns: ["lead_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "me_workstreams_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "me_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_appointment_audit: {
         Row: {
           action: string
@@ -13416,6 +16575,50 @@ export type Database = {
         Args: { _error: string; _schedule_id: string; _status: string }
         Returns: undefined
       }
+      me_can_delete: { Args: never; Returns: boolean }
+      me_can_manage: { Args: never; Returns: boolean }
+      me_can_verify: { Args: never; Returns: boolean }
+      me_can_view: {
+        Args: { _classification: string; _org_unit_id: string }
+        Returns: boolean
+      }
+      me_classification_rank: { Args: { _c: string }; Returns: number }
+      me_command_center: {
+        Args: { _department_id?: string; _period_id?: string; _region?: string }
+        Returns: Json
+      }
+      me_data_quality: {
+        Args: { _scope?: string; _scope_id?: string }
+        Returns: Json
+      }
+      me_geo_summary: {
+        Args: { _region?: string }
+        Returns: {
+          active_projects: number
+          avg_complete: number
+          field_reports: number
+          open_incidents: number
+          open_risks: number
+          projects: number
+          region: string
+        }[]
+      }
+      me_measure_achievement: {
+        Args: { _measure_id: string; _period_id?: string }
+        Returns: {
+          achievement_percent: number
+          measure_id: string
+          performance_status: string
+          period_id: string
+          reported_value: number
+          target_value: number
+          variance: number
+          verified_value: number
+        }[]
+      }
+      me_project_health: { Args: { _project_id: string }; Returns: Json }
+      me_recalculate_scores: { Args: { _period_id?: string }; Returns: number }
+      me_user_clearance: { Args: { _user_id: string }; Returns: number }
       mfa_consume_backup_code: { Args: { _code: string }; Returns: boolean }
       mfa_generate_backup_codes: {
         Args: never
@@ -14081,6 +17284,9 @@ export type Database = {
         | "deputy_head_of_processing"
         | "medical_officer"
         | "command_officer"
+        | "me_officer"
+        | "project_manager"
+        | "field_officer"
       appraisal_criterion:
         | "job_knowledge"
         | "quality_of_work"
@@ -14318,6 +17524,9 @@ export const Constants = {
         "deputy_head_of_processing",
         "medical_officer",
         "command_officer",
+        "me_officer",
+        "project_manager",
+        "field_officer",
       ],
       appraisal_criterion: [
         "job_knowledge",
