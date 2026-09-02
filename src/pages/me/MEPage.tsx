@@ -9,10 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { Activity, AlertTriangle, BarChart3, CalendarClock, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardCheck, FileText, FolderKanban, Gauge, Globe2, MapPin, Plus, RefreshCw, Search, ShieldAlert, Target, Users } from "lucide-react";
 
