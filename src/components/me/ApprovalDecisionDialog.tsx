@@ -21,12 +21,19 @@ export type ApprovalItem = {
   due_date?: string | null;
   requested_by_name?: string | null;
   can_decide?: boolean;
+  overdue?: boolean;
 };
 
 const decisionLabels: Record<Decision, string> = {
   approve: "Approve",
   reject: "Reject",
   return: "Return for changes",
+};
+
+const decisionPastTense: Record<Decision, string> = {
+  approve: "Approved",
+  reject: "Rejected",
+  return: "Returned",
 };
 
 export function ApprovalDecisionDialog({
@@ -58,7 +65,7 @@ export function ApprovalDecisionDialog({
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success(`${decisionLabels[decision]}d ${approval.record_name ?? approval.record_type}`);
+      toast.success(`${decisionPastTense[decision]} ${approval.record_name ?? approval.record_type}`);
       setComment("");
       onOpenChange(false);
       onCompleted();
