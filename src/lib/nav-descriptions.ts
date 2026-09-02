@@ -88,6 +88,27 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/settings?area=security": "Authentication, MFA, lockouts, firewall and security audit settings.",
   "/settings?area=system": "Organization info, branding, integrations, backup and maintenance.",
 
+  "/me/command-center": "National view of objectives, delivery, results and attention items.",
+  "/me/objectives": "Strategic objectives with owners, priority and performance.",
+  "/me/programs": "Programmes grouping related projects under one charter.",
+  "/me/projects": "Project scope, schedule, budget, health and completion.",
+  "/me/workplans": "Activities and tasks planned against projects.",
+  "/me/measures": "KPI and indicator definitions, targets and frequency.",
+  "/me/results": "Reported and verified results with data quality status.",
+  "/me/field-reports": "Structured field updates with location and review status.",
+  "/me/gis-map": "Delivery activity and performance shown by geography.",
+  "/me/risks": "Risk register with probability, impact and mitigation.",
+  "/me/incidents": "Operational and security incidents and their resolution.",
+  "/me/actions": "Corrective and preventive actions through to closure.",
+  "/me/resources": "People, vehicles and equipment allocated to delivery.",
+  "/me/budgets": "Approved budgets, commitments, spend and variance.",
+  "/me/evidence": "Supporting files and verification linked to records.",
+  "/me/approvals": "Controlled M&E decisions awaiting your review.",
+  "/me/reports": "Operational and performance reporting from source records.",
+  "/me/analytics": "Calculated project, programme and national scores.",
+  "/me/audit": "Changes, approvals and exports across M&E modules.",
+  "/me/administration": "Measures, thresholds, periods and workflow configuration.",
+
   // Parent (click-to-expand) menu labels.
   "My Duty": "Your own shift tracking and in-cab console.",
   "Attendance & Shifts": "Daily attendance marks and office shift windows.",
@@ -100,6 +121,11 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "Security & Audit": "Audit trails, sensitive access and network blocks.",
   "Data & Imports": "Bulk imports and system performance monitoring.",
   Configuration: "Announcements, branding, security and system settings.",
+  "Strategy & Delivery": "Objectives, programmes, projects and workplans.",
+  "Measurement & Evidence": "KPIs, results, field reports, GIS and evidence.",
+  "Risk & Assurance": "Risks, incidents, corrective actions and approvals.",
+  "Resources & Oversight": "Resources, budgets, reports, analytics and audit.",
+  "M&E and Project Management": "Monitoring, evaluation, project and performance management.",
 };
 
 /** Description for a route path or parent menu label, or undefined when none is defined. */

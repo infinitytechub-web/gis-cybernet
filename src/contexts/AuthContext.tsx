@@ -90,8 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select("role")
       .eq("user_id", userId);
     if (!data || data.length === 0) return "staff" as AppRole;
-    // Prioritize admin > oic > 2ic > HoA > CSO > command officer > staff_officer > supervisor > ipse > other roles > staff
-    const priority: Record<string, number> = { admin: 0, oic: 1, "2ic": 2, head_of_administration: 3, chief_staff_officer: 4, command_officer: 5, staff_officer: 6, supervisor: 7, ipse_supervisor: 8, ipse_deputy_supervisor: 9, head_of_processing: 10, deputy_head_of_processing: 11, shift_supervisor: 12, deputy_shift_supervisor: 13, shift_leader: 14, deputy_supervisor: 15, deputy_shift_leader: 16, special_duties: 17, deputy: 18, staff: 99 };
+    // Prioritize command authority before M&E delivery and operational roles.
+    const priority: Record<string, number> = { admin: 0, oic: 1, "2ic": 2, head_of_administration: 3, chief_staff_officer: 4, command_officer: 5, me_officer: 6, project_manager: 7, staff_officer: 8, supervisor: 9, field_officer: 10, ipse_supervisor: 11, ipse_deputy_supervisor: 12, head_of_processing: 13, deputy_head_of_processing: 14, shift_supervisor: 15, deputy_shift_supervisor: 16, shift_leader: 17, deputy_supervisor: 18, deputy_shift_leader: 19, special_duties: 20, deputy: 21, staff: 99 };
     const sorted = data.sort((a, b) => (priority[a.role] ?? 99) - (priority[b.role] ?? 99));
     return (sorted[0].role as AppRole) ?? "staff";
   }, []);

@@ -128,6 +128,43 @@ const financeItems = [
   { title: "Procurement Unit", url: "/procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400" },
 ];
 
+// ── Monitoring, Evaluation, Project & Performance Management ───────────────
+// Entry tile plus four themed sub-menus so the 20 destinations stay scannable.
+const meEntryItems = [
+  { title: "Command Center", url: "/me/command-center", icon: MonitorDot, iconColor: "text-primary" },
+];
+
+const meStrategyItems = [
+  { title: "Strategic Objectives", url: "/me/objectives", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300" },
+  { title: "Programs", url: "/me/programs", icon: Briefcase, iconColor: "text-indigo-600 dark:text-indigo-400" },
+  { title: "Projects", url: "/me/projects", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Workplans", url: "/me/workplans", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
+];
+
+const meMeasurementItems = [
+  { title: "KPIs & Indicators", url: "/me/measures", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400" },
+  { title: "Results Framework", url: "/me/results", icon: BarChart3, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Field Reports", url: "/me/field-reports", icon: FileSearch, iconColor: "text-purple-700 dark:text-purple-300" },
+  { title: "GIS Map", url: "/me/gis-map", icon: Globe2, iconColor: "text-sky-600 dark:text-sky-400" },
+  { title: "Evidence", url: "/me/evidence", icon: FileSpreadsheet, iconColor: "text-slate-600 dark:text-slate-400" },
+];
+
+const meAssuranceItems = [
+  { title: "Risks & Issues", url: "/me/risks", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400" },
+  { title: "Incidents", url: "/me/incidents", icon: ShieldAlert, iconColor: "text-orange-600 dark:text-orange-400" },
+  { title: "Corrective Actions", url: "/me/actions", icon: ClipboardCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Approvals", url: "/me/approvals", icon: ShieldCheck, iconColor: "text-emerald-600 dark:text-emerald-400" },
+];
+
+const meResourceItems = [
+  { title: "Resources", url: "/me/resources", icon: Users, iconColor: "text-blue-600 dark:text-blue-400" },
+  { title: "Budgets", url: "/me/budgets", icon: Landmark, iconColor: "text-chart-1" },
+  { title: "Reports", url: "/me/reports", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
+  { title: "Analytics", url: "/me/analytics", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300" },
+  { title: "M&E Audit", url: "/me/audit", icon: History, iconColor: "text-primary" },
+  { title: "M&E Administration", url: "/me/administration", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400" },
+];
+
 // Administration is grouped into sub-menus so no single list becomes a wall of links.
 const adminEntryItems = [
   { title: "Admin Console", url: "/admin", icon: LayoutGrid, iconColor: "text-primary" },
@@ -517,6 +554,12 @@ export function AppSidebar() {
         {renderGroup("My Forms", allStaffItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Healthcare", healthItems)}
         {renderGroup("Finance & Procurement", financeItems)}
+        {renderGroup("M&E and Project Management", meEntryItems, [
+          { label: "Strategy & Delivery", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300", items: meStrategyItems },
+          { label: "Measurement & Evidence", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400", items: meMeasurementItems },
+          { label: "Risk & Assurance", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: meAssuranceItems },
+          { label: "Resources & Oversight", icon: Landmark, iconColor: "text-chart-1", items: meResourceItems },
+        ])}
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}

@@ -44,6 +44,8 @@ const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
+// Monitoring & Evaluation — one screen resolves each /me/* module by path.
+const MEPage = lazy(() => import("./pages/me/MEPage"));
 const UnitDashboard = lazy(() => import("./pages/UnitDashboard"));
 const SessionManagement = lazy(() => import("./pages/SessionManagement"));
 const TrustedDevices = lazy(() => import("./pages/TrustedDevices"));
@@ -273,6 +275,37 @@ function App() {
           <Route path="/admin/trusted-devices" element={<ProtectedRoute module="trusted-devices"><Layout><TrustedDevices /></Layout></ProtectedRoute>} />
           <Route path="/unit-dashboard" element={<ProtectedRoute module="unit-dashboard"><Layout><UnitDashboard /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
+
+          {/* Monitoring, Evaluation, Project & Performance Management */}
+          <Route path="/me" element={<Navigate to="/me/command-center" replace />} />
+          {[
+            ["command-center", "me-command-center"],
+            ["objectives", "me-objectives"],
+            ["programs", "me-programs"],
+            ["projects", "me-projects"],
+            ["workplans", "me-workplans"],
+            ["measures", "me-measures"],
+            ["results", "me-results"],
+            ["field-reports", "me-field-reports"],
+            ["gis-map", "me-gis-map"],
+            ["risks", "me-risks"],
+            ["incidents", "me-incidents"],
+            ["actions", "me-actions"],
+            ["resources", "me-resources"],
+            ["budgets", "me-budgets"],
+            ["evidence", "me-evidence"],
+            ["approvals", "me-approvals"],
+            ["reports", "me-reports"],
+            ["analytics", "me-analytics"],
+            ["audit", "me-audit"],
+            ["administration", "me-administration"],
+          ].map(([segment, moduleKey]) => (
+            <Route
+              key={segment}
+              path={`/me/${segment}`}
+              element={<ProtectedRoute module={moduleKey}><Layout><MEPage /></Layout></ProtectedRoute>}
+            />
+          ))}
           <Route path="/commands" element={<ProtectedRoute module="commands"><Layout><CommandsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/command/:slug" element={<ProtectedRoute module="commands"><Layout><CommandWorkspace /></Layout></ProtectedRoute>} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
