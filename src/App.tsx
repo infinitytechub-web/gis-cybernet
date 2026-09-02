@@ -44,6 +44,8 @@ const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
+// Monitoring & Evaluation — one screen resolves each /me/* module by path.
+const MEPage = lazy(() => import("./pages/me/MEPage"));
 const UnitDashboard = lazy(() => import("./pages/UnitDashboard"));
 const SessionManagement = lazy(() => import("./pages/SessionManagement"));
 const TrustedDevices = lazy(() => import("./pages/TrustedDevices"));
