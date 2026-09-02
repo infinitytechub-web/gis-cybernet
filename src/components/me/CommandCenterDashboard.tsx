@@ -26,9 +26,10 @@ export function CommandCenterDashboard() {
 
   const load = async () => {
     setLoading(true);
+    const regionFilter = region.trim() || null;
     const [{ data: command, error: commandError }, { data: alertData, error: alertError }] = await Promise.all([
-      db.rpc("me_command_center"),
-      db.rpc("me_command_attention", { _region: region.trim() || null }),
+      db.rpc("me_command_center", { _region: regionFilter, _period_id: null, _department_id: null }),
+      db.rpc("me_command_attention", { _region: regionFilter }),
     ]);
     if (commandError) toast.error(commandError.message);
     if (alertError) toast.error(alertError.message);

@@ -63,7 +63,7 @@ function RecordDialog({ config, onSaved }: { config: Config; onSaved: () => void
   const save = async () => {
     setSaving(true);
     const { data: auth } = await supabase.auth.getUser();
-    const payload = { ...form, created_by: auth.user?.id, submitted_by: config.key === "field-reports" ? auth.user?.id : undefined };
+    const payload = { ...form, ...(config.key === "field-reports" ? { submitted_by: auth.user?.id } : { created_by: auth.user?.id }) };
     Object.keys(payload).forEach((key) => { if (payload[key] === "") delete payload[key]; });
     const { error } = await db.from(config.table).insert(payload);
     if (error) toast.error(error.message); else { await logAdminAudit(`me_${config.key}`, "created", { table: config.table }); toast.success(`${config.singular} created`); setOpen(false); setForm({ classification: "internal", status: "draft" }); onSaved(); }

@@ -27,6 +27,12 @@ test.describe("M&E thin vertical slice", () => {
     return response.json();
   }
 
+  async function rpc(name: string, body: Record<string, unknown>) {
+    const response = await api.post(`${SUPABASE_URL}/rest/v1/rpc/${name}`, { headers: { apikey: ANON_KEY!, Authorization: `Bearer ${token}`, "content-type": "application/json" }, data: body });
+    if (!response.ok()) throw new Error(`RPC ${name} failed: ${response.status()} ${await response.text()}`);
+    return response.json();
+  }
+
   test.beforeAll(async () => {
     if (skipAll) return;
     const signIn = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: ANON_KEY!, "content-type": "application/json" }, body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD }) });
@@ -92,6 +98,24 @@ test.describe("M&E thin vertical slice", () => {
     expect(statuses[1][0].status).toBe("submitted");
     expect(statuses[2][0].status).toBe("submitted");
     expect(statuses[3][0].status).toBe("submitted");
+
+    const approval = (await rest(`/me_approvals?record_type=eq.objective&record_id=eq.${objective.id}&select=id,status`))[0] as { id: string; status: string };
+    expect(approval.status).toBe("pending");
+    await page.goto(`${BASE_URL}/me/approvals`);
+    const approvalRow = page.getByRole("row", { name: new RegExp(`Objective ${suffix}`) });
+    await approvalRow.getByRole("button", { name: "Review" }).click();
+    await page.getByLabel("Decision comment").fill("E2E first-stage review");
+    await page.getByRole("button", { name: "Record decision" }).click();
+    await expect(page.getByText(`Approved Objective ${suffix}`)).toBeVisible();
+    const stepped = (await rest(`/me_approvals?id=eq.${approval.id}&select=status,current_step`))[0] as { status: string; current_step: number };
+    expect(stepped.status).toBe("pending");
+    expect(stepped.current_step).toBe(2);
+    expect((await rest(`/me_objectives?id=eq.${objective.id}&select=status`))[0].status).toBe("under_review");
+    await page.getByRole("row", { name: new RegExp(`Objective ${suffix}`) }).getByRole("button", { name: "Review" }).click();
+    await page.getByLabel("Decision comment").fill("E2E final approval");
+    await page.getByRole("button", { name: "Record decision" }).click();
+    expect((await rest(`/me_approvals?id=eq.${approval.id}&select=status`))[0].status).toBe("approved");
+    expect((await rest(`/me_objectives?id=eq.${objective.id}&select=status`))[0].status).toBe("approved");
 
     await page.goto(`${BASE_URL}/me/command-center`);
     await expect(page.getByRole("heading", { name: "M&E Command Center" })).toBeVisible();
