@@ -169,6 +169,30 @@ export const MODULES: ModuleDef[] = [
   { key: "retention-policy", label: "Retention Policy", tier: "admin", roles: ADMIN_ONLY, paths: ["/announcements/retention", "/retention-policy"] },
   { key: "settings", label: "System Settings", tier: "admin", roles: ADMIN_ONLY, paths: ["/settings"] },
   { key: "branding", label: "Branding Settings", tier: "admin", roles: ADMIN_ONLY, paths: ["/branding"] },
+
+  // ── Monitoring, Evaluation, Project & Performance Management ─────────────
+  // Executive and assurance surfaces stay command tier + M&E delivery roles.
+  // Field officers reach only their own field reporting and evidence.
+  { key: "me-command-center", label: "M&E Command Center", tier: "command", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/command-center"] },
+  { key: "me-objectives", label: "Strategic Objectives", tier: "command", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/objectives"] },
+  { key: "me-programs", label: "Programs", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/programs"] },
+  { key: "me-projects", label: "Projects", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, ...SHIFT_LEADERSHIP], paths: ["/me/projects"] },
+  { key: "me-workplans", label: "Workplans", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, ...SHIFT_LEADERSHIP], paths: ["/me/workplans"] },
+  { key: "me-measures", label: "KPIs and Indicators", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/measures"] },
+  { key: "me-results", label: "Results Framework", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/results"] },
+  { key: "me-field-reports", label: "Field Reports", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, ...ME_FIELD, ...SHIFT_LEADERSHIP], paths: ["/me/field-reports"] },
+  { key: "me-gis-map", label: "GIS Map", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, ...SHIFT_LEADERSHIP], paths: ["/me/gis-map"] },
+  { key: "me-risks", label: "Risks and Issues", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/risks"] },
+  { key: "me-incidents", label: "Incidents", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, ...SHIFT_LEADERSHIP], paths: ["/me/incidents"] },
+  { key: "me-actions", label: "Corrective Actions", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/actions"] },
+  { key: "me-resources", label: "M&E Resources", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, "storekeeper"], paths: ["/me/resources"] },
+  { key: "me-budgets", label: "M&E Budgets", tier: "command", roles: [...COMMAND, ...ME_DELIVERY, "procurement_officer"], paths: ["/me/budgets"] },
+  { key: "me-evidence", label: "Evidence", tier: "module", roles: [...COMMAND, ...ME_DELIVERY, ...ME_FIELD], paths: ["/me/evidence"] },
+  { key: "me-approvals", label: "M&E Approvals", tier: "command", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/approvals"] },
+  { key: "me-reports", label: "M&E Reports", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/reports"] },
+  { key: "me-analytics", label: "M&E Analytics", tier: "command", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/analytics"] },
+  { key: "me-audit", label: "M&E Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/me/audit"] },
+  { key: "me-administration", label: "M&E Administration", tier: "admin", roles: ADMIN_ONLY, paths: ["/me/administration"] },
 ];
 
 export const MODULES_BY_KEY: Record<string, ModuleDef> = Object.fromEntries(
