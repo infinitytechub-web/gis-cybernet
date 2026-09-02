@@ -554,6 +554,12 @@ export function AppSidebar() {
         {renderGroup("My Forms", allStaffItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Healthcare", healthItems)}
         {renderGroup("Finance & Procurement", financeItems)}
+        {renderGroup("M&E and Project Management", meEntryItems, [
+          { label: "Strategy & Delivery", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300", items: meStrategyItems },
+          { label: "Measurement & Evidence", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400", items: meMeasurementItems },
+          { label: "Risk & Assurance", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: meAssuranceItems },
+          { label: "Resources & Oversight", icon: Landmark, iconColor: "text-chart-1", items: meResourceItems },
+        ])}
 
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
         {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}
