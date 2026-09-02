@@ -58,6 +58,13 @@ const SHIFT_LEADERSHIP: AppRole[] = [
 const IPSE_TIER: AppRole[] = ["ipse_supervisor", "ipse_deputy_supervisor"];
 const PROCESSING_TIER: AppRole[] = ["head_of_processing", "deputy_head_of_processing"];
 
+/**
+ * M&E delivery tier — the roles that own programmes, projects, measures and
+ * verification. Field officers submit and view their own field work only.
+ */
+const ME_DELIVERY: AppRole[] = ["project_manager", "me_officer"];
+const ME_FIELD: AppRole[] = ["field_officer"];
+
 export const MODULES: ModuleDef[] = [
   // ── Open to every authenticated staff member ────────────────────────────
   { key: "dashboard", label: "Dashboard", feature: "Dashboard", tier: "all-staff", roles: "all", paths: ["/dashboard", "/"] },
