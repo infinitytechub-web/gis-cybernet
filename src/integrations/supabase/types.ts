@@ -16575,6 +16575,8 @@ export type Database = {
         Args: { _error: string; _schedule_id: string; _status: string }
         Returns: undefined
       }
+      me_approval_queue: { Args: { _status?: string }; Returns: Json }
+      me_approval_reviewer: { Args: never; Returns: boolean }
       me_can_delete: { Args: never; Returns: boolean }
       me_can_manage: { Args: never; Returns: boolean }
       me_can_verify: { Args: never; Returns: boolean }
@@ -16583,12 +16585,17 @@ export type Database = {
         Returns: boolean
       }
       me_classification_rank: { Args: { _c: string }; Returns: number }
+      me_command_attention: { Args: { _region?: string }; Returns: Json }
       me_command_center: {
         Args: { _department_id?: string; _period_id?: string; _region?: string }
         Returns: Json
       }
       me_data_quality: {
         Args: { _scope?: string; _scope_id?: string }
+        Returns: Json
+      }
+      me_decide_approval: {
+        Args: { _approval_id: string; _comment: string; _decision: string }
         Returns: Json
       }
       me_geo_summary: {
@@ -16618,6 +16625,14 @@ export type Database = {
       }
       me_project_health: { Args: { _project_id: string }; Returns: Json }
       me_recalculate_scores: { Args: { _period_id?: string }; Returns: number }
+      me_submit_for_approval: {
+        Args: {
+          _record_id: string
+          _record_type: string
+          _workflow_key?: string
+        }
+        Returns: string
+      }
       me_user_clearance: { Args: { _user_id: string }; Returns: number }
       mfa_consume_backup_code: { Args: { _code: string }; Returns: boolean }
       mfa_generate_backup_codes: {
