@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Clock, Users, Building2, Fuel,
+  MapPinned, MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Clock, Users, Building2, Fuel,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
@@ -36,6 +36,7 @@ import PatrolLogTab from "@/components/command/PatrolLogTab";
 import PatrolPlanTab from "@/components/command/PatrolPlanTab";
 import UnitRosterTab from "@/components/command/UnitRosterTab";
 import StaffRosterTab from "@/components/command/StaffRosterTab";
+import CommandStaffMappingTab from "@/components/command/CommandStaffMappingTab";
 
 import { useOrgScope } from "@/hooks/useOrgScope";
 import {
@@ -305,6 +306,9 @@ export default function CommandConsole() {
             <TabsTrigger value="on-duty">
               <Clock className="mr-1 h-4 w-4" aria-hidden="true" />On duty now
             </TabsTrigger>
+            <TabsTrigger value="staff-mapping">
+              <MapPinned className="mr-1 h-4 w-4" aria-hidden="true" />Staff mapping
+            </TabsTrigger>
             <TabsTrigger value="units">
               <Building2 className="mr-1 h-4 w-4" aria-hidden="true" />Unit roster
             </TabsTrigger>
@@ -330,6 +334,11 @@ export default function CommandConsole() {
         {/* ── Live duty schedule ───────────────────────────────────────── */}
         <TabsContent value="on-duty" className="mt-4">
           <OnDutyNowPanel />
+        </TabsContent>
+
+        {/* ── Staff mapping for my command (+ live roster) ───────────── */}
+        <TabsContent value="staff-mapping" className="mt-4">
+          <CommandStaffMappingTab />
         </TabsContent>
 
         {/* ── Cyber incidents ──────────────────────────────────────────── */}

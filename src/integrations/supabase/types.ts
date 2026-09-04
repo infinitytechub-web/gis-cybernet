@@ -6321,6 +6321,36 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_entitlements: {
+        Row: {
+          created_at: string
+          days: number
+          id: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          notes: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          days?: number
+          id?: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          notes?: string | null
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          days?: number
+          id?: string
+          leave_type?: Database["public"]["Enums"]["leave_type"]
+          notes?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       leave_requests: {
         Row: {
           approved_by: string | null
@@ -17312,6 +17342,23 @@ export type Database = {
       issue_otp: {
         Args: { _purpose?: string; _ttl_minutes?: number }
         Returns: string
+      }
+      leave_balances: {
+        Args: { _year?: number }
+        Returns: {
+          days_entitled: number
+          days_pending: number
+          days_remaining: number
+          days_taken: number
+          department_name: string
+          full_name: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          profile_id: string
+          rank_name: string
+          shift_group: string
+          staff_id: string
+          unit: string
+        }[]
       }
       list_medical_inventory_audit: {
         Args: {
