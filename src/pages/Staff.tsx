@@ -874,16 +874,15 @@ export default function Staff() {
             </div>
 
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
-              <div className="overflow-x-auto pb-1">
-                <TabsList className="w-max">
-                  {BIODATA_SECTIONS.map((s) => (
-                    <TabsTrigger key={s.key} value={s.key} className="text-xs">
-                      <span className="font-semibold">{s.key}</span>
-                      <span className="ml-1 hidden sm:inline">{s.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
+              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+                {BIODATA_SECTIONS.map((s) => (
+                  <TabsTrigger key={s.key} value={s.key} className="text-xs">
+                    <span className="font-semibold">{s.key}</span>
+                    <span className="ml-1 hidden sm:inline">{s.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
 
               {/* ── A. Form administration ──────────────────────────────── */}
               <TabsContent value="A" className="space-y-4">
