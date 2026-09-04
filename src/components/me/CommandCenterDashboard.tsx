@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/date-format";
 import { toast } from "sonner";
+import { FieldReportMap } from "./FieldReportMap";
+
 
 const db = supabase as any;
 type Row = Record<string, any>;
@@ -57,6 +59,8 @@ export function CommandCenterDashboard() {
       <Card><CardHeader><CardTitle>Budget snapshot</CardTitle></CardHeader><CardContent className="space-y-4"><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Approved</p><p className="text-2xl font-semibold">GHS {Number(summary?.budget?.approved ?? 0).toLocaleString()}</p></div><div className="grid grid-cols-2 gap-3 text-sm"><div><p className="text-muted-foreground">Committed</p><p className="font-medium">GHS {Number(summary?.budget?.committed ?? 0).toLocaleString()}</p></div><div><p className="text-muted-foreground">Spent</p><p className="font-medium">GHS {Number(summary?.budget?.spent ?? 0).toLocaleString()}</p></div></div></CardContent></Card>
     </div>
     <div className="grid gap-6 lg:grid-cols-3"><Card><CardHeader><CardTitle>Approval attention</CardTitle></CardHeader><CardContent className="space-y-3 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Open</span><span className="font-semibold">{attention?.approvals?.pending ?? 0}</span></div><div className="flex justify-between"><span className="text-muted-foreground">Overdue</span><span className="font-semibold text-destructive">{attention?.approvals?.overdue ?? 0}</span></div><div className="flex justify-between"><span className="text-muted-foreground">My review queue</span><span className="font-semibold">{attention?.approvals?.mine ?? 0}</span></div></CardContent></Card><Card><CardHeader><CardTitle>Top risks</CardTitle></CardHeader><CardContent className="space-y-2">{(attention?.top_risks ?? []).length ? attention.top_risks.map((risk: Row) => <div key={risk.id} className="flex items-center justify-between gap-2 border-b pb-2 last:border-0"><span className="truncate text-sm">{risk.title ?? risk.ref_code}</span><Badge variant="destructive">{risk.risk_score ?? titleCase(risk.risk_level)}</Badge></div>) : <p className="text-sm text-muted-foreground">No open risks in this scope.</p>}</CardContent></Card><Card><CardHeader><CardTitle>Recent field reports</CardTitle></CardHeader><CardContent className="space-y-2">{(attention?.recent_reports ?? []).length ? attention.recent_reports.map((report: Row) => <div key={report.id} className="border-b pb-2 last:border-0"><p className="truncate text-sm font-medium">{report.title ?? report.ref_code}</p><p className="text-xs text-muted-foreground">{titleCase(report.status)} · {formatDate(report.reported_at)}</p></div>) : <p className="text-sm text-muted-foreground">No field reports in this scope.</p>}</CardContent></Card></div>
+    <FieldReportMap region={region} onRegionChange={setRegion} />
     <div className="grid gap-3 sm:grid-cols-3"><Stat label="Open risks" value={summary?.risks?.open ?? 0} icon={AlertTriangle} /><Stat label="Critical incidents" value={summary?.incidents?.critical ?? 0} icon={ShieldAlert} /><Stat label="Budget utilisation" value={`${summary?.budget?.utilization ?? 0}%`} icon={CircleDollarSign} /></div>
   </div>;
+
 }
