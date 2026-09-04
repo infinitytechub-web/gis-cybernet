@@ -17378,6 +17378,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      hr_biodata_completeness: {
+        Args: never
+        Returns: {
+          completeness_pct: number
+          department_name: string
+          full_name: string
+          has_bank: boolean
+          has_contact: boolean
+          has_education: boolean
+          has_employment: boolean
+          has_family: boolean
+          has_identity: boolean
+          has_medical: boolean
+          has_verification: boolean
+          modules_complete: number
+          org_unit_id: string
+          org_unit_name: string
+          profile_id: string
+          rank_name: string
+          staff_id: string
+          status: string
+        }[]
+      }
       increment_announcement_file_downloads: {
         Args: { _file_id: string }
         Returns: undefined
@@ -17708,6 +17731,27 @@ export type Database = {
           _type: string
         }
         Returns: undefined
+      }
+      org_position_roster: {
+        Args: never
+        Returns: {
+          command_path: string
+          end_date: string
+          holder_name: string
+          holder_profile_id: string
+          holder_rank: string
+          holder_staff_id: string
+          id: string
+          is_active: boolean
+          is_vacant: boolean
+          notes: string
+          org_unit_id: string
+          org_unit_name: string
+          org_unit_type: Database["public"]["Enums"]["org_unit_type"]
+          position_level: Database["public"]["Enums"]["org_position_level"]
+          start_date: string
+          title: string
+        }[]
       }
       org_unit_ancestors: { Args: { _node: string }; Returns: string[] }
       org_unit_descendants: { Args: { _root: string }; Returns: string[] }
