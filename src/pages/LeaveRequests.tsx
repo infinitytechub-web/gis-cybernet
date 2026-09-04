@@ -3,6 +3,7 @@ import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { LeaveAdminDashboard } from "@/components/leave/LeaveAdminDashboard";
 import { LeaveBalanceDashboard } from "@/components/leave/LeaveBalanceDashboard";
+import { LeaveUsageDashboard } from "@/components/leave/LeaveUsageDashboard";
 
 export default function LeaveRequests() {
   const { isAdminOrSupervisor } = useAuth();
