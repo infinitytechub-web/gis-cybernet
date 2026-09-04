@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, Upload, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { validatePhotoFile } from "@/lib/image-upload";
 
 const BUCKET = "enforcement-photos";
 
@@ -33,13 +34,15 @@ export function MugshotUpload({ value, onChange, folder, disabled }: Props) {
 
   const handleFile = async (file: File | null | undefined) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Photo must be under 5MB");
+    // Under 3MB, a genuine image by magic bytes, and threat scanned.
+    const check = await validatePhotoFile(file);
+    if (!check.ok) {
+      toast.error(check.reason);
       return;
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = check.ext;
       const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
         cacheControl: "3600",

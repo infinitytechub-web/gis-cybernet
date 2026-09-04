@@ -8,6 +8,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { validatePhotoFile } from "@/lib/image-upload";
 import { useAuth } from "@/hooks/useAuth";
 
 export const PATROL_PHOTO_BUCKET = "patrol-photos";
@@ -117,12 +118,13 @@ export function usePatrolPhotos(patrolLogId: string | null) {
   });
 }
 
-export function validatePatrolPhoto(file: File): string | null {
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return `${file.name}: only JPEG, PNG or WebP photos are accepted`;
-  }
-  if (file.size > MAX_PHOTO_BYTES) return `${file.name}: larger than the 10 MB limit`;
-  return null;
+/**
+ * Photos must be under 3MB, really be a JPG/PNG/WEBP (magic bytes, not just the
+ * extension) and pass the threat scan. Returns an error message, or null.
+ */
+export async function validatePatrolPhoto(file: File): Promise<string | null> {
+  const check = await validatePhotoFile(file);
+  return check.ok ? null : `${file.name}: ${check.reason}`;
 }
 
 async function uploadPatrolPhotos(patrolLogId: string, files: File[], uploaderId: string) {
