@@ -20,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { StaffMappingAdminPanel } from "@/components/staff-mapping/StaffMappingAdminPanel";
+import { useAuth } from "@/hooks/useAuth";
 
 const db = supabase as any;
 
@@ -107,6 +109,7 @@ function BreakdownCard({
 }
 
 export default function StaffMapping() {
+  const { isAdmin } = useAuth();
   const [region, setRegion] = useState(ALL);
   const [sector, setSector] = useState(ALL);
   const [station, setStation] = useState(ALL);
