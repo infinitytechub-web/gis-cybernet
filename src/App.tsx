@@ -118,6 +118,8 @@ const RoleAssignmentsAdmin = lazy(() => import("./pages/RoleAssignmentsAdmin"));
 const StaffPortal = lazy(() => import("./pages/StaffPortal"));
 const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
 const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
+const BioDataFormSetup = lazy(() => import("./pages/BioDataFormSetup"));
+
 const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
 const MfaGate = lazy(() => import("./pages/MfaGate"));
 const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
