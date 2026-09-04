@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { validatePhotoFile } from "@/lib/image-upload";
 
 interface ItemPhotoUploadProps {
   value: string | null;
@@ -42,17 +43,15 @@ export function ItemPhotoUpload({ value, onChange }: ItemPhotoUploadProps) {
   }
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be 5 MB or smaller.");
+    // Under 3MB, a genuine image by magic bytes, and threat scanned.
+    const check = await validatePhotoFile(file);
+    if (!check.ok) {
+      toast.error(check.reason);
       return;
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() ?? "jpg";
+      const ext = check.ext;
       const path = `items/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
         .from("inventory-photos")

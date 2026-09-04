@@ -10533,6 +10533,76 @@ export type Database = {
           },
         ]
       }
+      org_positions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          holder_profile_id: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          org_unit_id: string | null
+          position_level: Database["public"]["Enums"]["org_position_level"]
+          sort_order: number
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          holder_profile_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          org_unit_id?: string | null
+          position_level: Database["public"]["Enums"]["org_position_level"]
+          sort_order?: number
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          holder_profile_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          org_unit_id?: string | null
+          position_level?: Database["public"]["Enums"]["org_position_level"]
+          sort_order?: number
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_positions_holder_profile_id_fkey"
+            columns: ["holder_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_positions_holder_profile_id_fkey"
+            columns: ["holder_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_positions_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_unit_assignments: {
         Row: {
           can_manage: boolean
@@ -17308,6 +17378,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      hr_biodata_completeness: {
+        Args: never
+        Returns: {
+          completeness_pct: number
+          department_name: string
+          full_name: string
+          has_bank: boolean
+          has_contact: boolean
+          has_education: boolean
+          has_employment: boolean
+          has_family: boolean
+          has_identity: boolean
+          has_medical: boolean
+          has_verification: boolean
+          modules_complete: number
+          org_unit_id: string
+          org_unit_name: string
+          profile_id: string
+          rank_name: string
+          staff_id: string
+          status: string
+        }[]
+      }
       increment_announcement_file_downloads: {
         Args: { _file_id: string }
         Returns: undefined
@@ -17638,6 +17731,27 @@ export type Database = {
           _type: string
         }
         Returns: undefined
+      }
+      org_position_roster: {
+        Args: never
+        Returns: {
+          command_path: string
+          end_date: string
+          holder_name: string
+          holder_profile_id: string
+          holder_rank: string
+          holder_staff_id: string
+          id: string
+          is_active: boolean
+          is_vacant: boolean
+          notes: string
+          org_unit_id: string
+          org_unit_name: string
+          org_unit_type: Database["public"]["Enums"]["org_unit_type"]
+          position_level: Database["public"]["Enums"]["org_position_level"]
+          start_date: string
+          title: string
+        }[]
       }
       org_unit_ancestors: { Args: { _node: string }; Returns: string[] }
       org_unit_descendants: { Args: { _root: string }; Returns: string[] }
@@ -18309,13 +18423,30 @@ export type Database = {
         | "decommissioned"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
+      org_position_level:
+        | "directorate"
+        | "management_member"
+        | "regional_commander"
+        | "commandant"
+        | "commanding_officer"
+        | "sector_commander"
+        | "departmental_head"
+        | "sectional_head"
+        | "unit_head"
+        | "control_head"
       org_unit_type:
+        | "directorate"
         | "national"
         | "regional"
         | "sector"
         | "district"
         | "station"
         | "unit"
+        | "management"
+        | "command"
+        | "department"
+        | "section"
+        | "control"
       presence_event_type: "heartbeat" | "prune" | "online" | "offline"
       scheduled_delivery_status: "pending" | "sent" | "failed" | "cancelled"
       shift_pattern: "8h" | "12h" | "custom"
@@ -18556,13 +18687,31 @@ export const Constants = {
       ],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
+      org_position_level: [
+        "directorate",
+        "management_member",
+        "regional_commander",
+        "commandant",
+        "commanding_officer",
+        "sector_commander",
+        "departmental_head",
+        "sectional_head",
+        "unit_head",
+        "control_head",
+      ],
       org_unit_type: [
+        "directorate",
         "national",
         "regional",
         "sector",
         "district",
         "station",
         "unit",
+        "management",
+        "command",
+        "department",
+        "section",
+        "control",
       ],
       presence_event_type: ["heartbeat", "prune", "online", "offline"],
       scheduled_delivery_status: ["pending", "sent", "failed", "cancelled"],

@@ -143,9 +143,9 @@ export default function PatrolLogTab({
     setFormOpen(true);
   }
 
-  function pickFiles(list: FileList | null) {
+  async function pickFiles(list: FileList | null) {
     const next = Array.from(list ?? []);
-    const bad = next.map(validatePatrolPhoto).find(Boolean);
+    const bad = (await Promise.all(next.map(validatePatrolPhoto))).find(Boolean);
     if (bad) {
       toast.error(bad);
       return;
@@ -581,7 +581,7 @@ export default function PatrolLogTab({
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="patrol-photos">Photos (JPEG, PNG or WebP, max 10 MB each)</Label>
+              <Label htmlFor="patrol-photos">Photos (JPEG, PNG or WebP, under 3MB each)</Label>
               <Input
                 id="patrol-photos"
                 type="file"

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgScope } from "@/hooks/useOrgScope";
+import { OrgPositionsAdmin } from "@/components/org/OrgPositionsAdmin";
 import {
   ORG_UNIT_TYPES,
   ORG_UNIT_TYPE_LABELS,
@@ -411,6 +412,12 @@ export default function OrgStructure() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Appointments register: who holds which position, and what is vacant. */}
+      <OrgPositionsAdmin />
+
+
+
 
       {/* Create / edit command */}
       <Dialog open={unitDialogOpen} onOpenChange={setUnitDialogOpen}>

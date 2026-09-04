@@ -66,6 +66,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/admin/sessions": "Active sessions, lockouts and forced sign-outs.",
   "/admin/trusted-devices": "Devices staff remembered for 2FA step-up — review and revoke.",
   "/org-structure": "Command hierarchy and key appointments.",
+  "/hr": "Central HR: establishment, appointments, personnel records and availability.",
   "/admin-access-matrix": "Fine-tune which roles can reach each module.",
   "/command-role-audit": "Audit trail of command role grants and removals.",
   "/role-assignments": "Assign system roles to individual staff.",

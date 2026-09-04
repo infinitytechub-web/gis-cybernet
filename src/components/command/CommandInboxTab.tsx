@@ -426,7 +426,7 @@ function RaiseAlertDialog({
               }}
             />
             <p className="text-xs text-muted-foreground">
-              JPEG, PNG or WebP up to 10 MB each. Stored privately against this alert.
+              JPEG, PNG or WebP under 3MB each, virus scanned. Stored privately against this alert.
               {photos.length > 0 ? ` ${photos.length} selected.` : ""}
             </p>
           </div>

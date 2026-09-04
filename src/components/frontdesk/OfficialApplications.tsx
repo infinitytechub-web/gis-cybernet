@@ -10,6 +10,7 @@ import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { isEcowasNationality } from "@/lib/countries";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
+import { ContactPhoneInput } from "@/components/ui/contact-phone-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -83,6 +84,7 @@ export default function OfficialApplications() {
         ...form,
         date_of_birth: form.date_of_birth || null,
         phone: assertContactPhoneList(form.phone, "Telephone"),
+        emergency_contact: assertContactPhoneList(form.emergency_contact, "Emergency Contact"),
         processed_by: user?.id,
       };
       let previousStatus: string | null = null;
@@ -222,7 +224,7 @@ export default function OfficialApplications() {
               <div><Label>Foreign Address</Label><Textarea value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} rows={2} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
-                <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
+                <div><Label>Emergency Contact (phone)</Label><ContactPhoneInput compact value={form.emergency_contact} onChange={(v) => setForm({ ...form, emergency_contact: v })} aria-label="Emergency contact phone number" /></div>
               </div>
               <div><Label>Purpose</Label><Textarea value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} rows={2} /></div>
               {editId && (

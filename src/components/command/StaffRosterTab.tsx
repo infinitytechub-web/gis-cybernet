@@ -659,10 +659,10 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 capture="environment"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const f = e.target.files?.[0] ?? null;
                   if (f) {
-                    const invalid = validateClockPhoto(f);
+                    const invalid = await validateClockPhoto(f);
                     if (invalid) {
                       toast.error(invalid);
                       e.target.value = "";

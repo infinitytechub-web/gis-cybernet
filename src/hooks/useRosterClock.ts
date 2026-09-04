@@ -10,19 +10,20 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { validatePhotoFile } from "@/lib/image-upload";
 import { toast } from "sonner";
 
 export type ClockAction = "check_in" | "check_out";
 
 export const ATTENDANCE_PHOTO_BUCKET = "attendance-photos";
-const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-/** Returns an error string when the chosen photo is not an acceptable image. */
-export function validateClockPhoto(file: File): string | null {
-  if (!ALLOWED_PHOTO_TYPES.includes(file.type)) return "Photo must be a JPEG, PNG or WebP image";
-  if (file.size > MAX_PHOTO_BYTES) return "Photo must be 8 MB or smaller";
-  return null;
+/**
+ * Photos must be under 3MB, really be a JPG/PNG/WEBP (magic bytes, not just the
+ * extension) and pass the threat scan. Returns an error message, or null.
+ */
+export async function validateClockPhoto(file: File): Promise<string | null> {
+  const check = await validatePhotoFile(file);
+  return check.ok ? null : `${check.reason}`;
 }
 
 export interface ClockResult {
@@ -62,7 +63,7 @@ export function useRosterClock() {
     }): Promise<ClockResult> => {
       let photoPath: string | null = null;
       if (vars.photo) {
-        const invalid = validateClockPhoto(vars.photo);
+        const invalid = await validateClockPhoto(vars.photo);
         if (invalid) throw new Error(invalid);
         const ext = vars.photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
         photoPath = `${vars.profileId}/${vars.action}-${crypto.randomUUID()}.${ext}`;
