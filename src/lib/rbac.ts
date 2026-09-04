@@ -149,6 +149,9 @@ export const MODULES: ModuleDef[] = [
   // Unit oversight — shows other staff members' postings, so not open to all staff.
   { key: "unit-dashboard", label: "Unit Dashboard", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, ...IPSE_TIER, ...PROCESSING_TIER], paths: ["/unit-dashboard"] },
   { key: "org-structure", label: "Command Structure", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/org-structure"] },
+  // Smart HR workspace: establishment, positions register, personnel record
+  // completeness and staff availability across every command in reach.
+  { key: "hr", label: "Human Resource", feature: "Human Resource", tier: "command", roles: [...COMMAND, "head_of_administration"], paths: ["/hr"] },
 
   // ── Administration, security & audit ────────────────────────────────────
   // Audit, session, security and telemetry surfaces are audit-sensitive:

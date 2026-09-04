@@ -45,6 +45,7 @@ const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
+const HrHub = lazy(() => import("./pages/HrHub"));
 // Monitoring & Evaluation — one screen resolves each /me/* module by path.
 const MEPage = lazy(() => import("./pages/me/MEPage"));
 const UnitDashboard = lazy(() => import("./pages/UnitDashboard"));
@@ -280,6 +281,7 @@ function App() {
           <Route path="/admin/sessions" element={<ProtectedRoute module="session-management"><Layout><SessionManagement /></Layout></ProtectedRoute>} />
           <Route path="/admin/trusted-devices" element={<ProtectedRoute module="trusted-devices"><Layout><TrustedDevices /></Layout></ProtectedRoute>} />
           <Route path="/unit-dashboard" element={<ProtectedRoute module="unit-dashboard"><Layout><UnitDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/hr" element={<ProtectedRoute module="hr"><Layout><HrHub /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
 
           {/* Monitoring, Evaluation, Project & Performance Management */}

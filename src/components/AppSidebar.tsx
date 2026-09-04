@@ -1,4 +1,5 @@
 import {
+  BriefcaseBusiness,
   LayoutDashboard, Users, Building2, Award, Clock, CalendarCheck,
   CalendarOff, Calendar, ArrowRightLeft, LogOut, Shield, ShieldCheck, ClipboardCheck, BarChart3, Contact, CalendarDays, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase, FolderLock, Trash2, Link2, Globe2, ScrollText, Ban, Network, Crown, History, FileSpreadsheet, Heart, FileHeart, UserCog, Inbox, Gauge, LayoutGrid, MonitorSmartphone, Truck, MonitorDot, Radio, Palette, ChevronRight, CreditCard, Landmark
 , Fingerprint, MapPinned } from "lucide-react";
@@ -44,6 +45,7 @@ const commandItems = [
 ];
 
 const personnelItems = [
+  { title: "Human Resource", url: "/hr", icon: BriefcaseBusiness, iconColor: "text-primary" },
   { title: "Staff / Employees", url: "/staff", icon: Users, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Staff Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400" },
   { title: "Staff Mapping", url: "/staff-mapping", icon: MapPinned, iconColor: "text-cyan-700 dark:text-cyan-300" },
