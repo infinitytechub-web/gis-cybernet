@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/date-format";
 import { toast } from "sonner";
+import { FieldReportMap } from "./FieldReportMap";
+
 
 const db = supabase as any;
 type Row = Record<string, any>;
