@@ -117,13 +117,12 @@ export function useShiftRotationConfig(scope?: ScopeOptions) {
   const baseQuery = useQuery({
     queryKey: ["shift-rotation-config"],
     queryFn: async (): Promise<RotationConfig> => {
-      const { data, error } = await supabase
-        .from("shift_rotation_config" as any)
-        .select("anchor_date, pattern, updated_at")
-        .eq("id", true)
-        .maybeSingle();
+      // Read through a safe RPC: the underlying table is command-tier only.
+      const { data, error } = await supabase.rpc("shift_rotation_public_config" as any);
       if (error) throw error;
-      const row = (data ?? null) as unknown as { anchor_date: string; pattern: string[]; updated_at: string } | null;
+      const row = (Array.isArray(data) ? data[0] : data) as unknown as
+        | { anchor_date: string; pattern: string[]; updated_at: string }
+        | null;
       if (!row?.anchor_date || !row?.pattern?.length) return FALLBACK;
       return {
         anchorDate: parseISO(row.anchor_date),
@@ -139,15 +138,14 @@ export function useShiftRotationConfig(scope?: ScopeOptions) {
   const overridesQuery = useQuery({
     queryKey: ["shift-rotation-overrides"],
     queryFn: async (): Promise<RotationOverrideRow[]> => {
-      const { data, error } = await supabase
-        .from("shift_rotation_overrides" as any)
-        .select("id, scope_type, scope_value, anchor_date, pattern, enabled, notes, updated_at")
-        .order("scope_type", { ascending: true });
+      // Notes are intentionally not returned by this RPC (command-tier only).
+      const { data, error } = await supabase.rpc("shift_rotation_public_overrides" as any);
       if (error) throw error;
-      return (data ?? []) as unknown as RotationOverrideRow[];
+      return ((data ?? []) as any[]).map((r) => ({ ...r, notes: null })) as RotationOverrideRow[];
     },
     staleTime: 60_000,
   });
+
 
   // ---------------------- Phase-3: published schedules ----------------------
   const schedulesQuery = useQuery({
