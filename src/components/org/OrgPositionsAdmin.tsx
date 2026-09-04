@@ -45,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StaffCombobox } from "@/components/ui/staff-combobox";
+import { StaffCombobox, type StaffOption } from "@/components/ui/staff-combobox";
 import { Crown, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -126,6 +126,21 @@ export function OrgPositionsAdmin() {
   const qc = useQueryClient();
   const { data: units = [] } = useOrgUnits();
   const positionsQuery = useOrgPositions();
+
+  // Staff list for the "holder" picker.
+  const { data: staffOptions = [] } = useQuery({
+    queryKey: ["org-positions-staff-options"],
+    staleTime: 300_000,
+    queryFn: async (): Promise<StaffOption[]> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, first_name, last_name, staff_id")
+        .eq("status", "active")
+        .order("last_name");
+      if (error) throw error;
+      return (data ?? []) as StaffOption[];
+    },
+  });
 
   const canManage = role === "admin" || role === "oic" || role === "2ic";
 
@@ -413,10 +428,13 @@ export function OrgPositionsAdmin() {
             <div className="space-y-1.5">
               <Label htmlFor="pos-holder">Holder (leave empty for a vacancy)</Label>
               <StaffCombobox
-                id="pos-holder"
+                staff={staffOptions}
                 value={form.holder_profile_id ?? ""}
-                onChange={(v) => setForm({ ...form, holder_profile_id: v || null })}
+                onValueChange={(v) => setForm({ ...form, holder_profile_id: v || null })}
                 placeholder="Search staff by name or ID"
+                compact
+                includeAllOption
+                allOptionLabel="Vacant — no holder"
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
