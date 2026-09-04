@@ -10533,6 +10533,76 @@ export type Database = {
           },
         ]
       }
+      org_positions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          holder_profile_id: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          org_unit_id: string | null
+          position_level: Database["public"]["Enums"]["org_position_level"]
+          sort_order: number
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          holder_profile_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          org_unit_id?: string | null
+          position_level: Database["public"]["Enums"]["org_position_level"]
+          sort_order?: number
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          holder_profile_id?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          org_unit_id?: string | null
+          position_level?: Database["public"]["Enums"]["org_position_level"]
+          sort_order?: number
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_positions_holder_profile_id_fkey"
+            columns: ["holder_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_positions_holder_profile_id_fkey"
+            columns: ["holder_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_positions_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_unit_assignments: {
         Row: {
           can_manage: boolean
@@ -18309,13 +18379,30 @@ export type Database = {
         | "decommissioned"
       leave_status: "pending" | "approved" | "rejected"
       leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
+      org_position_level:
+        | "directorate"
+        | "management_member"
+        | "regional_commander"
+        | "commandant"
+        | "commanding_officer"
+        | "sector_commander"
+        | "departmental_head"
+        | "sectional_head"
+        | "unit_head"
+        | "control_head"
       org_unit_type:
+        | "directorate"
         | "national"
         | "regional"
         | "sector"
         | "district"
         | "station"
         | "unit"
+        | "management"
+        | "command"
+        | "department"
+        | "section"
+        | "control"
       presence_event_type: "heartbeat" | "prune" | "online" | "offline"
       scheduled_delivery_status: "pending" | "sent" | "failed" | "cancelled"
       shift_pattern: "8h" | "12h" | "custom"
@@ -18556,13 +18643,31 @@ export const Constants = {
       ],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: ["annual", "sick", "compassionate", "pass", "study"],
+      org_position_level: [
+        "directorate",
+        "management_member",
+        "regional_commander",
+        "commandant",
+        "commanding_officer",
+        "sector_commander",
+        "departmental_head",
+        "sectional_head",
+        "unit_head",
+        "control_head",
+      ],
       org_unit_type: [
+        "directorate",
         "national",
         "regional",
         "sector",
         "district",
         "station",
         "unit",
+        "management",
+        "command",
+        "department",
+        "section",
+        "control",
       ],
       presence_event_type: ["heartbeat", "prune", "online", "offline"],
       scheduled_delivery_status: ["pending", "sent", "failed", "cancelled"],
