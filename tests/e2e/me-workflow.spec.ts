@@ -120,5 +120,11 @@ test.describe("M&E thin vertical slice", () => {
     await page.goto(`${BASE_URL}/me/command-center`);
     await expect(page.getByRole("heading", { name: "M&E Command Center" })).toBeVisible();
     await expect(page.getByText(`Field report ${suffix}`)).toBeVisible();
+
+    // Field-report GIS map: card, map surface and legend are present
+    await expect(page.getByText("Field reports by location")).toBeVisible();
+    await expect(page.getByRole("application", { name: "Map of field reports" })).toBeVisible();
+    await expect(page.getByText("Reports per region")).toBeVisible();
+
   });
 });
