@@ -42,6 +42,16 @@ import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  BioDataProvider, BioDataSections, BioDataCustomBlock, type PersistFn,
+} from "@/components/staff/biodata/BioDataExtras";
+import { OptionCombobox } from "@/components/staff/biodata/OptionCombobox";
+import {
+  BIODATA_SECTIONS, optionsFor, useBioDataOptionSets,
+} from "@/components/staff/biodata/useBioDataConfig";
+
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
