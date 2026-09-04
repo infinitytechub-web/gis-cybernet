@@ -16577,6 +16577,7 @@ export type Database = {
       }
       me_approval_queue: { Args: { _status?: string }; Returns: Json }
       me_approval_reviewer: { Args: never; Returns: boolean }
+      me_approved_dashboard: { Args: never; Returns: Json }
       me_can_delete: { Args: never; Returns: boolean }
       me_can_manage: { Args: never; Returns: boolean }
       me_can_verify: { Args: never; Returns: boolean }
