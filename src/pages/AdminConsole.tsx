@@ -191,6 +191,8 @@ const AREAS: ConsoleArea[] = [
           { title: "Roster Import", description: "Import duty rosters and auto-match staff.", url: "/roster/import", icon: FileSpreadsheet, tier: "command" },
           { title: "Guard PDF Import", description: "Import guard schedules from PDF exports.", url: "/guard-schedule/import", icon: FileSpreadsheet, tier: "command" },
           { title: "Staff Mapping Import", description: "Bulk import department, office and shift mappings.", url: "/staff-mapping-import", icon: Building2, tier: "admin" },
+          { title: "Bio-Data Form Setup", description: "Manage dropdown lists, extra fields and extra tables on the personnel bio-data form.", url: "/biodata-form-setup", icon: FileSpreadsheet, tier: "admin" },
+
           { title: "Staff Accounts Bulk Create", description: "Generate login accounts for imported staff.", url: "/settings?area=system&tab=accounts", icon: Users, tier: "admin" },
         ],
       },
