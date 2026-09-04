@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Bar,
@@ -232,8 +232,8 @@ export function ApprovalsWorkspace() {
                       const steps = Array.isArray(row.steps) ? row.steps : [];
                       const isOpen = expanded === row.id;
                       return (
-                        <>
-                          <tr key={row.id} className="border-b last:border-0">
+                        <Fragment key={row.id}>
+                          <tr className="border-b last:border-0">
                             <td className="px-4 py-3">
                               <p className="font-medium">{row.record_name ?? "Unnamed record"}</p>
                               <p className="text-xs text-muted-foreground">{typeLabels[row.record_type] ?? row.record_type} · {row.record_status ?? row.status}</p>
@@ -259,7 +259,7 @@ export function ApprovalsWorkspace() {
                             </td>
                           </tr>
                           {isOpen && (
-                            <tr key={`${row.id}-steps`} className="border-b bg-muted/20 last:border-0">
+                            <tr className="border-b bg-muted/20 last:border-0">
                               <td colSpan={5} className="px-4 py-4">
                                 {steps.length === 0 ? (
                                   <p className="text-sm text-muted-foreground">No steps recorded yet.</p>
@@ -282,7 +282,7 @@ export function ApprovalsWorkspace() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>
