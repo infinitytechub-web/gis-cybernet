@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GROUP_COLORS, type ShiftGroup } from "@/lib/shift-rotation";
+import { useAuth } from "@/hooks/useAuth";
+import { RosterClockCell } from "@/components/roster/RosterClockCell";
 
 const db = supabase as any;
 
@@ -54,6 +56,7 @@ function timeOf(value: string | null) {
 
 export function OnDutyNowPanel({ compact = false }: { compact?: boolean }) {
   const qc = useQueryClient();
+  const { user, isAdminOrSupervisor } = useAuth();
   const [dayOffset, setDayOffset] = useState(0);
   const [view, setView] = useState<"on-duty" | "present" | "missing" | "all">("on-duty");
   const [search, setSearch] = useState("");
@@ -62,6 +65,18 @@ export function OnDutyNowPanel({ compact = false }: { compact?: boolean }) {
   const iso = format(day, "yyyy-MM-dd");
   const { groupForDate, sourceForDate, isLoading: rotationLoading } = useShiftRotationConfig();
   const group = groupForDate(day);
+
+  // The signed-in officer's own roster row, so they can clock themselves.
+  const { data: myProfileId } = useQuery({
+    queryKey: ["my-profile-id", user?.id],
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await db.from("profiles").select("id").eq("user_id", user!.id).maybeSingle();
+      if (error) return null;
+      return data?.id ?? null;
+    },
+  });
 
   const { data: rows = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["duty-roster-live", iso, group],
@@ -154,7 +169,7 @@ export function OnDutyNowPanel({ compact = false }: { compact?: boolean }) {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-sm">
+          <table className="w-full min-w-[860px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="py-2 pr-3">Staff</th>
@@ -162,15 +177,16 @@ export function OnDutyNowPanel({ compact = false }: { compact?: boolean }) {
                 <th className="py-2 pr-3">Unit</th>
                 <th className="py-2 pr-3">Clock in</th>
                 <th className="py-2 pr-3">Clock out</th>
+                <th className="py-2 pr-3">Clock in / out</th>
                 <th className="py-2">Bio-data</th>
               </tr>
             </thead>
             <tbody>
               {(isLoading || rotationLoading) && (
-                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Loading the live schedule…</td></tr>
+                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Loading the live schedule…</td></tr>
               )}
               {!isLoading && listed.length === 0 && (
-                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">No staff in this view.</td></tr>
+                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">No staff in this view.</td></tr>
               )}
               {listed.slice(0, compact ? 25 : 200).map((row) => {
                 const rowTone = groupTone(row.shift_group);
@@ -186,6 +202,17 @@ export function OnDutyNowPanel({ compact = false }: { compact?: boolean }) {
                     <td className="py-2 pr-3">{row.unit || row.department_name || row.org_unit_name || "—"}</td>
                     <td className="py-2 pr-3 tabular-nums">{timeOf(row.check_in) ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="py-2 pr-3 tabular-nums">{timeOf(row.check_out) ?? <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 pr-3">
+                      <RosterClockCell
+                        profileId={row.profile_id}
+                        name={row.full_name ?? "this officer"}
+                        checkIn={row.check_in}
+                        checkOut={row.check_out}
+                        isSelf={!!myProfileId && myProfileId === row.profile_id}
+                        canClockOthers={!!isAdminOrSupervisor}
+                        enabled={dayOffset === 0}
+                      />
+                    </td>
                     <td className="py-2">
                       <Link to={`/staff/${row.profile_id}`} className="font-medium text-primary underline-offset-4 hover:underline">Open record</Link>
                     </td>
