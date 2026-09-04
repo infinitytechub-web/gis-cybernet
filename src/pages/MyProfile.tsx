@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
+import { UserCog, Save, Lock, RefreshCw, FileDown, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
@@ -26,7 +26,44 @@ import MyTrustedDevices from "@/components/settings/MyTrustedDevices";
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
   "blood_group", "office", "training_designation", "staff_category", "photo_url",
+  // Bio-data self-service (sections B–D and G of the personnel form)
+  "other_names", "place_of_birth", "hometown", "region_of_origin",
+  "current_place_of_stay", "residential_address", "digital_address", "postal_address",
+  "residential_phone", "height_cm", "uniform_size", "shoe_size", "religion",
+  "hobbies", "special_skills", "number_of_children",
+  "previous_last_position", "previous_reason_for_leaving",
 ] as const;
+
+/** Bio-data fields rendered in the self-service section, in form order. */
+const BIODATA_FIELDS: Array<{ key: EditableKey; label: string; wide?: boolean; multiline?: boolean }> = [
+  { key: "other_names", label: "Other name(s)" },
+  { key: "place_of_birth", label: "Place of birth" },
+  { key: "hometown", label: "Hometown" },
+  { key: "region_of_origin", label: "Region of origin" },
+  { key: "current_place_of_stay", label: "Current place of stay" },
+  { key: "digital_address", label: "Digital address (GhanaPost GPS)" },
+  { key: "residential_address", label: "Residential address", wide: true },
+  { key: "postal_address", label: "Postal address", wide: true },
+  { key: "residential_phone", label: "Residential telephone" },
+  { key: "height_cm", label: "Height (cm)" },
+  { key: "uniform_size", label: "Uniform size (S–XXL)" },
+  { key: "shoe_size", label: "Shoe size" },
+  { key: "religion", label: "Religion" },
+  { key: "number_of_children", label: "Number of children" },
+  { key: "hobbies", label: "Hobbies / interests", wide: true, multiline: true },
+  { key: "special_skills", label: "Special skill(s)", wide: true, multiline: true },
+  { key: "previous_last_position", label: "Last position at previous employer", wide: true },
+  { key: "previous_reason_for_leaving", label: "Reason for leaving previous employer", wide: true },
+];
+
+/** Restricted sections: staff may request a change, admins must approve it. */
+const RESTRICTED_FIELDS: Array<{ key: string; label: string; multiline?: boolean }> = [
+  { key: "medical.medical_conditions", label: "Medical condition(s) / allergy(ies)", multiline: true },
+  { key: "medical.welfare_notes", label: "Additional medical / welfare notes", multiline: true },
+  { key: "bank.bank_name", label: "Bank name" },
+  { key: "bank.branch", label: "Branch" },
+  { key: "bank.account_number", label: "Account number" },
+];
 
 type EditableKey = typeof EDITABLE_FIELDS[number];
 
@@ -46,7 +83,14 @@ export default function MyProfile() {
     first_name: "", last_name: "", gender: "", date_of_birth: "", marital_status: "", phone: "", email: "",
     ghana_card_number: "", blood_group: "", office: "", training_designation: "",
     staff_category: "", photo_url: "",
+    other_names: "", place_of_birth: "", hometown: "", region_of_origin: "",
+    current_place_of_stay: "", residential_address: "", digital_address: "", postal_address: "",
+    residential_phone: "", height_cm: "", uniform_size: "", shoe_size: "", religion: "",
+    hobbies: "", special_skills: "", number_of_children: "",
+    previous_last_position: "", previous_reason_for_leaving: "",
   });
+  const [restricted, setRestricted] = useState<Record<string, string>>({});
+  const [downloading, setDownloading] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["my-profile-self-edit", user?.id],
