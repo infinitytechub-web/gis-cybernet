@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.block_biodata_access_log_mutation() FROM PUBLIC, anon, authenticated;

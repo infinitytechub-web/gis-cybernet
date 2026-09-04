@@ -1305,6 +1305,60 @@ export type Database = {
           },
         ]
       }
+      biodata_restricted_access_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_label: string | null
+          changed_fields: string[] | null
+          created_at: string
+          details: Json
+          id: string
+          profile_id: string
+          section: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_label?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          details?: Json
+          id?: string
+          profile_id: string
+          section: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_label?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          details?: Json
+          id?: string
+          profile_id?: string
+          section?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biodata_restricted_access_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biodata_restricted_access_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       biometric_reminder_log: {
         Row: {
           channel: string
@@ -17277,6 +17331,16 @@ export type Database = {
           _staff_profile_id: string
         }
         Returns: undefined
+      }
+      log_biodata_restricted_access: {
+        Args: {
+          _action: string
+          _changed_fields?: string[]
+          _profile_id: string
+          _section: string
+          _user_agent?: string
+        }
+        Returns: string
       }
       log_hrm_export: {
         Args: {
