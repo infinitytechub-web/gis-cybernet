@@ -141,6 +141,8 @@ export const MODULES: ModuleDef[] = [
   { key: "roster-import", label: "Roster Import", tier: "command", roles: COMMAND, paths: ["/roster/import"] },
   { key: "guard-schedule-import", label: "Guard PDF Import", tier: "command", roles: COMMAND, paths: ["/guard-schedule/import"] },
   { key: "staff-mapping-import", label: "Staff Mapping Import", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-mapping-import"] },
+  { key: "biodata-form-setup", label: "Bio-Data Form Setup", tier: "admin", roles: ADMIN_ONLY, paths: ["/biodata-form-setup"] },
+
   { key: "role-assignments", label: "Role Assignments", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/role-assignments"] },
   { key: "command-roles", label: "Command Roles & Grants", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/command-roles"] },
   // Unit oversight — shows other staff members' postings, so not open to all staff.

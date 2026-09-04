@@ -43,7 +43,6 @@ import { useOrgScope } from "@/hooks/useOrgScope";
 import { flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   BioDataProvider, BioDataSections, BioDataCustomBlock, type PersistFn,
 } from "@/components/staff/biodata/BioDataExtras";
@@ -838,7 +837,7 @@ export default function Staff() {
         after the record through the shared persist function.
       */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -875,16 +874,15 @@ export default function Staff() {
             </div>
 
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
-              <div className="overflow-x-auto pb-1">
-                <TabsList className="w-max">
-                  {BIODATA_SECTIONS.map((s) => (
-                    <TabsTrigger key={s.key} value={s.key} className="text-xs">
-                      <span className="font-semibold">{s.key}</span>
-                      <span className="ml-1 hidden sm:inline">{s.label}</span>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
+              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+                {BIODATA_SECTIONS.map((s) => (
+                  <TabsTrigger key={s.key} value={s.key} className="text-xs">
+                    <span className="font-semibold">{s.key}</span>
+                    <span className="ml-1 hidden sm:inline">{s.label}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
 
               {/* ── A. Form administration ──────────────────────────────── */}
               <TabsContent value="A" className="space-y-4">
