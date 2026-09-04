@@ -17082,6 +17082,26 @@ export type Database = {
         }
         Returns: Json
       }
+      shift_rotation_public_config: {
+        Args: never
+        Returns: {
+          anchor_date: string
+          pattern: string[]
+          updated_at: string
+        }[]
+      }
+      shift_rotation_public_overrides: {
+        Args: never
+        Returns: {
+          anchor_date: string
+          enabled: boolean
+          id: string
+          pattern: string[]
+          scope_type: string
+          scope_value: string
+          updated_at: string
+        }[]
+      }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
