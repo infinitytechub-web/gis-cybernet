@@ -222,6 +222,72 @@ export default function MyProfile() {
     onError: (e: any) => toast.error(e.message ?? "Failed to cancel"),
   });
 
+  // Restricted sections (medical / welfare and bank) — read where policy allows.
+  const { data: restrictedCurrent } = useQuery({
+    queryKey: ["my-profile-restricted", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const [med, bank] = await Promise.all([
+        (supabase as any).from("staff_medical_welfare").select("medical_conditions, welfare_notes").eq("profile_id", profile.id).maybeSingle(),
+        (supabase as any).from("staff_bank_details").select("bank_name, branch, account_number").eq("profile_id", profile.id).maybeSingle(),
+      ]);
+      return {
+        "medical.medical_conditions": med.data?.medical_conditions ?? "",
+        "medical.welfare_notes": med.data?.welfare_notes ?? "",
+        "bank.bank_name": bank.data?.bank_name ?? "",
+        "bank.branch": bank.data?.branch ?? "",
+        "bank.account_number": bank.data?.account_number ?? "",
+      } as Record<string, string>;
+    },
+  });
+
+  useEffect(() => {
+    if (restrictedCurrent) setRestricted(restrictedCurrent);
+  }, [restrictedCurrent]);
+
+  const submitRestricted = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id || !user) throw new Error("Profile not loaded");
+      const requested: Record<string, string | null> = {};
+      const previous: Record<string, string | null> = {};
+      RESTRICTED_FIELDS.forEach((field) => {
+        const next = (restricted[field.key] ?? "").trim();
+        const curr = (restrictedCurrent?.[field.key] ?? "").trim();
+        if (next !== curr) {
+          requested[field.key] = next === "" ? null : next;
+          previous[field.key] = curr === "" ? null : curr;
+        }
+      });
+      if (Object.keys(requested).length === 0) throw new Error("No restricted changes to submit");
+      const { error } = await supabase.from("profile_change_requests").insert({
+        profile_id: profile.id,
+        user_id: user.id,
+        requested_changes: requested,
+        previous_values: previous,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Restricted change request submitted — an administrator must approve it.");
+      qc.invalidateQueries({ queryKey: ["my-profile-change-requests"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to submit restricted request"),
+  });
+
+  const downloadRecord = async () => {
+    if (!profile?.id) return;
+    setDownloading(true);
+    try {
+      const { exportBioDataPdf } = await import("@/lib/biodata-pdf");
+      await exportBioDataPdf(profile.id);
+      toast.success("Your bio-data record has been downloaded.");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not build your bio-data record.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (isLoading) return <div className="text-sm text-muted-foreground p-6">Loading your profile…</div>;
   if (!profile) return <div className="text-sm text-muted-foreground p-6">Profile not found.</div>;
 
@@ -240,6 +306,11 @@ export default function MyProfile() {
         icon={UserCog}
         title="My Profile"
         subtitle="Submit profile changes for review. Edits take effect after Command / Admin approval."
+        actions={
+          <Button variant="secondary" onClick={() => void downloadRecord()} disabled={downloading} className="gap-1">
+            <FileDown className="h-4 w-4" /> {downloading ? "Preparing…" : "My bio-data record (PDF)"}
+          </Button>
+        }
       />
 
       <Card className="border-l-4 border-l-amber-500">
@@ -317,6 +388,57 @@ export default function MyProfile() {
             </Button>
             {dirty && <span className="text-xs text-amber-600 self-center">Unsaved changes</span>}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Bio-data details</CardTitle>
+          <CardDescription className="text-xs">
+            Your personal, residential and physical profile details from the personnel bio-data form. Changes are submitted with the button above.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            {BIODATA_FIELDS.map((field) => (
+              <div key={field.key} className={field.wide ? "md:col-span-2" : undefined}>
+                <Label htmlFor={`bio-${field.key}`}>{field.label}</Label>
+                <Input
+                  id={`bio-${field.key}`}
+                  value={form[field.key] ?? ""}
+                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-l-4 border-l-red-600">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ShieldAlert className="h-4 w-4 text-red-600" /> Restricted sections — medical / welfare and bank
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Confidential. You may request a change here, but only an administrator can approve it, and every approved change is written to the restricted-access audit log.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            {RESTRICTED_FIELDS.map((field) => (
+              <div key={field.key} className={field.multiline ? "md:col-span-2" : undefined}>
+                <Label htmlFor={`res-${field.key}`}>{field.label}</Label>
+                <Input
+                  id={`res-${field.key}`}
+                  value={restricted[field.key] ?? ""}
+                  onChange={(e) => setRestricted({ ...restricted, [field.key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+          <Button onClick={() => submitRestricted.mutate()} disabled={submitRestricted.isPending} className="gap-1">
+            <Save className="h-4 w-4" /> {submitRestricted.isPending ? "Submitting…" : "Request restricted change"}
+          </Button>
         </CardContent>
       </Card>
 

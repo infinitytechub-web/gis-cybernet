@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { DateInput } from "@/components/ui/date-input";
+import { OnDutyNowPanel } from "@/components/roster/OnDutyNowPanel";
 
 const SHIFT_COLORS = [
   "bg-primary/15 text-primary border-primary/30",
