@@ -837,7 +837,7 @@ export default function Staff() {
         after the record through the shared persist function.
       */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
