@@ -217,9 +217,14 @@ export default function StaffMapping() {
         actions={
           <div className="flex items-center gap-2">
             <ExportMenu
-              data={exportRows}
-              filename="staff-mapping"
-              title="Staff Mapping"
+              variant="secondary"
+              getData={() => ({
+                title: "Staff Mapping",
+                filename: "staff-mapping",
+                subtitle: `${filtered.length} staff record(s)`,
+                headers: Object.keys(exportRows[0] ?? { "Staff ID": "" }),
+                rows: exportRows.map((row) => Object.values(row).map((value) => String(value ?? ""))),
+              })}
             />
             <Button variant="secondary" size="icon" onClick={() => void refetch()} aria-label="Refresh staff mapping">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
