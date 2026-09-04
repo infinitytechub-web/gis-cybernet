@@ -42,6 +42,16 @@ import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  BioDataProvider, BioDataSections, BioDataCustomBlock, type PersistFn,
+} from "@/components/staff/biodata/BioDataExtras";
+import { OptionCombobox } from "@/components/staff/biodata/OptionCombobox";
+import {
+  BIODATA_SECTIONS, optionsFor, useBioDataOptionSets,
+} from "@/components/staff/biodata/useBioDataConfig";
+
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
@@ -106,6 +116,38 @@ export default function Staff() {
   const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
   const [initialPortfolioIds, setInitialPortfolioIds] = useState<string[]>([]);
 
+  // ── Bio-Data & Service Record fields (sections A–D, G, H) ───────────────
+  const [formCompletedOn, setFormCompletedOn] = useState("");
+  const [serviceOrganization, setServiceOrganization] = useState("");
+  const [sectorCommand, setSectorCommand] = useState("");
+  const [stationUnit, setStationUnit] = useState("");
+  const [isNumber, setIsNumber] = useState("");
+  const [otherNames, setOtherNames] = useState("");
+  const [placeOfBirth, setPlaceOfBirth] = useState("");
+  const [hometown, setHometown] = useState("");
+  const [regionOfOrigin, setRegionOfOrigin] = useState("");
+  const [dateOfAppointment, setDateOfAppointment] = useState("");
+  const [cadetIntake, setCadetIntake] = useState("");
+  const [recruitIntake, setRecruitIntake] = useState("");
+  const [currentPlaceOfStay, setCurrentPlaceOfStay] = useState("");
+  const [residentialAddress, setResidentialAddress] = useState("");
+  const [digitalAddress, setDigitalAddress] = useState("");
+  const [postalAddress, setPostalAddress] = useState("");
+  const [residentialPhone, setResidentialPhone] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [uniformSize, setUniformSize] = useState("");
+  const [shoeSize, setShoeSize] = useState("");
+  const [religion, setReligion] = useState("");
+  const [hobbies, setHobbies] = useState<string[]>(["", "", ""]);
+  const [specialSkills, setSpecialSkills] = useState<string[]>(["", "", ""]);
+  const [numberOfChildren, setNumberOfChildren] = useState("");
+  const [previousLastPosition, setPreviousLastPosition] = useState("");
+  const [previousReasonForLeaving, setPreviousReasonForLeaving] = useState("");
+  const [bioTab, setBioTab] = useState("A");
+  const biodataPersistRef = useRef<PersistFn | null>(null);
+  const { data: bioOptionSets } = useBioDataOptionSets();
+
+
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
     queryFn: async () => {
@@ -169,6 +211,34 @@ export default function Staff() {
     setPortfolioIds([]);
     setInitialPortfolioIds([]);
     setOrgUnitId("");
+    setBioTab("A");
+    setFormCompletedOn(format(new Date(), "yyyy-MM-dd"));
+    setServiceOrganization("");
+    setSectorCommand("");
+    setStationUnit("");
+    setIsNumber("");
+    setOtherNames("");
+    setPlaceOfBirth("");
+    setHometown("");
+    setRegionOfOrigin("");
+    setDateOfAppointment("");
+    setCadetIntake("");
+    setRecruitIntake("");
+    setCurrentPlaceOfStay("");
+    setResidentialAddress("");
+    setDigitalAddress("");
+    setPostalAddress("");
+    setResidentialPhone("");
+    setHeightCm("");
+    setUniformSize("");
+    setShoeSize("");
+    setReligion("");
+    setHobbies(["", "", ""]);
+    setSpecialSkills(["", "", ""]);
+    setNumberOfChildren("");
+    setPreviousLastPosition("");
+    setPreviousReasonForLeaving("");
+
     setPhotoFile(null);
     setPhotoPreview(null);
     setDialogOpen(true);
@@ -221,6 +291,34 @@ export default function Staff() {
     setDateJoinedService((s as any).date_joined_service || "");
     setMaritalStatus(s.marital_status || "");
     setCurrentAppointment((s as any).current_appointment || "");
+    setBioTab("A");
+    setFormCompletedOn((s as any).form_completed_on || "");
+    setServiceOrganization((s as any).service_organization || "");
+    setSectorCommand((s as any).sector_command || "");
+    setStationUnit((s as any).station_unit || "");
+    setIsNumber((s as any).is_number || "");
+    setOtherNames((s as any).other_names || "");
+    setPlaceOfBirth((s as any).place_of_birth || "");
+    setHometown((s as any).hometown || "");
+    setRegionOfOrigin((s as any).region_of_origin || "");
+    setDateOfAppointment((s as any).date_of_appointment || "");
+    setCadetIntake((s as any).cadet_intake || "");
+    setRecruitIntake((s as any).recruit_intake || "");
+    setCurrentPlaceOfStay((s as any).current_place_of_stay || "");
+    setResidentialAddress((s as any).residential_address || "");
+    setDigitalAddress((s as any).digital_address || "");
+    setPostalAddress((s as any).postal_address || "");
+    setResidentialPhone((s as any).residential_phone || "");
+    setHeightCm((s as any).height_cm != null ? String((s as any).height_cm) : "");
+    setUniformSize((s as any).uniform_size || "");
+    setShoeSize((s as any).shoe_size || "");
+    setReligion((s as any).religion || "");
+    setHobbies([...(((s as any).hobbies ?? []) as string[]), "", "", ""].slice(0, 3));
+    setSpecialSkills([...(((s as any).special_skills ?? []) as string[]), "", "", ""].slice(0, 3));
+    setNumberOfChildren((s as any).number_of_children != null ? String((s as any).number_of_children) : "");
+    setPreviousLastPosition((s as any).previous_last_position || "");
+    setPreviousReasonForLeaving((s as any).previous_reason_for_leaving || "");
+
     // Load assigned portfolios for this profile
     supabase
       .from("profile_portfolios")
@@ -326,6 +424,34 @@ export default function Staff() {
         date_joined_service: dateJoinedService || null,
         marital_status: maritalStatus || null,
         current_appointment: currentAppointment || null,
+        // Bio-Data & Service Record — sections A to D, G and H
+        form_completed_on: formCompletedOn || null,
+        service_organization: serviceOrganization || null,
+        sector_command: sectorCommand || null,
+        station_unit: stationUnit || null,
+        is_number: isNumber || null,
+        other_names: otherNames || null,
+        place_of_birth: placeOfBirth || null,
+        hometown: hometown || null,
+        region_of_origin: regionOfOrigin || null,
+        date_of_appointment: dateOfAppointment || null,
+        cadet_intake: cadetIntake || null,
+        recruit_intake: recruitIntake || null,
+        current_place_of_stay: currentPlaceOfStay || null,
+        residential_address: residentialAddress || null,
+        digital_address: digitalAddress || null,
+        postal_address: postalAddress || null,
+        residential_phone: residentialPhone || null,
+        height_cm: heightCm ? Number(heightCm) : null,
+        uniform_size: uniformSize || null,
+        shoe_size: shoeSize || null,
+        religion: religion || null,
+        hobbies: hobbies.map((h) => h.trim()).filter(Boolean),
+        special_skills: specialSkills.map((s) => s.trim()).filter(Boolean),
+        number_of_children: numberOfChildren ? Number(numberOfChildren) : null,
+        previous_last_position: previousLastPosition || null,
+        previous_reason_for_leaving: previousReasonForLeaving || null,
+
       };
 
       const syncPortfolios = async (profileId: string) => {
@@ -354,6 +480,7 @@ export default function Staff() {
         if (error) throw error;
         await syncContacts(editing.id, validContacts);
         await syncPortfolios(editing.id);
+        await biodataPersistRef.current?.(editing.id);
       } else {
         const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
@@ -366,7 +493,9 @@ export default function Staff() {
         if (data) {
           await syncContacts(data.id, validContacts);
           await syncPortfolios(data.id);
+          await biodataPersistRef.current?.(data.id);
         }
+
       }
     },
     onSuccess: () => {
@@ -702,12 +831,26 @@ export default function Staff() {
       )}
       <p className="text-xs text-muted-foreground">{filtered.length} of {staff.length} staff shown</p>
 
+      {/*
+        PERSONNEL BIO-DATA & SERVICE RECORD FORM
+        Sections A–L in the official order. A–D hold the fields stored on the
+        staff record itself; E–L come from BioDataSections and are saved right
+        after the record through the shared persist function.
+      */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Personnel Bio-Data &amp; Service Record — confidential, for official use only
+            </p>
           </DialogHeader>
-          <div className="space-y-3">
+          <BioDataProvider
+            profileId={editing?.id ?? null}
+            open={dialogOpen}
+            persistRef={biodataPersistRef}
+          >
+          <div className="space-y-4">
             {/* Photo upload */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -731,230 +874,398 @@ export default function Staff() {
               <p className="text-xs text-muted-foreground">Click to upload photo (max 5MB)</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Staff ID</Label>
-                <Input value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="study_leave">Study Leave</SelectItem>
-                    <SelectItem value="transferred">Transferred</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>First Name</Label>
-                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-              </div>
-              <div>
-                <Label>Last Name</Label>
-                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Gender</Label>
-                <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="staff-phone">Primary Phone</Label>
-                <GhanaPhoneInput id="staff-phone" value={phone} onChange={setPhone} compact />
-                <p className="text-[10px] text-muted-foreground mt-1">Auto-set from primary contact below if added. MTN, Telecel or AirtelTigo, 10 digits.</p>
-              </div>
-            </div>
-            <div>
-              <Label>Additional Contacts</Label>
-              <p className="text-xs text-muted-foreground mb-2">Add multiple phone numbers. Star one to mark it primary.</p>
-              <MultiContactInput value={contacts} onChange={setContacts} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Rank</Label>
-                <Select value={rankId} onValueChange={setRankId}>
-                  <SelectTrigger><SelectValue placeholder="Select rank" /></SelectTrigger>
-                  <SelectContent>
-                    {ranks.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>{r.abbreviation} — {r.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Department</Label>
-                <Select value={deptId} onValueChange={setDeptId}>
-                  <SelectTrigger><SelectValue placeholder="Select dept" /></SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-2">
-                <Label>Command posting</Label>
-                <Select value={orgUnitId || "none"} onValueChange={(v) => setOrgUnitId(v === "none" ? "" : v)}>
-                  <SelectTrigger><SelectValue placeholder="Select command" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">— Unassigned —</SelectItem>
-                    {orgRows.map((o) => (
-                      <SelectItem key={o.id} value={o.id} disabled={!orgScope.canManage(o.id)}>
-                        {"— ".repeat(o.depth)}{o.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Determines which commands can view and edit this record (this command and everything above it in the chain).
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Ghana Card Number</Label>
-                <GhanaCardInput value={ghanaCardNumber} onChange={setGhanaCardNumber} />
-              </div>
-              <div>
-                <Label>Email Address</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Category</Label>
-                <Select value={staffCategory} onValueChange={setStaffCategory}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cadet">Cadet</SelectItem>
-                    <SelectItem value="Recruit">Recruit</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Intake (1–100)</Label>
-                <Select value={intake} onValueChange={setIntake}>
-                  <SelectTrigger><SelectValue placeholder="Select intake" /></SelectTrigger>
-                  <SelectContent className="max-h-[260px]">
-                    {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
-                      <SelectItem key={n} value={String(n)}>Intake {n}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Blood Group</Label>
-                <Select value={bloodGroup} onValueChange={setBloodGroup}>
-                  <SelectTrigger><SelectValue placeholder="Select blood group" /></SelectTrigger>
-                  <SelectContent>
-                    {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
-                      <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Weapon Training</Label>
-                <Select value={weaponTrained} onValueChange={(v) => { setWeaponTrained(v); if (v !== "yes") setWeaponTrainingDate(""); }}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Training Date</Label>
-                <DateInput
-                  value={weaponTrainingDate}
-                  onChange={(e) => setWeaponTrainingDate(e.target.value)}
-                  disabled={weaponTrained !== "yes"}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Training Designation</Label>
-                <Select value={trainingDesignation} onValueChange={setTrainingDesignation}>
-                  <SelectTrigger><SelectValue placeholder="Select designation" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HUHUNYA">HUHUNYA</SelectItem>
-                    <SelectItem value="ITTRAS">ITTRAS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <Label>Date of Birth ({DATE_FORMAT_HINT})</Label>
-                  <AgeDisplay dob={dateOfBirth} />
-                </div>
-                <DateInput
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  max={format(new Date(), "yyyy-MM-dd")}
-                />
+            <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
+              <div className="overflow-x-auto pb-1">
+                <TabsList className="w-max">
+                  {BIODATA_SECTIONS.map((s) => (
+                    <TabsTrigger key={s.key} value={s.key} className="text-xs">
+                      <span className="font-semibold">{s.key}</span>
+                      <span className="ml-1 hidden sm:inline">{s.label}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
               </div>
 
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Marital Status</Label>
-                <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {["Single","Married","Divorced","Widowed","Separated"].map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Date Joined Service</Label>
-                <DateInput
-                  value={dateJoinedService}
-                  onChange={(e) => setDateJoinedService(e.target.value)}
-                  max={format(new Date(), "yyyy-MM-dd")}
+              {/* ── A. Form administration ──────────────────────────────── */}
+              <TabsContent value="A" className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight">A. Form administration</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="bio-completed">Date of completion ({DATE_FORMAT_HINT})</Label>
+                    <DateInput id="bio-completed" value={formCompletedOn} onChange={(e) => setFormCompletedOn(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-service-org">Service / organization</Label>
+                    <Input id="bio-service-org" value={serviceOrganization} onChange={(e) => setServiceOrganization(e.target.value)} placeholder="e.g. Ghana Immigration Service" />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-sector">Sector / command</Label>
+                    <Input id="bio-sector" value={sectorCommand} onChange={(e) => setSectorCommand(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-station">Station / unit</Label>
+                    <Input id="bio-station" value={stationUnit} onChange={(e) => setStationUnit(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-staff-id">Staff ID</Label>
+                    <Input id="bio-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-is-no">IS / No.</Label>
+                    <Input id="bio-is-no" value={isNumber} onChange={(e) => setIsNumber(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-status">Status</Label>
+                    <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)}>
+                      <SelectTrigger id="bio-status"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="study_leave">Study Leave</SelectItem>
+                        <SelectItem value="transferred">Transferred</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-department">Department</Label>
+                    <Select value={deptId} onValueChange={setDeptId}>
+                      <SelectTrigger id="bio-department"><SelectValue placeholder="Select dept" /></SelectTrigger>
+                      <SelectContent>
+                        {departments.map((d) => (
+                          <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-unit">Unit</Label>
+                    <Input id="bio-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-office">Office</Label>
+                    <Input id="bio-office" value={office} onChange={(e) => setOffice(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-shift-group">Shift group</Label>
+                    <Select value={shiftGroup} onValueChange={setShiftGroup}>
+                      <SelectTrigger id="bio-shift-group"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="A">Shift A</SelectItem>
+                        <SelectItem value="B">Shift B</SelectItem>
+                        <SelectItem value="C">Shift C</SelectItem>
+                        <SelectItem value="D">Shift D</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="bio-command-posting">Command posting</Label>
+                    <Select value={orgUnitId || "none"} onValueChange={(v) => setOrgUnitId(v === "none" ? "" : v)}>
+                      <SelectTrigger id="bio-command-posting"><SelectValue placeholder="Select command" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Unassigned —</SelectItem>
+                        {orgRows.map((o) => (
+                          <SelectItem key={o.id} value={o.id} disabled={!orgScope.canManage(o.id)}>
+                            {"— ".repeat(o.depth)}{o.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Determines which commands can view and edit this record (this command and everything above it in the chain).
+                    </p>
+                  </div>
+                </div>
+                <BioDataCustomBlock section="A" />
+              </TabsContent>
+
+              {/* ── B. Personal identification ──────────────────────────── */}
+              <TabsContent value="B" className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight">B. Personal identification data</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="bio-surname">Surname</Label>
+                    <Input id="bio-surname" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-firstname">First name</Label>
+                    <Input id="bio-firstname" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-othernames">Other name(s)</Label>
+                    <Input id="bio-othernames" value={otherNames} onChange={(e) => setOtherNames(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-gender">Gender</Label>
+                    <Select value={gender} onValueChange={setGender}>
+                      <SelectTrigger id="bio-gender"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <Label htmlFor="bio-dob">Date of birth ({DATE_FORMAT_HINT})</Label>
+                      <AgeDisplay dob={dateOfBirth} />
+                    </div>
+                    <DateInput
+                      id="bio-dob"
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                      max={format(new Date(), "yyyy-MM-dd")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-pob">Place of birth</Label>
+                    <Input id="bio-pob" value={placeOfBirth} onChange={(e) => setPlaceOfBirth(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-hometown">Hometown</Label>
+                    <Input id="bio-hometown" value={hometown} onChange={(e) => setHometown(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-region">Region of origin</Label>
+                    <OptionCombobox
+                      id="bio-region"
+                      value={regionOfOrigin}
+                      onChange={setRegionOfOrigin}
+                      options={optionsFor(bioOptionSets, "region_of_origin").map((o) => ({ value: o.value, label: o.label }))}
+                      placeholder="Search region…"
+                    />
+                  </div>
+                  <div>
+                    <Label>Ghana Card no.</Label>
+                    <GhanaCardInput value={ghanaCardNumber} onChange={setGhanaCardNumber} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-rank">Rank</Label>
+                    <Select value={rankId} onValueChange={setRankId}>
+                      <SelectTrigger id="bio-rank"><SelectValue placeholder="Select rank" /></SelectTrigger>
+                      <SelectContent>
+                        {ranks.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>{r.abbreviation} — {r.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-appointment-date">Date of appointment ({DATE_FORMAT_HINT})</Label>
+                    <DateInput
+                      id="bio-appointment-date"
+                      value={dateOfAppointment}
+                      onChange={(e) => setDateOfAppointment(e.target.value)}
+                      max={format(new Date(), "yyyy-MM-dd")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-cadet-intake">Cadet intake</Label>
+                    <Input id="bio-cadet-intake" value={cadetIntake} onChange={(e) => setCadetIntake(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-recruit-intake">Recruit intake</Label>
+                    <Input id="bio-recruit-intake" value={recruitIntake} onChange={(e) => setRecruitIntake(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-category">Category</Label>
+                    <Select value={staffCategory} onValueChange={setStaffCategory}>
+                      <SelectTrigger id="bio-category"><SelectValue placeholder="Select category" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cadet">Cadet</SelectItem>
+                        <SelectItem value="Recruit">Recruit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-intake">Intake (1–100)</Label>
+                    <Select value={intake} onValueChange={setIntake}>
+                      <SelectTrigger id="bio-intake"><SelectValue placeholder="Select intake" /></SelectTrigger>
+                      <SelectContent className="max-h-[260px]">
+                        {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>Intake {n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-joined">Date joined service ({DATE_FORMAT_HINT})</Label>
+                    <DateInput
+                      id="bio-joined"
+                      value={dateJoinedService}
+                      onChange={(e) => setDateJoinedService(e.target.value)}
+                      max={format(new Date(), "yyyy-MM-dd")}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-weapon">Weapon training</Label>
+                    <Select value={weaponTrained} onValueChange={(v) => { setWeaponTrained(v); if (v !== "yes") setWeaponTrainingDate(""); }}>
+                      <SelectTrigger id="bio-weapon"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-weapon-date">Weapon training date</Label>
+                    <DateInput
+                      id="bio-weapon-date"
+                      value={weaponTrainingDate}
+                      onChange={(e) => setWeaponTrainingDate(e.target.value)}
+                      disabled={weaponTrained !== "yes"}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-training-designation">Training designation</Label>
+                    <Select value={trainingDesignation} onValueChange={setTrainingDesignation}>
+                      <SelectTrigger id="bio-training-designation"><SelectValue placeholder="Select designation" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="HUHUNYA">HUHUNYA</SelectItem>
+                        <SelectItem value="ITTRAS">ITTRAS</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <AppointmentAndPortfolios
+                  appointment={currentAppointment}
+                  onAppointmentChange={setCurrentAppointment}
+                  portfolioIds={portfolioIds}
+                  onPortfolioIdsChange={setPortfolioIds}
                 />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Unit</Label>
-                <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" />
-              </div>
-              <div>
-                <Label>Shift Group</Label>
-                <Select value={shiftGroup} onValueChange={setShiftGroup}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">Shift A</SelectItem>
-                    <SelectItem value="B">Shift B</SelectItem>
-                    <SelectItem value="C">Shift C</SelectItem>
-                    <SelectItem value="D">Shift D</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <AppointmentAndPortfolios
-              appointment={currentAppointment}
-              onAppointmentChange={setCurrentAppointment}
-              portfolioIds={portfolioIds}
-              onPortfolioIdsChange={setPortfolioIds}
-            />
+                <BioDataCustomBlock section="B" />
+              </TabsContent>
+
+              {/* ── C. Residential & contact ────────────────────────────── */}
+              <TabsContent value="C" className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight">C. Residential &amp; contact information</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="bio-stay">Current place of stay</Label>
+                    <Input id="bio-stay" value={currentPlaceOfStay} onChange={(e) => setCurrentPlaceOfStay(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-res-address">Residential address</Label>
+                    <Input id="bio-res-address" value={residentialAddress} onChange={(e) => setResidentialAddress(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-digital-address">Digital address</Label>
+                    <Input id="bio-digital-address" value={digitalAddress} onChange={(e) => setDigitalAddress(e.target.value)} placeholder="e.g. GA-123-4567" />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-postal">Postal address</Label>
+                    <Input id="bio-postal" value={postalAddress} onChange={(e) => setPostalAddress(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-res-phone">Residential telephone</Label>
+                    <GhanaPhoneInput id="bio-res-phone" value={residentialPhone} onChange={setResidentialPhone} compact />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-mobile-1">Mobile no. 1 (primary)</Label>
+                    <GhanaPhoneInput id="bio-mobile-1" value={phone} onChange={setPhone} compact />
+                    <p className="text-[10px] text-muted-foreground mt-1">Auto-set from the primary contact below if added. MTN, Telecel or AirtelTigo, 10 digits.</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label>Mobile no. 2 and other contacts</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Add more numbers. Star one to mark it primary.</p>
+                    <MultiContactInput value={contacts} onChange={setContacts} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="bio-email">Email address</Label>
+                    <Input id="bio-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+                  </div>
+                </div>
+                <BioDataCustomBlock section="C" />
+              </TabsContent>
+
+              {/* ── D. Physical & personal profile ──────────────────────── */}
+              <TabsContent value="D" className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight">D. Physical &amp; personal profile</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="bio-height">Height (cm)</Label>
+                    <Input id="bio-height" type="number" min={100} max={250} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-blood">Blood group</Label>
+                    <Select value={bloodGroup} onValueChange={setBloodGroup}>
+                      <SelectTrigger id="bio-blood"><SelectValue placeholder="Select blood group" /></SelectTrigger>
+                      <SelectContent>
+                        {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
+                          <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-uniform">Uniform size</Label>
+                    <OptionCombobox
+                      id="bio-uniform"
+                      value={uniformSize}
+                      onChange={setUniformSize}
+                      options={
+                        optionsFor(bioOptionSets, "uniform_size").length
+                          ? optionsFor(bioOptionSets, "uniform_size").map((o) => ({ value: o.value, label: o.label }))
+                          : ["S", "M", "L", "XL", "XXL"].map((s) => ({ value: s, label: s }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-shoe">Shoe size</Label>
+                    <Input id="bio-shoe" value={shoeSize} onChange={(e) => setShoeSize(e.target.value)} placeholder="e.g. 42" />
+                  </div>
+                  <div>
+                    <Label htmlFor="bio-religion">Religion</Label>
+                    <OptionCombobox
+                      id="bio-religion"
+                      value={religion}
+                      onChange={setReligion}
+                      options={optionsFor(bioOptionSets, "religion").map((o) => ({ value: o.value, label: o.label }))}
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Hobbies / interests</Label>
+                    {hobbies.map((h, i) => (
+                      <Input
+                        key={i}
+                        aria-label={`Hobby ${i + 1}`}
+                        value={h}
+                        onChange={(e) => setHobbies(hobbies.map((v, j) => (j === i ? e.target.value : v)))}
+                      />
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Special skill(s)</Label>
+                    {specialSkills.map((sk, i) => (
+                      <Input
+                        key={i}
+                        aria-label={`Special skill ${i + 1}`}
+                        value={sk}
+                        onChange={(e) => setSpecialSkills(specialSkills.map((v, j) => (j === i ? e.target.value : v)))}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <BioDataCustomBlock section="D" />
+              </TabsContent>
+
+              {/* ── E to L ──────────────────────────────────────────────── */}
+              <BioDataSections
+                staffName={[lastName, firstName, otherNames].filter(Boolean).join(" ")}
+                staffIdText={staffId}
+                isNumber={isNumber}
+                previousLastPosition={previousLastPosition}
+                onPreviousLastPositionChange={setPreviousLastPosition}
+                previousReasonForLeaving={previousReasonForLeaving}
+                onPreviousReasonChange={setPreviousReasonForLeaving}
+                maritalStatus={maritalStatus}
+                onMaritalStatusChange={setMaritalStatus}
+                numberOfChildren={numberOfChildren}
+                onNumberOfChildrenChange={setNumberOfChildren}
+              />
+            </Tabs>
+
             <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full">
               {saveMutation.isPending ? (
                 <span className="flex items-center gap-2">
@@ -964,8 +1275,10 @@ export default function Staff() {
               ) : editing ? "Update Staff" : "Create Staff"}
             </Button>
           </div>
+          </BioDataProvider>
         </DialogContent>
       </Dialog>
+
       <BulkImportDialog open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
     </div>
   );

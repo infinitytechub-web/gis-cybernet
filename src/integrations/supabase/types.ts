@@ -1008,6 +1008,303 @@ export type Database = {
         }
         Relationships: []
       }
+      biodata_custom_columns: {
+        Row: {
+          column_type: string
+          created_at: string
+          id: string
+          label: string
+          option_set_id: string | null
+          required: boolean
+          sort_order: number
+          table_id: string
+          updated_at: string
+        }
+        Insert: {
+          column_type?: string
+          created_at?: string
+          id?: string
+          label: string
+          option_set_id?: string | null
+          required?: boolean
+          sort_order?: number
+          table_id: string
+          updated_at?: string
+        }
+        Update: {
+          column_type?: string
+          created_at?: string
+          id?: string
+          label?: string
+          option_set_id?: string | null
+          required?: boolean
+          sort_order?: number
+          table_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biodata_custom_columns_option_set_id_fkey"
+            columns: ["option_set_id"]
+            isOneToOne: false
+            referencedRelation: "biodata_option_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biodata_custom_columns_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "biodata_custom_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biodata_custom_fields: {
+        Row: {
+          active: boolean
+          created_at: string
+          field_type: string
+          id: string
+          label: string
+          option_set_id: string | null
+          required: boolean
+          section: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          field_type?: string
+          id?: string
+          label: string
+          option_set_id?: string | null
+          required?: boolean
+          section: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          field_type?: string
+          id?: string
+          label?: string
+          option_set_id?: string | null
+          required?: boolean
+          section?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biodata_custom_fields_option_set_id_fkey"
+            columns: ["option_set_id"]
+            isOneToOne: false
+            referencedRelation: "biodata_option_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biodata_custom_rows: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          sort_order: number
+          table_id: string
+          updated_at: string
+          values: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          sort_order?: number
+          table_id: string
+          updated_at?: string
+          values?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          sort_order?: number
+          table_id?: string
+          updated_at?: string
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biodata_custom_rows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biodata_custom_rows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biodata_custom_rows_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "biodata_custom_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biodata_custom_tables: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          section: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          section: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          section?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      biodata_custom_values: {
+        Row: {
+          created_at: string
+          field_id: string
+          id: string
+          profile_id: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_id: string
+          id?: string
+          profile_id: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_id?: string
+          id?: string
+          profile_id?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biodata_custom_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "biodata_custom_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biodata_custom_values_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biodata_custom_values_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      biodata_option_sets: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      biodata_options: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          set_id: string
+          sort_order: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          set_id: string
+          sort_order?: number
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          set_id?: string
+          sort_order?: number
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biodata_options_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "biodata_option_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       biometric_reminder_log: {
         Row: {
           channel: string
@@ -12040,31 +12337,57 @@ export type Database = {
         Row: {
           account_locked: boolean
           blood_group: string | null
+          cadet_intake: string | null
           created_at: string
           current_appointment: string | null
+          current_place_of_stay: string | null
           date_joined_service: string | null
+          date_of_appointment: string | null
           date_of_birth: string | null
           department_id: string | null
+          digital_address: string | null
           email: string | null
           first_name: string
+          form_completed_on: string | null
           gender: string | null
           ghana_card_number: string | null
+          height_cm: number | null
+          hobbies: string[] | null
+          hometown: string | null
           id: string
           intake: number | null
+          is_number: string | null
           last_name: string
           login_enabled: boolean
           marital_status: string | null
+          number_of_children: number | null
           office: string | null
           org_unit_id: string | null
+          other_names: string | null
           phone: string | null
           photo_url: string | null
+          place_of_birth: string | null
+          postal_address: string | null
+          previous_last_position: string | null
+          previous_reason_for_leaving: string | null
           rank_id: string | null
+          recruit_intake: string | null
+          region_of_origin: string | null
+          religion: string | null
+          residential_address: string | null
+          residential_phone: string | null
           retirement_age: number
+          sector_command: string | null
+          service_organization: string | null
           shift_group: string | null
+          shoe_size: string | null
+          special_skills: string[] | null
           staff_category: string | null
           staff_id: string
+          station_unit: string | null
           status: Database["public"]["Enums"]["staff_status"]
           training_designation: string | null
+          uniform_size: string | null
           unit: string | null
           updated_at: string
           user_id: string | null
@@ -12074,31 +12397,57 @@ export type Database = {
         Insert: {
           account_locked?: boolean
           blood_group?: string | null
+          cadet_intake?: string | null
           created_at?: string
           current_appointment?: string | null
+          current_place_of_stay?: string | null
           date_joined_service?: string | null
+          date_of_appointment?: string | null
           date_of_birth?: string | null
           department_id?: string | null
+          digital_address?: string | null
           email?: string | null
           first_name: string
+          form_completed_on?: string | null
           gender?: string | null
           ghana_card_number?: string | null
+          height_cm?: number | null
+          hobbies?: string[] | null
+          hometown?: string | null
           id?: string
           intake?: number | null
+          is_number?: string | null
           last_name: string
           login_enabled?: boolean
           marital_status?: string | null
+          number_of_children?: number | null
           office?: string | null
           org_unit_id?: string | null
+          other_names?: string | null
           phone?: string | null
           photo_url?: string | null
+          place_of_birth?: string | null
+          postal_address?: string | null
+          previous_last_position?: string | null
+          previous_reason_for_leaving?: string | null
           rank_id?: string | null
+          recruit_intake?: string | null
+          region_of_origin?: string | null
+          religion?: string | null
+          residential_address?: string | null
+          residential_phone?: string | null
           retirement_age?: number
+          sector_command?: string | null
+          service_organization?: string | null
           shift_group?: string | null
+          shoe_size?: string | null
+          special_skills?: string[] | null
           staff_category?: string | null
           staff_id: string
+          station_unit?: string | null
           status?: Database["public"]["Enums"]["staff_status"]
           training_designation?: string | null
+          uniform_size?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string | null
@@ -12108,31 +12457,57 @@ export type Database = {
         Update: {
           account_locked?: boolean
           blood_group?: string | null
+          cadet_intake?: string | null
           created_at?: string
           current_appointment?: string | null
+          current_place_of_stay?: string | null
           date_joined_service?: string | null
+          date_of_appointment?: string | null
           date_of_birth?: string | null
           department_id?: string | null
+          digital_address?: string | null
           email?: string | null
           first_name?: string
+          form_completed_on?: string | null
           gender?: string | null
           ghana_card_number?: string | null
+          height_cm?: number | null
+          hobbies?: string[] | null
+          hometown?: string | null
           id?: string
           intake?: number | null
+          is_number?: string | null
           last_name?: string
           login_enabled?: boolean
           marital_status?: string | null
+          number_of_children?: number | null
           office?: string | null
           org_unit_id?: string | null
+          other_names?: string | null
           phone?: string | null
           photo_url?: string | null
+          place_of_birth?: string | null
+          postal_address?: string | null
+          previous_last_position?: string | null
+          previous_reason_for_leaving?: string | null
           rank_id?: string | null
+          recruit_intake?: string | null
+          region_of_origin?: string | null
+          religion?: string | null
+          residential_address?: string | null
+          residential_phone?: string | null
           retirement_age?: number
+          sector_command?: string | null
+          service_organization?: string | null
           shift_group?: string | null
+          shoe_size?: string | null
+          special_skills?: string[] | null
           staff_category?: string | null
           staff_id?: string
+          station_unit?: string | null
           status?: Database["public"]["Enums"]["staff_status"]
           training_designation?: string | null
+          uniform_size?: string | null
           unit?: string | null
           updated_at?: string
           user_id?: string | null
@@ -14457,6 +14832,105 @@ export type Database = {
           },
         ]
       }
+      staff_bank_details: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          branch: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          branch?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          branch?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_bank_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_bank_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_biodata_verifications: {
+        Row: {
+          acted_by: string | null
+          created_at: string
+          id: string
+          kind: string
+          name: string | null
+          profile_id: string
+          rank_position: string | null
+          signature: string | null
+          signed_on: string | null
+          updated_at: string
+        }
+        Insert: {
+          acted_by?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          name?: string | null
+          profile_id: string
+          rank_position?: string | null
+          signature?: string | null
+          signed_on?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acted_by?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string | null
+          profile_id?: string
+          rank_position?: string | null
+          signature?: string | null
+          signed_on?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_biodata_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_biodata_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_bulk_upload_audit: {
         Row: {
           created_count: number
@@ -14622,6 +15096,231 @@ export type Database = {
           },
         ]
       }
+      staff_education: {
+        Row: {
+          created_at: string
+          from_date: string | null
+          id: string
+          institution: string
+          profile_id: string
+          qualification: string | null
+          sort_order: number
+          to_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_date?: string | null
+          id?: string
+          institution: string
+          profile_id: string
+          qualification?: string | null
+          sort_order?: number
+          to_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_date?: string | null
+          id?: string
+          institution?: string
+          profile_id?: string
+          qualification?: string | null
+          sort_order?: number
+          to_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_education_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_education_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_emergency_contacts: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          profile_id: string
+          relationship: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          profile_id: string
+          relationship?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          profile_id?: string
+          relationship?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_emergency_contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_emergency_contacts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_employment_history: {
+        Row: {
+          created_at: string
+          employer: string
+          from_date: string | null
+          id: string
+          position_held: string | null
+          profile_id: string
+          reason_for_leaving: string | null
+          sort_order: number
+          to_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employer: string
+          from_date?: string | null
+          id?: string
+          position_held?: string | null
+          profile_id: string
+          reason_for_leaving?: string | null
+          sort_order?: number
+          to_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employer?: string
+          from_date?: string | null
+          id?: string
+          position_held?: string | null
+          profile_id?: string
+          reason_for_leaving?: string | null
+          sort_order?: number
+          to_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_employment_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_employment_history_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_family_details: {
+        Row: {
+          created_at: string
+          father_name: string | null
+          father_phone: string | null
+          id: string
+          mother_name: string | null
+          mother_phone: string | null
+          nok_address: string | null
+          nok_name: string | null
+          nok_phone: string | null
+          nok_relationship: string | null
+          profile_id: string
+          spouse_address: string | null
+          spouse_name: string | null
+          spouse_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          father_name?: string | null
+          father_phone?: string | null
+          id?: string
+          mother_name?: string | null
+          mother_phone?: string | null
+          nok_address?: string | null
+          nok_name?: string | null
+          nok_phone?: string | null
+          nok_relationship?: string | null
+          profile_id: string
+          spouse_address?: string | null
+          spouse_name?: string | null
+          spouse_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          father_name?: string | null
+          father_phone?: string | null
+          id?: string
+          mother_name?: string | null
+          mother_phone?: string | null
+          nok_address?: string | null
+          nok_name?: string | null
+          nok_phone?: string | null
+          nok_relationship?: string | null
+          profile_id?: string
+          spouse_address?: string | null
+          spouse_name?: string | null
+          spouse_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_family_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_family_details_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_mapping_imports: {
         Row: {
           created_at: string
@@ -14657,6 +15356,48 @@ export type Database = {
           updated_count?: number
         }
         Relationships: []
+      }
+      staff_medical_welfare: {
+        Row: {
+          created_at: string
+          id: string
+          medical_conditions: string | null
+          profile_id: string
+          updated_at: string
+          welfare_notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          medical_conditions?: string | null
+          profile_id: string
+          updated_at?: string
+          welfare_notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          medical_conditions?: string | null
+          profile_id?: string
+          updated_at?: string
+          welfare_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_medical_welfare_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_medical_welfare_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_request_history: {
         Row: {
@@ -15801,6 +16542,13 @@ export type Database = {
         Returns: Json
       }
       auto_match_roster_entries: { Args: { _import_id: string }; Returns: Json }
+      biodata_can_edit: { Args: { _profile_id: string }; Returns: boolean }
+      biodata_can_view: { Args: { _profile_id: string }; Returns: boolean }
+      biodata_can_view_restricted: {
+        Args: { _kind: string; _profile_id: string }
+        Returns: boolean
+      }
+      biodata_is_admin: { Args: never; Returns: boolean }
       biometric_reminder_mark: {
         Args: { _detail?: string; _log_id: string; _ok: boolean }
         Returns: undefined
