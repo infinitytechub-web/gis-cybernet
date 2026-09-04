@@ -116,6 +116,38 @@ export default function Staff() {
   const [portfolioIds, setPortfolioIds] = useState<string[]>([]);
   const [initialPortfolioIds, setInitialPortfolioIds] = useState<string[]>([]);
 
+  // ── Bio-Data & Service Record fields (sections A–D, G, H) ───────────────
+  const [formCompletedOn, setFormCompletedOn] = useState("");
+  const [serviceOrganization, setServiceOrganization] = useState("");
+  const [sectorCommand, setSectorCommand] = useState("");
+  const [stationUnit, setStationUnit] = useState("");
+  const [isNumber, setIsNumber] = useState("");
+  const [otherNames, setOtherNames] = useState("");
+  const [placeOfBirth, setPlaceOfBirth] = useState("");
+  const [hometown, setHometown] = useState("");
+  const [regionOfOrigin, setRegionOfOrigin] = useState("");
+  const [dateOfAppointment, setDateOfAppointment] = useState("");
+  const [cadetIntake, setCadetIntake] = useState("");
+  const [recruitIntake, setRecruitIntake] = useState("");
+  const [currentPlaceOfStay, setCurrentPlaceOfStay] = useState("");
+  const [residentialAddress, setResidentialAddress] = useState("");
+  const [digitalAddress, setDigitalAddress] = useState("");
+  const [postalAddress, setPostalAddress] = useState("");
+  const [residentialPhone, setResidentialPhone] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [uniformSize, setUniformSize] = useState("");
+  const [shoeSize, setShoeSize] = useState("");
+  const [religion, setReligion] = useState("");
+  const [hobbies, setHobbies] = useState<string[]>(["", "", ""]);
+  const [specialSkills, setSpecialSkills] = useState<string[]>(["", "", ""]);
+  const [numberOfChildren, setNumberOfChildren] = useState("");
+  const [previousLastPosition, setPreviousLastPosition] = useState("");
+  const [previousReasonForLeaving, setPreviousReasonForLeaving] = useState("");
+  const [bioTab, setBioTab] = useState("A");
+  const biodataPersistRef = useRef<PersistFn | null>(null);
+  const { data: bioOptionSets } = useBioDataOptionSets();
+
+
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["staff"],
     queryFn: async () => {
