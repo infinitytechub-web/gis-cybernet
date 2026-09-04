@@ -14,30 +14,54 @@
  */
 
 export type OrgUnitType =
+  | "directorate"
   | "national"
+  | "management"
   | "regional"
+  | "command"
   | "sector"
+  | "department"
+  | "section"
   | "district"
   | "station"
-  | "unit";
+  | "unit"
+  | "control";
 
-/** Display order / depth ranking, highest authority first. */
+/**
+ * Display order / depth ranking, highest authority first. This is the exact
+ * establishment order:
+ *   Directorate (HQ) → Management Members → Regional Commands →
+ *   Commandant / Commanding Officer commands → Sector Commands →
+ *   Departments → Sections → Units → Controls.
+ */
 export const ORG_UNIT_TYPES: OrgUnitType[] = [
+  "directorate",
   "national",
+  "management",
   "regional",
+  "command",
   "sector",
   "district",
+  "department",
+  "section",
   "station",
   "unit",
+  "control",
 ];
 
 export const ORG_UNIT_TYPE_LABELS: Record<OrgUnitType, string> = {
+  directorate: "The Directorate (HQ)",
   national: "National Headquarters",
+  management: "Management Members",
   regional: "Regional Command",
+  command: "Commandant / Commanding Officer",
   sector: "Sector Command",
   district: "District Command",
+  department: "Department",
+  section: "Section",
   station: "Station",
   unit: "Unit",
+  control: "Control",
 };
 
 export interface OrgUnit {
