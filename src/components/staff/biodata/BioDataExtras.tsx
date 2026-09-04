@@ -566,15 +566,59 @@ export function BioDataSections({
           onChange={(rows) => set("employment", rows)}
           addLabel="Add employer"
         />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="bio-prev-position">Last position held at previous place of work</Label>
+            <Input
+              id="bio-prev-position"
+              value={previousLastPosition}
+              onChange={(e) => onPreviousLastPositionChange(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="bio-prev-reason">Reason for leaving previous place of work</Label>
+            <OptionCombobox
+              id="bio-prev-reason"
+              value={previousReasonForLeaving}
+              onChange={onPreviousReasonChange}
+              options={reasonOptions}
+            />
+          </div>
+        </div>
         <BioDataCustomBlock section="G" />
       </TabsContent>
 
       {/* ── H. Family & dependants ─────────────────────────────────────── */}
       <TabsContent value="H" className="space-y-5">
-        <SectionHeading letter="H" title="Family & dependant information" note="Marital status and number of children are in the personal sections." />
+        <SectionHeading letter="H" title="Family & dependant information" />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="bio-marital">Marital status</Label>
+            <Select value={maritalStatus} onValueChange={onMaritalStatusChange}>
+              <SelectTrigger id="bio-marital"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {["Single", "Married", "Divorced", "Widowed"].map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="bio-children">Number of children</Label>
+            <Input
+              id="bio-children"
+              type="number"
+              min={0}
+              value={numberOfChildren}
+              onChange={(e) => onNumberOfChildrenChange(e.target.value)}
+            />
+          </div>
+        </div>
 
         <div className="space-y-3">
           <h4 className="text-sm font-semibold">Spouse information</h4>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label htmlFor="bio-spouse-name">Name of spouse</Label>
