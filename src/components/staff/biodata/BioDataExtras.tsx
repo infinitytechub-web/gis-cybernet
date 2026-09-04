@@ -70,6 +70,14 @@ type Ctx = BioDataState & {
   setCustomValue: (fieldId: string, value: string) => void;
   setCustomRows: (tableId: string, rows: RowValue[]) => void;
   setVerification: (kind: VerificationKind, patch: Partial<Verification>) => void;
+  /** Fills sections F–I from an imported spreadsheet row (nothing saved yet). */
+  applyPrefill: (data: {
+    education?: RowValue[];
+    employment?: RowValue[];
+    emergency?: RowValue[];
+    family?: Partial<FamilyDetails>;
+    bank?: Partial<BankDetails>;
+  }) => void;
   canSeeMedical: boolean;
   canSeeBank: boolean;
   fields: BioCustomField[];
@@ -99,6 +107,30 @@ const EMPTY_STATE: BioDataState = {
   },
   customValues: {}, customRows: {},
 };
+
+/**
+ * Records a look at, or a change to, a restricted section (medical & welfare,
+ * bank / salary) in the append-only access log. Failures are swallowed on
+ * purpose: logging must never block the form.
+ */
+export async function logRestrictedAccess(
+  profileId: string,
+  section: "medical" | "bank",
+  action: "view" | "edit",
+  changedFields: string[] = [],
+) {
+  try {
+    await supabase.rpc("log_biodata_restricted_access", {
+      _profile_id: profileId,
+      _section: section,
+      _action: action,
+      _changed_fields: changedFields,
+      _user_agent: typeof navigator === "undefined" ? null : navigator.userAgent,
+    });
+  } catch {
+    /* logging is best-effort */
+  }
+}
 
 export type PersistFn = (profileId: string) => Promise<void>;
 
@@ -222,6 +254,10 @@ export function BioDataProvider({
         customValues: Object.fromEntries(((cv.data ?? []) as any[]).map((r) => [r.field_id, r.value ?? ""])),
         customRows,
       });
+
+      // Every look at a restricted section is recorded for the audit trail.
+      if (med.data) void logRestrictedAccess(profileId, "medical", "view");
+      if (bank.data) void logRestrictedAccess(profileId, "bank", "view");
     })();
 
     return () => { cancelled = true; };
@@ -288,6 +324,10 @@ export function BioDataProvider({
         .from("staff_medical_welfare")
         .upsert({ profile_id: targetProfileId, ...s.medical }, { onConflict: "profile_id" });
       if (error) throw error;
+      void logRestrictedAccess(
+        targetProfileId, "medical", "edit",
+        Object.entries(s.medical).filter(([, v]) => (v ?? "").trim()).map(([k]) => k),
+      );
     }
 
     if (canSeeBank && Object.values(s.bank).some((v) => (v ?? "").trim())) {
@@ -295,6 +335,10 @@ export function BioDataProvider({
         .from("staff_bank_details")
         .upsert({ profile_id: targetProfileId, ...s.bank }, { onConflict: "profile_id" });
       if (error) throw error;
+      void logRestrictedAccess(
+        targetProfileId, "bank", "edit",
+        Object.entries(s.bank).filter(([, v]) => (v ?? "").trim()).map(([k]) => k),
+      );
     }
 
     for (const kind of VERIFICATION_KINDS) {
@@ -352,6 +396,15 @@ export function BioDataProvider({
       setState((prev) => ({
         ...prev,
         verifications: { ...prev.verifications, [kind]: { ...prev.verifications[kind], ...patch } },
+      })),
+    applyPrefill: (data) =>
+      setState((prev) => ({
+        ...prev,
+        education: data.education?.length ? data.education : prev.education,
+        employment: data.employment?.length ? data.employment : prev.employment,
+        emergency: data.emergency?.length ? data.emergency : prev.emergency,
+        family: { ...prev.family, ...(data.family ?? {}) },
+        bank: { ...prev.bank, ...(data.bank ?? {}) },
       })),
     canSeeMedical, canSeeBank, fields, tables, optionSets, profileId,
   }), [state, canSeeMedical, canSeeBank, fields, tables, optionSets, profileId]);

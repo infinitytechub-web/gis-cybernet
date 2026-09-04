@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -44,12 +44,84 @@ import { flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  BioDataProvider, BioDataSections, BioDataCustomBlock, type PersistFn,
+  BioDataProvider, BioDataSections, BioDataCustomBlock, useBioData, type PersistFn,
 } from "@/components/staff/biodata/BioDataExtras";
 import { OptionCombobox } from "@/components/staff/biodata/OptionCombobox";
 import {
   BIODATA_SECTIONS, optionsFor, useBioDataOptionSets,
 } from "@/components/staff/biodata/useBioDataConfig";
+import { BioDataImportDialog } from "@/components/staff/biodata/BioDataImportDialog";
+import type { BioDataPrefillRow } from "@/lib/biodata-import";
+import { exportBioDataPdf } from "@/lib/biodata-pdf";
+
+/**
+ * Toolbar inside the Bio-Data dialog: prefill the form from a roster
+ * spreadsheet, and print the completed record as a PDF.
+ */
+function BioDataFormToolbar({
+  profileId,
+  onProfileValues,
+}: {
+  profileId: string | null;
+  onProfileValues: (values: Record<string, string>) => void;
+}) {
+  const { applyPrefill } = useBioData();
+  const [importOpen, setImportOpen] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const handleApply = (row: BioDataPrefillRow) => {
+    onProfileValues(row.values);
+    const v = row.values;
+    applyPrefill({
+      education: row.education,
+      employment: row.employment,
+      emergency: row.emergency,
+      family: {
+        spouse_name: v.spouse_name, spouse_phone: v.spouse_phone, spouse_address: v.spouse_address,
+        nok_name: v.nok_name, nok_relationship: v.nok_relationship,
+        nok_phone: v.nok_phone, nok_address: v.nok_address,
+        father_name: v.father_name, father_phone: v.father_phone,
+        mother_name: v.mother_name, mother_phone: v.mother_phone,
+      },
+      bank: { bank_name: v.bank_name, branch: v.bank_branch, account_number: v.bank_account },
+    });
+    toast.success("Details filled in — check each section, then save");
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <Button type="button" variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+        <Upload className="mr-1 h-4 w-4" aria-hidden="true" />
+        Prefill from spreadsheet
+      </Button>
+      {profileId && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={printing}
+          onClick={async () => {
+            setPrinting(true);
+            try {
+              await exportBioDataPdf(profileId);
+              toast.success("Bio-data record downloaded");
+            } catch (e: any) {
+              toast.error(e?.message || "Could not build the PDF");
+            } finally {
+              setPrinting(false);
+            }
+          }}
+        >
+          {printing
+            ? <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
+            : <Printer className="mr-1 h-4 w-4" aria-hidden="true" />}
+          Print record (PDF)
+        </Button>
+      )}
+      <BioDataImportDialog open={importOpen} onOpenChange={setImportOpen} onApply={handleApply} />
+    </div>
+  );
+}
 
 
 async function getPhotoUrl(path: string | null) {
@@ -181,6 +253,79 @@ export default function Staff() {
       return data;
     },
   });
+
+  /**
+   * Fills sections A–D from one spreadsheet row. Rank and department arrive as
+   * text, so they are matched against the existing lists; anything unmatched is
+   * left for the user to pick.
+   */
+  const applyPrefillValues = (v: Record<string, string>) => {
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const setIf = (setter: (val: string) => void, val?: string) => {
+      if (val && val.trim()) setter(val.trim());
+    };
+
+    setIf(setStaffId, v.staffId);
+    setIf(setIsNumber, v.isNumber);
+    setIf(setLastName, v.lastName);
+    setIf(setFirstName, v.firstName);
+    setIf(setOtherNames, v.otherNames);
+    if (v.gender) setGender(/^f/i.test(v.gender) ? "Female" : "Male");
+    setIf(setDateOfBirth, v.dateOfBirth);
+    setIf(setPlaceOfBirth, v.placeOfBirth);
+    setIf(setHometown, v.hometown);
+    setIf(setRegionOfOrigin, v.regionOfOrigin);
+    setIf(setGhanaCardNumber, v.ghanaCardNumber);
+    setIf(setDateOfAppointment, v.dateOfAppointment);
+    setIf(setDateJoinedService, v.dateJoinedService);
+    setIf(setCadetIntake, v.cadetIntake);
+    setIf(setRecruitIntake, v.recruitIntake);
+    setIf(setIntake, v.intake);
+    setIf(setServiceOrganization, v.serviceOrganization);
+    setIf(setSectorCommand, v.sectorCommand);
+    setIf(setStationUnit, v.stationUnit);
+    setIf(setUnit, v.unit);
+    setIf(setShiftGroup, v.shiftGroup?.toUpperCase());
+    setIf(setCurrentPlaceOfStay, v.currentPlaceOfStay);
+    setIf(setResidentialAddress, v.residentialAddress);
+    setIf(setDigitalAddress, v.digitalAddress);
+    setIf(setPostalAddress, v.postalAddress);
+    setIf(setResidentialPhone, v.residentialPhone);
+    setIf(setPhone, v.phone);
+    setIf(setEmail, v.email);
+    setIf(setHeightCm, v.heightCm);
+    setIf(setBloodGroup, v.bloodGroup?.toUpperCase());
+    setIf(setUniformSize, v.uniformSize?.toUpperCase());
+    setIf(setShoeSize, v.shoeSize);
+    setIf(setReligion, v.religion);
+    setIf(setNumberOfChildren, v.numberOfChildren);
+    setIf(setPreviousLastPosition, v.previousLastPosition);
+    setIf(setPreviousReasonForLeaving, v.previousReasonForLeaving);
+    if (v.maritalStatus) {
+      const m = ["Single", "Married", "Divorced", "Widowed"].find((x) => norm(x) === norm(v.maritalStatus));
+      if (m) setMaritalStatus(m);
+    }
+    if (v.hobby1) setHobbies([v.hobby1, "", ""]);
+    if (v.specialSkill1) setSpecialSkills([v.specialSkill1, "", ""]);
+    if (v.phone2) {
+      setContacts((prev) =>
+        prev.some((c) => c.value === v.phone2)
+          ? prev
+          : [...prev, { contact_type: "mobile", label: "Mobile no. 2", value: v.phone2, is_primary: false }],
+      );
+    }
+    if (v.rankName) {
+      const match = (ranks as any[]).find(
+        (r) => norm(r.name) === norm(v.rankName) || norm(r.abbreviation ?? "") === norm(v.rankName),
+      );
+      if (match) setRankId(match.id);
+    }
+    if (v.departmentName) {
+      const match = (departments as any[]).find((d) => norm(d.name) === norm(v.departmentName));
+      if (match) setDeptId(match.id);
+    }
+  };
+
 
   const openCreate = () => {
     setEditing(null);
@@ -873,6 +1018,11 @@ export default function Staff() {
               <p className="text-xs text-muted-foreground">Click to upload photo (max 5MB)</p>
             </div>
 
+            <BioDataFormToolbar
+              profileId={editing?.id ?? null}
+              onProfileValues={applyPrefillValues}
+            />
+
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
               <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
                 {BIODATA_SECTIONS.map((s) => (
@@ -902,7 +1052,14 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-station">Station / unit</Label>
-                    <Input id="bio-station" value={stationUnit} onChange={(e) => setStationUnit(e.target.value)} />
+                    <OptionCombobox
+                      id="bio-station"
+                      value={stationUnit}
+                      onChange={setStationUnit}
+                      options={optionsFor(bioOptionSets, "station").map((o) => ({ value: o.value, label: o.label }))}
+                      placeholder="Search station / command…"
+                      allowCustom
+                    />
                   </div>
                   <div>
                     <Label htmlFor="bio-staff-id">Staff ID</Label>
@@ -1185,14 +1342,17 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-blood">Blood group</Label>
-                    <Select value={bloodGroup} onValueChange={setBloodGroup}>
-                      <SelectTrigger id="bio-blood"><SelectValue placeholder="Select blood group" /></SelectTrigger>
-                      <SelectContent>
-                        {["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => (
-                          <SelectItem key={bg} value={bg}>{bg}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <OptionCombobox
+                      id="bio-blood"
+                      value={bloodGroup}
+                      onChange={setBloodGroup}
+                      options={
+                        optionsFor(bioOptionSets, "blood_group").length
+                          ? optionsFor(bioOptionSets, "blood_group").map((o) => ({ value: o.value, label: o.label }))
+                          : ["A+","A-","B+","B-","AB+","AB-","O+","O-"].map((bg) => ({ value: bg, label: bg }))
+                      }
+                      placeholder="Select blood group"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="bio-uniform">Uniform size</Label>

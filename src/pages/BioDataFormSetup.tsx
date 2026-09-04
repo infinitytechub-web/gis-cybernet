@@ -22,7 +22,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Loader2, ListPlus, Table2, SlidersHorizontal } from "lucide-react";
+import { Plus, Trash2, Loader2, ListPlus, Table2, SlidersHorizontal, ShieldAlert } from "lucide-react";
+import { RestrictedAccessAuditPanel } from "@/components/staff/biodata/RestrictedAccessAuditPanel";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import {
   BIODATA_SECTIONS, useBioDataCustomFields, useBioDataCustomTables, useBioDataOptionSets,
@@ -202,11 +203,18 @@ export default function BioDataFormSetup() {
       </div>
 
       <Tabs defaultValue="lists">
-        <TabsList>
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="lists"><ListPlus className="mr-1 h-4 w-4" aria-hidden="true" /> Dropdown lists</TabsTrigger>
           <TabsTrigger value="fields"><SlidersHorizontal className="mr-1 h-4 w-4" aria-hidden="true" /> Extra fields</TabsTrigger>
           <TabsTrigger value="tables"><Table2 className="mr-1 h-4 w-4" aria-hidden="true" /> Extra tables</TabsTrigger>
+          <TabsTrigger value="access"><ShieldAlert className="mr-1 h-4 w-4" aria-hidden="true" /> Restricted access trail</TabsTrigger>
         </TabsList>
+
+        {/* Who looked at, or changed, medical & welfare and bank / salary details */}
+        <TabsContent value="access" className="space-y-4">
+          <RestrictedAccessAuditPanel />
+        </TabsContent>
+
 
         {/* Dropdown lists */}
         <TabsContent value="lists" className="space-y-4">

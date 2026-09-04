@@ -21,6 +21,7 @@ export function OptionCombobox({
   disabled,
   id,
   className,
+  allowCustom = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -30,8 +31,11 @@ export function OptionCombobox({
   disabled?: boolean;
   id?: string;
   className?: string;
+  /** Lets the user keep a typed value that is not on the list. */
+  allowCustom?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selected = options.find((o) => o.value.toLowerCase() === (value ?? "").toLowerCase());
 
   return (
@@ -52,7 +56,7 @@ export function OptionCombobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[220px] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Type to search…" />
+          <CommandInput placeholder="Type to search…" value={query} onValueChange={setQuery} />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
@@ -69,6 +73,19 @@ export function OptionCombobox({
                   {o.label}
                 </CommandItem>
               ))}
+              {allowCustom && query.trim() && !options.some((o) => o.label.toLowerCase() === query.trim().toLowerCase()) && (
+                <CommandItem
+                  value={`__custom__${query}`}
+                  onSelect={() => {
+                    onChange(query.trim());
+                    setQuery("");
+                    setOpen(false);
+                  }}
+                >
+                  <Check className="mr-2 h-4 w-4 opacity-0" />
+                  Use “{query.trim()}”
+                </CommandItem>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>
