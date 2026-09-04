@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Users, Building2, Fuel,
+  MonitorDot, Siren, ShieldAlert, RefreshCw, Radio, ListFilter, Gauge, ExternalLink, Network, Inbox, LayoutDashboard, ShoppingCart, Footprints, CalendarClock, Clock, Users, Building2, Fuel,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import CommandInboxTab from "@/components/command/CommandInboxTab";
