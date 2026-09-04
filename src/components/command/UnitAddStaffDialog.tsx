@@ -26,6 +26,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Copy, KeyRound, Loader2, UserPlus } from "lucide-react";
 import { validateGhanaPhone } from "@/lib/ghana-phone";
+import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { isValidGhanaCard } from "@/components/shared/GhanaCardInput";
 import { extractEdgeFunctionError } from "@/lib/edge-function-error";
 import { orgUnitPath, type OrgUnit } from "@/lib/org-hierarchy";
@@ -259,7 +260,7 @@ export function UnitAddStaffDialog({
             </div>
             <div>
               <Label htmlFor="add-phone">Phone</Label>
-              <Input id="add-phone" placeholder="024xxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <GhanaPhoneInput id="add-phone" value={phone} onChange={setPhone} />
             </div>
             <div>
               <Label htmlFor="add-gender">Gender</Label>
