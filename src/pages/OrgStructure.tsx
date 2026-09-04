@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgScope } from "@/hooks/useOrgScope";
+import { OrgPositionsAdmin } from "@/components/org/OrgPositionsAdmin";
+import { QuickScroll } from "@/components/ui/quick-scroll";
 import {
   ORG_UNIT_TYPES,
   ORG_UNIT_TYPE_LABELS,
