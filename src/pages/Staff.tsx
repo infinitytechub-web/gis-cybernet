@@ -1039,7 +1039,7 @@ export default function Staff() {
                 className="hidden"
                 onChange={handlePhotoSelect}
               />
-              <p className="text-xs text-muted-foreground">Click to upload photo (max 5MB)</p>
+              <p className="text-xs text-muted-foreground">Click to upload photo (JPG, PNG or WEBP, under 3MB)</p>
             </div>
 
             <BioDataFormToolbar

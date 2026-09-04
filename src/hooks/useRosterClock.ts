@@ -16,8 +16,6 @@ import { toast } from "sonner";
 export type ClockAction = "check_in" | "check_out";
 
 export const ATTENDANCE_PHOTO_BUCKET = "attendance-photos";
-const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
-const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 /**
  * Photos must be under 3MB, really be a JPG/PNG/WEBP (magic bytes, not just the

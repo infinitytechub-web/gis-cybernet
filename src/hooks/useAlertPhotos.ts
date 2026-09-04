@@ -10,8 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { validatePhotoFile } from "@/lib/image-upload";
 
 export const INCIDENT_PHOTO_BUCKET = "command-incidents";
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export interface AlertPhoto {
   id: string;

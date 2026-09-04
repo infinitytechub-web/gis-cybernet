@@ -13,8 +13,6 @@ import { validatePhotoFile } from "@/lib/image-upload";
 import { useAuth } from "@/hooks/useAuth";
 
 export const PROCUREMENT_PHOTO_BUCKET = "procurement-photos";
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 /** Roles allowed to approve and receive — mirrors `can_manage_procurement()`. */
 export const STOREKEEPER_TIER = [

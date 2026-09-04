@@ -12,8 +12,6 @@ import { validatePhotoFile } from "@/lib/image-upload";
 import { useAuth } from "@/hooks/useAuth";
 
 export const PATROL_PHOTO_BUCKET = "patrol-photos";
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 export const PATROL_TYPES = [
   "routine",

@@ -581,7 +581,7 @@ export default function PatrolLogTab({
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="patrol-photos">Photos (JPEG, PNG or WebP, max 10 MB each)</Label>
+              <Label htmlFor="patrol-photos">Photos (JPEG, PNG or WebP, under 3MB each)</Label>
               <Input
                 id="patrol-photos"
                 type="file"
