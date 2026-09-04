@@ -16624,6 +16624,8 @@ export type Database = {
           verified_value: number
         }[]
       }
+      me_program_dashboard: { Args: { _program_id: string }; Returns: Json }
+      me_project_dashboard: { Args: { _project_id: string }; Returns: Json }
       me_project_health: { Args: { _project_id: string }; Returns: Json }
       me_recalculate_scores: { Args: { _period_id?: string }; Returns: number }
       me_submit_for_approval: {

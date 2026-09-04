@@ -99,6 +99,7 @@ export function FieldReportMap({
   const [byRegion, setByRegion] = useState<RegionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<Array<{ id: string; title: string; file_path: string | null; evidence_type: string | null }>>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -120,6 +121,27 @@ export function FieldReportMap({
   };
 
   useEffect(() => { void load(); }, [region]);
+
+  // Photos and documents attached to the selected report.
+  useEffect(() => {
+    if (!selectedId) { setAttachments([]); return; }
+    void (async () => {
+      const { data } = await db
+        .from("me_evidence")
+        .select("id,title,file_path,evidence_type")
+        .eq("related_type", "field_report")
+        .eq("related_id", selectedId)
+        .order("created_at", { ascending: false });
+      setAttachments(Array.isArray(data) ? data : []);
+    })();
+  }, [selectedId]);
+
+  const openAttachment = async (path: string | null, title: string) => {
+    if (!path) return;
+    const { data, error } = await supabase.storage.from("secure-uploads").createSignedUrl(path, 120);
+    if (error || !data?.signedUrl) { toast.error(`${title} could not be opened.`); return; }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
 
   const located = useMemo(
     () => reports.filter((report) => Number.isFinite(Number(report.latitude)) && Number.isFinite(Number(report.longitude))),
@@ -260,6 +282,20 @@ export function FieldReportMap({
                   <div><dt className="text-muted-foreground">Reported</dt><dd className="font-medium">{formatDate(selected.reported_at)}</dd></div>
                   <div><dt className="text-muted-foreground">Coordinates</dt><dd className="font-medium tabular-nums">{Number(selected.latitude).toFixed(4)}, {Number(selected.longitude).toFixed(4)}</dd></div>
                 </dl>
+                {attachments.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs font-medium">Attachments ({attachments.length})</p>
+                    <ul className="mt-1 space-y-1">
+                      {attachments.map((file) => (
+                        <li key={file.id}>
+                          <button type="button" onClick={() => void openAttachment(file.file_path, file.title)} className="w-full truncate rounded px-1 text-left text-xs text-primary underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-ring">
+                            {file.evidence_type === "photo" ? "Photo" : "Document"} · {file.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <a href={`/me/field-reports?record=${selected.id}`} className="mt-3 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline">Open full report</a>
               </div>
             )}
