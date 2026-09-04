@@ -40,7 +40,9 @@ import { AgeDisplay } from "@/components/ui/age-display";
 import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
-import { flattenOrgTree } from "@/lib/org-hierarchy";
+import { CommandPicker } from "@/components/org/CommandPicker";
+import { validatePhotoFile, uploadPhoto as uploadGuardedPhoto } from "@/lib/image-upload";
+import { descendantIds, flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -148,6 +150,12 @@ export default function Staff() {
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [maritalFilter, setMaritalFilter] = useState("all");
+  /** Hierarchy filter: a command node means "this command and everything below it". */
+  const [unitFilter, setUnitFilter] = useState<string | null>(null);
+  const unitScopeIds = useMemo(
+    () => (unitFilter ? new Set(descendantIds(orgUnits, unitFilter)) : null),
+    [unitFilter, orgUnits],
+  );
   const [sortField, setSortField] = useState<"name" | "rank" | "department" | "status">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -478,26 +486,32 @@ export default function Staff() {
     setDialogOpen(true);
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Photos are capped under 3MB, must really be a JPG/PNG/WEBP (magic bytes,
+   * not just the extension) and are virus/threat scanned before we accept them.
+   */
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Photo must be under 5MB");
+    const check = await validatePhotoFile(file);
+    if (!check.ok) {
+      toast.error(check.reason);
+      setPhotoFile(null);
       return;
     }
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoFile(check.file);
+    setPhotoPreview(URL.createObjectURL(check.file));
   };
 
   const uploadPhoto = async (profileId: string): Promise<string | null> => {
     if (!photoFile) return null;
-    const ext = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${profileId}.${ext}`;
-    const { error } = await supabase.storage
-      .from("staff-photos")
-      .upload(path, photoFile, { upsert: true });
-    if (error) throw error;
-    return path;
+    return uploadGuardedPhoto({
+      file: photoFile,
+      bucket: "staff-photos",
+      pathBase: profileId,
+      upsert: true,
+    });
   };
 
   const syncContacts = async (profileId: string, list: ContactEntry[]) => {
@@ -698,7 +712,9 @@ export default function Staff() {
       const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
       const matchesMarital = maritalFilter === "all" || (s.marital_status ?? "") === maritalFilter;
-      return matchesSearch && matchesRank && matchesDept && matchesStatus && matchesMarital;
+      const matchesUnit =
+        !unitScopeIds || (!!s.org_unit_id && unitScopeIds.has(s.org_unit_id));
+      return matchesSearch && matchesRank && matchesDept && matchesStatus && matchesMarital && matchesUnit;
     });
 
     list.sort((a, b) => {
@@ -712,7 +728,7 @@ export default function Staff() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, sortField, sortDir]);
+  }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, unitScopeIds, sortField, sortDir]);
 
   const bulk = useBulkSelection(filtered);
 
@@ -790,6 +806,14 @@ export default function Staff() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search by name, ID, unit, or marital status..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="w-full sm:w-[220px]">
+          <CommandPicker
+            units={orgUnits}
+            value={unitFilter}
+            onChange={setUnitFilter}
+            placeholder="All commands"
+          />
         </div>
         <Select value={rankFilter} onValueChange={setRankFilter}>
           <SelectTrigger className="w-full sm:w-[150px]">
