@@ -412,6 +412,13 @@ export default function OrgStructure() {
         </CardContent>
       </Card>
 
+      {/* Appointments register: who holds which position, and what is vacant. */}
+      <OrgPositionsAdmin />
+
+      <QuickScroll label="command structure page" position="fixed" />
+
+
+
       {/* Create / edit command */}
       <Dialog open={unitDialogOpen} onOpenChange={setUnitDialogOpen}>
         <DialogContent>
