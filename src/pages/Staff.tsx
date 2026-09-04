@@ -43,7 +43,6 @@ import { useOrgScope } from "@/hooks/useOrgScope";
 import { flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   BioDataProvider, BioDataSections, BioDataCustomBlock, type PersistFn,
 } from "@/components/staff/biodata/BioDataExtras";
