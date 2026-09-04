@@ -260,6 +260,8 @@ function App() {
 
           <Route path="/role-assignments" element={<ProtectedRoute module="role-assignments"><Layout><RoleAssignmentsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/staff-mapping-import" element={<ProtectedRoute module="staff-mapping-import"><Layout><StaffMappingImport /></Layout></ProtectedRoute>} />
+          <Route path="/biodata-form-setup" element={<ProtectedRoute module="biodata-form-setup"><Layout><BioDataFormSetup /></Layout></ProtectedRoute>} />
+
           <Route path="/my-portal" element={<ProtectedRoute module="my-portal"><Layout><StaffPortal /></Layout></ProtectedRoute>} />
           <Route path="/audit-log" element={<ProtectedRoute module="audit-log"><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
           <Route path="/rum-analytics" element={<ProtectedRoute module="rum-analytics"><Layout><RumAnalytics /></Layout></ProtectedRoute>} />
