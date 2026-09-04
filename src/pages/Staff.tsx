@@ -41,6 +41,7 @@ import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { CommandPicker } from "@/components/org/CommandPicker";
+import { QuickScroll } from "@/components/ui/quick-scroll";
 import { validatePhotoFile, uploadPhoto as uploadGuardedPhoto } from "@/lib/image-upload";
 import { descendantIds, flattenOrgTree } from "@/lib/org-hierarchy";
 import UnitStaffPickerDialog from "@/components/command/UnitStaffPickerDialog";
@@ -144,6 +145,8 @@ export default function Staff() {
     [orgUnits, orgScope, isAdminOrSupervisor],
   );
   const [assignUnitOpen, setAssignUnitOpen] = useState(false);
+  /** Scroll container for the long A–L bio-data form, used by Quick Scroll. */
+  const bioDialogRef = useRef<HTMLDivElement>(null);
 
   const [search, setSearch] = useState("");
   const [rankFilter, setRankFilter] = useState("all");
@@ -1006,7 +1009,11 @@ export default function Staff() {
         after the record through the shared persist function.
       */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent
+          ref={bioDialogRef}
+          className="relative max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden"
+        >
+          <QuickScroll containerRef={bioDialogRef} label="bio-data form" threshold={200} />
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
