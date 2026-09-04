@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgScope } from "@/hooks/useOrgScope";
 import { OrgPositionsAdmin } from "@/components/org/OrgPositionsAdmin";
-import { QuickScroll } from "@/components/ui/quick-scroll";
 import {
   ORG_UNIT_TYPES,
   ORG_UNIT_TYPE_LABELS,
@@ -417,7 +416,6 @@ export default function OrgStructure() {
       {/* Appointments register: who holds which position, and what is vacant. */}
       <OrgPositionsAdmin />
 
-      <QuickScroll label="command structure page" position="fixed" />
 
 
 

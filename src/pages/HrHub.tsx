@@ -22,7 +22,6 @@ import { EstablishmentBrowser } from "@/components/hr/EstablishmentBrowser";
 import { BioDataCompletenessPanel } from "@/components/hr/BioDataCompletenessPanel";
 import { LeaveBalanceDashboard } from "@/components/leave/LeaveBalanceDashboard";
 import { LeaveUsageDashboard } from "@/components/leave/LeaveUsageDashboard";
-import { QuickScroll } from "@/components/ui/quick-scroll";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -172,7 +171,6 @@ export default function HrHub() {
         </TabsContent>
       </Tabs>
 
-      <QuickScroll label="HR page" position="fixed" />
     </div>
   );
 }
