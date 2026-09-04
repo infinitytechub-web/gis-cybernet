@@ -17360,6 +17360,20 @@ export type Database = {
           unit: string
         }[]
       }
+      leave_usage_by_location: {
+        Args: { _year?: number }
+        Returns: {
+          approved_days: number
+          latitude: number
+          leave_type: string
+          longitude: number
+          pending_days: number
+          region_name: string
+          request_count: number
+          staff_count: number
+          station_name: string
+        }[]
+      }
       list_medical_inventory_audit: {
         Args: {
           p_action?: string

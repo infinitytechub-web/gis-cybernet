@@ -3,6 +3,7 @@ import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { LeaveAdminDashboard } from "@/components/leave/LeaveAdminDashboard";
 import { LeaveBalanceDashboard } from "@/components/leave/LeaveBalanceDashboard";
+import { LeaveUsageDashboard } from "@/components/leave/LeaveUsageDashboard";
 
 export default function LeaveRequests() {
   const { isAdminOrSupervisor } = useAuth();
@@ -17,6 +18,10 @@ export default function LeaveRequests() {
 
       {/* Balance dashboard — own balance for staff, whole command for the command tier */}
       <LeaveBalanceDashboard />
+
+      {/* Approved days rolled up by region, station and leave type */}
+      <LeaveUsageDashboard />
+
 
       {/* Command tier (admin / OIC / 2IC / Staff Officer / Supervisor): dashboard + queue */}
       {isAdminOrSupervisor && (
