@@ -92,7 +92,14 @@ export default function CommandStaffMappingTab() {
       const key = label(r.station_name ?? r.org_unit_name);
       const existing = map.get(key);
       if (existing) existing.count += 1;
-      else map.set(key, { key, name: key, latitude: Number(r.latitude), longitude: Number(r.longitude), count: 1 } as MapCluster);
+      else map.set(key, {
+        key,
+        label: key,
+        region: label(r.region_name),
+        latitude: Number(r.latitude),
+        longitude: Number(r.longitude),
+        count: 1,
+      });
     });
     return Array.from(map.values());
   }, [filtered]);
@@ -162,7 +169,12 @@ export default function CommandStaffMappingTab() {
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3"><CardTitle className="text-base">Where my staff are</CardTitle></CardHeader>
           <CardContent>
-            <StaffMappingMap clusters={clusters} />
+            <StaffMappingMap
+              clusters={clusters}
+              selectedKey={station === ALL ? null : station}
+              onSelect={(key) => setStation(key ?? ALL)}
+              unlocatedCount={filtered.filter((r) => r.latitude == null || r.longitude == null).length}
+            />
           </CardContent>
         </Card>
         <Card>

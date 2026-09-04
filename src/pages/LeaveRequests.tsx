@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { LeaveAdminDashboard } from "@/components/leave/LeaveAdminDashboard";
+import { LeaveBalanceDashboard } from "@/components/leave/LeaveBalanceDashboard";
 
 export default function LeaveRequests() {
   const { isAdminOrSupervisor } = useAuth();
@@ -13,6 +14,9 @@ export default function LeaveRequests() {
       {/* Staff: submit form + own history */}
       <LeaveRequestForm />
       <MyLeaveHistory />
+
+      {/* Balance dashboard — own balance for staff, whole command for the command tier */}
+      <LeaveBalanceDashboard />
 
       {/* Command tier (admin / OIC / 2IC / Staff Officer / Supervisor): dashboard + queue */}
       {isAdminOrSupervisor && (
