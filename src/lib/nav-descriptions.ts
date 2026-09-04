@@ -19,6 +19,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/attendance": "Daily attendance marks, late/absent tracking and corrections.",
   "/shifts": "Office shift definitions and working windows.",
   "/roster": "Build and publish the duty roster by shift group.",
+  "/staff-mapping": "See where every staff member is posted, by region, station and rank.",
   "/guard-schedule": "Guard duty schedule builder with export and publishing.",
   "/leave": "Apply for leave or pass and follow approval progress.",
   "/holidays": "Public and station holidays used in scheduling.",

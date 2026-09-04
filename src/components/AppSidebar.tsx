@@ -46,6 +46,7 @@ const commandItems = [
 const personnelItems = [
   { title: "Staff / Employees", url: "/staff", icon: Users, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Staff Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400" },
+  { title: "Staff Mapping", url: "/staff-mapping", icon: MapPinned, iconColor: "text-cyan-700 dark:text-cyan-300" },
   { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400" },
   { title: "Roles / Designations", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
 ];

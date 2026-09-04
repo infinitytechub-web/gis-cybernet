@@ -97,6 +97,7 @@ export const MODULES: ModuleDef[] = [
   { key: "shifts", label: "Office Shifts", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/shifts"] },
   { key: "roster", label: "Duty Roster", feature: "Duty Roster", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/roster"] },
   { key: "guard-schedule", label: "Guard Schedule", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/guard-schedule"] },
+  { key: "staff-mapping", label: "Staff Mapping", feature: "Staff Mapping", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/staff-mapping"] },
   { key: "postings", label: "Postings & Transfers", feature: "Postings & Transfers", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/postings", "/postings/history"] },
   { key: "compliance", label: "Compliance", feature: "Compliance", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/compliance"] },
   { key: "appraisal-coverage", label: "Appraisal Coverage Report", tier: "command", roles: COMMAND, paths: ["/appraisals/coverage"] },

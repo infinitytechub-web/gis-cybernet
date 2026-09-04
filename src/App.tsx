@@ -39,6 +39,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Staff = lazy(() => import("./pages/Staff"));
 const StaffProfile = lazy(() => import("./pages/StaffProfile"));
+const StaffMapping = lazy(() => import("./pages/StaffMapping"));
 const StaffDirectory = lazy(() => import("./pages/StaffDirectory"));
 const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
@@ -192,6 +193,7 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute module="dashboard"><Layout><Dashboard /></Layout></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute module="staff"><Layout><Staff /></Layout></ProtectedRoute>} />
           <Route path="/staff/:id" element={<ProtectedRoute module="staff"><Layout><StaffProfile /></Layout></ProtectedRoute>} />
+          <Route path="/staff-mapping" element={<ProtectedRoute module="staff-mapping"><Layout><StaffMapping /></Layout></ProtectedRoute>} />
           <Route path="/directory" element={<ProtectedRoute module="staff-directory"><Layout><StaffDirectory /></Layout></ProtectedRoute>} />
           <Route path="/departments" element={<ProtectedRoute module="departments"><Layout><Departments /></Layout></ProtectedRoute>} />
 

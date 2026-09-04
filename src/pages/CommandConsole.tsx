@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OnDutyNowPanel } from "@/components/roster/OnDutyNowPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -301,6 +302,9 @@ export default function CommandConsole() {
             <TabsTrigger value="roster">
               <Users className="mr-1 h-4 w-4" aria-hidden="true" />Staff roster
             </TabsTrigger>
+            <TabsTrigger value="on-duty">
+              <Clock className="mr-1 h-4 w-4" aria-hidden="true" />On duty now
+            </TabsTrigger>
             <TabsTrigger value="units">
               <Building2 className="mr-1 h-4 w-4" aria-hidden="true" />Unit roster
             </TabsTrigger>
@@ -321,6 +325,11 @@ export default function CommandConsole() {
           <CommandDashboardTab
             branchName={branch === "all" ? undefined : orgUnitPath(units, branch) || undefined}
           />
+        </TabsContent>
+
+        {/* ── Live duty schedule ───────────────────────────────────────── */}
+        <TabsContent value="on-duty" className="mt-4">
+          <OnDutyNowPanel />
         </TabsContent>
 
         {/* ── Cyber incidents ──────────────────────────────────────────── */}
