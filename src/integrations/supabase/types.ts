@@ -10553,6 +10553,8 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           parent_id: string | null
           type: Database["public"]["Enums"]["org_unit_type"]
@@ -10563,6 +10565,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           parent_id?: string | null
           type: Database["public"]["Enums"]["org_unit_type"]
@@ -10573,6 +10577,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           parent_id?: string | null
           type?: Database["public"]["Enums"]["org_unit_type"]
@@ -16828,6 +16834,26 @@ export type Database = {
         }[]
       }
       detention_norm: { Args: { _t: string }; Returns: string }
+      duty_roster_live: {
+        Args: { _date?: string; _group?: string }
+        Returns: {
+          attendance_status: string
+          check_in: string
+          check_out: string
+          department_name: string
+          full_name: string
+          on_duty: boolean
+          org_unit_name: string
+          photo_url: string
+          profile_id: string
+          rank_abbr: string
+          rank_name: string
+          shift_group: string
+          staff_id: string
+          status: string
+          unit: string
+        }[]
+      }
       email_queue_dispatch: { Args: never; Returns: undefined }
       empty_recycle_bin: { Args: never; Returns: Json }
       enqueue_email: {
@@ -17931,6 +17957,28 @@ export type Database = {
           _table: string
         }
         Returns: string
+      }
+      staff_mapping_rows: {
+        Args: never
+        Returns: {
+          department_name: string
+          full_name: string
+          latitude: number
+          longitude: number
+          org_unit_id: string
+          org_unit_name: string
+          photo_url: string
+          profile_id: string
+          rank_abbr: string
+          rank_name: string
+          region_name: string
+          sector_name: string
+          shift_group: string
+          staff_id: string
+          station_name: string
+          status: string
+          unit: string
+        }[]
       }
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       tag_appraisal_audit_batch: {

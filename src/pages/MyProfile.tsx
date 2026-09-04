@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCog, Save, Lock, RefreshCw } from "lucide-react";
+import { UserCog, Save, Lock, RefreshCw, FileDown, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
@@ -26,7 +26,44 @@ import MyTrustedDevices from "@/components/settings/MyTrustedDevices";
 const EDITABLE_FIELDS = [
   "first_name", "last_name", "gender", "date_of_birth", "marital_status", "phone", "email", "ghana_card_number",
   "blood_group", "office", "training_designation", "staff_category", "photo_url",
+  // Bio-data self-service (sections B–D and G of the personnel form)
+  "other_names", "place_of_birth", "hometown", "region_of_origin",
+  "current_place_of_stay", "residential_address", "digital_address", "postal_address",
+  "residential_phone", "height_cm", "uniform_size", "shoe_size", "religion",
+  "hobbies", "special_skills", "number_of_children",
+  "previous_last_position", "previous_reason_for_leaving",
 ] as const;
+
+/** Bio-data fields rendered in the self-service section, in form order. */
+const BIODATA_FIELDS: Array<{ key: EditableKey; label: string; wide?: boolean; multiline?: boolean }> = [
+  { key: "other_names", label: "Other name(s)" },
+  { key: "place_of_birth", label: "Place of birth" },
+  { key: "hometown", label: "Hometown" },
+  { key: "region_of_origin", label: "Region of origin" },
+  { key: "current_place_of_stay", label: "Current place of stay" },
+  { key: "digital_address", label: "Digital address (GhanaPost GPS)" },
+  { key: "residential_address", label: "Residential address", wide: true },
+  { key: "postal_address", label: "Postal address", wide: true },
+  { key: "residential_phone", label: "Residential telephone" },
+  { key: "height_cm", label: "Height (cm)" },
+  { key: "uniform_size", label: "Uniform size (S–XXL)" },
+  { key: "shoe_size", label: "Shoe size" },
+  { key: "religion", label: "Religion" },
+  { key: "number_of_children", label: "Number of children" },
+  { key: "hobbies", label: "Hobbies / interests", wide: true, multiline: true },
+  { key: "special_skills", label: "Special skill(s)", wide: true, multiline: true },
+  { key: "previous_last_position", label: "Last position at previous employer", wide: true },
+  { key: "previous_reason_for_leaving", label: "Reason for leaving previous employer", wide: true },
+];
+
+/** Restricted sections: staff may request a change, admins must approve it. */
+const RESTRICTED_FIELDS: Array<{ key: string; label: string; multiline?: boolean }> = [
+  { key: "medical.medical_conditions", label: "Medical condition(s) / allergy(ies)", multiline: true },
+  { key: "medical.welfare_notes", label: "Additional medical / welfare notes", multiline: true },
+  { key: "bank.bank_name", label: "Bank name" },
+  { key: "bank.branch", label: "Branch" },
+  { key: "bank.account_number", label: "Account number" },
+];
 
 type EditableKey = typeof EDITABLE_FIELDS[number];
 
@@ -46,7 +83,14 @@ export default function MyProfile() {
     first_name: "", last_name: "", gender: "", date_of_birth: "", marital_status: "", phone: "", email: "",
     ghana_card_number: "", blood_group: "", office: "", training_designation: "",
     staff_category: "", photo_url: "",
+    other_names: "", place_of_birth: "", hometown: "", region_of_origin: "",
+    current_place_of_stay: "", residential_address: "", digital_address: "", postal_address: "",
+    residential_phone: "", height_cm: "", uniform_size: "", shoe_size: "", religion: "",
+    hobbies: "", special_skills: "", number_of_children: "",
+    previous_last_position: "", previous_reason_for_leaving: "",
   });
+  const [restricted, setRestricted] = useState<Record<string, string>>({});
+  const [downloading, setDownloading] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["my-profile-self-edit", user?.id],
@@ -178,6 +222,72 @@ export default function MyProfile() {
     onError: (e: any) => toast.error(e.message ?? "Failed to cancel"),
   });
 
+  // Restricted sections (medical / welfare and bank) — read where policy allows.
+  const { data: restrictedCurrent } = useQuery({
+    queryKey: ["my-profile-restricted", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const [med, bank] = await Promise.all([
+        (supabase as any).from("staff_medical_welfare").select("medical_conditions, welfare_notes").eq("profile_id", profile.id).maybeSingle(),
+        (supabase as any).from("staff_bank_details").select("bank_name, branch, account_number").eq("profile_id", profile.id).maybeSingle(),
+      ]);
+      return {
+        "medical.medical_conditions": med.data?.medical_conditions ?? "",
+        "medical.welfare_notes": med.data?.welfare_notes ?? "",
+        "bank.bank_name": bank.data?.bank_name ?? "",
+        "bank.branch": bank.data?.branch ?? "",
+        "bank.account_number": bank.data?.account_number ?? "",
+      } as Record<string, string>;
+    },
+  });
+
+  useEffect(() => {
+    if (restrictedCurrent) setRestricted(restrictedCurrent);
+  }, [restrictedCurrent]);
+
+  const submitRestricted = useMutation({
+    mutationFn: async () => {
+      if (!profile?.id || !user) throw new Error("Profile not loaded");
+      const requested: Record<string, string | null> = {};
+      const previous: Record<string, string | null> = {};
+      RESTRICTED_FIELDS.forEach((field) => {
+        const next = (restricted[field.key] ?? "").trim();
+        const curr = (restrictedCurrent?.[field.key] ?? "").trim();
+        if (next !== curr) {
+          requested[field.key] = next === "" ? null : next;
+          previous[field.key] = curr === "" ? null : curr;
+        }
+      });
+      if (Object.keys(requested).length === 0) throw new Error("No restricted changes to submit");
+      const { error } = await supabase.from("profile_change_requests").insert({
+        profile_id: profile.id,
+        user_id: user.id,
+        requested_changes: requested,
+        previous_values: previous,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Restricted change request submitted — an administrator must approve it.");
+      qc.invalidateQueries({ queryKey: ["my-profile-change-requests"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed to submit restricted request"),
+  });
+
+  const downloadRecord = async () => {
+    if (!profile?.id) return;
+    setDownloading(true);
+    try {
+      const { exportBioDataPdf } = await import("@/lib/biodata-pdf");
+      await exportBioDataPdf(profile.id);
+      toast.success("Your bio-data record has been downloaded.");
+    } catch (error: any) {
+      toast.error(error?.message ?? "Could not build your bio-data record.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (isLoading) return <div className="text-sm text-muted-foreground p-6">Loading your profile…</div>;
   if (!profile) return <div className="text-sm text-muted-foreground p-6">Profile not found.</div>;
 
@@ -196,6 +306,11 @@ export default function MyProfile() {
         icon={UserCog}
         title="My Profile"
         subtitle="Submit profile changes for review. Edits take effect after Command / Admin approval."
+        actions={
+          <Button variant="secondary" onClick={() => void downloadRecord()} disabled={downloading} className="gap-1">
+            <FileDown className="h-4 w-4" /> {downloading ? "Preparing…" : "My bio-data record (PDF)"}
+          </Button>
+        }
       />
 
       <Card className="border-l-4 border-l-amber-500">
@@ -273,6 +388,57 @@ export default function MyProfile() {
             </Button>
             {dirty && <span className="text-xs text-amber-600 self-center">Unsaved changes</span>}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Bio-data details</CardTitle>
+          <CardDescription className="text-xs">
+            Your personal, residential and physical profile details from the personnel bio-data form. Changes are submitted with the button above.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            {BIODATA_FIELDS.map((field) => (
+              <div key={field.key} className={field.wide ? "md:col-span-2" : undefined}>
+                <Label htmlFor={`bio-${field.key}`}>{field.label}</Label>
+                <Input
+                  id={`bio-${field.key}`}
+                  value={form[field.key] ?? ""}
+                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-l-4 border-l-red-600">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ShieldAlert className="h-4 w-4 text-red-600" /> Restricted sections — medical / welfare and bank
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Confidential. You may request a change here, but only an administrator can approve it, and every approved change is written to the restricted-access audit log.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
+            {RESTRICTED_FIELDS.map((field) => (
+              <div key={field.key} className={field.multiline ? "md:col-span-2" : undefined}>
+                <Label htmlFor={`res-${field.key}`}>{field.label}</Label>
+                <Input
+                  id={`res-${field.key}`}
+                  value={restricted[field.key] ?? ""}
+                  onChange={(e) => setRestricted({ ...restricted, [field.key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+          <Button onClick={() => submitRestricted.mutate()} disabled={submitRestricted.isPending} className="gap-1">
+            <Save className="h-4 w-4" /> {submitRestricted.isPending ? "Submitting…" : "Request restricted change"}
+          </Button>
         </CardContent>
       </Card>
 
