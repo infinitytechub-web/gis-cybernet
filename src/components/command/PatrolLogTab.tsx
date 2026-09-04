@@ -143,9 +143,9 @@ export default function PatrolLogTab({
     setFormOpen(true);
   }
 
-  function pickFiles(list: FileList | null) {
+  async function pickFiles(list: FileList | null) {
     const next = Array.from(list ?? []);
-    const bad = next.map(validatePatrolPhoto).find(Boolean);
+    const bad = (await Promise.all(next.map(validatePatrolPhoto))).find(Boolean);
     if (bad) {
       toast.error(bad);
       return;

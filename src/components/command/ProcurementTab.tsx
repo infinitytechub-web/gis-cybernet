@@ -580,9 +580,9 @@ function RaiseRequestDialog({
             <Label htmlFor="pr-photos">Photos (optional)</Label>
             <Input
               id="pr-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple
-              onChange={(e) => {
+              onChange={async (e) => {
                 const files = Array.from(e.target.files ?? []);
-                const bad = files.map(validateProcurementPhoto).find(Boolean);
+                const bad = (await Promise.all(files.map(validateProcurementPhoto))).find(Boolean);
                 if (bad) { toast.error(bad); return; }
                 setPhotos(files);
               }}
@@ -707,9 +707,9 @@ function RequestDetailDialog({
                   <Input
                     id="pr-receipt-photos" type="file" multiple
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const files = Array.from(e.target.files ?? []);
-                      const bad = files.map(validateProcurementPhoto).find(Boolean);
+                      const bad = (await Promise.all(files.map(validateProcurementPhoto))).find(Boolean);
                       if (bad) { toast.error(bad); return; }
                       setReceiptPhotos(files);
                     }}
@@ -846,7 +846,7 @@ function PhotoSection({ requisitionId, canManage }: { requisitionId: string; can
         onChange={async (e) => {
           const files = Array.from(e.target.files ?? []);
           if (files.length === 0) return;
-          const bad = files.map(validateProcurementPhoto).find(Boolean);
+          const bad = (await Promise.all(files.map(validateProcurementPhoto))).find(Boolean);
           if (bad) { toast.error(bad); return; }
           try {
             await upload.mutateAsync({ requisitionId, files });

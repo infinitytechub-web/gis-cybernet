@@ -71,7 +71,7 @@ export function useUploadAlertPhotos() {
 
       let uploaded = 0;
       for (const file of files) {
-        const problem = validatePhoto(file);
+        const problem = await validatePhoto(file);
         if (problem) throw new Error(problem);
 
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";

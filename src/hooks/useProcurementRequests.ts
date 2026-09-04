@@ -388,7 +388,7 @@ async function uploadProcurementPhotos(
   uploaderId: string,
 ) {
   for (const file of files) {
-    const problem = validateProcurementPhoto(file);
+    const problem = await validateProcurementPhoto(file);
     if (problem) throw new Error(problem);
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${requisitionId}/${kind}-${crypto.randomUUID()}.${ext}`;

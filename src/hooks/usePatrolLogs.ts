@@ -129,7 +129,7 @@ export async function validatePatrolPhoto(file: File): Promise<string | null> {
 
 async function uploadPatrolPhotos(patrolLogId: string, files: File[], uploaderId: string) {
   for (const file of files) {
-    const problem = validatePatrolPhoto(file);
+    const problem = await validatePatrolPhoto(file);
     if (problem) throw new Error(problem);
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${patrolLogId}/${crypto.randomUUID()}.${ext}`;
