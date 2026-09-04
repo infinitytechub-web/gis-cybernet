@@ -446,10 +446,27 @@ export function BioDataSections({
   staffName,
   staffIdText,
   isNumber,
+  previousLastPosition,
+  onPreviousLastPositionChange,
+  previousReasonForLeaving,
+  onPreviousReasonChange,
+  maritalStatus,
+  onMaritalStatusChange,
+  numberOfChildren,
+  onNumberOfChildrenChange,
 }: {
   staffName: string;
   staffIdText: string;
   isNumber: string;
+  previousLastPosition: string;
+  onPreviousLastPositionChange: (v: string) => void;
+  previousReasonForLeaving: string;
+  onPreviousReasonChange: (v: string) => void;
+  maritalStatus: string;
+  onMaritalStatusChange: (v: string) => void;
+  numberOfChildren: string;
+  onNumberOfChildrenChange: (v: string) => void;
+
 }) {
   const {
     education, employment, family, emergency, bank, medical, verifications,
