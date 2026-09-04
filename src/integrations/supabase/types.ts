@@ -16598,6 +16598,7 @@ export type Database = {
         Args: { _approval_id: string; _comment: string; _decision: string }
         Returns: Json
       }
+      me_field_report_map: { Args: { _region?: string }; Returns: Json }
       me_geo_summary: {
         Args: { _region?: string }
         Returns: {
