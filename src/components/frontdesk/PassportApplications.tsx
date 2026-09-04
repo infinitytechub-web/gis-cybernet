@@ -10,6 +10,7 @@ import { MultiContactInput } from "@/components/ui/multi-contact-input";
 import { CountryCombobox } from "@/components/ui/country-combobox";
 import { isEcowasNationality } from "@/lib/countries";
 import { FilterSummaryBar } from "@/components/frontdesk/FilterSummaryBar";
+import { ContactPhoneInput } from "@/components/ui/contact-phone-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -250,7 +251,7 @@ export default function PassportApplications() {
                 </div>
                 <div className="md:col-span-2"><Label>Telephone Number(s)</Label><MultiContactInput mode="list" ghanaAware value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} /></div>
                 <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
-                <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
+                <div><Label>Emergency Contact (phone)</Label><ContactPhoneInput compact value={form.emergency_contact} onChange={(v) => setForm({ ...form, emergency_contact: v })} aria-label="Emergency contact phone number" /></div>
                 <div><Label>Street Name</Label><Input value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} /></div>
                 <div><Label>Nearest Landmark</Label><Input value={form.nearest_landmark} onChange={(e) => setForm({ ...form, nearest_landmark: e.target.value })} /></div>
                 <div><Label>Surname</Label><Input value={form.surname} onChange={(e) => setForm({ ...form, surname: e.target.value })} /></div>

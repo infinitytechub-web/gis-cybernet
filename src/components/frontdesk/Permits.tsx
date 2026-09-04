@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ContactPhoneInput } from "@/components/ui/contact-phone-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -340,7 +341,7 @@ export function PermitForm({
       <div><Label>Foreign Address</Label><Textarea rows={2} value={form.foreign_address} onChange={(e) => setForm({ ...form, foreign_address: e.target.value })} /></div>
       <div className="grid grid-cols-2 gap-3">
         <div><Label>Next of Kin</Label><Input value={form.next_of_kin} onChange={(e) => setForm({ ...form, next_of_kin: e.target.value })} /></div>
-        <div><Label>Emergency Contact</Label><Input value={form.emergency_contact} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} /></div>
+        <div><Label>Emergency Contact (phone)</Label><ContactPhoneInput compact value={form.emergency_contact} onChange={(v) => setForm({ ...form, emergency_contact: v })} aria-label="Emergency contact phone number" /></div>
       </div>
       <div><Label>Purpose *</Label><Textarea rows={2} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} required /></div>
       <div><Label>Previous Permit / Visa History (if any)</Label><Textarea rows={2} value={form.previous_permit_history} onChange={(e) => setForm({ ...form, previous_permit_history: e.target.value })} /></div>
