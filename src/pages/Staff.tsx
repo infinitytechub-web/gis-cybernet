@@ -291,6 +291,34 @@ export default function Staff() {
     setDateJoinedService((s as any).date_joined_service || "");
     setMaritalStatus(s.marital_status || "");
     setCurrentAppointment((s as any).current_appointment || "");
+    setBioTab("A");
+    setFormCompletedOn((s as any).form_completed_on || "");
+    setServiceOrganization((s as any).service_organization || "");
+    setSectorCommand((s as any).sector_command || "");
+    setStationUnit((s as any).station_unit || "");
+    setIsNumber((s as any).is_number || "");
+    setOtherNames((s as any).other_names || "");
+    setPlaceOfBirth((s as any).place_of_birth || "");
+    setHometown((s as any).hometown || "");
+    setRegionOfOrigin((s as any).region_of_origin || "");
+    setDateOfAppointment((s as any).date_of_appointment || "");
+    setCadetIntake((s as any).cadet_intake || "");
+    setRecruitIntake((s as any).recruit_intake || "");
+    setCurrentPlaceOfStay((s as any).current_place_of_stay || "");
+    setResidentialAddress((s as any).residential_address || "");
+    setDigitalAddress((s as any).digital_address || "");
+    setPostalAddress((s as any).postal_address || "");
+    setResidentialPhone((s as any).residential_phone || "");
+    setHeightCm((s as any).height_cm != null ? String((s as any).height_cm) : "");
+    setUniformSize((s as any).uniform_size || "");
+    setShoeSize((s as any).shoe_size || "");
+    setReligion((s as any).religion || "");
+    setHobbies([...(((s as any).hobbies ?? []) as string[]), "", "", ""].slice(0, 3));
+    setSpecialSkills([...(((s as any).special_skills ?? []) as string[]), "", "", ""].slice(0, 3));
+    setNumberOfChildren((s as any).number_of_children != null ? String((s as any).number_of_children) : "");
+    setPreviousLastPosition((s as any).previous_last_position || "");
+    setPreviousReasonForLeaving((s as any).previous_reason_for_leaving || "");
+
     // Load assigned portfolios for this profile
     supabase
       .from("profile_portfolios")
