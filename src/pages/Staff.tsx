@@ -480,6 +480,7 @@ export default function Staff() {
         if (error) throw error;
         await syncContacts(editing.id, validContacts);
         await syncPortfolios(editing.id);
+        await biodataPersistRef.current?.(editing.id);
       } else {
         const { data, error } = await supabase.from("profiles").insert(payload).select("id").single();
         if (error) throw error;
@@ -492,7 +493,9 @@ export default function Staff() {
         if (data) {
           await syncContacts(data.id, validContacts);
           await syncPortfolios(data.id);
+          await biodataPersistRef.current?.(data.id);
         }
+
       }
     },
     onSuccess: () => {
