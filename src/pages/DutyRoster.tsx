@@ -236,6 +236,9 @@ export default function DutyRoster() {
         <ExportMenu getData={buildRosterExportData} />
       </div>
 
+      {/* Live schedule — who is on duty now, with clock-in state */}
+      <OnDutyNowPanel />
+
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1">
