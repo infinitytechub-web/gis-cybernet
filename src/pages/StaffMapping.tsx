@@ -368,6 +368,8 @@ export default function StaffMapping() {
           </CardContent>
         </Card>
       </div>
+
+      {isAdmin && <StaffMappingAdminPanel />}
     </div>
   );
 }
