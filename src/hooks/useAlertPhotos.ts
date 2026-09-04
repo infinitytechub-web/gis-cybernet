@@ -7,6 +7,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { validatePhotoFile } from "@/lib/image-upload";
 
 export const INCIDENT_PHOTO_BUCKET = "command-incidents";
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -50,14 +51,13 @@ export function useAlertPhotos(alertId: string | null) {
   });
 }
 
-export function validatePhoto(file: File): string | null {
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return `${file.name}: only JPEG, PNG or WebP photos are accepted`;
-  }
-  if (file.size > MAX_PHOTO_BYTES) {
-    return `${file.name}: larger than the 10 MB limit`;
-  }
-  return null;
+/**
+ * Photos must be under 3MB, really be a JPG/PNG/WEBP (magic bytes, not just the
+ * extension) and pass the threat scan. Returns an error message, or null.
+ */
+export async function validatePhoto(file: File): Promise<string | null> {
+  const check = await validatePhotoFile(file);
+  return check.ok ? null : `${file.name}: ${check.reason}`;
 }
 
 /** Upload one or more photos and register them against an alert. */

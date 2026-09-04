@@ -10,6 +10,7 @@
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { validatePhotoFile } from "@/lib/image-upload";
 import { toast } from "sonner";
 
 export type ClockAction = "check_in" | "check_out";
@@ -62,7 +63,7 @@ export function useRosterClock() {
     }): Promise<ClockResult> => {
       let photoPath: string | null = null;
       if (vars.photo) {
-        const invalid = validateClockPhoto(vars.photo);
+        const invalid = await validateClockPhoto(vars.photo);
         if (invalid) throw new Error(invalid);
         const ext = vars.photo.name.split(".").pop()?.toLowerCase() ?? "jpg";
         photoPath = `${vars.profileId}/${vars.action}-${crypto.randomUUID()}.${ext}`;
