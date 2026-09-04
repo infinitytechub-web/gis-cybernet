@@ -19,6 +19,10 @@ export default function LeaveRequests() {
       {/* Balance dashboard — own balance for staff, whole command for the command tier */}
       <LeaveBalanceDashboard />
 
+      {/* Approved days rolled up by region, station and leave type */}
+      <LeaveUsageDashboard />
+
+
       {/* Command tier (admin / OIC / 2IC / Staff Officer / Supervisor): dashboard + queue */}
       {isAdminOrSupervisor && (
         <div className="space-y-2">
