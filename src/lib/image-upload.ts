@@ -51,10 +51,18 @@ export interface PhotoCheckOk {
   file: File;
   mime: PhotoMime;
   ext: string;
+  /**
+   * Never set on success. Declared so `check.reason` type-checks under the
+   * project's non-strict config, where narrowing on `ok` is not applied.
+   */
+  reason?: undefined;
 }
 export interface PhotoCheckFail {
   ok: false;
   reason: string;
+  file?: undefined;
+  mime?: undefined;
+  ext?: undefined;
 }
 export type PhotoCheck = PhotoCheckOk | PhotoCheckFail;
 
