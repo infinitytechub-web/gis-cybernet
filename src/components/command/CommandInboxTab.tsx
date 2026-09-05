@@ -655,7 +655,7 @@ function AlertPhotoSection({ alertId, canManage }: { alertId: string; canManage:
   const remove = useDeleteAlertPhoto();
 
   const add = async (files: File[]) => {
-    const bad = files.map(validatePhoto).find(Boolean);
+    const bad = (await Promise.all(files.map(validatePhoto))).find(Boolean);
     if (bad) { toast.error(bad); return; }
     try {
       await upload.mutateAsync({ alertId, files });
