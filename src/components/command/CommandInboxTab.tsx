@@ -418,9 +418,9 @@ function RaiseAlertDialog({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
-              onChange={(e) => {
+              onChange={async (e) => {
                 const picked = Array.from(e.target.files ?? []);
-                const bad = picked.map(validatePhoto).find(Boolean);
+                const bad = (await Promise.all(picked.map(validatePhoto))).find(Boolean);
                 if (bad) { toast.error(bad); return; }
                 setPhotos(picked);
               }}
@@ -655,7 +655,7 @@ function AlertPhotoSection({ alertId, canManage }: { alertId: string; canManage:
   const remove = useDeleteAlertPhoto();
 
   const add = async (files: File[]) => {
-    const bad = files.map(validatePhoto).find(Boolean);
+    const bad = (await Promise.all(files.map(validatePhoto))).find(Boolean);
     if (bad) { toast.error(bad); return; }
     try {
       await upload.mutateAsync({ alertId, files });
