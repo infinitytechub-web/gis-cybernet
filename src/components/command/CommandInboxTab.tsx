@@ -418,9 +418,9 @@ function RaiseAlertDialog({
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
-              onChange={(e) => {
+              onChange={async (e) => {
                 const picked = Array.from(e.target.files ?? []);
-                const bad = picked.map(validatePhoto).find(Boolean);
+                const bad = (await Promise.all(picked.map(validatePhoto))).find(Boolean);
                 if (bad) { toast.error(bad); return; }
                 setPhotos(picked);
               }}
