@@ -8,6 +8,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
+import { isInternalCaller, unauthorizedResponse } from "../_shared/cron-auth.ts";
 
 const BodySchema = z.object({
   minutes: z.number().int().min(5).max(1440).optional(),
@@ -21,6 +22,8 @@ const json = (body: unknown, status = 200) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (!isInternalCaller(req)) return unauthorizedResponse(corsHeaders);
+
 
   try {
     const parsed = BodySchema.safeParse(
