@@ -63,11 +63,14 @@ function popupHtml(vehicle: FleetVehicle) {
     ["Odometer", `${Math.round(Number(vehicle.odometer_km ?? 0)).toLocaleString()} km`],
     ["Last report", seen],
   ];
+  const esc = (s: unknown) =>
+    String(s ?? "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
   return `
     <div style="min-width:190px">
-      <strong>${vehicleLabel(vehicle)}</strong>
+      <strong>${esc(vehicleLabel(vehicle))}</strong>
       <table style="margin-top:6px;font-size:12px">
-        ${rows.map(([k, v]) => `<tr><td style="padding-right:8px;opacity:.7">${k}</td><td>${v}</td></tr>`).join("")}
+        ${rows.map(([k, v]) => `<tr><td style="padding-right:8px;opacity:.7">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("")}
       </table>
     </div>`;
 }
