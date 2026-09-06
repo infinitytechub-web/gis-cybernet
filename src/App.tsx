@@ -7,7 +7,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { BrandingProvider } from "@/components/BrandingProvider";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyRetry as lazy } from "@/lib/lazy-retry";
 // Layout is lazy — it pulls in the authenticated app shell (sidebar,
 // SystemAuditTray, notification bell, etc.) and its transitive deps. The
 // login page must not pay that cost.

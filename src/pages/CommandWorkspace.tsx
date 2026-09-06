@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyRetry as lazy } from "@/lib/lazy-retry";
 import { useParams, Link } from "react-router-dom";
 import { useConfidentialityCommands } from "@/hooks/useConfidentialityCommands";
 import { Card, CardContent } from "@/components/ui/card";
