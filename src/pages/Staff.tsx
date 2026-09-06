@@ -1098,7 +1098,10 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-staff-id">Staff ID</Label>
-                    <Input id="bio-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" />
+                    <Input id="bio-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" disabled={!!editing && !isAdmin} />
+                    {!!editing && !isAdmin && (
+                      <p className="text-[10px] text-muted-foreground mt-1">Only a System Administrator can change this.</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="bio-is-no">IS / No.</Label>
@@ -1106,7 +1109,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-status">Status</Label>
-                    <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)}>
+                    <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-status"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
@@ -1129,7 +1132,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-unit">Unit</Label>
-                    <Input id="bio-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" />
+                    <Input id="bio-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" disabled={!!editing && !isAdmin} />
                   </div>
                   <div>
                     <Label htmlFor="bio-office">Office</Label>
@@ -1137,7 +1140,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-shift-group">Shift group</Label>
-                    <Select value={shiftGroup} onValueChange={setShiftGroup}>
+                    <Select value={shiftGroup} onValueChange={setShiftGroup} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-shift-group"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A">Shift A</SelectItem>
@@ -1146,6 +1149,7 @@ export default function Staff() {
                         <SelectItem value="D">Shift D</SelectItem>
                       </SelectContent>
                     </Select>
+
                   </div>
                   <div className="sm:col-span-2">
                     <Label htmlFor="bio-command-posting">Command posting</Label>
