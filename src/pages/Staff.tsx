@@ -915,13 +915,13 @@ export default function Staff() {
                     Status <ArrowUpDown className="h-3 w-3" />
                   </Button>
                 </TableHead>
-                {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
+                {canManage && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
+                  <TableCell colSpan={7 + (isAdmin ? 1 : 0) + (canManage ? 1 : 0)} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((s) => (
@@ -960,36 +960,40 @@ export default function Staff() {
                         )}
                       </div>
                     </TableCell>
-                    {isAdmin && (
+                    {canManage && (
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)} title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <AdminAccountActions
-                            profileId={s.id}
-                            staffId={s.staff_id}
-                            fullName={`${s.first_name} ${s.last_name}`}
-                            accountLocked={s.account_locked}
-                            hasUserId={!!s.user_id}
-                          />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete {s.last_name}, {s.first_name}?</AlertDialogTitle>
-                                <AlertDialogDescription>This will permanently remove this staff member and all associated records.</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          {isAdmin && (
+                            <AdminAccountActions
+                              profileId={s.id}
+                              staffId={s.staff_id}
+                              fullName={`${s.first_name} ${s.last_name}`}
+                              accountLocked={s.account_locked}
+                              hasUserId={!!s.user_id}
+                            />
+                          )}
+                          {isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete {s.last_name}, {s.first_name}?</AlertDialogTitle>
+                                  <AlertDialogDescription>This will permanently remove this staff member and all associated records.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     )}
@@ -1094,7 +1098,10 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-staff-id">Staff ID</Label>
-                    <Input id="bio-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" />
+                    <Input id="bio-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} placeholder="GIS-XXXXX" disabled={!!editing && !isAdmin} />
+                    {!!editing && !isAdmin && (
+                      <p className="text-[10px] text-muted-foreground mt-1">Only a System Administrator can change this.</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="bio-is-no">IS / No.</Label>
@@ -1102,7 +1109,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-status">Status</Label>
-                    <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)}>
+                    <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-status"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
@@ -1125,7 +1132,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-unit">Unit</Label>
-                    <Input id="bio-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" />
+                    <Input id="bio-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="e.g. Operations" disabled={!!editing && !isAdmin} />
                   </div>
                   <div>
                     <Label htmlFor="bio-office">Office</Label>
@@ -1133,7 +1140,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-shift-group">Shift group</Label>
-                    <Select value={shiftGroup} onValueChange={setShiftGroup}>
+                    <Select value={shiftGroup} onValueChange={setShiftGroup} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-shift-group"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A">Shift A</SelectItem>
@@ -1142,6 +1149,7 @@ export default function Staff() {
                         <SelectItem value="D">Shift D</SelectItem>
                       </SelectContent>
                     </Select>
+
                   </div>
                   <div className="sm:col-span-2">
                     <Label htmlFor="bio-command-posting">Command posting</Label>
@@ -1226,7 +1234,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-rank">Rank</Label>
-                    <Select value={rankId} onValueChange={setRankId}>
+                    <Select value={rankId} onValueChange={setRankId} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-rank"><SelectValue placeholder="Select rank" /></SelectTrigger>
                       <SelectContent>
                         {ranks.map((r) => (
