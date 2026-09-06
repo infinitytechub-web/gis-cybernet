@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.grant_command_officer_to_admin() FROM PUBLIC, anon, authenticated;
