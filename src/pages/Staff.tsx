@@ -915,13 +915,13 @@ export default function Staff() {
                     Status <ArrowUpDown className="h-3 w-3" />
                   </Button>
                 </TableHead>
-                {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
+                {canManage && <TableHead className="w-[80px]">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 9 : 7} className="text-center text-muted-foreground py-8">No staff found</TableCell>
+                  <TableCell colSpan={7 + (isAdmin ? 1 : 0) + (canManage ? 1 : 0)} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((s) => (
