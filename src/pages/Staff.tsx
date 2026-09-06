@@ -960,36 +960,40 @@ export default function Staff() {
                         )}
                       </div>
                     </TableCell>
-                    {isAdmin && (
+                    {canManage && (
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)} title="Edit">
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
-                          <AdminAccountActions
-                            profileId={s.id}
-                            staffId={s.staff_id}
-                            fullName={`${s.first_name} ${s.last_name}`}
-                            accountLocked={s.account_locked}
-                            hasUserId={!!s.user_id}
-                          />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete {s.last_name}, {s.first_name}?</AlertDialogTitle>
-                                <AlertDialogDescription>This will permanently remove this staff member and all associated records.</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          {isAdmin && (
+                            <AdminAccountActions
+                              profileId={s.id}
+                              staffId={s.staff_id}
+                              fullName={`${s.first_name} ${s.last_name}`}
+                              accountLocked={s.account_locked}
+                              hasUserId={!!s.user_id}
+                            />
+                          )}
+                          {isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete {s.last_name}, {s.first_name}?</AlertDialogTitle>
+                                  <AlertDialogDescription>This will permanently remove this staff member and all associated records.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     )}
