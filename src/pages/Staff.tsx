@@ -1234,7 +1234,7 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-rank">Rank</Label>
-                    <Select value={rankId} onValueChange={setRankId}>
+                    <Select value={rankId} onValueChange={setRankId} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-rank"><SelectValue placeholder="Select rank" /></SelectTrigger>
                       <SelectContent>
                         {ranks.map((r) => (
