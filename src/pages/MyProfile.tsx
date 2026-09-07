@@ -110,7 +110,7 @@ export default function MyProfile() {
   useEffect(() => {
     if (!profile) return;
     const next = { ...form };
-    EDITABLE_FIELDS.forEach((k) => { (next as any)[k] = (profile as any)[k] ?? ""; });
+    EDITABLE_FIELDS.forEach((k) => { (next as any)[k] = profileValueToText((profile as any)[k]); });
     setForm(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
