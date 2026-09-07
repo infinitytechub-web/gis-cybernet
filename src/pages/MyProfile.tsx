@@ -128,7 +128,7 @@ export default function MyProfile() {
 
   const dirty = useMemo(() => {
     if (!profile) return false;
-    return EDITABLE_FIELDS.some((k) => (form[k] ?? "") !== ((profile as any)[k] ?? ""));
+    return EDITABLE_FIELDS.some((k) => (form[k] ?? "") !== profileValueToText((profile as any)[k]));
   }, [form, profile]);
 
   // Pending change requests submitted by this user
