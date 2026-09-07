@@ -185,7 +185,7 @@ export default function MyProfile() {
       const previous: Record<string, string | null> = {};
       EDITABLE_FIELDS.forEach((k) => {
         const next = (form[k] ?? "").toString().trim();
-        const curr = ((profile as any)[k] ?? "").toString();
+        const curr = profileValueToText((profile as any)[k]);
         if (next !== curr) {
           requested[k] = next === "" ? null : next;
           previous[k] = curr === "" ? null : curr;
