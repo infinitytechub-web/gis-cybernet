@@ -67,6 +67,15 @@ const RESTRICTED_FIELDS: Array<{ key: string; label: string; multiline?: boolean
 
 type EditableKey = typeof EDITABLE_FIELDS[number];
 
+/**
+ * Some details (hobbies, special skills) are stored as lists. Show and compare
+ * them as a plain comma-separated line so the text inputs behave predictably.
+ */
+function profileValueToText(value: unknown): string {
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+  return value === null || value === undefined ? "" : String(value);
+}
+
 const LOCKED_FIELDS: { key: string; label: string }[] = [
   { key: "staff_id", label: "Staff ID" },
   { key: "rank", label: "Rank" },
