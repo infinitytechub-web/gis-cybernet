@@ -26,6 +26,28 @@ import { Link } from "react-router-dom";
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const MAX_DAILY_HOURS = 16;
 
+/** Shift bands used to classify a clock-in time when no roster shift is set. */
+const SHIFTS = [
+  { key: "morning", label: "Morning", window: "06:00–13:59" },
+  { key: "afternoon", label: "Afternoon", window: "14:00–21:59" },
+  { key: "night", label: "Night", window: "22:00–05:59" },
+] as const;
+
+type ShiftKey = (typeof SHIFTS)[number]["key"];
+
+/** Classify a clock-in timestamp into a shift band. */
+const shiftOf = (inAt: string | null): ShiftKey | null => {
+  if (!inAt) return null;
+  const h = new Date(inAt).getHours();
+  if (h >= 6 && h < 14) return "morning";
+  if (h >= 14 && h < 22) return "afternoon";
+  return "night";
+};
+
+const shiftLabel = (k: ShiftKey) => SHIFTS.find((s) => s.key === k)!.label;
+
+const emptyShiftHours = (): Record<ShiftKey, number> => ({ morning: 0, afternoon: 0, night: 0 });
+
 interface AttendanceRow {
   id: string;
   profile_id: string;
@@ -105,6 +127,29 @@ export default function AttendanceWeekly() {
     },
   });
 
+  const { data: rosterShifts = [] } = useQuery({
+    queryKey: ["attendance-weekly-roster", from, to],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guard_schedule_assignments")
+        .select("profile_id, duty_date, shift")
+        .gte("duty_date", from)
+        .lte("duty_date", to)
+        .not("profile_id", "is", null);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { profile_id: string; duty_date: string; shift: string | null }[];
+    },
+  });
+
+  /** Rostered shift name per staff member per day, when a schedule exists. */
+  const rosterByKey = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const r of rosterShifts) {
+      if (r.profile_id && r.shift) out[`${r.profile_id}|${r.duty_date}`] = r.shift;
+    }
+    return out;
+  }, [rosterShifts]);
+
   /** Dates in this week that are public holidays (recurring ones match day/month). */
   const holidayByDate = useMemo(() => {
     const out: Record<string, string> = {};
@@ -126,10 +171,21 @@ export default function AttendanceWeekly() {
         profileId: string;
         name: string;
         staffId: string;
-        byDate: Record<string, { inAt: string | null; outAt: string | null; status: string | null; hours: number }>;
+        byDate: Record<
+          string,
+          {
+            inAt: string | null;
+            outAt: string | null;
+            status: string | null;
+            hours: number;
+            shift: ShiftKey | null;
+            rosterShift: string | null;
+          }
+        >;
         leaveByDate: Record<string, string>;
         offByDate: Record<string, string>;
         total: number;
+        shiftHours: Record<ShiftKey, number>;
         leaveDays: number;
         daysOff: number;
       }
@@ -148,14 +204,24 @@ export default function AttendanceWeekly() {
           leaveByDate: {},
           offByDate: {},
           total: 0,
+          shiftHours: emptyShiftHours(),
           leaveDays: 0,
           daysOff: 0,
         });
       }
       const row = map.get(key)!;
       const hours = hoursBetween(a.check_in, a.check_out);
-      row.byDate[a.date] = { inAt: a.check_in, outAt: a.check_out, status: a.status, hours };
+      const shift = shiftOf(a.check_in);
+      row.byDate[a.date] = {
+        inAt: a.check_in,
+        outAt: a.check_out,
+        status: a.status,
+        hours,
+        shift,
+        rosterShift: rosterByKey[`${key}|${a.date}`] ?? null,
+      };
       row.total += hours;
+      if (shift) row.shiftHours[shift] += hours;
     }
 
     // Count how many days of this week each staff member is on leave for.
@@ -169,6 +235,7 @@ export default function AttendanceWeekly() {
           leaveByDate: {},
           offByDate: {},
           total: 0,
+          shiftHours: emptyShiftHours(),
           leaveDays: 0,
           daysOff: 0,
         });
@@ -201,13 +268,15 @@ export default function AttendanceWeekly() {
 
 
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [attendance, leave, days, holidayByDate]);
+  }, [attendance, leave, days, holidayByDate, rosterByKey]);
 
   const totals = useMemo(() => {
     const perDay: Record<string, number> = {};
+    const perShift = emptyShiftHours();
     let hours = 0;
     for (const r of staffRows) {
       hours += r.total;
+      for (const sh of SHIFTS) perShift[sh.key] += r.shiftHours[sh.key];
       for (const [d, cell] of Object.entries(r.byDate)) {
         perDay[d] = (perDay[d] ?? 0) + cell.hours;
       }
@@ -215,6 +284,7 @@ export default function AttendanceWeekly() {
     return {
       hours,
       perDay,
+      perShift,
       staff: staffRows.length,
       daysOff: staffRows.reduce((n, r) => n + r.daysOff, 0),
       leaveDays: staffRows.reduce((n, r) => n + r.leaveDays, 0),
@@ -239,6 +309,7 @@ export default function AttendanceWeekly() {
         return [`${lbl} in`, `${lbl} out`, `${lbl} hours`];
       }),
       "Total hours",
+      ...SHIFTS.map((sh) => `${sh.label} hours`),
       "Leave days (approved)",
       "Days off (auto)",
     ];
@@ -249,12 +320,22 @@ export default function AttendanceWeekly() {
         const cell = r.byDate[iso(d)];
         cells.push(clock(cell?.inAt ?? null), clock(cell?.outAt ?? null), (cell?.hours ?? 0).toFixed(2));
       }
-      cells.push(r.total.toFixed(2), String(r.leaveDays), String(r.daysOff));
+      cells.push(
+        r.total.toFixed(2),
+        ...SHIFTS.map((sh) => r.shiftHours[sh.key].toFixed(2)),
+        String(r.leaveDays),
+        String(r.daysOff)
+      );
       lines.push(cells.map(csvCellQuoted).join(","));
     }
     const footer: string[] = ["TOTAL", ""];
     for (const d of days) footer.push("", "", (totals.perDay[iso(d)] ?? 0).toFixed(2));
-    footer.push(totals.hours.toFixed(2), String(totals.leaveDays), String(totals.daysOff));
+    footer.push(
+      totals.hours.toFixed(2),
+      ...SHIFTS.map((sh) => totals.perShift[sh.key].toFixed(2)),
+      String(totals.leaveDays),
+      String(totals.daysOff)
+    );
     lines.push(footer.map(csvCellQuoted).join(","));
     downloadCSVString(lines.join("\n"), `attendance-week-${from}.csv`);
   };
@@ -364,7 +445,7 @@ export default function AttendanceWeekly() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table className="min-w-[1100px]">
+            <Table className="min-w-[1400px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background">Staff</TableHead>
@@ -376,6 +457,12 @@ export default function AttendanceWeekly() {
                     </TableHead>
                   ))}
                   <TableHead className="text-right">Total</TableHead>
+                  {SHIFTS.map((sh) => (
+                    <TableHead key={sh.key} className="text-right">
+                      {sh.label}
+                      <span className="block text-xs font-normal text-muted-foreground">{sh.window}</span>
+                    </TableHead>
+                  ))}
                   <TableHead className="text-right">Leave days</TableHead>
                   <TableHead className="text-right">Days off</TableHead>
                 </TableRow>
@@ -383,11 +470,11 @@ export default function AttendanceWeekly() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={days.length + 5}>Loading…</TableCell>
+                    <TableCell colSpan={days.length + 8}>Loading…</TableCell>
                   </TableRow>
                 ) : staffRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={days.length + 5}>No attendance recorded for this week.</TableCell>
+                    <TableCell colSpan={days.length + 8}>No attendance recorded for this week.</TableCell>
                   </TableRow>
                 ) : (
                   <>
@@ -407,6 +494,9 @@ export default function AttendanceWeekly() {
                                     {clock(cell.inAt)} – {clock(cell.outAt)}
                                   </div>
                                   <div className="font-semibold text-secondary">{cell.hours.toFixed(2)}h</div>
+                                  <div className="text-[10px] text-muted-foreground">
+                                    {cell.rosterShift ?? (cell.shift ? shiftLabel(cell.shift) : "—")}
+                                  </div>
                                   {cell.status && cell.status !== "present" && (
                                     <Badge variant="outline" className="text-[10px] capitalize">
                                       {cell.status}
@@ -430,6 +520,11 @@ export default function AttendanceWeekly() {
                         })}
 
                         <TableCell className="text-right font-semibold">{r.total.toFixed(2)}</TableCell>
+                        {SHIFTS.map((sh) => (
+                          <TableCell key={sh.key} className="text-right">
+                            {r.shiftHours[sh.key] > 0 ? r.shiftHours[sh.key].toFixed(2) : "—"}
+                          </TableCell>
+                        ))}
                         <TableCell className="text-right">{r.leaveDays}</TableCell>
                         <TableCell className="text-right">{r.daysOff}</TableCell>
                       </TableRow>
@@ -443,7 +538,14 @@ export default function AttendanceWeekly() {
                         </TableCell>
                       ))}
                       <TableCell className="text-right">{totals.hours.toFixed(2)}</TableCell>
-                      <TableCell />
+                      {SHIFTS.map((sh) => (
+                        <TableCell key={sh.key} className="text-right">
+                          {totals.perShift[sh.key].toFixed(2)}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-right">{totals.leaveDays}</TableCell>
+                      <TableCell className="text-right">{totals.daysOff}</TableCell>
+
                     </TableRow>
                   </>
                 )}
