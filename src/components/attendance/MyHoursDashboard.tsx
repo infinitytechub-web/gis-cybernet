@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Timer } from "lucide-react";
+import { Download, Fingerprint, Timer } from "lucide-react";
 import { format, startOfMonth, subDays } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { toast } from "sonner";
@@ -19,7 +19,16 @@ type Row = {
   check_out: string | null;
   status: string | null;
   notes: string | null;
+  check_in_method: string | null;
+  check_out_method: string | null;
+  check_in_device: string | null;
+  check_out_device: string | null;
 };
+
+function methodLabel(method: string | null, stamped: boolean) {
+  if (!stamped) return "—";
+  return method === "biometric" ? "Fingerprint" : "Manual";
+}
 
 const MAX_DAILY_HOURS = 16;
 
@@ -67,7 +76,7 @@ export function MyHoursDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendances")
-        .select("id, date, check_in, check_out, status, notes")
+        .select("id, date, check_in, check_out, status, notes, check_in_method, check_out_method, check_in_device, check_out_device")
         .eq("profile_id", profile!.id)
         .gte("date", from)
         .lte("date", to)
@@ -107,7 +116,7 @@ export function MyHoursDashboard() {
       toast.error("No attendance records in this range to export");
       return;
     }
-    const header = ["Date", "Check in", "Check out", "Hours worked", "Status", "Notes"];
+    const header = ["Date", "Check in", "Check in method", "Check out", "Check out method", "Hours worked", "Status", "Notes"];
     const lines = [header.join(",")];
     for (const r of rows) {
       const h = hoursFor(r);
@@ -115,7 +124,9 @@ export function MyHoursDashboard() {
         [
           csvCell(r.date),
           csvCell(r.check_in ? format(new Date(r.check_in), "HH:mm:ss") : ""),
+          csvCell(methodLabel(r.check_in_method, !!r.check_in)),
           csvCell(r.check_out ? format(new Date(r.check_out), "HH:mm:ss") : ""),
+          csvCell(methodLabel(r.check_out_method, !!r.check_out)),
           csvCell(h == null ? "" : h.toFixed(2)),
           csvCell(r.status ?? ""),
           csvCell(r.notes ?? ""),
@@ -179,12 +190,14 @@ export function MyHoursDashboard() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-3">Date</th>
                 <th className="py-2 pr-3">Check in</th>
+                <th className="py-2 pr-3">Verified by</th>
                 <th className="py-2 pr-3">Check out</th>
+                <th className="py-2 pr-3">Verified by</th>
                 <th className="py-2 pr-3">Hours</th>
                 <th className="py-2 pr-3">Status</th>
                 <th className="py-2">Notes</th>
@@ -192,9 +205,9 @@ export function MyHoursDashboard() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Loading...</td></tr>
+                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">Loading...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">No attendance records in this range.</td></tr>
+                <tr><td colSpan={8} className="py-6 text-center text-muted-foreground">No attendance records in this range.</td></tr>
               ) : (
                 rows.map((r) => {
                   const h = hoursFor(r);
@@ -202,7 +215,23 @@ export function MyHoursDashboard() {
                     <tr key={r.id} className="border-b last:border-0">
                       <td className="py-2 pr-3 whitespace-nowrap">{format(new Date(`${r.date}T00:00:00`), "dd/MM/yyyy")}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">{r.check_in ? format(new Date(r.check_in), "HH:mm:ss") : "—"}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap">
+                        {r.check_in ? (
+                          <Badge variant="outline" className="gap-1" title={r.check_in_device ?? undefined}>
+                            {r.check_in_method === "biometric" && <Fingerprint className="h-3 w-3" aria-hidden="true" />}
+                            {methodLabel(r.check_in_method, true)}
+                          </Badge>
+                        ) : "—"}
+                      </td>
                       <td className="py-2 pr-3 whitespace-nowrap">{r.check_out ? format(new Date(r.check_out), "HH:mm:ss") : "—"}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap">
+                        {r.check_out ? (
+                          <Badge variant="outline" className="gap-1" title={r.check_out_device ?? undefined}>
+                            {r.check_out_method === "biometric" && <Fingerprint className="h-3 w-3" aria-hidden="true" />}
+                            {methodLabel(r.check_out_method, true)}
+                          </Badge>
+                        ) : "—"}
+                      </td>
                       <td className="py-2 pr-3 whitespace-nowrap font-medium">{h == null ? (r.check_in ? "In progress" : "—") : fmtHours(h)}</td>
                       <td className="py-2 pr-3">
                         <Badge variant="outline">{r.status ?? "—"}</Badge>
