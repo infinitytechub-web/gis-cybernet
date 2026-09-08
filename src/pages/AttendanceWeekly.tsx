@@ -128,9 +128,12 @@ export default function AttendanceWeekly() {
         staffId: string;
         byDate: Record<string, { inAt: string | null; outAt: string | null; status: string | null; hours: number }>;
         leaveByDate: Record<string, string>;
+        offByDate: Record<string, string>;
         total: number;
         leaveDays: number;
+        daysOff: number;
       }
+
 
     >();
 
