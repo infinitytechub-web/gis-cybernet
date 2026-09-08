@@ -52,6 +52,16 @@ const FIELD_LABELS: Record<string, string> = {
 const label = (k: string) =>
   FIELD_LABELS[k] ?? k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+type Decision = "supervisor_approved" | "approved" | "rejected" | "pending";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Awaiting supervisor",
+  supervisor_approved: "Awaiting admin",
+  approved: "Approved",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+};
+
 export default function ProfileChangeApprovals() {
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const qc = useQueryClient();
