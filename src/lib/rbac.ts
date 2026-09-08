@@ -96,6 +96,15 @@ export const MODULES: ModuleDef[] = [
     paths: ["/staff", "/staff/:id"],
   },
   { key: "departments", label: "Departments", feature: "Departments", tier: "module", roles: [...COMMAND, ...IPSE_TIER], paths: ["/departments"] },
+  {
+    key: "attendance-overview", label: "Attendance Overview", tier: "module",
+    roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/attendance/overview"],
+  },
+  {
+    key: "attendance-weekly", label: "Weekly Attendance", tier: "module",
+    roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/attendance/weekly"],
+  },
+
   { key: "roles-designations", label: "Roles / Designations", feature: "Roles / Ranks", tier: "module", roles: [...COMMAND, ...IPSE_TIER], paths: ["/roles"] },
   { key: "shifts", label: "Office Shifts", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/shifts"] },
   { key: "roster", label: "Duty Roster", feature: "Duty Roster", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/roster"] },
