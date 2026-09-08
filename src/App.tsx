@@ -125,6 +125,7 @@ const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
 const BioDataFormSetup = lazy(() => import("./pages/BioDataFormSetup"));
 
 const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
+const SecurityBiometricsAdmin = lazy(() => import("./pages/SecurityBiometricsAdmin"));
 const MfaGate = lazy(() => import("./pages/MfaGate"));
 const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
 const AdminShiftRotations = lazy(() => import("./pages/AdminShiftRotations"));
