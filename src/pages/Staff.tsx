@@ -25,6 +25,7 @@ import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardI
 import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { validateGhanaPhone } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { logStaffAccess } from "@/lib/staff-access-log";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { StaffTableRow } from "@/components/staff/StaffTableRow";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
