@@ -818,6 +818,7 @@ export default function Staff() {
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {canManage && (
           <div className="flex flex-wrap gap-2">
+            {(isAdmin || dirPerms.canDownload || dirPerms.canPrint) && (
             <ExportMenu
               getData={() => ({
                 title: "Staff / Employee Report",
@@ -827,6 +828,7 @@ export default function Staff() {
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
+            )}
             <Button variant="outline" size="sm" onClick={() => setAssignUnitOpen(true)} className="gap-1">
               <Building2 className="h-4 w-4" /> Assign to unit
             </Button>
