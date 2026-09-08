@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { validateGhanaPhone } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
+import { StaffTableRow } from "@/components/staff/StaffTableRow";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -131,6 +132,8 @@ async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
 }
 
+const PAGE_SIZE = 25;
+
 export default function Staff() {
   const { isAdmin, isAdminOrSupervisor } = useAuth();
   const canManage = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor
@@ -159,6 +162,7 @@ export default function Staff() {
     () => (unitFilter ? new Set(descendantIds(orgUnits, unitFilter)) : null),
     [unitFilter, orgUnits],
   );
+  const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<"name" | "rank" | "department" | "status">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -733,7 +737,29 @@ export default function Staff() {
     return list;
   }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, unitScopeIds, sortField, sortDir]);
 
-  const bulk = useBulkSelection(filtered);
+  // Page-by-page display: 25 records per page keeps the table light so the
+  // edit form on the same page stays responsive.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  if (safePage !== page) setPage(safePage);
+  const paged = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage]
+  );
+
+  const bulk = useBulkSelection(paged);
+
+  // Stable row callbacks: refs keep the memoised rows from re-rendering on every
+  // keystroke in the edit form that lives on this same page.
+  const openEditRef = useRef(openEdit);
+  openEditRef.current = openEdit;
+  const deleteRef = useRef((id: string) => deleteMutation.mutate(id));
+  deleteRef.current = (id: string) => deleteMutation.mutate(id);
+
+  const handleToggleSelect = bulk.toggle;
+  const handleOpenProfile = useCallback((id: string) => navigate(`/staff/${id}`), [navigate]);
+  const handleEditRow = useCallback((s: any) => openEditRef.current(s), []);
+  const handleDeleteRow = useCallback((id: string) => deleteRef.current(id), []);
 
   const buildStaffExportRows = () =>
     filtered.map((s) => {
@@ -919,92 +945,69 @@ export default function Staff() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {paged.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7 + (isAdmin ? 1 : 0) + (canManage ? 1 : 0)} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
-                filtered.map((s) => (
-                  <TableRow key={s.id} data-state={bulk.isSelected(s.id) ? "selected" : undefined}>
-                    {isAdmin && (
-                      <TableCell>
-                        <Checkbox
-                          checked={bulk.isSelected(s.id)}
-                          onCheckedChange={() => bulk.toggle(s.id)}
-                          aria-label={`Select ${s.first_name} ${s.last_name}`}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(s.first_name, s.last_name)}</AvatarFallback>
-                      </Avatar>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{s.staff_id}</TableCell>
-                    <TableCell>
-                      <button onClick={() => navigate(`/staff/${s.id}`)} className="font-medium text-primary hover:underline text-left">
-                        {s.last_name}, {s.first_name}
-                      </button>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{s.ranks?.abbreviation ?? "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
-                        {s.account_locked && (
-                          <span title="Account locked" className="inline-flex items-center text-destructive">
-                            <Lock className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    {canManage && (
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)} title="Edit">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          {isAdmin && (
-                            <AdminAccountActions
-                              profileId={s.id}
-                              staffId={s.staff_id}
-                              fullName={`${s.first_name} ${s.last_name}`}
-                              accountLocked={s.account_locked}
-                              hasUserId={!!s.user_id}
-                            />
-                          )}
-                          {isAdmin && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete {s.last_name}, {s.first_name}?</AlertDialogTitle>
-                                  <AlertDialogDescription>This will permanently remove this staff member and all associated records.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
+                paged.map((s) => (
+                  <StaffTableRow
+                    key={s.id}
+                    staff={s}
+                    isAdmin={isAdmin}
+                    canManage={canManage}
+                    selected={bulk.isSelected(s.id)}
+                    onToggleSelect={handleToggleSelect}
+                    onOpenProfile={handleOpenProfile}
+                    onEdit={handleEditRow}
+                    onDelete={handleDeleteRow}
+                  />
                 ))
               )}
             </TableBody>
           </Table>
         </div>
       )}
-      <p className="text-xs text-muted-foreground">{filtered.length} of {staff.length} staff shown</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          {filtered.length === 0
+            ? `0 of ${staff.length} staff shown`
+            : `Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filtered.length)} of ${filtered.length} (${staff.length} total)`}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Previous page">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "ellipsis" ? (
+                  <span key={`e${i}`} className="px-1 text-xs text-muted-foreground">…</span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === safePage ? "default" : "outline"}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => setPage(p)}
+                    aria-label={`Page ${p}`}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Next page">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/*
         PERSONNEL BIO-DATA & SERVICE RECORD FORM
