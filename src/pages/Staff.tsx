@@ -835,7 +835,7 @@ export default function Staff() {
                 <Upload className="h-4 w-4" /> Import
               </Button>
             )}
-            {isAdmin && (
+            {(isAdmin || dirPerms.canCreate) && (
               <Button size="sm" onClick={openCreate} className="gap-1">
                 <Plus className="h-4 w-4" /> Add Staff
               </Button>
@@ -982,6 +982,8 @@ export default function Staff() {
                     staff={s}
                     isAdmin={isAdmin}
                     canManage={canManage}
+                    canEdit={isAdmin || dirPerms.can("edit", levelOf(s.org_unit_id))}
+                    canDelete={isAdmin || dirPerms.can("delete", levelOf(s.org_unit_id))}
                     selected={bulk.isSelected(s.id)}
                     onToggleSelect={handleToggleSelect}
                     onOpenProfile={handleOpenProfile}
