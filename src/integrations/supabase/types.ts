@@ -16417,6 +16417,10 @@ export type Database = {
       webauthn_credentials: {
         Row: {
           aaguid: string | null
+          approval_notes: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
           backed_up: boolean
           created_at: string
           credential_id: string
@@ -16434,6 +16438,10 @@ export type Database = {
         }
         Insert: {
           aaguid?: string | null
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           backed_up?: boolean
           created_at?: string
           credential_id: string
@@ -16451,6 +16459,10 @@ export type Database = {
         }
         Update: {
           aaguid?: string | null
+          approval_notes?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
           backed_up?: boolean
           created_at?: string
           credential_id?: string
@@ -18273,6 +18285,7 @@ export type Database = {
           first_enrolled_at: string
           full_name: string
           last_used_at: string
+          pending_count: number
           required: boolean
           roles: string[]
           staff_id: string
@@ -18282,6 +18295,9 @@ export type Database = {
       webauthn_admin_list_credentials: {
         Args: never
         Returns: {
+          approval_notes: string
+          approval_status: string
+          approved_at: string
           backed_up: boolean
           created_at: string
           device_label: string
@@ -18293,9 +18309,26 @@ export type Database = {
           user_id: string
         }[]
       }
+      webauthn_admin_pending_enrollments: {
+        Args: never
+        Returns: {
+          backed_up: boolean
+          created_at: string
+          department: string
+          device_label: string
+          full_name: string
+          id: string
+          staff_id: string
+          user_id: string
+        }[]
+      }
       webauthn_admin_reset_user: {
         Args: { _reason: string; _user_id: string }
         Returns: number
+      }
+      webauthn_admin_review_enrollment: {
+        Args: { _approve: boolean; _id: string; _notes?: string }
+        Returns: undefined
       }
       webauthn_admin_set_enrollment_policy: {
         Args: { _grace_days: number; _required: boolean; _roles: string[] }
@@ -18323,6 +18356,9 @@ export type Database = {
       webauthn_list_my_credentials: {
         Args: never
         Returns: {
+          approval_notes: string
+          approval_status: string
+          approved_at: string
           backed_up: boolean
           created_at: string
           device_label: string

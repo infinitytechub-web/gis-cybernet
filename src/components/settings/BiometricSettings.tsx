@@ -24,11 +24,14 @@ interface CredentialRow {
   backed_up: boolean;
   last_used_at: string | null;
   created_at: string;
+  approval_status: string;
+  approval_notes: string | null;
 }
 
 interface Status {
   enabled: boolean;
   device_count: number;
+  pending_count?: number;
   globally_enabled: boolean;
   consented_at: string | null;
 }
@@ -62,7 +65,10 @@ export function BiometricSettings() {
     setBusy(true);
     try {
       const label = await enrollBiometric(true, currentDeviceLabel());
-      toast({ title: "Device enrolled", description: `${label} can now sign you in with biometrics.` });
+      toast({
+        title: "Registration submitted",
+        description: `${label} was registered and is waiting for administrator approval before it can sign you in.`,
+      });
       setConsent(false);
       await load();
     } catch (e) {
@@ -186,7 +192,14 @@ export function BiometricSettings() {
           <div className="flex items-center gap-2 font-medium">
             <ShieldCheck className="h-4 w-4 text-primary" aria-hidden="true" />
             Enrolled devices
-            <Badge variant="secondary">{credentials.length}</Badge>
+            <Badge variant="secondary">
+              {credentials.filter((c) => c.approval_status === "approved").length} approved
+            </Badge>
+            {credentials.some((c) => c.approval_status === "pending") && (
+              <Badge variant="outline">
+                {credentials.filter((c) => c.approval_status === "pending").length} awaiting approval
+              </Badge>
+            )}
           </div>
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
@@ -197,7 +210,16 @@ export function BiometricSettings() {
               {credentials.map((c) => (
                 <li key={c.id} className="flex items-center justify-between gap-3 p-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{c.device_label}</p>
+                    <p className="flex items-center gap-2 truncate font-medium">
+                      {c.device_label}
+                      {c.approval_status === "approved" ? (
+                        <Badge variant="secondary">Approved</Badge>
+                      ) : c.approval_status === "rejected" ? (
+                        <Badge variant="destructive">Rejected</Badge>
+                      ) : (
+                        <Badge variant="outline">Awaiting approval</Badge>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Enrolled {formatDate(c.created_at)}
                       {c.last_used_at ? ` · Last used ${formatDate(c.last_used_at)}` : " · Never used"}

@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     .select("*")
     .eq("credential_id", assertion.id)
     .is("revoked_at", null)
+    .eq("approval_status", "approved")
     .maybeSingle();
 
   if (!cred || cred.user_id !== stored.user_id) {

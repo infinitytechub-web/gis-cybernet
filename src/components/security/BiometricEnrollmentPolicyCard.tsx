@@ -36,9 +36,10 @@ interface ReportRow {
   roles: string[] | null;
   required: boolean;
   device_count: number;
+  pending_count: number;
   first_enrolled_at: string | null;
   last_used_at: string | null;
-  compliance: "enrolled" | "grace" | "overdue" | "not_required";
+  compliance: "enrolled" | "awaiting_approval" | "grace" | "overdue" | "not_required";
 }
 
 /** Roles that can be placed under the biometric requirement. */
@@ -52,6 +53,7 @@ const ROLE_OPTIONS: string[] = [
 
 const COMPLIANCE_LABEL: Record<ReportRow["compliance"], string> = {
   enrolled: "Enrolled",
+  awaiting_approval: "Awaiting approval",
   grace: "Within grace",
   overdue: "Overdue",
   not_required: "Not required",
@@ -137,12 +139,13 @@ export function BiometricEnrollmentPolicyCard() {
   const counts = useMemo(() => ({
     enrolled: rows.filter((r) => r.compliance === "enrolled").length,
     grace: rows.filter((r) => r.compliance === "grace").length,
+    awaiting: rows.filter((r) => r.compliance === "awaiting_approval").length,
     overdue: rows.filter((r) => r.compliance === "overdue").length,
     total: rows.length,
   }), [rows]);
 
   const exportCsv = useCallback(() => {
-    const header = ["Staff", "Staff ID", "Department", "Roles", "Required", "Devices", "First enrolled", "Last used", "Status"];
+    const header = ["Staff", "Staff ID", "Department", "Roles", "Required", "Approved devices", "Awaiting approval", "First enrolled", "Last used", "Status"];
     const lines = [header.join(",")].concat(
       filtered.map((r) => [
         csvCell(r.full_name ?? ""),
@@ -151,6 +154,7 @@ export function BiometricEnrollmentPolicyCard() {
         csvCell((r.roles ?? []).join(" | ")),
         r.required ? "Yes" : "No",
         String(r.device_count),
+        String(r.pending_count ?? 0),
         r.first_enrolled_at ? formatDate(r.first_enrolled_at) : "",
         r.last_used_at ? formatDate(r.last_used_at) : "",
         COMPLIANCE_LABEL[r.compliance],
@@ -173,6 +177,7 @@ export function BiometricEnrollmentPolicyCard() {
           <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
           Biometric Enrollment Drive
           <Badge variant="secondary">{counts.enrolled}/{counts.total} enrolled</Badge>
+          {counts.awaiting > 0 && <Badge variant="outline">{counts.awaiting} awaiting approval</Badge>}
           {counts.overdue > 0 && <Badge variant="destructive">{counts.overdue} overdue</Badge>}
         </CardTitle>
         <CardDescription>
@@ -248,6 +253,7 @@ export function BiometricEnrollmentPolicyCard() {
             <SelectContent>
               <SelectItem value="all">All staff</SelectItem>
               <SelectItem value="enrolled">Enrolled</SelectItem>
+              <SelectItem value="awaiting_approval">Awaiting approval</SelectItem>
               <SelectItem value="grace">Within grace</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
               <SelectItem value="not_required">Not required</SelectItem>
@@ -286,11 +292,18 @@ export function BiometricEnrollmentPolicyCard() {
                   <TableCell className="flex items-center gap-1">
                     <Fingerprint className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     {r.device_count}
+                    {(r.pending_count ?? 0) > 0 && (
+                      <Badge variant="outline" className="ml-1">
+                        +{r.pending_count} pending
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>{r.last_used_at ? formatDate(r.last_used_at) : "Never"}</TableCell>
                   <TableCell>
                     {r.compliance === "enrolled" ? (
                       <Badge>Enrolled</Badge>
+                    ) : r.compliance === "awaiting_approval" ? (
+                      <Badge variant="outline">Awaiting approval</Badge>
                     ) : r.compliance === "overdue" ? (
                       <Badge variant="destructive">Overdue</Badge>
                     ) : r.compliance === "grace" ? (

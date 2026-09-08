@@ -14,17 +14,19 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, Fingerprint, KeyRound, History } from "lucide-react";
+import { ShieldCheck, Fingerprint, KeyRound, History, BadgeCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { BiometricEnrollmentPolicyCard } from "@/components/security/BiometricEnrollmentPolicyCard";
 import { BiometricReminderCard } from "@/components/security/BiometricReminderCard";
 import { BiometricAdminPanel } from "@/components/security/BiometricAdminPanel";
 import { BiometricAuditLogCard } from "@/components/security/BiometricAuditLogCard";
+import { BiometricApprovalQueue } from "@/components/security/BiometricApprovalQueue";
 
-type TabKey = "enrollment" | "credentials" | "audit";
+type TabKey = "enrollment" | "approvals" | "credentials" | "audit";
 
 const TABS: { value: TabKey; label: string; icon: typeof Fingerprint; iconClass: string }[] = [
   { value: "enrollment", label: "Enrollment", icon: Fingerprint, iconClass: "text-primary" },
+  { value: "approvals", label: "Approvals", icon: BadgeCheck, iconClass: "text-amber-600" },
   { value: "credentials", label: "Credentials", icon: KeyRound, iconClass: "text-chart-5" },
   { value: "audit", label: "Admin Audit", icon: History, iconClass: "text-emerald-600" },
 ];
@@ -73,6 +75,10 @@ export default function SecurityBiometricsAdmin() {
         <TabsContent value="enrollment" className="space-y-4 mt-4">
           <BiometricEnrollmentPolicyCard />
           <BiometricReminderCard />
+        </TabsContent>
+
+        <TabsContent value="approvals" className="space-y-4 mt-4">
+          <BiometricApprovalQueue />
         </TabsContent>
 
         <TabsContent value="credentials" className="space-y-4 mt-4">

@@ -30,7 +30,8 @@ Deno.serve(async (req) => {
     .from("webauthn_credentials")
     .select("credential_id, transports")
     .eq("user_id", user.id)
-    .is("revoked_at", null);
+    .is("revoked_at", null)
+    .eq("approval_status", "approved");
 
   if (!creds || creds.length === 0) return json({ enrolled: false });
 

@@ -83,6 +83,7 @@ Deno.serve(async (req) => {
       .eq("credential_id", assertion.id)
       .eq("user_id", user.id)
       .is("revoked_at", null)
+      .eq("approval_status", "approved")
       .maybeSingle();
     if (!cred) {
       await audit(db, req, "stepup_failure", { user_id: user.id, detail: `Unknown credential for ${action}` });
