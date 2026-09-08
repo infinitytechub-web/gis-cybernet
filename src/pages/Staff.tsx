@@ -1100,8 +1100,11 @@ export default function Staff() {
               onProfileValues={applyPrefillValues}
             />
 
+            <BioDataLoadingNotice />
+
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
-              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+              {/* Pinned so every section stays reachable while scrolling. */}
+              <TabsList className="sticky top-0 z-20 flex h-auto w-full flex-wrap justify-start gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                 {BIODATA_SECTIONS.map((s) => (
                   <TabsTrigger key={s.key} value={s.key} className="text-xs">
                     <span className="font-semibold">{s.key}</span>
