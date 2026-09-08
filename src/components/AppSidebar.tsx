@@ -62,6 +62,7 @@ const myDutyItems = [
 const attendanceItems = [
   { title: "My Dashboard", url: "/portal", icon: Activity, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Command Portal", url: "/command-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300" },
+  { title: "Command Dashboard", url: "/command-dashboard", icon: Building2, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Attendance", url: "/attendance", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400" },
   { title: "Office Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
 ];
