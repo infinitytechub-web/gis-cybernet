@@ -120,6 +120,7 @@ export default function AttendanceWeekly() {
           name: nameOf(a.profiles) || "—",
           staffId: a.profiles?.staff_id ?? "—",
           byDate: {},
+          leaveByDate: {},
           total: 0,
           leaveDays: 0,
         });
@@ -138,6 +139,7 @@ export default function AttendanceWeekly() {
           name: nameOf(l.profiles) || "—",
           staffId: l.profiles?.staff_id ?? "—",
           byDate: {},
+          leaveByDate: {},
           total: 0,
           leaveDays: 0,
         });
@@ -146,9 +148,13 @@ export default function AttendanceWeekly() {
       if (l.status !== "approved") continue;
       for (const d of days) {
         const key = iso(d);
-        if (key >= l.start_date && key <= l.end_date) row.leaveDays += 1;
+        if (key >= l.start_date && key <= l.end_date) {
+          row.leaveDays += 1;
+          row.leaveByDate[key] = l.type ?? "leave";
+        }
       }
     }
+
 
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [attendance, leave, days]);
