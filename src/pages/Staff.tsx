@@ -132,6 +132,8 @@ async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);
 }
 
+const PAGE_SIZE = 25;
+
 export default function Staff() {
   const { isAdmin, isAdminOrSupervisor } = useAuth();
   const canManage = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor
@@ -160,6 +162,7 @@ export default function Staff() {
     () => (unitFilter ? new Set(descendantIds(orgUnits, unitFilter)) : null),
     [unitFilter, orgUnits],
   );
+  const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState<"name" | "rank" | "department" | "status">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
