@@ -46,6 +46,7 @@ const StaffExportIntegrity = lazy(() => import("./pages/StaffExportIntegrity"));
 const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
+const CommandAssignments = lazy(() => import("./pages/CommandAssignments"));
 const HrHub = lazy(() => import("./pages/HrHub"));
 // Monitoring & Evaluation — one screen resolves each /me/* module by path.
 const MEPage = lazy(() => import("./pages/me/MEPage"));
