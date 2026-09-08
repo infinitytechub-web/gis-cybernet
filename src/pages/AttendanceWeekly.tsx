@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, PlaneTakeoff, Timer } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, Fingerprint, PlaneTakeoff, Timer } from "lucide-react";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, parseISO } from "date-fns";
@@ -568,6 +568,7 @@ export default function AttendanceWeekly() {
                       ))}
                       <TableCell className="text-right">{totals.leaveDays}</TableCell>
                       <TableCell className="text-right">{totals.daysOff}</TableCell>
+                      <TableCell className="text-right">{totals.biometricDays}</TableCell>
 
                     </TableRow>
                   </>
