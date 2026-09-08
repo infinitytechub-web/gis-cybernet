@@ -1052,12 +1052,14 @@ export default function Staff() {
         after the record through the shared persist function.
       */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent
-          ref={bioDialogRef}
-          className="relative max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden"
-        >
-          <QuickScroll containerRef={bioDialogRef} label="bio-data form" threshold={200} />
-          <DialogHeader>
+        {/*
+          Layout: the dialog itself never scrolls. The header and the section
+          tabs stay pinned, the middle area scrolls, and the save bar is pinned
+          to the bottom, so no section or control can end up clipped or out of
+          reach on small screens.
+        */}
+        <DialogContent className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Personnel Bio-Data &amp; Service Record — confidential, for official use only
@@ -1068,7 +1070,8 @@ export default function Staff() {
             open={dialogOpen}
             persistRef={biodataPersistRef}
           >
-          <div className="space-y-4">
+          <div ref={bioDialogRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-6 py-4">
+            <QuickScroll containerRef={bioDialogRef} label="bio-data form" threshold={200} />
             {/* Photo upload */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
