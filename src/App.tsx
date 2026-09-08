@@ -214,6 +214,7 @@ function App() {
           <Route path="/staff-approvals/accounts" element={<ProtectedRoute module="staff_admin"><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/profile-changes" element={<ProtectedRoute module="profile-change-approvals"><Layout><ProfileChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute module="attendance"><Layout><Attendance /></Layout></ProtectedRoute>} />
+          <Route path="/attendance/overview" element={<ProtectedRoute module="attendance-overview"><Layout><AttendanceOverview /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/shift-rotation-approvals" element={<ProtectedRoute module="shift-rotation-approvals"><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute module="shift-connections"><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
