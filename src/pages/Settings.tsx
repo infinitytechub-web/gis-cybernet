@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
+import { DirectoryPermissionsMatrix } from "@/components/settings/DirectoryPermissionsMatrix";
 import { AccessPolicySettings } from "@/components/settings/AccessPolicySettings";
 import { AnonymizationSettings } from "@/components/settings/AnonymizationSettings";
 
@@ -119,6 +120,7 @@ const roleColors: Record<AppRole, string> = {
 const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; area: "security" | "system" }[] = [
   { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
+  { value: "directory-perms", label: "Directory Matrix", icon: Grid3X3, iconClass: "text-emerald-600", area: "security" },
   { value: "access-policy", label: "Access Policy", icon: ShieldCheck, iconClass: "text-chart-5", area: "security" },
   { value: "anonymization", label: "Anonymisation", icon: EyeOff, iconClass: "text-indigo-600", area: "security" },
 
@@ -185,6 +187,7 @@ export default function Settings() {
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
+        <TabsContent value="directory-perms"><DirectoryPermissionsMatrix /></TabsContent>
         <TabsContent value="access-policy"><AccessPolicySettings /></TabsContent>
         <TabsContent value="anonymization"><AnonymizationSettings /></TabsContent>
 

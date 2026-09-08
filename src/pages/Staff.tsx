@@ -41,6 +41,7 @@ import { AgeDisplay } from "@/components/ui/age-display";
 import { DATE_FORMAT_HINT } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { useOrgScope } from "@/hooks/useOrgScope";
+import { useDirectoryPermissions, type DirectoryLevel } from "@/hooks/useDirectoryPermissions";
 import { CommandPicker } from "@/components/org/CommandPicker";
 import { QuickScroll } from "@/components/ui/quick-scroll";
 import { validatePhotoFile, uploadPhoto as uploadGuardedPhoto } from "@/lib/image-upload";
@@ -136,11 +137,36 @@ const PAGE_SIZE = 25;
 
 export default function Staff() {
   const { isAdmin, isAdminOrSupervisor } = useAuth();
-  const canManage = isAdminOrSupervisor; // Admin, OIC, 2IC, Staff Officer, Supervisor
+  const dirPerms = useDirectoryPermissions();
+  // Role tier OR an explicit switch in the admin Directory Matrix.
+  const canManage = isAdminOrSupervisor || dirPerms.canEdit || dirPerms.canCreate;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   // Hierarchical RBAC — command postings the signed-in user may assign.
   const { units: orgUnits, tree: orgTree, scope: orgScope } = useOrgScope();
+
+  /** org unit id → matrix hierarchy level (mirrors public.directory_level_of_unit). */
+  const unitLevels = useMemo(() => {
+    const m = new Map<string, DirectoryLevel>();
+    for (const u of orgUnits as any[]) {
+      const t = String((u as any).type ?? "");
+      const level: DirectoryLevel =
+        t === "directorate" || t === "national" || t === "management" || t === "command" ? "hq"
+        : t === "regional" ? "regional"
+        : t === "sector" ? "sector"
+        : t === "department" ? "department"
+        : t === "section" ? "section"
+        : "unit";
+      m.set(u.id, level);
+    }
+    return m;
+  }, [orgUnits]);
+
+  const levelOf = useCallback(
+    (orgUnitId: string | null | undefined): DirectoryLevel =>
+      (orgUnitId && unitLevels.get(orgUnitId)) || "unit",
+    [unitLevels],
+  );
   const orgRows = useMemo(() => flattenOrgTree(orgTree), [orgTree]);
   /** Units this user may post staff to — admins/command tier see the whole tree. */
   const assignableUnits = useMemo(
@@ -792,6 +818,7 @@ export default function Staff() {
         <h1 className="text-2xl font-bold text-secondary">Staff / Employees</h1>
         {canManage && (
           <div className="flex flex-wrap gap-2">
+            {(isAdmin || dirPerms.canDownload || dirPerms.canPrint) && (
             <ExportMenu
               getData={() => ({
                 title: "Staff / Employee Report",
@@ -801,6 +828,7 @@ export default function Staff() {
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
             />
+            )}
             <Button variant="outline" size="sm" onClick={() => setAssignUnitOpen(true)} className="gap-1">
               <Building2 className="h-4 w-4" /> Assign to unit
             </Button>
@@ -809,7 +837,7 @@ export default function Staff() {
                 <Upload className="h-4 w-4" /> Import
               </Button>
             )}
-            {isAdmin && (
+            {(isAdmin || dirPerms.canCreate) && (
               <Button size="sm" onClick={openCreate} className="gap-1">
                 <Plus className="h-4 w-4" /> Add Staff
               </Button>
@@ -956,6 +984,8 @@ export default function Staff() {
                     staff={s}
                     isAdmin={isAdmin}
                     canManage={canManage}
+                    canEdit={isAdmin || dirPerms.can("edit", levelOf(s.org_unit_id))}
+                    canDelete={isAdmin || dirPerms.can("delete", levelOf(s.org_unit_id))}
                     selected={bulk.isSelected(s.id)}
                     onToggleSelect={handleToggleSelect}
                     onOpenProfile={handleOpenProfile}
