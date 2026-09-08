@@ -56,6 +56,7 @@ const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const AttendanceOverview = lazy(() => import("./pages/AttendanceOverview"));
+const AttendanceWeekly = lazy(() => import("./pages/AttendanceWeekly"));
 const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
 const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
@@ -217,6 +218,7 @@ function App() {
           <Route path="/security/biometrics" element={<ProtectedRoute module="biometric-security-admin"><Layout><SecurityBiometricsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute module="attendance"><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/attendance/overview" element={<ProtectedRoute module="attendance-overview"><Layout><AttendanceOverview /></Layout></ProtectedRoute>} />
+          <Route path="/attendance/weekly" element={<ProtectedRoute module="attendance-weekly"><Layout><AttendanceWeekly /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/shift-rotation-approvals" element={<ProtectedRoute module="shift-rotation-approvals"><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute module="shift-connections"><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
