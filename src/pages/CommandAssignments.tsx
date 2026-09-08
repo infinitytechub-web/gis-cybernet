@@ -75,6 +75,8 @@ interface OfficerRow {
   last_name: string | null;
   staff_id: string | null;
   ranks?: { name: string | null } | null;
+  rank_id: string | null;
+  user_id: string | null;
   shift_group: string | null;
   org_unit_id: string | null;
 }
