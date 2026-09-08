@@ -233,27 +233,53 @@ export function useMyDirectoryAccess() {
     };
   }, [user, qc]);
 
-  const loading = !!user && (perms.loading || levelQuery.isLoading);
+  // An officer who has enrolled their own fingerprint on this account has
+  // proven who they are, so their own portal opens without waiting for an
+  // administrator to switch anything on. Wider directory rights still need the
+  // matrix.
+  const biometricQuery = useQuery({
+    queryKey: ["my-biometric-enrolled", user?.id],
+    enabled: !!user,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    queryFn: async (): Promise<boolean> => {
+      const { count, error } = await supabase
+        .from("webauthn_credentials")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .eq("approval_status", "approved")
+        .is("revoked_at", null);
+      if (error) throw new Error(error.message);
+      return (count ?? 0) > 0;
+    },
+  });
+
+  const loading = !!user && (perms.loading || levelQuery.isLoading || biometricQuery.isLoading);
   const assigned = levelQuery.data?.assigned ?? false;
   const level = levelQuery.data?.level ?? null;
+  const biometricEnrolled = biometricQuery.data ?? false;
   const matrixAllows = !loading && !!level && perms.can("view", level);
+  const selfAllowed = matrixAllows || biometricEnrolled;
 
   return {
     loading,
     level,
     /** Has a command posting (administrators are treated as assigned). */
     isAssigned: isAdmin || assigned,
+    /** Fingerprint/passkey enrolled and active on this account. */
+    biometricEnrolled,
     /** Why access is denied, once loading has finished. */
     denialReason: (isAdmin || loading
       ? null
       : !assigned
         ? "unassigned"
-        : !matrixAllows
+        : !selfAllowed
           ? "matrix"
           : null) as "unassigned" | "matrix" | null,
     /** Undecided while loading; keeps the UI from flashing a denial. */
-    canOpenPortal: isAdmin || (!loading && assigned && matrixAllows),
+    canOpenPortal: isAdmin || (!loading && assigned && selfAllowed),
     perms,
   };
 }
+
 
