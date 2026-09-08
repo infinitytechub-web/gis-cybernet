@@ -105,9 +105,11 @@ export default function AttendanceWeekly() {
         name: string;
         staffId: string;
         byDate: Record<string, { inAt: string | null; outAt: string | null; status: string | null; hours: number }>;
+        leaveByDate: Record<string, string>;
         total: number;
         leaveDays: number;
       }
+
     >();
 
     for (const a of attendance) {
@@ -118,6 +120,7 @@ export default function AttendanceWeekly() {
           name: nameOf(a.profiles) || "—",
           staffId: a.profiles?.staff_id ?? "—",
           byDate: {},
+          leaveByDate: {},
           total: 0,
           leaveDays: 0,
         });
@@ -136,6 +139,7 @@ export default function AttendanceWeekly() {
           name: nameOf(l.profiles) || "—",
           staffId: l.profiles?.staff_id ?? "—",
           byDate: {},
+          leaveByDate: {},
           total: 0,
           leaveDays: 0,
         });
@@ -144,9 +148,13 @@ export default function AttendanceWeekly() {
       if (l.status !== "approved") continue;
       for (const d of days) {
         const key = iso(d);
-        if (key >= l.start_date && key <= l.end_date) row.leaveDays += 1;
+        if (key >= l.start_date && key <= l.end_date) {
+          row.leaveDays += 1;
+          row.leaveByDate[key] = l.type ?? "leave";
+        }
       }
     }
+
 
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [attendance, leave, days]);
@@ -337,6 +345,7 @@ export default function AttendanceWeekly() {
                         <TableCell>{r.staffId}</TableCell>
                         {days.map((d) => {
                           const cell = r.byDate[iso(d)];
+                          const onLeave = r.leaveByDate[iso(d)];
                           return (
                             <TableCell key={iso(d)} className="text-center text-xs">
                               {cell ? (
@@ -350,13 +359,23 @@ export default function AttendanceWeekly() {
                                       {cell.status}
                                     </Badge>
                                   )}
+                                  {onLeave && (
+                                    <Badge variant="secondary" className="text-[10px] capitalize">
+                                      {onLeave} leave
+                                    </Badge>
+                                  )}
                                 </div>
+                              ) : onLeave ? (
+                                <Badge variant="secondary" className="text-[10px] capitalize">
+                                  {onLeave} leave
+                                </Badge>
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
                           );
                         })}
+
                         <TableCell className="text-right font-semibold">{r.total.toFixed(2)}</TableCell>
                         <TableCell className="text-right">{r.leaveDays}</TableCell>
                       </TableRow>
