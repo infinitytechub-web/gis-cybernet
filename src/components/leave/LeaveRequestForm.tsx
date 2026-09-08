@@ -159,7 +159,13 @@ export function LeaveRequestForm() {
       <CardContent className="space-y-4">
         <div>
           <Label>Type</Label>
-          <Select value={type} onValueChange={(v) => setType(v as LeaveType)}>
+          <Select
+            value={type}
+            onValueChange={(v) => {
+              setType(v as LeaveType);
+              setDuration("");
+            }}
+          >
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="annual">Annual Leave</SelectItem>
@@ -167,9 +173,33 @@ export function LeaveRequestForm() {
               <SelectItem value="compassionate">Compassionate Leave</SelectItem>
               <SelectItem value="pass">Pass</SelectItem>
               <SelectItem value="study">Study Leave</SelectItem>
+              <SelectItem value="maternity">Maternity Leave</SelectItem>
             </SelectContent>
           </Select>
+          {allowanceText && (
+            <p className="mt-1 text-xs text-muted-foreground">{allowanceText}</p>
+          )}
         </div>
+        {durationOptions.length > 0 && (
+          <div>
+            <Label>Duration</Label>
+            <Select value={duration} onValueChange={applyDuration}>
+              <SelectTrigger>
+                <SelectValue placeholder={`Select duration in ${UNIT_LABEL[entitlement!.unit]}s`} />
+              </SelectTrigger>
+              <SelectContent>
+                {durationOptions.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n} {UNIT_LABEL[entitlement!.unit]}{n === 1 ? "" : "s"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Choosing a duration fills the end date from the start date.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Start Date</Label>
