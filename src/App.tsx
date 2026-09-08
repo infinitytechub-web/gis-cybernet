@@ -295,6 +295,7 @@ function App() {
           <Route path="/unit-dashboard" element={<ProtectedRoute module="unit-dashboard"><Layout><UnitDashboard /></Layout></ProtectedRoute>} />
           <Route path="/hr" element={<ProtectedRoute module="hr"><Layout><HrHub /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
+          <Route path="/command-assignments" element={<ProtectedRoute module="command-assignments"><Layout><CommandAssignments /></Layout></ProtectedRoute>} />
 
           {/* Monitoring, Evaluation, Project & Performance Management */}
           <Route path="/me" element={<Navigate to="/me/command-center" replace />} />
