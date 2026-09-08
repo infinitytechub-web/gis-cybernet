@@ -4601,7 +4601,7 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: string
-          performed_by: string
+          performed_by?: string
         }
         Update: {
           action?: string
