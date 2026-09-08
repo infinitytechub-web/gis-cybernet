@@ -317,7 +317,14 @@ export default function StaffProfile() {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue={initialTab}>
+      <Tabs
+        defaultValue={initialTab}
+        onValueChange={(v) => {
+          if (v === "documents") {
+            void logStaffAccess("vault", profile.id, "Opened document vault tab");
+          }
+        }}
+      >
         <TabsList className="w-full justify-start flex-wrap h-auto">
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>
