@@ -64,6 +64,7 @@ const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
 const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
 const SensitiveAccessLog = lazy(() => import("./pages/SensitiveAccessLog"));
+const StaffAccessLog = lazy(() => import("./pages/StaffAccessLog"));
 const SecurityAuditLog = lazy(() => import("./pages/SecurityAuditLog"));
 const SecurityMonitoring = lazy(() => import("./pages/SecurityMonitoring"));
 const PhoneValidationRules = lazy(() => import("./pages/PhoneValidationRules"));
