@@ -6337,28 +6337,40 @@ export type Database = {
         Row: {
           created_at: string
           days: number
+          grade: string
           id: string
           leave_type: Database["public"]["Enums"]["leave_type"]
           notes: string | null
+          unit: string
           updated_at: string
+          value_max: number | null
+          value_min: number | null
           year: number
         }
         Insert: {
           created_at?: string
           days?: number
+          grade?: string
           id?: string
           leave_type: Database["public"]["Enums"]["leave_type"]
           notes?: string | null
+          unit?: string
           updated_at?: string
+          value_max?: number | null
+          value_min?: number | null
           year: number
         }
         Update: {
           created_at?: string
           days?: number
+          grade?: string
           id?: string
           leave_type?: Database["public"]["Enums"]["leave_type"]
           notes?: string | null
+          unit?: string
           updated_at?: string
+          value_max?: number | null
+          value_min?: number | null
           year?: number
         }
         Relationships: []
@@ -17512,6 +17524,15 @@ export type Database = {
           unit: string
         }[]
       }
+      leave_entitlement_days: {
+        Args: {
+          _profile_id: string
+          _type: Database["public"]["Enums"]["leave_type"]
+          _year: number
+        }
+        Returns: number
+      }
+      leave_grade_of_profile: { Args: { _profile_id: string }; Returns: string }
       leave_usage_by_location: {
         Args: { _year?: number }
         Returns: {
