@@ -1719,6 +1719,75 @@ export type Database = {
           },
         ]
       }
+      command_rank_changes: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          direction: string
+          effective_date: string
+          from_level: string | null
+          from_org_unit_id: string | null
+          from_rank_id: string | null
+          from_role: Database["public"]["Enums"]["app_role"] | null
+          id: string
+          profile_id: string
+          reason: string | null
+          to_level: string | null
+          to_org_unit_id: string | null
+          to_rank_id: string | null
+          to_role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          direction?: string
+          effective_date?: string
+          from_level?: string | null
+          from_org_unit_id?: string | null
+          from_rank_id?: string | null
+          from_role?: Database["public"]["Enums"]["app_role"] | null
+          id?: string
+          profile_id: string
+          reason?: string | null
+          to_level?: string | null
+          to_org_unit_id?: string | null
+          to_rank_id?: string | null
+          to_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          direction?: string
+          effective_date?: string
+          from_level?: string | null
+          from_org_unit_id?: string | null
+          from_rank_id?: string | null
+          from_role?: Database["public"]["Enums"]["app_role"] | null
+          id?: string
+          profile_id?: string
+          reason?: string | null
+          to_level?: string | null
+          to_org_unit_id?: string | null
+          to_rank_id?: string | null
+          to_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_rank_changes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_rank_changes_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_role_audit: {
         Row: {
           action: string
@@ -17131,6 +17200,18 @@ export type Database = {
           source: string
         }[]
       }
+      command_change_rank: {
+        Args: {
+          _direction?: string
+          _effective_date?: string
+          _profile_ids: string[]
+          _reason?: string
+          _to_org_unit_id?: string
+          _to_rank_id?: string
+          _to_role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: number
+      }
       command_dashboard: { Args: { _days?: number }; Returns: Json }
       command_move_officers: {
         Args: {
@@ -17222,6 +17303,23 @@ export type Database = {
         Args: { _org_unit_id: string; _profile_id: string }
         Returns: {
           assigned: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_download: boolean
+          can_edit: boolean
+          can_print: boolean
+          can_vault: boolean
+          can_view: boolean
+          level: string
+          scope: string
+        }[]
+      }
+      directory_rights_for_role: {
+        Args: {
+          _org_unit_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: {
           can_create: boolean
           can_delete: boolean
           can_download: boolean

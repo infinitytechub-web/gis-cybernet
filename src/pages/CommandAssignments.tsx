@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Building2,
   Check,
+  ChevronsUp,
   History,
   Loader2,
   Search,
@@ -39,6 +40,27 @@ import {
   DirectoryScope,
   directoryLevelOfUnitType,
 } from "@/hooks/useDirectoryPermissions";
+import { roleLabel } from "@/lib/role-labels";
+
+interface RankRow {
+  id: string;
+  name: string;
+  level: number | null;
+}
+
+interface RankChangeRow {
+  id: string;
+  profile_id: string;
+  from_rank_id: string | null;
+  to_rank_id: string | null;
+  from_role: string | null;
+  to_role: string | null;
+  to_level: string | null;
+  direction: string;
+  reason: string | null;
+  effective_date: string;
+  created_at: string;
+}
 
 interface UnitRow {
   id: string;
@@ -53,6 +75,8 @@ interface OfficerRow {
   last_name: string | null;
   staff_id: string | null;
   ranks?: { name: string | null } | null;
+  rank_id: string | null;
+  user_id: string | null;
   shift_group: string | null;
   org_unit_id: string | null;
 }
@@ -128,6 +152,11 @@ export default function CommandAssignments() {
   const [targetUnit, setTargetUnit] = useState<string>("");
   const [targetShift, setTargetShift] = useState<string>(UNCHANGED);
   const [reason, setReason] = useState("");
+  const [targetRank, setTargetRank] = useState<string>(UNCHANGED);
+  const [targetRole, setTargetRole] = useState<string>(UNCHANGED);
+  const [direction, setDirection] = useState<"promotion" | "demotion" | "lateral">("promotion");
+  const [rankReason, setRankReason] = useState("");
+
 
   const { data: units = [] } = useQuery({
     queryKey: ["command-assignments", "units"],
@@ -146,7 +175,9 @@ export default function CommandAssignments() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group, org_unit_id, ranks(name)")
+        .select(
+          "id, first_name, last_name, staff_id, shift_group, org_unit_id, rank_id, user_id, ranks(name)",
+        )
         .order("last_name");
       if (error) throw error;
       return (data ?? []) as OfficerRow[];
@@ -167,6 +198,55 @@ export default function CommandAssignments() {
       return (data ?? []) as TransferRow[];
     },
   });
+
+  const { data: ranks = [] } = useQuery({
+    queryKey: ["command-assignments", "ranks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ranks")
+        .select("id, name, level")
+        .order("level", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as RankRow[];
+    },
+  });
+
+  /** Roles that the directory matrix knows about — those are the ones with rights. */
+  const { data: matrixRoles = [] } = useQuery({
+    queryKey: ["command-assignments", "matrix-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("directory_permissions").select("role");
+      if (error) throw error;
+      return Array.from(new Set((data ?? []).map((r) => r.role as string))).sort();
+    },
+  });
+
+  const { data: roleByUser = {} } = useQuery({
+    queryKey: ["command-assignments", "roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      const m: Record<string, string> = {};
+      for (const r of data ?? []) if (!m[r.user_id]) m[r.user_id] = r.role as string;
+      return m;
+    },
+  });
+
+  const { data: rankChanges = [] } = useQuery({
+    queryKey: ["command-assignments", "rank-changes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("command_rank_changes")
+        .select(
+          "id, profile_id, from_rank_id, to_rank_id, from_role, to_role, to_level, direction, reason, effective_date, created_at",
+        )
+        .order("created_at", { ascending: false })
+        .limit(40);
+      if (error) throw error;
+      return (data ?? []) as RankChangeRow[];
+    },
+  });
+
 
   const unitById = useMemo(() => {
     const m = new Map<string, UnitRow>();
@@ -225,6 +305,75 @@ export default function CommandAssignments() {
       if (error) throw error;
       return ((data ?? [])[0] ?? null) as RightsRow | null;
     },
+  });
+
+  const rankById = useMemo(() => {
+    const m = new Map<string, RankRow>();
+    for (const r of ranks) m.set(r.id, r);
+    return m;
+  }, [ranks]);
+
+  const previewRole =
+    targetRole !== UNCHANGED
+      ? targetRole
+      : previewOfficer?.user_id
+        ? roleByUser[previewOfficer.user_id] ?? null
+        : null;
+
+  /** Switches the new role would get at the level of the officer's command. */
+  const roleRights = useQuery({
+    queryKey: [
+      "command-rights",
+      "role",
+      previewRole,
+      targetUnit || previewOfficer?.org_unit_id || null,
+    ],
+    enabled: !!previewRole,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("directory_rights_for_role", {
+        _role: previewRole as never,
+        _org_unit_id: targetUnit || previewOfficer?.org_unit_id || null,
+      });
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as RightsRow | null;
+    },
+  });
+
+  const changeRank = useMutation({
+    mutationFn: async () => {
+      if (!selectedIds.length) throw new Error("Select at least one officer");
+      if (targetRank === UNCHANGED && targetRole === UNCHANGED) {
+        throw new Error("Choose a new rank or role first");
+      }
+      const { data, error } = await supabase.rpc("command_change_rank", {
+        _profile_ids: selectedIds,
+        _to_rank_id: targetRank === UNCHANGED ? null : targetRank,
+        _to_role: targetRole === UNCHANGED ? null : (targetRole as never),
+        _to_org_unit_id: targetUnit || null,
+        _direction: direction,
+        _reason: rankReason.trim() || null,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+    onSuccess: (count) => {
+      toast.success(
+        `${count} officer(s) ${
+          direction === "demotion" ? "demoted" : direction === "promotion" ? "promoted" : "updated"
+        } — matrix switches applied automatically`,
+      );
+      setSelected({});
+      setRankReason("");
+      setTargetRank(UNCHANGED);
+      setTargetRole(UNCHANGED);
+      qc.invalidateQueries({ queryKey: ["command-assignments"] });
+      qc.invalidateQueries({ queryKey: ["command-rights"] });
+      qc.invalidateQueries({ queryKey: ["my-directory-level"] });
+      qc.invalidateQueries({ queryKey: ["directory-permissions"] });
+      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: ["user-roles"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not change the rank"),
   });
 
   const move = useMutation({
@@ -505,6 +654,162 @@ export default function CommandAssignments() {
               Showing the first 300 of {rows.length}. Narrow the search to reach the rest.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ChevronsUp className="h-5 w-5 text-primary" /> Promote or demote officers
+          </CardTitle>
+          <CardDescription>
+            Tick the officers in the list above, then set the new rank and level here. The directory
+            matrix switches for the new level are applied automatically — no separate step. Choose a
+            command above as well if the promotion also moves them.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-[170px]">
+              <p className="text-xs text-muted-foreground mb-1">Change type</p>
+              <Select
+                value={direction}
+                onValueChange={(v) => setDirection(v as typeof direction)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="promotion">Promotion</SelectItem>
+                  <SelectItem value="demotion">Demotion</SelectItem>
+                  <SelectItem value="lateral">Sideways change</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[200px] flex-1">
+              <p className="text-xs text-muted-foreground mb-1">New rank</p>
+              <Select value={targetRank} onValueChange={setTargetRank}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNCHANGED}>Leave rank unchanged</SelectItem>
+                  {ranks.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[200px] flex-1">
+              <p className="text-xs text-muted-foreground mb-1">New level (matrix role)</p>
+              <Select value={targetRole} onValueChange={setTargetRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNCHANGED}>Leave level unchanged</SelectItem>
+                  {matrixRoles.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {roleLabel(r as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              disabled={!selectedIds.length || changeRank.isPending}
+              onClick={() => changeRank.mutate()}
+              className="gap-1"
+            >
+              {changeRank.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Apply {selectedIds.length ? `(${selectedIds.length})` : ""}
+            </Button>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Reason / remarks (optional)</p>
+            <Textarea
+              rows={2}
+              placeholder="e.g. Promoted to Chief Inspector with effect from today"
+              value={rankReason}
+              onChange={(e) => setRankReason(e.target.value)}
+            />
+          </div>
+
+          {previewOfficer && previewRole && (
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Switches applied to {roleLabel(previewRole as never)} at{" "}
+                {(targetUnit ? unitById.get(targetUnit) : previewOfficer.org_unit_id
+                  ? unitById.get(previewOfficer.org_unit_id)
+                  : null)?.name ?? "no command"}
+              </p>
+              {roleRights.isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <RightsGrid rights={roleRights.data ?? null} />
+                  <p className="text-xs text-muted-foreground">
+                    Scope:{" "}
+                    {DIRECTORY_SCOPE_LABELS[(roleRights.data?.scope ?? "none") as DirectoryScope]}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Officer</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Reason</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rankChanges.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      No promotions or demotions recorded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rankChanges.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>{format(new Date(c.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                    <TableCell className="font-medium">
+                      {officerName(officerById.get(c.profile_id))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={c.direction === "demotion" ? "destructive" : "default"}>
+                        {c.direction === "demotion"
+                          ? "Demotion"
+                          : c.direction === "promotion"
+                            ? "Promotion"
+                            : "Sideways"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {(c.from_rank_id ? rankById.get(c.from_rank_id)?.name : null) ?? "—"} →{" "}
+                      {(c.to_rank_id ? rankById.get(c.to_rank_id)?.name : null) ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      {c.from_role ? roleLabel(c.from_role as never) : "—"} →{" "}
+                      {c.to_role ? roleLabel(c.to_role as never) : "—"}
+                    </TableCell>
+                    <TableCell className="max-w-[240px] truncate">{c.reason ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
