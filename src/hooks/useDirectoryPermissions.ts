@@ -174,10 +174,14 @@ export function directoryLevelOfUnitType(type?: string | null): DirectoryLevel {
 /**
  * Whether the signed-in officer may open their own staff portal dashboard.
  *
- * The portal is governed by the View switch of the directory matrix at the
- * officer's own hierarchy level, so an administrator can turn the portal off
- * for a whole role/level from Settings → Directory Matrix. Officers with no
- * posting yet fall back to the Unit level.
+ * Two independent gates, in this order:
+ *  1. Command assignment — an officer with no posting (no `org_unit_id`) sees
+ *     nothing until an administrator assigns them to a command. Turning the
+ *     matrix switch on does not substitute for a posting.
+ *  2. Directory matrix — the View switch for the officer's role at the
+ *     hierarchy level of their assigned command.
+ *
+ * Administrators always pass both.
  */
 export function useMyDirectoryAccess() {
   const { user, isAdmin } = useAuth();
@@ -187,26 +191,42 @@ export function useMyDirectoryAccess() {
     queryKey: ["my-directory-level", user?.id],
     enabled: !!user,
     staleTime: 5 * 60_000,
-    queryFn: async (): Promise<DirectoryLevel> => {
+    queryFn: async (): Promise<{ assigned: boolean; level: DirectoryLevel | null }> => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("org_unit:org_units!profiles_org_unit_id_fkey(type)")
+        .select("org_unit_id, org_unit:org_units!profiles_org_unit_id_fkey(type)")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw new Error(error.message);
-      const unit = (data as { org_unit?: { type?: string | null } | null } | null)?.org_unit;
-      return directoryLevelOfUnitType(unit?.type ?? null);
+      const row = data as
+        | { org_unit_id?: string | null; org_unit?: { type?: string | null } | null }
+        | null;
+      if (!row?.org_unit_id) return { assigned: false, level: null };
+      return { assigned: true, level: directoryLevelOfUnitType(row.org_unit?.type ?? null) };
     },
   });
 
   const loading = !!user && (perms.loading || levelQuery.isLoading);
-  const level = levelQuery.data ?? null;
+  const assigned = levelQuery.data?.assigned ?? false;
+  const level = levelQuery.data?.level ?? null;
+  const matrixAllows = !loading && !!level && perms.can("view", level);
 
   return {
     loading,
     level,
+    /** Has a command posting (administrators are treated as assigned). */
+    isAssigned: isAdmin || assigned,
+    /** Why access is denied, once loading has finished. */
+    denialReason: (isAdmin || loading
+      ? null
+      : !assigned
+        ? "unassigned"
+        : !matrixAllows
+          ? "matrix"
+          : null) as "unassigned" | "matrix" | null,
     /** Undecided while loading; keeps the UI from flashing a denial. */
-    canOpenPortal: isAdmin || (!loading && !!level && perms.can("view", level)),
+    canOpenPortal: isAdmin || (!loading && assigned && matrixAllows),
     perms,
   };
 }
+
