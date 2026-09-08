@@ -160,6 +160,14 @@ export default function CommandPortal() {
         </p>
       </header>
 
+      {(ctxQuery.error || officersQuery.error) && (
+        <Card className="border-destructive/40">
+          <CardContent className="pt-6 text-sm text-destructive">
+            Your command records could not be loaded. Please refresh the page.
+          </CardContent>
+        </Card>
+      )}
+
       {loading && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading your command…
