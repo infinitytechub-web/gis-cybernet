@@ -104,6 +104,16 @@ export default function MyDashboard() {
   });
   const profileId = profile?.id ?? null;
 
+  // Staff access log: record that this officer actually reached their portal.
+  // Once per profile per page-load, and only when access was granted.
+  const portalLoggedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!profileId || !canOpenPortal) return;
+    if (portalLoggedRef.current === profileId) return;
+    portalLoggedRef.current = profileId;
+    void logStaffAccess("portal", profileId, "Opened own staff portal dashboard");
+  }, [profileId, canOpenPortal]);
+
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
