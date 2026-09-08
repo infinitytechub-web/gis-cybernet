@@ -2835,6 +2835,57 @@ export type Database = {
           },
         ]
       }
+      directory_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_download: boolean
+          can_edit: boolean
+          can_print: boolean
+          can_vault: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          level: string
+          role: Database["public"]["Enums"]["app_role"]
+          scope: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_download?: boolean
+          can_edit?: boolean
+          can_print?: boolean
+          can_vault?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          level: string
+          role: Database["public"]["Enums"]["app_role"]
+          scope?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_download?: boolean
+          can_edit?: boolean
+          can_print?: boolean
+          can_vault?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          level?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          scope?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       duty_roster_entries: {
         Row: {
           created_at: string
@@ -16846,6 +16897,10 @@ export type Database = {
       }
       can_approve_fuel_request: { Args: { _user_id: string }; Returns: boolean }
       can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
+      can_directory_action: {
+        Args: { _action: string; _profile_id: string; _user_id?: string }
+        Returns: boolean
+      }
       can_export_hrm: { Args: { _kind: string }; Returns: boolean }
       can_export_interlink_logs: {
         Args: { _user_id: string }
@@ -17005,6 +17060,14 @@ export type Database = {
         }[]
       }
       detention_norm: { Args: { _t: string }; Returns: string }
+      directory_level_of_profile: {
+        Args: { _profile_id: string }
+        Returns: string
+      }
+      directory_level_of_unit: {
+        Args: { _org_unit_id: string }
+        Returns: string
+      }
       duty_roster_live: {
         Args: { _date?: string; _group?: string }
         Returns: {
@@ -17789,6 +17852,20 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      my_directory_permissions: {
+        Args: never
+        Returns: {
+          can_create: boolean
+          can_delete: boolean
+          can_download: boolean
+          can_edit: boolean
+          can_print: boolean
+          can_vault: boolean
+          can_view: boolean
+          level: string
+          scope: string
+        }[]
       }
       my_mfa_policy: { Args: never; Returns: Json }
       next_cyber_incident_number: { Args: never; Returns: string }
