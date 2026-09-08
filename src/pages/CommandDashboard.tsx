@@ -25,6 +25,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadBlob } from "@/lib/download-utils";
+import { formatDate, formatDateTime } from "@/lib/date-format";
 
 interface CommandUnit {
   id: string;
@@ -77,15 +78,7 @@ const DENIAL_TEXT: Record<string, string> = {
   out_of_scope: "That command is outside the scope allowed for your role.",
 };
 
-function fmtDateTime(value: string | null | undefined) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString(undefined, {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+
 
 /**
  * Live command dashboard — one command at a time.
@@ -337,7 +330,7 @@ export default function CommandDashboard() {
                     <TableCell>
                       {(o.portal_visits ?? 0) > 0 ? (
                         <span className="text-xs">
-                          {o.portal_visits}× · {fmtDateTime(o.last_portal_at)}
+                          {o.portal_visits}× · {formatDateTime(o.last_portal_at)}
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">Not yet</span>
@@ -437,7 +430,7 @@ export default function CommandDashboard() {
                       <TableCell>{p.holder || "—"}</TableCell>
                       <TableCell>{p.holder_rank ?? "—"}</TableCell>
                       <TableCell>
-                        {p.start_date ? new Date(p.start_date).toLocaleDateString() : "—"}
+                        {formatDate(p.start_date)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -471,7 +464,7 @@ export default function CommandDashboard() {
                     <TableCell className="font-medium">{o.name || "—"}</TableCell>
                     <TableCell>{o.rank ?? "—"}</TableCell>
                     <TableCell>{o.portal_visits}</TableCell>
-                    <TableCell>{fmtDateTime(o.last_portal_at)}</TableCell>
+                    <TableCell>{formatDateTime(o.last_portal_at)}</TableCell>
                   </TableRow>
                 ))}
                 {!reachedOfficers.length && (
