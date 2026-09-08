@@ -21,10 +21,16 @@ type Req = {
   user_id: string;
   requested_changes: Record<string, string | null>;
   previous_values: Record<string, string | null> | null;
-  status: "pending" | "approved" | "rejected" | "cancelled";
+  status: "pending" | "supervisor_approved" | "approved" | "rejected" | "cancelled";
   reviewer_notes: string | null;
   reviewed_at: string | null;
   created_at: string;
+  supervisor_id: string | null;
+  supervisor_reviewed_at: string | null;
+  supervisor_notes: string | null;
+  admin_id: string | null;
+  admin_reviewed_at: string | null;
+  admin_notes: string | null;
   profiles?: { first_name: string; last_name: string; staff_id: string; email?: string };
 };
 
