@@ -33,6 +33,7 @@ import { MyHoursDashboard } from "@/components/attendance/MyHoursDashboard";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { formatDate } from "@/lib/date-format";
+import { useMyDirectoryAccess } from "@/hooks/useDirectoryPermissions";
 
 const MAX_DAILY_HOURS = 16;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
@@ -85,6 +86,9 @@ function statusLabel(status: string) {
 
 export default function MyDashboard() {
   const { user } = useAuth();
+  // Portal visibility follows the directory matrix View switch for the
+  // officer's own hierarchy level (Settings → Directory Matrix).
+  const { loading: accessLoading, canOpenPortal } = useMyDirectoryAccess();
   const { data: profile } = useQuery({
     queryKey: ["portal-profile", user?.id],
     enabled: !!user,
@@ -170,6 +174,28 @@ export default function MyDashboard() {
   const pendingLeave = leaveRows.filter((r) => r.status === "pending");
   const pendingChanges = changeRows.filter((r) => r.status === "pending" || r.status === "supervisor_approved");
   const pendingCount = pendingLeave.length + pendingChanges.length;
+
+  if (accessLoading) {
+    return (
+      <div className="p-8 text-center text-sm text-muted-foreground">Checking your access…</div>
+    );
+  }
+
+  if (!canOpenPortal) {
+    return (
+      <div className="space-y-6">
+        <PageHeader icon={LayoutDashboard} title="Staff Portal" subtitle="Access restricted" />
+        <Card>
+          <CardContent className="py-10 text-center space-y-2">
+            <p className="text-sm font-medium">The staff portal is not enabled for your role.</p>
+            <p className="text-sm text-muted-foreground">
+              An administrator can switch it on for your rank and command level.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

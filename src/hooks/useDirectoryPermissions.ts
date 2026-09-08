@@ -146,3 +146,67 @@ export async function checkDirectoryAction(action: DirectoryAction, profileId: s
   if (error) throw error;
   return data === true;
 }
+
+/**
+ * Maps an organisational unit type onto the matrix hierarchy level.
+ * `org_units.type` is the column name (there is no `unit_type`).
+ */
+export function directoryLevelOfUnitType(type?: string | null): DirectoryLevel {
+  switch (type) {
+    case "directorate":
+    case "national":
+    case "management":
+    case "command":
+      return "hq";
+    case "regional":
+      return "regional";
+    case "sector":
+      return "sector";
+    case "department":
+      return "department";
+    case "section":
+      return "section";
+    default:
+      return "unit";
+  }
+}
+
+/**
+ * Whether the signed-in officer may open their own staff portal dashboard.
+ *
+ * The portal is governed by the View switch of the directory matrix at the
+ * officer's own hierarchy level, so an administrator can turn the portal off
+ * for a whole role/level from Settings → Directory Matrix. Officers with no
+ * posting yet fall back to the Unit level.
+ */
+export function useMyDirectoryAccess() {
+  const { user, isAdmin } = useAuth();
+  const perms = useDirectoryPermissions();
+
+  const levelQuery = useQuery({
+    queryKey: ["my-directory-level", user?.id],
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<DirectoryLevel> => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("org_unit:org_units!profiles_org_unit_id_fkey(type)")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      const unit = (data as { org_unit?: { type?: string | null } | null } | null)?.org_unit;
+      return directoryLevelOfUnitType(unit?.type ?? null);
+    },
+  });
+
+  const loading = !!user && (perms.loading || levelQuery.isLoading);
+  const level = levelQuery.data ?? null;
+
+  return {
+    loading,
+    level,
+    /** Undecided while loading; keeps the UI from flashing a denial. */
+    canOpenPortal: isAdmin || (!loading && !!level && perms.can("view", level)),
+    perms,
+  };
+}
