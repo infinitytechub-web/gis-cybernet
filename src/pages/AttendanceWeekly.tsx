@@ -146,8 +146,10 @@ export default function AttendanceWeekly() {
           staffId: a.profiles?.staff_id ?? "—",
           byDate: {},
           leaveByDate: {},
+          offByDate: {},
           total: 0,
           leaveDays: 0,
+          daysOff: 0,
         });
       }
       const row = map.get(key)!;
@@ -165,8 +167,10 @@ export default function AttendanceWeekly() {
           staffId: l.profiles?.staff_id ?? "—",
           byDate: {},
           leaveByDate: {},
+          offByDate: {},
           total: 0,
           leaveDays: 0,
+          daysOff: 0,
         });
       }
       const row = map.get(l.profile_id)!;
@@ -180,9 +184,24 @@ export default function AttendanceWeekly() {
       }
     }
 
+    // Auto-detect days off from the clock records: any day up to today with no
+    // clock-in at all counts as a day off (labelled with the holiday name when
+    // it is a public holiday, or with the approved leave type when on leave).
+    const today = iso(new Date());
+    for (const row of map.values()) {
+      for (const d of days) {
+        const key = iso(d);
+        if (key > today) continue;
+        if (row.byDate[key]) continue;
+        const label = row.leaveByDate[key] ? `${row.leaveByDate[key]} leave` : holidayByDate[key] ?? "Off";
+        row.offByDate[key] = label;
+        if (!row.leaveByDate[key]) row.daysOff += 1;
+      }
+    }
+
 
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [attendance, leave, days]);
+  }, [attendance, leave, days, holidayByDate]);
 
   const totals = useMemo(() => {
     const perDay: Record<string, number> = {};
@@ -193,7 +212,13 @@ export default function AttendanceWeekly() {
         perDay[d] = (perDay[d] ?? 0) + cell.hours;
       }
     }
-    return { hours, perDay, staff: staffRows.length };
+    return {
+      hours,
+      perDay,
+      staff: staffRows.length,
+      daysOff: staffRows.reduce((n, r) => n + r.daysOff, 0),
+      leaveDays: staffRows.reduce((n, r) => n + r.leaveDays, 0),
+    };
   }, [staffRows]);
 
   const leaveCounts = useMemo(
@@ -215,6 +240,7 @@ export default function AttendanceWeekly() {
       }),
       "Total hours",
       "Leave days (approved)",
+      "Days off (auto)",
     ];
     const lines = [header.map(csvCellQuoted).join(",")];
     for (const r of staffRows) {
@@ -223,12 +249,12 @@ export default function AttendanceWeekly() {
         const cell = r.byDate[iso(d)];
         cells.push(clock(cell?.inAt ?? null), clock(cell?.outAt ?? null), (cell?.hours ?? 0).toFixed(2));
       }
-      cells.push(r.total.toFixed(2), String(r.leaveDays));
+      cells.push(r.total.toFixed(2), String(r.leaveDays), String(r.daysOff));
       lines.push(cells.map(csvCellQuoted).join(","));
     }
     const footer: string[] = ["TOTAL", ""];
     for (const d of days) footer.push("", "", (totals.perDay[iso(d)] ?? 0).toFixed(2));
-    footer.push(totals.hours.toFixed(2), "");
+    footer.push(totals.hours.toFixed(2), String(totals.leaveDays), String(totals.daysOff));
     lines.push(footer.map(csvCellQuoted).join(","));
     downloadCSVString(lines.join("\n"), `attendance-week-${from}.csv`);
   };
@@ -351,16 +377,17 @@ export default function AttendanceWeekly() {
                   ))}
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">Leave days</TableHead>
+                  <TableHead className="text-right">Days off</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={days.length + 4}>Loading…</TableCell>
+                    <TableCell colSpan={days.length + 5}>Loading…</TableCell>
                   </TableRow>
                 ) : staffRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={days.length + 4}>No attendance recorded for this week.</TableCell>
+                    <TableCell colSpan={days.length + 5}>No attendance recorded for this week.</TableCell>
                   </TableRow>
                 ) : (
                   <>
@@ -371,6 +398,7 @@ export default function AttendanceWeekly() {
                         {days.map((d) => {
                           const cell = r.byDate[iso(d)];
                           const onLeave = r.leaveByDate[iso(d)];
+                          const offLabel = r.offByDate[iso(d)];
                           return (
                             <TableCell key={iso(d)} className="text-center text-xs">
                               {cell ? (
@@ -390,9 +418,9 @@ export default function AttendanceWeekly() {
                                     </Badge>
                                   )}
                                 </div>
-                              ) : onLeave ? (
+                              ) : offLabel ? (
                                 <Badge variant="secondary" className="text-[10px] capitalize">
-                                  {onLeave} leave
+                                  {offLabel}
                                 </Badge>
                               ) : (
                                 <span className="text-muted-foreground">—</span>
@@ -403,6 +431,7 @@ export default function AttendanceWeekly() {
 
                         <TableCell className="text-right font-semibold">{r.total.toFixed(2)}</TableCell>
                         <TableCell className="text-right">{r.leaveDays}</TableCell>
+                        <TableCell className="text-right">{r.daysOff}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-semibold">
