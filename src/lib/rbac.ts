@@ -175,6 +175,7 @@ export const MODULES: ModuleDef[] = [
   { key: "security-audit-log", label: "Security Audit Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/security-audit-log"] },
   { key: "phone-validation-rules", label: "Phone Validation Rules", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/admin/phone-validation"] },
   { key: "sensitive-access-log", label: "Sensitive Access Log", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/sensitive-access-log"] },
+  { key: "staff-access-log", label: "Staff Access Log", tier: "admin", roles: [...ADMIN_OIC_2IC, "staff_officer"], paths: ["/staff-access-log"] },
   { key: "ip-blocks", label: "IP & Device Blocks", tier: "admin", roles: ADMIN_ONLY, paths: ["/ip-blocks"] },
 
   { key: "recycle-bin", label: "Recycle Bin", tier: "admin", roles: ["admin", "oic"], paths: ["/recycle-bin"] },
