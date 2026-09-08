@@ -292,38 +292,97 @@ export function LeaveBalanceDashboard() {
             <CardTitle className="text-base">Yearly allowances · {year}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {LEAVE_TYPES.map((t) => {
-                const current = entitlements.find((e) => e.leave_type === t);
-                const key = `${t}-${year}`;
-                const value = drafts[key] ?? String(current?.days ?? 0);
-                return (
-                  <div key={t} className="flex items-end gap-2 rounded-md border p-3">
-                    <div className="flex-1 space-y-1">
-                      <Label htmlFor={`ent-${t}`}>{TYPE_LABELS[t]}</Label>
-                      <Input
-                        id={`ent-${t}`}
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        value={value}
-                        onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
-                      />
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => saveEntitlement.mutate({ leaveType: t, days: Number(value) || 0 })}
-                      disabled={saveEntitlement.isPending}
-                    >
-                      <Save className="mr-1 h-4 w-4" aria-hidden="true" /> Save
-                    </Button>
+            <div className="space-y-4">
+              {LEAVE_TYPES.map((t) => (
+                <div key={t} className="rounded-md border p-3">
+                  <div className="mb-2 text-sm font-medium">{TYPE_LABELS[t]}</div>
+                  <div className="grid gap-3 lg:grid-cols-3">
+                    {GRADES.map((g) => {
+                      const current = entitlements.find((e) => e.leave_type === t && e.grade === g);
+                      const key = `${t}-${g}-${year}`;
+                      const value = drafts[key] ?? (current ? String(current.days) : "");
+                      const unitKey = `${key}-unit`;
+                      const unit = drafts[unitKey] ?? current?.unit ?? "days";
+                      const minKey = `${key}-min`;
+                      const maxKey = `${key}-max`;
+                      const vMin = drafts[minKey] ?? (current?.value_min != null ? String(current.value_min) : "");
+                      const vMax = drafts[maxKey] ?? (current?.value_max != null ? String(current.value_max) : "");
+                      return (
+                        <div key={g} className="space-y-2 rounded-md bg-muted/40 p-2">
+                          <Label htmlFor={`ent-${t}-${g}`} className="text-xs">
+                            {GRADE_LABELS[g]}
+                          </Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id={`ent-${t}-${g}`}
+                              type="number"
+                              min={0}
+                              step={0.5}
+                              placeholder="Not set"
+                              value={value}
+                              onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
+                            />
+                            <Select
+                              value={unit}
+                              onValueChange={(v) => setDrafts((d) => ({ ...d, [unitKey]: v }))}
+                            >
+                              <SelectTrigger className="w-[110px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {UNITS.map((u) => (
+                                  <SelectItem key={u} value={u}>{u}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {unit !== "days" && (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={0}
+                                placeholder="Min"
+                                aria-label={`${TYPE_LABELS[t]} ${GRADE_LABELS[g]} minimum`}
+                                value={vMin}
+                                onChange={(e) => setDrafts((d) => ({ ...d, [minKey]: e.target.value }))}
+                              />
+                              <span className="text-xs text-muted-foreground">to</span>
+                              <Input
+                                type="number"
+                                min={0}
+                                placeholder="Max"
+                                aria-label={`${TYPE_LABELS[t]} ${GRADE_LABELS[g]} maximum`}
+                                value={vMax}
+                                onChange={(e) => setDrafts((d) => ({ ...d, [maxKey]: e.target.value }))}
+                              />
+                            </div>
+                          )}
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() =>
+                              saveEntitlement.mutate({
+                                leaveType: t,
+                                grade: g,
+                                unit,
+                                days: Number(value) || 0,
+                                valueMin: vMin === "" ? null : Number(vMin),
+                                valueMax: vMax === "" ? null : Number(vMax),
+                              })
+                            }
+                            disabled={saveEntitlement.isPending || value === ""}
+                          >
+                            <Save className="mr-1 h-4 w-4" aria-hidden="true" /> Save
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Allowances apply to every active staff member for the selected year. Days already approved are
-              deducted automatically.
+              Grade allowances win over the “all officers” value. Ranks of Assistant Superintendent and above
+              count as senior officers. For months or years you can set a selectable range (for example study
+              leave 1–2 years for senior officers). Requests longer than the matching allowance are refused.
             </p>
           </CardContent>
         </Card>
