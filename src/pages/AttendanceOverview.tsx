@@ -23,6 +23,7 @@ import { csvCellQuoted } from "@/lib/csv-safe";
 import { formatDate } from "@/lib/date-format";
 import { format, startOfMonth, subDays } from "date-fns";
 import { Link } from "react-router-dom";
+import { DateInput } from "@/components/ui/date-input";
 
 interface SummaryRow {
   profile_id: string;
@@ -153,11 +154,11 @@ export default function AttendanceOverview() {
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <Label htmlFor="att-from">From</Label>
-            <Input id="att-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
+            <DateInput id="att-from" value={from} max={to} onChange={(e) => setFrom(e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="att-to">To</Label>
-            <Input id="att-to" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
+            <DateInput id="att-to" value={to} min={from} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => applyPreset(7)}>Last 7 days</Button>

@@ -48,6 +48,7 @@ import {
 import { StaffCombobox, type StaffOption } from "@/components/ui/staff-combobox";
 import { Crown, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { DateInput } from "@/components/ui/date-input";
 
 /** Establishment levels, in the same order as the command hierarchy. */
 export const POSITION_LEVELS = [
@@ -440,18 +441,16 @@ export function OrgPositionsAdmin() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="pos-start">Held since</Label>
-                <Input
+                <DateInput
                   id="pos-start"
-                  type="date"
                   value={form.start_date}
                   onChange={(e) => setForm({ ...form, start_date: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pos-end">Ended on</Label>
-                <Input
+                <DateInput
                   id="pos-end"
-                  type="date"
                   value={form.end_date}
                   onChange={(e) => setForm({ ...form, end_date: e.target.value })}
                 />
