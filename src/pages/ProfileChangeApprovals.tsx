@@ -96,7 +96,7 @@ export default function ProfileChangeApprovals() {
 
   const notifyStaff = async (
     id: string,
-    status: "approved" | "rejected" | "pending",
+    status: Decision,
     req: any,
     reviewedAt: string
   ) => {
@@ -132,17 +132,13 @@ export default function ProfileChangeApprovals() {
     }
   };
 
-  const reviewOne = async (
-    id: string,
-    status: "approved" | "rejected" | "pending",
-    req: Req
-  ) => {
+  const reviewOne = async (id: string, status: Decision, req: Req) => {
     if (!user) throw new Error("Not signed in");
     const reviewedAt = new Date().toISOString();
 
     // Selective approval: only keep the fields still ticked for this request.
     let changes = req.requested_changes || {};
-    if (status === "approved") {
+    if (status === "supervisor_approved" || status === "approved") {
       const drop = excluded[id] || {};
       const kept = Object.fromEntries(Object.entries(changes).filter(([k]) => !drop[k]));
       if (Object.keys(kept).length === 0) {
@@ -151,15 +147,17 @@ export default function ProfileChangeApprovals() {
       changes = kept;
     }
 
+    const payload: Record<string, unknown> = {
+      requested_changes: changes,
+      status,
+      reviewer_id: user.id,
+      reviewer_notes: notes[id] ?? null,
+    };
+    if (status === "approved" || status === "rejected") payload.reviewed_at = reviewedAt;
+
     const { error } = await supabase
       .from("profile_change_requests")
-      .update({
-        requested_changes: changes,
-        status,
-        reviewer_id: user.id,
-        reviewer_notes: notes[id] ?? null,
-        reviewed_at: reviewedAt,
-      })
+      .update(payload as any)
       .eq("id", id);
     if (error) throw error;
 
@@ -167,15 +165,17 @@ export default function ProfileChangeApprovals() {
   };
 
   const review = useMutation({
-    mutationFn: async ({ id, status, req }: { id: string; status: "approved" | "rejected" | "pending"; req: Req }) =>
+    mutationFn: async ({ id, status, req }: { id: string; status: Decision; req: Req }) =>
       reviewOne(id, status, req),
     onSuccess: (_d, v) => {
       toast.success(
-        v.status === "approved"
-          ? "Change approved and applied to the profile."
+        v.status === "supervisor_approved"
+          ? "First approval recorded. Sent to an administrator for final approval."
+          : v.status === "approved"
+          ? "Final approval recorded and applied to the profile."
           : v.status === "rejected"
           ? "Request rejected."
-          : "Returned to the pending queue."
+          : "Returned to the start of the queue."
       );
       setQueued((q) => ({ ...q, [v.id]: false }));
       qc.invalidateQueries({ queryKey: ["profile-change-requests"] });
@@ -184,8 +184,8 @@ export default function ProfileChangeApprovals() {
   });
 
   const bulkReview = useMutation({
-    mutationFn: async (status: "approved" | "rejected") => {
-      const targets = filtered.filter((r) => r.status === "pending" && queued[r.id]);
+    mutationFn: async (status: Decision) => {
+      const targets = filtered.filter((r) => r.status === tab && queued[r.id]);
       if (targets.length === 0) throw new Error("No requests selected.");
       let ok = 0;
       const failures: string[] = [];
@@ -205,7 +205,7 @@ export default function ProfileChangeApprovals() {
     },
     onSuccess: ({ ok, failures, status }) => {
       if (ok > 0) {
-        toast.success(`${ok} request${ok === 1 ? "" : "s"} ${status === "approved" ? "approved" : "rejected"}.`);
+        toast.success(`${ok} request${ok === 1 ? "" : "s"} ${status === "rejected" ? "rejected" : "approved"}.`);
       }
       if (failures.length > 0) toast.error(`Could not process: ${failures.join(", ")}`);
       setQueued({});
