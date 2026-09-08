@@ -27,6 +27,7 @@ import { INTERLINK_LABELS } from "@/lib/interlink-types";
 import { roleLabel, COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { useInterlinkBranding } from "@/hooks/useInterlinkBranding";
 import { useConfidentialityCommands } from "@/hooks/useConfidentialityCommands";
+import { useMyDirectoryAccess } from "@/hooks/useDirectoryPermissions";
 import { useRbac } from "@/hooks/useRbac";
 import {
   ALL_APPLICATION_TABLES,
@@ -259,6 +260,8 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, role } = useAuth();
   const { canPath } = useRbac();
+  // The staff portal follows the directory matrix, not just the nav RBAC map.
+  const { canOpenPortal } = useMyDirectoryAccess();
 
   // Parent menus remember whether the user left them open, per browser profile.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(readOpenGroups);
@@ -482,7 +485,11 @@ export function AppSidebar() {
   const renderGroup = (label: string, allItems: NavItem[], sections: NavSection[] = []) => {
     // RBAC: hide destinations the signed-in account cannot reach, and drop the
     // whole group when nothing in it is permitted.
-    const permitted = (items: NavItem[]) => items.filter((item) => canPath(item.url.split("?")[0]));
+    const permitted = (items: NavItem[]) =>
+      items.filter(
+        (item) =>
+          canPath(item.url.split("?")[0]) && (item.url !== "/portal" || canOpenPortal),
+      );
     const items = permitted(allItems);
     const liveSections = sections
       .map((s) => ({ ...s, items: permitted(s.items) }))
