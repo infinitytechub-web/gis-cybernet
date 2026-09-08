@@ -445,7 +445,7 @@ export default function AttendanceWeekly() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table className="min-w-[1100px]">
+            <Table className="min-w-[1400px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background">Staff</TableHead>
