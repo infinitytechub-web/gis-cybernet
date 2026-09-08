@@ -1,208 +1,384 @@
+/**
+ * Staff Portal — one place for an officer's own working week.
+ *
+ * Everything here is self-scoped: the clock, this week's hours, the officer's
+ * own leave requests and the approval status of anything they submitted
+ * (leave requests and profile change requests). No command-tier data is shown,
+ * and RLS already limits every query below to the signed-in officer's rows.
+ */
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
+import {
+  LayoutDashboard,
+  Timer,
+  PlaneTakeoff,
+  ClipboardCheck,
+  CalendarDays,
+  Fingerprint,
+  ArrowRight,
+} from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, differenceInDays } from "date-fns";
-import { Inbox, Download, Clock, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CheckInOut } from "@/components/attendance/CheckInOut";
+import { MyHoursDashboard } from "@/components/attendance/MyHoursDashboard";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
-import { PostingRequestForm } from "@/components/postings/PostingRequestForm";
-import { generateLeaveLetter, generatePostingLetter, downloadPdf } from "@/lib/branded-letter-pdf";
+import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
+import { formatDate } from "@/lib/date-format";
 
-const statusColor = (s: string) =>
-  s === "approved" ? "bg-emerald-100 text-emerald-800" :
-  s === "rejected" ? "bg-red-100 text-red-800" :
-  "bg-amber-100 text-amber-800";
+const MAX_DAILY_HOURS = 16;
+const iso = (d: Date) => format(d, "yyyy-MM-dd");
+
+type WeekRow = {
+  date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: string | null;
+  check_in_method: string | null;
+};
+
+type LeaveRow = {
+  id: string;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  created_at: string;
+};
+
+type ChangeRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  requested_changes: Record<string, unknown> | null;
+};
+
+function hoursOf(row: WeekRow): number {
+  if (!row.check_in || !row.check_out) return 0;
+  const ms = new Date(row.check_out).getTime() - new Date(row.check_in).getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return 0;
+  return Math.min(ms / 3_600_000, MAX_DAILY_HOURS);
+}
+
+function fmtTime(value: string | null) {
+  return value ? format(new Date(value), "HH:mm") : "—";
+}
+
+function statusTone(status: string) {
+  if (status === "approved") return "bg-emerald-600 text-white";
+  if (status === "rejected" || status === "cancelled") return "bg-destructive text-destructive-foreground";
+  return "bg-amber-500 text-white";
+}
+
+function statusLabel(status: string) {
+  if (status === "supervisor_approved") return "With administrator";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
 
 export default function StaffPortal() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const profileId = (profile as { id?: string } | null)?.id ?? null;
 
-  const { data: profile } = useQuery({
-    queryKey: ["my-profile-portal", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("*").eq("user_id", user!.id).maybeSingle();
-      return data;
+  const today = new Date();
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+  const days = useMemo(
+    () => eachDayOfInterval({ start: weekStart, end: weekEnd }),
+    [weekStart.getTime(), weekEnd.getTime()],
+  );
+
+  /** This week's own attendance records. */
+  const { data: weekRows = [] } = useQuery({
+    queryKey: ["portal-week-attendance", profileId, iso(weekStart)],
+    enabled: !!profileId,
+    queryFn: async (): Promise<WeekRow[]> => {
+      const { data, error } = await supabase
+        .from("attendances")
+        .select("date, check_in, check_out, status, check_in_method")
+        .eq("profile_id", profileId!)
+        .gte("date", iso(weekStart))
+        .lte("date", iso(weekEnd))
+        .order("date");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as WeekRow[];
     },
   });
 
-  const { data: leaves = [] } = useQuery({
-    queryKey: ["my-leaves", profile?.id],
-    enabled: !!profile?.id,
-    queryFn: async () => {
+  /** Own leave requests (most recent first). */
+  const { data: leaveRows = [] } = useQuery({
+    queryKey: ["portal-my-leave", profileId],
+    enabled: !!profileId,
+    queryFn: async (): Promise<LeaveRow[]> => {
       const { data, error } = await supabase
         .from("leave_requests")
-        .select("*")
-        .eq("profile_id", profile!.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+        .select("id, leave_type, start_date, end_date, status, created_at")
+        .eq("profile_id", profileId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as LeaveRow[];
     },
   });
 
-  const { data: postings = [] } = useQuery({
-    queryKey: ["my-postings", profile?.id],
-    enabled: !!profile?.id,
-    queryFn: async () => {
+  /** Own profile change requests, so the officer can track their approvals. */
+  const { data: changeRows = [] } = useQuery({
+    queryKey: ["portal-my-change-requests", profileId],
+    enabled: !!profileId,
+    queryFn: async (): Promise<ChangeRow[]> => {
       const { data, error } = await supabase
-        .from("postings_transfers")
-        .select("*, from_dept:departments!postings_transfers_from_department_id_fkey(name), to_dept:departments!postings_transfers_to_department_id_fkey(name)")
-        .eq("profile_id", profile!.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+        .from("profile_change_requests")
+        .select("id, status, created_at, requested_changes")
+        .eq("profile_id", profileId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as unknown as ChangeRow[];
     },
   });
 
-  const counts = {
-    pending: leaves.filter((l: any) => l.status === "pending").length + postings.filter((p: any) => p.status === "pending").length,
-    approved: leaves.filter((l: any) => l.status === "approved").length + postings.filter((p: any) => p.status === "approved").length,
-    rejected: leaves.filter((l: any) => l.status === "rejected").length + postings.filter((p: any) => p.status === "rejected").length,
-  };
+  const weekByDate = useMemo(() => {
+    const m = new Map<string, WeekRow>();
+    for (const r of weekRows) if (!m.has(r.date)) m.set(r.date, r);
+    return m;
+  }, [weekRows]);
 
-  const fullName = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() : "";
+  const weekTotal = useMemo(() => weekRows.reduce((sum, r) => sum + hoursOf(r), 0), [weekRows]);
+  const openSession = weekRows.find((r) => r.check_in && !r.check_out) ?? null;
+  const biometricDays = weekRows.filter((r) => r.check_in_method === "biometric").length;
+
+  const pendingLeave = leaveRows.filter((r) => r.status === "pending");
+  const pendingChanges = changeRows.filter((r) => r.status === "pending" || r.status === "supervisor_approved");
+  const pendingCount = pendingLeave.length + pendingChanges.length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Inbox className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-secondary">My Staff Portal</h1>
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Staff Portal"
+        subtitle={`Your week at a glance${profile ? ` — ${(profile as { first_name?: string }).first_name ?? ""}` : ""}`}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/my-profile">
+                My profile <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/leave/calendar">Leave calendar</Link>
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Timer className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">Hours this week</span>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-primary">{weekTotal.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatDate(iso(weekStart))} – {formatDate(iso(weekEnd))}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">Days clocked in</span>
+            </div>
+            <p className="mt-2 text-2xl font-bold">{weekRows.filter((r) => r.check_in).length}</p>
+            <p className="text-xs text-muted-foreground">
+              {openSession ? "One shift still open" : "No open shifts"}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">Awaiting approval</span>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-amber-600">{pendingCount}</p>
+            <p className="text-xs text-muted-foreground">
+              {pendingLeave.length} leave · {pendingChanges.length} profile change
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Fingerprint className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">Fingerprint clock-ins</span>
+            </div>
+            <p className="mt-2 text-2xl font-bold">{biometricDays}</p>
+            <p className="text-xs text-muted-foreground">Verified this week</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <Clock className="h-7 w-7 text-amber-600" />
-          <div><div className="text-2xl font-bold">{counts.pending}</div><div className="text-xs text-muted-foreground">Pending</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <CheckCircle2 className="h-7 w-7 text-emerald-600" />
-          <div><div className="text-2xl font-bold">{counts.approved}</div><div className="text-xs text-muted-foreground">Approved</div></div>
-        </CardContent></Card>
-        <Card><CardContent className="p-4 flex items-center gap-3">
-          <XCircle className="h-7 w-7 text-destructive" />
-          <div><div className="text-2xl font-bold">{counts.rejected}</div><div className="text-xs text-muted-foreground">Rejected</div></div>
-        </CardContent></Card>
-      </div>
-
-      <Tabs defaultValue="leave" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="leave">Leave / Pass</TabsTrigger>
-          <TabsTrigger value="posting">Posting / Transfer</TabsTrigger>
+      <Tabs defaultValue="clock" className="space-y-4">
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="clock">Clock in / out</TabsTrigger>
+          <TabsTrigger value="hours">My hours</TabsTrigger>
+          <TabsTrigger value="leave">Leave</TabsTrigger>
+          <TabsTrigger value="approvals">
+            Approvals{pendingCount > 0 ? ` (${pendingCount})` : ""}
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="leave" className="space-y-4">
-          <LeaveRequestForm />
-
+        <TabsContent value="clock" className="space-y-4">
+          <CheckInOut />
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> My Leave History</CardTitle></CardHeader>
-            <CardContent>
-              <div className="rounded border overflow-auto" style={{ minWidth: 0 }}>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="hidden sm:table-cell">Dates</TableHead>
-                      <TableHead className="hidden sm:table-cell">Days</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="w-16">Letter</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {leaves.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">No requests yet</TableCell></TableRow>
-                    ) : leaves.map((r: any) => {
-                      const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
-                      return (
-                        <TableRow key={r.id}>
-                          <TableCell className="capitalize">{r.type}</TableCell>
-                          <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.start_date), "dd/MM/yyyy")} – {format(new Date(r.end_date), "dd/MM/yyyy")}</TableCell>
-                          <TableCell className="hidden sm:table-cell">{days}</TableCell>
-                          <TableCell><Badge className={statusColor(r.status)} variant="secondary">{r.status}</Badge></TableCell>
-                          <TableCell>
-                            {(r.status === "approved" || r.status === "rejected") && (
-                              <Button
-                                variant="ghost" size="icon" className="h-7 w-7"
-                                title="Download letter"
-                                onClick={() => {
-                                  const doc = generateLeaveLetter({
-                                    staffName: fullName,
-                                    staffId: profile?.staff_id ?? "—",
-                                    type: r.type, startDate: r.start_date, endDate: r.end_date, days,
-                                    status: r.status, reason: r.reason ?? undefined, comments: r.comments ?? undefined,
-                                    reference: `LV-${r.id.slice(0, 8).toUpperCase()}`,
-                                  });
-                                  downloadPdf(doc, `leave-${profile?.staff_id ?? "request"}.pdf`);
-                                }}
-                              >
-                                <Download className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+            <CardHeader>
+              <CardTitle className="text-base">This week</CardTitle>
+              <CardDescription>Your recorded clock-in and clock-out times.</CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Day</TableHead>
+                    <TableHead>Clock in</TableHead>
+                    <TableHead>Clock out</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Hours</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {days.map((d) => {
+                    const row = weekByDate.get(iso(d));
+                    return (
+                      <TableRow key={iso(d)} className={isSameDay(d, today) ? "bg-muted/50" : undefined}>
+                        <TableCell className="font-medium">{format(d, "EEE d MMM")}</TableCell>
+                        <TableCell>{fmtTime(row?.check_in ?? null)}</TableCell>
+                        <TableCell>{fmtTime(row?.check_out ?? null)}</TableCell>
+                        <TableCell>
+                          {row?.status ? (
+                            <Badge variant="outline" className="capitalize">
+                              {row.status}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">No record</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {row ? hoursOf(row).toFixed(2) : "0.00"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  <TableRow className="font-semibold">
+                    <TableCell colSpan={4}>Week total</TableCell>
+                    <TableCell className="text-right">{weekTotal.toFixed(2)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="posting" className="space-y-4">
-          <PostingRequestForm />
+        <TabsContent value="hours">
+          <MyHoursDashboard />
+        </TabsContent>
+
+        <TabsContent value="leave" className="space-y-4">
+          <LeaveRequestForm />
+          <MyLeaveHistory />
+        </TabsContent>
+
+        <TabsContent value="approvals" className="space-y-4">
           <Card>
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> My Posting/Transfer History</CardTitle></CardHeader>
-            <CardContent>
-              <div className="rounded border overflow-auto">
-                <Table>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <PlaneTakeoff className="h-4 w-4" aria-hidden="true" /> Leave requests
+              </CardTitle>
+              <CardDescription>Where each of your requests currently sits.</CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              {leaveRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">You have not submitted any leave requests.</p>
+              ) : (
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>
-                      <TableHead className="hidden sm:table-cell">From → To</TableHead>
-                      <TableHead className="hidden sm:table-cell">Effective</TableHead>
+                      <TableHead>From</TableHead>
+                      <TableHead>To</TableHead>
+                      <TableHead>Submitted</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-16">Letter</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {postings.length === 0 ? (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">No requests yet</TableCell></TableRow>
-                    ) : postings.map((r: any) => (
+                    {leaveRows.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="capitalize">{r.type}</TableCell>
-                        <TableCell className="hidden sm:table-cell text-xs">{r.from_dept?.name ?? "—"} → {r.to_dept?.name ?? "—"}</TableCell>
-                        <TableCell className="hidden sm:table-cell text-xs">{format(new Date(r.effective_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell><Badge className={statusColor(r.status)} variant="secondary">{r.status}</Badge></TableCell>
+                        <TableCell className="capitalize">{r.leave_type}</TableCell>
+                        <TableCell>{formatDate(r.start_date)}</TableCell>
+                        <TableCell>{formatDate(r.end_date)}</TableCell>
+                        <TableCell>{formatDate(r.created_at)}</TableCell>
                         <TableCell>
-                          {(r.status === "approved" || r.status === "rejected") && (
-                            <Button
-                              variant="ghost" size="icon" className="h-7 w-7"
-                              title="Download letter"
-                              onClick={() => {
-                                const doc = generatePostingLetter({
-                                  staffName: fullName,
-                                  staffId: profile?.staff_id ?? "—",
-                                  fromDepartment: r.from_dept?.name,
-                                  toDepartment: r.to_dept?.name,
-                                  effectiveDate: r.effective_date,
-                                  status: r.status, comments: r.remarks ?? undefined,
-                                  reference: `PT-${r.id.slice(0, 8).toUpperCase()}`,
-                                });
-                                downloadPdf(doc, `posting-${profile?.staff_id ?? "request"}.pdf`);
-                              }}
-                            >
-                              <Download className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
+                          <Badge className={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ClipboardCheck className="h-4 w-4" aria-hidden="true" /> Profile change requests
+              </CardTitle>
+              <CardDescription>
+                Changes you submitted from My Profile, with the stage they have reached.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              {changeRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No change requests yet. Update your details from{" "}
+                  <Link to="/my-profile" className="underline">
+                    My Profile
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Submitted</TableHead>
+                      <TableHead>Fields</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {changeRows.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>{formatDate(r.created_at)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {Object.keys(r.requested_changes ?? {}).join(", ") || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
