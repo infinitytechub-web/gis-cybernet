@@ -150,6 +150,11 @@ export default function CommandAssignments() {
   const [targetUnit, setTargetUnit] = useState<string>("");
   const [targetShift, setTargetShift] = useState<string>(UNCHANGED);
   const [reason, setReason] = useState("");
+  const [targetRank, setTargetRank] = useState<string>(UNCHANGED);
+  const [targetRole, setTargetRole] = useState<string>(UNCHANGED);
+  const [direction, setDirection] = useState<"promotion" | "demotion" | "lateral">("promotion");
+  const [rankReason, setRankReason] = useState("");
+
 
   const { data: units = [] } = useQuery({
     queryKey: ["command-assignments", "units"],
