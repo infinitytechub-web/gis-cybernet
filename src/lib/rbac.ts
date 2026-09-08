@@ -175,6 +175,7 @@ export const MODULES: ModuleDef[] = [
   { key: "recycle-bin", label: "Recycle Bin", tier: "admin", roles: ["admin", "oic"], paths: ["/recycle-bin"] },
   { key: "retention-policy", label: "Retention Policy", tier: "admin", roles: ADMIN_ONLY, paths: ["/announcements/retention", "/retention-policy"] },
   { key: "settings", label: "System Settings", tier: "admin", roles: ADMIN_ONLY, paths: ["/settings"] },
+  { key: "biometric-security-admin", label: "Biometric Security Administration", tier: "admin", roles: ADMIN_ONLY, paths: ["/security/biometrics"] },
   { key: "branding", label: "Branding Settings", tier: "admin", roles: ADMIN_ONLY, paths: ["/branding"] },
 
   // ── Monitoring, Evaluation, Project & Performance Management ─────────────

@@ -125,6 +125,7 @@ const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
 const BioDataFormSetup = lazy(() => import("./pages/BioDataFormSetup"));
 
 const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
+const SecurityBiometricsAdmin = lazy(() => import("./pages/SecurityBiometricsAdmin"));
 const MfaGate = lazy(() => import("./pages/MfaGate"));
 const RotationChangeApprovals = lazy(() => import("./pages/RotationChangeApprovals"));
 const AdminShiftRotations = lazy(() => import("./pages/AdminShiftRotations"));
@@ -213,6 +214,7 @@ function App() {
           <Route path="/staff-approvals/pending" element={<ProtectedRoute module="staff-approvals-pending"><Layout><PendingStaffApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/accounts" element={<ProtectedRoute module="staff_admin"><Layout><StaffAccountApprovals /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals/profile-changes" element={<ProtectedRoute module="profile-change-approvals"><Layout><ProfileChangeApprovals /></Layout></ProtectedRoute>} />
+          <Route path="/security/biometrics" element={<ProtectedRoute module="biometric-security-admin"><Layout><SecurityBiometricsAdmin /></Layout></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute module="attendance"><Layout><Attendance /></Layout></ProtectedRoute>} />
           <Route path="/attendance/overview" element={<ProtectedRoute module="attendance-overview"><Layout><AttendanceOverview /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
