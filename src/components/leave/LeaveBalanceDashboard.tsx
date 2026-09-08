@@ -26,13 +26,23 @@ import { useAuth } from "@/hooks/useAuth";
 
 const db = supabase as any;
 
-const LEAVE_TYPES = ["annual", "sick", "compassionate", "pass", "study"] as const;
+const LEAVE_TYPES = ["annual", "sick", "compassionate", "pass", "study", "maternity"] as const;
+
+/** Allowances can be set for all officers, or separately per officer grade. */
+const GRADES = ["all", "junior", "senior"] as const;
+const GRADE_LABELS: Record<string, string> = {
+  all: "All officers",
+  junior: "Junior officers",
+  senior: "Senior officers",
+};
+const UNITS = ["days", "months", "years"] as const;
 const TYPE_LABELS: Record<string, string> = {
   annual: "Annual leave",
   sick: "Sick leave",
   compassionate: "Compassionate leave",
   pass: "Pass",
   study: "Study leave",
+  maternity: "Maternity leave",
 };
 
 type BalanceRow = {
@@ -50,7 +60,16 @@ type BalanceRow = {
   days_remaining: number;
 };
 
-type Entitlement = { id: string; leave_type: string; year: number; days: number };
+type Entitlement = {
+  id: string;
+  leave_type: string;
+  year: number;
+  days: number;
+  grade: string;
+  unit: string;
+  value_min: number | null;
+  value_max: number | null;
+};
 
 const ALL = "all";
 
@@ -77,7 +96,7 @@ export function LeaveBalanceDashboard() {
     queryFn: async (): Promise<Entitlement[]> => {
       const { data, error } = await db
         .from("leave_entitlements")
-        .select("id, leave_type, year, days")
+        .select("id, leave_type, year, days, grade, unit, value_min, value_max")
         .eq("year", year);
       if (error) throw error;
       return data ?? [];
@@ -85,12 +104,27 @@ export function LeaveBalanceDashboard() {
   });
 
   const saveEntitlement = useMutation({
-    mutationFn: async (vars: { leaveType: string; days: number }) => {
+    mutationFn: async (vars: {
+      leaveType: string;
+      grade: string;
+      unit: string;
+      days: number;
+      valueMin: number | null;
+      valueMax: number | null;
+    }) => {
       const { error } = await db
         .from("leave_entitlements")
         .upsert(
-          { leave_type: vars.leaveType, year, days: vars.days },
-          { onConflict: "leave_type,year" },
+          {
+            leave_type: vars.leaveType,
+            year,
+            grade: vars.grade,
+            unit: vars.unit,
+            days: vars.days,
+            value_min: vars.valueMin,
+            value_max: vars.valueMax,
+          },
+          { onConflict: "leave_type,year,grade" },
         );
       if (error) throw error;
     },
