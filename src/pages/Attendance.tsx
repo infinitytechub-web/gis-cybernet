@@ -88,6 +88,10 @@ export default function Attendance() {
       {/* Staff always sees their own check-in/out card */}
       <CheckInOut />
 
+      {/* Personal daily-hours dashboard with CSV export */}
+      <MyHoursDashboard />
+
+
       {/* Sync history log */}
       {profile && <SyncHistoryLog profileId={profile.id} />}
 
