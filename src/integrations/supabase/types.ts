@@ -14948,6 +14948,71 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_access_log: {
+        Row: {
+          action: string
+          actor_profile_id: string | null
+          actor_user_id: string
+          created_at: string
+          detail: string | null
+          id: string
+          path: string | null
+          target_profile_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_profile_id?: string | null
+          actor_user_id?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          path?: string | null
+          target_profile_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string | null
+          actor_user_id?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          path?: string | null
+          target_profile_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_access_log_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_access_log_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_access_log_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_access_log_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_appraisal_audit: {
         Row: {
           action: string
@@ -17706,6 +17771,16 @@ export type Database = {
         Args: { _context?: Json; _entity_id: string; _entity_type: string }
         Returns: undefined
       }
+      log_staff_access: {
+        Args: {
+          _action: string
+          _detail?: string
+          _path?: string
+          _target_profile_id?: string
+          _user_agent?: string
+        }
+        Returns: string
+      }
       mark_backup_schedule_ran: {
         Args: { _error: string; _schedule_id: string; _status: string }
         Returns: undefined
@@ -18289,6 +18364,27 @@ export type Database = {
           _table: string
         }
         Returns: string
+      }
+      staff_access_log_feed: {
+        Args: {
+          _action?: string
+          _from?: string
+          _limit?: number
+          _search?: string
+          _to?: string
+        }
+        Returns: {
+          action: string
+          actor_name: string
+          actor_staff_id: string
+          created_at: string
+          detail: string
+          id: string
+          path: string
+          target_name: string
+          target_staff_id: string
+          user_agent: string
+        }[]
       }
       staff_mapping_rows: {
         Args: never
