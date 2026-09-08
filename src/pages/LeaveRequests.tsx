@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { CalendarDays } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
@@ -10,7 +13,15 @@ export default function LeaveRequests() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-secondary">Leave / Pass Requests</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-secondary">Leave / Pass Requests</h1>
+        <Button variant="outline" asChild>
+          <Link to="/leave/calendar">
+            <CalendarDays className="mr-2 h-4 w-4" />
+            Leave calendar
+          </Link>
+        </Button>
+      </div>
 
       {/* Staff: submit form + own history */}
       <LeaveRequestForm />

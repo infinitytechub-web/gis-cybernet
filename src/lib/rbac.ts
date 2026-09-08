@@ -75,6 +75,7 @@ export const MODULES: ModuleDef[] = [
   { key: "staff-directory", label: "Staff Directory", feature: "Staff Directory", tier: "all-staff", roles: "all", paths: ["/directory"] },
   { key: "excuse-duty", label: "Excuse Duty Form", tier: "all-staff", roles: "all", paths: ["/excuse-duty", "/excuse-duty/mine"] },
   { key: "leave", label: "Leave / Pass Requests", feature: "Leave Requests", tier: "all-staff", roles: "all", paths: ["/leave"] },
+  { key: "leave-calendar", label: "Leave Calendar", tier: "all-staff", roles: "all", paths: ["/leave/calendar"] },
   { key: "attendance", label: "Attendance", feature: "Attendance", tier: "all-staff", roles: "all", paths: ["/attendance"] },
   { key: "attendance-overview", label: "Attendance Overview", tier: "all-staff", roles: "all", paths: ["/attendance/overview"] },
   { key: "attendance-weekly", label: "Weekly Attendance", tier: "all-staff", roles: "all", paths: ["/attendance/weekly"] },
