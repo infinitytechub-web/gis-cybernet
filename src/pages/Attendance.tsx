@@ -75,6 +75,12 @@ export default function Attendance() {
         <h1 className="text-2xl font-bold text-secondary">Attendance</h1>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
+            <Link to="/attendance/weekly">
+              <CalendarClock className="mr-2 h-4 w-4" aria-hidden="true" />
+              Weekly dashboard
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
             <Link to="/attendance/overview">
               <CalendarClock className="mr-2 h-4 w-4" aria-hidden="true" />
               Overview &amp; hours
