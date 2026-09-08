@@ -96,8 +96,30 @@ export default function AttendanceWeekly() {
     },
   });
 
+  const { data: holidays = [] } = useQuery({
+    queryKey: ["attendance-weekly-holidays", from, to],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("holidays").select("name, date, recurring");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as { name: string; date: string; recurring: boolean | null }[];
+    },
+  });
+
+  /** Dates in this week that are public holidays (recurring ones match day/month). */
+  const holidayByDate = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const d of days) {
+      const key = iso(d);
+      const md = key.slice(5);
+      const hit = holidays.find((h) => h.date === key || (h.recurring && h.date.slice(5) === md));
+      if (hit) out[key] = hit.name;
+    }
+    return out;
+  }, [holidays, days]);
+
   /** One row per staff member with a per-day cell keyed by date. */
   const staffRows = useMemo(() => {
+
     const map = new Map<
       string,
       {
