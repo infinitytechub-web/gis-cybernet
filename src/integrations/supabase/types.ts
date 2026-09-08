@@ -16697,6 +16697,23 @@ export type Database = {
           unit: string
         }[]
       }
+      attendance_hours_summary: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          days_absent: number
+          days_excused: number
+          days_late: number
+          days_present: number
+          department: string
+          first_date: string
+          hours_worked: number
+          last_date: string
+          open_sessions: number
+          profile_id: string
+          staff_id: string
+          staff_name: string
+        }[]
+      }
       auto_deploy_roster_assignments: {
         Args: { _import_id: string }
         Returns: Json
