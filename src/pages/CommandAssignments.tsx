@@ -307,6 +307,75 @@ export default function CommandAssignments() {
     },
   });
 
+  const rankById = useMemo(() => {
+    const m = new Map<string, RankRow>();
+    for (const r of ranks) m.set(r.id, r);
+    return m;
+  }, [ranks]);
+
+  const previewRole =
+    targetRole !== UNCHANGED
+      ? targetRole
+      : previewOfficer?.user_id
+        ? roleByUser[previewOfficer.user_id] ?? null
+        : null;
+
+  /** Switches the new role would get at the level of the officer's command. */
+  const roleRights = useQuery({
+    queryKey: [
+      "command-rights",
+      "role",
+      previewRole,
+      targetUnit || previewOfficer?.org_unit_id || null,
+    ],
+    enabled: !!previewRole,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("directory_rights_for_role", {
+        _role: previewRole as never,
+        _org_unit_id: targetUnit || previewOfficer?.org_unit_id || null,
+      });
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as RightsRow | null;
+    },
+  });
+
+  const changeRank = useMutation({
+    mutationFn: async () => {
+      if (!selectedIds.length) throw new Error("Select at least one officer");
+      if (targetRank === UNCHANGED && targetRole === UNCHANGED) {
+        throw new Error("Choose a new rank or role first");
+      }
+      const { data, error } = await supabase.rpc("command_change_rank", {
+        _profile_ids: selectedIds,
+        _to_rank_id: targetRank === UNCHANGED ? null : targetRank,
+        _to_role: targetRole === UNCHANGED ? null : (targetRole as never),
+        _to_org_unit_id: targetUnit || null,
+        _direction: direction,
+        _reason: rankReason.trim() || null,
+      });
+      if (error) throw error;
+      return (data as number) ?? 0;
+    },
+    onSuccess: (count) => {
+      toast.success(
+        `${count} officer(s) ${
+          direction === "demotion" ? "demoted" : direction === "promotion" ? "promoted" : "updated"
+        } — matrix switches applied automatically`,
+      );
+      setSelected({});
+      setRankReason("");
+      setTargetRank(UNCHANGED);
+      setTargetRole(UNCHANGED);
+      qc.invalidateQueries({ queryKey: ["command-assignments"] });
+      qc.invalidateQueries({ queryKey: ["command-rights"] });
+      qc.invalidateQueries({ queryKey: ["my-directory-level"] });
+      qc.invalidateQueries({ queryKey: ["directory-permissions"] });
+      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: ["user-roles"] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not change the rank"),
+  });
+
   const move = useMutation({
     mutationFn: async (clear: boolean) => {
       if (!selectedIds.length) throw new Error("Select at least one officer");
