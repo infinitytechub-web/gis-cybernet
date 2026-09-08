@@ -78,6 +78,7 @@ export const MODULES: ModuleDef[] = [
   { key: "leave-calendar", label: "Leave Calendar", tier: "all-staff", roles: "all", paths: ["/leave/calendar"] },
   { key: "attendance", label: "Attendance", feature: "Attendance", tier: "all-staff", roles: "all", paths: ["/attendance"] },
   { key: "staff-portal", label: "My Dashboard", tier: "all-staff", roles: "all", paths: ["/portal"] },
+  { key: "command-portal", label: "Command Portal", tier: "all-staff", roles: "all", paths: ["/command-portal"] },
 
   { key: "holidays", label: "Holidays", tier: "all-staff", roles: "all", paths: ["/holidays"] },
   { key: "payments", label: "Payments", feature: "Payments", tier: "all-staff", roles: "all", paths: ["/payments"] },
