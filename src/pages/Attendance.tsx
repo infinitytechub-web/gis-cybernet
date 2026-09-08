@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckInOut } from "@/components/attendance/CheckInOut";
+import { MyHoursDashboard } from "@/components/attendance/MyHoursDashboard";
 import { AdminAttendanceLog } from "@/components/attendance/AdminAttendanceLog";
 import { SyncHistoryLog } from "@/components/attendance/SyncHistoryLog";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +87,10 @@ export default function Attendance() {
 
       {/* Staff always sees their own check-in/out card */}
       <CheckInOut />
+
+      {/* Personal daily-hours dashboard with CSV export */}
+      <MyHoursDashboard />
+
 
       {/* Sync history log */}
       {profile && <SyncHistoryLog profileId={profile.id} />}
