@@ -41,6 +41,7 @@ const TYPES: { value: LeaveType; label: string }[] = [
   { value: "compassionate", label: "Compassionate Leave" },
   { value: "pass", label: "Pass" },
   { value: "study", label: "Study Leave" },
+  { value: "maternity", label: "Maternity Leave" },
 ];
 
 const typeLabel = (t: string) => TYPES.find((x) => x.value === t)?.label ?? t;

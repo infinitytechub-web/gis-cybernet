@@ -4,7 +4,7 @@
  *
  *   The Directorate (HQ) → Management Members → Regional Commands →
  *   Commandant / ISA & CO / Assin Fosu, Tepa & ITTraS → Sector Commands →
- *   Departments → Sections → Units → All Controls
+ *   Departments → Sections → Units → Staffs
  *
  * Search narrows the tree while keeping each match's parents visible, so the
  * chain of command is never lost.
@@ -94,7 +94,7 @@ export function EstablishmentBrowser() {
           Establishment hierarchy
         </CardTitle>
         <p className="mt-1 text-sm text-muted-foreground">
-          Directorate down to controls, with staff posted and appointments held at
+          Directorate down to staffs, with staff posted and appointments held at
           each level.
         </p>
       </CardHeader>
