@@ -53,9 +53,9 @@ const label = (k: string) =>
   FIELD_LABELS[k] ?? k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function ProfileChangeApprovals() {
-  const { user, isAdminOrSupervisor } = useAuth();
+  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"pending" | "history">("pending");
+  const [tab, setTab] = useState<"pending" | "supervisor_approved" | "history">("pending");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [queued, setQueued] = useState<Record<string, boolean>>({});
