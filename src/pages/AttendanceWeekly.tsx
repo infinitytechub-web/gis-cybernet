@@ -538,7 +538,14 @@ export default function AttendanceWeekly() {
                         </TableCell>
                       ))}
                       <TableCell className="text-right">{totals.hours.toFixed(2)}</TableCell>
-                      <TableCell />
+                      {SHIFTS.map((sh) => (
+                        <TableCell key={sh.key} className="text-right">
+                          {totals.perShift[sh.key].toFixed(2)}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-right">{totals.leaveDays}</TableCell>
+                      <TableCell className="text-right">{totals.daysOff}</TableCell>
+
                     </TableRow>
                   </>
                 )}
