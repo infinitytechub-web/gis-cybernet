@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
+import { DirectoryPermissionsMatrix } from "@/components/settings/DirectoryPermissionsMatrix";
 import { AccessPolicySettings } from "@/components/settings/AccessPolicySettings";
 import { AnonymizationSettings } from "@/components/settings/AnonymizationSettings";
 
@@ -186,6 +187,7 @@ export default function Settings() {
 
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
+        <TabsContent value="directory-perms"><DirectoryPermissionsMatrix /></TabsContent>
         <TabsContent value="access-policy"><AccessPolicySettings /></TabsContent>
         <TabsContent value="anonymization"><AnonymizationSettings /></TabsContent>
 
