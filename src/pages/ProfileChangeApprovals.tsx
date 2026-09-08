@@ -71,8 +71,8 @@ export default function ProfileChangeApprovals() {
         .from("profile_change_requests")
         .select("*, profiles:profile_id(first_name, last_name, staff_id, email)")
         .order("created_at", { ascending: false });
-      if (tab === "pending") q = q.eq("status", "pending");
-      else q = q.in("status", ["approved", "rejected", "cancelled"]);
+      if (tab === "history") q = q.in("status", ["approved", "rejected", "cancelled"]);
+      else q = q.eq("status", tab);
       const { data, error } = await q.limit(200);
       if (error) throw error;
       return (data ?? []) as unknown as (Req & { profiles?: any })[];
