@@ -36,6 +36,9 @@ export type StaffTableRowProps = {
   staff: any;
   isAdmin: boolean;
   canManage: boolean;
+  /** Directory-matrix result for this record; falls back to the role tier. */
+  canEdit?: boolean;
+  canDelete?: boolean;
   selected: boolean;
   onToggleSelect: (id: string) => void;
   onOpenProfile: (id: string) => void;
@@ -44,9 +47,12 @@ export type StaffTableRowProps = {
 };
 
 function StaffTableRowBase({
-  staff: s, isAdmin, canManage, selected,
+  staff: s, isAdmin, canManage, canEdit, canDelete, selected,
   onToggleSelect, onOpenProfile, onEdit, onDelete,
 }: StaffTableRowProps) {
+  const showEdit = canEdit ?? canManage;
+  const showDelete = canDelete ?? isAdmin;
+  const showActions = showEdit || showDelete || isAdmin;
   return (
     <TableRow data-state={selected ? "selected" : undefined}>
       {isAdmin && (
@@ -88,9 +94,10 @@ function StaffTableRowBase({
           )}
         </div>
       </TableCell>
-      {canManage && (
+      {showActions && (
         <TableCell>
           <div className="flex gap-1">
+            {showEdit && (
             <Button
               variant="ghost"
               size="icon"
@@ -100,6 +107,7 @@ function StaffTableRowBase({
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
+            )}
             {isAdmin && (
               <AdminAccountActions
                 profileId={s.id}
@@ -109,7 +117,7 @@ function StaffTableRowBase({
                 hasUserId={!!s.user_id}
               />
             )}
-            {isAdmin && (
+            {showDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
