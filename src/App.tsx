@@ -56,6 +56,7 @@ const Shifts = lazy(() => import("./pages/Shifts"));
 const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const AttendanceOverview = lazy(() => import("./pages/AttendanceOverview"));
+const AttendanceWeekly = lazy(() => import("./pages/AttendanceWeekly"));
 const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
 const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
