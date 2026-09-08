@@ -1078,7 +1078,7 @@ export default function Staff() {
           to the bottom, so no section or control can end up clipped or out of
           reach on small screens.
         */}
-        <DialogContent className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogContent className="relative !flex max-h-[90vh] w-[95vw] max-w-5xl flex-col gap-0 !overflow-hidden p-0">
           <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
