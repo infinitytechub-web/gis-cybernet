@@ -588,10 +588,12 @@ export function AppSidebar() {
               iconColor: "text-fuchsia-700 dark:text-fuchsia-300",
               items:
                 role === "admin"
-                  ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, shiftWindowAuditItem, ipBlocksItem]
-                  : (role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer")
-                    ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, shiftWindowAuditItem]
-                    : adminSecurityItems,
+                  ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, staffAccessLogItem, shiftWindowAuditItem, ipBlocksItem]
+                  : (role === "oic" || role === "2ic" || role === "staff_officer")
+                    ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, staffAccessLogItem, shiftWindowAuditItem]
+                    : (role === "head_of_administration" || role === "chief_staff_officer")
+                      ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, shiftWindowAuditItem]
+                      : adminSecurityItems,
             },
             { label: "Data & Imports", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300", items: adminDataItems },
             { label: "Configuration", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400", items: adminConfigItems },
