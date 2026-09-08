@@ -263,7 +263,7 @@ export default function ProfileChangeApprovals() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {tab === "pending" && (
+            {tab !== "history" && (
               <>
                 <span className="text-xs text-muted-foreground">
                   {selectedCount} queued
@@ -271,10 +271,11 @@ export default function ProfileChangeApprovals() {
                 <Button
                   size="sm"
                   className="gap-1 bg-emerald-600 hover:bg-emerald-700"
-                  disabled={busy || selectedCount === 0}
-                  onClick={() => bulkReview.mutate("approved")}
+                  disabled={busy || selectedCount === 0 || !canDecideStage}
+                  onClick={() => bulkReview.mutate(stageDecision)}
                 >
-                  <Check className="h-4 w-4" /> Approve queued
+                  <Check className="h-4 w-4" />
+                  {tab === "supervisor_approved" ? "Final approve queued" : "First approve queued"}
                 </Button>
                 <Button
                   size="sm"
@@ -297,22 +298,34 @@ export default function ProfileChangeApprovals() {
       <Tabs value={tab} onValueChange={(v) => { setTab(v as any); setQueued({}); }}>
         <TabsList>
           <TabsTrigger value="pending">
-            Pending
-            {tab === "pending" && pendingRequests.length > 0 && (
-              <Badge variant="secondary" className="ml-2">{pendingRequests.length}</Badge>
+            Step 1 · Supervisor
+            {tab === "pending" && queueRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{queueRequests.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="supervisor_approved">
+            Step 2 · Admin
+            {tab === "supervisor_approved" && queueRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{queueRequests.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value={tab} className="space-y-3 mt-4">
-          {tab === "pending" && pendingRequests.length > 0 && (
+          {tab === "supervisor_approved" && !isAdmin && (
+            <p className="text-xs text-amber-700">
+              Only administrators can give the final approval. You can review these requests but not approve them.
+            </p>
+          )}
+
+          {tab !== "history" && queueRequests.length > 0 && (
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <Checkbox
-                checked={selectedCount === pendingRequests.length && selectedCount > 0}
+                checked={selectedCount === queueRequests.length && selectedCount > 0}
                 onCheckedChange={(c) =>
                   setQueued(
-                    c ? Object.fromEntries(pendingRequests.map((r) => [r.id, true])) : {}
+                    c ? Object.fromEntries(queueRequests.map((r) => [r.id, true])) : {}
                   )
                 }
               />
@@ -324,7 +337,7 @@ export default function ProfileChangeApprovals() {
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : filtered.length === 0 ? (
             <Card><CardContent className="p-6 text-sm text-muted-foreground">
-              No {tab === "pending" ? "pending requests" : "history"} to display.
+              No {tab === "history" ? "history" : "requests at this step"} to display.
             </CardContent></Card>
           ) : (
             filtered.map((r) => {
