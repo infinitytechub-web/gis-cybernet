@@ -6,7 +6,7 @@
  * (leave requests and profile change requests). No command-tier data is shown,
  * and RLS already limits every query below to the signed-in officer's rows.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { logStaffAccess } from "@/lib/staff-access-log";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,6 +104,16 @@ export default function MyDashboard() {
     },
   });
   const profileId = profile?.id ?? null;
+
+  // Staff access log: record that this officer actually reached their portal.
+  // Once per profile per page-load, and only when access was granted.
+  const portalLoggedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!profileId || !canOpenPortal) return;
+    if (portalLoggedRef.current === profileId) return;
+    portalLoggedRef.current = profileId;
+    void logStaffAccess("portal", profileId, "Opened own staff portal dashboard");
+  }, [profileId, canOpenPortal]);
 
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });

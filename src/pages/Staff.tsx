@@ -25,6 +25,7 @@ import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardI
 import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { validateGhanaPhone } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { logStaffAccess } from "@/lib/staff-access-log";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { StaffTableRow } from "@/components/staff/StaffTableRow";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
@@ -789,10 +790,10 @@ export default function Staff() {
   const handleEditRow = useCallback((s: any) => openEditRef.current(s), []);
   const handleDeleteRow = useCallback((id: string) => deleteRef.current(id), []);
 
-  const buildStaffExportRows = () => (
+  const buildStaffExportRows = () => {
     // Staff access log: record the download/print of the staff list.
-    void logStaffAccess("download", null, `Exported staff list (${filtered.length} records)`),
-    filtered.map((s) => {
+    void logStaffAccess("download", null, `Exported staff list (${filtered.length} records)`);
+    return filtered.map((s) => {
       const joined = (s as any).date_joined_service as string | null;
       const tenure = yearsOfService(joined ?? null);
       return [
@@ -803,6 +804,7 @@ export default function Staff() {
         joined ? formatService(tenure.years, tenure.months) : "—",
       ];
     });
+  };
 
   const statusColor = (s: string) => {
     switch (s) {
