@@ -17213,6 +17213,16 @@ export type Database = {
         Returns: number
       }
       command_dashboard: { Args: { _days?: number }; Returns: Json }
+      command_dashboard_live: { Args: { _org_unit_id?: string }; Returns: Json }
+      command_dashboard_units: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          officer_count: number
+          type: string
+        }[]
+      }
       command_move_officers: {
         Args: {
           _effective_date?: string
