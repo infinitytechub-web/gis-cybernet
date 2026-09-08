@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Sensitive } from "@/components/Sensitive";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
 import { checkDirectoryAction } from "@/hooks/useDirectoryPermissions";
+import { logStaffAccess } from "@/lib/staff-access-log";
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -152,6 +153,8 @@ export default function StaffProfile() {
     if (auditedRef.current === key) return;
     auditedRef.current = key;
     void (supabase as any).rpc("log_office_history_access", { _profile_id: id });
+    // Staff access log: record that this officer opened this staff record.
+    void logStaffAccess("view", id, "Opened staff profile page");
   }, [id, user?.id]);
 
   if (isLoading) {
@@ -314,7 +317,14 @@ export default function StaffProfile() {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue={initialTab}>
+      <Tabs
+        defaultValue={initialTab}
+        onValueChange={(v) => {
+          if (v === "documents") {
+            void logStaffAccess("vault", profile.id, "Opened document vault tab");
+          }
+        }}
+      >
         <TabsList className="w-full justify-start flex-wrap h-auto">
           <TabsTrigger value="attendance" className="gap-1"><CalendarCheck className="h-4 w-4" /> Attendance</TabsTrigger>
           <TabsTrigger value="leave" className="gap-1"><CalendarOff className="h-4 w-4" /> Leave</TabsTrigger>

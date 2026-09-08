@@ -79,6 +79,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/security-audit-log": "Lockouts, two-factor events and session revocations, with CSV export.",
   "/admin/phone-validation": "Active Ghana and international phone rules, with a troubleshooting checker.",
   "/sensitive-access-log": "Who read sensitive records, and when.",
+  "/staff-access-log": "Who opened which staff record, and who reached the portal.",
   "/ip-blocks": "Blocked IP addresses and devices.",
   "/attendance/connections": "Third-party attendance platform integrations.",
 

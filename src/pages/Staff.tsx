@@ -430,6 +430,8 @@ export default function Staff() {
   };
 
   const openEdit = (s: any) => {
+    // Staff access log: record that this officer opened this record for editing.
+    void logStaffAccess("edit", s.id, `Opened edit form for ${s.staff_id ?? ""}`.trim());
     setEditing(s);
     setStaffId(s.staff_id);
     setFirstName(s.first_name);
@@ -787,7 +789,9 @@ export default function Staff() {
   const handleEditRow = useCallback((s: any) => openEditRef.current(s), []);
   const handleDeleteRow = useCallback((id: string) => deleteRef.current(id), []);
 
-  const buildStaffExportRows = () =>
+  const buildStaffExportRows = () => (
+    // Staff access log: record the download/print of the staff list.
+    void logStaffAccess("download", null, `Exported staff list (${filtered.length} records)`),
     filtered.map((s) => {
       const joined = (s as any).date_joined_service as string | null;
       const tenure = yearsOfService(joined ?? null);
