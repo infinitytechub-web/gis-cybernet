@@ -84,6 +84,8 @@ Deno.serve(async (req) => {
     ? body.device_label.trim().slice(0, 80)
     : deviceLabelFromUserAgent(req.headers.get("user-agent") ?? "");
 
+  // Self-enrolment on the officer's own device with user verification proven:
+  // the credential is active immediately. Admins can still reject or revoke it.
   const { error: insertError } = await db.from("webauthn_credentials").insert({
     user_id: user.id,
     credential_id: info.credential.id,
@@ -94,7 +96,11 @@ Deno.serve(async (req) => {
     device_label: label,
     backed_up: info.credentialBackedUp ?? false,
     user_verified: true,
+    approval_status: "approved",
+    approved_at: new Date().toISOString(),
+    approval_notes: "Auto-approved on self-enrolment",
   });
+
 
   if (insertError) {
     return json({ error: "This device is already enrolled" }, 400);
