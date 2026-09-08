@@ -6,6 +6,7 @@ import {
   ArrowRight,
   Building2,
   Check,
+  ChevronsUp,
   History,
   Loader2,
   Search,
