@@ -789,10 +789,10 @@ export default function Staff() {
   const handleEditRow = useCallback((s: any) => openEditRef.current(s), []);
   const handleDeleteRow = useCallback((id: string) => deleteRef.current(id), []);
 
-  const buildStaffExportRows = () => (
+  const buildStaffExportRows = () => {
     // Staff access log: record the download/print of the staff list.
-    void logStaffAccess("download", null, `Exported staff list (${filtered.length} records)`),
-    filtered.map((s) => {
+    void logStaffAccess("download", null, `Exported staff list (${filtered.length} records)`);
+    return filtered.map((s) => {
       const joined = (s as any).date_joined_service as string | null;
       const tenure = yearsOfService(joined ?? null);
       return [
@@ -803,6 +803,7 @@ export default function Staff() {
         joined ? formatService(tenure.years, tenure.months) : "—",
       ];
     });
+  };
 
   const statusColor = (s: string) => {
     switch (s) {
