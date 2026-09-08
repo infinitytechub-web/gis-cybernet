@@ -61,6 +61,25 @@ import type { BioDataPrefillRow } from "@/lib/biodata-import";
 import { exportBioDataPdf } from "@/lib/biodata-pdf";
 
 /**
+ * Shown while sections E–L are still loading, so the form never looks blank
+ * or unresponsive when a record is opened for editing.
+ */
+function BioDataLoadingNotice() {
+  const { loading } = useBioData();
+  if (!loading) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-2 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+    >
+      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+      Loading sections E–L (education, family, bank, service history)…
+    </div>
+  );
+}
+
+/**
  * Toolbar inside the Bio-Data dialog: prefill the form from a roster
  * spreadsheet, and print the completed record as a PDF.
  */
@@ -257,6 +276,7 @@ export default function Staff() {
   const [previousLastPosition, setPreviousLastPosition] = useState("");
   const [previousReasonForLeaving, setPreviousReasonForLeaving] = useState("");
   const [bioTab, setBioTab] = useState("A");
+  const bioSectionIndex = Math.max(0, BIODATA_SECTIONS.findIndex((s) => s.key === bioTab));
   const biodataPersistRef = useRef<PersistFn | null>(null);
   const { data: bioOptionSets } = useBioDataOptionSets();
 
