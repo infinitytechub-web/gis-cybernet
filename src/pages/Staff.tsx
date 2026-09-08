@@ -919,92 +919,69 @@ export default function Staff() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {paged.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7 + (isAdmin ? 1 : 0) + (canManage ? 1 : 0)} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
-                filtered.map((s) => (
-                  <TableRow key={s.id} data-state={bulk.isSelected(s.id) ? "selected" : undefined}>
-                    {isAdmin && (
-                      <TableCell>
-                        <Checkbox
-                          checked={bulk.isSelected(s.id)}
-                          onCheckedChange={() => bulk.toggle(s.id)}
-                          aria-label={`Select ${s.first_name} ${s.last_name}`}
-                        />
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={(s as any)._photoUrl ?? undefined} alt={`${s.first_name} ${s.last_name}`} />
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(s.first_name, s.last_name)}</AvatarFallback>
-                      </Avatar>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{s.staff_id}</TableCell>
-                    <TableCell>
-                      <button onClick={() => navigate(`/staff/${s.id}`)} className="font-medium text-primary hover:underline text-left">
-                        {s.last_name}, {s.first_name}
-                      </button>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{s.ranks?.abbreviation ?? "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
-                        {s.account_locked && (
-                          <span title="Account locked" className="inline-flex items-center text-destructive">
-                            <Lock className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    {canManage && (
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)} title="Edit">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          {isAdmin && (
-                            <AdminAccountActions
-                              profileId={s.id}
-                              staffId={s.staff_id}
-                              fullName={`${s.first_name} ${s.last_name}`}
-                              accountLocked={s.account_locked}
-                              hasUserId={!!s.user_id}
-                            />
-                          )}
-                          {isAdmin && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Delete">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete {s.last_name}, {s.first_name}?</AlertDialogTitle>
-                                  <AlertDialogDescription>This will permanently remove this staff member and all associated records.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
-                  </TableRow>
+                paged.map((s) => (
+                  <StaffTableRow
+                    key={s.id}
+                    staff={s}
+                    isAdmin={isAdmin}
+                    canManage={canManage}
+                    selected={bulk.isSelected(s.id)}
+                    onToggleSelect={handleToggleSelect}
+                    onOpenProfile={handleOpenProfile}
+                    onEdit={handleEditRow}
+                    onDelete={handleDeleteRow}
+                  />
                 ))
               )}
             </TableBody>
           </Table>
         </div>
       )}
-      <p className="text-xs text-muted-foreground">{filtered.length} of {staff.length} staff shown</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          {filtered.length === 0
+            ? `0 of ${staff.length} staff shown`
+            : `Showing ${(safePage - 1) * PAGE_SIZE + 1}–${Math.min(safePage * PAGE_SIZE, filtered.length)} of ${filtered.length} (${staff.length} total)`}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)} aria-label="Previous page">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .reduce<(number | "ellipsis")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, i) =>
+                p === "ellipsis" ? (
+                  <span key={`e${i}`} className="px-1 text-xs text-muted-foreground">…</span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === safePage ? "default" : "outline"}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => setPage(p)}
+                    aria-label={`Page ${p}`}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+            <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)} aria-label="Next page">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/*
         PERSONNEL BIO-DATA & SERVICE RECORD FORM
