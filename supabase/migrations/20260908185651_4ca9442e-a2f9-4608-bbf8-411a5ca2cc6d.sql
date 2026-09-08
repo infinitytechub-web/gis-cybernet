@@ -1,0 +1,1 @@
+ALTER TYPE public.leave_type ADD VALUE IF NOT EXISTS 'maternity';
