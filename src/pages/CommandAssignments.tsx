@@ -199,6 +199,55 @@ export default function CommandAssignments() {
     },
   });
 
+  const { data: ranks = [] } = useQuery({
+    queryKey: ["command-assignments", "ranks"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ranks")
+        .select("id, name, level")
+        .order("level", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as RankRow[];
+    },
+  });
+
+  /** Roles that the directory matrix knows about — those are the ones with rights. */
+  const { data: matrixRoles = [] } = useQuery({
+    queryKey: ["command-assignments", "matrix-roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("directory_permissions").select("role");
+      if (error) throw error;
+      return Array.from(new Set((data ?? []).map((r) => r.role as string))).sort();
+    },
+  });
+
+  const { data: roleByUser = {} } = useQuery({
+    queryKey: ["command-assignments", "roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      if (error) throw error;
+      const m: Record<string, string> = {};
+      for (const r of data ?? []) if (!m[r.user_id]) m[r.user_id] = r.role as string;
+      return m;
+    },
+  });
+
+  const { data: rankChanges = [] } = useQuery({
+    queryKey: ["command-assignments", "rank-changes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("command_rank_changes")
+        .select(
+          "id, profile_id, from_rank_id, to_rank_id, from_role, to_role, to_level, direction, reason, effective_date, created_at",
+        )
+        .order("created_at", { ascending: false })
+        .limit(40);
+      if (error) throw error;
+      return (data ?? []) as RankChangeRow[];
+    },
+  });
+
+
   const unitById = useMemo(() => {
     const m = new Map<string, UnitRow>();
     for (const u of units) m.set(u.id, u);
