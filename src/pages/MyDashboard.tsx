@@ -88,7 +88,7 @@ export default function MyDashboard() {
   const { user } = useAuth();
   // Portal visibility follows the directory matrix View switch for the
   // officer's own hierarchy level (Settings → Directory Matrix).
-  const { loading: accessLoading, canOpenPortal } = useMyDirectoryAccess();
+  const { loading: accessLoading, canOpenPortal, denialReason } = useMyDirectoryAccess();
   const { data: profile } = useQuery({
     queryKey: ["portal-profile", user?.id],
     enabled: !!user,
