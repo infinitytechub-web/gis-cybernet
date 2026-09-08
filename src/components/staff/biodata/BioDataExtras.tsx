@@ -84,6 +84,8 @@ type Ctx = BioDataState & {
   tables: BioCustomTable[];
   optionSets: ReturnType<typeof useBioDataOptionSets>["data"];
   profileId: string | null;
+  /** True while sections E–L are still being fetched for this record. */
+  loading: boolean;
 };
 
 const BioDataCtx = createContext<Ctx | null>(null);
@@ -147,6 +149,7 @@ export function BioDataProvider({
 }) {
   const { user, isAdmin, role } = useAuth();
   const [state, setState] = useState<BioDataState>(EMPTY_STATE);
+  const [loading, setLoading] = useState(false);
   const { data: optionSets } = useBioDataOptionSets();
   const { data: fields = [] } = useBioDataCustomFields();
   const { data: tables = [] } = useBioDataCustomTables();
@@ -182,11 +185,12 @@ export function BioDataProvider({
 
   const loadedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (!open) { loadedFor.current = null; return; }
-    if (!profileId) { setState(EMPTY_STATE); loadedFor.current = null; return; }
+    if (!open) { loadedFor.current = null; setLoading(false); return; }
+    if (!profileId) { setState(EMPTY_STATE); loadedFor.current = null; setLoading(false); return; }
     if (loadedFor.current === profileId) return;
     loadedFor.current = profileId;
     let cancelled = false;
+    setLoading(true);
 
     (async () => {
       const [edu, emp, fam, emg, bank, med, ver, cv, cr] = await Promise.all([
@@ -258,6 +262,7 @@ export function BioDataProvider({
       // Every look at a restricted section is recorded for the audit trail.
       if (med.data) void logRestrictedAccess(profileId, "medical", "view");
       if (bank.data) void logRestrictedAccess(profileId, "bank", "view");
+      setLoading(false);
     })();
 
     return () => { cancelled = true; };
@@ -406,8 +411,8 @@ export function BioDataProvider({
         family: { ...prev.family, ...(data.family ?? {}) },
         bank: { ...prev.bank, ...(data.bank ?? {}) },
       })),
-    canSeeMedical, canSeeBank, fields, tables, optionSets, profileId,
-  }), [state, canSeeMedical, canSeeBank, fields, tables, optionSets, profileId]);
+    canSeeMedical, canSeeBank, fields, tables, optionSets, profileId, loading,
+  }), [state, canSeeMedical, canSeeBank, fields, tables, optionSets, profileId, loading]);
 
   return <BioDataCtx.Provider value={value}>{children}</BioDataCtx.Provider>;
 }

@@ -61,6 +61,25 @@ import type { BioDataPrefillRow } from "@/lib/biodata-import";
 import { exportBioDataPdf } from "@/lib/biodata-pdf";
 
 /**
+ * Shown while sections E–L are still loading, so the form never looks blank
+ * or unresponsive when a record is opened for editing.
+ */
+function BioDataLoadingNotice() {
+  const { loading } = useBioData();
+  if (!loading) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-2 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+    >
+      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+      Loading sections E–L (education, family, bank, service history)…
+    </div>
+  );
+}
+
+/**
  * Toolbar inside the Bio-Data dialog: prefill the form from a roster
  * spreadsheet, and print the completed record as a PDF.
  */
@@ -257,6 +276,7 @@ export default function Staff() {
   const [previousLastPosition, setPreviousLastPosition] = useState("");
   const [previousReasonForLeaving, setPreviousReasonForLeaving] = useState("");
   const [bioTab, setBioTab] = useState("A");
+  const bioSectionIndex = Math.max(0, BIODATA_SECTIONS.findIndex((s) => s.key === bioTab));
   const biodataPersistRef = useRef<PersistFn | null>(null);
   const { data: bioOptionSets } = useBioDataOptionSets();
 
@@ -1052,12 +1072,14 @@ export default function Staff() {
         after the record through the shared persist function.
       */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent
-          ref={bioDialogRef}
-          className="relative max-w-5xl w-[95vw] max-h-[90vh] overflow-y-auto overflow-x-hidden"
-        >
-          <QuickScroll containerRef={bioDialogRef} label="bio-data form" threshold={200} />
-          <DialogHeader>
+        {/*
+          Layout: the dialog itself never scrolls. The header and the section
+          tabs stay pinned, the middle area scrolls, and the save bar is pinned
+          to the bottom, so no section or control can end up clipped or out of
+          reach on small screens.
+        */}
+        <DialogContent className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Personnel Bio-Data &amp; Service Record — confidential, for official use only
@@ -1068,7 +1090,8 @@ export default function Staff() {
             open={dialogOpen}
             persistRef={biodataPersistRef}
           >
-          <div className="space-y-4">
+          <div ref={bioDialogRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-6 py-4">
+            <QuickScroll containerRef={bioDialogRef} label="bio-data form" threshold={200} />
             {/* Photo upload */}
             <div className="flex flex-col items-center gap-2">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
@@ -1097,8 +1120,11 @@ export default function Staff() {
               onProfileValues={applyPrefillValues}
             />
 
+            <BioDataLoadingNotice />
+
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
-              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+              {/* Pinned so every section stays reachable while scrolling. */}
+              <TabsList className="sticky top-0 z-20 flex h-auto w-full flex-wrap justify-start gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
                 {BIODATA_SECTIONS.map((s) => (
                   <TabsTrigger key={s.key} value={s.key} className="text-xs">
                     <span className="font-semibold">{s.key}</span>
@@ -1501,8 +1527,34 @@ export default function Staff() {
                 onNumberOfChildrenChange={setNumberOfChildren}
               />
             </Tabs>
+          </div>
 
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full">
+          {/* Pinned action bar: section stepper + save always reachable. */}
+          <div className="flex shrink-0 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bioSectionIndex <= 0}
+                onClick={() => setBioTab(BIODATA_SECTIONS[bioSectionIndex - 1].key)}
+              >
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Section {bioSectionIndex + 1} of {BIODATA_SECTIONS.length}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bioSectionIndex >= BIODATA_SECTIONS.length - 1}
+                onClick={() => setBioTab(BIODATA_SECTIONS[bioSectionIndex + 1].key)}
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full sm:w-auto">
               {saveMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1511,6 +1563,7 @@ export default function Staff() {
               ) : editing ? "Update Staff" : "Create Staff"}
             </Button>
           </div>
+
           </BioDataProvider>
         </DialogContent>
       </Dialog>
