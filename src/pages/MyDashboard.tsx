@@ -6,7 +6,7 @@
  * (leave requests and profile change requests). No command-tier data is shown,
  * and RLS already limits every query below to the signed-in officer's rows.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
