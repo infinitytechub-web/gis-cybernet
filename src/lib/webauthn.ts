@@ -22,7 +22,8 @@ export type StepUpAction =
   | "command_role_grant"
   | "recycle_bin_purge"
   | "backup_restore"
-  | "data_export";
+  | "data_export"
+  | "attendance_clock";
 
 /** True when this browser can perform WebAuthn at all. */
 export function supportsWebAuthn(): boolean {

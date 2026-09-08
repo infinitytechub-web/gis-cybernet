@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,19 +6,51 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { LogIn, LogOut, Clock, CheckCircle2, MapPin } from "lucide-react";
+import { LogIn, LogOut, Clock, CheckCircle2, MapPin, Fingerprint } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
 import { SyncHistoryLog } from "./SyncHistoryLog";
 import { getMyClientIp } from "@/lib/client-ip";
 import { captureDigitalAddress } from "@/lib/digital-address";
+import { biometricsAvailable, confirmStepUp, currentDeviceLabel } from "@/lib/webauthn";
 
 export function CheckInOut() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
+  const [bioReady, setBioReady] = useState(false);
   const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    let alive = true;
+    biometricsAvailable()
+      .then((ok) => { if (alive) setBioReady(ok); })
+      .catch(() => { if (alive) setBioReady(false); });
+    return () => { alive = false; };
+  }, []);
+
+  /**
+   * Ask for a live fingerprint / Face ID confirmation before stamping the clock.
+   * Returns the method actually used so the attendance row matches reality —
+   * the same timestamps then feed the weekly dashboard and My daily hours.
+   */
+  const verifyBiometric = useCallback(async (): Promise<{ method: "biometric" | "manual"; device: string | null }> => {
+    if (!bioReady) return { method: "manual", device: null };
+    try {
+      await confirmStepUp("attendance_clock");
+      return { method: "biometric", device: currentDeviceLabel() };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "NO_BIOMETRIC") return { method: "manual", device: null };
+      const name = (e as { name?: string })?.name;
+      if (name === "NotAllowedError" || name === "AbortError") {
+        throw new Error("Fingerprint check was cancelled — attendance was not recorded");
+      }
+      throw new Error("Fingerprint check failed — attendance was not recorded");
+    }
+  }, [bioReady]);
+
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -129,6 +161,7 @@ export function CheckInOut() {
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
+      const verified = await verifyBiometric();
       const now = new Date().toISOString();
       // Best-effort public IP + digital address capture — never block check-in on failure
       let ip: string | null = null;
@@ -140,26 +173,31 @@ export function CheckInOut() {
         check_in: now,
         status: "present",
         notes: notes || null,
+        check_in_method: verified.method,
+        ...(verified.device ? { check_in_device: verified.device } : {}),
         ...(ip ? { check_in_ip: ip } : {}),
         ...(loc.lat != null ? { check_in_lat: loc.lat } : {}),
         ...(loc.lng != null ? { check_in_lng: loc.lng } : {}),
         ...(loc.address ? { check_in_address: loc.address } : {}),
       } as any);
       if (error) throw error;
-      return now;
+      return { now, method: verified.method };
     },
-    onSuccess: (timestamp) => {
+    onSuccess: ({ now, method }) => {
       queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hours"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-weekly"] });
       setNotes("");
-      toast.success("Checked in successfully");
-      syncToPlatform("check_in", timestamp);
+      toast.success(method === "biometric" ? "Checked in — fingerprint confirmed" : "Checked in successfully");
+      syncToPlatform("check_in", now);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const checkOutMutation = useMutation({
     mutationFn: async () => {
+      const verified = await verifyBiometric();
       const now = new Date().toISOString();
       let ip: string | null = null;
       try { ip = await getMyClientIp(); } catch { ip = null; }
@@ -169,6 +207,8 @@ export function CheckInOut() {
         .update({
           check_out: now,
           notes: notes || todayRecord?.notes || null,
+          check_out_method: verified.method,
+          ...(verified.device ? { check_out_device: verified.device } : {}),
           ...(ip ? { check_out_ip: ip } : {}),
           ...(loc.lat != null ? { check_out_lat: loc.lat } : {}),
           ...(loc.lng != null ? { check_out_lng: loc.lng } : {}),
@@ -176,17 +216,20 @@ export function CheckInOut() {
         } as any)
         .eq("id", todayRecord!.id);
       if (error) throw error;
-      return now;
+      return { now, method: verified.method };
     },
-    onSuccess: (timestamp) => {
+    onSuccess: ({ now, method }) => {
       queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["my-hours"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-weekly"] });
       setNotes("");
-      toast.success("Checked out successfully");
-      syncToPlatform("check_out", timestamp);
+      toast.success(method === "biometric" ? "Checked out — fingerprint confirmed" : "Checked out successfully");
+      syncToPlatform("check_out", now);
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const hasCheckedIn = !!todayRecord?.check_in;
   const hasCheckedOut = !!todayRecord?.check_out;
@@ -232,6 +275,15 @@ export function CheckInOut() {
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_in ? format(new Date(todayRecord.check_in), "HH:mm:ss") : "—"}
             </div>
+            {todayRecord?.check_in && (
+              <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+                <Fingerprint className="h-3 w-3 shrink-0" />
+                <span title={(todayRecord as any).check_in_device ?? undefined}>
+                  {(todayRecord as any).check_in_method === "biometric" ? "Fingerprint confirmed" : "Manual entry"}
+                </span>
+              </div>
+            )}
+
             {(todayRecord as any)?.check_in_ip && (
               <div className="mt-1 text-[10px] font-mono text-muted-foreground">
                 IP {(todayRecord as any).check_in_ip}
@@ -251,6 +303,15 @@ export function CheckInOut() {
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_out ? format(new Date(todayRecord.check_out), "HH:mm:ss") : "—"}
             </div>
+            {todayRecord?.check_out && (
+              <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+                <Fingerprint className="h-3 w-3 shrink-0" />
+                <span title={(todayRecord as any).check_out_device ?? undefined}>
+                  {(todayRecord as any).check_out_method === "biometric" ? "Fingerprint confirmed" : "Manual entry"}
+                </span>
+              </div>
+            )}
+
             {(todayRecord as any)?.check_out_ip && (
               <div className="mt-1 text-[10px] font-mono text-muted-foreground">
                 IP {(todayRecord as any).check_out_ip}

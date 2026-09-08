@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, PlaneTakeoff, Timer } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, Fingerprint, PlaneTakeoff, Timer } from "lucide-react";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, parseISO } from "date-fns";
@@ -55,6 +55,8 @@ interface AttendanceRow {
   check_in: string | null;
   check_out: string | null;
   status: string | null;
+  check_in_method: string | null;
+  check_out_method: string | null;
   profiles: { first_name: string | null; last_name: string | null; staff_id: string | null } | null;
 }
 
@@ -95,7 +97,7 @@ export default function AttendanceWeekly() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendances")
-        .select("id, profile_id, date, check_in, check_out, status, profiles(first_name, last_name, staff_id)")
+        .select("id, profile_id, date, check_in, check_out, status, check_in_method, check_out_method, profiles(first_name, last_name, staff_id)")
         .gte("date", from)
         .lte("date", to)
         .order("date", { ascending: true });
@@ -180,6 +182,7 @@ export default function AttendanceWeekly() {
             hours: number;
             shift: ShiftKey | null;
             rosterShift: string | null;
+            biometric: boolean;
           }
         >;
         leaveByDate: Record<string, string>;
@@ -188,6 +191,7 @@ export default function AttendanceWeekly() {
         shiftHours: Record<ShiftKey, number>;
         leaveDays: number;
         daysOff: number;
+        biometricDays: number;
       }
 
 
@@ -207,6 +211,7 @@ export default function AttendanceWeekly() {
           shiftHours: emptyShiftHours(),
           leaveDays: 0,
           daysOff: 0,
+          biometricDays: 0,
         });
       }
       const row = map.get(key)!;
@@ -219,8 +224,10 @@ export default function AttendanceWeekly() {
         hours,
         shift,
         rosterShift: rosterByKey[`${key}|${a.date}`] ?? null,
+        biometric: a.check_in_method === "biometric",
       };
       row.total += hours;
+      if (a.check_in_method === "biometric") row.biometricDays += 1;
       if (shift) row.shiftHours[shift] += hours;
     }
 
@@ -238,6 +245,7 @@ export default function AttendanceWeekly() {
           shiftHours: emptyShiftHours(),
           leaveDays: 0,
           daysOff: 0,
+          biometricDays: 0,
         });
       }
       const row = map.get(l.profile_id)!;
@@ -288,6 +296,7 @@ export default function AttendanceWeekly() {
       staff: staffRows.length,
       daysOff: staffRows.reduce((n, r) => n + r.daysOff, 0),
       leaveDays: staffRows.reduce((n, r) => n + r.leaveDays, 0),
+      biometricDays: staffRows.reduce((n, r) => n + r.biometricDays, 0),
     };
   }, [staffRows]);
 
@@ -306,35 +315,43 @@ export default function AttendanceWeekly() {
       "Staff ID",
       ...days.flatMap((d) => {
         const lbl = format(d, "EEE dd/MM");
-        return [`${lbl} in`, `${lbl} out`, `${lbl} hours`];
+        return [`${lbl} in`, `${lbl} out`, `${lbl} hours`, `${lbl} verified by`];
       }),
       "Total hours",
       ...SHIFTS.map((sh) => `${sh.label} hours`),
       "Leave days (approved)",
       "Days off (auto)",
+      "Fingerprint-verified days",
     ];
     const lines = [header.map(csvCellQuoted).join(",")];
     for (const r of staffRows) {
       const cells: string[] = [r.name, r.staffId];
       for (const d of days) {
         const cell = r.byDate[iso(d)];
-        cells.push(clock(cell?.inAt ?? null), clock(cell?.outAt ?? null), (cell?.hours ?? 0).toFixed(2));
+        cells.push(
+          clock(cell?.inAt ?? null),
+          clock(cell?.outAt ?? null),
+          (cell?.hours ?? 0).toFixed(2),
+          cell ? (cell.biometric ? "Fingerprint" : "Manual") : ""
+        );
       }
       cells.push(
         r.total.toFixed(2),
         ...SHIFTS.map((sh) => r.shiftHours[sh.key].toFixed(2)),
         String(r.leaveDays),
-        String(r.daysOff)
+        String(r.daysOff),
+        String(r.biometricDays)
       );
       lines.push(cells.map(csvCellQuoted).join(","));
     }
     const footer: string[] = ["TOTAL", ""];
-    for (const d of days) footer.push("", "", (totals.perDay[iso(d)] ?? 0).toFixed(2));
+    for (const d of days) footer.push("", "", (totals.perDay[iso(d)] ?? 0).toFixed(2), "");
     footer.push(
       totals.hours.toFixed(2),
       ...SHIFTS.map((sh) => totals.perShift[sh.key].toFixed(2)),
       String(totals.leaveDays),
-      String(totals.daysOff)
+      String(totals.daysOff),
+      String(totals.biometricDays)
     );
     lines.push(footer.map(csvCellQuoted).join(","));
     downloadCSVString(lines.join("\n"), `attendance-week-${from}.csv`);
@@ -445,7 +462,7 @@ export default function AttendanceWeekly() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table className="min-w-[1400px]">
+            <Table className="min-w-[1560px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="sticky left-0 bg-background">Staff</TableHead>
@@ -465,16 +482,17 @@ export default function AttendanceWeekly() {
                   ))}
                   <TableHead className="text-right">Leave days</TableHead>
                   <TableHead className="text-right">Days off</TableHead>
+                  <TableHead className="text-right">Fingerprint days</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={days.length + 8}>Loading…</TableCell>
+                    <TableCell colSpan={days.length + 9}>Loading…</TableCell>
                   </TableRow>
                 ) : staffRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={days.length + 8}>No attendance recorded for this week.</TableCell>
+                    <TableCell colSpan={days.length + 9}>No attendance recorded for this week.</TableCell>
                   </TableRow>
                 ) : (
                   <>
@@ -496,6 +514,10 @@ export default function AttendanceWeekly() {
                                   <div className="font-semibold text-secondary">{cell.hours.toFixed(2)}h</div>
                                   <div className="text-[10px] text-muted-foreground">
                                     {cell.rosterShift ?? (cell.shift ? shiftLabel(cell.shift) : "—")}
+                                  </div>
+                                  <div className="flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+                                    <Fingerprint className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                    {cell.biometric ? "Fingerprint" : "Manual"}
                                   </div>
                                   {cell.status && cell.status !== "present" && (
                                     <Badge variant="outline" className="text-[10px] capitalize">
@@ -527,6 +549,7 @@ export default function AttendanceWeekly() {
                         ))}
                         <TableCell className="text-right">{r.leaveDays}</TableCell>
                         <TableCell className="text-right">{r.daysOff}</TableCell>
+                        <TableCell className="text-right">{r.biometricDays}</TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-semibold">
@@ -545,6 +568,7 @@ export default function AttendanceWeekly() {
                       ))}
                       <TableCell className="text-right">{totals.leaveDays}</TableCell>
                       <TableCell className="text-right">{totals.daysOff}</TableCell>
+                      <TableCell className="text-right">{totals.biometricDays}</TableCell>
 
                     </TableRow>
                   </>
