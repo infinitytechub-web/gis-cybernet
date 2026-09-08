@@ -35,7 +35,7 @@ interface OfficerRow {
   first_name: string | null;
   last_name: string | null;
   staff_id: string | null;
-  rank_position: string | null;
+  ranks?: { name: string | null } | null;
   shift_group: string | null;
   org_unit_id: string | null;
 }
@@ -68,7 +68,7 @@ export default function CommandAssignments() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, rank_position, shift_group, org_unit_id")
+        .select("id, first_name, last_name, staff_id, shift_group, org_unit_id, ranks(name)")
         .order("last_name");
       if (error) throw error;
       return (data ?? []) as OfficerRow[];
@@ -274,7 +274,7 @@ export default function CommandAssignments() {
                         {[o.first_name, o.last_name].filter(Boolean).join(" ") || "—"}
                       </TableCell>
                       <TableCell>{o.staff_id ?? "—"}</TableCell>
-                      <TableCell>{o.rank_position ?? "—"}</TableCell>
+                      <TableCell>{o.ranks?.name ?? "—"}</TableCell>
                       <TableCell>
                         {unit ? (
                           unit.name
