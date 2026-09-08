@@ -14,6 +14,7 @@ import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { Sensitive } from "@/components/Sensitive";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
+import { checkDirectoryAction } from "@/hooks/useDirectoryPermissions";
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -42,6 +43,21 @@ export default function StaffProfile() {
   const { user, role, isAdminOrSupervisor } = useAuth();
   const queryClient = useQueryClient();
   const canEditOffice = isAdminOrSupervisor;
+
+  // Document Vault is governed by the admin Directory Matrix, checked per record
+  // on the server so a direct link cannot bypass it.
+  const { data: vaultAllowed } = useQuery({
+    queryKey: ["directory-action", "vault", id],
+    enabled: !!id,
+    staleTime: 60_000,
+    queryFn: () => checkDirectoryAction("vault", id!),
+  });
+  const { data: vaultManage } = useQuery({
+    queryKey: ["directory-action", "edit", id],
+    enabled: !!id,
+    staleTime: 60_000,
+    queryFn: () => checkDirectoryAction("edit", id!),
+  });
 
   const [editingOffice, setEditingOffice] = useState(false);
   const [officeDraft, setOfficeDraft] = useState("");
@@ -499,10 +515,16 @@ export default function StaffProfile() {
         </TabsContent>
 
         <TabsContent value="documents">
-          <StaffDocumentVault
-            profileId={profile.id}
-            canManage={isAdminOrSupervisor}
-          />
+          {vaultAllowed === false ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              You are not authorised to open this staff member's document vault.
+            </p>
+          ) : (
+            <StaffDocumentVault
+              profileId={profile.id}
+              canManage={isAdminOrSupervisor && vaultManage !== false}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>
