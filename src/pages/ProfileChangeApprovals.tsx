@@ -343,12 +343,15 @@ export default function ProfileChangeApprovals() {
             filtered.map((r) => {
               const drop = excluded[r.id] || {};
               const entries = Object.entries(r.requested_changes || {});
+              const open = r.status === "pending" || r.status === "supervisor_approved";
+              const isFinalStep = r.status === "supervisor_approved";
+              const canDecide = isFinalStep ? isAdmin : true;
               return (
                 <Card key={r.id}>
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3">
-                        {r.status === "pending" && (
+                        {open && (
                           <Checkbox
                             className="mt-1"
                             checked={!!queued[r.id]}
@@ -372,19 +375,36 @@ export default function ProfileChangeApprovals() {
                           r.status === "approved" ? "border-emerald-500 text-emerald-700" :
                           r.status === "rejected" ? "border-red-500 text-red-700" :
                           r.status === "cancelled" ? "" :
+                          r.status === "supervisor_approved" ? "border-blue-500 text-blue-700" :
                           "border-amber-500 text-amber-700"
                         }
                       >
-                        {r.status}
+                        {STATUS_LABELS[r.status] ?? r.status}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {/* Approval trail */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        Step 1 (supervisor):{" "}
+                        <span className="text-foreground">
+                          {r.supervisor_reviewed_at ? formatDateTime(r.supervisor_reviewed_at) : "not yet"}
+                        </span>
+                      </span>
+                      <span>
+                        Step 2 (admin):{" "}
+                        <span className="text-foreground">
+                          {r.admin_reviewed_at ? formatDateTime(r.admin_reviewed_at) : "not yet"}
+                        </span>
+                      </span>
+                    </div>
+
                     <div className="rounded border overflow-x-auto text-xs">
                       <table className="w-full">
                         <thead className="bg-muted">
                           <tr>
-                            {r.status === "pending" && <th className="text-left p-2 w-10">Apply</th>}
+                            {open && <th className="text-left p-2 w-10">Apply</th>}
                             <th className="text-left p-2">Field</th>
                             <th className="text-left p-2">Current</th>
                             <th className="text-left p-2">Requested</th>
@@ -393,7 +413,7 @@ export default function ProfileChangeApprovals() {
                         <tbody>
                           {entries.map(([k, v]) => (
                             <tr key={k} className="border-t">
-                              {r.status === "pending" && (
+                              {open && (
                                 <td className="p-2">
                                   <Checkbox
                                     checked={!drop[k]}
@@ -418,8 +438,13 @@ export default function ProfileChangeApprovals() {
                       </table>
                     </div>
 
-                    {r.status === "pending" ? (
+                    {open ? (
                       <>
+                        {r.supervisor_notes && (
+                          <div className="text-xs text-muted-foreground">
+                            Supervisor notes: <span className="text-foreground">{r.supervisor_notes}</span>
+                          </div>
+                        )}
                         <Textarea
                           placeholder="Reviewer notes (optional)"
                           value={notes[r.id] ?? ""}
@@ -429,11 +454,18 @@ export default function ProfileChangeApprovals() {
                         <div className="flex gap-2 flex-wrap">
                           <Button
                             size="sm"
-                            onClick={() => review.mutate({ id: r.id, status: "approved", req: r })}
-                            disabled={busy}
+                            onClick={() =>
+                              review.mutate({
+                                id: r.id,
+                                status: isFinalStep ? "approved" : "supervisor_approved",
+                                req: r,
+                              })
+                            }
+                            disabled={busy || !canDecide}
                             className="gap-1 bg-emerald-600 hover:bg-emerald-700"
                           >
-                            <Check className="h-4 w-4" /> Approve ticked fields
+                            <Check className="h-4 w-4" />
+                            {isFinalStep ? "Final approve (apply to profile)" : "First approve ticked fields"}
                           </Button>
                           <Button
                             size="sm"
@@ -444,6 +476,16 @@ export default function ProfileChangeApprovals() {
                           >
                             <X className="h-4 w-4" /> Reject
                           </Button>
+                          {isFinalStep && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => review.mutate({ id: r.id, status: "pending", req: r })}
+                              disabled={busy}
+                            >
+                              Send back to supervisor
+                            </Button>
+                          )}
                         </div>
                       </>
                     ) : (
@@ -472,7 +514,7 @@ export default function ProfileChangeApprovals() {
                               onClick={() => review.mutate({ id: r.id, status: "pending", req: r })}
                               disabled={busy}
                             >
-                              Return to pending queue
+                              Return to the start of the queue
                             </Button>
                           </div>
                         )}
