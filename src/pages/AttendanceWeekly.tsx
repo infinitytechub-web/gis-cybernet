@@ -473,12 +473,24 @@ export default function AttendanceWeekly() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Timer className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs">Total hours this week</span>
+              <span className="text-xs">Scheduled hours (roster)</span>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-secondary">{totals.scheduled.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">
+              Variance {(totals.hours - totals.scheduled >= 0 ? "+" : "") + (totals.hours - totals.scheduled).toFixed(2)}h
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Timer className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">Total hours clocked</span>
             </div>
             <p className="mt-2 text-2xl font-bold text-secondary">{totals.hours.toFixed(2)}</p>
           </CardContent>
