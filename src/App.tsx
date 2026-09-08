@@ -233,6 +233,7 @@ function App() {
           <Route path="/security-audit-log" element={<ProtectedRoute module="security-audit-log"><Layout><SecurityAuditLog /></Layout></ProtectedRoute>} />
           <Route path="/admin/phone-validation" element={<ProtectedRoute module="phone-validation-rules"><Layout><PhoneValidationRules /></Layout></ProtectedRoute>} />
           <Route path="/sensitive-access-log" element={<ProtectedRoute module="sensitive-access-log"><Layout><SensitiveAccessLog /></Layout></ProtectedRoute>} />
+          <Route path="/staff-access-log" element={<ProtectedRoute module="staff-access-log"><Layout><StaffAccessLog /></Layout></ProtectedRoute>} />
           <Route path="/quarantine" element={<ProtectedRoute module="quarantine"><Layout><QuarantineInbox /></Layout></ProtectedRoute>} />
           <Route path="/ip-blocks" element={<ProtectedRoute module="ip-blocks"><Layout><IpBlocks /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute module="leave"><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
