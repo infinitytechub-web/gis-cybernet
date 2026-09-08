@@ -22,6 +22,7 @@ import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import { format, startOfWeek, endOfWeek, addDays, addWeeks, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
+import { DateInput } from "@/components/ui/date-input";
 
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 const MAX_DAILY_HOURS = 16;
@@ -460,9 +461,8 @@ export default function AttendanceWeekly() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="week-pick">Jump to a date</Label>
-            <Input
+            <DateInput
               id="week-pick"
-              type="date"
               value={from}
               onChange={(e) => {
                 if (!e.target.value) return;

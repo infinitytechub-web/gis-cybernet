@@ -37,6 +37,7 @@ export default [
       security,
       "no-unsanitized": noUnsanitized,
       "react-hooks": reactHooks,
+      "@typescript-eslint": tseslint.plugin,
     },
     linterOptions: {
       reportUnusedDisableDirectives: "off",
@@ -53,6 +54,9 @@ export default [
       // Keep react-hooks rules registered but quiet — full project lint runs
       // them in the main eslint.config.js.
       "react-hooks/rules-of-hooks": "off",
+      // Registered but quiet: source files carry inline disables for this rule,
+      // which would otherwise error as "rule not found" in this config.
+      "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/exhaustive-deps": "off",
     },
   },

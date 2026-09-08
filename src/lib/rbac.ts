@@ -77,9 +77,8 @@ export const MODULES: ModuleDef[] = [
   { key: "leave", label: "Leave / Pass Requests", feature: "Leave Requests", tier: "all-staff", roles: "all", paths: ["/leave"] },
   { key: "leave-calendar", label: "Leave Calendar", tier: "all-staff", roles: "all", paths: ["/leave/calendar"] },
   { key: "attendance", label: "Attendance", feature: "Attendance", tier: "all-staff", roles: "all", paths: ["/attendance"] },
-  { key: "attendance-overview", label: "Attendance Overview", tier: "all-staff", roles: "all", paths: ["/attendance/overview"] },
   { key: "staff-portal", label: "My Dashboard", tier: "all-staff", roles: "all", paths: ["/portal"] },
-  { key: "attendance-weekly", label: "Weekly Attendance", tier: "all-staff", roles: "all", paths: ["/attendance/weekly"] },
+
   { key: "holidays", label: "Holidays", tier: "all-staff", roles: "all", paths: ["/holidays"] },
   { key: "payments", label: "Payments", feature: "Payments", tier: "all-staff", roles: "all", paths: ["/payments"] },
   { key: "loans", label: "Loans", feature: "Loans", tier: "all-staff", roles: "all", paths: ["/loans"] },
@@ -97,6 +96,15 @@ export const MODULES: ModuleDef[] = [
     paths: ["/staff", "/staff/:id"],
   },
   { key: "departments", label: "Departments", feature: "Departments", tier: "module", roles: [...COMMAND, ...IPSE_TIER], paths: ["/departments"] },
+  {
+    key: "attendance-overview", label: "Attendance Overview", tier: "module",
+    roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/attendance/overview"],
+  },
+  {
+    key: "attendance-weekly", label: "Weekly Attendance", tier: "module",
+    roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/attendance/weekly"],
+  },
+
   { key: "roles-designations", label: "Roles / Designations", feature: "Roles / Ranks", tier: "module", roles: [...COMMAND, ...IPSE_TIER], paths: ["/roles"] },
   { key: "shifts", label: "Office Shifts", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/shifts"] },
   { key: "roster", label: "Duty Roster", feature: "Duty Roster", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/roster"] },

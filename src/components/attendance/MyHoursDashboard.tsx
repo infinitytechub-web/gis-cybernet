@@ -11,6 +11,7 @@ import { Download, Fingerprint, Timer } from "lucide-react";
 import { format, startOfMonth, subDays } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { toast } from "sonner";
+import { DateInput } from "@/components/ui/date-input";
 
 type Row = {
   id: string;
@@ -152,11 +153,11 @@ export function MyHoursDashboard() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <Label htmlFor="my-hours-from" className="text-xs">From</Label>
-            <Input id="my-hours-from" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className="w-[150px]" />
+            <DateInput id="my-hours-from" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className="w-[150px]" />
           </div>
           <div className="space-y-1">
             <Label htmlFor="my-hours-to" className="text-xs">To</Label>
-            <Input id="my-hours-to" type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} className="w-[150px]" />
+            <DateInput id="my-hours-to" value={to} min={from} onChange={(e) => setTo(e.target.value)} className="w-[150px]" />
           </div>
           <Button variant="outline" size="sm" onClick={() => { setFrom(format(subDays(new Date(), 6), "yyyy-MM-dd")); setTo(format(new Date(), "yyyy-MM-dd")); }}>
             Last 7 days
