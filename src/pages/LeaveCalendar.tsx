@@ -314,7 +314,7 @@ export default function LeaveCalendar() {
     <div className="space-y-6">
       <PageHeader
         title="Leave Calendar"
-        description="Approved leave dates per staff member. Drag across days to request leave, or drag a pending bar to move it."
+        subtitle="Approved leave dates per staff member. Drag across days to request leave, or drag a pending bar to move it."
         icon={CalendarDays}
       />
 
@@ -451,11 +451,11 @@ export default function LeaveCalendar() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label>Start date</Label>
-                <DateInput value={startDate} onChange={setStartDate} />
+                <DateInput value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
               <div>
                 <Label>End date</Label>
-                <DateInput value={endDate} onChange={setEndDate} />
+                <DateInput value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
             <div>

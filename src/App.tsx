@@ -57,6 +57,7 @@ const DutyRoster = lazy(() => import("./pages/DutyRoster"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const AttendanceOverview = lazy(() => import("./pages/AttendanceOverview"));
 const AttendanceWeekly = lazy(() => import("./pages/AttendanceWeekly"));
+const LeaveCalendar = lazy(() => import("./pages/LeaveCalendar"));
 const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
 const StaffRequestApprovals = lazy(() => import("./pages/StaffRequestApprovals"));
 const ShiftWindowAudit = lazy(() => import("./pages/ShiftWindowAudit"));
@@ -231,6 +232,7 @@ function App() {
           <Route path="/quarantine" element={<ProtectedRoute module="quarantine"><Layout><QuarantineInbox /></Layout></ProtectedRoute>} />
           <Route path="/ip-blocks" element={<ProtectedRoute module="ip-blocks"><Layout><IpBlocks /></Layout></ProtectedRoute>} />
           <Route path="/leave" element={<ProtectedRoute module="leave"><Layout><LeaveRequests /></Layout></ProtectedRoute>} />
+          <Route path="/leave/calendar" element={<ProtectedRoute module="leave-calendar"><Layout><LeaveCalendar /></Layout></ProtectedRoute>} />
           <Route path="/payments" element={<ProtectedRoute module="payments"><Layout><Payments /></Layout></ProtectedRoute>} />
           <Route path="/loans" element={<ProtectedRoute module="loans"><Layout><Loans /></Layout></ProtectedRoute>} />
           <Route path="/holidays" element={<ProtectedRoute module="holidays"><Layout><Holidays /></Layout></ProtectedRoute>} />
