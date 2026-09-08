@@ -18505,7 +18505,13 @@ export type Database = {
         | "grounded"
         | "decommissioned"
       leave_status: "pending" | "approved" | "rejected"
-      leave_type: "annual" | "sick" | "compassionate" | "pass" | "study"
+      leave_type:
+        | "annual"
+        | "sick"
+        | "compassionate"
+        | "pass"
+        | "study"
+        | "maternity"
       org_position_level:
         | "directorate"
         | "management_member"
@@ -18769,7 +18775,14 @@ export const Constants = {
         "decommissioned",
       ],
       leave_status: ["pending", "approved", "rejected"],
-      leave_type: ["annual", "sick", "compassionate", "pass", "study"],
+      leave_type: [
+        "annual",
+        "sick",
+        "compassionate",
+        "pass",
+        "study",
+        "maternity",
+      ],
       org_position_level: [
         "directorate",
         "management_member",
