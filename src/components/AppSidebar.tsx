@@ -94,6 +94,7 @@ const staffApprovalsItem = { title: "Staff Approvals", url: "/staff-approvals", 
 const shiftWindowAuditItem = { title: "Shift Rules Audit", url: "/shift-window-audit", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
 const securityAuditLogItem = { title: "Security Audit Log", url: "/security-audit-log", icon: ScrollText, iconColor: "text-amber-700 dark:text-amber-300" };
 const sensitiveAccessLogItem = { title: "Sensitive Access Log", url: "/sensitive-access-log", icon: ScrollText, iconColor: "text-rose-700 dark:text-rose-300" };
+const staffAccessLogItem = { title: "Staff Access Log", url: "/staff-access-log", icon: ScrollText, iconColor: "text-teal-700 dark:text-teal-300" };
 const ipBlocksItem = { title: "IP & Device Blocks", url: "/ip-blocks", icon: Ban, iconColor: "text-destructive" };
 
 const immigrationItems = [
