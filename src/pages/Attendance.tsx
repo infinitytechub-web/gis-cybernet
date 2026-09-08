@@ -67,10 +67,19 @@ export default function Attendance() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h1 className="text-2xl font-bold text-secondary">Attendance</h1>
-        <Badge variant="outline">{format(new Date(), "dd/MM/yyyy")}</Badge>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/attendance/overview">
+              <CalendarClock className="mr-2 h-4 w-4" aria-hidden="true" />
+              Overview &amp; hours
+            </Link>
+          </Button>
+          <Badge variant="outline">{format(new Date(), "dd/MM/yyyy")}</Badge>
+        </div>
       </div>
+
 
       {/* Staff always sees their own check-in/out card */}
       <CheckInOut />
