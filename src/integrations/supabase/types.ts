@@ -1806,6 +1806,80 @@ export type Database = {
         }
         Relationships: []
       }
+      command_transfers: {
+        Row: {
+          created_at: string
+          effective_date: string
+          from_level: string | null
+          from_org_unit_id: string | null
+          from_shift_group: string | null
+          id: string
+          moved_by: string | null
+          profile_id: string
+          reason: string | null
+          to_level: string | null
+          to_org_unit_id: string | null
+          to_shift_group: string | null
+        }
+        Insert: {
+          created_at?: string
+          effective_date?: string
+          from_level?: string | null
+          from_org_unit_id?: string | null
+          from_shift_group?: string | null
+          id?: string
+          moved_by?: string | null
+          profile_id: string
+          reason?: string | null
+          to_level?: string | null
+          to_org_unit_id?: string | null
+          to_shift_group?: string | null
+        }
+        Update: {
+          created_at?: string
+          effective_date?: string
+          from_level?: string | null
+          from_org_unit_id?: string | null
+          from_shift_group?: string | null
+          id?: string
+          moved_by?: string | null
+          profile_id?: string
+          reason?: string | null
+          to_level?: string | null
+          to_org_unit_id?: string | null
+          to_shift_group?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_transfers_from_org_unit_id_fkey"
+            columns: ["from_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_transfers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_transfers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_transfers_to_org_unit_id_fkey"
+            columns: ["to_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_vault_files: {
         Row: {
           category: string
@@ -16980,6 +17054,7 @@ export type Database = {
       }
       can_manage_procurement: { Args: { _user_id: string }; Returns: boolean }
       can_manage_sessions: { Args: { _user_id: string }; Returns: boolean }
+      can_move_command: { Args: { _user_id: string }; Returns: boolean }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_see_org_unit: {
         Args: { _org_unit_id: string; _user_id: string }
@@ -17057,6 +17132,16 @@ export type Database = {
         }[]
       }
       command_dashboard: { Args: { _days?: number }; Returns: Json }
+      command_move_officers: {
+        Args: {
+          _effective_date?: string
+          _profile_ids: string[]
+          _reason?: string
+          _shift_group?: string
+          _to_org_unit_id: string
+        }
+        Returns: number
+      }
       command_reach_units: { Args: { _user_id: string }; Returns: string[] }
       compute_interlink_next_run: {
         Args: {
@@ -17132,6 +17217,21 @@ export type Database = {
       directory_level_of_unit: {
         Args: { _org_unit_id: string }
         Returns: string
+      }
+      directory_rights_at_unit: {
+        Args: { _org_unit_id: string; _profile_id: string }
+        Returns: {
+          assigned: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_download: boolean
+          can_edit: boolean
+          can_print: boolean
+          can_vault: boolean
+          can_view: boolean
+          level: string
+          scope: string
+        }[]
       }
       duty_roster_live: {
         Args: { _date?: string; _group?: string }
