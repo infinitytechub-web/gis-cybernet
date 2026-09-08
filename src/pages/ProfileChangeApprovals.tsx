@@ -224,12 +224,15 @@ export default function ProfileChangeApprovals() {
     onError: (e: any) => toast.error(e.message ?? "Bulk action failed"),
   });
 
-  const pendingRequests = useMemo(
-    () => filtered.filter((r) => r.status === "pending"),
-    [filtered]
+  const queueRequests = useMemo(
+    () => filtered.filter((r) => r.status === tab),
+    [filtered, tab]
   );
-  const selectedCount = pendingRequests.filter((r) => queued[r.id]).length;
+  const selectedCount = queueRequests.filter((r) => queued[r.id]).length;
   const busy = review.isPending || bulkReview.isPending;
+  // Stage 1 = supervisor/command tier, stage 2 (final) = administrators only
+  const stageDecision: Decision = tab === "supervisor_approved" ? "approved" : "supervisor_approved";
+  const canDecideStage = tab === "supervisor_approved" ? isAdmin : true;
 
   if (!allowed) {
     return (
@@ -244,8 +247,9 @@ export default function ProfileChangeApprovals() {
       <PageHeader
         icon={ShieldCheck}
         title="Staff Change Approvals"
-        subtitle="Queue, review and approve profile edits submitted by staff. Approving applies the ticked fields to the staff record."
+        subtitle="Two-step review: staff submit, a supervisor gives the first approval, then an administrator gives the final approval that writes the change to the staff record. Every step is recorded in the audit log."
       />
+
 
       <Card>
         <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
