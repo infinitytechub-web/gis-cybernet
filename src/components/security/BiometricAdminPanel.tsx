@@ -134,7 +134,7 @@ export function BiometricAdminPanel() {
   }, [pending, reason, load, toast]);
 
 
-  const active = rows.filter((r) => !r.revoked_at).length;
+  const active = rows.filter((r) => !r.revoked_at && r.approval_status === "approved").length;
 
   return (
     <Card>
@@ -190,6 +190,8 @@ export function BiometricAdminPanel() {
                   <TableCell>
                     {r.revoked_at
                       ? <Badge variant="outline">Revoked {formatDate(r.revoked_at)}</Badge>
+                      : r.approval_status === "pending"
+                      ? <Badge variant="outline">Awaiting approval</Badge>
                       : <Badge>Active</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
