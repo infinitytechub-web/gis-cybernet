@@ -18126,6 +18126,43 @@ export type Database = {
         }
         Returns: number
       }
+      my_command_context: {
+        Args: never
+        Returns: {
+          can_create: boolean
+          can_delete: boolean
+          can_download: boolean
+          can_edit: boolean
+          can_print: boolean
+          can_vault: boolean
+          can_view: boolean
+          level: string
+          org_unit_id: string
+          profile_id: string
+          scope: string
+          shift_group: string
+          unit_code: string
+          unit_name: string
+          unit_type: string
+        }[]
+      }
+      my_command_officers: {
+        Args: never
+        Returns: {
+          department_name: string
+          first_name: string
+          id: string
+          is_self: boolean
+          last_name: string
+          org_unit_id: string
+          photo_url: string
+          rank_name: string
+          shift_group: string
+          staff_id: string
+          status: string
+          unit_name: string
+        }[]
+      }
       my_directory_permissions: {
         Args: never
         Returns: {
