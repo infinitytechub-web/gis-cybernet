@@ -152,6 +152,8 @@ export default function StaffProfile() {
     if (auditedRef.current === key) return;
     auditedRef.current = key;
     void (supabase as any).rpc("log_office_history_access", { _profile_id: id });
+    // Staff access log: record that this officer opened this staff record.
+    void logStaffAccess("view", id, "Opened staff profile page");
   }, [id, user?.id]);
 
   if (isLoading) {
