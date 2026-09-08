@@ -660,6 +660,162 @@ export default function CommandAssignments() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
+            <ChevronsUp className="h-5 w-5 text-primary" /> Promote or demote officers
+          </CardTitle>
+          <CardDescription>
+            Tick the officers in the list above, then set the new rank and level here. The directory
+            matrix switches for the new level are applied automatically — no separate step. Choose a
+            command above as well if the promotion also moves them.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-[170px]">
+              <p className="text-xs text-muted-foreground mb-1">Change type</p>
+              <Select
+                value={direction}
+                onValueChange={(v) => setDirection(v as typeof direction)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="promotion">Promotion</SelectItem>
+                  <SelectItem value="demotion">Demotion</SelectItem>
+                  <SelectItem value="lateral">Sideways change</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[200px] flex-1">
+              <p className="text-xs text-muted-foreground mb-1">New rank</p>
+              <Select value={targetRank} onValueChange={setTargetRank}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNCHANGED}>Leave rank unchanged</SelectItem>
+                  {ranks.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[200px] flex-1">
+              <p className="text-xs text-muted-foreground mb-1">New level (matrix role)</p>
+              <Select value={targetRole} onValueChange={setTargetRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNCHANGED}>Leave level unchanged</SelectItem>
+                  {matrixRoles.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {roleLabel(r as never)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              disabled={!selectedIds.length || changeRank.isPending}
+              onClick={() => changeRank.mutate()}
+              className="gap-1"
+            >
+              {changeRank.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Apply {selectedIds.length ? `(${selectedIds.length})` : ""}
+            </Button>
+          </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Reason / remarks (optional)</p>
+            <Textarea
+              rows={2}
+              placeholder="e.g. Promoted to Chief Inspector with effect from today"
+              value={rankReason}
+              onChange={(e) => setRankReason(e.target.value)}
+            />
+          </div>
+
+          {previewOfficer && previewRole && (
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Switches applied to {roleLabel(previewRole as never)} at{" "}
+                {(targetUnit ? unitById.get(targetUnit) : previewOfficer.org_unit_id
+                  ? unitById.get(previewOfficer.org_unit_id)
+                  : null)?.name ?? "no command"}
+              </p>
+              {roleRights.isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <RightsGrid rights={roleRights.data ?? null} />
+                  <p className="text-xs text-muted-foreground">
+                    Scope:{" "}
+                    {DIRECTORY_SCOPE_LABELS[(roleRights.data?.scope ?? "none") as DirectoryScope]}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Officer</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Rank</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Reason</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rankChanges.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      No promotions or demotions recorded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {rankChanges.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>{format(new Date(c.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                    <TableCell className="font-medium">
+                      {officerName(officerById.get(c.profile_id))}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={c.direction === "demotion" ? "destructive" : "default"}>
+                        {c.direction === "demotion"
+                          ? "Demotion"
+                          : c.direction === "promotion"
+                            ? "Promotion"
+                            : "Sideways"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {(c.from_rank_id ? rankById.get(c.from_rank_id)?.name : null) ?? "—"} →{" "}
+                      {(c.to_rank_id ? rankById.get(c.to_rank_id)?.name : null) ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      {c.from_role ? roleLabel(c.from_role as never) : "—"} →{" "}
+                      {c.to_role ? roleLabel(c.to_role as never) : "—"}
+                    </TableCell>
+                    <TableCell className="max-w-[240px] truncate">{c.reason ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <History className="h-5 w-5 text-primary" /> Recent moves
           </CardTitle>
           <CardDescription>
