@@ -173,7 +173,9 @@ export default function CommandAssignments() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group, org_unit_id, ranks(name)")
+        .select(
+          "id, first_name, last_name, staff_id, shift_group, org_unit_id, rank_id, user_id, ranks(name)",
+        )
         .order("last_name");
       if (error) throw error;
       return (data ?? []) as OfficerRow[];
