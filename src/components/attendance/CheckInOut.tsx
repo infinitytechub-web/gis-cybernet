@@ -275,6 +275,15 @@ export function CheckInOut() {
             <div className="text-lg font-semibold text-foreground">
               {todayRecord?.check_in ? format(new Date(todayRecord.check_in), "HH:mm:ss") : "—"}
             </div>
+            {todayRecord?.check_in && (
+              <div className="mt-1 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
+                <Fingerprint className="h-3 w-3 shrink-0" />
+                <span title={(todayRecord as any).check_in_device ?? undefined}>
+                  {(todayRecord as any).check_in_method === "biometric" ? "Fingerprint confirmed" : "Manual entry"}
+                </span>
+              </div>
+            )}
+
             {(todayRecord as any)?.check_in_ip && (
               <div className="mt-1 text-[10px] font-mono text-muted-foreground">
                 IP {(todayRecord as any).check_in_ip}
