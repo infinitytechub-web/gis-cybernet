@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ import { GhanaPhoneInput } from "@/components/ui/ghana-phone-input";
 import { validateGhanaPhone } from "@/lib/ghana-phone";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
+import { StaffTableRow } from "@/components/staff/StaffTableRow";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -745,10 +746,17 @@ export default function Staff() {
 
   const bulk = useBulkSelection(paged);
 
-  const handleToggleSelect = useCallback((id: string) => bulk.toggle(id), [bulk.toggle]);
+  // Stable row callbacks: refs keep the memoised rows from re-rendering on every
+  // keystroke in the edit form that lives on this same page.
+  const openEditRef = useRef(openEdit);
+  openEditRef.current = openEdit;
+  const deleteRef = useRef((id: string) => deleteMutation.mutate(id));
+  deleteRef.current = (id: string) => deleteMutation.mutate(id);
+
+  const handleToggleSelect = bulk.toggle;
   const handleOpenProfile = useCallback((id: string) => navigate(`/staff/${id}`), [navigate]);
-  const handleEditRow = useCallback((s: any) => openEdit(s), [openEdit]);
-  const handleDeleteRow = useCallback((id: string) => deleteMutation.mutate(id), [deleteMutation]);
+  const handleEditRow = useCallback((s: any) => openEditRef.current(s), []);
+  const handleDeleteRow = useCallback((id: string) => deleteRef.current(id), []);
 
   const buildStaffExportRows = () =>
     filtered.map((s) => {
