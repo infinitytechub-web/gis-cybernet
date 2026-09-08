@@ -1,13 +1,25 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building2, Loader2, Search, Users } from "lucide-react";
+import { format } from "date-fns";
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  History,
+  Loader2,
+  Search,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +31,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DIRECTORY_ACTIONS,
+  DIRECTORY_ACTION_LABELS,
   DIRECTORY_LEVEL_LABELS,
+  DIRECTORY_SCOPE_LABELS,
+  DirectoryLevel,
+  DirectoryScope,
   directoryLevelOfUnitType,
 } from "@/hooks/useDirectoryPermissions";
 
@@ -40,8 +57,68 @@ interface OfficerRow {
   org_unit_id: string | null;
 }
 
+interface RightsRow {
+  level: string | null;
+  scope: string;
+  assigned: boolean;
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_download: boolean;
+  can_print: boolean;
+  can_vault: boolean;
+}
+
+interface TransferRow {
+  id: string;
+  profile_id: string;
+  from_org_unit_id: string | null;
+  to_org_unit_id: string | null;
+  to_level: string | null;
+  from_shift_group: string | null;
+  to_shift_group: string | null;
+  reason: string | null;
+  effective_date: string;
+  created_at: string;
+}
+
 const SHIFTS = ["A", "B", "C", "D"] as const;
-const UNASSIGNED = "__none__";
+const UNCHANGED = "__unchanged__";
+const FLAG_KEY = {
+  view: "can_view",
+  create: "can_create",
+  edit: "can_edit",
+  delete: "can_delete",
+  download: "can_download",
+  print: "can_print",
+  vault: "can_vault",
+} as const;
+
+const officerName = (o?: OfficerRow | null) =>
+  o ? [o.first_name, o.last_name].filter(Boolean).join(" ") || o.staff_id || "—" : "—";
+
+/** Small tick/cross grid used for the "rights after the move" preview. */
+function RightsGrid({ rights }: { rights: RightsRow | null }) {
+  if (!rights) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {DIRECTORY_ACTIONS.map((action) => {
+        const on = !!rights[FLAG_KEY[action]];
+        return (
+          <Badge
+            key={action}
+            variant={on ? "default" : "secondary"}
+            className="gap-1 font-normal"
+          >
+            {on ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+            {DIRECTORY_ACTION_LABELS[action]}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function CommandAssignments() {
   const qc = useQueryClient();
@@ -49,7 +126,8 @@ export default function CommandAssignments() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [targetUnit, setTargetUnit] = useState<string>("");
-  const [targetShift, setTargetShift] = useState<string>(UNASSIGNED);
+  const [targetShift, setTargetShift] = useState<string>(UNCHANGED);
+  const [reason, setReason] = useState("");
 
   const { data: units = [] } = useQuery({
     queryKey: ["command-assignments", "units"],
@@ -75,11 +153,32 @@ export default function CommandAssignments() {
     },
   });
 
+  const { data: transfers = [] } = useQuery({
+    queryKey: ["command-assignments", "transfers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("command_transfers")
+        .select(
+          "id, profile_id, from_org_unit_id, to_org_unit_id, to_level, from_shift_group, to_shift_group, reason, effective_date, created_at",
+        )
+        .order("created_at", { ascending: false })
+        .limit(40);
+      if (error) throw error;
+      return (data ?? []) as TransferRow[];
+    },
+  });
+
   const unitById = useMemo(() => {
     const m = new Map<string, UnitRow>();
     for (const u of units) m.set(u.id, u);
     return m;
   }, [units]);
+
+  const officerById = useMemo(() => {
+    const m = new Map<string, OfficerRow>();
+    for (const o of officers) m.set(o.id, o);
+    return m;
+  }, [officers]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -97,59 +196,98 @@ export default function CommandAssignments() {
   );
   const unassignedCount = officers.filter((o) => !o.org_unit_id).length;
 
-  const assign = useMutation({
+  const previewId = selectedIds[0] ?? null;
+  const previewOfficer = previewId ? officerById.get(previewId) ?? null : null;
+
+  /** Rights recalculated for the first selected officer at their current command. */
+  const beforeRights = useQuery({
+    queryKey: ["command-rights", previewId, previewOfficer?.org_unit_id ?? null],
+    enabled: !!previewId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("directory_rights_at_unit", {
+        _profile_id: previewId!,
+        _org_unit_id: previewOfficer?.org_unit_id ?? null,
+      });
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as RightsRow | null;
+    },
+  });
+
+  /** Rights recalculated for the destination command, before anything is saved. */
+  const afterRights = useQuery({
+    queryKey: ["command-rights", previewId, "target", targetUnit || null],
+    enabled: !!previewId && !!targetUnit,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("directory_rights_at_unit", {
+        _profile_id: previewId!,
+        _org_unit_id: targetUnit,
+      });
+      if (error) throw error;
+      return ((data ?? [])[0] ?? null) as RightsRow | null;
+    },
+  });
+
+  const move = useMutation({
     mutationFn: async (clear: boolean) => {
       if (!selectedIds.length) throw new Error("Select at least one officer");
       if (!clear && !targetUnit) throw new Error("Choose a command first");
-      const patch: Record<string, string | null> = {
-        org_unit_id: clear ? null : targetUnit,
-      };
-      if (!clear && targetShift !== UNASSIGNED) patch.shift_group = targetShift;
-      const { error } = await supabase
-        .from("profiles")
-        .update(patch as never)
-        .in("id", selectedIds);
+      const { data, error } = await supabase.rpc("command_move_officers", {
+        _profile_ids: selectedIds,
+        _to_org_unit_id: clear ? null : targetUnit,
+        _shift_group: !clear && targetShift !== UNCHANGED ? targetShift : null,
+        _reason: reason.trim() || null,
+      });
       if (error) throw error;
-      return selectedIds.length;
+      return (data as number) ?? 0;
     },
     onSuccess: (count, clear) => {
-      toast.success(
-        clear
-          ? `${count} officer(s) removed from their command`
-          : `${count} officer(s) assigned`,
-      );
+      if (count === 0) {
+        toast.info("Those officers are already posted there — nothing changed");
+      } else {
+        toast.success(
+          clear
+            ? `${count} officer(s) removed from their command`
+            : `${count} officer(s) moved — portal and directory rights recalculated`,
+        );
+      }
       setSelected({});
+      setReason("");
+      // Rights follow the posting, so refresh everything that reads it.
       qc.invalidateQueries({ queryKey: ["command-assignments"] });
+      qc.invalidateQueries({ queryKey: ["command-rights"] });
       qc.invalidateQueries({ queryKey: ["my-directory-level"] });
+      qc.invalidateQueries({ queryKey: ["directory-permissions"] });
+      qc.invalidateQueries({ queryKey: ["staff"] });
     },
-    onError: (e: Error) => toast.error(e.message || "Could not update assignments"),
+    onError: (e: Error) => toast.error(e.message || "Could not move the officers"),
   });
 
   const allChecked = rows.length > 0 && rows.every((r) => selected[r.id]);
+  const targetUnitRow = targetUnit ? unitById.get(targetUnit) ?? null : null;
 
   return (
     <div className="space-y-6">
       <PageHeader
         icon={Building2}
-        title="Command Assignments"
-        subtitle="Post each officer to a command — the portal and the directory matrix both read this posting"
+        title="Command Matrix"
+        subtitle="Post and move officers between commands — portal access and directory rights are recalculated from the posting"
       />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" /> Assign officers
+            <Users className="h-5 w-5 text-primary" /> Move officers between commands
           </CardTitle>
           <CardDescription>
-            An officer with no command sees nothing in the staff portal, and the directory matrix has
-            no level to check for them. Assigning a command here is a separate step from switching
-            permissions on in Settings → Directory Matrix.
+            An officer with no command sees nothing in the staff portal. Moving an officer here
+            immediately re-reads their rights from Settings → Directory Matrix at the level of their
+            new command — nothing else needs changing. Every move is kept in the history below.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[240px] flex-1">
-              <p className="text-xs text-muted-foreground mb-1">Command</p>
+              <p className="text-xs text-muted-foreground mb-1">Move to command</p>
               <Select value={targetUnit} onValueChange={setTargetUnit}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a command" />
@@ -170,7 +308,7 @@ export default function CommandAssignments() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNASSIGNED}>Leave unchanged</SelectItem>
+                  <SelectItem value={UNCHANGED}>Leave unchanged</SelectItem>
                   {SHIFTS.map((s) => (
                     <SelectItem key={s} value={s}>
                       Shift {s}
@@ -180,21 +318,97 @@ export default function CommandAssignments() {
               </Select>
             </div>
             <Button
-              disabled={!selectedIds.length || assign.isPending}
-              onClick={() => assign.mutate(false)}
+              disabled={!selectedIds.length || move.isPending}
+              onClick={() => move.mutate(false)}
               className="gap-1"
             >
-              {assign.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Assign {selectedIds.length ? `(${selectedIds.length})` : ""}
+              {move.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Move {selectedIds.length ? `(${selectedIds.length})` : ""}
             </Button>
             <Button
               variant="outline"
-              disabled={!selectedIds.length || assign.isPending}
-              onClick={() => assign.mutate(true)}
+              disabled={!selectedIds.length || move.isPending}
+              onClick={() => move.mutate(true)}
             >
               Remove posting
             </Button>
           </div>
+
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Reason / remarks (optional)</p>
+            <Textarea
+              rows={2}
+              placeholder="e.g. Posted to Regional Command on redeployment"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </div>
+
+          {previewOfficer && (
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Rights recalculated for {officerName(previewOfficer)}
+                {selectedIds.length > 1 && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (first of {selectedIds.length} selected)
+                  </span>
+                )}
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Now —{" "}
+                    {previewOfficer.org_unit_id
+                      ? unitById.get(previewOfficer.org_unit_id)?.name ?? "current command"
+                      : "not assigned"}
+                  </p>
+                  {beforeRights.isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <RightsGrid rights={beforeRights.data ?? null} />
+                      <p className="text-xs text-muted-foreground">
+                        Scope:{" "}
+                        {DIRECTORY_SCOPE_LABELS[
+                          (beforeRights.data?.scope ?? "none") as DirectoryScope
+                        ]}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                    <ArrowRight className="h-3 w-3" />
+                    After the move — {targetUnitRow?.name ?? "choose a command"}
+                  </p>
+                  {!targetUnit ? (
+                    <p className="text-sm text-muted-foreground">
+                      Pick a destination command to preview the new rights.
+                    </p>
+                  ) : afterRights.isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <RightsGrid rights={afterRights.data ?? null} />
+                      <p className="text-xs text-muted-foreground">
+                        Level:{" "}
+                        {targetUnitRow
+                          ? DIRECTORY_LEVEL_LABELS[
+                              directoryLevelOfUnitType(targetUnitRow.type) as DirectoryLevel
+                            ]
+                          : "—"}{" "}
+                        · Scope:{" "}
+                        {DIRECTORY_SCOPE_LABELS[
+                          (afterRights.data?.scope ?? "none") as DirectoryScope
+                        ]}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             <Tabs value={tab} onValueChange={(v) => setTab(v as "unassigned" | "all")}>
@@ -264,23 +478,17 @@ export default function CommandAssignments() {
                       <TableCell>
                         <Checkbox
                           checked={!!selected[o.id]}
-                          aria-label={`Select ${o.first_name ?? ""} ${o.last_name ?? ""}`}
+                          aria-label={`Select ${officerName(o)}`}
                           onCheckedChange={(v) =>
                             setSelected((prev) => ({ ...prev, [o.id]: !!v }))
                           }
                         />
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {[o.first_name, o.last_name].filter(Boolean).join(" ") || "—"}
-                      </TableCell>
+                      <TableCell className="font-medium">{officerName(o)}</TableCell>
                       <TableCell>{o.staff_id ?? "—"}</TableCell>
                       <TableCell>{o.ranks?.name ?? "—"}</TableCell>
                       <TableCell>
-                        {unit ? (
-                          unit.name
-                        ) : (
-                          <Badge variant="destructive">Not assigned</Badge>
-                        )}
+                        {unit ? unit.name : <Badge variant="destructive">Not assigned</Badge>}
                       </TableCell>
                       <TableCell>
                         {unit ? DIRECTORY_LEVEL_LABELS[directoryLevelOfUnitType(unit.type)] : "—"}
@@ -297,6 +505,68 @@ export default function CommandAssignments() {
               Showing the first 300 of {rows.length}. Narrow the search to reach the rest.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-primary" /> Recent moves
+          </CardTitle>
+          <CardDescription>
+            Permanent record of command changes — entries cannot be edited or removed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Officer</TableHead>
+                  <TableHead>From</TableHead>
+                  <TableHead>To</TableHead>
+                  <TableHead>New level</TableHead>
+                  <TableHead>Shift</TableHead>
+                  <TableHead>Reason</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transfers.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                      No command moves recorded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {transfers.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell>{format(new Date(t.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                    <TableCell className="font-medium">
+                      {officerName(officerById.get(t.profile_id))}
+                    </TableCell>
+                    <TableCell>
+                      {t.from_org_unit_id
+                        ? unitById.get(t.from_org_unit_id)?.name ?? "—"
+                        : "Not assigned"}
+                    </TableCell>
+                    <TableCell>
+                      {t.to_org_unit_id
+                        ? unitById.get(t.to_org_unit_id)?.name ?? "—"
+                        : "Posting removed"}
+                    </TableCell>
+                    <TableCell>
+                      {t.to_level
+                        ? DIRECTORY_LEVEL_LABELS[t.to_level as DirectoryLevel] ?? t.to_level
+                        : "—"}
+                    </TableCell>
+                    <TableCell>{t.to_shift_group ? `Shift ${t.to_shift_group}` : "—"}</TableCell>
+                    <TableCell className="max-w-[240px] truncate">{t.reason ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
