@@ -345,6 +345,7 @@ export default function AttendanceWeekly() {
                         <TableCell>{r.staffId}</TableCell>
                         {days.map((d) => {
                           const cell = r.byDate[iso(d)];
+                          const onLeave = r.leaveByDate[iso(d)];
                           return (
                             <TableCell key={iso(d)} className="text-center text-xs">
                               {cell ? (
@@ -358,13 +359,23 @@ export default function AttendanceWeekly() {
                                       {cell.status}
                                     </Badge>
                                   )}
+                                  {onLeave && (
+                                    <Badge variant="secondary" className="text-[10px] capitalize">
+                                      {onLeave} leave
+                                    </Badge>
+                                  )}
                                 </div>
+                              ) : onLeave ? (
+                                <Badge variant="secondary" className="text-[10px] capitalize">
+                                  {onLeave} leave
+                                </Badge>
                               ) : (
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
                           );
                         })}
+
                         <TableCell className="text-right font-semibold">{r.total.toFixed(2)}</TableCell>
                         <TableCell className="text-right">{r.leaveDays}</TableCell>
                       </TableRow>
