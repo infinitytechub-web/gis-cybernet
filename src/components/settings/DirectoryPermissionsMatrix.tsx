@@ -95,7 +95,10 @@ export function DirectoryPermissionsMatrix() {
       const updates = Object.entries(draft).map(([k, patch]) => {
         const row = byKey.get(k);
         if (!row) throw new Error("Unknown permission row");
-        return supabase.from("directory_permissions").update(patch).eq("id", row.id);
+        return supabase
+          .from("directory_permissions")
+          .update(patch as never)
+          .eq("id", row.id);
       });
       const results = await Promise.all(updates);
       const failed = results.find((r) => r.error);
