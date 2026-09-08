@@ -1,9 +1,12 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { CheckInOut } from "@/components/attendance/CheckInOut";
 import { AdminAttendanceLog } from "@/components/attendance/AdminAttendanceLog";
 import { SyncHistoryLog } from "@/components/attendance/SyncHistoryLog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CalendarClock } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
