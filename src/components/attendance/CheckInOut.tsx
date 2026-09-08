@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,19 +6,51 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { LogIn, LogOut, Clock, CheckCircle2, MapPin } from "lucide-react";
+import { LogIn, LogOut, Clock, CheckCircle2, MapPin, Fingerprint } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ShiftPlatformConnect } from "./ShiftPlatformConnect";
 import { SyncHistoryLog } from "./SyncHistoryLog";
 import { getMyClientIp } from "@/lib/client-ip";
 import { captureDigitalAddress } from "@/lib/digital-address";
+import { biometricsAvailable, confirmStepUp, currentDeviceLabel } from "@/lib/webauthn";
 
 export function CheckInOut() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
+  const [bioReady, setBioReady] = useState(false);
   const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    let alive = true;
+    biometricsAvailable()
+      .then((ok) => { if (alive) setBioReady(ok); })
+      .catch(() => { if (alive) setBioReady(false); });
+    return () => { alive = false; };
+  }, []);
+
+  /**
+   * Ask for a live fingerprint / Face ID confirmation before stamping the clock.
+   * Returns the method actually used so the attendance row matches reality —
+   * the same timestamps then feed the weekly dashboard and My daily hours.
+   */
+  const verifyBiometric = useCallback(async (): Promise<{ method: "biometric" | "manual"; device: string | null }> => {
+    if (!bioReady) return { method: "manual", device: null };
+    try {
+      await confirmStepUp("attendance_clock");
+      return { method: "biometric", device: currentDeviceLabel() };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg === "NO_BIOMETRIC") return { method: "manual", device: null };
+      const name = (e as { name?: string })?.name;
+      if (name === "NotAllowedError" || name === "AbortError") {
+        throw new Error("Fingerprint check was cancelled — attendance was not recorded");
+      }
+      throw new Error("Fingerprint check failed — attendance was not recorded");
+    }
+  }, [bioReady]);
+
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
