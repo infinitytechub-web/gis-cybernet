@@ -182,20 +182,28 @@ export default function MyDashboard() {
   }
 
   if (!canOpenPortal) {
+    const unassigned = denialReason === "unassigned";
     return (
       <div className="space-y-6">
         <PageHeader icon={LayoutDashboard} title="Staff Portal" subtitle="Access restricted" />
         <Card>
           <CardContent className="py-10 text-center space-y-2">
-            <p className="text-sm font-medium">The staff portal is not enabled for your role.</p>
+            <p className="text-sm font-medium">
+              {unassigned
+                ? "You are not assigned to a command yet."
+                : "The staff portal is not enabled for your role."}
+            </p>
             <p className="text-sm text-muted-foreground">
-              An administrator can switch it on for your rank and command level.
+              {unassigned
+                ? "An administrator must post you to a command before the portal opens. This is a separate step from switching the portal on for your rank."
+                : "An administrator can switch it on for your rank and command level."}
             </p>
           </CardContent>
         </Card>
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6">
