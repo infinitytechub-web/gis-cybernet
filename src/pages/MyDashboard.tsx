@@ -33,6 +33,7 @@ import { MyHoursDashboard } from "@/components/attendance/MyHoursDashboard";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { formatDate } from "@/lib/date-format";
+import { useMyDirectoryAccess } from "@/hooks/useDirectoryPermissions";
 
 const MAX_DAILY_HOURS = 16;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
@@ -85,6 +86,9 @@ function statusLabel(status: string) {
 
 export default function MyDashboard() {
   const { user } = useAuth();
+  // Portal visibility follows the directory matrix View switch for the
+  // officer's own hierarchy level (Settings → Directory Matrix).
+  const { loading: accessLoading, canOpenPortal } = useMyDirectoryAccess();
   const { data: profile } = useQuery({
     queryKey: ["portal-profile", user?.id],
     enabled: !!user,
