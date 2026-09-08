@@ -1504,8 +1504,34 @@ export default function Staff() {
                 onNumberOfChildrenChange={setNumberOfChildren}
               />
             </Tabs>
+          </div>
 
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full">
+          {/* Pinned action bar: section stepper + save always reachable. */}
+          <div className="flex shrink-0 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bioSectionIndex <= 0}
+                onClick={() => setBioTab(BIODATA_SECTIONS[bioSectionIndex - 1].key)}
+              >
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Section {bioSectionIndex + 1} of {BIODATA_SECTIONS.length}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={bioSectionIndex >= BIODATA_SECTIONS.length - 1}
+                onClick={() => setBioTab(BIODATA_SECTIONS[bioSectionIndex + 1].key)}
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full sm:w-auto">
               {saveMutation.isPending ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1514,6 +1540,7 @@ export default function Staff() {
               ) : editing ? "Update Staff" : "Create Staff"}
             </Button>
           </div>
+
           </BioDataProvider>
         </DialogContent>
       </Dialog>
