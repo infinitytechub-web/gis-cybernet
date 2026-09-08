@@ -474,8 +474,15 @@ export default function MyProfile() {
                       r.status === "approved" ? "bg-emerald-100 text-emerald-800" :
                       r.status === "rejected" ? "bg-red-100 text-red-800" :
                       r.status === "cancelled" ? "bg-muted text-muted-foreground" :
+                      r.status === "supervisor_approved" ? "bg-blue-100 text-blue-800" :
                       "bg-amber-100 text-amber-800"
-                    }`}>{r.status}</span>
+                    }`}>
+                      {r.status === "supervisor_approved"
+                        ? "Awaiting admin approval"
+                        : r.status === "pending"
+                        ? "Awaiting supervisor approval"
+                        : r.status}
+                    </span>
                     <span className="text-muted-foreground">{formatDateTime(r.created_at)}</span>
                   </div>
                   <div className="text-muted-foreground">

@@ -12256,6 +12256,9 @@ export type Database = {
       }
       profile_change_requests: {
         Row: {
+          admin_id: string | null
+          admin_notes: string | null
+          admin_reviewed_at: string | null
           created_at: string
           id: string
           previous_values: Json | null
@@ -12265,10 +12268,16 @@ export type Database = {
           reviewer_id: string | null
           reviewer_notes: string | null
           status: string
+          supervisor_id: string | null
+          supervisor_notes: string | null
+          supervisor_reviewed_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          admin_reviewed_at?: string | null
           created_at?: string
           id?: string
           previous_values?: Json | null
@@ -12278,10 +12287,16 @@ export type Database = {
           reviewer_id?: string | null
           reviewer_notes?: string | null
           status?: string
+          supervisor_id?: string | null
+          supervisor_notes?: string | null
+          supervisor_reviewed_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          admin_reviewed_at?: string | null
           created_at?: string
           id?: string
           previous_values?: Json | null
@@ -12291,6 +12306,9 @@ export type Database = {
           reviewer_id?: string | null
           reviewer_notes?: string | null
           status?: string
+          supervisor_id?: string | null
+          supervisor_notes?: string | null
+          supervisor_reviewed_at?: string | null
           updated_at?: string
           user_id?: string
         }

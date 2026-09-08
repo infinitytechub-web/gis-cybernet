@@ -21,10 +21,16 @@ type Req = {
   user_id: string;
   requested_changes: Record<string, string | null>;
   previous_values: Record<string, string | null> | null;
-  status: "pending" | "approved" | "rejected" | "cancelled";
+  status: "pending" | "supervisor_approved" | "approved" | "rejected" | "cancelled";
   reviewer_notes: string | null;
   reviewed_at: string | null;
   created_at: string;
+  supervisor_id: string | null;
+  supervisor_reviewed_at: string | null;
+  supervisor_notes: string | null;
+  admin_id: string | null;
+  admin_reviewed_at: string | null;
+  admin_notes: string | null;
   profiles?: { first_name: string; last_name: string; staff_id: string; email?: string };
 };
 
@@ -46,10 +52,20 @@ const FIELD_LABELS: Record<string, string> = {
 const label = (k: string) =>
   FIELD_LABELS[k] ?? k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+type Decision = "supervisor_approved" | "approved" | "rejected" | "pending";
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Awaiting supervisor",
+  supervisor_approved: "Awaiting admin",
+  approved: "Approved",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+};
+
 export default function ProfileChangeApprovals() {
-  const { user, isAdminOrSupervisor } = useAuth();
+  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"pending" | "history">("pending");
+  const [tab, setTab] = useState<"pending" | "supervisor_approved" | "history">("pending");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [queued, setQueued] = useState<Record<string, boolean>>({});
@@ -65,8 +81,8 @@ export default function ProfileChangeApprovals() {
         .from("profile_change_requests")
         .select("*, profiles:profile_id(first_name, last_name, staff_id, email)")
         .order("created_at", { ascending: false });
-      if (tab === "pending") q = q.eq("status", "pending");
-      else q = q.in("status", ["approved", "rejected", "cancelled"]);
+      if (tab === "history") q = q.in("status", ["approved", "rejected", "cancelled"]);
+      else q = q.eq("status", tab);
       const { data, error } = await q.limit(200);
       if (error) throw error;
       return (data ?? []) as unknown as (Req & { profiles?: any })[];
@@ -90,7 +106,7 @@ export default function ProfileChangeApprovals() {
 
   const notifyStaff = async (
     id: string,
-    status: "approved" | "rejected" | "pending",
+    status: Decision,
     req: any,
     reviewedAt: string
   ) => {
@@ -126,17 +142,13 @@ export default function ProfileChangeApprovals() {
     }
   };
 
-  const reviewOne = async (
-    id: string,
-    status: "approved" | "rejected" | "pending",
-    req: Req
-  ) => {
+  const reviewOne = async (id: string, status: Decision, req: Req) => {
     if (!user) throw new Error("Not signed in");
     const reviewedAt = new Date().toISOString();
 
     // Selective approval: only keep the fields still ticked for this request.
     let changes = req.requested_changes || {};
-    if (status === "approved") {
+    if (status === "supervisor_approved" || status === "approved") {
       const drop = excluded[id] || {};
       const kept = Object.fromEntries(Object.entries(changes).filter(([k]) => !drop[k]));
       if (Object.keys(kept).length === 0) {
@@ -145,15 +157,17 @@ export default function ProfileChangeApprovals() {
       changes = kept;
     }
 
+    const payload: Record<string, unknown> = {
+      requested_changes: changes,
+      status,
+      reviewer_id: user.id,
+      reviewer_notes: notes[id] ?? null,
+    };
+    if (status === "approved" || status === "rejected") payload.reviewed_at = reviewedAt;
+
     const { error } = await supabase
       .from("profile_change_requests")
-      .update({
-        requested_changes: changes,
-        status,
-        reviewer_id: user.id,
-        reviewer_notes: notes[id] ?? null,
-        reviewed_at: reviewedAt,
-      })
+      .update(payload as any)
       .eq("id", id);
     if (error) throw error;
 
@@ -161,15 +175,17 @@ export default function ProfileChangeApprovals() {
   };
 
   const review = useMutation({
-    mutationFn: async ({ id, status, req }: { id: string; status: "approved" | "rejected" | "pending"; req: Req }) =>
+    mutationFn: async ({ id, status, req }: { id: string; status: Decision; req: Req }) =>
       reviewOne(id, status, req),
     onSuccess: (_d, v) => {
       toast.success(
-        v.status === "approved"
-          ? "Change approved and applied to the profile."
+        v.status === "supervisor_approved"
+          ? "First approval recorded. Sent to an administrator for final approval."
+          : v.status === "approved"
+          ? "Final approval recorded and applied to the profile."
           : v.status === "rejected"
           ? "Request rejected."
-          : "Returned to the pending queue."
+          : "Returned to the start of the queue."
       );
       setQueued((q) => ({ ...q, [v.id]: false }));
       qc.invalidateQueries({ queryKey: ["profile-change-requests"] });
@@ -178,8 +194,8 @@ export default function ProfileChangeApprovals() {
   });
 
   const bulkReview = useMutation({
-    mutationFn: async (status: "approved" | "rejected") => {
-      const targets = filtered.filter((r) => r.status === "pending" && queued[r.id]);
+    mutationFn: async (status: Decision) => {
+      const targets = filtered.filter((r) => r.status === tab && queued[r.id]);
       if (targets.length === 0) throw new Error("No requests selected.");
       let ok = 0;
       const failures: string[] = [];
@@ -199,7 +215,7 @@ export default function ProfileChangeApprovals() {
     },
     onSuccess: ({ ok, failures, status }) => {
       if (ok > 0) {
-        toast.success(`${ok} request${ok === 1 ? "" : "s"} ${status === "approved" ? "approved" : "rejected"}.`);
+        toast.success(`${ok} request${ok === 1 ? "" : "s"} ${status === "rejected" ? "rejected" : "approved"}.`);
       }
       if (failures.length > 0) toast.error(`Could not process: ${failures.join(", ")}`);
       setQueued({});
@@ -208,12 +224,15 @@ export default function ProfileChangeApprovals() {
     onError: (e: any) => toast.error(e.message ?? "Bulk action failed"),
   });
 
-  const pendingRequests = useMemo(
-    () => filtered.filter((r) => r.status === "pending"),
-    [filtered]
+  const queueRequests = useMemo(
+    () => filtered.filter((r) => r.status === tab),
+    [filtered, tab]
   );
-  const selectedCount = pendingRequests.filter((r) => queued[r.id]).length;
+  const selectedCount = queueRequests.filter((r) => queued[r.id]).length;
   const busy = review.isPending || bulkReview.isPending;
+  // Stage 1 = supervisor/command tier, stage 2 (final) = administrators only
+  const stageDecision: Decision = tab === "supervisor_approved" ? "approved" : "supervisor_approved";
+  const canDecideStage = tab === "supervisor_approved" ? isAdmin : true;
 
   if (!allowed) {
     return (
@@ -228,8 +247,9 @@ export default function ProfileChangeApprovals() {
       <PageHeader
         icon={ShieldCheck}
         title="Staff Change Approvals"
-        subtitle="Queue, review and approve profile edits submitted by staff. Approving applies the ticked fields to the staff record."
+        subtitle="Two-step review: staff submit, a supervisor gives the first approval, then an administrator gives the final approval that writes the change to the staff record. Every step is recorded in the audit log."
       />
+
 
       <Card>
         <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -243,7 +263,7 @@ export default function ProfileChangeApprovals() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {tab === "pending" && (
+            {tab !== "history" && (
               <>
                 <span className="text-xs text-muted-foreground">
                   {selectedCount} queued
@@ -251,10 +271,11 @@ export default function ProfileChangeApprovals() {
                 <Button
                   size="sm"
                   className="gap-1 bg-emerald-600 hover:bg-emerald-700"
-                  disabled={busy || selectedCount === 0}
-                  onClick={() => bulkReview.mutate("approved")}
+                  disabled={busy || selectedCount === 0 || !canDecideStage}
+                  onClick={() => bulkReview.mutate(stageDecision)}
                 >
-                  <Check className="h-4 w-4" /> Approve queued
+                  <Check className="h-4 w-4" />
+                  {tab === "supervisor_approved" ? "Final approve queued" : "First approve queued"}
                 </Button>
                 <Button
                   size="sm"
@@ -277,22 +298,34 @@ export default function ProfileChangeApprovals() {
       <Tabs value={tab} onValueChange={(v) => { setTab(v as any); setQueued({}); }}>
         <TabsList>
           <TabsTrigger value="pending">
-            Pending
-            {tab === "pending" && pendingRequests.length > 0 && (
-              <Badge variant="secondary" className="ml-2">{pendingRequests.length}</Badge>
+            Step 1 · Supervisor
+            {tab === "pending" && queueRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{queueRequests.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="supervisor_approved">
+            Step 2 · Admin
+            {tab === "supervisor_approved" && queueRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{queueRequests.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value={tab} className="space-y-3 mt-4">
-          {tab === "pending" && pendingRequests.length > 0 && (
+          {tab === "supervisor_approved" && !isAdmin && (
+            <p className="text-xs text-amber-700">
+              Only administrators can give the final approval. You can review these requests but not approve them.
+            </p>
+          )}
+
+          {tab !== "history" && queueRequests.length > 0 && (
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <Checkbox
-                checked={selectedCount === pendingRequests.length && selectedCount > 0}
+                checked={selectedCount === queueRequests.length && selectedCount > 0}
                 onCheckedChange={(c) =>
                   setQueued(
-                    c ? Object.fromEntries(pendingRequests.map((r) => [r.id, true])) : {}
+                    c ? Object.fromEntries(queueRequests.map((r) => [r.id, true])) : {}
                   )
                 }
               />
@@ -304,18 +337,21 @@ export default function ProfileChangeApprovals() {
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : filtered.length === 0 ? (
             <Card><CardContent className="p-6 text-sm text-muted-foreground">
-              No {tab === "pending" ? "pending requests" : "history"} to display.
+              No {tab === "history" ? "history" : "requests at this step"} to display.
             </CardContent></Card>
           ) : (
             filtered.map((r) => {
               const drop = excluded[r.id] || {};
               const entries = Object.entries(r.requested_changes || {});
+              const open = r.status === "pending" || r.status === "supervisor_approved";
+              const isFinalStep = r.status === "supervisor_approved";
+              const canDecide = isFinalStep ? isAdmin : true;
               return (
                 <Card key={r.id}>
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3">
-                        {r.status === "pending" && (
+                        {open && (
                           <Checkbox
                             className="mt-1"
                             checked={!!queued[r.id]}
@@ -339,19 +375,36 @@ export default function ProfileChangeApprovals() {
                           r.status === "approved" ? "border-emerald-500 text-emerald-700" :
                           r.status === "rejected" ? "border-red-500 text-red-700" :
                           r.status === "cancelled" ? "" :
+                          r.status === "supervisor_approved" ? "border-blue-500 text-blue-700" :
                           "border-amber-500 text-amber-700"
                         }
                       >
-                        {r.status}
+                        {STATUS_LABELS[r.status] ?? r.status}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    {/* Approval trail */}
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        Step 1 (supervisor):{" "}
+                        <span className="text-foreground">
+                          {r.supervisor_reviewed_at ? formatDateTime(r.supervisor_reviewed_at) : "not yet"}
+                        </span>
+                      </span>
+                      <span>
+                        Step 2 (admin):{" "}
+                        <span className="text-foreground">
+                          {r.admin_reviewed_at ? formatDateTime(r.admin_reviewed_at) : "not yet"}
+                        </span>
+                      </span>
+                    </div>
+
                     <div className="rounded border overflow-x-auto text-xs">
                       <table className="w-full">
                         <thead className="bg-muted">
                           <tr>
-                            {r.status === "pending" && <th className="text-left p-2 w-10">Apply</th>}
+                            {open && <th className="text-left p-2 w-10">Apply</th>}
                             <th className="text-left p-2">Field</th>
                             <th className="text-left p-2">Current</th>
                             <th className="text-left p-2">Requested</th>
@@ -360,7 +413,7 @@ export default function ProfileChangeApprovals() {
                         <tbody>
                           {entries.map(([k, v]) => (
                             <tr key={k} className="border-t">
-                              {r.status === "pending" && (
+                              {open && (
                                 <td className="p-2">
                                   <Checkbox
                                     checked={!drop[k]}
@@ -385,8 +438,13 @@ export default function ProfileChangeApprovals() {
                       </table>
                     </div>
 
-                    {r.status === "pending" ? (
+                    {open ? (
                       <>
+                        {r.supervisor_notes && (
+                          <div className="text-xs text-muted-foreground">
+                            Supervisor notes: <span className="text-foreground">{r.supervisor_notes}</span>
+                          </div>
+                        )}
                         <Textarea
                           placeholder="Reviewer notes (optional)"
                           value={notes[r.id] ?? ""}
@@ -396,11 +454,18 @@ export default function ProfileChangeApprovals() {
                         <div className="flex gap-2 flex-wrap">
                           <Button
                             size="sm"
-                            onClick={() => review.mutate({ id: r.id, status: "approved", req: r })}
-                            disabled={busy}
+                            onClick={() =>
+                              review.mutate({
+                                id: r.id,
+                                status: isFinalStep ? "approved" : "supervisor_approved",
+                                req: r,
+                              })
+                            }
+                            disabled={busy || !canDecide}
                             className="gap-1 bg-emerald-600 hover:bg-emerald-700"
                           >
-                            <Check className="h-4 w-4" /> Approve ticked fields
+                            <Check className="h-4 w-4" />
+                            {isFinalStep ? "Final approve (apply to profile)" : "First approve ticked fields"}
                           </Button>
                           <Button
                             size="sm"
@@ -411,6 +476,16 @@ export default function ProfileChangeApprovals() {
                           >
                             <X className="h-4 w-4" /> Reject
                           </Button>
+                          {isFinalStep && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => review.mutate({ id: r.id, status: "pending", req: r })}
+                              disabled={busy}
+                            >
+                              Send back to supervisor
+                            </Button>
+                          )}
                         </div>
                       </>
                     ) : (
@@ -439,7 +514,7 @@ export default function ProfileChangeApprovals() {
                               onClick={() => review.mutate({ id: r.id, status: "pending", req: r })}
                               disabled={busy}
                             >
-                              Return to pending queue
+                              Return to the start of the queue
                             </Button>
                           </div>
                         )}
