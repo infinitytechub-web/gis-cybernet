@@ -733,7 +733,22 @@ export default function Staff() {
     return list;
   }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, unitScopeIds, sortField, sortDir]);
 
-  const bulk = useBulkSelection(filtered);
+  // Page-by-page display: 25 records per page keeps the table light so the
+  // edit form on the same page stays responsive.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  if (safePage !== page) setPage(safePage);
+  const paged = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage]
+  );
+
+  const bulk = useBulkSelection(paged);
+
+  const handleToggleSelect = useCallback((id: string) => bulk.toggle(id), [bulk.toggle]);
+  const handleOpenProfile = useCallback((id: string) => navigate(`/staff/${id}`), [navigate]);
+  const handleEditRow = useCallback((s: any) => openEdit(s), [openEdit]);
+  const handleDeleteRow = useCallback((id: string) => deleteMutation.mutate(id), [deleteMutation]);
 
   const buildStaffExportRows = () =>
     filtered.map((s) => {
