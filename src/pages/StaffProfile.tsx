@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Sensitive } from "@/components/Sensitive";
 import { StaffDocumentVault } from "@/components/staff/StaffDocumentVault";
 import { checkDirectoryAction } from "@/hooks/useDirectoryPermissions";
+import { logStaffAccess } from "@/lib/staff-access-log";
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
