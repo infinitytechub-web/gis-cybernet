@@ -25,6 +25,7 @@ const ALLOWED_ACTIONS = new Set([
   "recycle_bin_purge",
   "backup_restore",
   "data_export",
+  "attendance_clock",
 ]);
 
 function challengeFromClientData(clientDataJSON: string): string | null {
