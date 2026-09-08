@@ -40,6 +40,27 @@ import {
   DirectoryScope,
   directoryLevelOfUnitType,
 } from "@/hooks/useDirectoryPermissions";
+import { roleLabel } from "@/lib/role-labels";
+
+interface RankRow {
+  id: string;
+  name: string;
+  level: number | null;
+}
+
+interface RankChangeRow {
+  id: string;
+  profile_id: string;
+  from_rank_id: string | null;
+  to_rank_id: string | null;
+  from_role: string | null;
+  to_role: string | null;
+  to_level: string | null;
+  direction: string;
+  reason: string | null;
+  effective_date: string;
+  created_at: string;
+}
 
 interface UnitRow {
   id: string;
