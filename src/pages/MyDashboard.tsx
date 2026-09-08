@@ -207,8 +207,9 @@ export default function MyDashboard() {
             <p className="text-sm text-muted-foreground">
               {unassigned
                 ? "An administrator must post you to a command before the portal opens. This is a separate step from switching the portal on for your rank."
-                : "An administrator can switch it on for your rank and command level."}
+                : "Enrol your fingerprint on this device to open your own portal straight away, or ask an administrator to switch it on for your rank and command level."}
             </p>
+
           </CardContent>
         </Card>
       </div>
