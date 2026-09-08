@@ -30,6 +30,7 @@ interface AdminCredential {
   last_used_at: string | null;
   created_at: string;
   revoked_at: string | null;
+  approval_status: string;
 }
 
 /** Pending admin action awaiting confirmation + reason. */
