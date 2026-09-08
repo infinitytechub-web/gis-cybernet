@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -185,12 +185,14 @@ export function directoryLevelOfUnitType(type?: string | null): DirectoryLevel {
  */
 export function useMyDirectoryAccess() {
   const { user, isAdmin } = useAuth();
+  const qc = useQueryClient();
   const perms = useDirectoryPermissions();
 
   const levelQuery = useQuery({
     queryKey: ["my-directory-level", user?.id],
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<{ assigned: boolean; level: DirectoryLevel | null }> => {
       const { data, error } = await supabase
         .from("profiles")
@@ -205,6 +207,31 @@ export function useMyDirectoryAccess() {
       return { assigned: true, level: directoryLevelOfUnitType(row.org_unit?.type ?? null) };
     },
   });
+
+  // A posting change (Command Matrix) or a matrix switch change must recalculate
+  // this officer's portal + directory rights without them signing out again.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`directory-access-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["my-directory-level"] });
+          qc.invalidateQueries({ queryKey: ["directory-permissions"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "directory_permissions" },
+        () => qc.invalidateQueries({ queryKey: ["directory-permissions"] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user, qc]);
 
   const loading = !!user && (perms.loading || levelQuery.isLoading);
   const assigned = levelQuery.data?.assigned ?? false;
