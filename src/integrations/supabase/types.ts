@@ -17868,6 +17868,15 @@ export type Database = {
         }
         Returns: number
       }
+      leave_entitlement_span_end: {
+        Args: {
+          _profile_id: string
+          _start: string
+          _type: Database["public"]["Enums"]["leave_type"]
+          _year: number
+        }
+        Returns: string
+      }
       leave_grade_of_profile: { Args: { _profile_id: string }; Returns: string }
       leave_usage_by_location: {
         Args: { _year?: number }
@@ -17882,6 +17891,10 @@ export type Database = {
           staff_count: number
           station_name: string
         }[]
+      }
+      leave_working_days: {
+        Args: { _end: string; _start: string }
+        Returns: number
       }
       list_medical_inventory_audit: {
         Args: {
