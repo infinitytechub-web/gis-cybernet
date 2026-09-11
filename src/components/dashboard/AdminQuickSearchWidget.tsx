@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Search, ArrowRight, User, FileText, Compass, Command as CommandIcon,
+  Search, ArrowRight, User, FileText, Compass, Command as CommandIcon, Pencil,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 // Curated nav targets. Keywords power fuzzy matching.
 const NAV_TARGETS: { label: string; path: string; keywords: string[]; group: string }[] = [
@@ -75,6 +77,7 @@ function matchScore(target: { label: string; keywords: string[] }, q: string): n
 
 export default function AdminQuickSearchWidget() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
 
@@ -117,7 +120,14 @@ export default function AdminQuickSearchWidget() {
   const staffResults = serverResults?.staff ?? [];
   const appResults = serverResults?.applications ?? [];
 
-  type Row = { kind: "page" | "staff" | "app"; label: string; sublabel?: string; onSelect: () => void; group: string };
+  type Row = {
+    kind: "page" | "staff" | "app";
+    label: string;
+    sublabel?: string;
+    onSelect: () => void;
+    onEdit?: () => void;
+    group: string;
+  };
   const flatRows: Row[] = useMemo(() => {
     const rows: Row[] = [];
     navResults.forEach((r) => rows.push({
@@ -129,6 +139,7 @@ export default function AdminQuickSearchWidget() {
       label: `${s.first_name ?? ""} ${s.last_name ?? ""}`.trim() || s.staff_id || s.email,
       sublabel: [s.staff_id, s.rank, s.department].filter(Boolean).join(" • "),
       onSelect: () => { navigate(`/staff/${s.id}`); setQ(""); },
+      onEdit: isAdmin ? () => { navigate(`/staff?edit=${encodeURIComponent(s.id)}`); setQ(""); } : undefined,
     }));
     appResults.forEach((a) => rows.push({
       kind: "app", group: `${a.kind} Application`,
@@ -136,7 +147,7 @@ export default function AdminQuickSearchWidget() {
       onSelect: () => { navigate(a.kind === "Passport" ? "/processing" : "/processing"); setQ(""); },
     }));
     return rows;
-  }, [navResults, staffResults, appResults, navigate]);
+  }, [navResults, staffResults, appResults, navigate, isAdmin]);
 
   useEffect(() => { setActive(0); }, [q]);
 
@@ -195,21 +206,33 @@ export default function AdminQuickSearchWidget() {
                     const idx = flatRows.indexOf(r);
                     const isActive = idx === active;
                     return (
-                      <button
+                      <div
                         key={`${group}-${idx}`}
-                        onClick={r.onSelect}
                         onMouseEnter={() => setActive(idx)}
-                        className={`flex items-center gap-2 w-full text-left px-2.5 py-1.5 text-xs border-b last:border-b-0 ${
-                          isActive ? "bg-primary/10" : "hover:bg-accent/40"
-                        }`}
+                        className={`flex items-center border-b last:border-b-0 ${isActive ? "bg-primary/10" : "hover:bg-accent/40"}`}
                       >
-                        <span className="shrink-0">{iconFor(r.kind)}</span>
-                        <span className="flex-1 min-w-0">
-                          <span className="block font-medium truncate text-foreground">{r.label}</span>
-                          {r.sublabel && <span className="block text-muted-foreground truncate text-[10px]">{r.sublabel}</span>}
-                        </span>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                      </button>
+                        <button onClick={r.onSelect} className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-left text-xs">
+                          <span className="shrink-0">{iconFor(r.kind)}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium text-foreground">{r.label}</span>
+                            {r.sublabel && <span className="block truncate text-[10px] text-muted-foreground">{r.sublabel}</span>}
+                          </span>
+                          <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                        </button>
+                        {r.onEdit && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="mr-1 h-8 w-8 shrink-0"
+                            onClick={r.onEdit}
+                            title={`Edit ${r.label}`}
+                            aria-label={`Edit ${r.label}`}
+                          >
+                            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                          </Button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
