@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { yearsOfService } from "@/lib/postings-analytics";
 import { formatService } from "@/hooks/useStaffRoster";
@@ -162,6 +162,7 @@ export default function Staff() {
   const canManage = isAdminOrSupervisor || dirPerms.canEdit || dirPerms.canCreate;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Hierarchical RBAC — command postings the signed-in user may assign.
   const { units: orgUnits, tree: orgTree, scope: orgScope } = useOrgScope();
 
@@ -542,6 +543,34 @@ export default function Staff() {
     setDialogOpen(true);
   };
 
+  const requestedEditId = searchParams.get("edit");
+  const handledEditIdRef = useRef<string | null>(null);
+  const clearEditLink = useCallback(() => {
+    if (!searchParams.has("edit")) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete("edit");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Dashboard deep links open the same complete form as the Staff table. Wait
+  // for both the scoped staff list and directory permissions before deciding,
+  // so a slow request cannot produce a false "not available" message.
+  useEffect(() => {
+    if (!requestedEditId || isLoading || dirPerms.loading) return;
+    if (handledEditIdRef.current === requestedEditId) return;
+    handledEditIdRef.current = requestedEditId;
+
+    const target = staff.find((row) => row.id === requestedEditId);
+    const allowed = target && (isAdmin || dirPerms.can("edit", levelOf(target.org_unit_id)));
+    if (!target || !allowed) {
+      toast.error("This staff record is unavailable or you do not have permission to edit it.");
+      clearEditLink();
+      return;
+    }
+
+    openEdit(target);
+  }, [requestedEditId, isLoading, dirPerms, staff, isAdmin, levelOf, clearEditLink]);
+
   /**
    * Photos are capped under 3MB, must really be a JPG/PNG/WEBP (magic bytes,
    * not just the extension) and are virus/threat scanned before we accept them.
@@ -715,6 +744,7 @@ export default function Staff() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       setDialogOpen(false);
+      clearEditLink();
       setUploadingPhoto(false);
       toast.success(editing ? "Staff updated" : "Staff created");
     },
@@ -1071,7 +1101,13 @@ export default function Staff() {
         staff record itself; E–L come from BioDataSections and are saved right
         after the record through the shared persist function.
       */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) clearEditLink();
+        }}
+      >
         {/*
           Layout: the dialog itself never scrolls. The header and the section
           tabs stay pinned, the middle area scrolls, and the save bar is pinned
