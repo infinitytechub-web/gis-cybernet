@@ -58,7 +58,7 @@ export function StoresReportsTab() {
       const { data } = await supabase
         .from("inventory_issuance")
         .select(
-          "id, quantity, issued_at, returned_at, expected_return_date, inventory_items(name, unit), profiles!inventory_issuance_profile_id_fkey(first_name, last_name, staff_id, departments(name))",
+          "id, quantity, issued_at, returned_at, inventory_items(name, unit), profiles!inventory_issuance_profile_id_fkey(first_name, last_name, staff_id, departments(name))",
         )
         .order("issued_at", { ascending: false })
         .limit(500);
@@ -110,11 +110,6 @@ export function StoresReportsTab() {
     return issuance.filter((r: any) => !r.returned_at);
   }, [issuance]);
 
-  const overdue = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    return ledger.filter((r: any) => r.expected_return_date && r.expected_return_date < today);
-  }, [ledger]);
-
   const exportCombined = (fmt: "pdf" | "csv") => {
     const today = format(new Date(), "yyyy-MM-dd");
     const sections: { title: string; headers: string[]; rows: string[][] }[] = [
@@ -140,7 +135,7 @@ export function StoresReportsTab() {
       },
       {
         title: "Open Asset Issuance",
-        headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
+        headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department"],
         rows: ledger.map((r: any) => [
           format(new Date(r.issued_at), "yyyy-MM-dd"),
           r.inventory_items?.name ?? "",
@@ -148,7 +143,6 @@ export function StoresReportsTab() {
           `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
           r.profiles?.staff_id ?? "",
           r.profiles?.departments?.name ?? "",
-          r.expected_return_date ?? "",
         ]),
       },
     ];
@@ -234,8 +228,7 @@ export function StoresReportsTab() {
           icon={Users}
           label="Issued (open)"
           value={ledger.length.toString()}
-          sub={overdue.length > 0 ? `${overdue.length} overdue` : undefined}
-          accent={overdue.length > 0 ? "text-destructive" : "text-blue-600"}
+          accent="text-blue-600"
         />
       </div>
 
@@ -436,7 +429,7 @@ export function StoresReportsTab() {
                 <Users className="h-4 w-4 text-blue-600" /> Asset issuance ledger
               </CardTitle>
               <CardDescription>
-                Open issues — items currently held by staff. Overdue rows are flagged.
+                Open issues — items currently held by staff.
               </CardDescription>
             </div>
             {canExport && (
@@ -444,7 +437,7 @@ export function StoresReportsTab() {
                 getData={() => ({
                   title: "Open Asset Issuance",
                   filename: `issuance-open-${format(new Date(), "yyyy-MM-dd")}`,
-                  headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department", "Expected return"],
+                  headers: ["Issued", "Item", "Qty", "Staff", "Staff ID", "Department"],
                   rows: ledger.map((r: any) => [
                     format(new Date(r.issued_at), "yyyy-MM-dd"),
                     r.inventory_items?.name ?? "",
@@ -452,7 +445,6 @@ export function StoresReportsTab() {
                     `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
                     r.profiles?.staff_id ?? "",
                     r.profiles?.departments?.name ?? "",
-                    r.expected_return_date ?? "",
                   ]),
                 })}
               />
@@ -469,23 +461,18 @@ export function StoresReportsTab() {
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead>Staff</TableHead>
                   <TableHead>Department</TableHead>
-                  <TableHead>Expected return</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {ledger.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground text-sm">
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-sm">
                       No outstanding asset issuances.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  ledger.map((r: any) => {
-                    const isOverdue =
-                      r.expected_return_date &&
-                      r.expected_return_date < new Date().toISOString().slice(0, 10);
-                    return (
-                      <TableRow key={r.id} className={isOverdue ? "bg-destructive/5" : ""}>
+                  ledger.map((r: any) => (
+                      <TableRow key={r.id}>
                         <TableCell className="text-xs">{format(new Date(r.issued_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="font-medium text-xs">{r.inventory_items?.name ?? "—"}</TableCell>
                         <TableCell className="text-right text-xs">
@@ -498,22 +485,8 @@ export function StoresReportsTab() {
                           </div>
                         </TableCell>
                         <TableCell className="text-xs">{r.profiles?.departments?.name ?? "—"}</TableCell>
-                        <TableCell className="text-xs">
-                          {r.expected_return_date ? (
-                            <Badge
-                              variant={isOverdue ? "destructive" : "secondary"}
-                              className="font-normal"
-                            >
-                              {format(new Date(r.expected_return_date), "dd/MM/yyyy")}
-                              {isOverdue && " · overdue"}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
                       </TableRow>
-                    );
-                  })
+                  ))
                 )}
               </TableBody>
             </Table>
