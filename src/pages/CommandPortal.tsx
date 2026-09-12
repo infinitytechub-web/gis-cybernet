@@ -26,6 +26,7 @@ import { DIRECTORY_LEVEL_LABELS, DIRECTORY_SCOPE_LABELS, type DirectoryLevel, ty
 import { downloadBlob } from "@/lib/download-utils";
 import { OfficerLeavePanel } from "@/components/command/OfficerLeavePanel";
 import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
+import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
 
 interface CommandContext {
   profile_id: string | null;
@@ -228,46 +229,49 @@ export default function CommandPortal() {
 
           <div className="min-w-0 space-y-4">
             {section === "overview" && (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  { label: "Officers in scope", value: officers.length },
-                  { label: "Active", value: activeCount },
-                  { label: "Shift groups", value: byShift.length },
-                  { label: "Hierarchy level", value: DIRECTORY_LEVEL_LABELS[(ctx?.level ?? "unit") as DirectoryLevel] ?? ctx?.level ?? "—" },
-                ].map((m) => (
-                  <Card key={m.label}>
-                    <CardHeader className="pb-1">
-                      <CardTitle className="text-xs font-medium text-muted-foreground">{m.label}</CardTitle>
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    { label: "Officers in scope", value: officers.length },
+                    { label: "Active", value: activeCount },
+                    { label: "Shift groups", value: byShift.length },
+                    { label: "Hierarchy level", value: DIRECTORY_LEVEL_LABELS[(ctx?.level ?? "unit") as DirectoryLevel] ?? ctx?.level ?? "—" },
+                  ].map((m) => (
+                    <Card key={m.label}>
+                      <CardHeader className="pb-1">
+                        <CardTitle className="text-xs font-medium text-muted-foreground">{m.label}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-2xl font-bold">{m.value}</CardContent>
+                    </Card>
+                  ))}
+                  <Card className="sm:col-span-2 xl:col-span-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Your access in this command</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-2xl font-bold">{m.value}</CardContent>
-                  </Card>
-                ))}
-                <Card className="sm:col-span-2 xl:col-span-4">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Your access in this command</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="outline">
-                      Scope: {DIRECTORY_SCOPE_LABELS[(ctx?.scope ?? "none") as DirectoryScope] ?? ctx?.scope}
-                    </Badge>
-                    {ctx?.shift_group && <Badge variant="outline">Shift {ctx.shift_group}</Badge>}
-                    {(
-                      [
-                        ["View", ctx?.can_view],
-                        ["Create", ctx?.can_create],
-                        ["Edit", ctx?.can_edit],
-                        ["Delete", ctx?.can_delete],
-                        ["Download", ctx?.can_download],
-                        ["Print", ctx?.can_print],
-                        ["Document vault", ctx?.can_vault],
-                      ] as [string, boolean | undefined][]
-                    ).map(([label, on]) => (
-                      <Badge key={label} variant={on ? "default" : "secondary"}>
-                        {label}: {on ? "yes" : "no"}
+                    <CardContent className="flex flex-wrap gap-2 text-xs">
+                      <Badge variant="outline">
+                        Scope: {DIRECTORY_SCOPE_LABELS[(ctx?.scope ?? "none") as DirectoryScope] ?? ctx?.scope}
                       </Badge>
-                    ))}
-                  </CardContent>
-                </Card>
+                      {ctx?.shift_group && <Badge variant="outline">Shift {ctx.shift_group}</Badge>}
+                      {(
+                        [
+                          ["View", ctx?.can_view],
+                          ["Create", ctx?.can_create],
+                          ["Edit", ctx?.can_edit],
+                          ["Delete", ctx?.can_delete],
+                          ["Download", ctx?.can_download],
+                          ["Print", ctx?.can_print],
+                          ["Document vault", ctx?.can_vault],
+                        ] as [string, boolean | undefined][]
+                      ).map(([label, on]) => (
+                        <Badge key={label} variant={on ? "default" : "secondary"}>
+                          {label}: {on ? "yes" : "no"}
+                        </Badge>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+                <ApprovedLeaveCalendarWidget />
               </div>
             )}
 

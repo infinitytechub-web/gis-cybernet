@@ -268,7 +268,14 @@ export default function Login() {
         _device_fingerprint: fp,
         _user_agent: ua,
       });
-      navigate("/dashboard");
+      const { data: { user: verifiedUser } } = await supabase.auth.getUser();
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", verifiedUser?.id ?? "")
+        .eq("role", "admin")
+        .limit(1);
+      navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/command-portal", { replace: true });
     } catch (e: any) {
       const reason = e?.message || "Invalid code";
       const [fp, ip] = await Promise.all([fpPromise, ipPromise]);

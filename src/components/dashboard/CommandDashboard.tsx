@@ -22,6 +22,7 @@ import ApprovedReportsWidget from "@/components/dashboard/ApprovedReportsWidget"
 import ScheduledReportsWidget from "@/components/dashboard/ScheduledReportsWidget";
 import RetirementAlertWidget from "@/components/dashboard/RetirementAlertWidget";
 import CommandTierAnalyticsTabs from "@/components/dashboard/CommandTierAnalyticsTabs";
+import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
 import { useOversightDashboardData, usePersonalDashboardData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
 
@@ -103,6 +104,7 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
       </DashboardSection>
 
       <DashboardSection id="workforce" title="Workforce analytics" icon={TrendingUp}>
+        <ApprovedLeaveCalendarWidget />
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader className="pb-2">
