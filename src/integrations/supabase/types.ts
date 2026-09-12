@@ -18201,6 +18201,19 @@ export type Database = {
         }[]
       }
       my_mfa_policy: { Args: never; Returns: Json }
+      my_store_issuance: {
+        Args: never
+        Returns: {
+          condition_on_return: string
+          id: string
+          issued_at: string
+          item_name: string
+          notes: string
+          quantity: number
+          returned_at: string
+          unit: string
+        }[]
+      }
       next_cyber_incident_number: { Args: never; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
