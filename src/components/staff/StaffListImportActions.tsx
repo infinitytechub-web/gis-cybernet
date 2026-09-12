@@ -210,6 +210,20 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
         )}
         Approve
       </Button>
+      <Button
+        variant="outline" size="sm"
+        className="h-7 px-2 text-destructive hover:text-destructive"
+        disabled={committed || remove.isPending}
+        title={committed ? "Applied files are kept for the record" : "Delete this uploaded file"}
+        onClick={() => setDeleteOpen(true)}
+      >
+        {remove.isPending ? (
+          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        Delete
+      </Button>
 
       {/* Preview & edit */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
