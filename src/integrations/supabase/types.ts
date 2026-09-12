@@ -18831,6 +18831,7 @@ export type Database = {
           user_agent: string
         }[]
       }
+      staff_list_import_delete: { Args: { _import_id: string }; Returns: Json }
       staff_list_import_edit_row: {
         Args: { _outcome?: string; _payload: Json; _row_id: string }
         Returns: Json
