@@ -13,3 +13,4 @@
 - [Bulk Credential Handling](mem://features/bulk-credential-handling) — masked temp passwords, verification-gated CSV/Excel export, client+server credential audit trail
 - [Bot Protection](mem://features/bot-protection) — reCAPTCHA v3 login gate; fail-open on config/browser errors, required site-key domains
 - [Admin AAL2 Bypass](mem://auth/admin-aal2-bypass) — admins skip AAL2 for own email/password via updateOwnCredentials + admin-self-credentials function
+- [Staff & Command Upgrade](mem://features/staff-command-upgrade) — new statuses + deactivation audit, minor approvals, MRZ reader, signatures, dependants, rank hierarchy, leave due widget, Sex label
