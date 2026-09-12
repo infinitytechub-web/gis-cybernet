@@ -346,10 +346,92 @@ export default function MyDashboard() {
           <TabsTrigger value="clock">Clock in / out</TabsTrigger>
           <TabsTrigger value="hours">My hours</TabsTrigger>
           <TabsTrigger value="leave">Leave</TabsTrigger>
+          <TabsTrigger value="staff">Staff search</TabsTrigger>
+          <TabsTrigger value="stores">Stores</TabsTrigger>
+          <TabsTrigger value="calendar">Leave calendar</TabsTrigger>
           <TabsTrigger value="approvals">
             Approvals{pendingCount > 0 ? ` (${pendingCount})` : ""}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="staff" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-4 w-4" aria-hidden="true" /> Staff in my command
+                  <Badge variant="secondary">{matchedOfficers.length}</Badge>
+                </CardTitle>
+                <CardDescription>Only officers posted to your own command are listed.</CardDescription>
+              </div>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  value={staffSearch}
+                  onChange={(e) => setStaffSearch(e.target.value)}
+                  placeholder="Search name, staff ID or rank"
+                  aria-label="Search staff in my command"
+                  className="w-full pl-8 sm:w-64"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Staff ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Shift</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {officersLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                        Loading your command…
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    matchedOfficers.map((o) => (
+                      <TableRow key={o.id} className={o.is_self ? "bg-muted/40" : undefined}>
+                        <TableCell className="font-mono text-xs">{o.staff_id ?? "—"}</TableCell>
+                        <TableCell className="font-medium">
+                          {[o.last_name, o.first_name].filter(Boolean).join(", ") || "—"}
+                          {o.is_self && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                        </TableCell>
+                        <TableCell>{o.rank_name ?? "—"}</TableCell>
+                        <TableCell>{o.department_name ?? "—"}</TableCell>
+                        <TableCell>{o.shift_group ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={o.status === "active" ? "default" : "secondary"}>{o.status ?? "—"}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {!officersLoading && matchedOfficers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                        No staff records are available for your command scope.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stores">
+          <OfficerStoresPanel />
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <ApprovedLeaveCalendarWidget />
+        </TabsContent>
+
 
         <TabsContent value="clock" className="space-y-4">
           <CheckInOut />
