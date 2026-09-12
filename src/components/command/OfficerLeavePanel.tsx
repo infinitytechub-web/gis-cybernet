@@ -43,7 +43,7 @@ export function OfficerLeavePanel() {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {balancesLoading ? <p className="text-sm text-muted-foreground">Loading balances…</p> : balances.map((row: any) => (
-          <Card key={row.leave_type}><CardHeader className="pb-1"><CardTitle className="text-sm capitalize">{String(row.leave_type).replaceAll("_", " ")}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{Number(row.days_remaining)}</div><p className="text-xs text-muted-foreground">remaining · {Number(row.days_taken)} approved · {Number(row.days_pending)} pending</p></CardContent></Card>
+          <Card key={row.leave_type}><CardHeader className="pb-1"><CardTitle className="text-sm capitalize">{String(row.leave_type).replace(/_/g, " ")}</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{Number(row.days_remaining)}</div><p className="text-xs text-muted-foreground">remaining · {Number(row.days_taken)} approved · {Number(row.days_pending)} pending</p></CardContent></Card>
         ))}
       </div>
       <Card><CardHeader><CardTitle className="text-base">Recent requests</CardTitle></CardHeader><CardContent className="overflow-x-auto"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Dates</TableHead><TableHead>Status</TableHead><TableHead>Comments</TableHead></TableRow></TableHeader><TableBody>
