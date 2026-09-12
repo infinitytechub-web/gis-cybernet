@@ -60,6 +60,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
   const [editRow, setEditRow] = useState<RowRecord | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [search, setSearch] = useState("");
 
