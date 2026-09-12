@@ -500,7 +500,7 @@ export default function StaffListImport() {
             <p className="text-sm text-muted-foreground">No staff list has been imported yet.</p>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[980px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>File</TableHead>
@@ -510,6 +510,7 @@ export default function StaffListImport() {
                     <TableHead>Updated</TableHead>
                     <TableHead>Retired</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,14 +523,31 @@ export default function StaffListImport() {
                       <TableCell className="text-sm">{h.matched_count}</TableCell>
                       <TableCell className="text-sm">{h.retired_count}</TableCell>
                       <TableCell>
-                        <Badge variant={h.status === "committed" ? "secondary" : "outline"} className="text-[10px]">
-                          {h.status}
+                        <Badge
+                          variant={
+                            h.status === "committed" ? "secondary"
+                            : h.approval_status === "rejected" ? "destructive"
+                            : "outline"
+                          }
+                          className="text-[10px]"
+                        >
+                          {h.status === "committed"
+                            ? "committed"
+                            : h.approval_status === "rejected"
+                              ? "rejected"
+                              : "awaiting approval"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <StaffListImportActions record={h} />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+
             </div>
           )}
         </CardContent>
