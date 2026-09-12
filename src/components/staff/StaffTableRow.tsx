@@ -17,17 +17,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Lock, Pencil, Trash2 } from "lucide-react";
+import { Lock, Pencil, Trash2, UserMinus, UserCheck } from "lucide-react";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 
-const statusColor = (s: string) => {
-  switch (s) {
-    case "active": return "bg-emerald-100 text-emerald-800";
-    case "inactive": return "bg-red-100 text-red-800";
-    case "study_leave": return "bg-amber-100 text-amber-800";
-    default: return "bg-muted text-muted-foreground";
-  }
-};
+import { staffStatusColor, staffStatusLabel } from "@/lib/staff-status";
+
+const statusColor = staffStatusColor;
 
 const getInitials = (first: string, last: string) =>
   `${(first ?? "").charAt(0)}${(last ?? "").charAt(0)}`.toUpperCase();
@@ -44,15 +39,19 @@ export type StaffTableRowProps = {
   onOpenProfile: (id: string) => void;
   onEdit: (staff: any) => void;
   onDelete: (id: string) => void;
+  /** Deactivate (or reactivate) without deleting the record. */
+  onDeactivate?: (staff: any) => void;
 };
 
 function StaffTableRowBase({
   staff: s, isAdmin, canManage, canEdit, canDelete, selected,
-  onToggleSelect, onOpenProfile, onEdit, onDelete,
+  onToggleSelect, onOpenProfile, onEdit, onDelete, onDeactivate,
 }: StaffTableRowProps) {
   const showEdit = canEdit ?? canManage;
   const showDelete = canDelete ?? isAdmin;
-  const showActions = showEdit || showDelete || isAdmin;
+  const showDeactivate = !!onDeactivate && showEdit;
+  const showActions = showEdit || showDelete || showDeactivate || isAdmin;
+  const isActive = s.status === "active";
   return (
     <TableRow data-state={selected ? "selected" : undefined}>
       {isAdmin && (
@@ -86,7 +85,16 @@ function StaffTableRowBase({
       <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
       <TableCell>
         <div className="flex items-center gap-1.5">
-          <Badge variant="secondary" className={statusColor(s.status)}>{s.status}</Badge>
+          <Badge variant="secondary" className={statusColor(s.status)}>{staffStatusLabel(s.status)}</Badge>
+          {s.is_minor && (
+            <Badge
+              variant="secondary"
+              className={s.minor_status === "approved" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}
+              title={s.minor_status === "approved" ? "Minor — approved" : "Minor — awaiting approval"}
+            >
+              Minor
+            </Badge>
+          )}
           {s.account_locked && (
             <span title="Account locked" className="inline-flex items-center text-destructive">
               <Lock className="h-3.5 w-3.5" />
@@ -107,6 +115,17 @@ function StaffTableRowBase({
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
+            )}
+            {showDeactivate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-7 w-7 ${isActive ? "text-amber-600" : "text-emerald-600"}`}
+                onClick={() => onDeactivate?.(s)}
+                title={isActive ? "Deactivate" : "Reactivate"}
+              >
+                {isActive ? <UserMinus className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+              </Button>
             )}
             {isAdmin && (
               <AdminAccountActions
