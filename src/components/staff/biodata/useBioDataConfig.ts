@@ -123,4 +123,5 @@ export const BIODATA_SECTIONS = [
   { key: "J", label: "Service / transfer history" },
   { key: "K", label: "Staff declaration" },
   { key: "L", label: "Command / HR verification" },
+  { key: "M", label: "KYC, dependants & signature" },
 ] as const;

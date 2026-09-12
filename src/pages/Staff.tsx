@@ -28,6 +28,14 @@ import { logAdminAudit } from "@/lib/admin-audit";
 import { logStaffAccess } from "@/lib/staff-access-log";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 import { StaffTableRow } from "@/components/staff/StaffTableRow";
+import { DeactivateStaffDialog, type DeactivateTarget } from "@/components/staff/DeactivateStaffDialog";
+import { MinorApprovalQueue } from "@/components/staff/MinorApprovalQueue";
+import { MrzScanPanel } from "@/components/staff/MrzScanPanel";
+import { GhanaCardDobCheck } from "@/components/staff/GhanaCardDobCheck";
+import { DependentsSection } from "@/components/staff/biodata/DependentsSection";
+import { SignatureBlock } from "@/components/shared/SignatureBlock";
+import { STAFF_STATUSES, STAFF_STATUS_LABELS, staffStatusColor } from "@/lib/staff-status";
+import { sortRanks } from "@/lib/rank-order";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
 import type { Database } from "@/integrations/supabase/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -849,6 +857,17 @@ export default function Staff() {
 
   const handleToggleSelect = bulk.toggle;
   const handleOpenProfile = useCallback((id: string) => navigate(`/staff/${id}`), [navigate]);
+  const [deactivateTarget, setDeactivateTarget] = useState<DeactivateTarget | null>(null);
+  const [deactivateMode, setDeactivateMode] = useState<"deactivate" | "reactivate">("deactivate");
+  const handleDeactivateRow = useCallback((s: any) => {
+    setDeactivateMode(s.status === "active" ? "deactivate" : "reactivate");
+    setDeactivateTarget({
+      id: s.id,
+      name: `${s.last_name}, ${s.first_name}`,
+      staffId: s.staff_id,
+      status: s.status,
+    });
+  }, []);
   const handleEditRow = useCallback((s: any) => openEditRef.current(s), []);
   const handleDeleteRow = useCallback((id: string) => deleteRef.current(id), []);
 
@@ -868,14 +887,7 @@ export default function Staff() {
     });
   };
 
-  const statusColor = (s: string) => {
-    switch (s) {
-      case "active": return "bg-emerald-100 text-emerald-800";
-      case "inactive": return "bg-red-100 text-red-800";
-      case "study_leave": return "bg-amber-100 text-amber-800";
-      default: return "bg-muted text-muted-foreground";
-    }
-  };
+  const statusColor = staffStatusColor;
 
   const getInitials = (first: string, last: string) =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
@@ -891,7 +903,7 @@ export default function Staff() {
               getData={() => ({
                 title: "Staff / Employee Report",
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone", "Date Joined Service", "Years of Service"],
+                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Sex", "Status", "Phone", "Date Joined Service", "Years of Service"],
                 rows: buildStaffExportRows(),
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
@@ -946,7 +958,7 @@ export default function Staff() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Ranks</SelectItem>
-            {ranks.map((r) => (
+            {sortRanks(ranks).map((r) => (
               <SelectItem key={r.id} value={r.id}>{r.abbreviation}</SelectItem>
             ))}
           </SelectContent>
@@ -968,10 +980,9 @@ export default function Staff() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="study_leave">Study Leave</SelectItem>
-            <SelectItem value="transferred">Transferred</SelectItem>
+            {STAFF_STATUSES.map((v) => (
+              <SelectItem key={v} value={v}>{STAFF_STATUS_LABELS[v]}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={maritalFilter} onValueChange={setMaritalFilter}>
@@ -1059,6 +1070,7 @@ export default function Staff() {
                     onOpenProfile={handleOpenProfile}
                     onEdit={handleEditRow}
                     onDelete={handleDeleteRow}
+                    onDeactivate={handleDeactivateRow}
                   />
                 ))
               )}
@@ -1228,10 +1240,9 @@ export default function Staff() {
                     <Select value={status} onValueChange={(v) => setStatus(v as StaffStatus)} disabled={!!editing && !isAdmin}>
                       <SelectTrigger id="bio-status"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="study_leave">Study Leave</SelectItem>
-                        <SelectItem value="transferred">Transferred</SelectItem>
+                        {STAFF_STATUSES.map((v) => (
+                          <SelectItem key={v} value={v}>{STAFF_STATUS_LABELS[v]}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1305,7 +1316,7 @@ export default function Staff() {
                     <Input id="bio-othernames" value={otherNames} onChange={(e) => setOtherNames(e.target.value)} />
                   </div>
                   <div>
-                    <Label htmlFor="bio-gender">Gender</Label>
+                    <Label htmlFor="bio-gender">Sex</Label>
                     <Select value={gender} onValueChange={setGender}>
                       <SelectTrigger id="bio-gender"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
@@ -1564,6 +1575,37 @@ export default function Staff() {
               </TabsContent>
 
               {/* ── E to L ──────────────────────────────────────────────── */}
+              {/* ── M. KYC, dependants & signature ──────────────────────── */}
+              <TabsContent value="M" className="space-y-4">
+                <h3 className="text-base font-semibold tracking-tight">M. KYC, dependants &amp; signature</h3>
+                <MrzScanPanel
+                  profileId={editing?.id ?? null}
+                  onApply={(v) => {
+                    if (v.surname) setLastName(v.surname);
+                    if (v.givenNames) setFirstName(v.givenNames.split(" ")[0]);
+                    if (v.sex) setGender(v.sex);
+                    if (v.dateOfBirth) setDateOfBirth(v.dateOfBirth);
+                  }}
+                />
+                <GhanaCardDobCheck
+                  profileId={editing?.id ?? null}
+                  recordDob={dateOfBirth}
+                  ghanaCardNumber={ghanaCardNumber}
+                />
+                <DependentsSection profileId={editing?.id ?? null} canEdit={canManage} />
+                {editing?.id && (
+                  <SignatureBlock
+                    profileId={editing.id}
+                    recordType="staff_biodata"
+                    recordId={editing.id}
+                    recordSummary={`${staffId}|${lastName}|${firstName}`}
+                    label="Staff / officer signature"
+                    defaultName={[lastName, firstName].filter(Boolean).join(" ")}
+                  />
+                )}
+                <BioDataCustomBlock section="M" />
+              </TabsContent>
+
               <BioDataSections
                 staffName={[lastName, firstName, otherNames].filter(Boolean).join(" ")}
                 staffIdText={staffId}
@@ -1618,6 +1660,14 @@ export default function Staff() {
           </BioDataProvider>
         </DialogContent>
       </Dialog>
+
+      <DeactivateStaffDialog
+        target={deactivateTarget}
+        mode={deactivateMode}
+        onOpenChange={(open) => { if (!open) setDeactivateTarget(null); }}
+      />
+
+      {isAdmin && <MinorApprovalQueue canReview={isAdmin} />}
 
       <BulkImportDialog open={bulkImportOpen} onOpenChange={setBulkImportOpen} />
     </div>
