@@ -157,12 +157,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     onSuccess: () => {
       toast.success("Uploaded file deleted");
       setDeleteOpen(false);
-      logAdminAudit({
-        action: "staff_list_import_deleted",
-        entityType: "staff_list_imports",
-        entityId: record.id,
-        details: { file_name: record.file_name },
-      });
+      logAdminAudit("staff_list_imports", "staff_list_import_deleted", { file_name: record.file_name }, record.id);
       qc.invalidateQueries({ queryKey: ["staff-list-imports"] });
     },
     onError: (e: any) => toast.error(e?.message || "That file could not be deleted"),
