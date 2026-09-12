@@ -74,6 +74,7 @@ const rosterItems = [
 
 const leaveItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
+  { title: "Leave Approvals", url: "/leave/approvals", icon: ClipboardCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
 ];
 
