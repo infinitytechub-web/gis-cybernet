@@ -18200,7 +18200,37 @@ export type Database = {
           scope: string
         }[]
       }
+      my_leave_balances: {
+        Args: { _year?: number }
+        Returns: {
+          days_entitled: number
+          days_pending: number
+          days_remaining: number
+          days_taken: number
+          department_name: string
+          full_name: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          profile_id: string
+          rank_name: string
+          shift_group: string
+          staff_id: string
+          unit: string
+        }[]
+      }
       my_mfa_policy: { Args: never; Returns: Json }
+      my_store_issuance: {
+        Args: never
+        Returns: {
+          condition_on_return: string
+          id: string
+          issued_at: string
+          item_name: string
+          notes: string
+          quantity: number
+          returned_at: string
+          unit: string
+        }[]
+      }
       next_cyber_incident_number: { Args: never; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {

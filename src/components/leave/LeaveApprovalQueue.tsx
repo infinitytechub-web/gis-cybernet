@@ -19,7 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import {
   Search, CheckCircle2, XCircle, Clock, FileText, Download, MoreHorizontal,
   Pencil, Trash2, RotateCcw,
@@ -29,6 +29,7 @@ import { ApprovalAuditTrail } from "@/components/audit/ApprovalAuditTrail";
 import { generateLeaveLetter, downloadPdf } from "@/lib/branded-letter-pdf";
 import { LeaveEditDialog } from "./LeaveEditDialog";
 import { softDelete } from "@/lib/recycle-bin";
+import { countLeaveDays, type HolidayDate } from "@/lib/leave-days";
 
 export function LeaveApprovalQueue() {
   const { user, isAdmin, isOic, isAdminOrSupervisor } = useAuth();
@@ -39,6 +40,16 @@ export function LeaveApprovalQueue() {
   const [editRequest, setEditRequest] = useState<any>(null);
   const [deleteRequest, setDeleteRequest] = useState<any>(null);
   const [comments, setComments] = useState("");
+
+  const { data: holidays = [] } = useQuery({
+    queryKey: ["leave-day-holidays"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("holidays").select("date, recurring");
+      if (error) throw error;
+      return (data ?? []) as HolidayDate[];
+    },
+  });
+  const daysFor = (r: any) => countLeaveDays(r.start_date, r.end_date, r.type, holidays);
 
   /** Role-based capabilities — server-side triggers/RLS enforce the same rules. */
   const canReview = isAdminOrSupervisor;                 // approve / reject
@@ -146,7 +157,7 @@ export function LeaveApprovalQueue() {
   };
 
   const downloadLetter = (r: any) => {
-    const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+    const days = daysFor(r);
     const doc = generateLeaveLetter({
       staffName: `${r.profiles?.first_name ?? ""} ${r.profiles?.last_name ?? ""}`.trim(),
       staffId: r.profiles?.staff_id ?? "—",
@@ -239,7 +250,7 @@ export function LeaveApprovalQueue() {
                 </TableRow>
               ) : (
                 filtered.map((r: any) => {
-                  const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+                  const days = daysFor(r);
                   const isPending = r.status === "pending";
                   const showMenu = canReview || canEditPending || canDelete;
                   return (
@@ -354,7 +365,7 @@ export function LeaveApprovalQueue() {
                 </div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Days:</span>
-                  <p className="font-medium">{differenceInDays(new Date(selectedRequest.end_date), new Date(selectedRequest.start_date)) + 1}</p>
+                  <p className="font-medium">{daysFor(selectedRequest)}</p>
                 </div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Status:</span>{" "}

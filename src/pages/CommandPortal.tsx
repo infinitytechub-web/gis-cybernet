@@ -3,11 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   Building2,
+  CalendarOff,
+  ClipboardCheck,
   Download,
   FolderLock,
   Layers,
   Loader2,
   Printer,
+  Package,
   Search,
   ShieldAlert,
   Users,
@@ -21,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DIRECTORY_LEVEL_LABELS, DIRECTORY_SCOPE_LABELS, type DirectoryLevel, type DirectoryScope } from "@/hooks/useDirectoryPermissions";
 import { downloadBlob } from "@/lib/download-utils";
+import { OfficerLeavePanel } from "@/components/command/OfficerLeavePanel";
+import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 
 interface CommandContext {
   profile_id: string | null;
@@ -55,11 +60,14 @@ interface CommandOfficer {
   is_self: boolean;
 }
 
-type Section = "overview" | "officers" | "shifts" | "documents";
+type Section = "overview" | "officers" | "leave" | "stores" | "approvals" | "shifts" | "documents";
 
 const SECTIONS: { key: Section; label: string; icon: typeof Users }[] = [
   { key: "overview", label: "Command overview", icon: Building2 },
   { key: "officers", label: "Command officers", icon: Users },
+  { key: "leave", label: "My leave", icon: CalendarOff },
+  { key: "stores", label: "My stores", icon: Package },
+  { key: "approvals", label: "Leave approvals", icon: ClipboardCheck },
   { key: "shifts", label: "Shift groups", icon: Layers },
   { key: "documents", label: "Command documents", icon: FolderLock },
 ];
@@ -77,7 +85,7 @@ function officerName(o: CommandOfficer) {
  * directly, so the command boundary cannot be widened from the browser.
  */
 export default function CommandPortal() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const [section, setSection] = useState<Section>("overview");
   const [search, setSearch] = useState("");
 
@@ -199,6 +207,7 @@ export default function CommandPortal() {
                 </p>
                 {SECTIONS.map((s) => {
                   const disabled = s.key === "documents" && !ctx?.can_vault;
+                  if (s.key === "approvals" && !isAdminOrSupervisor) return null;
                   return (
                     <Button
                       key={s.key}
@@ -356,6 +365,20 @@ export default function CommandPortal() {
                   <p className="text-sm text-muted-foreground">No shift groups in your command yet.</p>
                 )}
               </div>
+            )}
+
+            {section === "leave" && <OfficerLeavePanel />}
+
+            {section === "stores" && <OfficerStoresPanel />}
+
+            {section === "approvals" && isAdminOrSupervisor && (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Leave approval queue</CardTitle></CardHeader>
+                <CardContent className="space-y-3 text-sm text-muted-foreground">
+                  <p>Review requests from officers inside your authorized command scope.</p>
+                  <Button asChild size="sm"><Link to="/leave/approvals"><ClipboardCheck className="h-4 w-4" /> Open approval queue</Link></Button>
+                </CardContent>
+              </Card>
             )}
 
             {section === "documents" && (

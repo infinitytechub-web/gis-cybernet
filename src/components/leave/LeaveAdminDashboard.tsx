@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Clock, CheckCircle2, XCircle, CalendarOff, Search } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import { LeaveApprovalQueue } from "./LeaveApprovalQueue";
+import { countLeaveDays, type HolidayDate } from "@/lib/leave-days";
 
 const SHIFT_GROUPS = ["A", "B", "C", "D"] as const;
 
@@ -18,6 +19,14 @@ export function LeaveAdminDashboard() {
   const [shiftFilter, setShiftFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const { data: holidays = [] } = useQuery({
+    queryKey: ["leave-day-holidays"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("holidays").select("date, recurring");
+      if (error) throw error;
+      return (data ?? []) as HolidayDate[];
+    },
+  });
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments-light"],
@@ -186,7 +195,7 @@ export function LeaveAdminDashboard() {
                   <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No leave requests match these filters</TableCell></TableRow>
                 ) : (
                   filtered.map((r: any) => {
-                    const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+                    const days = countLeaveDays(r.start_date, r.end_date, r.type, holidays);
                     return (
                       <TableRow key={r.id}>
                         <TableCell>

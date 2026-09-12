@@ -209,7 +209,7 @@ export default function Login() {
         } else if (!roleErr && (roleRows?.length ?? 0) > 0) {
           navigate("/dashboard", { replace: true });
         } else {
-          navigate("/", { replace: true });
+          navigate("/command-portal", { replace: true });
         }
       } catch (signInErr) {
         // Record failed attempt server-side, against the configured policy.
@@ -268,7 +268,7 @@ export default function Login() {
         _device_fingerprint: fp,
         _user_agent: ua,
       });
-      navigate("/");
+      navigate("/dashboard");
     } catch (e: any) {
       const reason = e?.message || "Invalid code";
       const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
@@ -352,7 +352,13 @@ export default function Login() {
       if (freshUser?.user_metadata?.must_change_password === true) {
         navigate("/change-password", { replace: true });
       } else {
-        navigate("/", { replace: true });
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", freshUser?.id ?? "")
+          .eq("role", "admin")
+          .limit(1);
+        navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/command-portal", { replace: true });
       }
     } catch (e: any) {
       toast({
