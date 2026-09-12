@@ -8,6 +8,7 @@ import { roleLabel } from "@/lib/role-labels";
 import StaffDashboard from "@/components/dashboard/StaffDashboard";
 import CommandDashboard from "@/components/dashboard/CommandDashboard";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
+import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import { Users } from "lucide-react";
 
@@ -71,6 +72,14 @@ export default function Dashboard() {
               <AdminQuickSearchWidget />
             </DashboardSection>
           )}
+          <DashboardSection
+            id="leave-due"
+            title="Leave due & overdue"
+            description="Officers who are due or overdue to take their annual leave."
+            icon={CalendarClock}
+          >
+            <LeaveDueWidget />
+          </DashboardSection>
         </CommandDashboard>
       ) : <StaffDashboard />}
     </div>

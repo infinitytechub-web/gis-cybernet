@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { BulkCreateAccounts } from "@/components/settings/BulkCreateAccounts";
 import { PermissionsMatrix } from "@/components/settings/PermissionsMatrix";
 import { DirectoryPermissionsMatrix } from "@/components/settings/DirectoryPermissionsMatrix";
+import { RankHierarchyAdmin } from "@/components/settings/RankHierarchyAdmin";
 import { AccessPolicySettings } from "@/components/settings/AccessPolicySettings";
 import { AnonymizationSettings } from "@/components/settings/AnonymizationSettings";
 
@@ -121,6 +122,7 @@ const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; ar
   { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
   { value: "directory-perms", label: "Directory Matrix", icon: Grid3X3, iconClass: "text-emerald-600", area: "security" },
+  { value: "ranks", label: "Ranks & Hierarchy", icon: Layers, iconClass: "text-amber-600", area: "system" },
   { value: "access-policy", label: "Access Policy", icon: ShieldCheck, iconClass: "text-chart-5", area: "security" },
   { value: "anonymization", label: "Anonymisation", icon: EyeOff, iconClass: "text-indigo-600", area: "security" },
 
@@ -188,6 +190,7 @@ export default function Settings() {
         <TabsContent value="roles"><UserRolesTab /></TabsContent>
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
         <TabsContent value="directory-perms"><DirectoryPermissionsMatrix /></TabsContent>
+        <TabsContent value="ranks"><RankHierarchyAdmin canEdit={isAdmin} /></TabsContent>
         <TabsContent value="access-policy"><AccessPolicySettings /></TabsContent>
         <TabsContent value="anonymization"><AnonymizationSettings /></TabsContent>
 
