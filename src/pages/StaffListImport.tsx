@@ -40,6 +40,8 @@ import { csvCellQuoted } from "@/lib/csv-safe";
 import {
   parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, type StaffListRow,
 } from "@/lib/staff-list-import";
+import StaffListImportActions from "@/components/staff/StaffListImportActions";
+
 
 const COMMAND_TYPES = ["sector", "command", "station", "district", "regional"];
 
