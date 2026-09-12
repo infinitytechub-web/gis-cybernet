@@ -69,6 +69,20 @@ type ChangeRow = {
   requested_changes: Record<string, unknown> | null;
 };
 
+type CommandOfficerRow = {
+  id: string;
+  staff_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  rank_name: string | null;
+  department_name: string | null;
+  shift_group: string | null;
+  status: string | null;
+  unit_name: string | null;
+  is_self: boolean;
+};
+
+
 function hoursOf(row: WeekRow): number {
   if (!row.check_in || !row.check_out) return 0;
   const ms = new Date(row.check_out).getTime() - new Date(row.check_in).getTime();
