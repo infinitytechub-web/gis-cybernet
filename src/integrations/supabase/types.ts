@@ -18200,6 +18200,23 @@ export type Database = {
           scope: string
         }[]
       }
+      my_leave_balances: {
+        Args: { _year?: number }
+        Returns: {
+          days_entitled: number
+          days_pending: number
+          days_remaining: number
+          days_taken: number
+          department_name: string
+          full_name: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          profile_id: string
+          rank_name: string
+          shift_group: string
+          staff_id: string
+          unit: string
+        }[]
+      }
       my_mfa_policy: { Args: never; Returns: Json }
       my_store_issuance: {
         Args: never
