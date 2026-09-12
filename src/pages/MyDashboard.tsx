@@ -178,6 +178,34 @@ export default function MyDashboard() {
     },
   });
 
+  /**
+   * Command-scoped staff search. `my_command_officers()` resolves the officer's
+   * own posting server-side and returns nothing when they have no command or no
+   * View switch, so the boundary cannot be widened from the browser.
+   */
+  const [staffSearch, setStaffSearch] = useState("");
+  const { data: commandOfficers = [], isLoading: officersLoading } = useQuery({
+    queryKey: ["portal-command-officers", profileId],
+    enabled: !!profileId && canOpenPortal,
+    queryFn: async (): Promise<CommandOfficerRow[]> => {
+      const { data, error } = await supabase.rpc("my_command_officers");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CommandOfficerRow[];
+    },
+  });
+
+  const matchedOfficers = useMemo(() => {
+    const q = staffSearch.trim().toLowerCase();
+    if (!q) return commandOfficers;
+    return commandOfficers.filter((o) =>
+      [o.staff_id, o.first_name, o.last_name, o.rank_name, o.department_name, o.unit_name]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [commandOfficers, staffSearch]);
+
+
+
   const weekByDate = useMemo(() => {
     const m = new Map<string, WeekRow>();
     for (const r of weekRows) if (!m.has(r.date)) m.set(r.date, r);
