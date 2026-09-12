@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, Pencil, XCircle, CheckCircle2, Loader2, Search } from "lucide-react";
+import { Eye, Pencil, XCircle, CheckCircle2, Loader2, Search, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
   const [editRow, setEditRow] = useState<RowRecord | null>(null);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [search, setSearch] = useState("");
 
@@ -148,6 +149,20 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     onError: (e: any) => toast.error(e?.message || "That action could not be completed"),
   });
 
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("staff_list_import_delete", { _import_id: record.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Uploaded file deleted");
+      setDeleteOpen(false);
+      logAdminAudit("staff_list_imports", "staff_list_import_deleted", { file_name: record.file_name }, record.id);
+      qc.invalidateQueries({ queryKey: ["staff-list-imports"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "That file could not be deleted"),
+  });
+
   const createAccounts = async (ids: string[]) => {
     const creds: Array<{ staffId: string; name: string; username: string; password: string }> = [];
     for (let i = 0; i < ids.length; i += 150) {
@@ -209,6 +224,20 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
           <CheckCircle2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
         )}
         Approve
+      </Button>
+      <Button
+        variant="outline" size="sm"
+        className="h-7 px-2 text-destructive hover:text-destructive"
+        disabled={committed || remove.isPending}
+        title={committed ? "Applied files are kept for the record" : "Delete this uploaded file"}
+        onClick={() => setDeleteOpen(true)}
+      >
+        {remove.isPending ? (
+          <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <Trash2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        Delete
       </Button>
 
       {/* Preview & edit */}
@@ -316,6 +345,29 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
             <Button onClick={() => saveRow.mutate()} disabled={saveRow.isPending}>
               {saveRow.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
               Save row
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Delete {record.file_name}?</DialogTitle>
+            <DialogDescription className="text-xs">
+              The file and its parsed rows are removed for good. Staff records are not touched.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
+              {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+              Delete file
             </Button>
           </DialogFooter>
         </DialogContent>
