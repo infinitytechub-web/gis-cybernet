@@ -412,14 +412,15 @@ export default function StaffListImport() {
                 <Download className="mr-2 h-4 w-4" aria-hidden="true" />
                 Export preview
               </Button>
-              <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0} onClick={commit}>
+              <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0} onClick={submitForApproval}>
                 {committing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Rocket className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
-                Commit {summary.ready} row(s)
+                Save {summary.ready} row(s) for approval
               </Button>
+
             </div>
             {!targetUnit && (
               <CardDescription className="text-xs text-destructive">
