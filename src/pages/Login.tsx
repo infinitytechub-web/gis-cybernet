@@ -268,10 +268,11 @@ export default function Login() {
         _device_fingerprint: fp,
         _user_agent: ua,
       });
+      const { data: { user: verifiedUser } } = await supabase.auth.getUser();
       const { data: adminRoles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user?.id ?? "")
+        .eq("user_id", verifiedUser?.id ?? "")
         .eq("role", "admin")
         .limit(1);
       navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/command-portal", { replace: true });
@@ -292,7 +293,7 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
-  }, [mfaFactorId, otp, staffId, navigate, toast, user?.id]);
+  }, [mfaFactorId, otp, staffId, navigate, toast]);
 
   const handleCancelMfa = useCallback(async () => {
     try { await signOut(); } catch { /* ignore */ }
