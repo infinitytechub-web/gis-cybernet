@@ -10,7 +10,7 @@ import CommandDashboard from "@/components/dashboard/CommandDashboard";
 import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import DashboardSection from "@/components/dashboard/DashboardSection";
-import { Users } from "lucide-react";
+import { Users, CalendarClock } from "lucide-react";
 
 /**
  * Dashboard — one fixed information hierarchy, two role compositions:
