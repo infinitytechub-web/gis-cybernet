@@ -1,8 +1,8 @@
 /**
- * Optional dependants table for the staff bio-data record (section H).
+ * Optional dependants table for the staff bio-data record.
  *
  * Entirely optional — a record can be saved with no dependants at all.
- * Administrators can add as many rows as needed.
+ * Rows are replaced as a set when saved, so removing a row removes it here too.
  */
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,19 +10,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RepeatingRows, type RepeatingColumn } from "@/components/staff/biodata/RepeatingRows";
+import { RepeatingRows, type RowColumn, type RowValue } from "@/components/staff/biodata/RepeatingRows";
 
-const COLUMNS: RepeatingColumn[] = [
+const COLUMNS: RowColumn[] = [
   { key: "full_name", label: "Full name", type: "text" },
   { key: "relationship", label: "Relationship", type: "text" },
   { key: "date_of_birth", label: "Date of birth", type: "date" },
-  { key: "sex", label: "Sex", type: "select", options: ["Male", "Female"] },
+  {
+    key: "sex",
+    label: "Sex",
+    type: "select",
+    options: [
+      { value: "Male", label: "Male" },
+      { value: "Female", label: "Female" },
+    ],
+  },
   { key: "phone", label: "Telephone", type: "text" },
   { key: "is_beneficiary", label: "Beneficiary", type: "boolean" },
   { key: "notes", label: "Notes", type: "text" },
 ];
-
-type Row = Record<string, unknown>;
 
 export function DependentsSection({
   profileId,
@@ -32,7 +38,7 @@ export function DependentsSection({
   canEdit?: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<RowValue[]>([]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["staff-dependents", profileId],
@@ -43,7 +49,15 @@ export function DependentsSection({
         .eq("profile_id", profileId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (res ?? []) as Row[];
+      return (res ?? []).map((r) => ({
+        full_name: r.full_name ?? "",
+        relationship: r.relationship ?? "",
+        date_of_birth: r.date_of_birth ?? "",
+        sex: r.sex ?? "",
+        phone: r.phone ?? "",
+        is_beneficiary: r.is_beneficiary ? "yes" : "no",
+        notes: r.notes ?? "",
+      })) as RowValue[];
     },
     enabled: !!profileId,
   });
@@ -59,16 +73,16 @@ export function DependentsSection({
         .eq("profile_id", profileId);
       if (delErr) throw delErr;
       const payload = rows
-        .filter((r) => String(r.full_name ?? "").trim())
+        .filter((r) => (r.full_name ?? "").trim())
         .map((r) => ({
           profile_id: profileId,
-          full_name: String(r.full_name).trim(),
-          relationship: (r.relationship as string) || null,
-          date_of_birth: (r.date_of_birth as string) || null,
-          sex: (r.sex as string) || null,
-          phone: (r.phone as string) || null,
-          is_beneficiary: !!r.is_beneficiary,
-          notes: (r.notes as string) || null,
+          full_name: r.full_name.trim(),
+          relationship: r.relationship || null,
+          date_of_birth: r.date_of_birth || null,
+          sex: r.sex || null,
+          phone: r.phone || null,
+          is_beneficiary: r.is_beneficiary === "yes",
+          notes: r.notes || null,
         }));
       if (payload.length) {
         const { error } = await supabase.from("staff_dependents").insert(payload);
@@ -97,11 +111,12 @@ export function DependentsSection({
       ) : (
         <>
           <RepeatingRows
+            idPrefix="dependant"
             columns={COLUMNS}
             rows={rows}
             onChange={setRows}
             addLabel="Add dependant"
-            readOnly={!canEdit}
+            disabled={!canEdit}
           />
           {canEdit && (
             <Button type="button" size="sm" variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>
