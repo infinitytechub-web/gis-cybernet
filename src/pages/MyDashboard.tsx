@@ -6,7 +6,7 @@
  * (leave requests and profile change requests). No command-tier data is shown,
  * and RLS already limits every query below to the signed-in officer's rows.
  */
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
@@ -18,6 +18,8 @@ import {
   CalendarDays,
   Fingerprint,
   ArrowRight,
+  Search,
+  Users,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -27,14 +29,18 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckInOut } from "@/components/attendance/CheckInOut";
 import { MyHoursDashboard } from "@/components/attendance/MyHoursDashboard";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
+import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
+import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 import { formatDate } from "@/lib/date-format";
 import { useMyDirectoryAccess } from "@/hooks/useDirectoryPermissions";
+
 
 const MAX_DAILY_HOURS = 16;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
