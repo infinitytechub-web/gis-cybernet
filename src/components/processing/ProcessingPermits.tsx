@@ -209,7 +209,7 @@ export default function ProcessingPermits() {
               <div><span className="text-muted-foreground">Passport:</span> {reviewItem.passport_number}</div>
               {reviewItem.nationality && <div><span className="text-muted-foreground">Nationality:</span> {reviewItem.nationality}</div>}
               {reviewItem.date_of_birth && <div><span className="text-muted-foreground">DOB:</span> {reviewItem.date_of_birth}</div>}
-              {reviewItem.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewItem.gender}</div>}
+              {reviewItem.gender && <div><span className="text-muted-foreground">Sex:</span> {reviewItem.gender}</div>}
               {reviewItem.marital_status && <div><span className="text-muted-foreground">Marital:</span> {reviewItem.marital_status}</div>}
               {reviewItem.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewItem.phone}</div>}
               {reviewItem.occupation && <div><span className="text-muted-foreground">Occupation:</span> {reviewItem.occupation}</div>}

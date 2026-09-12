@@ -202,7 +202,7 @@ export default function OfficialApplications() {
                 <div><Label>Reference Number</Label><Input value={form.reference_number} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} /></div>
                 <div><Label>Requesting Entity</Label><Input value={form.requesting_entity} onChange={(e) => setForm({ ...form, requesting_entity: e.target.value })} /></div>
                 <div><Label>Date of Birth</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
-                <div><Label>Gender</Label>
+                <div><Label>Sex</Label>
                   <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem></SelectContent>

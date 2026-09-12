@@ -153,7 +153,7 @@ export async function exportBioDataPdf(profileId: string): Promise<void> {
     ["Surname", p.last_name],
     ["First name", p.first_name],
     ["Other name(s)", p.other_names],
-    ["Gender", p.gender],
+    ["Sex", p.gender],
     ["Date of birth", dmy(p.date_of_birth)],
     ["Place of birth", p.place_of_birth],
     ["Hometown", p.hometown],

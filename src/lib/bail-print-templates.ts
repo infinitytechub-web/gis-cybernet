@@ -77,7 +77,7 @@ export function buildBailPlaceholders(r: BailRecord): Record<string, string> {
 
   const bailee = `<h2>Bailee</h2><table>${rows([
     ["Name", dash(name)],
-    ["Gender / Nationality", `${dash(genderLabel(r.bailee_gender))} / ${dash(r.bailee_nationality)}`],
+    ["Sex / Nationality", `${dash(genderLabel(r.bailee_gender))} / ${dash(r.bailee_nationality)}`],
     ["Phone", dash(r.bailee_phone)],
     ["Address", dash(r.bailee_address)],
     ["Identification", `${dash(r.bailee_id_type)} ${esc(r.bailee_id_number ?? "")}`.trim()],

@@ -40,7 +40,7 @@ const LABELS: Record<string, string> = {
   subject: "Subject",
   response: "Response",
   date_of_birth: "Date of Birth",
-  gender: "Gender",
+  gender: "Sex",
   marital_status: "Marital Status",
   phone: "Phone",
   home_address: "Home Address",

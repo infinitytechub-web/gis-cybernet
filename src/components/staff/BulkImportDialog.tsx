@@ -286,7 +286,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
 
   const downloadTemplate = () => {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["Staff ID", "First Name", "Last Name", "Gender", "Phone", "Unit", "Shift Group", "Rank", "Department", "Office", "Status"],
+      ["Staff ID", "First Name", "Last Name", "Sex", "Phone", "Unit", "Shift Group", "Rank", "Department", "Office", "Status"],
       ["GIS-00001", "John", "Doe", "Male", "0201234567", "Operations", "A", "Cpl", "Administration", "Amasaman HQ", "active"],
     ]);
     const wb = XLSX.utils.book_new();

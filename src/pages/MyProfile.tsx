@@ -351,7 +351,7 @@ export default function MyProfile() {
             <div><Label>First name</Label><Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div>
             <div><Label>Last name</Label><Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div>
             <div>
-              <Label>Gender</Label>
+              <Label>Sex</Label>
               <Select value={form.gender || ""} onValueChange={(v) => setForm({ ...form, gender: v })}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>

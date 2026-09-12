@@ -261,7 +261,7 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
         <ExportMenu getData={() => ({
           title: "Detention Records",
           filename: `detention-${format(new Date(), "yyyy-MM-dd")}`,
-          headers: ["Name", "Gender", "Nationality", "Type of Offense", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by", ...(isArchive ? ["Archive Review", "Reviewed At", "Review Reason"] : [])],
+          headers: ["Name", "Sex", "Nationality", "Type of Offense", "Cell", "Intake", "Status", "Risk", "Referred From", "Referred To", "Next of Kin (NoK)", "Next of Kin (NoK) Phone", "Statement Approved by", ...(isArchive ? ["Archive Review", "Reviewed At", "Review Reason"] : [])],
           rows: filtered.map((r: any) => [`${r.first_name} ${r.last_name}`, r.gender || "-", r.nationality || "-", r.crime_type, r.cell_number || "-", formatDateTime(r.intake_at), statusLabel(r.status), r.risk_level, referralDisplay(r.referred_from, r.referred_from_other) || "-", referralDisplay(r.referred_to, r.referred_to_other) || "-", displayField("next_of_kin", r.next_of_kin, { role: role as any }), displayField("next_of_kin", r.next_of_kin_phone, { role: role as any }), r.statement_approved_by_name || "-", ...(isArchive ? [ARCHIVE_REVIEW_LABELS[r.archive_review_status || "pending"], r.archive_reviewed_at ? formatDateTime(r.archive_reviewed_at) : "-", r.archive_review_reason || "-"] : [])]),
         })} />
         {canCreate && <Button onClick={() => setIntakeOpen(true)} className="ml-auto gap-1 bg-rose-600 hover:bg-rose-700"><Plus className="h-4 w-4" />New Intake</Button>}
@@ -272,7 +272,7 @@ function RecordsList({ status, canCreate, isArchive = false, userId, role, onSel
           <div className="overflow-x-auto">
             <Table className="min-w-[1000px]">
               <TableHeader><TableRow>
-                <TableHead></TableHead><TableHead>Detainee</TableHead><TableHead>Gender</TableHead>
+                <TableHead></TableHead><TableHead>Detainee</TableHead><TableHead>Sex</TableHead>
                 <TableHead>Nationality</TableHead><TableHead>Type of Offense</TableHead><TableHead>Cell</TableHead>
                 <TableHead>Risk</TableHead><TableHead>Status</TableHead><TableHead>Duration</TableHead>
                 {isArchive && <TableHead>Archive Review</TableHead>}
@@ -442,7 +442,7 @@ function printDetentionRecord(r: any, viewer: FieldContext = { role: null }) {
   const rows: [string, any][] = [
     ["Full Name", `${r.first_name} ${r.last_name}`],
     ["Alias", r.alias],
-    ["Gender", r.gender],
+    ["Sex", r.gender],
     ["Date of Birth", canSeeField("detainee_identity", viewer) ? formatDate(r.date_of_birth) : "••/••/••••"],
     ["Age", ageLabel(r.date_of_birth)],
     ["Nationality", r.nationality],
@@ -503,7 +503,7 @@ function validateDetaineeForm(form: any) {
   if (!form.first_name?.trim() || !form.last_name?.trim()) return "First and last name are required";
   if (!form.crime_type) return "Type of offense is required";
   if (!form.risk_level) return "Risk level is required";
-  if (!form.gender) return "Gender is required";
+  if (!form.gender) return "Sex is required";
   if (form.referred_from === OTHER_AGENCY && !form.referred_from_other?.trim())
     return "Specify the agency/command for “Referred from”";
   if (form.referred_to === OTHER_AGENCY && !form.referred_to_other?.trim())
@@ -582,7 +582,7 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
               <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
               <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
               <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
-              <div><Label>Gender *</Label>
+              <div><Label>Sex *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                   <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
@@ -740,7 +740,7 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
               <div><Label>First Name *</Label><Input value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} /></div>
               <div><Label>Last Name *</Label><Input value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} /></div>
               <div><Label>Alias</Label><Input value={form.alias} onChange={e => setForm(p => ({ ...p, alias: e.target.value }))} /></div>
-              <div><Label>Gender *</Label>
+              <div><Label>Sex *</Label>
                 <Select value={form.gender} onValueChange={v => setForm(p => ({ ...p, gender: v }))}>
                   <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                   <SelectContent>{GENDER_OPTIONS.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}</SelectContent>
@@ -911,7 +911,7 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
 
           <TabsContent value="bio" className="space-y-3">
             <Section title="Identification">
-              <Field label="Gender" value={record.gender} />
+              <Field label="Sex" value={record.gender} />
               <Field label="Date of Birth" value={canSeeField("detainee_identity", viewer) ? formatDate(record.date_of_birth) : "••/••/••••"} />
               <Field label="Age" value={ageLabel(record.date_of_birth)} />
               <Field label="Nationality" value={record.nationality} />
@@ -1243,7 +1243,7 @@ function HoldingAnalytics() {
   const filterSummary = [
     `Period: ${RANGE_LABELS[range]}`,
     `Status: ${fStatus === "all" ? "All" : statusLabel(fStatus)}`,
-    `Gender: ${fGender === "all" ? "All" : fGender}`,
+    `Sex: ${fGender === "all" ? "All" : fGender}`,
     `Risk: ${fRisk === "all" ? "All" : fRisk}`,
     `Offense category: ${fOffense === "all" ? "All" : fOffense}`,
     `Nationality: ${fNationality || "All"}`,
@@ -1411,7 +1411,7 @@ function HoldingAnalytics() {
               <ResponsiveContainer width="100%" height={250}><BarChart data={byLoc} layout="vertical"><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" fontSize={11} allowDecimals={false} /><YAxis dataKey="name" type="category" width={120} fontSize={10} /><Tooltip /><Bar dataKey="value" name="Arrests" fill="#8b5cf6" /></BarChart></ResponsiveContainer>
             </CardContent></Card>
 
-            <Card><CardHeader><CardTitle className="text-sm">Gender Distribution</CardTitle></CardHeader><CardContent>
+            <Card><CardHeader><CardTitle className="text-sm">Sex Distribution</CardTitle></CardHeader><CardContent>
               <ResponsiveContainer width="100%" height={220}><PieChart><Pie data={byGender} dataKey="value" nameKey="name" outerRadius={78} label>{byGender.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}</Pie><Tooltip /><Legend /></PieChart></ResponsiveContainer>
             </CardContent></Card>
 

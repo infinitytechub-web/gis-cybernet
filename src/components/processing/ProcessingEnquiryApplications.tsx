@@ -165,7 +165,7 @@ export default function ProcessingEnquiryApplications() {
               {reviewApp.subject && <div className="col-span-2"><span className="text-muted-foreground">Subject:</span> {reviewApp.subject}</div>}
               {reviewApp.passport_number && <div><span className="text-muted-foreground">Passport:</span> {reviewApp.passport_number}</div>}
               {reviewApp.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewApp.phone}</div>}
-              {reviewApp.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewApp.gender}</div>}
+              {reviewApp.gender && <div><span className="text-muted-foreground">Sex:</span> {reviewApp.gender}</div>}
               {reviewApp.date_of_birth && <div><span className="text-muted-foreground">DOB:</span> {reviewApp.date_of_birth}</div>}
               {reviewApp.marital_status && <div><span className="text-muted-foreground">Marital Status:</span> {reviewApp.marital_status}</div>}
               {reviewApp.home_address && <div className="col-span-2"><span className="text-muted-foreground">Home Address:</span> {reviewApp.home_address}</div>}

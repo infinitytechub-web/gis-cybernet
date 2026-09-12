@@ -199,7 +199,7 @@ export default function ProcessingVisaExtensions() {
               <div><span className="text-muted-foreground">Visa Expiry:</span> {reviewItem.current_visa_expiry}</div>
               <div><span className="text-muted-foreground">Requested Date:</span> {reviewItem.requested_extension_date}</div>
               {reviewItem.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewItem.phone}</div>}
-              {reviewItem.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewItem.gender}</div>}
+              {reviewItem.gender && <div><span className="text-muted-foreground">Sex:</span> {reviewItem.gender}</div>}
               {reviewItem.date_of_birth && <div><span className="text-muted-foreground">DOB:</span> {reviewItem.date_of_birth}</div>}
               {reviewItem.marital_status && <div><span className="text-muted-foreground">Marital Status:</span> {reviewItem.marital_status}</div>}
               {reviewItem.home_address && <div className="col-span-2"><span className="text-muted-foreground">Home Address:</span> {reviewItem.home_address}</div>}

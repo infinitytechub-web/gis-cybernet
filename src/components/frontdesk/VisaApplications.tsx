@@ -240,7 +240,7 @@ export default function VisaApplications() {
                   </Select>
                 </div>
                 <div><Label>Date of Birth</Label><DateInput  value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} /></div>
-                <div><Label>Gender</Label>
+                <div><Label>Sex</Label>
                   <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>

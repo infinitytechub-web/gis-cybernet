@@ -459,7 +459,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
                   <Field label="First name *" value={form.bailee_first_name} onChange={(v) => set("bailee_first_name", v)} />
                   <Field label="Last name *" value={form.bailee_last_name} onChange={(v) => set("bailee_last_name", v)} />
                   <div className="space-y-2">
-                    <Label>Gender</Label>
+                    <Label>Sex</Label>
                     <Select value={form.bailee_gender || "none"} onValueChange={(v) => set("bailee_gender", v === "none" ? "" : v)}>
                       <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                       <SelectContent>
@@ -644,7 +644,7 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
                 <Detail k="Amount" v={viewing.bail_amount ? `${viewing.currency ?? "GHS"} ${Number(viewing.bail_amount).toLocaleString()}` : "—"} />
                 <Detail k="Granted at" v={viewing.granted_at ? format(new Date(viewing.granted_at), "dd/MM/yyyy HH:mm") : "—"} />
                 <Detail k="Status" v={String(viewing.authorization_status ?? "pending")} />
-                <Detail k="Gender" v={genderLabel(viewing.bailee_gender)} />
+                <Detail k="Sex" v={genderLabel(viewing.bailee_gender)} />
                 <Detail k="Nationality" v={viewing.bailee_nationality} />
                 <Detail k="Phone" v={viewing.bailee_phone} />
                 <Detail k="Address" v={viewing.bailee_address} />
