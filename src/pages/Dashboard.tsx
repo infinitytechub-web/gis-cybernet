@@ -7,6 +7,9 @@ import { useBranding } from "@/hooks/useBranding";
 import { roleLabel } from "@/lib/role-labels";
 import StaffDashboard from "@/components/dashboard/StaffDashboard";
 import CommandDashboard from "@/components/dashboard/CommandDashboard";
+import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidget";
+import DashboardSection from "@/components/dashboard/DashboardSection";
+import { Users } from "lucide-react";
 
 /**
  * Dashboard — one fixed information hierarchy, two role compositions:
@@ -56,7 +59,20 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {isAdminOrSupervisor ? <CommandDashboard /> : <StaffDashboard />}
+      {isAdminOrSupervisor ? (
+        <CommandDashboard>
+          {role === "admin" && (
+            <DashboardSection
+              id="staff-management"
+              title="Staff management"
+              description="Find a staff record to view or edit."
+              icon={Users}
+            >
+              <AdminQuickSearchWidget />
+            </DashboardSection>
+          )}
+        </CommandDashboard>
+      ) : <StaffDashboard />}
     </div>
   );
 }

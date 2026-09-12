@@ -215,6 +215,7 @@ export default function Staff() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const activeEditIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -391,6 +392,7 @@ export default function Staff() {
 
 
   const openCreate = () => {
+    activeEditIdRef.current = null;
     setEditing(null);
     setStaffId("");
     setFirstName("");
@@ -454,19 +456,23 @@ export default function Staff() {
   const openEdit = (s: any) => {
     // Staff access log: record that this officer opened this record for editing.
     void logStaffAccess("edit", s.id, `Opened edit form for ${s.staff_id ?? ""}`.trim());
+    activeEditIdRef.current = s.id;
     setEditing(s);
     setStaffId(s.staff_id);
     setFirstName(s.first_name);
     setLastName(s.last_name);
     setGender(s.gender || "");
     setPhone(s.phone || "");
-    // Load contacts for this profile
+    // Clear record-specific related data immediately. The id guard prevents a
+    // slower response from an earlier row overwriting a newly opened record.
+    setContacts([]);
     supabase
       .from("profile_contacts")
       .select("*")
       .eq("profile_id", s.id)
       .order("is_primary", { ascending: false })
       .then(({ data }) => {
+        if (activeEditIdRef.current !== s.id) return;
         if (data) {
           setContacts(
             data.map((c: any) => ({
@@ -528,12 +534,14 @@ export default function Staff() {
     setPreviousLastPosition((s as any).previous_last_position || "");
     setPreviousReasonForLeaving((s as any).previous_reason_for_leaving || "");
 
-    // Load assigned portfolios for this profile
+    setPortfolioIds([]);
+    setInitialPortfolioIds([]);
     supabase
       .from("profile_portfolios")
       .select("portfolio_id")
       .eq("profile_id", s.id)
       .then(({ data }) => {
+        if (activeEditIdRef.current !== s.id) return;
         const ids = (data ?? []).map((r: any) => r.portfolio_id);
         setPortfolioIds(ids);
         setInitialPortfolioIds(ids);
@@ -556,7 +564,11 @@ export default function Staff() {
   // for both the scoped staff list and directory permissions before deciding,
   // so a slow request cannot produce a false "not available" message.
   useEffect(() => {
-    if (!requestedEditId || isLoading || dirPerms.loading) return;
+    if (!requestedEditId) {
+      handledEditIdRef.current = null;
+      return;
+    }
+    if (isLoading || dirPerms.loading) return;
     if (handledEditIdRef.current === requestedEditId) return;
     handledEditIdRef.current = requestedEditId;
 
@@ -1105,7 +1117,10 @@ export default function Staff() {
         open={dialogOpen}
         onOpenChange={(open) => {
           setDialogOpen(open);
-          if (!open) clearEditLink();
+          if (!open) {
+            activeEditIdRef.current = null;
+            clearEditLink();
+          }
         }}
       >
         {/*
