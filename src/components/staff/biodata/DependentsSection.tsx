@@ -25,8 +25,7 @@ const COLUMNS: RowColumn[] = [
       { value: "Female", label: "Female" },
     ],
   },
-  { key: "phone", label: "Telephone", type: "text" },
-  { key: "is_beneficiary", label: "Beneficiary", type: "boolean" },
+  { key: "contact", label: "Telephone / contact", type: "text" },
   { key: "notes", label: "Notes", type: "text" },
 ];
 
@@ -54,8 +53,7 @@ export function DependentsSection({
         relationship: r.relationship ?? "",
         date_of_birth: r.date_of_birth ?? "",
         sex: r.sex ?? "",
-        phone: r.phone ?? "",
-        is_beneficiary: r.is_beneficiary ? "yes" : "no",
+        contact: r.contact ?? "",
         notes: r.notes ?? "",
       })) as RowValue[];
     },
@@ -74,15 +72,15 @@ export function DependentsSection({
       if (delErr) throw delErr;
       const payload = rows
         .filter((r) => (r.full_name ?? "").trim())
-        .map((r) => ({
+        .map((r, i) => ({
           profile_id: profileId,
           full_name: r.full_name.trim(),
           relationship: r.relationship || null,
           date_of_birth: r.date_of_birth || null,
           sex: r.sex || null,
-          phone: r.phone || null,
-          is_beneficiary: r.is_beneficiary === "yes",
+          contact: r.contact || null,
           notes: r.notes || null,
+          sort_order: i,
         }));
       if (payload.length) {
         const { error } = await supabase.from("staff_dependents").insert(payload);

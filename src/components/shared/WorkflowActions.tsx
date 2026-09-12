@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, MessageCircleQuestion, ThumbsUp, CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, MessageCircleQuestion, ThumbsUp, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -51,11 +51,10 @@ export function WorkflowStageBadge({ stage }: { stage: string | null | undefined
 
 type Transition = {
   id: string;
-  from_stage: string | null;
-  to_stage: string;
+  from_status: string | null;
+  to_status: string;
   note: string | null;
   created_at: string;
-  actor_name: string | null;
 };
 
 export function WorkflowActions({
@@ -85,7 +84,7 @@ export function WorkflowActions({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("workflow_transitions")
-        .select("id, from_stage, to_stage, note, created_at, actor_name")
+        .select("id, from_status, to_status, note, created_at")
         .eq("entity_type", entityType)
         .eq("entity_id", entityId)
         .order("created_at", { ascending: false });
@@ -99,18 +98,22 @@ export function WorkflowActions({
     mutationFn: async () => {
       if (!pending) throw new Error("No action selected");
       if (!note.trim()) throw new Error("A note is required");
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) throw new Error("You are signed out — sign in again to continue");
       const { error } = await supabase.from("workflow_transitions").insert({
         entity_type: entityType,
         entity_id: entityId,
-        from_stage: stage ?? "submitted",
-        to_stage: pending,
+        from_status: stage ?? "submitted",
+        to_status: pending,
         note: note.trim(),
+        performed_by: uid,
       });
       if (error) throw error;
       await onChanged?.(pending);
     },
     onSuccess: () => {
-      toast.success(`Marked ${WORKFLOW_LABELS[pending ?? ""]?.toLowerCase()}`);
+      toast.success(`Marked ${(WORKFLOW_LABELS[pending ?? ""] ?? "").toLowerCase()}`);
       queryClient.invalidateQueries({ queryKey: ["workflow-transitions", entityType, entityId] });
       setPending(null);
       setNote("");
@@ -152,9 +155,9 @@ export function WorkflowActions({
           {history.map((h) => (
             <li key={h.id}>
               <span className="font-medium text-foreground">
-                {WORKFLOW_LABELS[h.to_stage] ?? h.to_stage}
+                {WORKFLOW_LABELS[h.to_status] ?? h.to_status}
               </span>{" "}
-              · {h.actor_name ?? "—"} · {formatDateTime(h.created_at)}
+              · {formatDateTime(h.created_at)}
               {h.note ? ` · ${h.note}` : ""}
             </li>
           ))}

@@ -60,9 +60,13 @@ export function MrzScanPanel({
   const save = useMutation({
     mutationFn: async (parsed: MrzResult) => {
       if (!profileId) return;
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid) throw new Error("You are signed out — sign in again to save the scan");
       const { error: err } = await supabase.from("staff_mrz_scans").insert({
         profile_id: profileId,
-        mrz_format: parsed.format,
+        scanned_by: uid,
+        source: hasMrzImageReader() ? "reader" : "manual",
         raw_mrz: parsed.raw,
         document_type: parsed.documentType || null,
         document_number: parsed.documentNumber || null,
