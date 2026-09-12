@@ -4,7 +4,7 @@ export type HolidayDate = { date: string; recurring: boolean };
 
 export function isLeaveHoliday(day: Date, holidays: HolidayDate[]) {
   const iso = format(day, "yyyy-MM-dd");
-  const monthDay = format(day, "MM-dd");
+  const monthDay = iso.slice(5);
   return holidays.some((holiday) =>
     holiday.recurring ? holiday.date.slice(5) === monthDay : holiday.date === iso,
   );
