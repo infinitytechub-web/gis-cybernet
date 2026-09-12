@@ -4957,6 +4957,63 @@ export type Database = {
           },
         ]
       }
+      ghana_card_verifications: {
+        Row: {
+          created_at: string
+          ghana_card_number: string | null
+          id: string
+          method: string
+          note: string | null
+          profile_id: string
+          recorded_dob: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          ghana_card_number?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          profile_id: string
+          recorded_dob?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          ghana_card_number?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          profile_id?: string
+          recorded_dob?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ghana_card_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ghana_card_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ghana_districts: {
         Row: {
           category: string
@@ -12740,8 +12797,15 @@ export type Database = {
           date_joined_service: string | null
           date_of_appointment: string | null
           date_of_birth: string | null
+          deactivated_at: string | null
+          deactivated_by: string | null
+          deactivation_reason: string | null
           department_id: string | null
           digital_address: string | null
+          dob_verification_note: string | null
+          dob_verification_status: string
+          dob_verified_at: string | null
+          dob_verified_by: string | null
           email: string | null
           first_name: string
           form_completed_on: string | null
@@ -12752,10 +12816,15 @@ export type Database = {
           hometown: string | null
           id: string
           intake: number | null
+          is_minor: boolean
           is_number: string | null
           last_name: string
           login_enabled: boolean
           marital_status: string | null
+          minor_review_reason: string | null
+          minor_reviewed_at: string | null
+          minor_reviewed_by: string | null
+          minor_status: string
           number_of_children: number | null
           office: string | null
           org_unit_id: string | null
@@ -12800,8 +12869,15 @@ export type Database = {
           date_joined_service?: string | null
           date_of_appointment?: string | null
           date_of_birth?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          deactivation_reason?: string | null
           department_id?: string | null
           digital_address?: string | null
+          dob_verification_note?: string | null
+          dob_verification_status?: string
+          dob_verified_at?: string | null
+          dob_verified_by?: string | null
           email?: string | null
           first_name: string
           form_completed_on?: string | null
@@ -12812,10 +12888,15 @@ export type Database = {
           hometown?: string | null
           id?: string
           intake?: number | null
+          is_minor?: boolean
           is_number?: string | null
           last_name: string
           login_enabled?: boolean
           marital_status?: string | null
+          minor_review_reason?: string | null
+          minor_reviewed_at?: string | null
+          minor_reviewed_by?: string | null
+          minor_status?: string
           number_of_children?: number | null
           office?: string | null
           org_unit_id?: string | null
@@ -12860,8 +12941,15 @@ export type Database = {
           date_joined_service?: string | null
           date_of_appointment?: string | null
           date_of_birth?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          deactivation_reason?: string | null
           department_id?: string | null
           digital_address?: string | null
+          dob_verification_note?: string | null
+          dob_verification_status?: string
+          dob_verified_at?: string | null
+          dob_verified_by?: string | null
           email?: string | null
           first_name?: string
           form_completed_on?: string | null
@@ -12872,10 +12960,15 @@ export type Database = {
           hometown?: string | null
           id?: string
           intake?: number | null
+          is_minor?: boolean
           is_number?: string | null
           last_name?: string
           login_enabled?: boolean
           marital_status?: string | null
+          minor_review_reason?: string | null
+          minor_reviewed_at?: string | null
+          minor_reviewed_by?: string | null
+          minor_status?: string
           number_of_children?: number | null
           office?: string | null
           org_unit_id?: string | null
@@ -13203,29 +13296,67 @@ export type Database = {
           },
         ]
       }
+      rank_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ranks: {
         Row: {
           abbreviation: string
+          category_id: string | null
           created_at: string
           id: string
           level: number
           name: string
+          sort_order: number | null
         }
         Insert: {
           abbreviation: string
+          category_id?: string | null
           created_at?: string
           id?: string
           level?: number
           name: string
+          sort_order?: number | null
         }
         Update: {
           abbreviation?: string
+          category_id?: string | null
           created_at?: string
           id?: string
           level?: number
           name?: string
+          sort_order?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ranks_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "rank_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recycle_bin: {
         Row: {
@@ -15485,6 +15616,114 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_deactivations: {
+        Row: {
+          action: string
+          created_at: string
+          effective_date: string
+          id: string
+          new_status: string
+          performed_by: string
+          previous_status: string
+          profile_id: string
+          reason: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          new_status: string
+          performed_by: string
+          previous_status: string
+          profile_id: string
+          reason: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          new_status?: string
+          performed_by?: string
+          previous_status?: string
+          profile_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_deactivations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_deactivations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_dependents: {
+        Row: {
+          contact: string | null
+          created_at: string
+          date_of_birth: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          profile_id: string
+          relationship: string | null
+          sex: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          profile_id: string
+          relationship?: string | null
+          sex?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          relationship?: string | null
+          sex?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_dependents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_dependents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_documents: {
         Row: {
           created_at: string
@@ -16016,6 +16255,81 @@ export type Database = {
           },
         ]
       }
+      staff_mrz_scans: {
+        Row: {
+          applied: boolean
+          checksum_valid: boolean
+          created_at: string
+          date_of_birth: string | null
+          document_number: string | null
+          document_type: string | null
+          expiry_date: string | null
+          given_names: string | null
+          id: string
+          issuing_country: string | null
+          nationality: string | null
+          profile_id: string | null
+          raw_mrz: string
+          scanned_by: string
+          sex: string | null
+          source: string
+          surname: string | null
+        }
+        Insert: {
+          applied?: boolean
+          checksum_valid?: boolean
+          created_at?: string
+          date_of_birth?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          expiry_date?: string | null
+          given_names?: string | null
+          id?: string
+          issuing_country?: string | null
+          nationality?: string | null
+          profile_id?: string | null
+          raw_mrz: string
+          scanned_by: string
+          sex?: string | null
+          source?: string
+          surname?: string | null
+        }
+        Update: {
+          applied?: boolean
+          checksum_valid?: boolean
+          created_at?: string
+          date_of_birth?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          expiry_date?: string | null
+          given_names?: string | null
+          id?: string
+          issuing_country?: string | null
+          nationality?: string | null
+          profile_id?: string | null
+          raw_mrz?: string
+          scanned_by?: string
+          sex?: string | null
+          source?: string
+          surname?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_mrz_scans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_mrz_scans_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_request_history: {
         Row: {
           actor: string | null
@@ -16051,6 +16365,81 @@ export type Database = {
           to_status?: string
         }
         Relationships: []
+      }
+      staff_signatures: {
+        Row: {
+          created_at: string
+          device_fingerprint: string | null
+          id: string
+          invalidated_at: string | null
+          invalidated_reason: string | null
+          ip_address: string | null
+          profile_id: string | null
+          record_fingerprint: string
+          record_id: string | null
+          record_type: string
+          signature_data: string
+          signature_hash: string
+          signed_at: string
+          signer_name: string
+          signer_role: string | null
+          signer_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          invalidated_at?: string | null
+          invalidated_reason?: string | null
+          ip_address?: string | null
+          profile_id?: string | null
+          record_fingerprint: string
+          record_id?: string | null
+          record_type: string
+          signature_data: string
+          signature_hash: string
+          signed_at?: string
+          signer_name: string
+          signer_role?: string | null
+          signer_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          invalidated_at?: string | null
+          invalidated_reason?: string | null
+          ip_address?: string | null
+          profile_id?: string | null
+          record_fingerprint?: string
+          record_id?: string | null
+          record_type?: string
+          signature_data?: string
+          signature_hash?: string
+          signed_at?: string
+          signer_name?: string
+          signer_role?: string | null
+          signer_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_signatures_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_signatures_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       status_change_audit: {
         Row: {
@@ -16975,6 +17364,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workflow_transitions: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          from_status: string | null
+          id: string
+          note: string | null
+          performed_by: string
+          signature_id: string | null
+          to_status: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          performed_by: string
+          signature_id?: string | null
+          to_status: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          performed_by?: string
+          signature_id?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_transitions_signature_id_fkey"
+            columns: ["signature_id"]
+            isOneToOne: false
+            referencedRelation: "staff_signatures"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -18862,6 +19295,19 @@ export type Database = {
           unit: string
         }[]
       }
+      staff_review_minor: {
+        Args: { _decision: string; _profile_id: string; _reason: string }
+        Returns: undefined
+      }
+      staff_set_status: {
+        Args: {
+          _effective_date?: string
+          _new_status: string
+          _profile_id: string
+          _reason: string
+        }
+        Returns: undefined
+      }
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       tag_appraisal_audit_batch: {
         Args: {
@@ -19189,7 +19635,14 @@ export type Database = {
       shift_pattern: "8h" | "12h" | "custom"
       shift_rotation_scope: "org" | "department" | "role" | "staff"
       shift_rotation_status: "draft" | "published" | "archived"
-      staff_status: "active" | "inactive" | "study_leave" | "transferred"
+      staff_status:
+        | "active"
+        | "inactive"
+        | "study_leave"
+        | "transferred"
+        | "partially_active"
+        | "retired"
+        | "interdicted"
       transfer_type: "posting" | "transfer"
     }
     CompositeTypes: {
@@ -19462,7 +19915,15 @@ export const Constants = {
       shift_pattern: ["8h", "12h", "custom"],
       shift_rotation_scope: ["org", "department", "role", "staff"],
       shift_rotation_status: ["draft", "published", "archived"],
-      staff_status: ["active", "inactive", "study_leave", "transferred"],
+      staff_status: [
+        "active",
+        "inactive",
+        "study_leave",
+        "transferred",
+        "partially_active",
+        "retired",
+        "interdicted",
+      ],
       transfer_type: ["posting", "transfer"],
     },
   },
