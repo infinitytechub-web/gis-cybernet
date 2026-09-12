@@ -148,6 +148,25 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     onError: (e: any) => toast.error(e?.message || "That action could not be completed"),
   });
 
+  const remove = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc("staff_list_import_delete", { _import_id: record.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Uploaded file deleted");
+      setDeleteOpen(false);
+      logAdminAudit({
+        action: "staff_list_import_deleted",
+        entityType: "staff_list_imports",
+        entityId: record.id,
+        details: { file_name: record.file_name },
+      });
+      qc.invalidateQueries({ queryKey: ["staff-list-imports"] });
+    },
+    onError: (e: any) => toast.error(e?.message || "That file could not be deleted"),
+  });
+
   const createAccounts = async (ids: string[]) => {
     const creds: Array<{ staffId: string; name: string; username: string; password: string }> = [];
     for (let i = 0; i < ids.length; i += 150) {
