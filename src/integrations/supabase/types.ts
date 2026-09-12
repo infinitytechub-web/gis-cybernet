@@ -19189,7 +19189,14 @@ export type Database = {
       shift_pattern: "8h" | "12h" | "custom"
       shift_rotation_scope: "org" | "department" | "role" | "staff"
       shift_rotation_status: "draft" | "published" | "archived"
-      staff_status: "active" | "inactive" | "study_leave" | "transferred"
+      staff_status:
+        | "active"
+        | "inactive"
+        | "study_leave"
+        | "transferred"
+        | "partially_active"
+        | "retired"
+        | "interdicted"
       transfer_type: "posting" | "transfer"
     }
     CompositeTypes: {
@@ -19462,7 +19469,15 @@ export const Constants = {
       shift_pattern: ["8h", "12h", "custom"],
       shift_rotation_scope: ["org", "department", "role", "staff"],
       shift_rotation_status: ["draft", "published", "archived"],
-      staff_status: ["active", "inactive", "study_leave", "transferred"],
+      staff_status: [
+        "active",
+        "inactive",
+        "study_leave",
+        "transferred",
+        "partially_active",
+        "retired",
+        "interdicted",
+      ],
       transfer_type: ["posting", "transfer"],
     },
   },
