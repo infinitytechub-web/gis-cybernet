@@ -15782,6 +15782,112 @@ export type Database = {
           },
         ]
       }
+      staff_list_import_rows: {
+        Row: {
+          created_at: string
+          id: string
+          import_id: string
+          outcome: string
+          payload: Json
+          profile_id: string | null
+          reason: string | null
+          row_no: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          import_id: string
+          outcome?: string
+          payload: Json
+          profile_id?: string | null
+          reason?: string | null
+          row_no: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          import_id?: string
+          outcome?: string
+          payload?: Json
+          profile_id?: string | null
+          reason?: string | null
+          row_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_list_import_rows_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "staff_list_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_list_imports: {
+        Row: {
+          committed_at: string | null
+          created_at: string
+          file_name: string
+          id: string
+          matched_count: number
+          new_count: number
+          notes: string | null
+          ranks_created: number
+          retired_count: number
+          skipped_count: number
+          status: string
+          target_org_unit_id: string | null
+          total_rows: number
+          units_created: number
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          committed_at?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          matched_count?: number
+          new_count?: number
+          notes?: string | null
+          ranks_created?: number
+          retired_count?: number
+          skipped_count?: number
+          status?: string
+          target_org_unit_id?: string | null
+          total_rows?: number
+          units_created?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          committed_at?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          matched_count?: number
+          new_count?: number
+          notes?: string | null
+          ranks_created?: number
+          retired_count?: number
+          skipped_count?: number
+          status?: string
+          target_org_unit_id?: string | null
+          total_rows?: number
+          units_created?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_list_imports_target_org_unit_id_fkey"
+            columns: ["target_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_mapping_imports: {
         Row: {
           created_at: string
@@ -17234,6 +17340,7 @@ export type Database = {
         Returns: number
       }
       command_reach_units: { Args: { _user_id: string }; Returns: string[] }
+      commit_staff_list_import: { Args: { _import_id: string }; Returns: Json }
       compute_interlink_next_run: {
         Args: {
           _day_of_month: number
