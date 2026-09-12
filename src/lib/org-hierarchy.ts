@@ -32,7 +32,7 @@ export type OrgUnitType =
  * establishment order:
  *   Directorate (HQ) → Management Members → Regional Commands →
  *   Commandant / Commanding Officer commands → Sector Commands →
- *   Departments → Sections → Units → Controls.
+ *   Departments → Sections → Units → Staffs.
  */
 export const ORG_UNIT_TYPES: OrgUnitType[] = [
   "directorate",
@@ -61,7 +61,7 @@ export const ORG_UNIT_TYPE_LABELS: Record<OrgUnitType, string> = {
   section: "Section",
   station: "Station",
   unit: "Unit",
-  control: "Control",
+  control: "Staffs",
 };
 
 export interface OrgUnit {
