@@ -130,6 +130,7 @@ const RoleAssignmentsAdmin = lazy(() => import("./pages/RoleAssignmentsAdmin"));
 const StaffPortal = lazy(() => import("./pages/StaffPortal"));
 const AuditLogDashboard = lazy(() => import("./pages/AuditLogDashboard"));
 const StaffMappingImport = lazy(() => import("./pages/StaffMappingImport"));
+const StaffListImport = lazy(() => import("./pages/StaffListImport"));
 const BioDataFormSetup = lazy(() => import("./pages/BioDataFormSetup"));
 
 const ProfileChangeApprovals = lazy(() => import("./pages/ProfileChangeApprovals"));
@@ -213,6 +214,7 @@ function App() {
           <Route path="/shifts" element={<ProtectedRoute module="shifts"><Layout><Shifts /></Layout></ProtectedRoute>} />
           <Route path="/roster" element={<ProtectedRoute module="roster"><Layout><DutyRoster /></Layout></ProtectedRoute>} />
           <Route path="/roster/import" element={<ProtectedRoute module="roster-import"><Layout><DutyRosterImport /></Layout></ProtectedRoute>} />
+          <Route path="/staff-list/import" element={<ProtectedRoute module="staff-list-import"><Layout><StaffListImport /></Layout></ProtectedRoute>} />
           <Route path="/guard-schedule" element={<ProtectedRoute module="guard-schedule"><Layout><GuardSchedule /></Layout></ProtectedRoute>} />
           <Route path="/guard-schedule/import" element={<ProtectedRoute module="guard-schedule-import"><Layout><GuardScheduleImport /></Layout></ProtectedRoute>} />
           <Route path="/route-history" element={<ProtectedRoute module="route-history"><Layout><RouteHistory /></Layout></ProtectedRoute>} />

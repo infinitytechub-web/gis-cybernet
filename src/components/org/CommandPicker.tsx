@@ -3,7 +3,7 @@
  * establishment, in the exact order:
  *   Directorate (HQ) → Management Members → Regional Commands →
  *   Commandant / ISA & CO / Assin Fosu, Tepa & ITTraS → Sector Commands →
- *   Departments → Sections → Units → Controls.
+ *   Departments → Sections → Units → Staffs.
  *
  * Used by the Staff Roster, the HR hub and the positions register so all three
  * filter the same way. Selecting a node means "this node and everything below

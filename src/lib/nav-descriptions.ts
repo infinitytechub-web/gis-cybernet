@@ -71,6 +71,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/command-role-audit": "Audit trail of command role grants and removals.",
   "/role-assignments": "Assign system roles to individual staff.",
   "/staff-mapping-import": "Bulk import staff and map them to units.",
+  "/staff-list/import": "Upload a staff list, preview every row, then commit it to a command.",
   "/audit-log": "System-wide audit trail of sensitive actions.",
   "/rum-analytics": "Real-user performance and error monitoring.",
   "/branding": "Customize names, logos, colours, login screen and emails.",

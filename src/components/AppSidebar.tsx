@@ -203,6 +203,7 @@ const adminSecurityItems = [
 
 const adminDataItems = [
   { title: "Roster Import", url: "/roster/import", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300" },
+  { title: "Staff List Import", url: "/staff-list/import", icon: FileSpreadsheet, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Guard PDF Import", url: "/guard-schedule/import", icon: FileSpreadsheet, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Staff Mapping Import", url: "/staff-mapping-import", icon: Building2, iconColor: "text-purple-700 dark:text-purple-300" },
   { title: "RUM Analytics", url: "/rum-analytics", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400" },
