@@ -19295,6 +19295,19 @@ export type Database = {
           unit: string
         }[]
       }
+      staff_review_minor: {
+        Args: { _decision: string; _profile_id: string; _reason: string }
+        Returns: undefined
+      }
+      staff_set_status: {
+        Args: {
+          _effective_date?: string
+          _new_status: string
+          _profile_id: string
+          _reason: string
+        }
+        Returns: undefined
+      }
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       tag_appraisal_audit_batch: {
         Args: {
