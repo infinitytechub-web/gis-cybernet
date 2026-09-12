@@ -6,7 +6,7 @@
  * (leave requests and profile change requests). No command-tier data is shown,
  * and RLS already limits every query below to the signed-in officer's rows.
  */
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
@@ -18,6 +18,8 @@ import {
   CalendarDays,
   Fingerprint,
   ArrowRight,
+  Search,
+  Users,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -27,14 +29,18 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckInOut } from "@/components/attendance/CheckInOut";
 import { MyHoursDashboard } from "@/components/attendance/MyHoursDashboard";
 import { LeaveRequestForm } from "@/components/leave/LeaveRequestForm";
 import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
+import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
+import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 import { formatDate } from "@/lib/date-format";
 import { useMyDirectoryAccess } from "@/hooks/useDirectoryPermissions";
+
 
 const MAX_DAILY_HOURS = 16;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
@@ -62,6 +68,20 @@ type ChangeRow = {
   created_at: string;
   requested_changes: Record<string, unknown> | null;
 };
+
+type CommandOfficerRow = {
+  id: string;
+  staff_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  rank_name: string | null;
+  department_name: string | null;
+  shift_group: string | null;
+  status: string | null;
+  unit_name: string | null;
+  is_self: boolean;
+};
+
 
 function hoursOf(row: WeekRow): number {
   if (!row.check_in || !row.check_out) return 0;
@@ -172,6 +192,34 @@ export default function MyDashboard() {
     },
   });
 
+  /**
+   * Command-scoped staff search. `my_command_officers()` resolves the officer's
+   * own posting server-side and returns nothing when they have no command or no
+   * View switch, so the boundary cannot be widened from the browser.
+   */
+  const [staffSearch, setStaffSearch] = useState("");
+  const { data: commandOfficers = [], isLoading: officersLoading } = useQuery({
+    queryKey: ["portal-command-officers", profileId],
+    enabled: !!profileId && canOpenPortal,
+    queryFn: async (): Promise<CommandOfficerRow[]> => {
+      const { data, error } = await supabase.rpc("my_command_officers");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CommandOfficerRow[];
+    },
+  });
+
+  const matchedOfficers = useMemo(() => {
+    const q = staffSearch.trim().toLowerCase();
+    if (!q) return commandOfficers;
+    return commandOfficers.filter((o) =>
+      [o.staff_id, o.first_name, o.last_name, o.rank_name, o.department_name, o.unit_name]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q)),
+    );
+  }, [commandOfficers, staffSearch]);
+
+
+
   const weekByDate = useMemo(() => {
     const m = new Map<string, WeekRow>();
     for (const r of weekRows) if (!m.has(r.date)) m.set(r.date, r);
@@ -236,6 +284,10 @@ export default function MyDashboard() {
             <Button asChild variant="secondary" size="sm">
               <Link to="/my-portal">My letters</Link>
             </Button>
+            <Button asChild size="sm">
+              <Link to="/command-portal">Command portal</Link>
+            </Button>
+
           </div>
         }
       />
@@ -294,10 +346,92 @@ export default function MyDashboard() {
           <TabsTrigger value="clock">Clock in / out</TabsTrigger>
           <TabsTrigger value="hours">My hours</TabsTrigger>
           <TabsTrigger value="leave">Leave</TabsTrigger>
+          <TabsTrigger value="staff">Staff search</TabsTrigger>
+          <TabsTrigger value="stores">Stores</TabsTrigger>
+          <TabsTrigger value="calendar">Leave calendar</TabsTrigger>
           <TabsTrigger value="approvals">
             Approvals{pendingCount > 0 ? ` (${pendingCount})` : ""}
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="staff" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Users className="h-4 w-4" aria-hidden="true" /> Staff in my command
+                  <Badge variant="secondary">{matchedOfficers.length}</Badge>
+                </CardTitle>
+                <CardDescription>Only officers posted to your own command are listed.</CardDescription>
+              </div>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  value={staffSearch}
+                  onChange={(e) => setStaffSearch(e.target.value)}
+                  placeholder="Search name, staff ID or rank"
+                  aria-label="Search staff in my command"
+                  className="w-full pl-8 sm:w-64"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Staff ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Shift</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {officersLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                        Loading your command…
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    matchedOfficers.map((o) => (
+                      <TableRow key={o.id} className={o.is_self ? "bg-muted/40" : undefined}>
+                        <TableCell className="font-mono text-xs">{o.staff_id ?? "—"}</TableCell>
+                        <TableCell className="font-medium">
+                          {[o.last_name, o.first_name].filter(Boolean).join(", ") || "—"}
+                          {o.is_self && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                        </TableCell>
+                        <TableCell>{o.rank_name ?? "—"}</TableCell>
+                        <TableCell>{o.department_name ?? "—"}</TableCell>
+                        <TableCell>{o.shift_group ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={o.status === "active" ? "default" : "secondary"}>{o.status ?? "—"}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {!officersLoading && matchedOfficers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                        No staff records are available for your command scope.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="stores">
+          <OfficerStoresPanel />
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <ApprovedLeaveCalendarWidget />
+        </TabsContent>
+
 
         <TabsContent value="clock" className="space-y-4">
           <CheckInOut />
