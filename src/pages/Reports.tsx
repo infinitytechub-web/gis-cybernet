@@ -199,7 +199,7 @@ export default function Reports() {
       case "staff":
         return {
           title: "Staff Summary Report",
-          headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"],
+          headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Sex", "Status", "Phone"],
           rows: staff.map((s: any) => [
             s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—", s.departments?.name ?? "—",
             s.unit ?? "—", s.shift_group ?? "—", s.gender ?? "—", s.status, s.phone ?? "—",

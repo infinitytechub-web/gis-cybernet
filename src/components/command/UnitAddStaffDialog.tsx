@@ -263,7 +263,7 @@ export function UnitAddStaffDialog({
               <GhanaPhoneInput id="add-phone" value={phone} onChange={setPhone} />
             </div>
             <div>
-              <Label htmlFor="add-gender">Gender</Label>
+              <Label htmlFor="add-gender">Sex</Label>
               <Select value={gender} onValueChange={setGender}>
                 <SelectTrigger id="add-gender"><SelectValue placeholder="Select gender" /></SelectTrigger>
                 <SelectContent>

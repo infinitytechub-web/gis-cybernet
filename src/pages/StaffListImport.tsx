@@ -293,7 +293,7 @@ export default function StaffListImport() {
   const exportPreview = () => {
     if (!rows) return;
     const csv = [
-      "Row,Last name,First name,Rank,Unit,Shift,Intake,Region,Phone,Gender,Sign-in email,Outcome,Reason",
+      "Row,Last name,First name,Rank,Unit,Shift,Intake,Region,Phone,Sex,Sign-in email,Outcome,Reason",
       ...rows.map((r) =>
         [
           String(r.row_no), r.last_name, r.first_name, r.rank, r.unit, r.shift, r.intake,

@@ -285,7 +285,7 @@ function ComposeTab({ userId }: { userId: string }) {
           .from("profiles")
           .select("staff_id, last_name, first_name, unit, shift_group, gender, status, phone, ranks(abbreviation), departments(name)")
           .order("last_name");
-        headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Gender", "Status", "Phone"];
+        headers = ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Sex", "Status", "Phone"];
         rows = (data ?? []).map((s: any) => [
           s.staff_id ?? "—", s.last_name ?? "", s.first_name ?? "",
           s.ranks?.abbreviation ?? "—", s.departments?.name ?? "—",

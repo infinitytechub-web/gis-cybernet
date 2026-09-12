@@ -51,7 +51,7 @@ const FIELDS: Array<{ key: string; label: string }> = [
   { key: "intake", label: "Intake" },
   { key: "region", label: "Region" },
   { key: "phone", label: "Phone" },
-  { key: "gender", label: "Gender" },
+  { key: "gender", label: "Sex" },
 ];
 
 export default function StaffListImportActions({ record }: { record: ImportRecord }) {
