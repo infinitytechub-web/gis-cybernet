@@ -85,7 +85,7 @@ export function NightGuardDutySummary({ nightGuardStaff, todayDutyStaff }: Props
       s.lastLogout ? format(s.lastLogout, "HH:mm:ss") : "—",
     ]);
 
-  const headers = ["Name", "Staff ID", "Gender", "Reported", "Status", "First Login", "Last Logout"];
+  const headers = ["Name", "Staff ID", "Sex", "Reported", "Status", "First Login", "Last Logout"];
   const dateLabel = format(today, "dd/MM/yyyy");
 
   return (
@@ -160,7 +160,7 @@ export function NightGuardDutySummary({ nightGuardStaff, todayDutyStaff }: Props
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="px-3 py-2 text-left font-medium">Staff</th>
-                    <th className="px-2 py-2 text-left font-medium hidden sm:table-cell">Gender</th>
+                    <th className="px-2 py-2 text-left font-medium hidden sm:table-cell">Sex</th>
                     <th className="px-2 py-2 text-center font-medium">Status</th>
                     <th className="px-2 py-2 text-center font-medium">Login</th>
                     <th className="px-2 py-2 text-center font-medium">Logout</th>

@@ -231,7 +231,7 @@ export default function ApprovalsQueue() {
                 {reviewApp.subject && <div className="col-span-2"><span className="text-muted-foreground">Subject:</span> {reviewApp.subject}</div>}
                 {reviewApp.purpose && <div className="col-span-2"><span className="text-muted-foreground">Purpose:</span> {reviewApp.purpose}</div>}
                 {reviewApp.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewApp.phone}</div>}
-                {reviewApp.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewApp.gender}</div>}
+                {reviewApp.gender && <div><span className="text-muted-foreground">Sex:</span> {reviewApp.gender}</div>}
                 {reviewApp.date_of_birth && <div><span className="text-muted-foreground">DOB:</span> {reviewApp.date_of_birth}</div>}
                 {reviewApp.created_at && <div className="col-span-2"><span className="text-muted-foreground">Submitted:</span> {format(new Date(reviewApp.created_at), "dd/MM/yyyy HH:mm")}</div>}
                 {reviewApp.notes && <div className="col-span-2 whitespace-pre-wrap"><span className="text-muted-foreground">Existing notes:</span><br />{reviewApp.notes}</div>}

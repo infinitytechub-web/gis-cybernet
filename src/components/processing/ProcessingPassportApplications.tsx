@@ -216,7 +216,7 @@ export default function ProcessingPassportApplications() {
               <div><span className="text-muted-foreground">Type:</span> {reviewApp.application_type}</div>
               <div><span className="text-muted-foreground">DOB:</span> {reviewApp.date_of_birth}</div>
               {reviewApp.phone && <div><span className="text-muted-foreground">Phone:</span> {reviewApp.phone}</div>}
-              {reviewApp.gender && <div><span className="text-muted-foreground">Gender:</span> {reviewApp.gender}</div>}
+              {reviewApp.gender && <div><span className="text-muted-foreground">Sex:</span> {reviewApp.gender}</div>}
               {reviewApp.marital_status && <div><span className="text-muted-foreground">Marital Status:</span> {reviewApp.marital_status}</div>}
               {reviewApp.address && <div className="col-span-2"><span className="text-muted-foreground">Address:</span> {reviewApp.address}</div>}
               {reviewApp.foreign_address && <div className="col-span-2"><span className="text-muted-foreground">Foreign Address:</span> {reviewApp.foreign_address}</div>}
