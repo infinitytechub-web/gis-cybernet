@@ -40,6 +40,8 @@ import { csvCellQuoted } from "@/lib/csv-safe";
 import {
   parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, type StaffListRow,
 } from "@/lib/staff-list-import";
+import StaffListImportActions from "@/components/staff/StaffListImportActions";
+
 
 const COMMAND_TYPES = ["sector", "command", "station", "district", "regional"];
 
@@ -222,7 +224,11 @@ export default function StaffListImport() {
     }
   };
 
-  const commit = async () => {
+  /**
+   * Stage the parsed rows for approval. Nothing touches staff records here —
+   * an administrator approves the file afterwards, which commits it.
+   */
+  const submitForApproval = async () => {
     if (!rows || !targetUnit) return;
     setCommitting(true);
     try {
@@ -236,6 +242,7 @@ export default function StaffListImport() {
           total_rows: rows.length,
           skipped_count: summary.skipped,
           status: "preview",
+          approval_status: "pending",
         })
         .select("id")
         .single();
@@ -265,61 +272,23 @@ export default function StaffListImport() {
         if (error) throw error;
       }
 
-      const { data: res, error: rpcErr } = await supabase.rpc("commit_staff_list_import", {
-        _import_id: imp.id,
+      await supabase.from("staff_list_import_audit").insert({
+        import_id: imp.id,
+        action: "uploaded",
+        performed_by: me?.user?.id ?? "",
+        details: { file: fileName, rows: rows.length, skipped: summary.skipped } as never,
       });
-      if (rpcErr) throw rpcErr;
-      const out = res as any;
-      setResult({
-        new: out.new ?? 0,
-        matched: out.matched ?? 0,
-        retired: out.retired ?? 0,
-        ranks_created: out.ranks_created ?? 0,
-        units_created: out.units_created ?? 0,
-      });
-      toast.success(
-        `Committed — ${out.new ?? 0} added, ${out.matched ?? 0} updated, ${out.retired ?? 0} retired`,
-      );
 
-      // Sign-in accounts for the newly added officers, in batches.
-      const createdIds: string[] = (out.created_profile_ids ?? []) as string[];
-      if (createdIds.length) {
-        const creds: Array<{ staffId: string; name: string; username: string; password: string }> = [];
-        for (let i = 0; i < createdIds.length; i += 150) {
-          const { data: acc, error: accErr } = await supabase.functions.invoke("bulk-create-accounts", {
-            body: { profile_ids: createdIds.slice(i, i + 150), role: "staff" },
-          });
-          if (accErr) {
-            toast.error("Some accounts could not be created — you can retry from Staff Approvals");
-            break;
-          }
-          creds.push(...(((acc as any)?.created ?? []) as any[]));
-        }
-        if (creds.length) {
-          const csv = [
-            "Staff ID,Name,Sign-in email,Temporary password",
-            ...creds.map((c) =>
-              [c.staffId, c.name, `${c.username}@gis.local`, c.password].map(csvCellQuoted).join(","),
-            ),
-          ].join("\n");
-          downloadCSVString(csv, `staff-accounts-${new Date().toISOString().slice(0, 10)}.csv`);
-          toast.success(`${creds.length} account(s) created — credential sheet downloaded`);
-        }
-      }
-
+      toast.success(`${summary.ready} row(s) saved — review then approve below`);
       qc.invalidateQueries({ queryKey: ["staff-list-imports"] });
-      qc.invalidateQueries({ queryKey: ["staff-list-import-people"] });
-      qc.invalidateQueries({ queryKey: ["staff-list-import-units"] });
-      qc.invalidateQueries({ queryKey: ["staff-list-import-ranks"] });
-      qc.invalidateQueries({ queryKey: ["staff"] });
-      qc.invalidateQueries({ queryKey: ["staff-roster"] });
       setRows(null);
     } catch (e: any) {
-      toast.error(e?.message || "Commit failed");
+      toast.error(e?.message || "Could not save that file");
     } finally {
       setCommitting(false);
     }
   };
+
 
   const exportPreview = () => {
     if (!rows) return;
@@ -445,14 +414,15 @@ export default function StaffListImport() {
                 <Download className="mr-2 h-4 w-4" aria-hidden="true" />
                 Export preview
               </Button>
-              <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0} onClick={commit}>
+              <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0} onClick={submitForApproval}>
                 {committing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Rocket className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
-                Commit {summary.ready} row(s)
+                Save {summary.ready} row(s) for approval
               </Button>
+
             </div>
             {!targetUnit && (
               <CardDescription className="text-xs text-destructive">
@@ -532,7 +502,7 @@ export default function StaffListImport() {
             <p className="text-sm text-muted-foreground">No staff list has been imported yet.</p>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[980px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>File</TableHead>
@@ -542,6 +512,7 @@ export default function StaffListImport() {
                     <TableHead>Updated</TableHead>
                     <TableHead>Retired</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -554,14 +525,31 @@ export default function StaffListImport() {
                       <TableCell className="text-sm">{h.matched_count}</TableCell>
                       <TableCell className="text-sm">{h.retired_count}</TableCell>
                       <TableCell>
-                        <Badge variant={h.status === "committed" ? "secondary" : "outline"} className="text-[10px]">
-                          {h.status}
+                        <Badge
+                          variant={
+                            h.status === "committed" ? "secondary"
+                            : h.approval_status === "rejected" ? "destructive"
+                            : "outline"
+                          }
+                          className="text-[10px]"
+                        >
+                          {h.status === "committed"
+                            ? "committed"
+                            : h.approval_status === "rejected"
+                              ? "rejected"
+                              : "awaiting approval"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end">
+                          <StaffListImportActions record={h} />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+
             </div>
           )}
         </CardContent>
