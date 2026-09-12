@@ -27,8 +27,9 @@ import { DateInput } from "@/components/ui/date-input";
 import { CalendarDays, ChevronLeft, ChevronRight, MousePointer2, PlaneTakeoff } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
-import { format, startOfMonth, endOfMonth, addMonths, eachDayOfInterval, isSameDay, differenceInCalendarDays, addDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, addMonths, eachDayOfInterval, isSameDay, differenceInCalendarDays, addDays, isWeekend } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+import { countLeaveDays, isLeaveHoliday, type HolidayDate } from "@/lib/leave-days";
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
 
@@ -116,6 +117,17 @@ export default function LeaveCalendar() {
     },
   });
 
+  const { data: holidays = [] } = useQuery({
+    queryKey: ["leave-calendar-holidays", format(month, "yyyy-MM")],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("holidays").select("date, recurring");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as HolidayDate[];
+    },
+  });
+
+  const blockedDay = useCallback((day: Date) => isWeekend(day) || isLeaveHoliday(day, holidays), [holidays]);
+
   /** Staff rows: everyone with leave this month, plus always your own row. */
   const rows = useMemo(() => {
     const map = new Map<string, { id: string; name: string; staffId: string | null }>();
@@ -174,6 +186,9 @@ export default function LeaveCalendar() {
       if (!formProfileId) throw new Error("No staff member selected");
       if (!startDate || !endDate) throw new Error("Please pick both dates");
       if (new Date(endDate) < new Date(startDate)) throw new Error("End date must be on or after the start date");
+      if (type === "annual" && (blockedDay(new Date(`${startDate}T00:00:00`)) || blockedDay(new Date(`${endDate}T00:00:00`)))) {
+        throw new Error("Annual leave must start and end on a working day");
+      }
       const { error } = await supabase.from("leave_requests").insert({
         profile_id: formProfileId,
         type,
@@ -226,17 +241,24 @@ export default function LeaveCalendar() {
       openNew(d.profileId, iso(days[a]), iso(days[b]));
     }
     if (d.kind === "move" && d.requestId && d.origStart && d.origEnd && d.delta) {
+      const request = leave.find((row) => row.id === d.requestId);
+      const movedStart = addDays(new Date(`${d.origStart}T00:00:00`), d.delta);
+      const movedEnd = addDays(new Date(`${d.origEnd}T00:00:00`), d.delta);
+      if (request?.type === "annual" && (blockedDay(movedStart) || blockedDay(movedEnd))) {
+        toast.error("Annual leave must start and end on a working day");
+        return;
+      }
       moveRequest.mutate({
         id: d.requestId,
-        start: iso(addDays(new Date(d.origStart), d.delta)),
-        end: iso(addDays(new Date(d.origEnd), d.delta)),
+        start: iso(movedStart),
+        end: iso(movedEnd),
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, moveRequest]);
+  }, [blockedDay, days, leave, moveRequest]);
 
   const onCellDown = (profileId: string, dayIndex: number) => (e: React.PointerEvent) => {
-    if (!canEditRow(profileId)) return;
+    if (!canEditRow(profileId) || blockedDay(days[dayIndex])) return;
     e.preventDefault();
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
     setDragState({ kind: "select", profileId, anchor: dayIndex, current: dayIndex });
@@ -244,7 +266,7 @@ export default function LeaveCalendar() {
 
   const onCellEnter = (profileId: string, dayIndex: number) => () => {
     const d = dragRef.current;
-    if (d?.kind === "select" && d.profileId === profileId) {
+    if (d?.kind === "select" && d.profileId === profileId && !blockedDay(days[dayIndex])) {
       setDragState({ ...d, current: dayIndex });
     }
   };
@@ -306,9 +328,9 @@ export default function LeaveCalendar() {
           const e = new Date(`${r.end_date}T00:00:00`);
           const a = s < month ? month : s;
           const b = e > endOfMonth(month) ? endOfMonth(month) : e;
-          return sum + Math.max(0, differenceInCalendarDays(b, a) + 1);
+          return sum + countLeaveDays(iso(a), iso(b), r.type, holidays);
         }, 0),
-    [leave, month]
+    [holidays, leave, month]
   );
 
   return (
@@ -327,7 +349,7 @@ export default function LeaveCalendar() {
               {format(month, "MMMM yyyy")}
             </CardTitle>
             <CardDescription>
-              {rows.length} staff · {approvedDays} approved leave day(s) this month
+              {rows.length} staff · {approvedDays} approved entitlement day(s) this month
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -348,6 +370,7 @@ export default function LeaveCalendar() {
             <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-emerald-500/85" /> Approved</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-amber-400/90" /> Pending (draggable)</span>
             <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-destructive/70" /> Rejected</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded border bg-muted/80" /> Weekend / holiday</span>
             <span className="flex items-center gap-1.5"><MousePointer2 className="h-3.5 w-3.5" /> Drag empty days to request leave</span>
           </div>
 
@@ -366,7 +389,8 @@ export default function LeaveCalendar() {
                     <div
                       key={iso(d)}
                       style={{ width: CELL }}
-                      className={`py-2 text-center text-[10px] leading-tight ${
+                      title={isLeaveHoliday(d, holidays) ? "Public holiday" : isWeekend(d) ? "Weekend" : undefined}
+                      className={`py-2 text-center text-[10px] leading-tight ${blockedDay(d) ? "bg-muted/80" : ""} ${
                         isSameDay(d, new Date()) ? "font-bold text-primary" : "text-muted-foreground"
                       }`}
                     >
@@ -396,8 +420,8 @@ export default function LeaveCalendar() {
                         onPointerDown={onCellDown(row.id, i)}
                         onPointerEnter={onCellEnter(row.id, i)}
                         className={`border-l ${i === days.length - 1 ? "border-r" : ""} ${
-                          inSelection(row.id, i) ? "bg-primary/25" : "hover:bg-muted/60"
-                        } ${canEditRow(row.id) ? "cursor-crosshair" : ""}`}
+                          blockedDay(d) ? "bg-muted/80 cursor-not-allowed" : inSelection(row.id, i) ? "bg-primary/25" : "hover:bg-muted/60"
+                        } ${canEditRow(row.id) && !blockedDay(d) ? "cursor-crosshair" : ""}`}
                         aria-label={`${row.name} ${format(d, "d MMM yyyy")}`}
                       />
                     ))}
