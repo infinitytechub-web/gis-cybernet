@@ -268,7 +268,13 @@ export default function Login() {
         _device_fingerprint: fp,
         _user_agent: ua,
       });
-      navigate("/dashboard");
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user?.id ?? "")
+        .eq("role", "admin")
+        .limit(1);
+      navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/command-portal", { replace: true });
     } catch (e: any) {
       const reason = e?.message || "Invalid code";
       const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
@@ -286,7 +292,7 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
-  }, [mfaFactorId, otp, staffId, navigate, toast]);
+  }, [mfaFactorId, otp, staffId, navigate, toast, user?.id]);
 
   const handleCancelMfa = useCallback(async () => {
     try { await signOut(); } catch { /* ignore */ }
