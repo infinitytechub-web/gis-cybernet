@@ -339,7 +339,7 @@ export default function StaffListImport() {
     <div className="space-y-6">
       <PageHeader
         title="Staff list import"
-        description="Upload a staff list, check every row, then commit it to the system."
+        subtitle="Upload a staff list, check every row, then commit it to the system."
         icon={FileSpreadsheet}
       />
 
