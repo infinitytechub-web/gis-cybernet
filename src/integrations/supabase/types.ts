@@ -15782,6 +15782,44 @@ export type Database = {
           },
         ]
       }
+      staff_list_import_audit: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json
+          id: string
+          import_id: string
+          performed_by: string
+          row_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json
+          id?: string
+          import_id: string
+          performed_by?: string
+          row_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          import_id?: string
+          performed_by?: string
+          row_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_list_import_audit_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "staff_list_imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_list_import_rows: {
         Row: {
           created_at: string
@@ -15825,6 +15863,7 @@ export type Database = {
       }
       staff_list_imports: {
         Row: {
+          approval_status: string
           committed_at: string | null
           created_at: string
           file_name: string
@@ -15834,6 +15873,9 @@ export type Database = {
           notes: string | null
           ranks_created: number
           retired_count: number
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           skipped_count: number
           status: string
           target_org_unit_id: string | null
@@ -15843,6 +15885,7 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          approval_status?: string
           committed_at?: string | null
           created_at?: string
           file_name: string
@@ -15852,6 +15895,9 @@ export type Database = {
           notes?: string | null
           ranks_created?: number
           retired_count?: number
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           skipped_count?: number
           status?: string
           target_org_unit_id?: string | null
@@ -15861,6 +15907,7 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          approval_status?: string
           committed_at?: string | null
           created_at?: string
           file_name?: string
@@ -15870,6 +15917,9 @@ export type Database = {
           notes?: string | null
           ranks_created?: number
           retired_count?: number
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           skipped_count?: number
           status?: string
           target_org_unit_id?: string | null
@@ -18780,6 +18830,14 @@ export type Database = {
           target_staff_id: string
           user_agent: string
         }[]
+      }
+      staff_list_import_edit_row: {
+        Args: { _outcome?: string; _payload: Json; _row_id: string }
+        Returns: Json
+      }
+      staff_list_import_review: {
+        Args: { _decision: string; _import_id: string; _notes?: string }
+        Returns: Json
       }
       staff_mapping_rows: {
         Args: never
