@@ -6,13 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { differenceInDays } from "date-fns";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { CheckCircle2, Clock, Download, FileText, XCircle } from "lucide-react";
 import { generateLeaveLetter, downloadPdf } from "@/lib/branded-letter-pdf";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { canAccessModule } from "@/lib/rbac";
 import { toast } from "sonner";
+import { countLeaveDays, type HolidayDate } from "@/lib/leave-days";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
@@ -26,6 +26,14 @@ const statusTone = (s: string) =>
 export function MyLeaveHistory() {
   const { user, role } = useAuth();
   const [filter, setFilter] = useState<StatusFilter>("all");
+  const { data: holidays = [] } = useQuery({
+    queryKey: ["leave-day-holidays"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("holidays").select("date, recurring");
+      if (error) throw error;
+      return (data ?? []) as HolidayDate[];
+    },
+  });
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -80,7 +88,7 @@ export function MyLeaveHistory() {
     (r.status === "approved" || r.status === "rejected") &&
     !!r.decided_at;
 
-  const daysFor = (r: any) => differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+  const daysFor = (r: any) => countLeaveDays(r.start_date, r.end_date, r.type, holidays);
   const approverName = (r: any) =>
     r.approver ? `${r.approver.first_name ?? ""} ${r.approver.last_name ?? ""}`.trim() : "";
 
@@ -171,7 +179,7 @@ export function MyLeaveHistory() {
               </TableHeader>
               <TableBody>
                 {rows.map((r: any) => {
-                  const days = differenceInDays(new Date(r.end_date), new Date(r.start_date)) + 1;
+                  const days = daysFor(r);
                   const approver = r.approver
                     ? `${r.approver.first_name ?? ""} ${r.approver.last_name ?? ""}`.trim()
                     : "";
