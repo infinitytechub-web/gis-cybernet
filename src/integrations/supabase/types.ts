@@ -18368,6 +18368,10 @@ export type Database = {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
       }
+      has_profile_oversight_role: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -19262,6 +19266,26 @@ export type Database = {
           target_name: string
           target_staff_id: string
           user_agent: string
+        }[]
+      }
+      staff_directory_rows: {
+        Args: never
+        Returns: {
+          department_id: string
+          department_name: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          photo_url: string
+          rank_abbreviation: string
+          rank_id: string
+          rank_name: string
+          shift_group: string
+          staff_id: string
+          status: string
+          unit: string
+          user_id: string
         }[]
       }
       staff_list_import_delete: { Args: { _import_id: string }; Returns: Json }
