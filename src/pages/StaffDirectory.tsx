@@ -47,22 +47,27 @@ export default function StaffDirectory() {
   const [rankFilter, setRankFilter] = useState("all");
   const [page, setPage] = useState(1);
 
+  // Directory data comes from a server-side routine that returns only
+  // directory-safe columns (name, staff number, rank, unit, shift, status,
+  // photo, contact number). Confidential fields — date of birth,
+  // identification numbers, addresses, KYC — are never sent to this screen.
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ["directory-staff"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*, ranks(*), departments(*)")
-        .eq("status", "active")
-        .order("last_name");
+      const { data, error } = await (supabase as any).rpc("staff_directory_rows");
       if (error) throw error;
-      const profiles = data as ProfileWithRelations[];
+      const profiles = ((data ?? []) as any[]).map((r) => ({
+        ...r,
+        ranks: r.rank_id ? { id: r.rank_id, abbreviation: r.rank_abbreviation, name: r.rank_name } : null,
+        departments: r.department_id ? { id: r.department_id, name: r.department_name } : null,
+      })) as unknown as ProfileWithRelations[];
       await Promise.all(profiles.map(async (p: any) => {
         p._photoUrl = await getPhotoUrl(p.photo_url);
       }));
       return profiles;
     },
   });
+
 
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
