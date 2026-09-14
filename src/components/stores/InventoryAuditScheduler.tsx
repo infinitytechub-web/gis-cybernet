@@ -124,7 +124,7 @@ export function InventoryAuditScheduler() {
         .from("reports")
         .createSignedUrl(path, 60 * 5);
       if (error) throw error;
-      window.open(data.signedUrl, "_blank");
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
     } catch (e: any) {
       toast.error(e.message ?? "Could not generate link");
     }
