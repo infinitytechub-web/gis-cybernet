@@ -47,7 +47,7 @@ export function SecureAttachmentField({
       .from("secure-uploads")
       .createSignedUrl(value, 60);
     if (error || !data) { toast.error("Could not generate download link"); return; }
-    window.open(data.signedUrl, "_blank");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   const filename = value ? value.split("/").pop()?.split("-").slice(2).join("-") : null;
