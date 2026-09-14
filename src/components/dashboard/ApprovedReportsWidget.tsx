@@ -62,7 +62,8 @@ export default function ApprovedReportsWidget({ variant = "standard" }: Props) {
       toast.error("Unable to open file for print");
       return;
     }
-    const w = window.open(data.signedUrl, "_blank");
+    // "noreferrer" only — the window handle is needed to trigger printing.
+    const w = window.open(data.signedUrl, "_blank", "noreferrer");
     if (w) setTimeout(() => { try { w.print(); } catch { /* ignore */ } }, 800);
   };
 

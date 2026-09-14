@@ -129,7 +129,7 @@ export function ApplicationDocuments({ recordType, recordId, permitType, readOnl
     const { data, error } = await supabase.storage
       .from("secure-uploads").createSignedUrl(doc.storage_path, 60);
     if (error || !data) { toast.error("Could not generate link"); return; }
-    window.open(data.signedUrl, "_blank");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   if (!recordId) {
