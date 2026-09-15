@@ -207,15 +207,12 @@ export function useShiftRotationConfig(scope?: ScopeOptions) {
   });
 
   // ---------------------- Realtime subscriptions ----------------------
+  // Legacy rotation config/override tables are intentionally NOT published to
+  // Realtime (operational settings); their queries refetch on mount/focus.
   useEffect(() => {
     const ch = supabase
       .channel("shift-rotation-config")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shift_rotation_config" }, () =>
-        qc.invalidateQueries({ queryKey: ["shift-rotation-config"] }),
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "shift_rotation_overrides" }, () =>
-        qc.invalidateQueries({ queryKey: ["shift-rotation-overrides"] }),
-      )
+
       .on("postgres_changes", { event: "*", schema: "public", table: "shift_rotation_schedules" }, () =>
         qc.invalidateQueries({ queryKey: ["shift-rotation-schedules-published"] }),
       )
