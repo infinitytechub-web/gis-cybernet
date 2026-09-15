@@ -639,6 +639,19 @@ export default function Staff() {
         }, editing?.id ?? null);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
       }
+      // A date of birth already confirmed against the Ghana Card cannot be
+      // changed silently — the check has to be repeated for the new date.
+      if (editing && latestCardCheck?.status === "matched" && dateOfBirth &&
+          latestCardCheck.recorded_dob && latestCardCheck.recorded_dob !== dateOfBirth) {
+        await logAdminAudit("ghana_card_verification", "dob_change_after_verification", {
+          staff_id: staffId.trim() || null,
+          verified_dob: latestCardCheck.recorded_dob,
+          attempted_dob: dateOfBirth,
+        }, editing.id);
+        throw new Error(
+          "This date of birth was confirmed against the officer's Ghana Card. Re-run the Ghana Card check in Section M before changing it.",
+        );
+      }
       setUploadingPhoto(!!photoFile);
 
       // Derive primary phone from contacts list (fallback to legacy field)
