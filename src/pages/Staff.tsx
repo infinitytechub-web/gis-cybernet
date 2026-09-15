@@ -33,7 +33,7 @@ import { MinorApprovalQueue } from "@/components/staff/MinorApprovalQueue";
 import { MrzScanPanel } from "@/components/staff/MrzScanPanel";
 import { GhanaCardDobCheck } from "@/components/staff/GhanaCardDobCheck";
 import { GhanaCardDobBadge } from "@/components/staff/GhanaCardDobBadge";
-import { ghanaCardDobState, useGhanaCardDobStatus } from "@/hooks/useGhanaCardDobStatus";
+import { useGhanaCardDobStatus } from "@/hooks/useGhanaCardDobStatus";
 import { DependentsSection } from "@/components/staff/biodata/DependentsSection";
 import { SignatureBlock } from "@/components/shared/SignatureBlock";
 import { STAFF_STATUSES, STAFF_STATUS_LABELS, staffStatusColor } from "@/lib/staff-status";
