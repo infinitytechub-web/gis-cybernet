@@ -32,6 +32,8 @@ import { DeactivateStaffDialog, type DeactivateTarget } from "@/components/staff
 import { MinorApprovalQueue } from "@/components/staff/MinorApprovalQueue";
 import { MrzScanPanel } from "@/components/staff/MrzScanPanel";
 import { GhanaCardDobCheck } from "@/components/staff/GhanaCardDobCheck";
+import { GhanaCardDobBadge } from "@/components/staff/GhanaCardDobBadge";
+import { ghanaCardDobState, useGhanaCardDobStatus } from "@/hooks/useGhanaCardDobStatus";
 import { DependentsSection } from "@/components/staff/biodata/DependentsSection";
 import { SignatureBlock } from "@/components/shared/SignatureBlock";
 import { STAFF_STATUSES, STAFF_STATUS_LABELS, staffStatusColor } from "@/lib/staff-status";
@@ -1314,9 +1316,16 @@ export default function Staff() {
                     </Select>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                       <Label htmlFor="bio-dob">Date of birth ({DATE_FORMAT_HINT})</Label>
-                      <AgeDisplay dob={dateOfBirth} />
+                      <div className="flex items-center gap-2">
+                        <GhanaCardDobBadge
+                          profileId={editing?.id ?? null}
+                          formDob={dateOfBirth}
+                          onVerify={() => setBioTab("M")}
+                        />
+                        <AgeDisplay dob={dateOfBirth} />
+                      </div>
                     </div>
                     <DateInput
                       id="bio-dob"
