@@ -27,6 +27,7 @@ import { downloadBlob } from "@/lib/download-utils";
 import { OfficerLeavePanel } from "@/components/command/OfficerLeavePanel";
 import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
+import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 
 interface CommandContext {
   profile_id: string | null;
@@ -371,7 +372,12 @@ export default function CommandPortal() {
               </div>
             )}
 
-            {section === "leave" && <OfficerLeavePanel />}
+            {section === "leave" && (
+              <div className="space-y-4">
+                <OfficerLeavePanel />
+                {isAdminOrSupervisor && <LeaveDueWidget unitId={ctx?.org_unit_id ?? null} />}
+              </div>
+            )}
 
             {section === "stores" && <OfficerStoresPanel />}
 

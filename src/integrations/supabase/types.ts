@@ -18502,6 +18502,22 @@ export type Database = {
           unit: string
         }[]
       }
+      leave_due_overview: {
+        Args: { _org_unit_id?: string }
+        Returns: {
+          entitlement: number
+          full_name: string
+          grade: string
+          last_leave_end: string
+          profile_id: string
+          rank_name: string
+          remaining: number
+          staff_id: string
+          state: string
+          taken: number
+          unit_name: string
+        }[]
+      }
       leave_entitlement_days: {
         Args: {
           _profile_id: string
