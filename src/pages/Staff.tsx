@@ -213,6 +213,8 @@ export default function Staff() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const { data: cardChecks = [] } = useGhanaCardDobStatus(editing?.id ?? null);
+  const latestCardCheck = cardChecks[0] ?? null;
   const activeEditIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
