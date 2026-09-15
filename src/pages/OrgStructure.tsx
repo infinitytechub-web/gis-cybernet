@@ -272,6 +272,7 @@ export default function OrgStructure() {
                   <TableHead>Level</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Staff posted</TableHead>
+                  <TableHead>Authorised</TableHead>
                   <TableHead>Your authority</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -279,14 +280,14 @@ export default function OrgStructure() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Loading hierarchy…
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       No commands defined yet.
                     </TableCell>
                   </TableRow>
@@ -308,6 +309,7 @@ export default function OrgStructure() {
                       <TableCell>{ORG_UNIT_TYPE_LABELS[node.type]}</TableCell>
                       <TableCell className="font-mono text-xs">{node.code}</TableCell>
                       <TableCell>{headcount.get(node.id) ?? 0}</TableCell>
+                      <TableCell>{node.authorised_strength ?? "—"}</TableCell>
                       <TableCell>
                         {canManage ? (
                           <Badge>Manage</Badge>
