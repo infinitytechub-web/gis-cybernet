@@ -56,6 +56,12 @@ interface DashboardData {
     active: number;
     positions: number;
     vacancies: number;
+    /** Approved establishment headcount for this command and its sub-units. */
+    authorised_strength?: number;
+    /** Officers actually posted here (active or partially active). */
+    posted_strength?: number;
+    /** Named appointments with nobody in them. */
+    unfilled_appointments?: number;
     portal_reached: number;
   };
   officers?: DashboardOfficer[];
