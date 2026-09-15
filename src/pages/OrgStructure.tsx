@@ -493,6 +493,22 @@ export default function OrgStructure() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-strength">Authorised strength</Label>
+              <Input
+                id="org-strength"
+                inputMode="numeric"
+                value={form.authorised_strength}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, authorised_strength: e.target.value.replace(/[^\d]/g, "") }))
+                }
+                placeholder="e.g. 240"
+              />
+              <p className="text-xs text-muted-foreground">
+                Approved number of officers for this command. Vacancies are worked out as
+                authorised strength minus officers actually posted here.
+              </p>
+            </div>
             <div className="flex items-center justify-between rounded-md border p-3">
               <Label htmlFor="org-active">Active</Label>
               <Switch
