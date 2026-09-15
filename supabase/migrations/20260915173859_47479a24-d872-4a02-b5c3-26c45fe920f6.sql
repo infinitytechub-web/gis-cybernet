@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.rank_visible_on_dashboard(uuid, uuid) FROM anon;
