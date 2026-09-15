@@ -421,6 +421,7 @@ export default function Staff() {
     setInitialPortfolioIds([]);
     setOrgUnitId("");
     setBioTab("A");
+    setScannedDob("");
     setFormCompletedOn(format(new Date(), "yyyy-MM-dd"));
     setServiceOrganization("");
     setSectorCommand("");
@@ -507,6 +508,7 @@ export default function Staff() {
     setMaritalStatus(s.marital_status || "");
     setCurrentAppointment((s as any).current_appointment || "");
     setBioTab("A");
+    setScannedDob("");
     setFormCompletedOn((s as any).form_completed_on || "");
     setServiceOrganization((s as any).service_organization || "");
     setSectorCommand((s as any).sector_command || "");
