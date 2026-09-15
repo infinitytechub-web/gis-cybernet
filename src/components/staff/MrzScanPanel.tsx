@@ -20,6 +20,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/lib/date-format";
 import { hasMrzImageReader, parseMrz, readMrzFromImage, type MrzResult } from "@/lib/mrz";
+import { MrzReadError, registerMrzReader } from "@/lib/mrz-reader";
+
+// Connect the live document reader as soon as the scan panel is loaded.
+registerMrzReader();
 
 export type MrzApplyValues = {
   surname: string;
@@ -29,6 +33,8 @@ export type MrzApplyValues = {
   documentNumber: string;
   nationality: string;
   expiryDate: string | null;
+  /** TD1 = ID card such as the Ghana Card, TD3 = passport. */
+  format: "TD1" | "TD3";
 };
 
 export function MrzScanPanel({
@@ -86,15 +92,29 @@ export function MrzScanPanel({
   });
 
   const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("Choose a photo of the document — the reader needs a picture, not a file.");
+      return;
+    }
     setReading(true);
+    setError(null);
     try {
       const text = await readMrzFromImage(file);
       if (!text) {
-        setError("No document reader is connected yet, so the image could not be read automatically. Type or paste the two or three MRZ lines below.");
+        setError("The machine-readable lines at the bottom of the card were not clear enough. Retake the photo straight on in good light with the whole card in frame, or key in the lines below.");
         return;
       }
       setRaw(text);
-      decode(text);
+      const parsed = decode(text);
+      if (parsed) {
+        toast.success(
+          parsed.checksumValid
+            ? "Document read and verified"
+            : "Document read — check the highlighted fields against the card",
+        );
+      }
+    } catch (e) {
+      setError(e instanceof MrzReadError ? e.message : "The document could not be read. Try again or key in the lines below.");
     } finally {
       setReading(false);
     }
@@ -115,7 +135,7 @@ export function MrzScanPanel({
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={reading}>
             {reading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Camera className="mr-1 h-4 w-4" />}
-            Capture or upload document
+            {reading ? "Reading document…" : "Capture or upload document"}
           </Button>
           <input
             ref={fileRef}
@@ -130,7 +150,9 @@ export function MrzScanPanel({
             }}
           />
           <span className="text-xs text-muted-foreground">
-            {hasMrzImageReader() ? "Reader connected" : "Reader not connected — key in the lines below"}
+            {hasMrzImageReader()
+              ? "Photograph the back of the Ghana Card (or the passport data page) — details are filled in automatically."
+              : "Reader not connected — key in the lines below"}
           </span>
         </div>
 
@@ -142,7 +164,8 @@ export function MrzScanPanel({
             spellCheck={false}
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
-            placeholder={"P<GHAMENSAH<<KOFI<<<<<<<<<<<<<<<<<<<<<<<<<<<\nG12345678GHA9001014M3001017<<<<<<<<<<<<<<02"}
+            disabled={reading}
+          placeholder={"P<GHAMENSAH<<KOFI<<<<<<<<<<<<<<<<<<<<<<<<<<<\nG12345678GHA9001014M3001017<<<<<<<<<<<<<<02"}
             className="font-mono text-xs uppercase"
           />
           <div className="mt-2 flex flex-wrap gap-2">
@@ -202,6 +225,7 @@ export function MrzScanPanel({
                       documentNumber: result.documentNumber,
                       nationality: result.nationality,
                       expiryDate: result.expiryDate,
+                      format: result.format,
                     });
                     toast.success("Details copied into the form");
                   }}
