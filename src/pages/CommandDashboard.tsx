@@ -200,10 +200,11 @@ export default function CommandDashboard() {
   }
 
   const totals = data?.totals;
-  const fillRate =
-    totals && totals.positions > 0
-      ? Math.round(((totals.positions - totals.vacancies) / totals.positions) * 100)
-      : null;
+  // Authorised strength is the approved establishment for this command and the
+  // units beneath it; the fill rate compares officers posted against it.
+  const authorised = totals?.authorised_strength ?? totals?.positions ?? 0;
+  const posted = totals?.posted_strength ?? totals?.active ?? 0;
+  const fillRate = authorised > 0 ? Math.round((posted / authorised) * 100) : null;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
