@@ -303,9 +303,11 @@ export default function MyProfile() {
         title="My Profile"
         subtitle="Submit profile changes for review. Edits take effect after Command / Admin approval."
         actions={
-          <Button variant="secondary" onClick={() => void downloadRecord()} disabled={downloading} className="gap-1">
-            <FileDown className="h-4 w-4" /> {downloading ? "Preparing…" : "My bio-data record (PDF)"}
-          </Button>
+          <BioDataDownloadMenu
+            profileId={profile.id}
+            label="My bio-data record"
+            variant="secondary"
+          />
         }
       />
 
