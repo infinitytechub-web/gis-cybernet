@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadBlob } from "@/lib/download-utils";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
+import { SignOffQueue } from "@/components/command/SignOffQueue";
 
 interface CommandUnit {
   id: string;
@@ -497,6 +498,9 @@ export default function CommandDashboard() {
 
       {/* Leave due / overdue for this command's officers only. */}
       <LeaveDueWidget unitId={selectedUnit} />
+
+      {/* Records in this command whose next sign-off step this officer may sign. */}
+      <SignOffQueue limit={25} />
     </div>
   );
 }

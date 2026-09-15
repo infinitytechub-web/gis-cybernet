@@ -6,6 +6,7 @@ import {
   CalendarOff,
   ClipboardCheck,
   Download,
+  FileSignature,
   FolderLock,
   Layers,
   Loader2,
@@ -28,6 +29,7 @@ import { OfficerLeavePanel } from "@/components/command/OfficerLeavePanel";
 import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
+import { SignOffQueue } from "@/components/command/SignOffQueue";
 
 interface CommandContext {
   profile_id: string | null;
@@ -62,7 +64,7 @@ interface CommandOfficer {
   is_self: boolean;
 }
 
-type Section = "overview" | "officers" | "leave" | "stores" | "approvals" | "shifts" | "documents";
+type Section = "overview" | "officers" | "leave" | "stores" | "approvals" | "signoffs" | "shifts" | "documents";
 
 const SECTIONS: { key: Section; label: string; icon: typeof Users }[] = [
   { key: "overview", label: "Command overview", icon: Building2 },
@@ -70,6 +72,7 @@ const SECTIONS: { key: Section; label: string; icon: typeof Users }[] = [
   { key: "leave", label: "My leave", icon: CalendarOff },
   { key: "stores", label: "My stores", icon: Package },
   { key: "approvals", label: "Leave approvals", icon: ClipboardCheck },
+  { key: "signoffs", label: "Sign-offs", icon: FileSignature },
   { key: "shifts", label: "Shift groups", icon: Layers },
   { key: "documents", label: "Command documents", icon: FolderLock },
 ];
@@ -390,6 +393,8 @@ export default function CommandPortal() {
                 </CardContent>
               </Card>
             )}
+
+            {section === "signoffs" && <SignOffQueue />}
 
             {section === "documents" && (
               <Card>

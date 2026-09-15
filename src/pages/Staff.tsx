@@ -31,11 +31,11 @@ import { StaffTableRow } from "@/components/staff/StaffTableRow";
 import { DeactivateStaffDialog, type DeactivateTarget } from "@/components/staff/DeactivateStaffDialog";
 import { MinorApprovalQueue } from "@/components/staff/MinorApprovalQueue";
 import { MrzScanPanel } from "@/components/staff/MrzScanPanel";
+import { SignOffPanel } from "@/components/shared/SignOffPanel";
 import { GhanaCardDobCheck } from "@/components/staff/GhanaCardDobCheck";
 import { GhanaCardDobBadge } from "@/components/staff/GhanaCardDobBadge";
 import { useGhanaCardDobStatus } from "@/hooks/useGhanaCardDobStatus";
 import { DependentsSection } from "@/components/staff/biodata/DependentsSection";
-import { SignatureBlock } from "@/components/shared/SignatureBlock";
 import { STAFF_STATUSES, STAFF_STATUS_LABELS, staffStatusColor } from "@/lib/staff-status";
 import { sortRanks } from "@/lib/rank-order";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
@@ -161,6 +161,7 @@ export default function Staff() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
   // Hierarchical RBAC — command postings the signed-in user may assign.
   const { units: orgUnits, tree: orgTree, scope: orgScope } = useOrgScope();
 
@@ -280,6 +281,13 @@ export default function Staff() {
   const [bioTab, setBioTab] = useState("A");
   /** Date of birth read from the latest card/passport scan in this session. */
   const [scannedDob, setScannedDob] = useState("");
+  // A sign-off link can name the section to open, e.g. /staff?edit=<id>&tab=M
+  useEffect(() => {
+    if (requestedTab && BIODATA_SECTIONS.some((s) => s.key === requestedTab)) {
+      setBioTab(requestedTab);
+    }
+  }, [requestedTab]);
+
   const bioSectionIndex = Math.max(0, BIODATA_SECTIONS.findIndex((s) => s.key === bioTab));
   const biodataPersistRef = useRef<PersistFn | null>(null);
   const { data: bioOptionSets } = useBioDataOptionSets();
@@ -561,6 +569,7 @@ export default function Staff() {
     if (!searchParams.has("edit")) return;
     const next = new URLSearchParams(searchParams);
     next.delete("edit");
+    next.delete("tab");
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -1623,16 +1632,13 @@ export default function Staff() {
                   scannedDob={scannedDob}
                 />
                 <DependentsSection profileId={editing?.id ?? null} canEdit={canManage} />
-                {editing?.id && (
-                  <SignatureBlock
-                    profileId={editing.id}
-                    recordType="staff_biodata"
-                    recordId={editing.id}
-                    recordSummary={`${staffId}|${lastName}|${firstName}`}
-                    label="Staff / officer signature"
-                    defaultName={[lastName, firstName].filter(Boolean).join(" ")}
-                  />
-                )}
+                <SignOffPanel
+                  entityId={editing?.id ?? null}
+                  recordSummary={`${staffId}|${lastName}|${firstName}`}
+                  documentTitle="Staff bio-data record — sign-off"
+                  subjectName={[staffId, lastName, firstName].filter(Boolean).join(" · ")}
+                  defaultSignatoryName={[lastName, firstName].filter(Boolean).join(" ")}
+                />
                 <BioDataCustomBlock section="M" />
               </TabsContent>
 

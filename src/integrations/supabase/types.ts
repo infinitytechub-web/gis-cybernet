@@ -19048,6 +19048,16 @@ export type Database = {
         }
         Returns: string
       }
+      record_signoff: {
+        Args: {
+          _entity_id: string
+          _entity_type: string
+          _note?: string
+          _signature_id?: string
+          _step: string
+        }
+        Returns: string
+      }
       redact_old_job_passwords: { Args: never; Returns: undefined }
       register_app_build: {
         Args: {
@@ -19305,6 +19315,27 @@ export type Database = {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
       }
+      signoff_can_sign: {
+        Args: { _step: string; _user: string }
+        Returns: boolean
+      }
+      signoff_my_queue: {
+        Args: never
+        Returns: {
+          entity_id: string
+          entity_type: string
+          last_action_at: string
+          next_step: string
+          staff_id: string
+          staff_name: string
+          unit_name: string
+        }[]
+      }
+      signoff_state: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: Json
+      }
+      signoff_steps: { Args: { _entity_type: string }; Returns: string[] }
       soft_delete_record: {
         Args: {
           _display_context?: string
