@@ -66,7 +66,8 @@ import {
 } from "@/components/staff/biodata/useBioDataConfig";
 import { BioDataImportDialog } from "@/components/staff/biodata/BioDataImportDialog";
 import type { BioDataPrefillRow } from "@/lib/biodata-import";
-import { exportBioDataPdf } from "@/lib/biodata-pdf";
+import { BioDataDownloadMenu } from "@/components/staff/biodata/BioDataDownloadMenu";
+import type { BioDataFormat } from "@/lib/biodata-export";
 
 /**
  * Shown while sections E–L are still loading, so the form never looks blank
@@ -127,29 +128,8 @@ function BioDataFormToolbar({
         <Upload className="mr-1 h-4 w-4" aria-hidden="true" />
         Prefill from spreadsheet
       </Button>
-      {profileId && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={printing}
-          onClick={async () => {
-            setPrinting(true);
-            try {
-              await exportBioDataPdf(profileId);
-              toast.success("Bio-data record downloaded");
-            } catch (e: any) {
-              toast.error(e?.message || "Could not build the PDF");
-            } finally {
-              setPrinting(false);
-            }
-          }}
-        >
-          {printing
-            ? <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
-            : <Printer className="mr-1 h-4 w-4" aria-hidden="true" />}
-          Print record (PDF)
-        </Button>
+      {profileId && formats.length > 0 && (
+        <BioDataDownloadMenu profileId={profileId} formats={formats} />
       )}
       <BioDataImportDialog open={importOpen} onOpenChange={setImportOpen} onApply={handleApply} />
     </div>
