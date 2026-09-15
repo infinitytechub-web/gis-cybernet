@@ -283,19 +283,6 @@ export default function MyProfile() {
     onError: (e: any) => toast.error(e.message ?? "Failed to submit restricted request"),
   });
 
-  const downloadRecord = async () => {
-    if (!profile?.id) return;
-    setDownloading(true);
-    try {
-      const { exportBioDataPdf } = await import("@/lib/biodata-pdf");
-      await exportBioDataPdf(profile.id);
-      toast.success("Your bio-data record has been downloaded.");
-    } catch (error: any) {
-      toast.error(error?.message ?? "Could not build your bio-data record.");
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   if (isLoading) return <div className="text-sm text-muted-foreground p-6">Loading your profile…</div>;
   if (!profile) return <div className="text-sm text-muted-foreground p-6">Profile not found.</div>;
