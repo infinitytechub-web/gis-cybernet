@@ -276,6 +276,8 @@ export default function Staff() {
   const [previousLastPosition, setPreviousLastPosition] = useState("");
   const [previousReasonForLeaving, setPreviousReasonForLeaving] = useState("");
   const [bioTab, setBioTab] = useState("A");
+  /** Date of birth read from the latest card/passport scan in this session. */
+  const [scannedDob, setScannedDob] = useState("");
   const bioSectionIndex = Math.max(0, BIODATA_SECTIONS.findIndex((s) => s.key === bioTab));
   const biodataPersistRef = useRef<PersistFn | null>(null);
   const { data: bioOptionSets } = useBioDataOptionSets();
