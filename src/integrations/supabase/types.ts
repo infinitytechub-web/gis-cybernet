@@ -10924,6 +10924,7 @@ export type Database = {
       }
       org_units: {
         Row: {
+          authorised_strength: number | null
           code: string
           created_at: string
           id: string
@@ -10936,6 +10937,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          authorised_strength?: number | null
           code: string
           created_at?: string
           id?: string
@@ -10948,6 +10950,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          authorised_strength?: number | null
           code?: string
           created_at?: string
           id?: string
