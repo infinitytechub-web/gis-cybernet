@@ -64,6 +64,7 @@ export function WorkflowActions({
   canQuery,
   canRecommend,
   canApprove,
+  canReject,
   onChanged,
 }: {
   /** Logical record type, e.g. "leave_request", "excuse_duty_form". */
@@ -73,6 +74,8 @@ export function WorkflowActions({
   canQuery?: boolean;
   canRecommend?: boolean;
   canApprove?: boolean;
+  /** Defaults to whoever can recommend or approve. */
+  canReject?: boolean;
   onChanged?: (next: WorkflowStage) => void | Promise<void>;
 }) {
   const queryClient = useQueryClient();
@@ -143,7 +146,7 @@ export function WorkflowActions({
             <CheckCircle2 className="mr-1 h-4 w-4" /> Approve
           </Button>
         )}
-        {(canApprove || canRecommend) && current !== "rejected" && (
+        {(canReject ?? (canApprove || canRecommend)) && current !== "rejected" && (
           <Button size="sm" variant="ghost" className="text-destructive" onClick={() => open("rejected")}>
             <XCircle className="mr-1 h-4 w-4" /> Reject
           </Button>

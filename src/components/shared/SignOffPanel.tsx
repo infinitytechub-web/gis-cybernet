@@ -274,7 +274,8 @@ export function SignOffPanel({
               stage={state?.stage ?? null}
               canQuery={next.can_sign}
               canApprove={false}
-              canRecommend={next.can_sign}
+              canRecommend={false}
+              canReject={next.can_sign}
               onChanged={() => refresh()}
             />
           </div>
