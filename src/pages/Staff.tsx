@@ -90,7 +90,9 @@ function BioDataLoadingNotice() {
 
 /**
  * Toolbar inside the Bio-Data dialog: prefill the form from a roster
- * spreadsheet, and print the completed record as a PDF.
+ * spreadsheet, and download the completed record in PDF, Word, Excel or CSV.
+ * Formats follow the signed-in user's directory rights — download rights give
+ * all four, print rights alone give the printable PDF only.
  */
 function BioDataFormToolbar({
   profileId,
@@ -100,8 +102,14 @@ function BioDataFormToolbar({
   onProfileValues: (values: Record<string, string>) => void;
 }) {
   const { applyPrefill } = useBioData();
+  const dirPerms = useDirectoryPermissions();
   const [importOpen, setImportOpen] = useState(false);
-  const [printing, setPrinting] = useState(false);
+
+  const formats: BioDataFormat[] = dirPerms.canDownload
+    ? ["pdf", "word", "excel", "csv"]
+    : dirPerms.canPrint
+      ? ["pdf"]
+      : [];
 
   const handleApply = (row: BioDataPrefillRow) => {
     onProfileValues(row.values);
