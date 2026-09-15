@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCog, Save, Lock, RefreshCw, FileDown, ShieldAlert } from "lucide-react";
+import { UserCog, Save, Lock, RefreshCw, ShieldAlert } from "lucide-react";
+import { BioDataDownloadMenu } from "@/components/staff/biodata/BioDataDownloadMenu";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
@@ -99,7 +100,7 @@ export default function MyProfile() {
     previous_last_position: "", previous_reason_for_leaving: "",
   });
   const [restricted, setRestricted] = useState<Record<string, string>>({});
-  const [downloading, setDownloading] = useState(false);
+  
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["my-profile-self-edit", user?.id],
