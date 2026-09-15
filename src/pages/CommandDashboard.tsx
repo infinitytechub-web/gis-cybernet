@@ -125,6 +125,7 @@ export default function CommandDashboard() {
 
   const data = dashQuery.data;
   const officers = data?.officers ?? [];
+  const officerIds = useMemo(() => officers.map((o) => o.id), [officers]);
 
   const filteredOfficers = useMemo(() => {
     const q = search.trim().toLowerCase();
