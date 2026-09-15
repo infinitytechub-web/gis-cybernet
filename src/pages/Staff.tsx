@@ -36,7 +36,6 @@ import { GhanaCardDobCheck } from "@/components/staff/GhanaCardDobCheck";
 import { GhanaCardDobBadge } from "@/components/staff/GhanaCardDobBadge";
 import { useGhanaCardDobStatus } from "@/hooks/useGhanaCardDobStatus";
 import { DependentsSection } from "@/components/staff/biodata/DependentsSection";
-import { SignatureBlock } from "@/components/shared/SignatureBlock";
 import { STAFF_STATUSES, STAFF_STATUS_LABELS, staffStatusColor } from "@/lib/staff-status";
 import { sortRanks } from "@/lib/rank-order";
 import { MultiContactInput, type ContactEntry } from "@/components/ui/multi-contact-input";
@@ -162,6 +161,7 @@ export default function Staff() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
   // Hierarchical RBAC — command postings the signed-in user may assign.
   const { units: orgUnits, tree: orgTree, scope: orgScope } = useOrgScope();
 
@@ -564,7 +564,6 @@ export default function Staff() {
   };
 
   const requestedEditId = searchParams.get("edit");
-  const requestedTab = searchParams.get("tab");
   const handledEditIdRef = useRef<string | null>(null);
   const clearEditLink = useCallback(() => {
     if (!searchParams.has("edit")) return;
