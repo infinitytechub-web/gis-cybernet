@@ -71,6 +71,8 @@ export interface OrgUnit {
   type: OrgUnitType;
   parent_id: string | null;
   is_active: boolean;
+  /** Approved establishment headcount for this unit (null when not set). */
+  authorised_strength?: number | null;
 }
 
 export interface OrgUnitAssignment {

@@ -58,6 +58,8 @@ const emptyForm = {
   type: "unit" as OrgUnitType,
   parent_id: "" as string,
   is_active: true,
+  /** Approved establishment headcount — drives the vacancy figures. */
+  authorised_strength: "" as string,
 };
 
 export default function OrgStructure() {
@@ -121,12 +123,17 @@ export default function OrgStructure() {
 
   const saveUnit = useMutation({
     mutationFn: async () => {
+      const strength = form.authorised_strength.trim();
+      if (strength && (!/^\d+$/.test(strength) || Number(strength) > 100000)) {
+        throw new Error("Authorised strength must be a whole number");
+      }
       const payload = {
         name: form.name.trim(),
         code: form.code.trim().toUpperCase(),
         type: form.type,
         parent_id: form.parent_id || null,
         is_active: form.is_active,
+        authorised_strength: strength ? Number(strength) : null,
       };
       if (!payload.name || !payload.code) throw new Error("Name and code are required");
       if (form.id) {
@@ -223,6 +230,8 @@ export default function OrgStructure() {
       type: u.type,
       parent_id: u.parent_id ?? "",
       is_active: u.is_active,
+      authorised_strength:
+        u.authorised_strength == null ? "" : String(u.authorised_strength),
     });
     setUnitDialogOpen(true);
   };
@@ -263,6 +272,7 @@ export default function OrgStructure() {
                   <TableHead>Level</TableHead>
                   <TableHead>Code</TableHead>
                   <TableHead>Staff posted</TableHead>
+                  <TableHead>Authorised</TableHead>
                   <TableHead>Your authority</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -270,14 +280,14 @@ export default function OrgStructure() {
               <TableBody>
                 {loading && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Loading hierarchy…
                     </TableCell>
                   </TableRow>
                 )}
                 {!loading && rows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       No commands defined yet.
                     </TableCell>
                   </TableRow>
@@ -299,6 +309,7 @@ export default function OrgStructure() {
                       <TableCell>{ORG_UNIT_TYPE_LABELS[node.type]}</TableCell>
                       <TableCell className="font-mono text-xs">{node.code}</TableCell>
                       <TableCell>{headcount.get(node.id) ?? 0}</TableCell>
+                      <TableCell>{node.authorised_strength ?? "—"}</TableCell>
                       <TableCell>
                         {canManage ? (
                           <Badge>Manage</Badge>
@@ -483,6 +494,22 @@ export default function OrgStructure() {
                     ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org-strength">Authorised strength</Label>
+              <Input
+                id="org-strength"
+                inputMode="numeric"
+                value={form.authorised_strength}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, authorised_strength: e.target.value.replace(/[^\d]/g, "") }))
+                }
+                placeholder="e.g. 240"
+              />
+              <p className="text-xs text-muted-foreground">
+                Approved number of officers for this command. Vacancies are worked out as
+                authorised strength minus officers actually posted here.
+              </p>
             </div>
             <div className="flex items-center justify-between rounded-md border p-3">
               <Label htmlFor="org-active">Active</Label>

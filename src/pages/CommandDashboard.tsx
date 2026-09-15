@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadBlob } from "@/lib/download-utils";
 import { formatDate, formatDateTime } from "@/lib/date-format";
+import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 
 interface CommandUnit {
   id: string;
@@ -56,6 +57,12 @@ interface DashboardData {
     active: number;
     positions: number;
     vacancies: number;
+    /** Approved establishment headcount for this command and its sub-units. */
+    authorised_strength?: number;
+    /** Officers actually posted here (active or partially active). */
+    posted_strength?: number;
+    /** Named appointments with nobody in them. */
+    unfilled_appointments?: number;
     portal_reached: number;
   };
   officers?: DashboardOfficer[];
@@ -118,6 +125,7 @@ export default function CommandDashboard() {
 
   const data = dashQuery.data;
   const officers = data?.officers ?? [];
+  const officerIds = useMemo(() => officers.map((o) => o.id), [officers]);
 
   const filteredOfficers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -194,10 +202,11 @@ export default function CommandDashboard() {
   }
 
   const totals = data?.totals;
-  const fillRate =
-    totals && totals.positions > 0
-      ? Math.round(((totals.positions - totals.vacancies) / totals.positions) * 100)
-      : null;
+  // Authorised strength is the approved establishment for this command and the
+  // units beneath it; the fill rate compares officers posted against it.
+  const authorised = totals?.authorised_strength ?? totals?.positions ?? 0;
+  const posted = totals?.posted_strength ?? totals?.active ?? 0;
+  const fillRate = authorised > 0 ? Math.round((posted / authorised) * 100) : null;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -251,8 +260,15 @@ export default function CommandDashboard() {
           <CardContent>
             <div className="text-3xl font-bold">{totals?.vacancies ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              of {totals?.positions ?? 0} posts{fillRate !== null ? ` · ${fillRate}% filled` : ""}
+              {posted} posted of {authorised} authorised
+              {fillRate !== null ? ` · ${fillRate}% filled` : ""}
             </p>
+            {(totals?.unfilled_appointments ?? 0) > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {totals?.unfilled_appointments} named appointment
+                {totals?.unfilled_appointments === 1 ? "" : "s"} unfilled
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -479,6 +495,9 @@ export default function CommandDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Leave due / overdue for this command's officers only. */}
+      {officerIds.length > 0 && <LeaveDueWidget profileIds={officerIds} />}
     </div>
   );
 }
