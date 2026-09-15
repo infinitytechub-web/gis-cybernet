@@ -230,6 +230,8 @@ export default function OrgStructure() {
       type: u.type,
       parent_id: u.parent_id ?? "",
       is_active: u.is_active,
+      authorised_strength:
+        u.authorised_strength == null ? "" : String(u.authorised_strength),
     });
     setUnitDialogOpen(true);
   };

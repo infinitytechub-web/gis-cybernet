@@ -19,7 +19,7 @@ export function useOrgUnits() {
     queryFn: async (): Promise<OrgUnit[]> => {
       const { data, error } = await supabase
         .from("org_units")
-        .select("id, name, code, type, parent_id, is_active")
+        .select("id, name, code, type, parent_id, is_active, authorised_strength")
         .order("name");
       if (error) throw error;
       return (data ?? []) as OrgUnit[];
