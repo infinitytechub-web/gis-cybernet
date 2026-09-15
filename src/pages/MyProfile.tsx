@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCog, Save, Lock, RefreshCw, FileDown, ShieldAlert } from "lucide-react";
+import { UserCog, Save, Lock, RefreshCw, ShieldAlert } from "lucide-react";
+import { BioDataDownloadMenu } from "@/components/staff/biodata/BioDataDownloadMenu";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { GhanaCardInput, isValidGhanaCard } from "@/components/shared/GhanaCardInput";
@@ -99,7 +100,7 @@ export default function MyProfile() {
     previous_last_position: "", previous_reason_for_leaving: "",
   });
   const [restricted, setRestricted] = useState<Record<string, string>>({});
-  const [downloading, setDownloading] = useState(false);
+  
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["my-profile-self-edit", user?.id],
@@ -283,19 +284,6 @@ export default function MyProfile() {
     onError: (e: any) => toast.error(e.message ?? "Failed to submit restricted request"),
   });
 
-  const downloadRecord = async () => {
-    if (!profile?.id) return;
-    setDownloading(true);
-    try {
-      const { exportBioDataPdf } = await import("@/lib/biodata-pdf");
-      await exportBioDataPdf(profile.id);
-      toast.success("Your bio-data record has been downloaded.");
-    } catch (error: any) {
-      toast.error(error?.message ?? "Could not build your bio-data record.");
-    } finally {
-      setDownloading(false);
-    }
-  };
 
   if (isLoading) return <div className="text-sm text-muted-foreground p-6">Loading your profile…</div>;
   if (!profile) return <div className="text-sm text-muted-foreground p-6">Profile not found.</div>;
@@ -316,9 +304,11 @@ export default function MyProfile() {
         title="My Profile"
         subtitle="Submit profile changes for review. Edits take effect after Command / Admin approval."
         actions={
-          <Button variant="secondary" onClick={() => void downloadRecord()} disabled={downloading} className="gap-1">
-            <FileDown className="h-4 w-4" /> {downloading ? "Preparing…" : "My bio-data record (PDF)"}
-          </Button>
+          <BioDataDownloadMenu
+            profileId={profile.id}
+            label="My bio-data record"
+            variant="secondary"
+          />
         }
       />
 

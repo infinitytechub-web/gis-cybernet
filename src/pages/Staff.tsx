@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, Printer, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Camera, Loader2, Eye, Upload, ArrowUpDown, Lock, Building2, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -66,7 +66,8 @@ import {
 } from "@/components/staff/biodata/useBioDataConfig";
 import { BioDataImportDialog } from "@/components/staff/biodata/BioDataImportDialog";
 import type { BioDataPrefillRow } from "@/lib/biodata-import";
-import { exportBioDataPdf } from "@/lib/biodata-pdf";
+import { BioDataDownloadMenu } from "@/components/staff/biodata/BioDataDownloadMenu";
+import type { BioDataFormat } from "@/lib/biodata-export";
 
 /**
  * Shown while sections E–L are still loading, so the form never looks blank
@@ -89,7 +90,9 @@ function BioDataLoadingNotice() {
 
 /**
  * Toolbar inside the Bio-Data dialog: prefill the form from a roster
- * spreadsheet, and print the completed record as a PDF.
+ * spreadsheet, and download the completed record in PDF, Word, Excel or CSV.
+ * Formats follow the signed-in user's directory rights — download rights give
+ * all four, print rights alone give the printable PDF only.
  */
 function BioDataFormToolbar({
   profileId,
@@ -99,8 +102,14 @@ function BioDataFormToolbar({
   onProfileValues: (values: Record<string, string>) => void;
 }) {
   const { applyPrefill } = useBioData();
+  const dirPerms = useDirectoryPermissions();
   const [importOpen, setImportOpen] = useState(false);
-  const [printing, setPrinting] = useState(false);
+
+  const formats: BioDataFormat[] = dirPerms.canDownload
+    ? ["pdf", "word", "excel", "csv"]
+    : dirPerms.canPrint
+      ? ["pdf"]
+      : [];
 
   const handleApply = (row: BioDataPrefillRow) => {
     onProfileValues(row.values);
@@ -127,29 +136,8 @@ function BioDataFormToolbar({
         <Upload className="mr-1 h-4 w-4" aria-hidden="true" />
         Prefill from spreadsheet
       </Button>
-      {profileId && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={printing}
-          onClick={async () => {
-            setPrinting(true);
-            try {
-              await exportBioDataPdf(profileId);
-              toast.success("Bio-data record downloaded");
-            } catch (e: any) {
-              toast.error(e?.message || "Could not build the PDF");
-            } finally {
-              setPrinting(false);
-            }
-          }}
-        >
-          {printing
-            ? <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
-            : <Printer className="mr-1 h-4 w-4" aria-hidden="true" />}
-          Print record (PDF)
-        </Button>
+      {profileId && formats.length > 0 && (
+        <BioDataDownloadMenu profileId={profileId} formats={formats} />
       )}
       <BioDataImportDialog open={importOpen} onOpenChange={setImportOpen} onApply={handleApply} />
     </div>
