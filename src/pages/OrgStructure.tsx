@@ -58,6 +58,8 @@ const emptyForm = {
   type: "unit" as OrgUnitType,
   parent_id: "" as string,
   is_active: true,
+  /** Approved establishment headcount — drives the vacancy figures. */
+  authorised_strength: "" as string,
 };
 
 export default function OrgStructure() {
@@ -121,12 +123,17 @@ export default function OrgStructure() {
 
   const saveUnit = useMutation({
     mutationFn: async () => {
+      const strength = form.authorised_strength.trim();
+      if (strength && (!/^\d+$/.test(strength) || Number(strength) > 100000)) {
+        throw new Error("Authorised strength must be a whole number");
+      }
       const payload = {
         name: form.name.trim(),
         code: form.code.trim().toUpperCase(),
         type: form.type,
         parent_id: form.parent_id || null,
         is_active: form.is_active,
+        authorised_strength: strength ? Number(strength) : null,
       };
       if (!payload.name || !payload.code) throw new Error("Name and code are required");
       if (form.id) {
