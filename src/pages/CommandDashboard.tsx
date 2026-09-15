@@ -258,8 +258,15 @@ export default function CommandDashboard() {
           <CardContent>
             <div className="text-3xl font-bold">{totals?.vacancies ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              of {totals?.positions ?? 0} posts{fillRate !== null ? ` · ${fillRate}% filled` : ""}
+              {posted} posted of {authorised} authorised
+              {fillRate !== null ? ` · ${fillRate}% filled` : ""}
             </p>
+            {(totals?.unfilled_appointments ?? 0) > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {totals?.unfilled_appointments} named appointment
+                {totals?.unfilled_appointments === 1 ? "" : "s"} unfilled
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card>
