@@ -1581,13 +1581,19 @@ export default function Staff() {
                     if (v.surname) setLastName(v.surname);
                     if (v.givenNames) setFirstName(v.givenNames.split(" ")[0]);
                     if (v.sex) setGender(v.sex);
-                    if (v.dateOfBirth) setDateOfBirth(v.dateOfBirth);
+                    if (v.dateOfBirth) {
+                      setDateOfBirth(v.dateOfBirth);
+                      // Feed the scanned date into the card check below so the
+                      // record's date of birth is confirmed against the card.
+                      setScannedDob(v.dateOfBirth);
+                    }
                   }}
                 />
                 <GhanaCardDobCheck
                   profileId={editing?.id ?? null}
                   recordDob={dateOfBirth}
                   ghanaCardNumber={ghanaCardNumber}
+                  scannedDob={scannedDob}
                 />
                 <DependentsSection profileId={editing?.id ?? null} canEdit={canManage} />
                 {editing?.id && (
