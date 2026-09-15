@@ -1788,6 +1788,51 @@ export type Database = {
           },
         ]
       }
+      command_rank_visibility: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_visible: boolean
+          org_unit_id: string | null
+          rank_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_visible?: boolean
+          org_unit_id?: string | null
+          rank_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_visible?: boolean
+          org_unit_id?: string | null
+          rank_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_rank_visibility_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_rank_visibility_rank_id_fkey"
+            columns: ["rank_id"]
+            isOneToOne: false
+            referencedRelation: "ranks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_role_audit: {
         Row: {
           action: string
@@ -18928,6 +18973,10 @@ export type Database = {
         Returns: number
       }
       purge_recycle_bin_entry: { Args: { _bin_id: string }; Returns: Json }
+      rank_visible_on_dashboard: {
+        Args: { _org_unit_id: string; _rank_id: string }
+        Returns: boolean
+      }
       read_attendance_report_recipients: {
         Args: { _reason?: string }
         Returns: {
