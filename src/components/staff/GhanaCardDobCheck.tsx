@@ -7,8 +7,8 @@
  * `ghana_card_verifications` so the check can be matched against the national
  * card register once that integration is switched on after deployment.
  */
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BadgeCheck, Loader2, TriangleAlert } from "lucide-react";
@@ -19,35 +19,38 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DateInput } from "@/components/ui/date-input";
 import { DATE_FORMAT_HINT, formatDate, formatDateTime } from "@/lib/date-format";
+import {
+  GHANA_CARD_VERIFICATION_KEY,
+  useGhanaCardDobStatus,
+} from "@/hooks/useGhanaCardDobStatus";
 
 export function GhanaCardDobCheck({
   profileId,
   recordDob,
   ghanaCardNumber,
+  scannedDob,
 }: {
   profileId: string | null;
   /** Date of birth currently on the staff record (yyyy-MM-dd). */
   recordDob: string;
   ghanaCardNumber: string;
+  /** Date of birth read off a card/passport scan, used to pre-fill the check. */
+  scannedDob?: string;
 }) {
   const queryClient = useQueryClient();
   const [cardDob, setCardDob] = useState("");
   const [note, setNote] = useState("");
+  const [fromScan, setFromScan] = useState(false);
 
-  const { data: history = [] } = useQuery({
-    queryKey: ["ghana-card-verifications", profileId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ghana_card_verifications")
-        .select("id, status, method, note, recorded_dob, ghana_card_number, created_at")
-        .eq("profile_id", profileId!)
-        .order("created_at", { ascending: false })
-        .limit(5);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!profileId,
-  });
+  // A fresh scan pre-fills the card date so the officer only confirms it.
+  useEffect(() => {
+    if (scannedDob) {
+      setCardDob(scannedDob);
+      setFromScan(true);
+    }
+  }, [scannedDob]);
+
+  const { data: history = [] } = useGhanaCardDobStatus(profileId);
 
   const matches = !!cardDob && !!recordDob && cardDob === recordDob;
 
@@ -63,7 +66,7 @@ export function GhanaCardDobCheck({
         ghana_card_number: ghanaCardNumber || null,
         recorded_dob: cardDob,
         status: matches ? "matched" : "mismatch",
-        method: "manual_card_entry",
+        method: fromScan && cardDob === scannedDob ? "mrz_scan" : "manual_card_entry",
         note: note.trim() || null,
         requested_by: uid,
       });
@@ -71,7 +74,7 @@ export function GhanaCardDobCheck({
     },
     onSuccess: () => {
       toast.success("Verification recorded");
-      queryClient.invalidateQueries({ queryKey: ["ghana-card-verifications", profileId] });
+      queryClient.invalidateQueries({ queryKey: [GHANA_CARD_VERIFICATION_KEY, profileId] });
       setNote("");
     },
     onError: (e: Error) => toast.error(e.message),

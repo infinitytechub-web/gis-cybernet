@@ -32,6 +32,8 @@ import { DeactivateStaffDialog, type DeactivateTarget } from "@/components/staff
 import { MinorApprovalQueue } from "@/components/staff/MinorApprovalQueue";
 import { MrzScanPanel } from "@/components/staff/MrzScanPanel";
 import { GhanaCardDobCheck } from "@/components/staff/GhanaCardDobCheck";
+import { GhanaCardDobBadge } from "@/components/staff/GhanaCardDobBadge";
+import { useGhanaCardDobStatus } from "@/hooks/useGhanaCardDobStatus";
 import { DependentsSection } from "@/components/staff/biodata/DependentsSection";
 import { SignatureBlock } from "@/components/shared/SignatureBlock";
 import { STAFF_STATUSES, STAFF_STATUS_LABELS, staffStatusColor } from "@/lib/staff-status";
@@ -211,6 +213,8 @@ export default function Staff() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const { data: cardChecks = [] } = useGhanaCardDobStatus(editing?.id ?? null);
+  const latestCardCheck = cardChecks[0] ?? null;
   const activeEditIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -274,6 +278,8 @@ export default function Staff() {
   const [previousLastPosition, setPreviousLastPosition] = useState("");
   const [previousReasonForLeaving, setPreviousReasonForLeaving] = useState("");
   const [bioTab, setBioTab] = useState("A");
+  /** Date of birth read from the latest card/passport scan in this session. */
+  const [scannedDob, setScannedDob] = useState("");
   const bioSectionIndex = Math.max(0, BIODATA_SECTIONS.findIndex((s) => s.key === bioTab));
   const biodataPersistRef = useRef<PersistFn | null>(null);
   const { data: bioOptionSets } = useBioDataOptionSets();
@@ -417,6 +423,7 @@ export default function Staff() {
     setInitialPortfolioIds([]);
     setOrgUnitId("");
     setBioTab("A");
+    setScannedDob("");
     setFormCompletedOn(format(new Date(), "yyyy-MM-dd"));
     setServiceOrganization("");
     setSectorCommand("");
@@ -503,6 +510,7 @@ export default function Staff() {
     setMaritalStatus(s.marital_status || "");
     setCurrentAppointment((s as any).current_appointment || "");
     setBioTab("A");
+    setScannedDob("");
     setFormCompletedOn((s as any).form_completed_on || "");
     setServiceOrganization((s as any).service_organization || "");
     setSectorCommand((s as any).sector_command || "");
@@ -632,6 +640,19 @@ export default function Staff() {
           reason: "format_invalid",
         }, editing?.id ?? null);
         throw new Error("Ghana Card must be in the format GHA-XXXXXXXXX-X (9 digits, dash, 1 digit)");
+      }
+      // A date of birth already confirmed against the Ghana Card cannot be
+      // changed silently — the check has to be repeated for the new date.
+      if (editing && latestCardCheck?.status === "matched" && dateOfBirth &&
+          latestCardCheck.recorded_dob && latestCardCheck.recorded_dob !== dateOfBirth) {
+        await logAdminAudit("ghana_card_verification", "dob_change_after_verification", {
+          staff_id: staffId.trim() || null,
+          verified_dob: latestCardCheck.recorded_dob,
+          attempted_dob: dateOfBirth,
+        }, editing.id);
+        throw new Error(
+          "This date of birth was confirmed against the officer's Ghana Card. Re-run the Ghana Card check in Section M before changing it.",
+        );
       }
       setUploadingPhoto(!!photoFile);
 
@@ -1314,9 +1335,16 @@ export default function Staff() {
                     </Select>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                       <Label htmlFor="bio-dob">Date of birth ({DATE_FORMAT_HINT})</Label>
-                      <AgeDisplay dob={dateOfBirth} />
+                      <div className="flex items-center gap-2">
+                        <GhanaCardDobBadge
+                          profileId={editing?.id ?? null}
+                          formDob={dateOfBirth}
+                          onVerify={() => setBioTab("M")}
+                        />
+                        <AgeDisplay dob={dateOfBirth} />
+                      </div>
                     </div>
                     <DateInput
                       id="bio-dob"
@@ -1572,13 +1600,19 @@ export default function Staff() {
                     if (v.surname) setLastName(v.surname);
                     if (v.givenNames) setFirstName(v.givenNames.split(" ")[0]);
                     if (v.sex) setGender(v.sex);
-                    if (v.dateOfBirth) setDateOfBirth(v.dateOfBirth);
+                    if (v.dateOfBirth) {
+                      setDateOfBirth(v.dateOfBirth);
+                      // Feed the scanned date into the card check below so the
+                      // record's date of birth is confirmed against the card.
+                      setScannedDob(v.dateOfBirth);
+                    }
                   }}
                 />
                 <GhanaCardDobCheck
                   profileId={editing?.id ?? null}
                   recordDob={dateOfBirth}
                   ghanaCardNumber={ghanaCardNumber}
+                  scannedDob={scannedDob}
                 />
                 <DependentsSection profileId={editing?.id ?? null} canEdit={canManage} />
                 {editing?.id && (
