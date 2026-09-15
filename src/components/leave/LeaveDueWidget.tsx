@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { formatDate } from "@/lib/date-format";
-import { downloadTextFile } from "@/lib/download-utils";
+import { downloadCSVString } from "@/lib/download-utils";
 
 export type LeaveState = "overdue" | "due" | "on_track" | "taken";
 
@@ -115,7 +115,7 @@ export function LeaveDueWidget({ unitId = null }: { unitId?: string | null }) {
     const csv = lines
       .map((cells) => cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
       .join("\r\n");
-    downloadTextFile(`leave-due-${year}.csv`, csv, "text/csv;charset=utf-8");
+    downloadCSVString(csv, `leave-due-${year}.csv`);
   };
 
   const tiles: { state: LeaveState; value: number }[] = [

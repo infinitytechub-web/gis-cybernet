@@ -497,7 +497,7 @@ export default function CommandDashboard() {
       </Tabs>
 
       {/* Leave due / overdue for this command's officers only. */}
-      {officerIds.length > 0 && <LeaveDueWidget profileIds={officerIds} />}
+      <LeaveDueWidget unitId={selectedUnit} />
     </div>
   );
 }
