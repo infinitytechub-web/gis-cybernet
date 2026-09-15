@@ -26,6 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { downloadBlob } from "@/lib/download-utils";
 import { formatDate, formatDateTime } from "@/lib/date-format";
+import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 
 interface CommandUnit {
   id: string;
@@ -493,6 +494,9 @@ export default function CommandDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Leave due / overdue for this command's officers only. */}
+      {officerIds.length > 0 && <LeaveDueWidget profileIds={officerIds} />}
     </div>
   );
 }
