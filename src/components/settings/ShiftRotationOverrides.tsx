@@ -95,16 +95,20 @@ export function ShiftRotationOverrides() {
     },
   });
 
+  // Rotation override tables are not Realtime-published (operational settings);
+  // the audit feed still is, and local mutations invalidate their own queries.
   useEffect(() => {
     const ch = supabase
       .channel("shift-rotation-overrides-admin")
-      .on("postgres_changes", { event: "*", schema: "public", table: "shift_rotation_overrides" },
-        () => qc.invalidateQueries({ queryKey: ["shift-rotation-overrides"] }))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "shift_rotation_config_audit" },
-        () => qc.invalidateQueries({ queryKey: ["shift-rotation-audit"] }))
+        () => {
+          qc.invalidateQueries({ queryKey: ["shift-rotation-audit"] });
+          qc.invalidateQueries({ queryKey: ["shift-rotation-overrides"] });
+        })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
+
 
   const deptName = useMemo(() => {
     const m = new Map(departments.map((d) => [d.id, d.name]));
