@@ -1598,13 +1598,21 @@ export default function Staff() {
                   profileId={editing?.id ?? null}
                   onApply={(v) => {
                     if (v.surname) setLastName(v.surname);
-                    if (v.givenNames) setFirstName(v.givenNames.split(" ")[0]);
+                    if (v.givenNames) {
+                      const parts = v.givenNames.split(" ").filter(Boolean);
+                      setFirstName(parts[0] ?? "");
+                      if (parts.length > 1) setOtherNames(parts.slice(1).join(" "));
+                    }
                     if (v.sex) setGender(v.sex);
                     if (v.dateOfBirth) {
                       setDateOfBirth(v.dateOfBirth);
                       // Feed the scanned date into the card check below so the
                       // record's date of birth is confirmed against the card.
                       setScannedDob(v.dateOfBirth);
+                    }
+                    // A Ghanaian ID-card scan carries the Ghana Card number.
+                    if (v.format === "TD1" && v.documentNumber && v.nationality === "GHA" && !ghanaCardNumber.trim()) {
+                      setGhanaCardNumber(v.documentNumber);
                     }
                   }}
                 />
