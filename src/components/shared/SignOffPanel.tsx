@@ -155,7 +155,7 @@ export function SignOffPanel({
               <DialogTrigger asChild>
                 <Button type="button" size="sm" variant="outline">View signed document</Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+              <DialogContent className="max-h-[85vh] w-[95vw] max-w-3xl overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{documentTitle}</DialogTitle>
                   <DialogDescription>{subjectName}</DialogDescription>
@@ -180,6 +180,9 @@ export function SignOffPanel({
           </p>
         )}
 
+        {/* Phone: the steps sit in their own scrollable panel so the header and
+            signed-document button stay in reach; desktop shows them in full. */}
+        <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1 sm:max-h-none sm:overflow-visible sm:pr-0">
         {steps.map((s) => {
           const isNext = next?.step === s.step;
           return (
@@ -264,6 +267,7 @@ export function SignOffPanel({
             </div>
           );
         })}
+        </div>
 
         {next && !complete && (
           <div className="rounded-lg border p-3">

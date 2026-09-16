@@ -133,7 +133,7 @@ function BioDataFormToolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
       <Button type="button" variant="outline" size="sm" onClick={() => setImportOpen(true)}>
         <Upload className="mr-1 h-4 w-4" aria-hidden="true" />
         Prefill from spreadsheet
@@ -1205,11 +1205,11 @@ export default function Staff() {
 
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
               {/* Pinned so every section stays reachable while scrolling. */}
-              <TabsList className="sticky top-0 z-20 flex h-auto w-full flex-wrap justify-start gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+              <TabsList className="z-20 flex h-auto w-full flex-col justify-start gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:sticky sm:top-0 sm:flex-row sm:flex-wrap">
                 {BIODATA_SECTIONS.map((s) => (
-                  <TabsTrigger key={s.key} value={s.key} className="text-xs">
+                  <TabsTrigger key={s.key} value={s.key} className="w-full justify-start text-xs sm:w-auto">
                     <span className="font-semibold">{s.key}</span>
-                    <span className="ml-1 hidden sm:inline">{s.label}</span>
+                    <span className="ml-1 inline">{s.label}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>

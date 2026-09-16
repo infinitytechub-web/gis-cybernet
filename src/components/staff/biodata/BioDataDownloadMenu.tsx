@@ -53,10 +53,35 @@ export function BioDataDownloadMenu({
     }
   };
 
+  const SHORT: Record<BioDataFormat, string> = { pdf: "PDF", word: "Word", excel: "Excel", csv: "CSV" };
+
   return (
+    <>
+      {/* Phone: all formats in one row — no menu digging on a small screen. */}
+      <div className={`grid w-full grid-cols-4 gap-1 sm:hidden ${className ?? ""}`}>
+        {formats.map((fmt) => {
+          const Icon = ICONS[fmt];
+          return (
+            <Button
+              key={fmt}
+              type="button"
+              variant={variant}
+              size="sm"
+              disabled={!!busy}
+              onClick={() => void run(fmt)}
+              className="h-auto flex-col gap-0.5 py-1.5"
+            >
+              {busy === fmt
+                ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                : <Icon className="h-4 w-4" aria-hidden="true" />}
+              <span className="text-[10px] leading-none">{SHORT[fmt]}</span>
+            </Button>
+          );
+        })}
+      </div>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant={variant} size={size} className={className} disabled={!!busy}>
+        <Button type="button" variant={variant} size={size} className={`hidden sm:inline-flex ${className ?? ""}`} disabled={!!busy}>
           {busy
             ? <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
             : <Download className="mr-1 h-4 w-4" aria-hidden="true" />}
@@ -78,5 +103,6 @@ export function BioDataDownloadMenu({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+    </>
   );
 }
