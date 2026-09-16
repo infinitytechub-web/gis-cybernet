@@ -222,11 +222,9 @@ export function useMyDirectoryAccess() {
           qc.invalidateQueries({ queryKey: ["directory-permissions"] });
         },
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "directory_permissions" },
-        () => qc.invalidateQueries({ queryKey: ["directory-permissions"] }),
-      )
+      // NOTE: directory_permissions is deliberately NOT broadcast over realtime —
+      // the permission matrix must not stream to subscribed clients. Matrix
+      // changes are picked up on mount / window focus instead.
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
