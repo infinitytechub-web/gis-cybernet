@@ -267,6 +267,7 @@ export function SignOffPanel({
             </div>
           );
         })}
+        </div>
 
         {next && !complete && (
           <div className="rounded-lg border p-3">
