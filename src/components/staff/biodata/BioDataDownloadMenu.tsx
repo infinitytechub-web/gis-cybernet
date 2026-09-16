@@ -103,5 +103,6 @@ export function BioDataDownloadMenu({
         })}
       </DropdownMenuContent>
     </DropdownMenu>
+    </>
   );
 }
