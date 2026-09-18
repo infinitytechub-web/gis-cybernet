@@ -60,10 +60,9 @@ const myDutyItems = [
 ];
 
 const attendanceItems = [
-  { title: "My Dashboard", url: "/portal", icon: Activity, iconColor: "text-emerald-600 dark:text-emerald-400" },
-  { title: "Command Portal", url: "/command-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300" },
-  { title: "Command Dashboard", url: "/command-dashboard", icon: Building2, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Attendance", url: "/attendance", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400" },
+  { title: "Attendance Overview", url: "/attendance/overview", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300" },
+  { title: "Weekly Attendance", url: "/attendance/weekly", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
   { title: "Office Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400" },
 ];
 
@@ -74,6 +73,7 @@ const rosterItems = [
 
 const leaveItems = [
   { title: "Leave / Pass Requests", url: "/leave", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400" },
+  { title: "Leave Calendar", url: "/leave/calendar", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
   { title: "Leave Approvals", url: "/leave/approvals", icon: ClipboardCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400" },
 ];
@@ -90,6 +90,7 @@ const postingItems = [
 
 const appraisalItems = [
   { title: "Staff Appraisals", url: "/appraisals", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Appraisal Coverage", url: "/appraisals/coverage", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300" },
 ];
 
 
@@ -226,6 +227,25 @@ const commandVaultItems = [
   { title: "Command Vault", url: "/command-vault", icon: FolderLock, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
   { title: "GPS Hub", url: "/command-vault/gps", icon: Globe2, iconColor: "text-[hsl(180,70%,40%)] dark:text-[hsl(180,70%,65%)]" },
   { title: INTERLINK_LABELS.nav, url: "/interlink", icon: Network, iconColor: "text-indigo-600 dark:text-indigo-400" },
+];
+
+const commandWorkspaceItems = [
+  { title: "Command Portal", url: "/command-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300" },
+  { title: "Command Dashboard", url: "/command-dashboard", icon: Gauge, iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },
+  { title: "Command Matrix", url: "/command-assignments", icon: Building2, iconColor: "text-sky-700 dark:text-sky-300" },
+  { title: "Route History", url: "/route-history", icon: History, iconColor: "text-violet-700 dark:text-violet-300" },
+];
+
+const reportingItems = [
+  { title: "Scheduled Files", url: "/scheduled-files", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
+  { title: "Staff Export Integrity", url: "/staff-export-integrity", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
+];
+
+const homeItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
+  { title: "My Dashboard", url: "/portal", icon: Activity, iconColor: "text-emerald-600 dark:text-emerald-400" },
+  ...allStaffItems,
 ];
 
 const recycleBinItems = [
@@ -547,13 +567,23 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent role="navigation" aria-label={collapsed ? "Collapsed navigation menu" : "Expanded navigation menu"}>
-        {renderGroup("Command & Control", commandItems)}
-        {renderGroup("Personnel Management", personnelItems)}
+        {renderGroup("Home & My Work", homeItems, [
+          { label: "My Duty", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400", items: myDutyItems },
+        ])}
+        {renderGroup("People & Organization", personnelItems)}
+        {renderGroup("Command", commandItems, [
+          { label: "Command Workspace", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300", items: commandWorkspaceItems },
+          { label: "Reports & Assurance", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", items: reportingItems },
+        ])}
         {renderGroup(
-          "Workforce Operations",
+          "Workforce",
           [],
           [
-            ...workforceSections,
+            { label: "Attendance & Shifts", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400", items: attendanceItems },
+            { label: "Rosters & Schedules", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", items: rosterItems },
+            { label: "Leave & Holidays", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400", items: leaveItems },
+            { label: "Pay & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: paymentsLoansItems },
+            { label: "Postings & Transfers", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", items: postingItems },
             {
               label: "Appraisals & Approvals",
               icon: Award,
@@ -565,12 +595,13 @@ export function AppSidebar() {
             },
           ],
         )}
-        {renderGroup("Immigration Services", immigrationItems)}
-        {renderGroup("Security & Enforcement", securityItems)}
-        {renderGroup("Logistics", logisticsItems)}
-        {renderGroup("My Forms", allStaffItems)}
-        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Healthcare", healthItems)}
-        {renderGroup("Finance & Procurement", financeItems)}
+        {renderGroup("Immigration & Enforcement", immigrationItems, [
+          { label: "Operational Security", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: securityItems },
+        ])}
+        {renderGroup("Logistics & Resources", logisticsItems, [
+          { label: "Procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400", items: financeItems },
+          { label: "Health & Wellbeing", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300", items: healthItems },
+        ])}
         {renderGroup("M&E and Project Management", meEntryItems, [
           { label: "Strategy & Delivery", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300", items: meStrategyItems },
           { label: "Measurement & Evidence", icon: Gauge, iconColor: "text-teal-600 dark:text-teal-400", items: meMeasurementItems },
@@ -578,29 +609,20 @@ export function AppSidebar() {
           { label: "Resources & Oversight", icon: Landmark, iconColor: "text-chart-1", items: meResourceItems },
         ])}
 
-        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor") && renderGroup("Integrations", integrationsItems)}
-        {(role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") && renderGroup("Confidential", liveCommandVaultItems)}
-        {role === "admin" && renderGroup("Confidentiality", confidentialityItems)}
-        {(role === "admin" || role === "oic") && renderGroup("Recovery", recycleBinItems)}
-        {(role === "admin" || role === "supervisor" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer") &&
-          renderGroup("Administration", adminEntryItems, [
+        {renderGroup("Secure Workspace", liveCommandVaultItems, [
+          { label: "Confidentiality Commands", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400", items: confidentialityItems },
+        ])}
+        {renderGroup("Administration", adminEntryItems, [
             { label: "Approvals", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300", items: adminApprovalItems },
             { label: "Access & Roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400", items: adminAccessItems },
             {
               label: "Security & Audit",
               icon: ScrollText,
               iconColor: "text-fuchsia-700 dark:text-fuchsia-300",
-              items:
-                role === "admin"
-                  ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, staffAccessLogItem, shiftWindowAuditItem, ipBlocksItem]
-                  : (role === "oic" || role === "2ic" || role === "staff_officer")
-                    ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, staffAccessLogItem, shiftWindowAuditItem]
-                    : (role === "head_of_administration" || role === "chief_staff_officer")
-                      ? [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, shiftWindowAuditItem]
-                      : adminSecurityItems,
+              items: [...adminSecurityItems, securityAuditLogItem, sensitiveAccessLogItem, staffAccessLogItem, shiftWindowAuditItem, ipBlocksItem],
             },
             { label: "Data & Imports", icon: FileSpreadsheet, iconColor: "text-cyan-700 dark:text-cyan-300", items: adminDataItems },
-            { label: "Configuration", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400", items: adminConfigItems },
+            { label: "Configuration", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400", items: [...adminConfigItems, ...integrationsItems, ...recycleBinItems] },
           ])}
       </SidebarContent>
 
