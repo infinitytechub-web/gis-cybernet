@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import { KpiGrid, KpiTile } from "@/components/dashboard/KpiTile";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
-import BirthdayWidget from "@/components/dashboard/BirthdayWidget";
 import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
 import { usePersonalDashboardData } from "@/hooks/useDashboardData";
 
@@ -64,10 +63,7 @@ export default function StaffDashboard() {
       </DashboardSection>
 
       <DashboardSection id="information" title="Information" icon={Info} accent="text-cyan-700 dark:text-cyan-400">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <AnnouncementsBanner />
-          <BirthdayWidget />
-        </div>
+        <AnnouncementsBanner />
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">

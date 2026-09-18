@@ -39,7 +39,6 @@ import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 import { navDescription } from "@/lib/nav-descriptions";
 
 const commandItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, iconColor: "text-blue-600 dark:text-blue-400" },
   { title: "Command Console", url: "/command-console", icon: MonitorDot, iconColor: "text-[hsl(220,80%,40%)] dark:text-[hsl(220,80%,70%)]" },
   { title: "Analytics", url: "/analytics", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400" },
   { title: "Reports", url: "/reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400" },
@@ -268,17 +267,6 @@ const readOpenGroups = (): Record<string, boolean> => {
     return {};
   }
 };
-
-// Workforce Operations sub-menus — keeps the longest group scroll-free.
-const workforceSections: NavSection[] = [
-  { label: "My Duty", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400", items: myDutyItems },
-  { label: "Attendance & Shifts", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400", items: attendanceItems },
-  { label: "Rosters & Schedules", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", items: rosterItems },
-  { label: "Leave & Holidays", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400", items: leaveItems },
-  { label: "Payments & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: paymentsLoansItems },
-  { label: "Postings & Transfers", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", items: postingItems },
-];
-
 
 export function AppSidebar() {
   const { state, setOpen, setOpenMobile, isMobile } = useSidebar();
