@@ -6,6 +6,7 @@ import {
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import DashboardSection from "@/components/dashboard/DashboardSection";
@@ -50,11 +51,11 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
     <>
       <DashboardSection id="key-figures" title="Key figures" icon={ListChecks}>
         <KpiGrid>
-          <KpiTile title="Total Staff" value={c.staffCount} sub={`${c.activeStaff} active`} icon={Users} tone="info" onClick={() => navigate("/staff")} />
-          <KpiTile title="On-Duty Today" value={c.todayAttendance} sub={`of ${c.activeStaff} active`} icon={CalendarCheck} tone="success" onClick={() => navigate("/attendance")} />
-          <KpiTile title="Absent Today" value={Math.max(0, c.activeStaff - c.todayAttendance)} sub="not checked in" icon={UserX} tone="danger" onClick={() => navigate("/attendance")} />
-          <KpiTile title="Pending Leave" value={c.pendingLeave} sub="awaiting approval" icon={CalendarOff} tone="warning" onClick={() => navigate("/leave")} />
-          <KpiTile title="Pending Postings" value={c.pendingPostings} sub="awaiting approval" icon={ArrowRightLeft} tone="warning" onClick={() => navigate("/postings")} />
+          {can("staff") && <KpiTile title="Total Staff" value={c.staffCount} sub={`${c.activeStaff} active`} icon={Users} tone="info" onClick={() => navigate("/staff")} />}
+          {can("attendance") && <KpiTile title="On-Duty Today" value={c.todayAttendance} sub={`of ${c.activeStaff} active`} icon={CalendarCheck} tone="success" onClick={() => navigate("/attendance")} />}
+          {can("attendance") && <KpiTile title="Absent Today" value={Math.max(0, c.activeStaff - c.todayAttendance)} sub="not checked in" icon={UserX} tone="danger" onClick={() => navigate("/attendance")} />}
+          {can("leave-approvals") && <KpiTile title="Pending Leave" value={c.pendingLeave} sub="awaiting approval" icon={CalendarOff} tone="warning" onClick={() => navigate("/leave/approvals")} />}
+          {can("postings") && <KpiTile title="Pending Postings" value={c.pendingPostings} sub="awaiting approval" icon={ArrowRightLeft} tone="warning" onClick={() => navigate("/postings")} />}
           <KpiTile title="Upcoming Holidays" value={holidays.length} sub="next 5" icon={Calendar} tone="neutral" onClick={() => navigate("/holidays")} />
         </KpiGrid>
       </DashboardSection>
@@ -63,23 +64,23 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
         <DashboardSection id="action-needed" title="Action needed" description="Items waiting on your decision." icon={CalendarOff} accent="text-warning">
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="flex flex-wrap gap-4 pt-6">
-              {c.pendingLeave > 0 && (
-                <button onClick={() => navigate("/leave")} className="flex items-center gap-3 rounded-lg border bg-background p-3 transition-colors hover:border-primary/50">
+              {can("leave-approvals") && c.pendingLeave > 0 && (
+                <Button variant="outline" onClick={() => navigate("/leave/approvals")} className="h-auto justify-start gap-3 p-3">
                   <CalendarOff className="h-6 w-6 text-warning" aria-hidden="true" />
                   <span className="text-left">
                     <span className="block text-xl font-bold">{c.pendingLeave}</span>
                     <span className="block text-xs text-muted-foreground">Leave requests</span>
                   </span>
-                </button>
+                </Button>
               )}
-              {c.pendingPostings > 0 && (
-                <button onClick={() => navigate("/postings")} className="flex items-center gap-3 rounded-lg border bg-background p-3 transition-colors hover:border-primary/50">
+              {can("postings") && c.pendingPostings > 0 && (
+                <Button variant="outline" onClick={() => navigate("/postings")} className="h-auto justify-start gap-3 p-3">
                   <ArrowRightLeft className="h-6 w-6 text-secondary" aria-hidden="true" />
                   <span className="text-left">
                     <span className="block text-xl font-bold">{c.pendingPostings}</span>
                     <span className="block text-xs text-muted-foreground">Postings / transfers</span>
                   </span>
-                </button>
+                </Button>
               )}
             </CardContent>
           </Card>
@@ -104,7 +105,7 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
       </DashboardSection>
 
       <DashboardSection id="workforce" title="Workforce analytics" icon={TrendingUp}>
-        <ApprovedLeaveCalendarWidget />
+        {can("leave-calendar") && <ApprovedLeaveCalendarWidget />}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader className="pb-2">
@@ -160,7 +161,7 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
+          {can("leave-approvals") && <Card className="lg:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <CalendarOff className="h-4 w-4 text-warning" aria-hidden="true" />
@@ -195,7 +196,7 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>
+          </Card>}
 
           <Card>
             <CardHeader className="pb-2">
@@ -219,9 +220,9 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
       <DashboardSection id="information" title="Information" icon={Info} accent="text-cyan-700 dark:text-cyan-400">
         <div className="grid gap-4 lg:grid-cols-2">
           <AnnouncementsBanner />
-          <BirthdayWidget />
+          {can("staff") && <BirthdayWidget />}
         </div>
-        <GenderStatisticsWidget />
+        {can("analytics") && <GenderStatisticsWidget />}
       </DashboardSection>
     </>
   );

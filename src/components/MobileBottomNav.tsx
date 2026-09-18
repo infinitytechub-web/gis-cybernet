@@ -15,6 +15,7 @@ import {
 import {
   CalendarCheck, Building2, Award, Clock, Calendar,
   ArrowRightLeft, ClipboardCheck, BarChart3, CalendarDays, Shield, Megaphone, Stamp, Activity, FileSearch, ShieldAlert, Crosshair, Package, Lock, Briefcase,
+  Gauge, Network, FolderLock, FileHeart, Settings,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
@@ -27,16 +28,24 @@ const primaryTabs = [
 ];
 
 const moreItems = [
-  // Command & Control
+  // Command
+  { title: "Command Portal", url: "/command-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300", group: "Command" },
+  { title: "Command Dashboard", url: "/command-dashboard", icon: Gauge, iconColor: "text-emerald-700 dark:text-emerald-300", group: "Command" },
+  { title: "Command Console", url: "/command-console", icon: Activity, iconColor: "text-primary", group: "Command" },
   { title: "Analytics", url: "/analytics", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400", group: "Command" },
   { title: "Reports", url: "/reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", group: "Command" },
+  { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300", group: "Command" },
   // Personnel
   { title: "Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400", group: "Personnel" },
   { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400", group: "Personnel" },
   { title: "Roles", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400", group: "Personnel" },
   // Workforce
   { title: "Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400", group: "Workforce" },
+  { title: "Attendance Overview", url: "/attendance/overview", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300", group: "Workforce" },
+  { title: "Weekly Attendance", url: "/attendance/weekly", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300", group: "Workforce" },
   { title: "Duty Roster", url: "/roster", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", group: "Workforce" },
+  { title: "Leave Calendar", url: "/leave/calendar", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300", group: "Workforce" },
+  { title: "Leave Approvals", url: "/leave/approvals", icon: ClipboardCheck, iconColor: "text-emerald-700 dark:text-emerald-300", group: "Workforce" },
   { title: "Holidays", url: "/holidays", icon: Calendar, iconColor: "text-rose-600 dark:text-rose-400", group: "Workforce" },
   { title: "Postings & Transfers", url: "/postings", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", group: "Workforce" },
   // Immigration Services
@@ -51,19 +60,23 @@ const moreItems = [
   { title: "IPSE", url: "/ipse", icon: Shield, iconColor: "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]", group: "Security" },
   // Logistics
   { title: "Stores & Inventory", url: "/stores", icon: Package, iconColor: "text-amber-700 dark:text-amber-500", group: "Logistics" },
+  { title: "Health Lab+", url: "/health-lab", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300", group: "Health" },
+  { title: "Command Vault", url: "/command-vault", icon: FolderLock, iconColor: "text-primary", group: "Secure workspace" },
+  { title: "Interlink", url: "/interlink", icon: Network, iconColor: "text-indigo-600 dark:text-indigo-400", group: "Secure workspace" },
   // Finance & Procurement
   { title: "Procurement Unit", url: "/procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400", group: "Finance" },
 ];
 
 const adminItems = [
+  { title: "Admin Console", url: "/admin", icon: Shield, iconColor: "text-primary" },
   { title: "Announcements", url: "/announcements", icon: Megaphone, iconColor: "text-red-600 dark:text-red-400" },
-  { title: "Settings", url: "/settings", icon: Shield, iconColor: "text-slate-600 dark:text-slate-400" },
+  { title: "Settings", url: "/settings", icon: Settings, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
 
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAdmin, isAdminOrSupervisor } = useAuth();
+  const { user } = useAuth();
   const { canPath } = useRbac();
   // RBAC: only surface destinations this account may open.
   const visibleTabs = primaryTabs.filter((t) => canPath(t.url));

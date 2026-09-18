@@ -35,10 +35,11 @@ export function useRbac() {
     enabled: !!user,
     staleTime: 5 * 60_000,
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("command_tier_grants")
         .select("capability, expires_at, revoked_at")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .is("revoked_at", null);
       if (error) throw error;
       const now = Date.now();
