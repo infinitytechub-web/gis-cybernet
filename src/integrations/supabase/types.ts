@@ -17794,6 +17794,27 @@ export type Database = {
         Args: { _staff_id: string }
         Returns: undefined
       }
+      command_admin_units: {
+        Args: never
+        Returns: {
+          code: string
+          id: string
+          level: string
+          name: string
+          parent_id: string
+          unit_type: string
+        }[]
+      }
+      command_admin_update_officer: {
+        Args: {
+          _org_unit_id?: string
+          _profile_id: string
+          _reason?: string
+          _shift_group?: string
+          _status?: string
+        }
+        Returns: undefined
+      }
       command_alert_add_note: {
         Args: { _alert_id: string; _note: string }
         Returns: undefined
