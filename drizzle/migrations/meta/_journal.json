@@ -71,6 +71,13 @@
       "when": 1789828792737,
       "tag": "0009_secure_presence_channel",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789829006925,
+      "tag": "0010_fix_presence_identities_org_scope",
+      "breakpoints": true
     }
   ]
 }
