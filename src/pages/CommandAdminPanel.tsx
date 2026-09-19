@@ -12,7 +12,7 @@
  */
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, FileSignature, CalendarOff, Loader2, Search, Users, ShieldCheck, Pencil } from "lucide-react";
+import { Building2, FileSignature, CalendarOff, Gauge, Loader2, Search, Users, ShieldCheck, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
