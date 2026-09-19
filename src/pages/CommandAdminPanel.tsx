@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SignOffQueue } from "@/components/command/SignOffQueue";
+import { CommandLiveOverview } from "@/components/command/CommandLiveOverview";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import { STAFF_STATUS_LABELS } from "@/lib/staff-status";
 
