@@ -235,6 +235,7 @@ function App() {
           <Route path="/command-portal" element={<ProtectedRoute module="command-portal"><Layout><CommandPortal /></Layout></ProtectedRoute>} />
           <Route path="/command-admin" element={<ProtectedRoute module="command-admin"><Layout><CommandAdminPanel /></Layout></ProtectedRoute>} />
           <Route path="/officer-portal" element={<ProtectedRoute module="officer-portal"><Layout><OfficerPortal /></Layout></ProtectedRoute>} />
+          <Route path="/command-administration" element={<ProtectedRoute module="command-administration"><Layout><CommandAdministration /></Layout></ProtectedRoute>} />
           <Route path="/attendance/weekly" element={<ProtectedRoute module="attendance-weekly"><Layout><AttendanceWeekly /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/shift-rotation-approvals" element={<ProtectedRoute module="shift-rotation-approvals"><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
