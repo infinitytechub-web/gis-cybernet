@@ -7,7 +7,7 @@
  *  - `leave_due_overview()` narrows to the caller's own row at 'self' scope
  *  - `my_posting_history()` only returns the caller's own transfers
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarOff, FileSignature, ArrowRightLeft, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,9 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SignOffPanel, useSignOffState } from "@/components/shared/SignOffPanel";
+import { SignOffQueue, type QueueRow } from "@/components/command/SignOffQueue";
 import { nextSignOffStep, SIGNOFF_STEP_LABEL, SIGNOFF_STEP_WHO } from "@/lib/signoff";
 import { formatDate, formatDateTime } from "@/lib/date-format";
+
 
 
 interface MyProfile {
