@@ -165,6 +165,10 @@ export default function CommandAdminPanel() {
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="overview" className="mt-4">
+          <CommandLiveOverview unitId={context?.org_unit_id ?? null} />
+        </TabsContent>
+
         <TabsContent value="officers" className="mt-4">
           <Card>
             <CardHeader className="space-y-1">
