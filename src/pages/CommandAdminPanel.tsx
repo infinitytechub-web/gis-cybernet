@@ -12,7 +12,7 @@
  */
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, FileSignature, CalendarOff, Loader2, Search, Users, ShieldCheck, Pencil } from "lucide-react";
+import { Building2, FileSignature, CalendarOff, Gauge, Loader2, Search, Users, ShieldCheck, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SignOffQueue } from "@/components/command/SignOffQueue";
+import { CommandLiveOverview } from "@/components/command/CommandLiveOverview";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import { STAFF_STATUS_LABELS } from "@/lib/staff-status";
 
@@ -148,8 +149,11 @@ export default function CommandAdminPanel() {
         </p>
       </header>
 
-      <Tabs defaultValue="officers">
+      <Tabs defaultValue="overview">
         <TabsList className="flex w-full flex-col sm:inline-flex sm:w-auto sm:flex-row">
+          <TabsTrigger value="overview" className="w-full gap-1.5 sm:w-auto">
+            <Gauge className="h-4 w-4" aria-hidden="true" /> Overview
+          </TabsTrigger>
           <TabsTrigger value="officers" className="w-full gap-1.5 sm:w-auto">
             <Users className="h-4 w-4" aria-hidden="true" /> Officers
           </TabsTrigger>
@@ -160,6 +164,10 @@ export default function CommandAdminPanel() {
             <CalendarOff className="h-4 w-4" aria-hidden="true" /> Leave status
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="mt-4">
+          <CommandLiveOverview unitId={context?.org_unit_id ?? null} />
+        </TabsContent>
 
         <TabsContent value="officers" className="mt-4">
           <Card>
