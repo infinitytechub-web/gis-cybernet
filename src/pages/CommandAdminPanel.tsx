@@ -33,7 +33,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SignOffQueue } from "@/components/command/SignOffQueue";
+import { SignOffQueue, type QueueRow } from "@/components/command/SignOffQueue";
+import { SignOffPanel } from "@/components/shared/SignOffPanel";
 import { CommandLiveOverview } from "@/components/command/CommandLiveOverview";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import { STAFF_STATUS_LABELS } from "@/lib/staff-status";
@@ -88,6 +89,7 @@ export default function CommandAdminPanel() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Officer | null>(null);
+  const [signingRow, setSigningRow] = useState<QueueRow | null>(null);
 
   const { data: context } = useQuery({
     queryKey: ["command-admin-context"],
@@ -128,6 +130,7 @@ export default function CommandAdminPanel() {
   }, [officers, search]);
 
   const activeCount = officers.filter((o) => o.status === "active").length;
+  const self = useMemo(() => officers.find((o) => o.is_self) ?? null, [officers]);
 
   return (
     <div className="space-y-6 pb-24 md:pb-6">
@@ -247,13 +250,43 @@ export default function CommandAdminPanel() {
         </TabsContent>
 
         <TabsContent value="signoffs" className="mt-4">
-          <SignOffQueue />
+          <SignOffQueue onSign={(row) => setSigningRow(row)} />
         </TabsContent>
 
         <TabsContent value="leave" className="mt-4">
           <LeaveDueWidget unitId={context?.org_unit_id ?? null} />
         </TabsContent>
       </Tabs>
+
+      {/* Sign and approve without leaving the panel; the server still checks
+          entitlement for each step, so the dialog cannot bypass the order. */}
+      <Dialog open={!!signingRow} onOpenChange={(open) => !open && setSigningRow(null)}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sign-off — {signingRow?.staff_name ?? "record"}</DialogTitle>
+            <DialogDescription>
+              {[signingRow?.staff_id, signingRow?.unit_name].filter(Boolean).join(" · ") ||
+                "Sign the next step in order."}
+            </DialogDescription>
+          </DialogHeader>
+          {signingRow && (
+            <SignOffPanel
+              entityType={signingRow.entity_type}
+              entityId={signingRow.entity_id}
+              subjectName={signingRow.staff_name ?? "Officer"}
+              documentTitle="Staff record sign-off"
+              defaultSignatoryName={self ? officerName(self) : ""}
+              recordSummary={[
+                signingRow.staff_name ?? "Officer",
+                signingRow.staff_id ?? "",
+                signingRow.unit_name ?? "",
+              ]
+                .filter(Boolean)
+                .join(" | ")}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <OfficerEditDialog
         officer={editing}
