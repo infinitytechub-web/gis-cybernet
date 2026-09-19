@@ -70,7 +70,7 @@ const SHIFT_GROUPS = ["A", "B", "C", "D"];
 const KEEP = "__keep__";
 
 /** Statuses a commander may set. Retire/interdict stay admin-only server-side. */
-const COMMANDER_STATUSES = ["active", "partially_active", "inactive", "suspended"] as const;
+const COMMANDER_STATUSES = ["active", "partially_active", "inactive", "study_leave", "transferred"] as const;
 const ADMIN_ONLY_STATUSES = ["retired", "interdicted"] as const;
 
 function officerName(o: Officer) {
