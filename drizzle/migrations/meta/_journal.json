@@ -8,6 +8,13 @@
       "when": 1789779227590,
       "tag": "0000_command_admin_panel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789825018246,
+      "tag": "0001_my_posting_history_self_service",
+      "breakpoints": true
     }
   ]
 }

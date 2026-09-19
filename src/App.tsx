@@ -62,6 +62,7 @@ const MyDashboard = lazy(() => import("./pages/MyDashboard"));
 const CommandPortal = lazy(() => import("./pages/CommandPortal"));
 const CommandDashboard = lazy(() => import("./pages/CommandDashboard"));
 const CommandAdminPanel = lazy(() => import("./pages/CommandAdminPanel"));
+const OfficerPortal = lazy(() => import("./pages/OfficerPortal"));
 const LeaveCalendar = lazy(() => import("./pages/LeaveCalendar"));
 const LeaveApprovals = lazy(() => import("./pages/LeaveApprovals"));
 const MyShiftTracker = lazy(() => import("./pages/MyShiftTracker"));
@@ -232,6 +233,7 @@ function App() {
           <Route path="/command-dashboard" element={<ProtectedRoute module="command-dashboard"><Layout><CommandDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-portal" element={<ProtectedRoute module="command-portal"><Layout><CommandPortal /></Layout></ProtectedRoute>} />
           <Route path="/command-admin" element={<ProtectedRoute module="command-admin"><Layout><CommandAdminPanel /></Layout></ProtectedRoute>} />
+          <Route path="/officer-portal" element={<ProtectedRoute module="officer-portal"><Layout><OfficerPortal /></Layout></ProtectedRoute>} />
           <Route path="/attendance/weekly" element={<ProtectedRoute module="attendance-weekly"><Layout><AttendanceWeekly /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/shift-rotation-approvals" element={<ProtectedRoute module="shift-rotation-approvals"><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />

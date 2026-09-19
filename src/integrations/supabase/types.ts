@@ -18897,6 +18897,21 @@ export type Database = {
         }[]
       }
       my_mfa_policy: { Args: never; Returns: Json }
+      my_posting_history: {
+        Args: never
+        Returns: {
+          created_at: string
+          effective_date: string
+          from_level: string
+          from_shift_group: string
+          from_unit_name: string
+          id: string
+          reason: string
+          to_level: string
+          to_shift_group: string
+          to_unit_name: string
+        }[]
+      }
       my_store_issuance: {
         Args: never
         Returns: {

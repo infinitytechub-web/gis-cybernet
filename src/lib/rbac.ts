@@ -82,6 +82,7 @@ export const MODULES: ModuleDef[] = [
   { key: "command-portal", label: "Command Portal", tier: "all-staff", roles: "all", paths: ["/command-portal"] },
   { key: "command-dashboard", label: "Command Dashboard", tier: "all-staff", roles: "all", paths: ["/command-dashboard"] },
   { key: "command-admin", label: "Command Admin Panel", tier: "command", roles: COMMAND, paths: ["/command-admin"] },
+  { key: "officer-portal", label: "Officer Portal", tier: "all-staff", roles: "all", paths: ["/officer-portal"] },
 
   { key: "holidays", label: "Holidays", tier: "all-staff", roles: "all", paths: ["/holidays"] },
   { key: "payments", label: "Payments", feature: "Payments", tier: "all-staff", roles: "all", paths: ["/payments"] },
