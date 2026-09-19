@@ -36,6 +36,13 @@
       "when": 1789826211050,
       "tag": "0004_scope_command_dashboard_units_to_own_subtree",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789826634726,
+      "tag": "0005_admin_command_administration_rpcs",
+      "breakpoints": true
     }
   ]
 }
