@@ -245,8 +245,10 @@ export function useFleetRealtime(enabled = true) {
       .subscribe();
 
     return () => {
+      window.clearInterval(vehiclePoll);
       supabase.removeChannel(channel);
     };
+
   }, [enabled, queryClient]);
 }
 
