@@ -30,31 +30,90 @@ export function SignedDocumentView({
   const print = () => {
     const win = window.open("", "_blank", "noopener,noreferrer,width=900,height=1100");
     if (!win) return;
-    const rows = signed
-      .map(
-        (s) => `<tr>
-          <td>${SIGNOFF_STEP_LABEL[s.step] ?? s.step}</td>
-          <td>${escapeHtml(s.signer_name ?? "")}<br><small>${escapeHtml(s.signer_role ?? "")}</small></td>
-          <td>${s.signed_at ? escapeHtml(formatDateTime(s.signed_at)) : ""}</td>
-          <td><img src="${s.signature_data ?? ""}" style="height:46px"></td>
-          <td style="font-family:monospace;font-size:10px">${escapeHtml((s.signature_hash ?? "").slice(0, 24))}</td>
-        </tr>`,
-      )
-      .join("");
-    win.document.write(`<!doctype html><html><head><title>${escapeHtml(documentTitle)}</title>
-      <style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}
-      table{width:100%;border-collapse:collapse;margin-top:12px}
-      th,td{border:1px solid #999;padding:6px;text-align:left;font-size:12px;vertical-align:top}
-      footer{margin-top:24px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#555}</style>
-      </head><body>
-      <h2>${escapeHtml(documentTitle)}</h2>
-      <p><strong>${escapeHtml(subjectName)}</strong><br>
-      Status: ${complete ? "Fully signed" : `${signed.length} of ${steps.length} signed`}</p>
-      <table><thead><tr><th>Step</th><th>Signatory</th><th>Signed</th><th>Signature</th><th>Fingerprint</th></tr></thead>
-      <tbody>${rows}</tbody></table>
-      <footer>Confidential — Ghana Immigration Service</footer>
-      </body></html>`);
-    win.document.close();
+    // Build the print document with DOM APIs only (no document.write /
+    // innerHTML) so user-controlled values can never break out as markup.
+    const doc = win.document;
+    doc.title = documentTitle;
+
+    const style = doc.createElement("style");
+    style.textContent =
+      "body{font-family:system-ui,sans-serif;padding:24px;color:#111}" +
+      "table{width:100%;border-collapse:collapse;margin-top:12px}" +
+      "th,td{border:1px solid #999;padding:6px;text-align:left;font-size:12px;vertical-align:top}" +
+      "footer{margin-top:24px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#555}";
+    doc.head.appendChild(style);
+
+    const h2 = doc.createElement("h2");
+    h2.textContent = documentTitle;
+    doc.body.appendChild(h2);
+
+    const p = doc.createElement("p");
+    const strong = doc.createElement("strong");
+    strong.textContent = subjectName;
+    p.appendChild(strong);
+    p.appendChild(doc.createElement("br"));
+    p.appendChild(
+      doc.createTextNode(
+        `Status: ${complete ? "Fully signed" : `${signed.length} of ${steps.length} signed`}`,
+      ),
+    );
+    doc.body.appendChild(p);
+
+    const table = doc.createElement("table");
+    const thead = doc.createElement("thead");
+    const headRow = doc.createElement("tr");
+    for (const label of ["Step", "Signatory", "Signed", "Signature", "Fingerprint"]) {
+      const th = doc.createElement("th");
+      th.textContent = label;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = doc.createElement("tbody");
+    for (const s of signed) {
+      const tr = doc.createElement("tr");
+
+      const stepCell = doc.createElement("td");
+      stepCell.textContent = SIGNOFF_STEP_LABEL[s.step] ?? s.step;
+      tr.appendChild(stepCell);
+
+      const signerCell = doc.createElement("td");
+      signerCell.appendChild(doc.createTextNode(s.signer_name ?? ""));
+      signerCell.appendChild(doc.createElement("br"));
+      const small = doc.createElement("small");
+      small.textContent = s.signer_role ?? "";
+      signerCell.appendChild(small);
+      tr.appendChild(signerCell);
+
+      const whenCell = doc.createElement("td");
+      whenCell.textContent = s.signed_at ? formatDateTime(s.signed_at) : "";
+      tr.appendChild(whenCell);
+
+      const sigCell = doc.createElement("td");
+      if (s.signature_data && /^data:image\/(png|jpe?g|webp);base64,/i.test(s.signature_data)) {
+        const img = doc.createElement("img");
+        img.src = s.signature_data;
+        img.style.height = "46px";
+        sigCell.appendChild(img);
+      }
+      tr.appendChild(sigCell);
+
+      const hashCell = doc.createElement("td");
+      hashCell.style.fontFamily = "monospace";
+      hashCell.style.fontSize = "10px";
+      hashCell.textContent = (s.signature_hash ?? "").slice(0, 24);
+      tr.appendChild(hashCell);
+
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    doc.body.appendChild(table);
+
+    const footer = doc.createElement("footer");
+    footer.textContent = "Confidential — Ghana Immigration Service";
+    doc.body.appendChild(footer);
+
     win.focus();
     win.print();
   };
@@ -139,12 +198,6 @@ export function SignedDocumentView({
         </div>
       )}
     </div>
-  );
-}
-
-function escapeHtml(v: string) {
-  return v.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c),
   );
 }
 
