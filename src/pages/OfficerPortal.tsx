@@ -194,15 +194,19 @@ export default function OfficerPortal() {
 
         <TabsContent value="signoffs" className="mt-4">
           {profile?.id ? (
-            <SignOffPanel
-              entityType="staff_biodata"
-              entityId={profile.id}
-              subjectName={fullName}
-              documentTitle="Staff record sign-off"
-              recordSummary={`Staff record of ${fullName} (${profile.staff_id ?? "no staff number"})`}
-              defaultSignatoryName={fullName}
-            />
+            <div className="space-y-4">
+              <MySignOffStatus profileId={profile.id} />
+              <SignOffPanel
+                entityType="staff_biodata"
+                entityId={profile.id}
+                subjectName={fullName}
+                documentTitle="Staff record sign-off"
+                recordSummary={`Staff record of ${fullName} (${profile.staff_id ?? "no staff number"})`}
+                defaultSignatoryName={fullName}
+              />
+            </div>
           ) : (
+
             <Card>
               <CardContent className="py-8 text-sm text-muted-foreground">
                 Loading your record…
