@@ -50,6 +50,20 @@
       "when": 1789826854069,
       "tag": "0006_fix_command_appointment_audit_action",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789827055535,
+      "tag": "0007_scope_oic_2ic_profile_reads_to_own_command",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789827129585,
+      "tag": "0008_scope_command_tier_reads_to_own_command",
+      "breakpoints": true
     }
   ]
 }
