@@ -17606,6 +17606,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_appoint_commander: {
+        Args: {
+          _org_unit_id: string
+          _profile_id: string
+          _reason?: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
+      }
+      admin_command_overview: {
+        Args: never
+        Returns: {
+          authorised_strength: number
+          commanders: Json
+          org_unit_id: string
+          parent_name: string
+          posted: number
+          unit_name: string
+          unit_type: string
+        }[]
+      }
+      admin_command_panel_activity: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          actor_name: string
+          created_at: string
+          details: Json
+          id: string
+          subject_name: string
+          subject_staff_id: string
+        }[]
+      }
       admin_purge_shift_connections: { Args: never; Returns: number }
       admin_quick_search: { Args: { _q: string }; Returns: Json }
       admin_recovery_consume_backup_code: {
@@ -17614,6 +17647,14 @@ export type Database = {
       }
       admin_reset_failed_attempts: {
         Args: { _staff_id: string }
+        Returns: undefined
+      }
+      admin_revoke_command_role: {
+        Args: {
+          _profile_id: string
+          _reason?: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
         Returns: undefined
       }
       admin_unlock_account: {

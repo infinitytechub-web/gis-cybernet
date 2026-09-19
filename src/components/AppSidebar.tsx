@@ -188,6 +188,7 @@ const adminApprovalItems = [
 ];
 
 const adminAccessItems = [
+  { title: "Command Administration", url: "/command-administration", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
   { title: "Command Roles", url: "/command-roles", icon: Crown, iconColor: "text-amber-600 dark:text-amber-400" },
   { title: "Role Assignments", url: "/role-assignments", icon: UserCog, iconColor: "text-amber-700 dark:text-amber-300" },
   { title: "Admin Access Matrix", url: "/admin-access-matrix", icon: Shield, iconColor: "text-emerald-600 dark:text-emerald-400" },
