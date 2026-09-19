@@ -199,6 +199,7 @@ export default function OfficerPortal() {
           {profile?.id ? (
             <div className="space-y-4">
               <MySignOffStatus profileId={profile.id} />
+              <SignOffQueue onSign={(row) => setSigningRow(row)} />
               <SignOffPanel
                 entityType="staff_biodata"
                 entityId={profile.id}
@@ -208,6 +209,7 @@ export default function OfficerPortal() {
                 defaultSignatoryName={fullName}
               />
             </div>
+
           ) : (
 
             <Card>
