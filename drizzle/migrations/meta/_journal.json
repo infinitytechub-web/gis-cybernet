@@ -64,6 +64,13 @@
       "when": 1789827129585,
       "tag": "0008_scope_command_tier_reads_to_own_command",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789828792737,
+      "tag": "0009_secure_presence_channel",
+      "breakpoints": true
     }
   ]
 }
