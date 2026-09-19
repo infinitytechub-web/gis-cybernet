@@ -79,16 +79,77 @@ const PRUNE_INTERVAL_MS = 10_000;
 type Subscriber = (users: OnlineUser[], syncedAt: number) => void;
 const subscribers = new Set<Subscriber>();
 let sharedChannel: ReturnType<typeof supabase.channel> | null = null;
+let sharedPresences: PresencePayload[] = [];
 let sharedUsers: OnlineUser[] = [];
 let sharedSyncedAt: number = Date.now();
 let sharedUserId: string | null = null;
-let sharedPayload: OnlineUser | null = null;
+let sharedPayload: PresencePayload | null = null;
 let refCount = 0;
+
+type Identity = {
+  staffId: string;
+  firstName: string;
+  lastName: string;
+  department: string;
+  rank: string;
+  photoUrl: string | null;
+};
+// Identities the server allowed this session to see. Users we are not
+// authorized to identify stay anonymous.
+const identityCache = new Map<string, Identity>();
+const identityMisses = new Set<string>();
+let identityFetchInFlight = false;
 
 function notifySubscribers() {
   subscribers.forEach((cb) => {
     try { cb(sharedUsers, sharedSyncedAt); } catch { /* ignore */ }
   });
+}
+
+function rebuildUsers() {
+  sharedUsers = sharedPresences.map((p) => {
+    const id = identityCache.get(p.userId);
+    return {
+      userId: p.userId,
+      firstName: id?.firstName ?? "Staff member",
+      lastName: id?.lastName ?? "",
+      staffId: id?.staffId ?? "",
+      department: id?.department ?? "",
+      rank: id?.rank ?? "",
+      photoUrl: id?.photoUrl ?? null,
+      currentPage: p.currentPage,
+      onlineSince: p.onlineSince,
+      lastActiveAt: p.lastActiveAt,
+    } satisfies OnlineUser;
+  });
+}
+
+async function resolveIdentities() {
+  const missing = sharedPresences
+    .map((p) => p.userId)
+    .filter((id) => !identityCache.has(id) && !identityMisses.has(id));
+  if (missing.length === 0 || identityFetchInFlight) return;
+  identityFetchInFlight = true;
+  try {
+    const { data } = await supabase.rpc("presence_identities", { _user_ids: missing });
+    for (const row of data ?? []) {
+      identityCache.set(row.user_id, {
+        staffId: row.staff_id ?? "",
+        firstName: row.first_name ?? "",
+        lastName: row.last_name ?? "",
+        department: row.department ?? "",
+        rank: row.rank ?? "",
+        photoUrl: row.photo_url ?? null,
+      });
+    }
+    // Anything the server withheld is not visible to this viewer.
+    for (const id of missing) {
+      if (!identityCache.has(id)) identityMisses.add(id);
+    }
+    rebuildUsers();
+    notifySubscribers();
+  } catch { /* ignore */ }
+  finally { identityFetchInFlight = false; }
 }
 
 function ensureChannel(userId: string) {
@@ -99,20 +160,22 @@ function ensureChannel(userId: string) {
   }
   sharedUserId = userId;
   const ch = supabase.channel("online-users-global", {
-    config: { presence: { key: userId } },
+    config: { private: true, presence: { key: userId } },
   });
   ch.on("presence", { event: "sync" }, () => {
-    const state = ch.presenceState<OnlineUser>();
-    const users: OnlineUser[] = [];
+    const state = ch.presenceState<PresencePayload>();
+    const presences: PresencePayload[] = [];
     for (const key of Object.keys(state)) {
-      const presences = state[key];
-      if (presences && presences.length > 0) {
-        users.push(presences[0] as unknown as OnlineUser);
+      const entries = state[key];
+      if (entries && entries.length > 0) {
+        presences.push(entries[0] as unknown as PresencePayload);
       }
     }
-    sharedUsers = users;
+    sharedPresences = presences;
     sharedSyncedAt = Date.now();
+    rebuildUsers();
     notifySubscribers();
+    void resolveIdentities();
   });
   ch.subscribe(async (status) => {
     if (status === "SUBSCRIBED" && sharedPayload && sharedChannel === ch) {
@@ -129,6 +192,7 @@ function ensureChannel(userId: string) {
   sharedChannel = ch;
   return ch;
 }
+
 
 // Best-effort offline event on tab close/navigation. Uses sendBeacon when
 // available so the request survives unload.
