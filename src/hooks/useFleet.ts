@@ -213,15 +213,16 @@ export function useFleetRealtime(enabled = true) {
 
   useEffect(() => {
     if (!enabled) return;
+    // Vehicle rows are not broadcast over Realtime (they carry driver +
+    // location detail that Realtime cannot RLS-scope per topic), so refresh
+    // them on a short poll instead.
+    const vehiclePoll = window.setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["fleet", "vehicles"] });
+    }, 20_000);
+
     const channel = supabase
       .channel("fleet-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "fleet_vehicles" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["fleet", "vehicles"] });
-        },
-      )
+
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "fleet_alerts" },
