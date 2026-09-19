@@ -323,6 +323,28 @@ export default function OfficerPortal() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!signingRow} onOpenChange={(open) => !open && setSigningRow(null)}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sign-off</DialogTitle>
+            <DialogDescription>
+              {signingRow?.staff_name ?? "Staff record"}
+              {signingRow?.staff_id ? ` · ${signingRow.staff_id}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {signingRow && (
+            <SignOffPanel
+              entityType={signingRow.entity_type}
+              entityId={signingRow.entity_id}
+              subjectName={signingRow.staff_name ?? "Staff record"}
+              documentTitle="Staff record sign-off"
+              recordSummary={`Staff record of ${signingRow.staff_name ?? "officer"} (${signingRow.staff_id ?? "no staff number"})`}
+              defaultSignatoryName={fullName}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
