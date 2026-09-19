@@ -269,7 +269,8 @@ export function SignOffPanel({
         })}
         </div>
 
-        {next && !complete && (
+        {/* Query/refuse is a reviewer action — never offered on the subject's own declaration. */}
+        {next && !complete && next.step !== "staff_declaration" && (
           <div className="rounded-lg border p-3">
             <p className="mb-2 text-sm font-medium">Query or refuse this record</p>
             <WorkflowActions
