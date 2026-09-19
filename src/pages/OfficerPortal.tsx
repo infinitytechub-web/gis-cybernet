@@ -17,8 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SignOffPanel } from "@/components/shared/SignOffPanel";
-import { formatDate } from "@/lib/date-format";
+import { SignOffPanel, useSignOffState } from "@/components/shared/SignOffPanel";
+import { nextSignOffStep, SIGNOFF_STEP_LABEL, SIGNOFF_STEP_WHO } from "@/lib/signoff";
+import { formatDate, formatDateTime } from "@/lib/date-format";
+
 
 interface MyProfile {
   id: string;
