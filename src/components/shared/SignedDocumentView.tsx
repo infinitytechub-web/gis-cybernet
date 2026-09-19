@@ -201,10 +201,4 @@ export function SignedDocumentView({
   );
 }
 
-function escapeHtml(v: string) {
-  return v.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] ?? c),
-  );
-}
-
 export default SignedDocumentView;
