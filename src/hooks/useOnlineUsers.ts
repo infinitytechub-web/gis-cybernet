@@ -16,6 +16,18 @@ export interface OnlineUser {
   lastActiveAt: string;
 }
 
+// What actually travels over the Realtime presence channel. Deliberately free
+// of names, staff IDs, ranks, departments and photos: presence bypasses RLS,
+// so identifying data is resolved server-side via presence_identities() which
+// enforces role + org scoping.
+interface PresencePayload {
+  userId: string;
+  currentPage: string;
+  onlineSince: string;
+  lastActiveAt: string;
+}
+
+
 const ROUTE_LABELS: Record<string, string> = {
   "/": "Dashboard",
   "/dashboard": "Dashboard",
