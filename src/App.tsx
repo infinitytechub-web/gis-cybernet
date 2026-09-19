@@ -62,6 +62,7 @@ const MyDashboard = lazy(() => import("./pages/MyDashboard"));
 const CommandPortal = lazy(() => import("./pages/CommandPortal"));
 const CommandDashboard = lazy(() => import("./pages/CommandDashboard"));
 const CommandAdminPanel = lazy(() => import("./pages/CommandAdminPanel"));
+const CommandAdministration = lazy(() => import("./pages/CommandAdministration"));
 const OfficerPortal = lazy(() => import("./pages/OfficerPortal"));
 const LeaveCalendar = lazy(() => import("./pages/LeaveCalendar"));
 const LeaveApprovals = lazy(() => import("./pages/LeaveApprovals"));
