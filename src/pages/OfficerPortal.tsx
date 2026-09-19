@@ -61,7 +61,63 @@ const LEAVE_STATE: Record<string, { label: string; className: string }> = {
   taken: { label: "Fully taken", className: "bg-emerald-100 text-emerald-800" },
 };
 
+/**
+ * Tells the officer where their record stands: not yet submitted, submitted and
+ * waiting on a named stage of the chain, or fully approved. The figures come
+ * from the same server view the commanders' queue uses, so the two agree.
+ */
+function MySignOffStatus({ profileId }: { profileId: string }) {
+  const { data: state, isLoading } = useSignOffState("staff_biodata", profileId);
+  const steps = state?.steps ?? [];
+  const next = nextSignOffStep(steps);
+  const signedCount = steps.filter((s) => s.signed).length;
+  const declarationSigned = steps.find((s) => s.step === "staff_declaration")?.signed ?? false;
+  const lastSigned = steps.filter((s) => s.signed_at).map((s) => s.signed_at!).sort().at(-1) ?? null;
+
+  const status = !steps.length || isLoading
+    ? { label: "Loading…", className: "bg-muted text-muted-foreground", detail: "Checking your record." }
+    : !next
+      ? {
+          label: "Fully approved",
+          className: "bg-emerald-100 text-emerald-800",
+          detail: "Every step has been signed. You can open the signed certificate below.",
+        }
+      : !declarationSigned
+        ? {
+            label: "Not yet submitted",
+            className: "bg-amber-100 text-amber-800",
+            detail: "Sign your declaration below to send your record to your commander.",
+          }
+        : {
+            label: `Submitted — with ${SIGNOFF_STEP_LABEL[next.step] ?? next.step}`,
+            className: "bg-sky-100 text-sky-800",
+            detail: `Waiting for ${(SIGNOFF_STEP_WHO[next.step] ?? "the next signatory").toLowerCase()}. You do not need to do anything else.`,
+          };
+
+  return (
+    <Card>
+      <CardHeader className="space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base">Where my record stands</CardTitle>
+          <Badge className={status.className}>{status.label}</Badge>
+        </div>
+        <CardDescription>{status.detail}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="space-y-1">
+          <Progress value={steps.length ? Math.round((signedCount / steps.length) * 100) : 0} aria-label="Sign-off progress" />
+          <p className="text-xs text-muted-foreground">
+            {signedCount} of {steps.length || 4} steps signed
+            {lastSigned ? ` · last signed ${formatDateTime(lastSigned)}` : ""}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function OfficerPortal() {
+
   const { user } = useAuth();
 
   const { data: profile } = useQuery({
