@@ -148,8 +148,11 @@ export default function CommandAdminPanel() {
         </p>
       </header>
 
-      <Tabs defaultValue="officers">
+      <Tabs defaultValue="overview">
         <TabsList className="flex w-full flex-col sm:inline-flex sm:w-auto sm:flex-row">
+          <TabsTrigger value="overview" className="w-full gap-1.5 sm:w-auto">
+            <Gauge className="h-4 w-4" aria-hidden="true" /> Overview
+          </TabsTrigger>
           <TabsTrigger value="officers" className="w-full gap-1.5 sm:w-auto">
             <Users className="h-4 w-4" aria-hidden="true" /> Officers
           </TabsTrigger>
