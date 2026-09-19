@@ -121,6 +121,8 @@ describe("least privilege — audit-sensitive modules", () => {
       "excuse-duty", "leave", "attendance", "holidays", "announcements",
       "quarantine", "appraisals", "verify-export", "change-password",
       "payments", "loans", "biometric-enrollment", "leave-calendar", "staff-portal", "command-portal", "command-dashboard",
+      // Self-service only: own sign-off steps, own leave standing, own postings.
+      "officer-portal",
     ]);
     const unexpected = MODULES.filter((m) => m.roles === "all" && !allowed.has(m.key)).map((m) => m.key);
     expect(unexpected, `modules open to everyone: ${unexpected.join(", ")}`).toEqual([]);
