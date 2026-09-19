@@ -15,6 +15,20 @@
       "when": 1789825018246,
       "tag": "0001_my_posting_history_self_service",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789825945307,
+      "tag": "0002_seed_amasaman_subunits",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789826080092,
+      "tag": "0003_clear_amasaman_subunit_strength",
+      "breakpoints": true
     }
   ]
 }
