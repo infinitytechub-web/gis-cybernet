@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDateTime } from "@/lib/date-format";
 import { SIGNOFF_STEP_LABEL } from "@/lib/signoff";
 
-type QueueRow = {
+export type QueueRow = {
   entity_type: string;
   entity_id: string;
   staff_name: string | null;
