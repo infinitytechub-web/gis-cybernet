@@ -43,6 +43,13 @@
       "when": 1789826634726,
       "tag": "0005_admin_command_administration_rpcs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789826854069,
+      "tag": "0006_fix_command_appointment_audit_action",
+      "breakpoints": true
     }
   ]
 }
