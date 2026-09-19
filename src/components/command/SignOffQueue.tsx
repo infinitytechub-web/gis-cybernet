@@ -28,7 +28,14 @@ type QueueRow = {
   last_action_at: string | null;
 };
 
-export function SignOffQueue({ limit }: { limit?: number }) {
+export function SignOffQueue({
+  limit,
+  onSign,
+}: {
+  limit?: number;
+  /** When given, the row's Sign button calls this instead of navigating to the record. */
+  onSign?: (row: QueueRow) => void;
+}) {
   const [search, setSearch] = useState("");
 
   const { data = [], isLoading, error } = useQuery({
@@ -113,9 +120,15 @@ export function SignOffQueue({ limit }: { limit?: number }) {
                       {r.last_action_at ? formatDateTime(r.last_action_at) : "Not started"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button asChild size="sm" variant="outline">
-                        <Link to={`/staff?edit=${r.entity_id}&tab=M`}>Sign</Link>
-                      </Button>
+                      {onSign ? (
+                        <Button size="sm" variant="outline" onClick={() => onSign(r)}>
+                          Sign
+                        </Button>
+                      ) : (
+                        <Button asChild size="sm" variant="outline">
+                          <Link to={`/staff?edit=${r.entity_id}&tab=M`}>Sign</Link>
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
