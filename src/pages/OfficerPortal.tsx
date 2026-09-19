@@ -7,7 +7,7 @@
  *  - `leave_due_overview()` narrows to the caller's own row at 'self' scope
  *  - `my_posting_history()` only returns the caller's own transfers
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarOff, FileSignature, ArrowRightLeft, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,9 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SignOffPanel, useSignOffState } from "@/components/shared/SignOffPanel";
+import { SignOffQueue, type QueueRow } from "@/components/command/SignOffQueue";
 import { nextSignOffStep, SIGNOFF_STEP_LABEL, SIGNOFF_STEP_WHO } from "@/lib/signoff";
 import { formatDate, formatDateTime } from "@/lib/date-format";
+
 
 
 interface MyProfile {
@@ -119,6 +122,8 @@ function MySignOffStatus({ profileId }: { profileId: string }) {
 export default function OfficerPortal() {
 
   const { user } = useAuth();
+  const [signingRow, setSigningRow] = useState<QueueRow | null>(null);
+
 
   const { data: profile } = useQuery({
     queryKey: ["officer-portal-profile", user?.id],
@@ -196,6 +201,7 @@ export default function OfficerPortal() {
           {profile?.id ? (
             <div className="space-y-4">
               <MySignOffStatus profileId={profile.id} />
+              <SignOffQueue onSign={(row) => setSigningRow(row)} />
               <SignOffPanel
                 entityType="staff_biodata"
                 entityId={profile.id}
@@ -205,6 +211,7 @@ export default function OfficerPortal() {
                 defaultSignatoryName={fullName}
               />
             </div>
+
           ) : (
 
             <Card>
@@ -316,6 +323,28 @@ export default function OfficerPortal() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!signingRow} onOpenChange={(open) => !open && setSigningRow(null)}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sign-off</DialogTitle>
+            <DialogDescription>
+              {signingRow?.staff_name ?? "Staff record"}
+              {signingRow?.staff_id ? ` · ${signingRow.staff_id}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          {signingRow && (
+            <SignOffPanel
+              entityType={signingRow.entity_type}
+              entityId={signingRow.entity_id}
+              subjectName={signingRow.staff_name ?? "Staff record"}
+              documentTitle="Staff record sign-off"
+              recordSummary={`Staff record of ${signingRow.staff_name ?? "officer"} (${signingRow.staff_id ?? "no staff number"})`}
+              defaultSignatoryName={fullName}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
