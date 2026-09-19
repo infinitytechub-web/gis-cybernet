@@ -19020,6 +19020,18 @@ export type Database = {
         Returns: Json
       }
       patrol_gps_activity: { Args: { _days?: number }; Returns: Json }
+      presence_identities: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          department: string
+          first_name: string
+          last_name: string
+          photo_url: string
+          rank: string
+          staff_id: string
+          user_id: string
+        }[]
+      }
       procurement_actor_name: { Args: { _uid: string }; Returns: string }
       procurement_budget_status: {
         Args: { _fiscal_year?: number }
