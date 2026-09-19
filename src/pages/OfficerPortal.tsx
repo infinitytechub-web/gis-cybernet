@@ -122,6 +122,8 @@ function MySignOffStatus({ profileId }: { profileId: string }) {
 export default function OfficerPortal() {
 
   const { user } = useAuth();
+  const [signingRow, setSigningRow] = useState<QueueRow | null>(null);
+
 
   const { data: profile } = useQuery({
     queryKey: ["officer-portal-profile", user?.id],
