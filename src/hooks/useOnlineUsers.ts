@@ -249,29 +249,17 @@ export function useOnlineUsers(windowMinutes: number = DEFAULT_ONLINE_WINDOW_MIN
     refCount += 1;
 
     (async () => {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, last_name, staff_id, photo_url, department_id, rank_id, departments:department_id(name), ranks:rank_id(name)")
-        .eq("user_id", user.id)
-        .maybeSingle();
       if (cancelled) return;
-
-      const deptName = (profile as any)?.departments?.name ?? "";
-      const rankName = (profile as any)?.ranks?.name ?? "";
       const nowIso = new Date().toISOString();
 
+      // Only non-identifying fields are broadcast over the channel.
       sharedPayload = {
         userId: user.id,
-        firstName: profile?.first_name ?? "Unknown",
-        lastName: profile?.last_name ?? "",
-        staffId: profile?.staff_id ?? "",
-        department: deptName,
-        rank: rankName,
-        photoUrl: (profile as any)?.photo_url ?? null,
         currentPage: labelForPath(location.pathname),
         onlineSince: nowIso,
         lastActiveAt: nowIso,
       };
+
 
       const ch = ensureChannel(user.id);
       // If channel already subscribed (other instance set it up), re-track now.
