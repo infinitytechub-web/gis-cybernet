@@ -165,7 +165,7 @@ export default function CommandPortal({ embedded = false }: { embedded?: boolean
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Command Portal</h1>
+        {!embedded && <h1 className="text-2xl font-bold tracking-tight">Command Portal</h1>}
         <p className="text-sm text-muted-foreground">
           {ctx?.unit_name
             ? `${ctx.unit_name}${ctx.unit_code ? ` (${ctx.unit_code})` : ""} — officers of your own command only`
