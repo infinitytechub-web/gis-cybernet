@@ -89,7 +89,7 @@ function officerName(o: CommandOfficer) {
  * they have no command or no View switch. The page never queries `profiles`
  * directly, so the command boundary cannot be widened from the browser.
  */
-export default function CommandPortal() {
+export default function CommandPortal({ embedded = false }: { embedded?: boolean } = {}) {
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const [section, setSection] = useState<Section>("overview");
   const [search, setSearch] = useState("");
@@ -165,7 +165,7 @@ export default function CommandPortal() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Command Portal</h1>
+        {!embedded && <h1 className="text-2xl font-bold tracking-tight">Command Portal</h1>}
         <p className="text-sm text-muted-foreground">
           {ctx?.unit_name
             ? `${ctx.unit_name}${ctx.unit_code ? ` (${ctx.unit_code})` : ""} — officers of your own command only`

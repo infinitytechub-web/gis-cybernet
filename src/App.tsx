@@ -232,7 +232,7 @@ function App() {
           <Route path="/attendance/overview" element={<ProtectedRoute module="attendance-overview"><Layout><AttendanceOverview /></Layout></ProtectedRoute>} />
           <Route path="/portal" element={<ProtectedRoute module="staff-portal"><Layout><MyDashboard /></Layout></ProtectedRoute>} />
           <Route path="/command-dashboard" element={<ProtectedRoute module="command-dashboard"><Layout><CommandDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/command-portal" element={<ProtectedRoute module="command-portal"><Layout><CommandPortal /></Layout></ProtectedRoute>} />
+          <Route path="/command-portal" element={<Navigate to="/portal?tab=command" replace />} />
           <Route path="/command-admin" element={<ProtectedRoute module="command-admin"><Layout><CommandAdminPanel /></Layout></ProtectedRoute>} />
           <Route path="/officer-portal" element={<ProtectedRoute module="officer-portal"><Layout><OfficerPortal /></Layout></ProtectedRoute>} />
           <Route path="/command-administration" element={<ProtectedRoute module="command-administration"><Layout><CommandAdministration /></Layout></ProtectedRoute>} />

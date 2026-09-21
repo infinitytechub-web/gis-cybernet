@@ -209,7 +209,7 @@ export default function Login() {
         } else if (!roleErr && (roleRows?.length ?? 0) > 0) {
           navigate("/dashboard", { replace: true });
         } else {
-          navigate("/command-portal", { replace: true });
+          navigate("/portal", { replace: true });
         }
       } catch (signInErr) {
         // Record failed attempt server-side, against the configured policy.
@@ -275,7 +275,7 @@ export default function Login() {
         .eq("user_id", verifiedUser?.id ?? "")
         .eq("role", "admin")
         .limit(1);
-      navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/command-portal", { replace: true });
+      navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/portal", { replace: true });
     } catch (e: any) {
       const reason = e?.message || "Invalid code";
       const [fp, ip] = await Promise.all([fpPromise, ipPromise]);
@@ -365,7 +365,7 @@ export default function Login() {
           .eq("user_id", freshUser?.id ?? "")
           .eq("role", "admin")
           .limit(1);
-        navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/command-portal", { replace: true });
+        navigate((adminRoles?.length ?? 0) > 0 ? "/dashboard" : "/portal", { replace: true });
       }
     } catch (e: any) {
       toast({

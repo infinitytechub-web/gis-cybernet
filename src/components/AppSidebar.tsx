@@ -122,7 +122,6 @@ const allStaffItems = [
   { title: "My Profile", url: "/my-profile", icon: UserCog, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Biometric Enrollment", url: "/biometric-enrollment", icon: Fingerprint, iconColor: "text-indigo-600 dark:text-indigo-400" },
   { title: "My Portal", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
-  { title: "Officer Portal", url: "/officer-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300" },
   { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
   { title: "My Submissions", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
 ];
@@ -231,7 +230,6 @@ const commandVaultItems = [
 ];
 
 const commandWorkspaceItems = [
-  { title: "Command Portal", url: "/command-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300" },
   { title: "Command Dashboard", url: "/command-dashboard", icon: Gauge, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Command Admin Panel", url: "/command-admin", icon: ShieldCheck, iconColor: "text-amber-700 dark:text-amber-300" },
   { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },

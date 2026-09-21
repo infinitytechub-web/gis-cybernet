@@ -13,5 +13,5 @@ export default function Index() {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  return <Navigate to={role === "admin" ? "/dashboard" : "/command-portal"} replace />;
+  return <Navigate to={role === "admin" ? "/dashboard" : "/portal"} replace />;
 }

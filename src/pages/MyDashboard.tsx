@@ -1,14 +1,15 @@
 /**
- * Staff Portal — one place for an officer's own working week.
+ * My Dashboard — the single personal home for every signed-in officer.
  *
- * Everything here is self-scoped: the clock, this week's hours, the officer's
- * own leave requests and the approval status of anything they submitted
- * (leave requests and profile change requests). No command-tier data is shown,
- * and RLS already limits every query below to the signed-in officer's rows.
+ * Everything under "My …" is self-scoped: the clock, this week's hours, the
+ * officer's own leave, sign-off trail, postings, stores and the approval status
+ * of anything they submitted. The Command tab only renders for officers whose
+ * role authorises command data, and the server (RLS + scoped RPCs) remains the
+ * authority — the UI gate is presentation only.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from "date-fns";
 import {
   LayoutDashboard,
@@ -16,10 +17,9 @@ import {
   PlaneTakeoff,
   ClipboardCheck,
   CalendarDays,
-  Fingerprint,
+  FileSignature,
   ArrowRight,
-  Search,
-  Users,
+  Building2,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +29,6 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckInOut } from "@/components/attendance/CheckInOut";
@@ -40,10 +39,25 @@ import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCal
 import { OfficerStoresPanel } from "@/components/command/OfficerStoresPanel";
 import { formatDate } from "@/lib/date-format";
 import { useMyDirectoryAccess } from "@/hooks/useDirectoryPermissions";
+import CommandPortal from "@/pages/CommandPortal";
+import {
+  MyLeaveStandingCard,
+  useMyLeaveStanding,
+  LEAVE_STATE_BADGE,
+} from "@/components/portal/MyLeaveStandingCard";
+import { MyPostingsCard } from "@/components/portal/MyPostingsCard";
+import {
+  MySignOffSection,
+  useMyRecordStatus,
+  useSignOffQueueCount,
+} from "@/components/portal/MySignOffSection";
 
 
 const MAX_DAILY_HOURS = 16;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
+
+const TABS = ["today", "leave", "record", "things", "requests", "command"] as const;
+type TabKey = (typeof TABS)[number];
 
 type WeekRow = {
   date: string;
@@ -69,20 +83,6 @@ type ChangeRow = {
   requested_changes: Record<string, unknown> | null;
 };
 
-type CommandOfficerRow = {
-  id: string;
-  staff_id: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  rank_name: string | null;
-  department_name: string | null;
-  shift_group: string | null;
-  status: string | null;
-  unit_name: string | null;
-  is_self: boolean;
-};
-
-
 function hoursOf(row: WeekRow): number {
   if (!row.check_in || !row.check_out) return 0;
   const ms = new Date(row.check_out).getTime() - new Date(row.check_in).getTime();
@@ -106,17 +106,27 @@ function statusLabel(status: string) {
 }
 
 export default function MyDashboard() {
-  const { user } = useAuth();
+  const { user, isAdminOrSupervisor } = useAuth();
   // Portal visibility follows the directory matrix View switch for the
   // officer's own hierarchy level (Settings → Directory Matrix).
   const { loading: accessLoading, canOpenPortal, denialReason } = useMyDirectoryAccess();
+  const [params, setParams] = useSearchParams();
+  const requested = params.get("tab") as TabKey | null;
+  const tab: TabKey = requested && TABS.includes(requested) ? requested : "today";
+
+  const setTab = (value: string) => {
+    const next = new URLSearchParams(params);
+    next.set("tab", value);
+    setParams(next, { replace: true });
+  };
+
   const { data: profile } = useQuery({
     queryKey: ["portal-profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name")
+        .select("id, first_name, last_name, staff_id, shift_group")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -124,6 +134,7 @@ export default function MyDashboard() {
     },
   });
   const profileId = profile?.id ?? null;
+  const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "My record";
 
   // Staff access log: record that this officer actually reached their portal.
   // Once per profile per page-load, and only when access was granted.
@@ -192,33 +203,9 @@ export default function MyDashboard() {
     },
   });
 
-  /**
-   * Command-scoped staff search. `my_command_officers()` resolves the officer's
-   * own posting server-side and returns nothing when they have no command or no
-   * View switch, so the boundary cannot be widened from the browser.
-   */
-  const [staffSearch, setStaffSearch] = useState("");
-  const { data: commandOfficers = [], isLoading: officersLoading } = useQuery({
-    queryKey: ["portal-command-officers", profileId],
-    enabled: !!profileId && canOpenPortal,
-    queryFn: async (): Promise<CommandOfficerRow[]> => {
-      const { data, error } = await supabase.rpc("my_command_officers");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as CommandOfficerRow[];
-    },
-  });
-
-  const matchedOfficers = useMemo(() => {
-    const q = staffSearch.trim().toLowerCase();
-    if (!q) return commandOfficers;
-    return commandOfficers.filter((o) =>
-      [o.staff_id, o.first_name, o.last_name, o.rank_name, o.department_name, o.unit_name]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(q)),
-    );
-  }, [commandOfficers, staffSearch]);
-
-
+  const { mine: myLeave } = useMyLeaveStanding(profileId);
+  const { status: recordStatus } = useMyRecordStatus(profileId);
+  const awaitingMySignature = useSignOffQueueCount();
 
   const weekByDate = useMemo(() => {
     const m = new Map<string, WeekRow>();
@@ -228,49 +215,46 @@ export default function MyDashboard() {
 
   const weekTotal = useMemo(() => weekRows.reduce((sum, r) => sum + hoursOf(r), 0), [weekRows]);
   const openSession = weekRows.find((r) => r.check_in && !r.check_out) ?? null;
-  const biometricDays = weekRows.filter((r) => r.check_in_method === "biometric").length;
 
   const pendingLeave = leaveRows.filter((r) => r.status === "pending");
   const pendingChanges = changeRows.filter((r) => r.status === "pending" || r.status === "supervisor_approved");
   const pendingCount = pendingLeave.length + pendingChanges.length;
 
+  const leaveBadge = myLeave ? LEAVE_STATE_BADGE[myLeave.state] ?? LEAVE_STATE_BADGE.on_track : null;
+
   if (accessLoading) {
-    return (
-      <div className="p-8 text-center text-sm text-muted-foreground">Checking your access…</div>
-    );
+    return <div className="p-8 text-center text-sm text-muted-foreground">Checking your access…</div>;
   }
 
   if (!canOpenPortal) {
     const unassigned = denialReason === "unassigned";
     return (
       <div className="space-y-6">
-        <PageHeader icon={LayoutDashboard} title="Staff Portal" subtitle="Access restricted" />
+        <PageHeader icon={LayoutDashboard} title="My Dashboard" subtitle="Access restricted" />
         <Card>
           <CardContent className="py-10 text-center space-y-2">
             <p className="text-sm font-medium">
               {unassigned
                 ? "You are not assigned to a command yet."
-                : "The staff portal is not enabled for your role."}
+                : "This dashboard is not enabled for your role."}
             </p>
             <p className="text-sm text-muted-foreground">
               {unassigned
-                ? "An administrator must post you to a command before the portal opens. This is a separate step from switching the portal on for your rank."
-                : "Enrol your fingerprint on this device to open your own portal straight away, or ask an administrator to switch it on for your rank and command level."}
+                ? "An administrator must post you to a command before the dashboard opens. This is a separate step from switching it on for your rank."
+                : "Enrol your fingerprint on this device to open your own dashboard straight away, or ask an administrator to switch it on for your rank and command level."}
             </p>
-
           </CardContent>
         </Card>
       </div>
     );
   }
 
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 md:pb-6">
       <PageHeader
         icon={LayoutDashboard}
-        title="Staff Portal"
-        subtitle={`Your week at a glance${profile?.first_name ? ` — ${profile.first_name}` : ""}`}
+        title="My Dashboard"
+        subtitle={`Your week, your record and your requests${profile?.first_name ? ` — ${profile.first_name}` : ""}`}
         actions={
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="secondary" size="sm">
@@ -284,10 +268,6 @@ export default function MyDashboard() {
             <Button asChild variant="secondary" size="sm">
               <Link to="/my-portal">My letters</Link>
             </Button>
-            <Button asChild size="sm">
-              <Link to="/command-portal">Command portal</Link>
-            </Button>
-
           </div>
         }
       />
@@ -301,7 +281,7 @@ export default function MyDashboard() {
             </div>
             <p className="mt-2 text-2xl font-bold text-primary">{weekTotal.toFixed(2)}</p>
             <p className="text-xs text-muted-foreground">
-              {formatDate(iso(weekStart))} – {formatDate(iso(weekEnd))}
+              {openSession ? "One shift still open" : `${formatDate(iso(weekStart))} – ${formatDate(iso(weekEnd))}`}
             </p>
           </CardContent>
         </Card>
@@ -309,11 +289,27 @@ export default function MyDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarDays className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs">Days clocked in</span>
+              <span className="text-xs">Leave days remaining</span>
             </div>
-            <p className="mt-2 text-2xl font-bold">{weekRows.filter((r) => r.check_in).length}</p>
+            <p className="mt-2 text-2xl font-bold">{myLeave ? Number(myLeave.remaining) : "—"}</p>
+            {leaveBadge ? (
+              <Badge className={`mt-1 ${leaveBadge.className}`}>{leaveBadge.label}</Badge>
+            ) : (
+              <p className="text-xs text-muted-foreground">No entitlement recorded yet</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <FileSignature className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">My record</span>
+            </div>
+            <p className="mt-2 text-sm font-semibold">{recordStatus.label}</p>
             <p className="text-xs text-muted-foreground">
-              {openSession ? "One shift still open" : "No open shifts"}
+              {awaitingMySignature > 0
+                ? `${awaitingMySignature} waiting for your signature`
+                : "Nothing waiting for your signature"}
             </p>
           </CardContent>
         </Card>
@@ -329,111 +325,27 @@ export default function MyDashboard() {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Fingerprint className="h-4 w-4" aria-hidden="true" />
-              <span className="text-xs">Fingerprint clock-ins</span>
-            </div>
-            <p className="mt-2 text-2xl font-bold">{biometricDays}</p>
-            <p className="text-xs text-muted-foreground">Verified this week</p>
-          </CardContent>
-        </Card>
       </div>
 
-      <Tabs defaultValue="clock" className="space-y-4">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="clock">Clock in / out</TabsTrigger>
-          <TabsTrigger value="hours">My hours</TabsTrigger>
-          <TabsTrigger value="leave">Leave</TabsTrigger>
-          <TabsTrigger value="staff">Staff search</TabsTrigger>
-          <TabsTrigger value="stores">Stores</TabsTrigger>
-          <TabsTrigger value="calendar">Leave calendar</TabsTrigger>
-          <TabsTrigger value="approvals">
-            Approvals{pendingCount > 0 ? ` (${pendingCount})` : ""}
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+        <TabsList className="flex w-full flex-col sm:inline-flex sm:w-auto sm:flex-row sm:flex-wrap">
+          <TabsTrigger value="today" className="w-full sm:w-auto">Today</TabsTrigger>
+          <TabsTrigger value="leave" className="w-full sm:w-auto">My leave</TabsTrigger>
+          <TabsTrigger value="record" className="w-full gap-1.5 sm:w-auto">
+            My record{awaitingMySignature > 0 ? ` (${awaitingMySignature})` : ""}
           </TabsTrigger>
+          <TabsTrigger value="things" className="w-full sm:w-auto">My things</TabsTrigger>
+          <TabsTrigger value="requests" className="w-full sm:w-auto">
+            My requests{pendingCount > 0 ? ` (${pendingCount})` : ""}
+          </TabsTrigger>
+          {isAdminOrSupervisor && (
+            <TabsTrigger value="command" className="w-full gap-1.5 sm:w-auto">
+              <Building2 className="h-4 w-4" aria-hidden="true" /> Command
+            </TabsTrigger>
+          )}
         </TabsList>
 
-        <TabsContent value="staff" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="h-4 w-4" aria-hidden="true" /> Staff in my command
-                  <Badge variant="secondary">{matchedOfficers.length}</Badge>
-                </CardTitle>
-                <CardDescription>Only officers posted to your own command are listed.</CardDescription>
-              </div>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                <Input
-                  value={staffSearch}
-                  onChange={(e) => setStaffSearch(e.target.value)}
-                  placeholder="Search name, staff ID or rank"
-                  aria-label="Search staff in my command"
-                  className="w-full pl-8 sm:w-64"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <Table className="min-w-[700px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Rank</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Shift</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {officersLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                        Loading your command…
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    matchedOfficers.map((o) => (
-                      <TableRow key={o.id} className={o.is_self ? "bg-muted/40" : undefined}>
-                        <TableCell className="font-mono text-xs">{o.staff_id ?? "—"}</TableCell>
-                        <TableCell className="font-medium">
-                          {[o.last_name, o.first_name].filter(Boolean).join(", ") || "—"}
-                          {o.is_self && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
-                        </TableCell>
-                        <TableCell>{o.rank_name ?? "—"}</TableCell>
-                        <TableCell>{o.department_name ?? "—"}</TableCell>
-                        <TableCell>{o.shift_group ?? "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant={o.status === "active" ? "default" : "secondary"}>{o.status ?? "—"}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                  {!officersLoading && matchedOfficers.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                        No staff records are available for your command scope.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="stores">
-          <OfficerStoresPanel />
-        </TabsContent>
-
-        <TabsContent value="calendar">
-          <ApprovedLeaveCalendarWidget />
-        </TabsContent>
-
-
-        <TabsContent value="clock" className="space-y-4">
+        <TabsContent value="today" className="space-y-4">
           <CheckInOut />
           <Card>
             <CardHeader>
@@ -468,9 +380,7 @@ export default function MyDashboard() {
                             <span className="text-xs text-muted-foreground">No record</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
-                          {row ? hoursOf(row).toFixed(2) : "0.00"}
-                        </TableCell>
+                        <TableCell className="text-right">{row ? hoursOf(row).toFixed(2) : "0.00"}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -482,18 +392,26 @@ export default function MyDashboard() {
               </Table>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="hours">
           <MyHoursDashboard />
         </TabsContent>
 
         <TabsContent value="leave" className="space-y-4">
+          <MyLeaveStandingCard profileId={profileId} />
           <LeaveRequestForm />
           <MyLeaveHistory />
+          <ApprovedLeaveCalendarWidget />
         </TabsContent>
 
-        <TabsContent value="approvals" className="space-y-4">
+        <TabsContent value="record" className="space-y-4">
+          <MySignOffSection profileId={profileId} staffId={profile?.staff_id ?? null} fullName={fullName} />
+          <MyPostingsCard shiftGroup={profile?.shift_group ?? null} />
+        </TabsContent>
+
+        <TabsContent value="things">
+          <OfficerStoresPanel />
+        </TabsContent>
+
+        <TabsContent value="requests" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -578,6 +496,12 @@ export default function MyDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {isAdminOrSupervisor && (
+          <TabsContent value="command">
+            <CommandPortal embedded />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
