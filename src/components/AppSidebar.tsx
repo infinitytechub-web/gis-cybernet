@@ -230,7 +230,6 @@ const commandVaultItems = [
 ];
 
 const commandWorkspaceItems = [
-  { title: "Command Portal", url: "/command-portal", icon: Building2, iconColor: "text-blue-700 dark:text-blue-300" },
   { title: "Command Dashboard", url: "/command-dashboard", icon: Gauge, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Command Admin Panel", url: "/command-admin", icon: ShieldCheck, iconColor: "text-amber-700 dark:text-amber-300" },
   { title: "Command Structure", url: "/org-structure", icon: Network, iconColor: "text-blue-700 dark:text-blue-300" },
