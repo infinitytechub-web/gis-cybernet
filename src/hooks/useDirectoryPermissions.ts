@@ -212,8 +212,12 @@ export function useMyDirectoryAccess() {
   // this officer's portal + directory rights without them signing out again.
   useEffect(() => {
     if (!user) return;
+    // Unique topic per mount: reusing a fixed topic name hands back a channel
+    // that is already subscribed (removeChannel resolves asynchronously), and
+    // attaching a postgres_changes listener to it throws.
+    const topic = `directory-access-${user.id}-${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel(`directory-access-${user.id}`)
+      .channel(topic)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
@@ -230,6 +234,7 @@ export function useMyDirectoryAccess() {
       void supabase.removeChannel(channel);
     };
   }, [user, qc]);
+
 
   // An officer who has enrolled their own fingerprint on this account has
   // proven who they are, so their own portal opens without waiting for an
