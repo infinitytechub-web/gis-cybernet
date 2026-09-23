@@ -35,17 +35,19 @@ export function usePageMeta({ title, description, path }: PageMeta) {
     setMeta('meta[name="twitter:title"]', "name", "twitter:title", title);
     setMeta('meta[name="twitter:description"]', "name", "twitter:description", description);
 
-    if (path) {
-      const url = `${SITE_URL}${path}`;
-      setMeta('meta[property="og:url"]', "property", "og:url", url);
-      let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-      if (!canonical) {
-        canonical = document.createElement("link");
-        canonical.setAttribute("rel", "canonical");
-        document.head.appendChild(canonical);
-      }
-      canonical.setAttribute("href", url);
+    // Always self-reference the current route so subpages are never treated
+    // as duplicates of the homepage.
+    const routePath =
+      path ?? (typeof window !== "undefined" ? window.location.pathname : "/");
+    const url = `${SITE_URL}${routePath}`;
+    setMeta('meta[property="og:url"]', "property", "og:url", url);
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
     }
+    canonical.setAttribute("href", url);
 
     return () => {
       document.title = previousTitle;

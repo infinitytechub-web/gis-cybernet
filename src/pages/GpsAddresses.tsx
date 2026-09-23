@@ -1345,7 +1345,7 @@ export default function GpsAddresses() {
             {/* 7-day capture trend */}
             <div className="lg:col-span-2 rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold">Captures — Last 7 Days</h3>
+                <h2 className="text-sm font-semibold">Captures — Last 7 Days</h2>
                 <Badge variant="outline" className="text-[10px]">By day</Badge>
               </div>
               <div className="h-56">
@@ -1371,7 +1371,7 @@ export default function GpsAddresses() {
             {/* Source breakdown */}
             <div className="rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold">By Source Module</h3>
+                <h2 className="text-sm font-semibold">By Source Module</h2>
                 <Badge variant="outline" className="text-[10px]">Live</Badge>
               </div>
               {stats.sourceBreakdown.every((s) => s.count === 0) ? (
@@ -1412,7 +1412,7 @@ export default function GpsAddresses() {
           {stats.topRegions.length > 0 && (
             <div className="rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold">Top Regions (by digital prefix)</h3>
+                <h2 className="text-sm font-semibold">Top Regions (by digital prefix)</h2>
                 <Badge variant="outline" className="text-[10px]">Top {stats.topRegions.length}</Badge>
               </div>
               <ul className="grid grid-cols-2 md:grid-cols-3 gap-2">

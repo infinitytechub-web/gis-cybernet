@@ -32,6 +32,7 @@ export default function Loans() {
   usePageMeta({
     title: "Loans | Cybernet HRM System",
     description: "Submit and review staff loan applications with validated Ghana telephone contacts.",
+    path: "/loans",
   });
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const { toast } = useToast();
