@@ -71,6 +71,7 @@ export default function SecurityMonitoring() {
   usePageMeta({
     title: "Security Monitoring & Alerting",
     description: "Detect suspicious role changes, authorization failures and unusual file-access patterns.",
+    path: "/security-monitoring",
   });
   const { isAdmin, isOic, is2ic } = useAuth();
   const allowed = isAdmin || isOic || is2ic;

@@ -36,6 +36,7 @@ export default function BioDataFormSetup() {
   usePageMeta({
     title: "Bio-Data Form Setup | Personnel records",
     description: "Manage the dropdown lists, extra fields and extra tables of the personnel bio-data form.",
+    path: "/biodata-form-setup",
   });
   const qc = useQueryClient();
   const { data: optionSets = [], isLoading: loadingSets } = useBioDataOptionSets();

@@ -85,6 +85,7 @@ export default function TrustedDevices() {
     title: "Trusted 2FA Devices | Cybernet HRM",
     description:
       "Review and revoke devices staff have remembered for two-factor step-up verification.",
+    path: "/admin/trusted-devices",
   });
 
   const { toast } = useToast();

@@ -41,6 +41,7 @@ export default function Payments() {
   usePageMeta({
     title: "Payments | Cybernet HRM System",
     description: "Record and track payment requests with validated Ghana telephone contacts.",
+    path: "/payments",
   });
   const { user, isAdmin, isAdminOrSupervisor } = useAuth();
   const { toast } = useToast();
