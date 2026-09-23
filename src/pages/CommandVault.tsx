@@ -419,7 +419,7 @@ export default function CommandVault() {
             {/* Monthly trend */}
             <div className="lg:col-span-2 rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold">Uploads — Last 6 Months</h3>
+                <h2 className="text-sm font-semibold">Uploads — Last 6 Months</h2>
                 <Badge variant="outline" className="text-[10px]">By month</Badge>
               </div>
               <div className="h-56">
@@ -445,7 +445,7 @@ export default function CommandVault() {
             {/* Top uploaders */}
             <div className="rounded-lg border bg-card p-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold">Top Uploaders</h3>
+                <h2 className="text-sm font-semibold">Top Uploaders</h2>
                 <Badge variant="outline" className="text-[10px]">Top 5</Badge>
               </div>
               {stats.topUploaders.length === 0 ? (
