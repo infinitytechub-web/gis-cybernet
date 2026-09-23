@@ -18516,6 +18516,7 @@ export type Database = {
         Args: { _file_id: string }
         Returns: undefined
       }
+      is_active_staff: { Args: never; Returns: boolean }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
       is_ecowas_country: { Args: { _nationality: string }; Returns: boolean }
       is_frontdesk_realtime_topic: {
