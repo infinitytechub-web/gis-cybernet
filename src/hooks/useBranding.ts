@@ -60,29 +60,21 @@ export const BRANDING_DEFAULTS: Branding = {
 
 
 export const BRANDING_BUCKET = "branding";
-const SIGNED_URL_TTL = 60 * 60 * 6; // 6h
 
-const urlCache = new Map<string, { url: string; expires: number }>();
+const BRANDING_PROXY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/branding-asset`;
 
 /**
  * Branding images are stored as object paths inside the private `branding`
- * bucket. Read access is granted to anon + authenticated, so the login screen
- * can resolve them too. Absolute URLs are passed through untouched.
+ * bucket, which grants no direct read access. The public, read-only
+ * `branding-asset` function vouches for the six well-known branding slots
+ * and redirects to a short-lived signed URL, so the login screen can show
+ * the logo without exposing anything else in the bucket. Absolute URLs are
+ * passed through untouched.
  */
 export async function resolveBrandingAsset(path: string | null): Promise<string | null> {
   if (!path) return null;
   if (/^(https?:|data:|\/)/.test(path)) return path;
-
-  const cached = urlCache.get(path);
-  if (cached && cached.expires > Date.now()) return cached.url;
-
-  const { data, error } = await supabase.storage
-    .from(BRANDING_BUCKET)
-    .createSignedUrl(path, SIGNED_URL_TTL);
-  if (error || !data?.signedUrl) return null;
-
-  urlCache.set(path, { url: data.signedUrl, expires: Date.now() + (SIGNED_URL_TTL - 300) * 1000 });
-  return data.signedUrl;
+  return `${BRANDING_PROXY_URL}?path=${encodeURIComponent(path)}`;
 }
 
 /**
