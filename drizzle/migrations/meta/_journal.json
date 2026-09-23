@@ -85,6 +85,13 @@
       "when": 1790125080600,
       "tag": "0011_tighten_permissive_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790125129835,
+      "tag": "0012_narrow_branding_asset_reads",
+      "breakpoints": true
     }
   ]
 }
