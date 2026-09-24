@@ -19,6 +19,7 @@ export default function AdminRecovery() {
   const [method, setMethod] = useState<Method>("passphrase");
   const [staffId, setStaffId] = useState("");
   const [secret, setSecret] = useState("");
+  const [passCode, setPassCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +30,7 @@ export default function AdminRecovery() {
     e.preventDefault();
     if (!staffId.trim()) return toast.error("Enter your Admin Staff ID");
     if (!secret.trim()) return toast.error(method === "passphrase" ? "Enter the recovery passphrase" : "Enter a backup code");
+    if (method === "passphrase" && !passCode.trim()) return toast.error("Enter one of your MFA backup codes as well");
     if (newPassword !== confirm) return toast.error("Passwords do not match");
     if (getStrength(newPassword) < 4) return toast.error("Password must be at least 'Strong' (12+ chars, mixed case, number, symbol).");
 
@@ -39,6 +41,7 @@ export default function AdminRecovery() {
           staff_id: staffId.trim(),
           method,
           secret: secret.trim(),
+          ...(method === "passphrase" ? { backup_code: passCode.trim() } : {}),
           new_password: newPassword,
         },
       });
@@ -103,7 +106,7 @@ export default function AdminRecovery() {
               <Input id="rec-staff" placeholder="e.g. ADMIN-001" value={staffId} onChange={(e) => setStaffId(e.target.value)} required autoComplete="username" />
             </div>
 
-            <Tabs value={method} onValueChange={(v) => { setMethod(v as Method); setSecret(""); }}>
+            <Tabs value={method} onValueChange={(v) => { setMethod(v as Method); setSecret(""); setPassCode(""); }}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="passphrase">Passphrase</TabsTrigger>
                 <TabsTrigger value="backup_code">Backup code</TabsTrigger>
@@ -112,6 +115,9 @@ export default function AdminRecovery() {
                 <Label htmlFor="rec-pass">Recovery passphrase</Label>
                 <Input id="rec-pass" type="password" placeholder="Server-side passphrase" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="off" />
                 <p className="text-[11px] text-muted-foreground">Held by the system administrator off-system.</p>
+                <Label htmlFor="rec-pass-code">Your MFA backup code</Label>
+                <Input id="rec-pass-code" placeholder="xxxx-xxxx-xxxx" value={passCode} onChange={(e) => setPassCode(e.target.value)} autoComplete="off" />
+                <p className="text-[11px] text-muted-foreground">The shared passphrase alone is not enough — one of your own unused backup codes is also required.</p>
               </TabsContent>
               <TabsContent value="backup_code" className="space-y-2 pt-3">
                 <Label htmlFor="rec-code">MFA backup code</Label>

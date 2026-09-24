@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   const admin = createClient(supabaseUrl, serviceKey);
 
   const body = await req.json().catch(() => null) as
-    | { staff_id?: string; method?: string; secret?: string; new_password?: string }
+    | { staff_id?: string; method?: string; secret?: string; new_password?: string; backup_code?: string }
     | null;
   if (!body) return json(400, { error: "Invalid JSON" });
 
@@ -151,7 +151,18 @@ Deno.serve(async (req) => {
     if (passphrase.length === 0) {
       return json(503, { error: "Recovery passphrase not configured on server" });
     }
-    verified = timingSafeEqual(secret, passphrase);
+    // The shared passphrase is never sufficient on its own: it must be paired
+    // with an unused backup code belonging to the target administrator, so
+    // knowing the passphrase does not let anyone take over any admin account.
+    const code = String(body.backup_code ?? "").trim();
+    if (timingSafeEqual(secret, passphrase) && code && code.length <= 64) {
+      const { data, error } = await admin.rpc("admin_recovery_consume_backup_code", {
+        _user_id: profile.user_id,
+        _code: code,
+      });
+      if (error) return json(500, { error: "Recovery check failed" });
+      verified = data === true;
+    }
   } else {
     const { data, error } = await admin.rpc("admin_recovery_consume_backup_code", {
       _user_id: profile.user_id,
