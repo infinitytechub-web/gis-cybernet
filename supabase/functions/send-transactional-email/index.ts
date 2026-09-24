@@ -3,6 +3,7 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+import { partitionRecipients } from "../_shared/recipient-policy.ts";
 
 // Configuration baked in at scaffold time — do NOT change these manually.
 // To update, re-run the email domain setup flow.
@@ -163,6 +164,19 @@ Deno.serve(async (req) => {
   // Create Supabase client with service role (bypasses RLS)
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+  // Recipient policy: client-initiated sends may only target registered
+  // staff addresses. Fixed template recipients and service-role callers
+  // (cron / internal functions) are trusted.
+  if (!isServiceRole && !template.to) {
+    const { rejected } = await partitionRecipients(supabase, [effectiveRecipient])
+    if (rejected.length) {
+      return new Response(
+        JSON.stringify({ error: 'Recipient is not a registered staff address' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+  }
+
   // 2. Check suppression list (fail-closed: if we can't verify, don't send)
   const { data: suppressed, error: suppressionError } = await supabase
     .from('suppressed_emails')
@@ -173,7 +187,6 @@ Deno.serve(async (req) => {
   if (suppressionError) {
     console.error('Suppression check failed — refusing to send', {
       error: suppressionError,
-      effectiveRecipient,
     })
     return new Response(
       JSON.stringify({ error: 'Failed to verify suppression status' }),
@@ -193,7 +206,7 @@ Deno.serve(async (req) => {
       status: 'suppressed',
     })
 
-    console.log('Email suppressed', { effectiveRecipient, templateName })
+    console.log('Email suppressed', { templateName })
     return new Response(
       JSON.stringify({ success: false, reason: 'email_suppressed' }),
       {
@@ -217,7 +230,6 @@ Deno.serve(async (req) => {
   if (tokenLookupError) {
     console.error('Token lookup failed', {
       error: tokenLookupError,
-      email: normalizedEmail,
     })
     await supabase.from('email_send_log').insert({
       message_id: messageId,
@@ -279,7 +291,6 @@ Deno.serve(async (req) => {
     if (reReadError || !storedToken) {
       console.error('Failed to read back unsubscribe token after upsert', {
         error: reReadError,
-        email: normalizedEmail,
       })
       await supabase.from('email_send_log').insert({
         message_id: messageId,
@@ -300,9 +311,7 @@ Deno.serve(async (req) => {
   } else {
     // Token exists but is already used — email should have been caught by suppression check above.
     // This is a safety fallback; log and skip sending.
-    console.warn('Unsubscribe token already used but email not suppressed', {
-      email: normalizedEmail,
-    })
+    console.warn('Unsubscribe token already used but email not suppressed', { templateName })
     await supabase.from('email_send_log').insert({
       message_id: messageId,
       template_name: templateName,
