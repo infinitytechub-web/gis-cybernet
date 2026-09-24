@@ -91,7 +91,29 @@ Deno.serve(async (req) => {
 
   // Lockout bookkeeping runs here (service role) because the underlying RPCs
   // are not executable by anonymous visitors.
+  // record_failure: the caller must present the password that failed. The
+  // server re-checks it itself, so a lockout can only be triggered by a real,
+  // failing sign-in attempt — never by a bare request naming a staff ID.
   if (action === "record_failure") {
+    const pw = (body as { password?: unknown }).password;
+    if (typeof pw !== "string" || pw.length === 0 || pw.length > 256) {
+      return new Response(JSON.stringify({ error: "Invalid request" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: em } = await supabase.rpc("get_email_by_staff_id", { _staff_id: raw });
+    if (typeof em === "string" && em) {
+      const probe = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: ok } = await probe.auth.signInWithPassword({ email: em, password: pw });
+      if (ok?.session) {
+        await probe.auth.signOut().catch(() => {});
+        return new Response(JSON.stringify({ attempts: null, locked: false, remaining: null }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
     const { data } = await supabase.rpc("record_failed_login", {
       _staff_id: raw,
       _ip_address: ip,
@@ -103,7 +125,19 @@ Deno.serve(async (req) => {
     );
   }
 
+  // clear_failures: only the signed-in owner of that staff ID may reset it.
   if (action === "clear_failures") {
+    const auth = req.headers.get("Authorization") ?? "";
+    const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    const { data: u } = bearer ? await supabase.auth.getUser(bearer) : { data: { user: null } };
+    const { data: em } = await supabase.rpc("get_email_by_staff_id", { _staff_id: raw });
+    const owner = !!u?.user?.email && typeof em === "string" &&
+      u.user.email.toLowerCase() === em.toLowerCase();
+    if (!owner) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     await supabase.rpc("clear_failed_login_attempts", { _staff_id: raw });
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
