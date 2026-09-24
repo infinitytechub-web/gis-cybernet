@@ -92,6 +92,13 @@
       "when": 1790125129835,
       "tag": "0012_narrow_branding_asset_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790214359539,
+      "tag": "0013_branding_admin_only_read",
+      "breakpoints": true
     }
   ]
 }
