@@ -61,7 +61,18 @@ Deno.serve(async (req) => {
   const sessionId = clampString(body?.session_id, 64);
   const buildId = clampString(body?.build_id, 32);
   const viewport = clampString(body?.viewport, 32);
-  const userId = clampString(body?.user_id, 64); // optional, client-asserted
+  // user_id is never taken from the request body — it is derived from a
+  // verified session token only; anonymous telemetry is stored without one.
+  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  let userId: string | null = null;
+  const authz = req.headers.get("Authorization") ?? "";
+  const bearer = authz.startsWith("Bearer ") ? authz.slice(7) : "";
+  if (bearer && bearer.split(".").length === 3) {
+    const { data: u } = await supabase.auth.getUser(bearer).catch(() => ({ data: { user: null } }));
+    userId = u?.user?.id ?? null;
+  }
 
   const rows = events
     .map((e: any) => {
@@ -87,10 +98,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 
   const { error } = await supabase.from("rum_events").insert(rows);
   if (error) {
