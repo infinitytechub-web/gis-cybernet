@@ -127,7 +127,6 @@ export function useBranding() {
 export function useRefreshBranding() {
   const qc = useQueryClient();
   return () => {
-    urlCache.clear();
     qc.invalidateQueries({ queryKey: ["branding"] });
     qc.invalidateQueries({ queryKey: ["app-settings"] });
   };
