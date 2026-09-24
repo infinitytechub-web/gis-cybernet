@@ -5,6 +5,7 @@
 // invoked manually from the Reports UI ("Send now") and from a pg_cron job.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { partitionRecipients } from "../_shared/recipient-policy.ts";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
 import { isInternalCaller } from "../_shared/cron-auth.ts";
@@ -135,7 +136,18 @@ Deno.serve(async (req) => {
     // Recipients
     let recipients: string[] = [];
     if (Array.isArray(body.recipients) && body.recipients.length) {
-      recipients = body.recipients.filter(isValidEmail);
+      // Caller-supplied overrides must be configured report recipients or
+      // registered staff addresses — never arbitrary external addresses.
+      const requested = body.recipients.filter(isValidEmail);
+      const { allowed, rejected } = await partitionRecipients(supabase, requested, {
+        extraTable: "attendance_report_recipients",
+      });
+      if (rejected.length) {
+        return new Response(JSON.stringify({ error: "One or more recipients are not authorised", rejected_count: rejected.length }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      recipients = allowed;
     } else {
       const { data } = await supabase
         .from("attendance_report_recipients")

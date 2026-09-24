@@ -3,6 +3,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { assertCsrfSafe, csrfDeniedResponse } from "../_shared/csrf.ts";
+import { partitionRecipients } from "../_shared/recipient-policy.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,6 +189,19 @@ Deno.serve(async (req) => {
     // CC/BCC only apply in single-send
     const ccList = isBulk ? [] : sanitizeEmailList(body.cc);
     const bccList = isBulk ? [] : sanitizeEmailList(body.bcc);
+
+    // Recipient policy — only registered staff addresses may receive record
+    // documents. Arbitrary external recipients are refused server-side.
+    const check = await partitionRecipients(adminClient, [...recipients, ...ccList, ...bccList]);
+    if (check.rejected.length) {
+      return new Response(
+        JSON.stringify({
+          error: "One or more recipients are not registered staff addresses",
+          rejected_count: check.rejected.length,
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const escapeHtml = (s: string) =>
       s.replace(/&/g, "&amp;")

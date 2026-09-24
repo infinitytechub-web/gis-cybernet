@@ -17,6 +17,36 @@ const ALLOWED_TABLES = new Set([
 
 const CHUNK = 200;
 
+// Privilege-bearing tables may only be restored from server-created snapshots
+// (stored in the private system-backups bucket), never from caller-supplied
+// inline payloads, so an uploaded file can't inject roles or profile fields.
+const SNAPSHOT_ONLY_TABLES = new Set(["profiles", "user_roles", "app_settings"]);
+const COLUMN_RE = /^[a-z_][a-z0-9_]{0,62}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Protected fields that must never be rewritten by a restore.
+const PROTECTED_FIELDS: Record<string, Set<string>> = {
+  profiles: new Set(["user_id", "email", "login_enabled", "mfa_secret", "mfa_backup_codes"]),
+  user_roles: new Set([]),
+};
+
+function sanitizeRows(table: string, rows: unknown[]): Record<string, unknown>[] {
+  const prot = PROTECTED_FIELDS[table] ?? new Set<string>();
+  const out: Record<string, unknown>[] = [];
+  for (const r of rows) {
+    if (!r || typeof r !== "object" || Array.isArray(r)) continue;
+    const src = r as Record<string, unknown>;
+    if (typeof src.id !== "string" || !UUID_RE.test(src.id)) continue;
+    const clean: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(src)) {
+      if (!COLUMN_RE.test(k) || prot.has(k)) continue;
+      clean[k] = v;
+    }
+    out.push(clean);
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -103,8 +133,14 @@ Deno.serve(async (req) => {
   let total = 0;
   const errors: string[] = [];
 
+  const inline = snapshotId === null;
   for (const table of valid) {
-    const rows = payload[table];
+    if (inline && SNAPSHOT_ONLY_TABLES.has(table)) {
+      errors.push(`${table}: can only be restored from a stored snapshot`);
+      continue;
+    }
+    const rawRows = payload[table];
+    const rows = Array.isArray(rawRows) ? sanitizeRows(table, rawRows) : rawRows;
     if (!Array.isArray(rows)) {
       errors.push(`${table}: missing or invalid in snapshot`);
       continue;

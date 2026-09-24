@@ -214,7 +214,7 @@ export default function Login() {
       } catch (signInErr) {
         // Record failed attempt server-side, against the configured policy.
         const { data: failData } = await supabase.functions.invoke("resolve-staff-email", {
-          body: { staff_id: trimmedId, action: "record_failure" },
+          body: { staff_id: trimmedId, action: "record_failure", password },
         });
         const r = (failData ?? null) as { attempts?: number; locked?: boolean; remaining?: number } | null;
         const threshold = lookup?.threshold ?? null;
