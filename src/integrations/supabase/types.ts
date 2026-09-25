@@ -5575,6 +5575,10 @@ export type Database = {
       }
       interlink_contacts: {
         Row: {
+          approval_note: string | null
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
           command_or_unit: string | null
           created_at: string
           created_by: string
@@ -5586,6 +5590,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_note?: string | null
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           command_or_unit?: string | null
           created_at?: string
           created_by: string
@@ -5597,6 +5605,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_note?: string | null
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           command_or_unit?: string | null
           created_at?: string
           created_by?: string
@@ -17688,6 +17700,15 @@ export type Database = {
           unit: string
         }[]
       }
+      approved_record_email_recipients: {
+        Args: never
+        Returns: {
+          display_name: string
+          email: string
+          id: string
+          recipient_type: string
+        }[]
+      }
       attendance_hours_summary: {
         Args: { _from: string; _to: string }
         Returns: {
@@ -19367,6 +19388,10 @@ export type Database = {
       session_heartbeat: {
         Args: { _page?: string; _session_key: string }
         Returns: boolean
+      }
+      set_interlink_contact_approval: {
+        Args: { _approved: boolean; _contact_id: string; _note?: string }
+        Returns: undefined
       }
       set_inventory_alert_webhook: {
         Args: { _record_id: string; _source: string; _webhook_url: string }
