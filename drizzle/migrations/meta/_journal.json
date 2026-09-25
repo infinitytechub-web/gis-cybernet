@@ -99,6 +99,13 @@
       "when": 1790214359539,
       "tag": "0013_branding_admin_only_read",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790294937341,
+      "tag": "0014_approve_external_email_contacts",
+      "breakpoints": true
     }
   ]
 }
