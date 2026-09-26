@@ -76,18 +76,29 @@ import type { BioDataFormat } from "@/lib/biodata-export";
  * or unresponsive when a record is opened for editing.
  */
 function BioDataLoadingNotice() {
-  const { loading } = useBioData();
-  if (!loading) return null;
+  const { loading, loadError, retryLoad } = useBioData();
+  if (!loading && !loadError) return null;
   return (
     <div
       role="status"
       aria-live="polite"
-      className="flex items-center gap-2 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+      className="flex flex-wrap items-center gap-2 rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
     >
-      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-      Loading sections E–L (education, family, bank, service history)…
+      {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
+      {loading ? "Loading sections E–L (education, family, bank, service history)…" : loadError}
+      {loadError && <Button type="button" variant="outline" size="sm" onClick={retryLoad}>Retry loading</Button>}
     </div>
   );
+}
+
+function BioDataSaveButton({ editing, pending, uploadingPhoto, disabled, onSave }: {
+  editing: boolean; pending: boolean; uploadingPhoto: boolean; disabled: boolean; onSave: () => void;
+}) {
+  const { loading, loadError } = useBioData();
+  return <Button onClick={onSave} disabled={disabled || pending || loading || !!loadError} className="w-full sm:w-auto">
+    {pending ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{uploadingPhoto ? "Uploading photo..." : "Saving..."}</span>
+      : editing ? "Update Staff" : "Create Staff"}
+  </Button>;
 }
 
 /**
@@ -1159,10 +1170,10 @@ export default function Staff() {
           to the bottom, so no section or control can end up clipped or out of
           reach on small screens.
         */}
-        <DialogContent className="relative !flex max-h-[90vh] w-[95vw] max-w-5xl flex-col gap-0 !overflow-hidden p-0">
-          <DialogHeader className="shrink-0 border-b px-6 py-4 text-left">
+        <DialogContent aria-describedby="bio-form-description" className="relative !flex h-[min(92dvh,900px)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl flex-col gap-0 !overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-4 py-3 pr-12 text-left sm:px-6 sm:py-4">
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p id="bio-form-description" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Personnel Bio-Data &amp; Service Record — confidential, for official use only
             </p>
           </DialogHeader>
@@ -1171,21 +1182,21 @@ export default function Staff() {
             open={dialogOpen}
             persistRef={biodataPersistRef}
           >
-          <div ref={bioDialogRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-6 py-4">
+          <div ref={bioDialogRef} className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-4 py-3 sm:px-6 sm:py-4">
             <QuickScroll containerRef={bioDialogRef} label="bio-data form" threshold={200} />
             {/* Photo upload */}
             <div className="flex flex-col items-center gap-2">
-              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <Button type="button" variant="ghost" size="icon" className="relative group h-20 w-20 rounded-full" aria-label="Upload staff photo" onClick={() => fileInputRef.current?.click()}>
                 <Avatar className="h-20 w-20 border-2 border-border">
                   <AvatarImage src={photoPreview ?? undefined} />
                   <AvatarFallback className="text-lg bg-primary/10 text-primary">
                     {firstName && lastName ? getInitials(firstName, lastName) : <Camera className="h-6 w-6" />}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="h-5 w-5 text-white" />
+                <div className="absolute inset-0 rounded-full bg-foreground/60 flex items-center justify-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                  <Camera className="h-5 w-5 text-background" />
                 </div>
-              </div>
+              </Button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1193,7 +1204,7 @@ export default function Staff() {
                 className="hidden"
                 onChange={handlePhotoSelect}
               />
-              <p className="text-xs text-muted-foreground">Click to upload photo (JPG, PNG or WEBP, under 3MB)</p>
+              <p className="text-xs text-muted-foreground">Upload photo (JPG, PNG or WEBP, under 3MB)</p>
             </div>
 
             <BioDataFormToolbar
@@ -1204,10 +1215,16 @@ export default function Staff() {
             <BioDataLoadingNotice />
 
             <Tabs value={bioTab} onValueChange={setBioTab} className="w-full">
-              {/* Pinned so every section stays reachable while scrolling. */}
-              <TabsList className="z-20 flex h-auto w-full flex-col justify-start gap-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:sticky sm:top-0 sm:flex-row sm:flex-wrap">
+              <Label htmlFor="bio-section-picker" className="sm:sr-only">Form section</Label>
+              <Select value={bioTab} onValueChange={setBioTab}>
+                <SelectTrigger id="bio-section-picker" className="w-full sm:hidden"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {BIODATA_SECTIONS.map((s) => <SelectItem key={s.key} value={s.key}>{s.key}. {s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <TabsList className="z-20 hidden h-auto w-full flex-wrap justify-start gap-1 bg-background/95 sm:sticky sm:top-0 sm:flex">
                 {BIODATA_SECTIONS.map((s) => (
-                  <TabsTrigger key={s.key} value={s.key} className="w-full justify-start text-xs sm:w-auto">
+                  <TabsTrigger key={s.key} value={s.key} className="justify-start text-xs">
                     <span className="font-semibold">{s.key}</span>
                     <span className="ml-1 inline">{s.label}</span>
                   </TabsTrigger>
@@ -1659,8 +1676,8 @@ export default function Staff() {
           </div>
 
           {/* Pinned action bar: section stepper + save always reachable. */}
-          <div className="flex shrink-0 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-col gap-2 border-t bg-background px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
+            <div className="flex items-center justify-between gap-1 sm:justify-start sm:gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -1683,14 +1700,7 @@ export default function Staff() {
                 Next <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || !staffId.trim() || !firstName.trim() || !lastName.trim()} className="w-full sm:w-auto">
-              {saveMutation.isPending ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {uploadingPhoto ? "Uploading photo..." : "Saving..."}
-                </span>
-              ) : editing ? "Update Staff" : "Create Staff"}
-            </Button>
+            <BioDataSaveButton editing={!!editing} pending={saveMutation.isPending} uploadingPhoto={uploadingPhoto} disabled={!staffId.trim() || !firstName.trim() || !lastName.trim()} onSave={() => saveMutation.mutate()} />
           </div>
 
           </BioDataProvider>

@@ -190,13 +190,12 @@ Deno.serve(async (req) => {
     const ccList = isBulk ? [] : sanitizeEmailList(body.cc);
     const bccList = isBulk ? [] : sanitizeEmailList(body.bcc);
 
-    // Recipient policy — only registered staff addresses may receive record
-    // documents. Arbitrary external recipients are refused server-side.
-    const check = await partitionRecipients(adminClient, [...recipients, ...ccList, ...bccList]);
+    // Recipient policy is checked on every send, including saved lists and CC/BCC.
+    const check = await partitionRecipients(adminClient, [...recipients, ...ccList, ...bccList], { approvedExternal: true });
     if (check.rejected.length) {
       return new Response(
         JSON.stringify({
-          error: "One or more recipients are not registered staff addresses",
+          error: "One or more recipients are neither registered staff nor approved outside contacts",
           rejected_count: check.rejected.length,
         }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },

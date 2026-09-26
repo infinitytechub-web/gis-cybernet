@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { recordPdfBase64, buildRecordPdf, type RecordKind, RECORD_TITLES } from "@/lib/record-pdf";
 import { csvCellQuoted } from "@/lib/csv-safe";
 
@@ -212,6 +213,16 @@ function finalDedupeBulk(recipients: string[]): { recipients: string[]; report: 
 }
 
 export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShareDialogProps) {
+  const { data: approvedContacts = [] } = useQuery({
+    queryKey: ["approved-record-email-recipients"],
+    enabled: open,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("approved_record_email_recipients");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const [step, setStep] = useState<"compose" | "preview">("compose");
   const [mode, setMode] = useState<"single" | "bulk">("single");
   const [to, setTo] = useState("");
@@ -866,8 +877,20 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                     placeholder="recipient@example.com"
                     value={to}
                     onChange={(e) => setTo(e.target.value)}
+                    list="approved-outside-email-contacts"
                   />
+                  <datalist id="approved-outside-email-contacts">
+                    {approvedContacts.map((contact) => <option key={contact.id} value={contact.email} label={`${contact.display_name} · Approved external`} />)}
+                  </datalist>
+                  <p className="mt-1 text-xs text-muted-foreground">Registered staff and approved outside contacts only.</p>
                 </div>
+                {approvedContacts.length > 0 && <div className="space-y-1">
+                  <Label htmlFor="approved-external-picker">Approved outside contacts</Label>
+                  <select id="approved-external-picker" value="" onChange={(e) => setTo(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
+                    <option value="">Choose a contact…</option>
+                    {approvedContacts.map((contact) => <option key={contact.id} value={contact.email}>{contact.display_name} — {contact.email} (external)</option>)}
+                  </select>
+                </div>}
                 <div>
                   <Label>CC</Label>
                   <Input
@@ -919,6 +942,9 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                     value={bulkText}
                     onChange={(e) => setBulkText(e.target.value)}
                   />
+                  {approvedContacts.length > 0 && <div className="flex flex-wrap gap-1.5" aria-label="Approved outside contacts">
+                    {approvedContacts.map((contact) => <Button key={contact.id} type="button" size="sm" variant="outline" onClick={() => setBulkText((current) => mergeUniqueEmails(current, [contact.email]).merged)}>{contact.display_name} · external</Button>)}
+                  </div>}
                   <div className="flex flex-wrap gap-2 mt-2 text-xs">
                     <Badge variant="secondary">{bulkList.length} unique</Badge>
                     {bulkParsed.duplicates > 0 && (

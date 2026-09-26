@@ -61,7 +61,7 @@ const MAX_FILES = 5;
 // Page
 
 export default function Interlink() {
-  const { isAdminOrSupervisor, user } = useAuth();
+  const { isAdminOrSupervisor, isAdmin, user } = useAuth();
   const branding = useInterlinkBranding();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -135,7 +135,7 @@ export default function Interlink() {
         <TabsContent value="approvals" className="mt-4"><ApprovalsTab /></TabsContent>
         <TabsContent value="schedules" className="mt-4"><SchedulesTab userId={user?.id ?? ""} /></TabsContent>
         <TabsContent value="rules" className="mt-4"><AttachmentRulesTab userId={user?.id ?? ""} /></TabsContent>
-        <TabsContent value="recipients" className="mt-4"><RecipientsTab userId={user?.id ?? ""} /></TabsContent>
+        <TabsContent value="recipients" className="mt-4"><RecipientsTab userId={user?.id ?? ""} isAdmin={isAdmin} /></TabsContent>
         <TabsContent value="audit" className="mt-4 space-y-4">
           <EmailStatusPanel />
           <AuditTab />
@@ -736,10 +736,11 @@ function ComposeTab({ userId }: { userId: string }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // RECIPIENTS TAB — manage external command contacts + saved lists
 
-function RecipientsTab({ userId }: { userId: string }) {
+function RecipientsTab({ userId, isAdmin }: { userId: string; isAdmin: boolean }) {
   const queryClient = useQueryClient();
   const [contactDlg, setContactDlg] = useState(false);
   const [listDlg, setListDlg] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const [newContact, setNewContact] = useState({ display_name: "", command_or_unit: "", email: "", scope: "extranet" as Exclude<InterlinkScope, "mixed">, notes: "" });
   const [newList, setNewList] = useState({ name: "", description: "", scope: "extranet" as Exclude<InterlinkScope, "mixed">, member_emails: "" });
 
@@ -810,14 +811,34 @@ function RecipientsTab({ userId }: { userId: string }) {
   }
 
   async function saveContact() {
-    if (!newContact.display_name || !newContact.email) return toast.error("Name and email required");
-    const { error } = await supabase.from("interlink_contacts").insert({ ...newContact, created_by: userId });
+    const name = newContact.display_name.trim();
+    const address = newContact.email.trim().toLowerCase();
+    if (!name || name.length > 150 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address) || address.length > 254) return toast.error("Enter a valid name and email address");
+    const { error } = await supabase.from("interlink_contacts").insert({
+      display_name: name, command_or_unit: newContact.command_or_unit.trim().slice(0, 150) || null,
+      email: address, scope: newContact.scope, notes: newContact.notes.trim().slice(0, 500) || null,
+      created_by: userId,
+    });
     if (error) return toast.error(error.message);
-    toast.success("Contact added");
+    toast.success("Contact submitted for administrator approval");
     setContactDlg(false);
     setNewContact({ display_name: "", command_or_unit: "", email: "", scope: "extranet", notes: "" });
     queryClient.invalidateQueries({ queryKey: ["interlink-contacts-mgmt"] });
     queryClient.invalidateQueries({ queryKey: ["interlink-contacts"] });
+  }
+
+  async function setContactApproval(id: string, approved: boolean) {
+    if (!isAdmin) return;
+    setApprovingId(id);
+    const { error } = await supabase.rpc("set_interlink_contact_approval", {
+      _contact_id: id, _approved: approved,
+    });
+    setApprovingId(null);
+    if (error) return toast.error(error.message);
+    toast.success(approved ? "Outside contact approved for record emails" : "Outside contact approval revoked");
+    queryClient.invalidateQueries({ queryKey: ["interlink-contacts-mgmt"] });
+    queryClient.invalidateQueries({ queryKey: ["interlink-contacts"] });
+    queryClient.invalidateQueries({ queryKey: ["approved-record-email-recipients"] });
   }
 
   async function saveList() {
@@ -913,7 +934,7 @@ function RecipientsTab({ userId }: { userId: string }) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base flex items-center gap-2"><Globe2 className="h-4 w-4 text-violet-600" />Other Commands & Partners</CardTitle>
-            <CardDescription>External recipient directory</CardDescription>
+            <CardDescription>Only administrator-approved contacts can receive record emails.</CardDescription>
           </div>
           <Dialog open={contactDlg} onOpenChange={setContactDlg}>
             <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Add</Button></DialogTrigger>
@@ -943,16 +964,20 @@ function RecipientsTab({ userId }: { userId: string }) {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Command</TableHead><TableHead>Email</TableHead><TableHead>Scope</TableHead><TableHead></TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Command</TableHead><TableHead>Email</TableHead><TableHead>Scope</TableHead><TableHead>Approval</TableHead><TableHead></TableHead></TableRow></TableHeader>
               <TableBody>
-                {contacts.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground italic py-6">No contacts yet</TableCell></TableRow>}
+                {contacts.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground italic py-6">No contacts yet</TableCell></TableRow>}
                 {contacts.map((c: any) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.display_name}</TableCell>
                     <TableCell>{c.command_or_unit ?? "—"}</TableCell>
                     <TableCell className="text-xs">{c.email}</TableCell>
                     <TableCell><Badge variant="outline" className={SCOPE_META[c.scope as keyof typeof SCOPE_META]?.tone}>{c.scope}</Badge></TableCell>
-                    <TableCell><Button size="icon" variant="ghost" onClick={() => deleteContact(c.id)} className="h-7 w-7"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                    <TableCell><Badge variant={c.approved ? "secondary" : "outline"}>{c.approved ? "Approved" : "Pending"}</Badge></TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {isAdmin && <Button size="sm" variant="outline" disabled={approvingId === c.id} onClick={() => void setContactApproval(c.id, !c.approved)}>{c.approved ? "Revoke" : "Approve"}</Button>}
+                      {isAdmin && <Button size="icon" variant="ghost" aria-label={`Delete ${c.display_name}`} onClick={() => deleteContact(c.id)} className="h-7 w-7"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
