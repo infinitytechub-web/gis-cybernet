@@ -86,6 +86,8 @@ type Ctx = BioDataState & {
   profileId: string | null;
   /** True while sections E–L are still being fetched for this record. */
   loading: boolean;
+  loadError: string | null;
+  retryLoad: () => void;
 };
 
 const BioDataCtx = createContext<Ctx | null>(null);
@@ -150,6 +152,8 @@ export function BioDataProvider({
   const { user, isAdmin, role } = useAuth();
   const [state, setState] = useState<BioDataState>(EMPTY_STATE);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const { data: optionSets } = useBioDataOptionSets();
   const { data: fields = [] } = useBioDataCustomFields();
   const { data: tables = [] } = useBioDataCustomTables();
@@ -184,16 +188,22 @@ export function BioDataProvider({
   const canSeeMedical = canSeeBank || role === "medical_officer";
 
   const loadedFor = useRef<string | null>(null);
+  const retryLoad = useCallback(() => {
+    loadedFor.current = null;
+    setLoadAttempt((n) => n + 1);
+  }, []);
   useEffect(() => {
-    if (!open) { loadedFor.current = null; setLoading(false); return; }
-    if (!profileId) { setState(EMPTY_STATE); loadedFor.current = null; setLoading(false); return; }
+    if (!open) { loadedFor.current = null; setLoading(false); setLoadError(null); return; }
+    if (!profileId) { setState(EMPTY_STATE); loadedFor.current = null; setLoading(false); setLoadError(null); return; }
     if (loadedFor.current === profileId) return;
     loadedFor.current = profileId;
     let cancelled = false;
     setLoading(true);
+    setLoadError(null);
 
     (async () => {
-      const [edu, emp, fam, emg, bank, med, ver, cv, cr] = await Promise.all([
+      try {
+      const requests = [
         supabase.from("staff_education").select("*").eq("profile_id", profileId).order("sort_order"),
         supabase.from("staff_employment_history").select("*").eq("profile_id", profileId).order("sort_order"),
         supabase.from("staff_family_details").select("*").eq("profile_id", profileId).maybeSingle(),
@@ -203,8 +213,13 @@ export function BioDataProvider({
         supabase.from("staff_biodata_verifications").select("*").eq("profile_id", profileId),
         supabase.from("biodata_custom_values").select("*").eq("profile_id", profileId),
         supabase.from("biodata_custom_rows").select("*").eq("profile_id", profileId).order("sort_order"),
-      ]);
+      ];
+      const settled = await Promise.allSettled(requests);
       if (cancelled) return;
+      const failed = settled.some((result) => result.status === "rejected" || result.value.error);
+      const [edu, emp, fam, emg, bank, med, ver, cv, cr] = settled.map((result) =>
+        result.status === "fulfilled" && !result.value.error ? result.value : { data: null },
+      );
 
       const verifications = { ...EMPTY_STATE.verifications } as Record<VerificationKind, Verification>;
       for (const row of (ver.data ?? []) as any[]) {
@@ -262,16 +277,22 @@ export function BioDataProvider({
       // Every look at a restricted section is recorded for the audit trail.
       if (med.data) void logRestrictedAccess(profileId, "medical", "view");
       if (bank.data) void logRestrictedAccess(profileId, "bank", "view");
-      setLoading(false);
+      if (failed) setLoadError("Some record details could not be loaded. Retry before saving to avoid replacing missing details.");
+      } catch {
+        if (!cancelled) setLoadError("Record details could not be loaded. Retry before saving.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
 
     return () => { cancelled = true; };
-  }, [open, profileId]);
+  }, [open, profileId, loadAttempt]);
 
   const stateRef = useRef(state);
   stateRef.current = state;
 
   const persist = useCallback<PersistFn>(async (targetProfileId: string) => {
+    if (loading || loadError) throw new Error("Wait for all record details to load successfully before saving.");
     const s = stateRef.current;
 
     const replaceRows = async (table: string, rows: any[]) => {
@@ -383,7 +404,7 @@ export function BioDataProvider({
       const { error } = await supabase.from("biodata_custom_rows").insert(rowsToInsert);
       if (error) throw error;
     }
-  }, [canSeeBank, canSeeMedical, user?.id]);
+  }, [canSeeBank, canSeeMedical, user?.id, loading, loadError]);
 
   useEffect(() => {
     persistRef.current = persist;
@@ -411,8 +432,8 @@ export function BioDataProvider({
         family: { ...prev.family, ...(data.family ?? {}) },
         bank: { ...prev.bank, ...(data.bank ?? {}) },
       })),
-    canSeeMedical, canSeeBank, fields, tables, optionSets, profileId, loading,
-  }), [state, canSeeMedical, canSeeBank, fields, tables, optionSets, profileId, loading]);
+    canSeeMedical, canSeeBank, fields, tables, optionSets, profileId, loading, loadError, retryLoad,
+  }), [state, canSeeMedical, canSeeBank, fields, tables, optionSets, profileId, loading, loadError, retryLoad]);
 
   return <BioDataCtx.Provider value={value}>{children}</BioDataCtx.Provider>;
 }

@@ -7,7 +7,7 @@
 export async function partitionRecipients(
   adminClient: any,
   emails: string[],
-  opts: { extraTable?: string } = {},
+  opts: { extraTable?: string; approvedExternal?: boolean } = {},
 ): Promise<{ allowed: string[]; rejected: string[] }> {
   const uniq = Array.from(new Set(emails.map((e) => e.trim()).filter(Boolean)));
   if (uniq.length === 0) return { allowed: [], rejected: [] };
@@ -22,6 +22,12 @@ export async function partitionRecipients(
     const { data: extra } = await adminClient
       .from(opts.extraTable).select("email").in("email", lookup);
     for (const r of extra ?? []) if (r?.email) known.add(String(r.email).toLowerCase());
+  }
+  if (opts.approvedExternal) {
+    const { data: external, error } = await adminClient
+      .from("interlink_contacts").select("email").eq("approved", true).in("email", lookup);
+    if (error) throw new Error("Recipient approval could not be verified");
+    for (const r of external ?? []) if (r?.email) known.add(String(r.email).toLowerCase());
   }
 
   const allowed: string[] = [];
