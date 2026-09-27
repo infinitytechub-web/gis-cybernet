@@ -1,3 +1,4 @@
+import { assertNoDuplicateRoles, friendlyRoleError } from "@/lib/role-duplicate-guard";
 import { useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -213,8 +214,9 @@ export default function RoleAssignmentsAdmin() {
 
   const addRole = useMutation({
     mutationFn: async ({ user_id, role }: { user_id: string; role: AppRole }) => {
+      await assertNoDuplicateRoles([{ user_id, role }]);
       const { error } = await supabase.from("user_roles").insert({ user_id, role });
-      if (error) throw error;
+      if (error) throw new Error(friendlyRoleError(error));
       await logAdminAudit("user_role", "role.add", { role, reversible: true }, user_id);
     },
     onSuccess: () => {
@@ -284,6 +286,7 @@ export default function RoleAssignmentsAdmin() {
         if (error) throw error;
         await logAdminAudit("user_role", "role.remove", { role: d.role, reverted_from: entry.id }, entry.entity_id);
       } else if (entry.action === "role.remove") {
+        await assertNoDuplicateRoles([{ user_id: entry.entity_id, role: d.role }]);
         const { error } = await supabase.from("user_roles").insert({ user_id: entry.entity_id, role: d.role });
         if (error) throw error;
         await logAdminAudit("user_role", "role.add", { role: d.role, reverted_from: entry.id }, entry.entity_id);
@@ -353,11 +356,12 @@ export default function RoleAssignmentsAdmin() {
         seen.add(k);
         return true;
       }).map((r) => ({ user_id: r.user_id!, role: r.role! }));
+      await assertNoDuplicateRoles(rows);
       let inserted = 0;
       for (let i = 0; i < rows.length; i += 50) {
         const batch = rows.slice(i, i + 50);
         const { error } = await supabase.from("user_roles").insert(batch);
-        if (error) throw error;
+        if (error) throw new Error(friendlyRoleError(error));
         for (const row of batch) {
           await logAdminAudit("user_role", "role.add", { role: row.role, source: "bulk_upload", reversible: true }, row.user_id);
         }
