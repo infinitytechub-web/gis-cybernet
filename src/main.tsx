@@ -11,6 +11,22 @@ import { initRum } from "./lib/rum";
 // call it again explicitly so a tree-shaker can never elide the side effect.
 installCsrfHeader();
 
+// "ResizeObserver loop ..." is a benign browser notice (a layout settled over
+// two frames), not a real failure. Swallow it before monitoring/overlays treat
+// it as a crash.
+const isBenignResizeObserverError = (msg: unknown) =>
+  typeof msg === "string" && msg.includes("ResizeObserver loop");
+window.addEventListener(
+  "error",
+  (e) => {
+    if (isBenignResizeObserverError(e.message)) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+  },
+  true,
+);
+
 // Real User Monitoring — captures Web Vitals, route timings, errors, and
 // unhandled rejections from production traffic.
 initRum();
