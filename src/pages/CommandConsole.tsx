@@ -9,6 +9,8 @@
  * additionally scoped to the signed-in officer's branch of the hierarchy.
  */
 import { useMemo, useState } from "react";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -133,6 +135,7 @@ export default function CommandConsole() {
       );
     });
   }, [scoped, source, severity, state, search]);
+  const pager = usePagedList(filtered);
 
   const open = scoped.filter((i) => i.open);
   const critical = open.filter((i) => i.severity === "critical");
@@ -434,7 +437,7 @@ export default function CommandConsole() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filtered.slice(0, 300).map((i) => (
+                      pager.pageItems.map((i) => (
                         <TableRow key={i.key}>
                           <TableCell className="whitespace-nowrap text-xs">{formatDateTime(i.occurredAt)}</TableCell>
                           <TableCell>
@@ -470,6 +473,7 @@ export default function CommandConsole() {
                   </TableBody>
                 </Table>
               </div>
+              <ListPagination {...pager} />
             </CardContent>
           </Card>
         </TabsContent>

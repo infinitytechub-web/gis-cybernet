@@ -7,6 +7,8 @@
  * scoped by can_see_org_unit), so no profile table access happens here.
  */
 import { useMemo, useState } from "react";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Map as MapIcon, Users, Building2, Award, Search, RefreshCw, IdCard } from "lucide-react";
@@ -155,6 +157,7 @@ export default function StaffMapping() {
         .some((value) => String(value ?? "").toLowerCase().includes(term));
     });
   }, [rows, region, sector, station, rank, department, status, search, mapKey]);
+  const pager = usePagedList(filtered);
 
   const countBy = (pick: (row: MappingRow) => string) => {
     const map = new Map<string, number>();
@@ -342,7 +345,7 @@ export default function StaffMapping() {
                   {!isLoading && filtered.length === 0 && (
                     <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">No staff match these filters.</td></tr>
                   )}
-                  {filtered.slice(0, 300).map((row) => (
+                  {pager.pageItems.map((row) => (
                     <tr key={row.profile_id} className="border-b last:border-0">
                       <td className="py-2 pr-3">
                         <span className="block font-medium">{row.full_name || "—"}</span>
@@ -365,9 +368,7 @@ export default function StaffMapping() {
                 </tbody>
               </table>
             </div>
-            {filtered.length > 300 && (
-              <p className="mt-2 text-xs text-muted-foreground">Showing the first 300 of {filtered.length}. Narrow the filters or export the full list.</p>
-            )}
+            <ListPagination {...pager} />
           </CardContent>
         </Card>
       </div>

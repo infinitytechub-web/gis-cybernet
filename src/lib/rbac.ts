@@ -163,7 +163,8 @@ export const MODULES: ModuleDef[] = [
   { key: "staff-list-import", label: "Staff List Import", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-list/import"] },
   { key: "biodata-form-setup", label: "Bio-Data Form Setup", tier: "admin", roles: ADMIN_ONLY, paths: ["/biodata-form-setup"] },
 
-  { key: "role-assignments", label: "Role Assignments", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/role-assignments"] },
+  // Role & Department Management (roles, departments, staff assignments) — Super Admin only; page and DB policies agree.
+  { key: "role-assignments", label: "Role Assignments", tier: "admin", roles: ADMIN_ONLY, paths: ["/role-assignments"] },
   { key: "command-roles", label: "Command Roles & Grants", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/command-roles"] },
   // Unit oversight — shows other staff members' postings, so not open to all staff.
   { key: "unit-dashboard", label: "Unit Dashboard", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, ...IPSE_TIER, ...PROCESSING_TIER], paths: ["/unit-dashboard"] },
