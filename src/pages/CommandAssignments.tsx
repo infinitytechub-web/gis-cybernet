@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -269,6 +271,7 @@ export default function CommandAssignments() {
       return name.includes(q);
     });
   }, [officers, tab, search]);
+  const pager = usePagedList(rows);
 
   const selectedIds = useMemo(
     () => Object.keys(selected).filter((k) => selected[k]),
@@ -620,7 +623,7 @@ export default function CommandAssignments() {
                     </TableCell>
                   </TableRow>
                 )}
-                {rows.slice(0, 300).map((o) => {
+                {pager.pageItems.map((o) => {
                   const unit = o.org_unit_id ? unitById.get(o.org_unit_id) : null;
                   return (
                     <TableRow key={o.id}>
@@ -649,11 +652,7 @@ export default function CommandAssignments() {
               </TableBody>
             </Table>
           </div>
-          {rows.length > 300 && (
-            <p className="text-xs text-muted-foreground">
-              Showing the first 300 of {rows.length}. Narrow the search to reach the rest.
-            </p>
-          )}
+          <ListPagination {...pager} />
         </CardContent>
       </Card>
 

@@ -7,6 +7,8 @@
  * sit on one screen.
  */
 import { useMemo, useState } from "react";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +86,7 @@ export default function CommandStaffMappingTab() {
       return `${r.full_name ?? ""} ${r.staff_id ?? ""} ${r.unit ?? ""}`.toLowerCase().includes(q);
     });
   }, [active, region, station, rank, search]);
+  const pager = usePagedList(filtered);
 
   const clusters = useMemo<MapCluster[]>(() => {
     const map = new Map<string, MapCluster>();
@@ -214,7 +217,7 @@ export default function CommandStaffMappingTab() {
                 ) : filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={6} className="py-6 text-center text-muted-foreground">No staff match these filters.</TableCell></TableRow>
                 ) : (
-                  filtered.slice(0, 300).map((r) => (
+                  pager.pageItems.map((r) => (
                     <TableRow key={r.profile_id}>
                       <TableCell>
                         <div className="font-medium">{r.full_name || "—"}</div>
@@ -237,6 +240,7 @@ export default function CommandStaffMappingTab() {
               </TableBody>
             </Table>
           </div>
+          <ListPagination {...pager} />
         </CardContent>
       </Card>
 

@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react"; 
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
@@ -622,6 +624,7 @@ export default function Operations() {
     }
     return result;
   }, [filtered, searchTerm, filterType, filterSeverity, filterStatus, filterOfficer, dateFrom, dateTo]);
+  const pager = usePagedList(searched);
 
   const searchedTotalSuspects = useMemo(() => searched.reduce((s, o) => s + o.suspects_count, 0), [searched]);
   const searchedTotalArrests = useMemo(() => searched.reduce((s, o) => s + o.arrests_count, 0), [searched]);
@@ -1193,7 +1196,7 @@ export default function Operations() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searched.slice(0, 100).map(op => (
+                  {pager.pageItems.map(op => (
                     <React.Fragment key={op.id}>
                       <TableRow className="cursor-pointer" onClick={() => setExpandedId(prev => prev === op.id ? null : op.id)}>
                         <TableCell className="whitespace-nowrap">
@@ -1277,6 +1280,7 @@ export default function Operations() {
                 </tfoot>
               </Table>
             </div>
+            <ListPagination {...pager} />
           )}
         </TabsContent>
       </Tabs>

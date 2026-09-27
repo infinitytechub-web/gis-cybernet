@@ -9,6 +9,8 @@
  * Command tier can also edit the yearly allowances (leave_entitlements).
  */
 import { useMemo, useState } from "react";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,6 +146,7 @@ export function LeaveBalanceDashboard() {
       return `${r.full_name ?? ""} ${r.staff_id ?? ""} ${r.unit ?? ""}`.toLowerCase().includes(q);
     });
   }, [rows, type, search]);
+  const pager = usePagedList(filtered);
 
   const totals = useMemo(() => {
     const t = { people: new Set<string>(), entitled: 0, taken: 0, pending: 0, remaining: 0 };
@@ -243,7 +246,7 @@ export function LeaveBalanceDashboard() {
                 ) : filtered.length === 0 ? (
                   <TableRow><TableCell colSpan={8} className="py-6 text-center text-muted-foreground">No balances to show.</TableCell></TableRow>
                 ) : (
-                  filtered.slice(0, 500).map((r) => {
+                  pager.pageItems.map((r) => {
                     const entitled = Number(r.days_entitled) || 0;
                     const remaining = Number(r.days_remaining) || 0;
                     const pct = entitled ? Math.round((remaining / entitled) * 100) : 0;
@@ -283,6 +286,7 @@ export function LeaveBalanceDashboard() {
               </TableBody>
             </Table>
           </div>
+          <ListPagination {...pager} />
         </CardContent>
       </Card>
 
