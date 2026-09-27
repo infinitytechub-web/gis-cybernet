@@ -310,6 +310,7 @@ export default function Staff() {
       const { data, error } = await supabase
         .from("profiles")
         .select("*, ranks(*), departments(*)")
+        .is("deleted_at", null)
         .order("last_name");
       if (error) throw error;
       const profiles = data as ProfileWithRelations[];
@@ -803,23 +804,32 @@ export default function Staff() {
     },
   });
 
+  // Soft delete via server RPC: hard deletes would cascade into immutable
+  // audit/security history. Purge is a separate, admin-only controlled step.
+  const askDeleteReason = () => {
+    const r = window.prompt("Reason for deleting this staff record (required, min 4 characters):")?.trim();
+    if (!r || r.length < 4) throw new Error("Deletion cancelled — a reason of at least 4 characters is required");
+    return r;
+  };
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("profiles").delete().eq("id", id);
+      const reason = askDeleteReason();
+      const { error } = await supabase.rpc("soft_delete_staff", { _ids: [id], _reason: reason });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
-      toast.success("Staff deleted");
+      toast.success("Staff record moved to deleted records");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("profiles").delete().in("id", ids);
+      const reason = askDeleteReason();
+      const { data, error } = await supabase.rpc("soft_delete_staff", { _ids: ids, _reason: reason });
       if (error) throw error;
-      return ids.length;
+      return (data as number) ?? ids.length;
     },
     onSuccess: (n) => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
