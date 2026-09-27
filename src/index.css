@@ -84,6 +84,9 @@ body {
     --warning-foreground: 30 80% 15%;
     --info: 205 90% 38%;
     --info-foreground: 0 0% 100%;
+    /* Category accents for command/department cards */
+    --cat-1: 152 60% 32%; --cat-2: 205 75% 40%; --cat-3: 262 45% 48%; --cat-4: 28 85% 45%;
+    --cat-5: 186 65% 34%; --cat-6: 340 55% 45%; --cat-7: 45 80% 40%; --cat-8: 220 60% 35%;
 
     --sidebar-background: 215 75% 14%;
     --sidebar-foreground: 200 25% 95%;
@@ -130,6 +133,8 @@ body {
     --warning-foreground: 30 80% 10%;
     --info: 205 90% 40%;
     --info-foreground: 0 0% 100%;
+    --cat-1: 152 55% 45%; --cat-2: 205 75% 58%; --cat-3: 262 55% 66%; --cat-4: 28 85% 58%;
+    --cat-5: 186 60% 50%; --cat-6: 340 60% 62%; --cat-7: 45 85% 55%; --cat-8: 220 70% 65%;
 
     --sidebar-background: 215 60% 8%;
     --sidebar-foreground: 200 25% 90%;
