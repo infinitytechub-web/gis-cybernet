@@ -996,6 +996,24 @@ export type Database = {
           },
         ]
       }
+      audit_purge_grants: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_retention_settings: {
         Row: {
           account_unlock_days: number
@@ -17876,6 +17894,7 @@ export type Database = {
       can_manage_sessions: { Args: { _user_id: string }; Returns: boolean }
       can_move_command: { Args: { _user_id: string }; Returns: boolean }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
+      can_purge_audit: { Args: never; Returns: boolean }
       can_see_org_unit: {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
@@ -19146,6 +19165,10 @@ export type Database = {
         Returns: number
       }
       prune_system_backup_audit: { Args: never; Returns: Json }
+      purge_audit_records: {
+        Args: { _before: string; _reason: string; _table: string }
+        Returns: number
+      }
       purge_deleted_staff: {
         Args: { _id: string; _reason: string }
         Returns: undefined
@@ -19445,6 +19468,10 @@ export type Database = {
       session_heartbeat: {
         Args: { _page?: string; _session_key: string }
         Returns: boolean
+      }
+      set_audit_purge_grant: {
+        Args: { _grant: boolean; _user_id: string }
+        Returns: undefined
       }
       set_interlink_contact_approval: {
         Args: { _approved: boolean; _contact_id: string; _note?: string }
