@@ -19543,6 +19543,10 @@ export type Database = {
           user_agent: string
         }[]
       }
+      staff_analytics: {
+        Args: { _department_id?: string; _org_unit_id?: string }
+        Returns: Json
+      }
       staff_directory_rows: {
         Args: never
         Returns: {
