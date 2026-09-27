@@ -29,7 +29,7 @@ test.describe("Staff Officer command isolation", () => {
 
     const [profiles, documents, positions, analytics] = await Promise.all([
       restSelect("profiles", session.access_token, `select=id&org_unit_id=eq.${encodeURIComponent(otherUnit)}&limit=1`),
-      restSelect("application_documents", session.access_token, `select=id&org_unit_id=eq.${encodeURIComponent(otherUnit)}&limit=1`),
+      restSelect("staff_documents", session.access_token, `select=id,profiles!inner(org_unit_id)&profiles.org_unit_id=eq.${encodeURIComponent(otherUnit)}&limit=1`),
       restSelect("org_positions", session.access_token, `select=id&org_unit_id=eq.${encodeURIComponent(otherUnit)}&limit=1`),
       restRpc("staff_analytics", session.access_token, { _org_unit_id: otherUnit }),
     ]);

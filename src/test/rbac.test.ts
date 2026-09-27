@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { MODULES, canAccessModule, canAccessPath } from "@/lib/rbac";
+import { MODULES, MODULES_BY_KEY, canAccessModule, canAccessPath } from "@/lib/rbac";
 
 const appSrc = fs.readFileSync(path.resolve(__dirname, "../App.tsx"), "utf8");
 
