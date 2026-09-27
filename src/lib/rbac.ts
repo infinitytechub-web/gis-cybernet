@@ -194,6 +194,7 @@ export const MODULES: ModuleDef[] = [
   { key: "ip-blocks", label: "IP & Device Blocks", tier: "admin", roles: ADMIN_ONLY, paths: ["/ip-blocks"] },
 
   { key: "recycle-bin", label: "Recycle Bin", tier: "admin", roles: ["admin", "oic"], paths: ["/recycle-bin"] },
+  { key: "deleted-records", label: "Deleted Records", tier: "admin", roles: ["admin", "oic"], paths: ["/deleted-records"] },
   { key: "retention-policy", label: "Retention Policy", tier: "admin", roles: ADMIN_ONLY, paths: ["/announcements/retention", "/retention-policy"] },
   { key: "settings", label: "System Settings", tier: "admin", roles: ADMIN_ONLY, paths: ["/settings"] },
   { key: "biometric-security-admin", label: "Biometric Security Administration", tier: "admin", roles: ADMIN_ONLY, paths: ["/security/biometrics"] },

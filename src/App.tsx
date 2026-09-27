@@ -109,6 +109,7 @@ const Misd = lazy(() => import("./pages/Misd"));
 const Ipse = lazy(() => import("./pages/Ipse"));
 const CommandVault = lazy(() => import("./pages/CommandVault"));
 const RecycleBin = lazy(() => import("./pages/RecycleBin"));
+const DeletedRecords = lazy(() => import("./pages/DeletedRecords"));
 const RetentionPolicy = lazy(() => import("./pages/RetentionPolicy"));
 const GpsAddresses = lazy(() => import("./pages/GpsAddresses"));
 const Interlink = lazy(() => import("./pages/Interlink"));
@@ -303,7 +304,8 @@ function App() {
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
          <Route path="/gps-addresses" element={<Navigate to="/command-vault/gps" replace />} />
          <Route path="/gps-hub" element={<Navigate to="/command-vault/gps" replace />} />
-          <Route path="/recycle-bin" element={<ProtectedRoute module="recycle-bin"><Layout><RecycleBin /></Layout></ProtectedRoute>} />
+<Route path="/recycle-bin" element={<ProtectedRoute module="recycle-bin"><Layout><RecycleBin /></Layout></ProtectedRoute>} />
+          <Route path="/deleted-records" element={<ProtectedRoute module="deleted-records"><Layout><DeletedRecords /></Layout></ProtectedRoute>} />
           <Route path="/announcements/retention" element={<ProtectedRoute module="retention-policy"><Layout><RetentionPolicy /></Layout></ProtectedRoute>} />
           <Route path="/interlink" element={<ProtectedRoute module="interlink"><Layout><Interlink /></Layout></ProtectedRoute>} />
           <Route path="/admin/sessions" element={<ProtectedRoute module="session-management"><Layout><SessionManagement /></Layout></ProtectedRoute>} />
