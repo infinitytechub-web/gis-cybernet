@@ -849,6 +849,7 @@ export default function GuardScheduleImport() {
           status: "draft",
           notes: notes || null,
           created_by: user.id,
+          source_format: /\.xlsx$/i.test(file.name) ? "xlsx" : "csv",
         })
         .select("id")
         .single();
