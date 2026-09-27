@@ -5,3 +5,6 @@
 - [ ] Reorganize desktop and mobile navigation around task flows using central RBAC only
 - [ ] Reorder command dashboards around decisions, personal work, operations, and information
 - [ ] Verify a command officer sees only command-scoped, authorized information in the new layout
+- [x] Make personnel bio-data create/edit sections responsive and prevent saving after incomplete related-record loads.
+- [x] Add administrator-approved outside contacts to the record-email recipient list and enforce approval on sends.
+- [ ] Re-deploy record-email validation and repeat authenticated add/edit, approval and download checks after Lovable Cloud resumes (hosted database and auth are paused).
