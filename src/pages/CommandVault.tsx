@@ -111,7 +111,7 @@ export default function CommandVault() {
     queryKey: ["command-vault-commands"],
     enabled: allowed,
     queryFn: async () => {
-      const { data, error } = await supabase.from("org_units").select("id, name, type").eq("is_active", true).order("name");
+      const { data, error } = await supabase.rpc("list_authorized_command_vault_units");
       if (error) throw error;
       return data ?? [];
     },
