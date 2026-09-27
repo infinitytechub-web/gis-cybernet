@@ -217,7 +217,6 @@ export default function RoleAssignmentsAdmin() {
 
   const assignPage = usePagedList(filteredAssignments, { resetKey: `${aSearch}|${aRole}|${aDept}|${aStaff}` });
   const usersPage = usePagedList(filteredUsers, { resetKey: search });
-  const auditPage = usePagedList(auditTrail);
 
   // Drop selections that are no longer visible after filtering.
   const visibleIds = useMemo(() => new Set(filteredAssignments.map((r: any) => r.id)), [filteredAssignments]);
@@ -253,6 +252,7 @@ export default function RoleAssignmentsAdmin() {
     enabled: isAdmin && tab === "audit",
     refetchInterval: tab === "audit" ? 15000 : false,
   });
+  const auditPage = usePagedList(auditTrail);
 
   // ---- Mutations ----------------------------------------------------------
 
