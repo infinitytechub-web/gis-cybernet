@@ -18825,6 +18825,14 @@ export type Database = {
         Args: { _end: string; _start: string }
         Returns: number
       }
+      list_authorized_command_vault_units: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          type: string
+        }[]
+      }
       list_medical_inventory_audit: {
         Args: {
           p_action?: string
