@@ -16558,6 +16558,36 @@ export type Database = {
           },
         ]
       }
+      staff_record_archive: {
+        Row: {
+          cleanup: Json
+          created_at: string
+          event: string
+          id: string
+          performed_by: string | null
+          profile_id: string
+          snapshot: Json
+        }
+        Insert: {
+          cleanup?: Json
+          created_at?: string
+          event: string
+          id?: string
+          performed_by?: string | null
+          profile_id: string
+          snapshot?: Json
+        }
+        Update: {
+          cleanup?: Json
+          created_at?: string
+          event?: string
+          id?: string
+          performed_by?: string | null
+          profile_id?: string
+          snapshot?: Json
+        }
+        Relationships: []
+      }
       staff_request_history: {
         Row: {
           actor: string | null
@@ -19347,6 +19377,20 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      reconcile_staff_records_apply: {
+        Args: { _profile_ids: string[]; _reason: string }
+        Returns: Json
+      }
+      reconcile_staff_records_preview: {
+        Args: never
+        Returns: {
+          detail: string
+          full_name: string
+          issue: string
+          profile_id: string
+          staff_id: string
+        }[]
+      }
       record_command_vault_access: {
         Args: { _action: string; _detail?: string; _file_id: string }
         Returns: boolean
@@ -19716,6 +19760,10 @@ export type Database = {
         Args: { _department_id?: string; _org_unit_id?: string }
         Returns: Json
       }
+      staff_detach_operational: {
+        Args: { _profile_id: string; _scope_root?: string }
+        Returns: Json
+      }
       staff_directory_rows: {
         Args: never
         Returns: {
@@ -19736,6 +19784,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      staff_integrity_check: { Args: never; Returns: Json }
       staff_list_import_delete: { Args: { _import_id: string }; Returns: Json }
       staff_list_import_edit_row: {
         Args: { _outcome?: string; _payload: Json; _row_id: string }
