@@ -1,3 +1,4 @@
+import { PagedSection } from "@/components/ui/paged-section";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +13,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/date-format";
-import { PagedSection } from "@/components/ui/paged-section";
 
 type Status = "ready" | "no_change" | "no_staff" | "no_dept" | "no_rank";
 

@@ -1,4 +1,5 @@
 // src/pages/DutyRosterImport.tsx
+import { PagedSection } from "@/components/ui/paged-section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -22,7 +23,6 @@ import autoTable from "jspdf-autotable";
 import { formatDateTime } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { csvCellQuoted } from "@/lib/csv-safe";
-import { PagedSection } from "@/components/ui/paged-section";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";

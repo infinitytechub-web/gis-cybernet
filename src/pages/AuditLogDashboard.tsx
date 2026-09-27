@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { DateInput } from "@/components/ui/date-input";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 const ACTIONS = ["all", "INSERT", "UPDATE", "DELETE"];
 

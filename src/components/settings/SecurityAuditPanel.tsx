@@ -1,4 +1,5 @@
 // src/components/settings/SecurityAuditPanel.tsx
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,6 @@ import { downloadBlob } from "@/lib/download-utils";
 import { AuditImportVerifyDialog } from "./AuditImportVerifyDialog";
 import { formatDateTime } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 const sevColor: Record<string, string> = {
   info: "bg-muted text-muted-foreground",

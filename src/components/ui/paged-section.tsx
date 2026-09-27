@@ -1,8 +1,8 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 import { ReactNode, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { usePagedList } from "@/hooks/usePagedList";
-import { ListPagination } from "@/components/ui/list-pagination";
 
 /**
  * Wraps any list/table with type-to-search and 25-per-page pagination.

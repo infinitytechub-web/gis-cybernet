@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,6 @@ import {
   Users, Calendar as CalendarIcon, Trash2, Plus, Minus, ChevronDown, ChevronUp,
 } from "lucide-react";
 import {
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";

@@ -1,3 +1,5 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 /**
  * COMMAND CONSOLE — STAFF MAPPING TAB
  *
@@ -7,8 +9,6 @@
  * sit on one screen.
  */
 import { useMemo, useState } from "react";
-import { usePagedList } from "@/hooks/usePagedList";
-import { ListPagination } from "@/components/ui/list-pagination";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

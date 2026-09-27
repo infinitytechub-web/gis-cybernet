@@ -1,3 +1,5 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 /**
  * Staff Mapping dashboard — where every staff member is posted.
  *
@@ -7,8 +9,6 @@
  * scoped by can_see_org_unit), so no profile table access happens here.
  */
 import { useMemo, useState } from "react";
-import { usePagedList } from "@/hooks/usePagedList";
-import { ListPagination } from "@/components/ui/list-pagination";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Map as MapIcon, Users, Building2, Award, Search, RefreshCw, IdCard } from "lucide-react";

@@ -1,3 +1,5 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 /**
  * LEAVE BALANCE DASHBOARD
  *
@@ -9,8 +11,6 @@
  * Command tier can also edit the yearly allowances (leave_entitlements).
  */
 import { useMemo, useState } from "react";
-import { usePagedList } from "@/hooks/usePagedList";
-import { ListPagination } from "@/components/ui/list-pagination";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

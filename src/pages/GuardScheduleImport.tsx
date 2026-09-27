@@ -1,4 +1,5 @@
 // src/pages/GuardScheduleImport.tsx
+import { PagedSection } from "@/components/ui/paged-section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -19,7 +20,6 @@ import { z } from "zod";
 import { formatDateTime } from "@/lib/date-format";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import {
-import { PagedSection } from "@/components/ui/paged-section";
   exportScheduleXlsx,
   exportScheduleCsv,
   type Assignment,

@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,6 @@ import { format } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { csvCell } from "@/lib/csv-safe";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 export default function SensitiveAccessLog() {
   const { isAdmin, is2ic, isOic } = useAuth();

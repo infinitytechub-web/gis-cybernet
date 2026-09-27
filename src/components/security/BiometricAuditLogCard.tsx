@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 /**
  * Biometric audit log.
  *
@@ -26,7 +27,6 @@ import { Download, RefreshCw, ScrollText } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
 import { downloadBlob } from "@/lib/download-utils";
 import { buildCsv } from "@/lib/csv-safe";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 interface AuditRow {
   id: string;

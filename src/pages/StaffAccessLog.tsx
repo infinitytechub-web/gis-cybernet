@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 /**
  * Staff Access Log — command-tier view of who opened which staff record and
  * which action they performed, including who reached their own staff portal.
@@ -19,7 +20,6 @@ import { format, subDays } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCell } from "@/lib/csv-safe";
 import { SecurityHero } from "@/components/security/SecurityHero";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 type FeedRow = {
   id: string;

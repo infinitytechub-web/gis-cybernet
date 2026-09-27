@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 /**
  * RESTRICTED-SECTION ACCESS TRAIL
  *
@@ -22,7 +23,6 @@ import {
 } from "@/components/ui/table";
 import { Eye, Loader2, Pencil, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 type LogRow = {
   id: string;

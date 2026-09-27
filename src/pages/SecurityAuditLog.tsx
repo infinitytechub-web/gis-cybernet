@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,6 @@ import { format, subDays } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { buildCsv } from "@/lib/csv-safe";
-import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 type FeedRow = {
   id: string;

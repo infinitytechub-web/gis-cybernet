@@ -1,3 +1,5 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 /**
  * UNIT STAFF PICKER — pop-up search-and-select over the whole staff directory,
  * available for every Command, Department and Unit.
@@ -29,8 +31,6 @@ import { useBulkSelection } from "@/hooks/useBulkSelection";
 import { orgUnitPath, type OrgUnit } from "@/lib/org-hierarchy";
 import { roleLabel, ROLE_LABEL } from "@/lib/role-labels";
 import { UnitAddStaffDialog } from "@/components/command/UnitAddStaffDialog";
-import { usePagedList } from "@/hooks/usePagedList";
-import { ListPagination } from "@/components/ui/list-pagination";
 
 
 export type DirectoryStaff = {
