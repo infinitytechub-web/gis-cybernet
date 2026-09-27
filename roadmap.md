@@ -16,3 +16,5 @@
 - [x] Scope Command Vault records and storage to each command with role/capability enforcement
 - [x] Add immutable Command Vault access/action audit records and archive workflow
 - [ ] Complete signed-in functional and cross-command browser checks for Procurement and Command Vault (automated type, RBAC, schema and responsive checks complete)
+
+- [x] Staff deletion/transfer cascade, archive, reconciliation & integrity check

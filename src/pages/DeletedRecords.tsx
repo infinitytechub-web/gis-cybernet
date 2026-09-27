@@ -16,6 +16,7 @@ import { csvCell } from "@/lib/csv-safe";
 import { triggerDownload } from "@/lib/download-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
 import { DeletionInsightsPanel } from "@/components/staff/DeletionInsightsPanel";
+import { StaffReconciliationPanel } from "@/components/staff/StaffReconciliationPanel";
 
 interface DeletedProfile {
   id: string;
@@ -182,6 +183,7 @@ export default function DeletedRecords() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <DeletionInsightsPanel />
+      {isAdmin && <StaffReconciliationPanel />}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
