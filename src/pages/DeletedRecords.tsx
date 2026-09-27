@@ -11,7 +11,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, RotateCcw, Search, ShieldAlert, Loader2 } from "lucide-react";
+import { Trash2, RotateCcw, Search, ShieldAlert, Loader2, Download } from "lucide-react";
+import { csvCell } from "@/lib/csv-safe";
+import { triggerDownload } from "@/lib/download-utils";
+import { logAdminAudit } from "@/lib/admin-audit";
+import { DeletionInsightsPanel } from "@/components/staff/DeletionInsightsPanel";
 
 interface DeletedProfile {
   id: string;
@@ -93,6 +97,42 @@ export default function DeletedRecords() {
   const fullName = (r: DeletedProfile) =>
     `${r.last_name ?? ""} ${r.first_name ?? ""}`.trim() || "Unnamed record";
 
+  const [exporting, setExporting] = useState(false);
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const ids = filtered.map((r) => r.id);
+      let events: any[] = [];
+      let q = supabase
+        .from("system_audit_log")
+        .select("action, entity_id, created_at, details")
+        .in("action", ["soft_deleted_staff", "restored_staff", "purged_staff"])
+        .order("created_at", { ascending: false })
+        .limit(2000);
+      if (search.trim()) q = q.in("entity_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
+      const { data, error } = await q;
+      if (error) throw error;
+      events = data ?? [];
+      const head = ["Section", "Staff ID", "Name", "Rank", "Department", "Action", "When (UTC)", "Reason"];
+      const lines = [head.map(csvCell).join(",")];
+      filtered.forEach((r) => lines.push([
+        "Deleted record", r.staff_id, fullName(r), rankName(r.rank_id), deptName(r.department_id),
+        "soft_deleted", r.deleted_at, r.deletion_reason,
+      ].map(csvCell).join(",")));
+      events.forEach((e) => lines.push([
+        "Activity", e.details?.staff_id, e.details?.name, "", "", e.action, e.created_at, e.details?.reason,
+      ].map(csvCell).join(",")));
+      const url = URL.createObjectURL(new Blob([lines.join("\r\n")], { type: "text/csv;charset=utf-8" }));
+      triggerDownload(url, `deleted-records-${new Date().toISOString().slice(0, 10)}.csv`);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      logAdminAudit("deleted_records_report", "exported", { rows: filtered.length, events: events.length, search });
+    } catch (e: any) {
+      toast({ title: "Export failed", description: e.message, variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const doRestore = async () => {
     if (!restoreTarget) return;
     setBusy(true);
@@ -141,6 +181,7 @@ export default function DeletedRecords() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
+      <DeletionInsightsPanel />
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -153,6 +194,12 @@ export default function DeletedRecords() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={exporting}>
+              {exporting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+              Export CSV
+            </Button>
+          </div>
           <div className="relative max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
