@@ -271,11 +271,18 @@ export function canAccessModule(key: string, input: AccessInput): boolean {
   // 2. Admin-tuned matrix override wins over the code default.
   if (mod.feature && overrides) {
     const level = overrides[`${mod.feature}::${role}`];
-    if (level) return level !== "none";
+    if (level === "none") return false;
+    if (level && role !== "staff_officer") return true;
   }
 
   // 3. Static role list.
   if (mod.roles === "all") return true;
+
+  // Staff Officers only reach restricted modules the Super Admin assigned
+  // to them individually (command_tier_grants with the module key).
+  if (role === "staff_officer") {
+    return !!capabilities?.some((c) => c === mod.key);
+  }
   if (mod.roles.includes(role)) return true;
 
   // 4. Delegated capability grant (exact module key or wildcard).
