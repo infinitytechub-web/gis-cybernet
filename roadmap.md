@@ -10,3 +10,5 @@
 - [ ] Re-deploy record-email validation and repeat authenticated add/edit, approval and download checks after Lovable Cloud resumes (hosted database and auth are paused).
 - [ ] Signed-in test of Staff Officer command scoping and module grants
 - [ ] Super Admin screen to grant audit-purge access to selected admins
+- [ ] Extend staffing alerts and seven-day trends across administrator dashboards
+- [ ] Add automated Staff Officer UI/API command-isolation regression tests

@@ -1,4 +1,4 @@
-import { Activity, Shield, ShieldCheck, Users, Wifi } from "lucide-react";
+import { Activity, Building2, Shield, ShieldCheck, UserCheck, Users, Wifi } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import DashboardSection from "@/components/dashboard/DashboardSection";
@@ -8,6 +8,8 @@ import SecurityPolicyWidget from "@/components/dashboard/SecurityPolicyWidget";
 import SystemHealthCheckWidget from "@/components/dashboard/SystemHealthCheckWidget";
 import { useSystemHealthData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
+import { KpiTile } from "@/components/dashboard/KpiTile";
+import { completenessAlert } from "@/lib/staffing-indicators";
 
 /**
  * Administration & security band — Admin / OIC / 2IC only. Everything here is
@@ -40,6 +42,15 @@ export default function AdminSecurityBand() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <KpiTile title="Login accounts" value={systemHealth.withAccounts} sub={`${systemHealth.loginCoverage}% coverage`} icon={Users}
+                alert={systemHealth.loginCoverage < 80 ? { level: "danger", text: "Low account coverage" } : systemHealth.loginCoverage < 95 ? { level: "warning", text: "Accounts still missing" } : null} />
+              <KpiTile title="Role assignments" value={systemHealth.roleAssignments} sub={`${systemHealth.departments} departments`} icon={Shield} accent={3} />
+              <KpiTile title="Data completeness" value={`${systemHealth.dataCompleteness}%`} sub="required profile fields" icon={UserCheck}
+                alert={completenessAlert(systemHealth.dataCompleteness)} />
+              <KpiTile title="Missing unit or rank" value={systemHealth.missingDept + systemHealth.missingRank} sub={`${systemHealth.missingPhone} missing phone`} icon={Building2}
+                alert={systemHealth.missingDept + systemHealth.missingRank > 0 ? { level: "warning", text: "Staffing records need review" } : null} />
+            </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

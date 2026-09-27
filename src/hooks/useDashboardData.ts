@@ -69,11 +69,13 @@ export function usePersonalDashboardData() {
 
 /** Workforce oversight figures — command tier and above only. */
 export function useOversightDashboardData(enabled: boolean) {
+  const { user } = useAuth();
   const day = today();
 
   const counts = useQuery({
     queryKey: ["dash", "oversight-counts", day],
     enabled,
+    refetchInterval: 30_000,
     queryFn: async () => {
       const [staff, active, attendance, leave, postings] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -165,13 +167,50 @@ export function useOversightDashboardData(enabled: boolean) {
     },
   });
 
+  const homeUnit = useQuery({
+    queryKey: ["dash", "home-unit", user?.id],
+    enabled: enabled && !!user,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase.from("profiles").select("org_unit_id").eq("user_id", user.id).maybeSingle();
+      if (error) throw error;
+      return data?.org_unit_id ?? null;
+    },
+  });
+
+  const baseline = useQuery({
+    queryKey: ["dash", "staffing-baseline", homeUnit.data],
+    enabled: enabled && !!homeUnit.data,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("command_analytics_baseline", { _days: 7 });
+      if (error) throw error;
+      return (data ?? []).find((row) => row.org_unit_id === homeUnit.data) ?? null;
+    },
+  });
+
   return {
     counts: counts.data,
     weeklyAttendance: weeklyAttendance.data ?? [],
     deptDistribution: deptDistribution.data ?? [],
     recentLeave: recentLeave.data ?? [],
     staffStatus: staffStatus.data ?? [],
+    staffingBaseline: baseline.data ?? null,
   };
+}
+
+export function useStaffingBaseline(orgUnitId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["staffing-baseline", orgUnitId],
+    enabled: !!orgUnitId,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("command_analytics_baseline", { _days: 7 });
+      if (error) throw error;
+      return (data ?? []).find((row) => row.org_unit_id === orgUnitId) ?? null;
+    },
+  });
 }
 
 /** System health & configuration integrity — administration tier only. */
