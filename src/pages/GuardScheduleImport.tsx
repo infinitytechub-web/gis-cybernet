@@ -1493,6 +1493,7 @@ type CalendarAssignment = {
   rank_text: string | null;
   name_text: string;
   serial_no: number | null;
+  unit: string | null;
   position_label: string | null;
   schedule_id: string;
   guard_schedules: { name: string; status: string } | null;
@@ -1508,6 +1509,9 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [shiftFilter, setShiftFilter] = useState<Shift | "all">("all");
+  const [deptFilter, setDeptFilter] = useState<string>("all");
+  const [postFilter, setPostFilter] = useState<string>("all");
 
   const start = `${monthKey(month)}-01`;
   const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -1519,7 +1523,7 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("guard_schedule_assignments")
-        .select("id, duty_date, shift, rank_text, name_text, serial_no, position_label, schedule_id, guard_schedules(name, status)")
+        .select("id, duty_date, shift, rank_text, name_text, serial_no, unit, position_label, schedule_id, guard_schedules(name, status)")
         .gte("duty_date", start)
         .lte("duty_date", end)
         .order("duty_date")
@@ -1530,15 +1534,38 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
     },
   });
 
+  // Distinct filter options from the loaded month
+  const deptOptions = useMemo(
+    () => Array.from(new Set((query.data ?? []).map((a) => a.unit).filter((u): u is string => !!u))).sort(),
+    [query.data]
+  );
+  const postOptions = useMemo(
+    () => Array.from(new Set((query.data ?? []).map((a) => a.position_label).filter((p): p is string => !!p))).sort(),
+    [query.data]
+  );
+
+  const filtered = useMemo(
+    () =>
+      (query.data ?? []).filter(
+        (a) =>
+          (shiftFilter === "all" || a.shift === shiftFilter) &&
+          (deptFilter === "all" || a.unit === deptFilter) &&
+          (postFilter === "all" || a.position_label === postFilter)
+      ),
+    [query.data, shiftFilter, deptFilter, postFilter]
+  );
+
   const byDate = useMemo(() => {
     const map = new Map<string, CalendarAssignment[]>();
-    for (const a of query.data ?? []) {
+    for (const a of filtered) {
       const arr = map.get(a.duty_date) ?? [];
       arr.push(a);
       map.set(a.duty_date, arr);
     }
     return map;
-  }, [query.data]);
+  }, [filtered]);
+
+  const filtersActive = shiftFilter !== "all" || deptFilter !== "all" || postFilter !== "all";
 
   // Build the Monday-first grid cells (null = outside this month).
   const cells = useMemo(() => {
@@ -1586,6 +1613,80 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
               Shift {s} · {SHIFT_PERIOD_INFO[s].label}
             </span>
           ))}
+        </div>
+
+        {/* Filters: shift, department, post */}
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-muted/30 p-2">
+          <div>
+            <Label className="text-[11px]">Shift</Label>
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant={shiftFilter === "all" ? "default" : "outline"}
+                className="h-7 px-2 text-[11px]"
+                onClick={() => setShiftFilter("all")}
+              >
+                All
+              </Button>
+              {SHIFTS.map((s) => (
+                <Button
+                  key={s}
+                  type="button"
+                  size="sm"
+                  variant={shiftFilter === s ? "default" : "outline"}
+                  className="h-7 px-2 text-[11px]"
+                  onClick={() => setShiftFilter(s)}
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label htmlFor="cal-dept" className="text-[11px]">Department</Label>
+            <select
+              id="cal-dept"
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              className="flex h-7 w-full min-w-[160px] rounded-md border border-input bg-background px-2 text-[11px]"
+            >
+              <option value="all">All departments</option>
+              {deptOptions.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="cal-post" className="text-[11px]">Post</Label>
+            <select
+              id="cal-post"
+              value={postFilter}
+              onChange={(e) => setPostFilter(e.target.value)}
+              className="flex h-7 w-full min-w-[160px] rounded-md border border-input bg-background px-2 text-[11px]"
+            >
+              <option value="all">All posts</option>
+              {postOptions.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          {filtersActive && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={() => { setShiftFilter("all"); setDeptFilter("all"); setPostFilter("all"); }}
+            >
+              <XCircle className="h-3.5 w-3.5 mr-1" /> Clear filters
+            </Button>
+          )}
+          {filtersActive && (
+            <span className="text-[11px] text-muted-foreground ml-auto">
+              Showing {filtered.length} of {(query.data ?? []).length} assignment(s)
+            </span>
+          )}
         </div>
 
         {query.isLoading ? (
@@ -1657,6 +1758,8 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
                       <TableHead className="w-16">S/N</TableHead>
                       <TableHead>Rank</TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Post</TableHead>
                       <TableHead>Schedule</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1671,6 +1774,8 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
                         <TableCell className="text-xs font-mono">{a.serial_no ?? "—"}</TableCell>
                         <TableCell className="text-xs">{a.rank_text || "—"}</TableCell>
                         <TableCell className="text-xs font-medium">{a.name_text}</TableCell>
+                        <TableCell className="text-xs">{a.unit || "—"}</TableCell>
+                        <TableCell className="text-xs">{a.position_label || "—"}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {a.guard_schedules?.name ?? "—"}
                           {a.guard_schedules?.status && (
