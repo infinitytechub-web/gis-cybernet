@@ -58,45 +58,6 @@ export const SHIFT_PERIOD_INFO: Record<Shift, { label: string; start: string; en
   D: { label: "Operational (24/7)", start: "00:00", end: "24:00" },
 };
 
-// ----- PDF text extraction -----
-async function extractPdfText(file: File): Promise<string[]> {
-  // Lazy import; self-host worker (bundled by Vite) so we never load executable
-  // code from a third-party CDN. This sidesteps SRI/version-pinning concerns.
-  const pdfjs: any = await import("pdfjs-dist");
-  const workerUrl: string = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url" as string)).default;
-  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-  const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
-  const pages: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const tc = await page.getTextContent();
-    // Reconstruct rows by Y coordinate.
-    const items = (tc.items as any[])
-      .map((it) => ({
-        str: String(it.str ?? ""),
-        x: it.transform?.[4] ?? 0,
-        y: it.transform?.[5] ?? 0,
-      }))
-      .filter((it) => it.str.trim() !== "");
-    items.sort((a, b) => b.y - a.y || a.x - b.x);
-    const lines: { y: number; parts: { x: number; str: string }[] }[] = [];
-    for (const it of items) {
-      const last = lines[lines.length - 1];
-      if (last && Math.abs(last.y - it.y) < 3) {
-        last.parts.push({ x: it.x, str: it.str });
-      } else {
-        lines.push({ y: it.y, parts: [{ x: it.x, str: it.str }] });
-      }
-    }
-    pages.push(
-      lines
-        .map((l) => l.parts.sort((a, b) => a.x - b.x).map((p) => p.str).join(" "))
-        .join("\n")
-    );
-  }
-  return pages;
-}
 
 // ----- Parser tuned to the May 2026 layout but tolerant of variants -----
 const MONTHS: Record<string, number> = {
@@ -796,35 +757,45 @@ export default function GuardScheduleImport() {
   const handleFile = async (f: File) => {
     setFile(f); setParsed(null); setParsing(true);
     try {
-      const isCsv = /\.csv$/i.test(f.name) || f.type === "text/csv";
-      const isPdf = /\.pdf$/i.test(f.name) || f.type === "application/pdf";
-      if (!isCsv && !isPdf) {
-        toast.error("Please upload a PDF or CSV file");
+      const isCsv = /\.csv$/i.test(f.name);
+      const isXlsx = /\.xlsx$/i.test(f.name);
+      if (!isCsv && !isXlsx) {
+        toast.error("Only Excel (.xlsx) or CSV (.csv) files are accepted. PDF files are not supported.");
+        setFile(null);
         return;
       }
-      let result: ParseResult;
-      if (isCsv) {
-        if (f.size > 5 * 1024 * 1024) { toast.error("CSV too large (max 5 MB)"); return; }
-        const text = await f.text();
-        result = parseCsv(text, fallbackYear);
-        if (!name) setName(f.name.replace(/\.csv$/i, "").replace(/[_-]+/g, " "));
-        const structuralIssues = result.warnings.length;
-        if (result.rows.length === 0) {
-          toast.error(structuralIssues
-            ? `CSV rejected: ${structuralIssues} structural issue(s) — see warnings`
-            : "No personnel rows could be parsed");
-        } else {
-          toast.success(
-            `Parsed ${result.rows.length} CSV row(s)` +
-            (structuralIssues ? ` — ${structuralIssues} warning(s)` : ""),
-          );
-        }
+      if (f.size === 0) { toast.error("The file is empty"); setFile(null); return; }
+      if (f.size > 5 * 1024 * 1024) { toast.error("File too large (max 5 MB)"); setFile(null); return; }
+      const head = new Uint8Array(await f.slice(0, 5).arrayBuffer());
+      const isZip = head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;
+      const isPdfBytes = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
+      if (isPdfBytes || (isXlsx && !isZip) || (isCsv && isZip)) {
+        toast.error("File contents don't match its type. Upload a genuine .xlsx or .csv file.");
+        setFile(null);
+        return;
+      }
+      let text: string;
+      if (isXlsx) {
+        const XLSX = await import("xlsx");
+        const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        if (!sheet) { toast.error("The workbook has no sheets"); setFile(null); return; }
+        text = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
       } else {
-        const pages = await extractPdfText(f);
-        result = parsePages(pages, fallbackYear);
-        if (!name) setName(f.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " "));
-        if (result.rows.length === 0) toast.error("No personnel rows could be parsed");
-        else toast.success(`Parsed ${result.rows.length} entries from ${pages.length} page(s)`);
+        text = await f.text();
+      }
+      const result: ParseResult = parseCsv(text, fallbackYear);
+      if (!name) setName(f.name.replace(/\.(csv|xlsx)$/i, "").replace(/[_-]+/g, " "));
+      const structuralIssues = result.warnings.length;
+      if (result.rows.length === 0) {
+        toast.error(structuralIssues
+          ? `File rejected: ${structuralIssues} structural issue(s) — see warnings`
+          : "No personnel rows could be parsed");
+      } else {
+        toast.success(
+          `Parsed ${result.rows.length} row(s)` +
+          (structuralIssues ? ` — ${structuralIssues} warning(s)` : ""),
+        );
       }
       setParsed(result);
     } catch (e: any) {
@@ -864,7 +835,7 @@ export default function GuardScheduleImport() {
     if (!parsed || !assignments.length || !file) return;
     if (!guardValidation("Commit")) return;
     if (!parsed.startDate || !parsed.endDate) {
-      toast.error("Could not determine date range from PDF");
+      toast.error("Could not determine date range from file");
       return;
     }
     setCommitting(true);
@@ -916,18 +887,18 @@ export default function GuardScheduleImport() {
     <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-6xl">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Guard Schedule — PDF Import
+          <ShieldCheck className="h-6 w-6 text-primary" /> Guard Duty Import
         </h1>
         <p className="text-sm text-muted-foreground">
-          Upload a guard duty PDF, choose how DAY/NIGHT periods map to shifts (A–D), preview, then export or save into the system.
+          Upload a validated Excel (.xlsx) or CSV (.csv) guard duty file, choose how DAY/NIGHT periods map to shifts (A–D), preview, then export or save into the system.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>1. Upload PDF</CardTitle>
+          <CardTitle>1. Upload Excel or CSV</CardTitle>
           <CardDescription>
-            Each page should list a group with date, DAY/NIGHT period, and numbered personnel rows like <code>1. SGT JOHN DOE</code>.
+            Accepted formats: .xlsx and .csv only (max 5 MB). PDF files are not accepted. The first sheet is read for Excel files.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -938,12 +909,12 @@ export default function GuardScheduleImport() {
           >
             <Upload className="h-8 w-8 text-muted-foreground" />
             <div className="text-sm">
-              {parsing ? "Parsing PDF…" : file ? <strong>{file.name}</strong> : "Click to choose or drop a PDF here"}
+              {parsing ? "Validating file…" : file ? <strong>{file.name}</strong> : "Click to choose or drop an .xlsx or .csv file"}
             </div>
             <input
               ref={fileRef}
               type="file"
-              accept=".pdf,application/pdf,.csv,text/csv"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,text/csv"
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
             />
