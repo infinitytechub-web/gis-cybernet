@@ -127,6 +127,13 @@
       "when": 1790505416129,
       "tag": "0017_staff_soft_delete_and_purge",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790510654784,
+      "tag": "0018_staff_analytics_rpc",
+      "breakpoints": true
     }
   ]
 }

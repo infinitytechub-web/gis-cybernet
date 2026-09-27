@@ -45,6 +45,7 @@ const commandItems = [
 ];
 
 const personnelItems = [
+  { title: "Command Analytics", url: "/command-analytics", icon: Activity, iconColor: "text-primary" },
   { title: "Human Resource", url: "/hr", icon: BriefcaseBusiness, iconColor: "text-primary" },
   { title: "Staff / Employees", url: "/staff", icon: Users, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Staff Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400" },
