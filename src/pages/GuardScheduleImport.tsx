@@ -1,5 +1,5 @@
 // src/pages/GuardScheduleImport.tsx
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -647,6 +647,17 @@ export default function GuardScheduleImport() {
   const [parsing, setParsing] = useState(false);
   const [committing, setCommitting] = useState(false);
   const templateFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`guard-schedules-live-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "guard_schedules" }, () => {
+        qc.invalidateQueries({ queryKey: ["guard-schedules-recent"] });
+        qc.invalidateQueries({ queryKey: ["guard-schedules"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 
   const recent = useQuery({
     queryKey: ["guard-schedules-recent"],
