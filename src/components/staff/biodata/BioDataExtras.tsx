@@ -203,7 +203,7 @@ export function BioDataProvider({
 
     (async () => {
       try {
-      const requests = [
+        const requests = [
         supabase.from("staff_education").select("*").eq("profile_id", profileId).order("sort_order"),
         supabase.from("staff_employment_history").select("*").eq("profile_id", profileId).order("sort_order"),
         supabase.from("staff_family_details").select("*").eq("profile_id", profileId).maybeSingle(),
@@ -213,13 +213,13 @@ export function BioDataProvider({
         supabase.from("staff_biodata_verifications").select("*").eq("profile_id", profileId),
         supabase.from("biodata_custom_values").select("*").eq("profile_id", profileId),
         supabase.from("biodata_custom_rows").select("*").eq("profile_id", profileId).order("sort_order"),
-      ];
-      const settled = await Promise.allSettled(requests);
-      if (cancelled) return;
-      const failed = settled.some((result) => result.status === "rejected" || result.value.error);
-      const [edu, emp, fam, emg, bank, med, ver, cv, cr] = settled.map((result) =>
-        result.status === "fulfilled" && !result.value.error ? result.value : { data: null },
-      );
+        ];
+        const settled = await Promise.allSettled(requests);
+        if (cancelled) return;
+        const failed = settled.some((result) => result.status === "rejected" || result.value.error);
+        const [edu, emp, fam, emg, bank, med, ver, cv, cr] = settled.map((result) =>
+          result.status === "fulfilled" && !result.value.error ? result.value : { data: null },
+        );
 
       const verifications = { ...EMPTY_STATE.verifications } as Record<VerificationKind, Verification>;
       for (const row of (ver.data ?? []) as any[]) {

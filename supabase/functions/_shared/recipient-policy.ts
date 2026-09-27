@@ -14,8 +14,9 @@ export async function partitionRecipients(
   const lookup = Array.from(new Set([...uniq, ...uniq.map((e) => e.toLowerCase())]));
 
   const known = new Set<string>();
-  const { data: prof } = await adminClient
+  const { data: prof, error: profileError } = await adminClient
     .from("profiles").select("email").in("email", lookup);
+  if (profileError) throw new Error("Recipient approval could not be verified");
   for (const r of prof ?? []) if (r?.email) known.add(String(r.email).toLowerCase());
 
   if (opts.extraTable) {
