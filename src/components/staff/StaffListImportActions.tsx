@@ -193,6 +193,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     ? rows.filter((r) => FIELDS.some((f) =>
         String(r.payload?.[f.key] ?? "").toLowerCase().includes(q)))
     : rows;
+  const visiblePager = usePagedList(visible, { resetKey: q });
 
   return (
     <div className="flex flex-wrap items-center gap-1">

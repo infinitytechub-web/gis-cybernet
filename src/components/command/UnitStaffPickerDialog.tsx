@@ -159,9 +159,9 @@ export function UnitStaffPickerDialog({
           .toLowerCase()
           .includes(q);
       })
-      .slice(0, ROW_LIMIT);
   }, [staff, search, unitFilter, deptFilter, roleFilter, statusFilter]);
 
+  const pager = usePagedList(filtered, { resetKey: `${search}|${unitFilter}|${deptFilter}|${roleFilter}|${statusFilter}` });
   const bulk = useBulkSelection(filtered);
 
   const reassign = useMutation({
@@ -310,7 +310,7 @@ export function UnitStaffPickerDialog({
                     No staff match this search.
                   </div>
                 ) : (
-                  filtered.map((s) => (
+                  pager.pageItems.map((s) => (
                     <div
                       key={s.id}
                       role="option"
