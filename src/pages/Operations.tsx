@@ -1180,6 +1180,7 @@ export default function Operations() {
           ) : searched.length === 0 ? (
             <Card><CardContent className="py-12 text-center text-muted-foreground">No operations found for this period.</CardContent></Card>
           ) : (
+            <>
             <div className="rounded-md border overflow-x-auto" style={{ minWidth: 700 }}>
               <Table>
                 <TableHeader>
@@ -1280,7 +1281,8 @@ export default function Operations() {
                 </tfoot>
               </Table>
             </div>
-            <ListPagination {...pager} />
+            <ListPagination {...pager} className="mt-2" />
+            </>
           )}
         </TabsContent>
       </Tabs>

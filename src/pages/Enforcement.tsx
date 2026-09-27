@@ -1179,6 +1179,7 @@ export default function Enforcement() {
           ) : searched.length === 0 ? (
             <Card><CardContent className="py-12 text-center text-muted-foreground">No enforcement operations found for this period.</CardContent></Card>
           ) : (
+            <>
             <div className="rounded-md border overflow-x-auto" style={{ minWidth: 700 }}>
               <Table>
                 <TableHeader>
@@ -1271,7 +1272,8 @@ export default function Enforcement() {
                 </tfoot>
               </Table>
             </div>
-            <ListPagination {...pager} />
+            <ListPagination {...pager} className="mt-2" />
+            </>
           )}
         </TabsContent>
       </Tabs>
