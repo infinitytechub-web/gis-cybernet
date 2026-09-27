@@ -63,7 +63,9 @@ const CATEGORY_BADGE: Record<string, string> = {
 
 export default function CommandVault() {
   const { user, isAdmin, isOic, is2ic, role, loading } = useAuth();
-  const allowed = isAdmin || isOic || is2ic || role === "command_officer" || role === "staff_officer";
+  // Regional commanders commonly carry the supervisor app role; the database
+  // still requires an active regional-commander position before returning data.
+  const allowed = isAdmin || isOic || is2ic || role === "supervisor" || role === "command_officer" || role === "staff_officer";
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
