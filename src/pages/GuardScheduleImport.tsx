@@ -1432,6 +1432,8 @@ export default function GuardScheduleImport() {
         </Card>
       )}
 
+      <GuardDutyCalendar enabled={!!user && canSchedule} />
+
       <Card>
         <CardHeader>
           <CardTitle>Recent schedules</CardTitle>
