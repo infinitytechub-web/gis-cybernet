@@ -250,6 +250,7 @@ const homeItems = [
 
 const recycleBinItems = [
   { title: "Recycle Bin", url: "/recycle-bin", icon: Trash2, iconColor: "text-destructive" },
+  { title: "Deleted Records", url: "/deleted-records", icon: RotateCcw, iconColor: "text-amber-600 dark:text-amber-400" },
 ];
 
 type NavItem = { title: string; url: string; icon: any; iconColor: string; badge?: "frontdesk" | "processing" };
