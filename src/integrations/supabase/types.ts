@@ -5157,6 +5157,42 @@ export type Database = {
           },
         ]
       }
+      guard_duty_import_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          schedule_id: string | null
+          schedule_name: string | null
+          source_format: string | null
+          start_date: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          schedule_id?: string | null
+          schedule_name?: string | null
+          source_format?: string | null
+          start_date?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          schedule_id?: string | null
+          schedule_name?: string | null
+          source_format?: string | null
+          start_date?: string | null
+        }
+        Relationships: []
+      }
       guard_schedule_assignments: {
         Row: {
           created_at: string
@@ -5233,6 +5269,7 @@ export type Database = {
           name: string
           notes: string | null
           published_at: string | null
+          source_format: string | null
           source_import_id: string | null
           start_date: string
           status: string
@@ -5246,6 +5283,7 @@ export type Database = {
           name: string
           notes?: string | null
           published_at?: string | null
+          source_format?: string | null
           source_import_id?: string | null
           start_date: string
           status?: string
@@ -5259,6 +5297,7 @@ export type Database = {
           name?: string
           notes?: string | null
           published_at?: string | null
+          source_format?: string | null
           source_import_id?: string | null
           start_date?: string
           status?: string
