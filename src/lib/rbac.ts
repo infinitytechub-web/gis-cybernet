@@ -158,7 +158,7 @@ export const MODULES: ModuleDef[] = [
   { key: "staff_admin", label: "Account Approvals", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-approvals/accounts"] },
   { key: "profile-change-approvals", label: "Profile Change Approvals", tier: "command", roles: COMMAND, paths: ["/staff-approvals/profile-changes"] },
   { key: "roster-import", label: "Roster Import", tier: "command", roles: COMMAND, paths: ["/roster/import"] },
-  { key: "guard-schedule-import", label: "Guard PDF Import", tier: "command", roles: COMMAND, paths: ["/guard-schedule/import"] },
+  { key: "guard-schedule-import", label: "Guard Duty Import", tier: "command", roles: COMMAND, paths: ["/guard-schedule/import"] },
   { key: "staff-mapping-import", label: "Staff Mapping Import", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-mapping-import"] },
   { key: "staff-list-import", label: "Staff List Import", tier: "admin", roles: ADMIN_ONLY, paths: ["/staff-list/import"] },
   { key: "biodata-form-setup", label: "Bio-Data Form Setup", tier: "admin", roles: ADMIN_ONLY, paths: ["/biodata-form-setup"] },

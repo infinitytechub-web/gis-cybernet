@@ -874,7 +874,7 @@ export default function GuardScheduleImport() {
     if (!parsed || !assignments.length || !file) return;
     if (!guardValidation("Commit")) return;
     if (!parsed.startDate || !parsed.endDate) {
-      toast.error("Could not determine date range from PDF");
+      toast.error("Could not determine date range from file");
       return;
     }
     setCommitting(true);
@@ -926,18 +926,18 @@ export default function GuardScheduleImport() {
     <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-6xl">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Guard Schedule — PDF Import
+          <ShieldCheck className="h-6 w-6 text-primary" /> Guard Duty Import
         </h1>
         <p className="text-sm text-muted-foreground">
-          Upload a guard duty PDF, choose how DAY/NIGHT periods map to shifts (A–D), preview, then export or save into the system.
+          Upload a validated Excel (.xlsx) or CSV (.csv) guard duty file, choose how DAY/NIGHT periods map to shifts (A–D), preview, then export or save into the system.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>1. Upload PDF</CardTitle>
+          <CardTitle>1. Upload Excel or CSV</CardTitle>
           <CardDescription>
-            Each page should list a group with date, DAY/NIGHT period, and numbered personnel rows like <code>1. SGT JOHN DOE</code>.
+            Accepted formats: .xlsx and .csv only (max 5 MB). PDF files are not accepted. The first sheet is read for Excel files.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -948,12 +948,12 @@ export default function GuardScheduleImport() {
           >
             <Upload className="h-8 w-8 text-muted-foreground" />
             <div className="text-sm">
-              {parsing ? "Parsing PDF…" : file ? <strong>{file.name}</strong> : "Click to choose or drop a PDF here"}
+              {parsing ? "Validating file…" : file ? <strong>{file.name}</strong> : "Click to choose or drop an .xlsx or .csv file"}
             </div>
             <input
               ref={fileRef}
               type="file"
-              accept=".pdf,application/pdf,.csv,text/csv"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.csv,text/csv"
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
             />
