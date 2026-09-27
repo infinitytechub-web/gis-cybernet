@@ -20,6 +20,9 @@ export const env = {
   get staffPassword() { return process.env.E2E_TEST_PASSWORD; },
   get adminEmail() { return process.env.E2E_ADMIN_EMAIL; },
   get adminPassword() { return process.env.E2E_ADMIN_PASSWORD; },
+  get staffOfficerEmail() { return process.env.E2E_STAFF_OFFICER_EMAIL; },
+  get staffOfficerPassword() { return process.env.E2E_STAFF_OFFICER_PASSWORD; },
+  get staffOfficerOtherUnitId() { return process.env.E2E_STAFF_OFFICER_OTHER_UNIT_ID; },
 };
 
 /** True when we can talk to the backend at all. */
@@ -33,6 +36,14 @@ export function hasStaffCreds() {
 
 export function hasAdminCreds() {
   return hasBackend() && !!(env.adminEmail && env.adminPassword);
+}
+
+export function hasStaffOfficerCreds() {
+  return hasBackend() && !!(env.staffOfficerEmail && env.staffOfficerPassword && env.staffOfficerOtherUnitId);
+}
+
+export function requireStaffOfficerCreds() {
+  test.skip(!hasStaffOfficerCreds(), "Set the Staff Officer E2E credentials and another-command unit ID to run isolation checks.");
 }
 
 /** Skip guard with an explicit, readable reason in the report. */
@@ -74,13 +85,24 @@ export async function seedSession(page: Page, session: Session) {
 }
 
 /** Sign in as a role and seed the browser session. Throws if creds are wrong. */
-export async function bootAs(page: Page, role: "staff" | "admin") {
-  const email = role === "admin" ? env.adminEmail! : env.staffEmail!;
-  const password = role === "admin" ? env.adminPassword! : env.staffPassword!;
+export async function bootAs(page: Page, role: "staff" | "admin" | "staff_officer") {
+  const email = role === "admin" ? env.adminEmail : role === "staff_officer" ? env.staffOfficerEmail : env.staffEmail;
+  const password = role === "admin" ? env.adminPassword : role === "staff_officer" ? env.staffOfficerPassword : env.staffPassword;
+  if (!email || !password) throw new Error(`Missing credentials for the ${role} account.`);
   const session = await signInWithPassword(email, password);
   if (!session) throw new Error(`Smoke sign-in failed for the ${role} account — check the credentials secret.`);
   await seedSession(page, session);
   return session;
+}
+
+export async function restRpc(name: string, token: string, payload: unknown) {
+  const res = await fetch(`${env.supabaseUrl}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: { apikey: env.anonKey ?? "", authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const body = await res.text();
+  return { status: res.status, body };
 }
 
 /** Collect console errors so a smoke run surfaces runtime breakage. */

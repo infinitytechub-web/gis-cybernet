@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { MODULES, canAccessModule, canAccessPath } from "@/lib/rbac";
+import { MODULES, MODULES_BY_KEY, canAccessModule, canAccessPath } from "@/lib/rbac";
 
 const appSrc = fs.readFileSync(path.resolve(__dirname, "../App.tsx"), "utf8");
 
@@ -126,6 +126,36 @@ describe("least privilege — audit-sensitive modules", () => {
     ]);
     const unexpected = MODULES.filter((m) => m.roles === "all" && !allowed.has(m.key)).map((m) => m.key);
     expect(unexpected, `modules open to everyone: ${unexpected.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("Staff Officer per-person module isolation", () => {
+  const restricted = ["hr", "staff", "command-analytics", "command-vault", "org-structure"];
+
+  it("denies HR, analytics, documents, and establishment without an exact grant", () => {
+    for (const key of restricted) {
+      expect(canAccessModule(key, { role: "staff_officer", capabilities: [] }), key).toBe(false);
+    }
+  });
+
+  it("allows only the individually assigned module", () => {
+    expect(canAccessModule("command-analytics", { role: "staff_officer", capabilities: ["command-analytics"] })).toBe(true);
+    expect(canAccessModule("hr", { role: "staff_officer", capabilities: ["command-analytics"] })).toBe(false);
+    expect(canAccessModule("command-vault", { role: "staff_officer", capabilities: ["command-analytics"] })).toBe(false);
+  });
+
+  it("does not let role-wide permission overrides widen Staff Officer access", () => {
+    for (const key of restricted) {
+      const mod = MODULES_BY_KEY[key];
+      const overrides = mod.feature ? { [`${mod.feature}::staff_officer`]: "manage" } : {};
+      expect(canAccessModule(key, { role: "staff_officer", overrides, capabilities: [] }), key).toBe(false);
+    }
+  });
+
+  it("does not treat a wildcard as a Staff Officer module assignment", () => {
+    for (const key of restricted) {
+      expect(canAccessModule(key, { role: "staff_officer", capabilities: ["*"] }), key).toBe(false);
+    }
   });
 });
 

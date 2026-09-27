@@ -26,6 +26,7 @@ import CommandTierAnalyticsTabs from "@/components/dashboard/CommandTierAnalytic
 import { ApprovedLeaveCalendarWidget } from "@/components/leave/ApprovedLeaveCalendarWidget";
 import { useOversightDashboardData, usePersonalDashboardData } from "@/hooks/useDashboardData";
 import { useRbac } from "@/hooks/useRbac";
+import { absenceAlert, activeRatioAlert, pendingAlert } from "@/lib/staffing-indicators";
 
 
 
@@ -42,20 +43,26 @@ export default function CommandDashboard({ children }: { children?: React.ReactN
   const navigate = useNavigate();
   const { can } = useRbac();
   const { holidays } = usePersonalDashboardData();
-  const { counts, weeklyAttendance, deptDistribution, recentLeave, staffStatus } = useOversightDashboardData(true);
+  const { counts, weeklyAttendance, deptDistribution, recentLeave, staffStatus, staffingBaseline } = useOversightDashboardData(true);
 
   const c = counts ?? { staffCount: 0, activeStaff: 0, todayAttendance: 0, pendingLeave: 0, pendingPostings: 0 };
   const actionCount = c.pendingLeave + c.pendingPostings;
+  const absentToday = Math.max(0, c.activeStaff - c.todayAttendance);
 
   return (
     <>
       <DashboardSection id="key-figures" title="Key figures" icon={ListChecks}>
         <KpiGrid>
-          {can("staff") && <KpiTile title="Total Staff" value={c.staffCount} sub={`${c.activeStaff} active`} icon={Users} tone="info" onClick={() => navigate("/staff")} />}
-          {can("attendance") && <KpiTile title="On-Duty Today" value={c.todayAttendance} sub={`of ${c.activeStaff} active`} icon={CalendarCheck} tone="success" onClick={() => navigate("/attendance")} />}
-          {can("attendance") && <KpiTile title="Absent Today" value={Math.max(0, c.activeStaff - c.todayAttendance)} sub="not checked in" icon={UserX} tone="danger" onClick={() => navigate("/attendance")} />}
-          {can("leave-approvals") && <KpiTile title="Pending Leave" value={c.pendingLeave} sub="awaiting approval" icon={CalendarOff} tone="warning" onClick={() => navigate("/leave/approvals")} />}
-          {can("postings") && <KpiTile title="Pending Postings" value={c.pendingPostings} sub="awaiting approval" icon={ArrowRightLeft} tone="warning" onClick={() => navigate("/postings")} />}
+          {can("staff") && <KpiTile title="Total Staff" value={c.staffCount} sub={`${c.activeStaff} active`} icon={Users} tone="info"
+            trend={staffingBaseline ? c.staffCount - staffingBaseline.total : null} onClick={() => navigate("/staff")} />}
+          {can("attendance") && <KpiTile title="On-Duty Today" value={c.todayAttendance} sub={`of ${c.activeStaff} active`} icon={CalendarCheck} tone="success"
+            alert={activeRatioAlert(c.todayAttendance, c.activeStaff)} onClick={() => navigate("/attendance")} />}
+          {can("attendance") && <KpiTile title="Absent Today" value={absentToday} sub="not checked in" icon={UserX} tone="danger"
+            alert={absenceAlert(absentToday, c.activeStaff)} trendDirection="lower-is-better" onClick={() => navigate("/attendance")} />}
+          {can("leave-approvals") && <KpiTile title="Pending Leave" value={c.pendingLeave} sub="awaiting approval" icon={CalendarOff} tone="warning"
+            alert={pendingAlert(c.pendingLeave, "leave requests")} trendDirection="lower-is-better" onClick={() => navigate("/leave/approvals")} />}
+          {can("postings") && <KpiTile title="Pending Postings" value={c.pendingPostings} sub="awaiting approval" icon={ArrowRightLeft} tone="warning"
+            alert={pendingAlert(c.pendingPostings, "postings")} trendDirection="lower-is-better" onClick={() => navigate("/postings")} />}
           <KpiTile title="Upcoming Holidays" value={holidays.length} sub="next 5" icon={Calendar} tone="neutral" onClick={() => navigate("/holidays")} />
         </KpiGrid>
       </DashboardSection>

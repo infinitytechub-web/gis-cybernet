@@ -13,7 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDirectoryPermissions } from "@/hooks/useDirectoryPermissions";
 import { exportReport, type ExportFormat } from "@/lib/export-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
-import { KpiTile, accentFor, type KpiAlert } from "@/components/dashboard/KpiTile";
+import { KpiTile, accentFor } from "@/components/dashboard/KpiTile";
+import { activeRatioAlert, strengthAlert } from "@/lib/staffing-indicators";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,22 +92,6 @@ function Breakdown({ title, data }: { title: string; data: Record<string, number
       </CardContent>
     </Card>
   );
-}
-
-function strengthAlert(active: number, authorised?: number | null): KpiAlert | null {
-  if (!authorised) return null;
-  const pct = Math.round((active / authorised) * 100);
-  if (pct < 85) return { level: "danger", text: `Understrength — ${pct}% of authorised` };
-  if (pct < 95) return { level: "warning", text: `${authorised - active} below authorised` };
-  return null;
-}
-
-function activeRatioAlert(active: number, total: number): KpiAlert | null {
-  if (total < 5) return null;
-  const pct = Math.round((active / total) * 100);
-  if (pct < 60) return { level: "danger", text: `Only ${pct}% active` };
-  if (pct < 75) return { level: "warning", text: `${pct}% active` };
-  return null;
 }
 
 export default function CommandAnalytics() {

@@ -1,5 +1,6 @@
 import { type LucideIcon, ArrowDownRight, ArrowUpRight, Minus, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface KpiAlert { level: "warning" | "danger"; text: string }
@@ -16,6 +17,8 @@ export interface KpiTileProps {
   /** Change versus the comparison period; null/undefined hides the indicator. */
   trend?: number | null;
   trendLabel?: string;
+  /** Controls whether an increase or decrease is favourable. */
+  trendDirection?: "higher-is-better" | "lower-is-better" | "neutral";
   /** Automatic alert — recolours the card and shows the reason. */
   alert?: KpiAlert | null;
   selected?: boolean;
@@ -29,6 +32,18 @@ const TONES: Record<NonNullable<KpiTileProps["tone"]>, string> = {
   danger: "border-destructive/40 bg-destructive/5 text-destructive",
 };
 
+const ACCENT_BARS: Record<number, string> = {
+  1: "bg-[hsl(var(--cat-1))]", 2: "bg-[hsl(var(--cat-2))]", 3: "bg-[hsl(var(--cat-3))]", 4: "bg-[hsl(var(--cat-4))]",
+  5: "bg-[hsl(var(--cat-5))]", 6: "bg-[hsl(var(--cat-6))]", 7: "bg-[hsl(var(--cat-7))]", 8: "bg-[hsl(var(--cat-8))]",
+};
+
+const ACCENT_ICONS: Record<number, string> = {
+  1: "bg-[hsl(var(--cat-1)/0.12)] text-[hsl(var(--cat-1))]", 2: "bg-[hsl(var(--cat-2)/0.12)] text-[hsl(var(--cat-2))]",
+  3: "bg-[hsl(var(--cat-3)/0.12)] text-[hsl(var(--cat-3))]", 4: "bg-[hsl(var(--cat-4)/0.12)] text-[hsl(var(--cat-4))]",
+  5: "bg-[hsl(var(--cat-5)/0.12)] text-[hsl(var(--cat-5))]", 6: "bg-[hsl(var(--cat-6)/0.12)] text-[hsl(var(--cat-6))]",
+  7: "bg-[hsl(var(--cat-7)/0.12)] text-[hsl(var(--cat-7))]", 8: "bg-[hsl(var(--cat-8)/0.12)] text-[hsl(var(--cat-8))]",
+};
+
 /** Stable accent index for a name, so a command keeps its colour everywhere. */
 export function accentFor(key: string | null | undefined): number {
   let h = 0;
@@ -37,10 +52,13 @@ export function accentFor(key: string | null | undefined): number {
 }
 
 /** One key figure. Same shape everywhere so the hierarchy reads consistently. */
-export function KpiTile({ title, value, sub, icon: Icon, tone = "neutral", onClick, accent, trend, trendLabel = "vs last week", alert, selected }: KpiTileProps) {
+export function KpiTile({ title, value, sub, icon: Icon, tone = "neutral", onClick, accent, trend, trendLabel = "vs last week", trendDirection = "higher-is-better", alert, selected }: KpiTileProps) {
   const effTone = alert ? alert.level : tone;
-  const accentColor = accent ? `hsl(var(--cat-${accent}))` : undefined;
-  const TrendIcon = trend == null ? null : trend > 0 ? ArrowUpRight : trend < 0 ? ArrowDownRight : Minus;
+  const trendValue = trend ?? null;
+  const TrendIcon = trendValue == null ? null : trendValue > 0 ? ArrowUpRight : trendValue < 0 ? ArrowDownRight : Minus;
+  const trendIsGood = trendValue == null || trendValue === 0 || trendDirection === "neutral"
+    ? null
+    : trendDirection === "higher-is-better" ? trendValue > 0 : trendValue < 0;
   const body = (
     <Card
       className={cn(
@@ -50,12 +68,11 @@ export function KpiTile({ title, value, sub, icon: Icon, tone = "neutral", onCli
         selected && "ring-2 ring-primary ring-offset-1",
       )}
     >
-      {accentColor && <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5" style={{ background: accentColor }} />}
+      {accent && <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-1.5", ACCENT_BARS[accent])} />}
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-1 pt-4 px-4">
         <CardTitle className="text-xs font-medium text-muted-foreground line-clamp-2">{title}</CardTitle>
         <span
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
-          style={accentColor ? { background: `hsl(var(--cat-${accent}) / 0.12)`, color: accentColor } : undefined}
+          className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", accent && ACCENT_ICONS[accent])}
         >
           <Icon className="h-4 w-4" aria-hidden="true" />
         </span>
@@ -67,12 +84,12 @@ export function KpiTile({ title, value, sub, icon: Icon, tone = "neutral", onCli
             <span
               className={cn(
                 "inline-flex items-center text-[11px] font-medium tabular-nums",
-                trend! > 0 ? "text-success" : trend! < 0 ? "text-destructive" : "text-muted-foreground",
+                trendIsGood === true ? "text-success" : trendIsGood === false ? "text-destructive" : "text-muted-foreground",
               )}
               title={trendLabel}
             >
               <TrendIcon className="h-3 w-3" aria-hidden="true" />
-              {trend! > 0 ? "+" : ""}{trend}
+              {trendValue != null && trendValue > 0 ? "+" : ""}{trendValue}
               <span className="sr-only"> {trendLabel}</span>
             </span>
           )}
@@ -89,9 +106,9 @@ export function KpiTile({ title, value, sub, icon: Icon, tone = "neutral", onCli
 
   if (!onClick) return body;
   return (
-    <button type="button" onClick={onClick} aria-pressed={selected} className="min-h-[44px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg">
+    <Button type="button" variant="ghost" onClick={onClick} aria-pressed={selected} className="h-auto min-h-[44px] w-full justify-start rounded-lg p-0 text-left hover:bg-transparent">
       {body}
-    </button>
+    </Button>
   );
 }
 
