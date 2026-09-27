@@ -27,23 +27,8 @@ import { useUnitDashboard } from "@/hooks/useUnitDashboard";
 import { COMMAND_TIER_ROLES } from "@/lib/role-labels";
 import { ORG_UNIT_TYPE_LABELS, orgUnitPath, type OrgUnitType } from "@/lib/org-hierarchy";
 import { formatDate, formatDateTime } from "@/lib/date-format";
-
-function Kpi({ icon: Icon, label, value, hint }: { icon: any; label: string; value: string | number; hint?: string }) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <span className="rounded-md bg-primary/10 p-2 text-primary">
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
-        <div>
-          <div className="text-2xl font-semibold leading-none">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
-          {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import { KpiTile } from "@/components/dashboard/KpiTile";
+import { activeRatioAlert } from "@/lib/staffing-indicators";
 
 export default function UnitDashboard() {
   const { role } = useAuth();
@@ -184,16 +169,15 @@ export default function UnitDashboard() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Kpi icon={Users} label="Assigned staff" value={data.staff_total} hint={`${data.staff_active} active`} />
-            <Kpi icon={Lock} label="Detainees" value={data.detainees.length} hint={`${data.detainees_in_custody} in custody`} />
-            <Kpi icon={Gavel} label="Cases" value={data.cases.length} hint={`${data.cases_open} open`} />
-            <Kpi icon={Truck} label="Vehicles" value={data.vehicles.length} />
-            <Kpi
-              icon={Footprints}
-              label="Patrols (30 days)"
-              value={data.patrols_recent}
-              hint={`${data.patrol_incidents_recent} incidents recorded`}
-            />
+            <KpiTile icon={Users} title="Assigned staff" value={data.staff_total} sub={`${data.staff_active} active`} accent={1}
+              alert={activeRatioAlert(data.staff_active, data.staff_total)} />
+            <KpiTile icon={Lock} title="Detainees" value={data.detainees.length} sub={`${data.detainees_in_custody} in custody`} accent={4} />
+            <KpiTile icon={Gavel} title="Cases" value={data.cases.length} sub={`${data.cases_open} open`} accent={3}
+              alert={data.cases_open >= 10 ? { level: "warning", text: "Open-case workload is high" } : null} />
+            <KpiTile icon={Truck} title="Vehicles" value={data.vehicles.length} accent={2} />
+            <KpiTile icon={Footprints} title="Patrols (30 days)" value={data.patrols_recent}
+              sub={`${data.patrol_incidents_recent} incidents recorded`} accent={5}
+              alert={data.patrol_incidents_recent > 0 ? { level: "warning", text: "Patrol incidents recorded" } : null} />
           </div>
 
           <Tabs defaultValue="staff">

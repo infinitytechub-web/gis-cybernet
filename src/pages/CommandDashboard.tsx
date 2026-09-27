@@ -28,6 +28,9 @@ import { downloadBlob } from "@/lib/download-utils";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import { SignOffQueue } from "@/components/command/SignOffQueue";
+import { KpiTile } from "@/components/dashboard/KpiTile";
+import { useStaffingBaseline } from "@/hooks/useDashboardData";
+import { activeRatioAlert, strengthAlert } from "@/lib/staffing-indicators";
 
 interface CommandUnit {
   id: string;
@@ -126,6 +129,7 @@ export default function CommandDashboard() {
 
   const data = dashQuery.data;
   const officers = data?.officers ?? [];
+  const baselineQuery = useStaffingBaseline(selectedUnit);
 
   const filteredOfficers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -207,6 +211,7 @@ export default function CommandDashboard() {
   const authorised = totals?.authorised_strength ?? totals?.positions ?? 0;
   const posted = totals?.posted_strength ?? totals?.active ?? 0;
   const fillRate = authorised > 0 ? Math.round((posted / authorised) * 100) : null;
+  const baseline = baselineQuery.data;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -240,61 +245,18 @@ export default function CommandDashboard() {
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Users className="h-4 w-4" /> Officers on strength
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totals?.officers ?? 0}</div>
-            <p className="text-xs text-muted-foreground">{totals?.active ?? 0} active</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <UserMinus className="h-4 w-4" /> Vacancies
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totals?.vacancies ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {posted} posted of {authorised} authorised
-              {fillRate !== null ? ` · ${fillRate}% filled` : ""}
-            </p>
-            {(totals?.unfilled_appointments ?? 0) > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {totals?.unfilled_appointments} named appointment
-                {totals?.unfilled_appointments === 1 ? "" : "s"} unfilled
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Building2 className="h-4 w-4" /> Posted ranks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{data?.ranks?.length ?? 0}</div>
-            <p className="text-xs text-muted-foreground">distinct ranks in this command</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CheckCircle2 className="h-4 w-4" /> Reached the portal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totals?.portal_reached ?? 0}</div>
-            <p className="text-xs text-muted-foreground">
-              this month{totals?.officers ? ` of ${totals.officers} officers` : ""}
-            </p>
-          </CardContent>
-        </Card>
+        <KpiTile title="Officers on strength" value={totals?.officers ?? 0} sub={`${totals?.active ?? 0} active`} icon={Users} accent={1}
+          alert={activeRatioAlert(totals?.active ?? 0, totals?.officers ?? 0)}
+          trend={baseline ? (totals?.officers ?? 0) - baseline.total : null} />
+        <KpiTile title="Vacancies" value={totals?.vacancies ?? 0}
+          sub={`${posted} posted of ${authorised} authorised${fillRate !== null ? ` · ${fillRate}% filled` : ""}`}
+          icon={UserMinus} accent={4} alert={strengthAlert(posted, authorised)}
+          trend={baseline && baseline.authorised ? Math.max(0, baseline.authorised - baseline.active) - (totals?.vacancies ?? 0) : null}
+          trendDirection="lower-is-better" />
+        <KpiTile title="Posted ranks" value={data?.ranks?.length ?? 0} sub="distinct ranks in this command" icon={Building2} accent={2} />
+        <KpiTile title="Reached the portal" value={totals?.portal_reached ?? 0}
+          sub={`this month${totals?.officers ? ` of ${totals.officers} officers` : ""}`} icon={CheckCircle2} accent={5}
+          alert={activeRatioAlert(totals?.portal_reached ?? 0, totals?.officers ?? 0)} />
       </div>
 
       <Tabs defaultValue="officers">

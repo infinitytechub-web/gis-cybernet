@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Loader2, Search, ShieldCheck, Trash2, Building2, History } from "lucide-react";
+import { Crown, Loader2, Search, ShieldCheck, Trash2, Building2, History, UserMinus, Users } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { roleLabel } from "@/lib/role-labels";
 import type { AppRole } from "@/lib/types";
+import { KpiTile } from "@/components/dashboard/KpiTile";
+import { strengthAlert } from "@/lib/staffing-indicators";
 
 const COMMAND_APPOINTMENTS: AppRole[] = ["oic", "2ic", "staff_officer", "supervisor", "command_officer"];
 
@@ -113,6 +115,12 @@ export default function CommandAdministration() {
     () => units.flatMap((u) => u.commanders.map((c) => ({ ...c, unit: u.unit_name, unitId: u.org_unit_id }))),
     [units],
   );
+  const summary = useMemo(() => units.reduce((acc, unit) => {
+    acc.posted += unit.posted;
+    acc.authorised += unit.authorised_strength ?? 0;
+    if (unit.commanders.length === 0) acc.withoutCommander += 1;
+    return acc;
+  }, { posted: 0, authorised: 0, withoutCommander: 0 }), [units]);
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["admin-command-overview"] });
@@ -151,6 +159,16 @@ export default function CommandAdministration() {
         >
           <ShieldCheck className="mr-2 h-4 w-4" /> Appoint commander
         </Button>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiTile title="Commands" value={units.length} sub={`${allCommanders.length} command appointments`} icon={Building2} accent={2} />
+        <KpiTile title="Officers posted" value={summary.posted} sub={`of ${summary.authorised} authorised`} icon={Users} accent={1}
+          alert={strengthAlert(summary.posted, summary.authorised)} />
+        <KpiTile title="Service vacancies" value={Math.max(0, summary.authorised - summary.posted)} sub="against authorised strength" icon={UserMinus} accent={4}
+          alert={strengthAlert(summary.posted, summary.authorised)} />
+        <KpiTile title="Without commander" value={summary.withoutCommander} sub="commands requiring appointment" icon={ShieldCheck} accent={3}
+          alert={summary.withoutCommander > 0 ? { level: "warning", text: "Command appointment required" } : null} />
       </div>
 
       <Tabs defaultValue="commanders">
