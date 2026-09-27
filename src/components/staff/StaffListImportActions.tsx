@@ -23,6 +23,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 type ImportRecord = {
   id: string;
@@ -277,7 +279,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visible.slice(0, 500).map((r) => (
+                  {visiblePager.pageItems.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs text-muted-foreground">{r.row_no}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm font-medium">
@@ -310,11 +312,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
                 </TableBody>
               </Table>
             )}
-            {visible.length > 500 && (
-              <p className="p-2 text-xs text-muted-foreground">
-                Showing the first 500 of {visible.length} rows.
-              </p>
-            )}
+            <ListPagination {...visiblePager} label="rows" className="p-2" />
           </div>
         </DialogContent>
       </Dialog>

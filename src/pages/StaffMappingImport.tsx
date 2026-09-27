@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Upload, CheckCircle2, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/date-format";
+import { PagedSection } from "@/components/ui/paged-section";
 
 type Status = "ready" | "no_change" | "no_staff" | "no_dept" | "no_rank";
 
@@ -226,6 +227,7 @@ export default function StaffMappingImport() {
                 <Badge className="bg-amber-100 text-amber-800">Skip (no change / duplicate): {counts.skip}</Badge>
                 <Badge variant="destructive">Errors: {counts.err}</Badge>
               </div>
+              <PagedSection items={preview} searchText={(r: any) => `${r.staff_id ?? ""} ${r.raw_dept ?? ""} ${r.raw_designation ?? ""} ${r.status} ${r.reason ?? ""}`} label="rows">{(pageRows) => (
               <div className="rounded border max-h-80 overflow-auto">
                 <Table>
                   <TableHeader>
@@ -238,7 +240,7 @@ export default function StaffMappingImport() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {preview.slice(0, 200).map((r, i) => (
+                    {pageRows.map((r: any, i: number) => (
                       <TableRow key={i}>
                         <TableCell className="font-mono text-xs">{r.staff_id || "—"}</TableCell>
                         <TableCell className="text-xs">{r.raw_dept || "—"}</TableCell>
@@ -261,6 +263,7 @@ export default function StaffMappingImport() {
                   </TableBody>
                 </Table>
               </div>
+              )}</PagedSection>
               <Button
                 onClick={() => commit.mutate()}
                 disabled={commit.isPending || counts.ready === 0}
