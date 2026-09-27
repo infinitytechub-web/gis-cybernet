@@ -1493,6 +1493,7 @@ type CalendarAssignment = {
   rank_text: string | null;
   name_text: string;
   serial_no: number | null;
+  unit: string | null;
   position_label: string | null;
   schedule_id: string;
   guard_schedules: { name: string; status: string } | null;
@@ -1508,6 +1509,9 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [shiftFilter, setShiftFilter] = useState<Shift | "all">("all");
+  const [deptFilter, setDeptFilter] = useState<string>("all");
+  const [postFilter, setPostFilter] = useState<string>("all");
 
   const start = `${monthKey(month)}-01`;
   const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
@@ -1519,7 +1523,7 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("guard_schedule_assignments")
-        .select("id, duty_date, shift, rank_text, name_text, serial_no, position_label, schedule_id, guard_schedules(name, status)")
+        .select("id, duty_date, shift, rank_text, name_text, serial_no, unit, position_label, schedule_id, guard_schedules(name, status)")
         .gte("duty_date", start)
         .lte("duty_date", end)
         .order("duty_date")
