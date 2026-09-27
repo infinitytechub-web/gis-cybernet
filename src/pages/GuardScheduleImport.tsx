@@ -1758,6 +1758,8 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
                       <TableHead className="w-16">S/N</TableHead>
                       <TableHead>Rank</TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Post</TableHead>
                       <TableHead>Schedule</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1772,6 +1774,8 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
                         <TableCell className="text-xs font-mono">{a.serial_no ?? "—"}</TableCell>
                         <TableCell className="text-xs">{a.rank_text || "—"}</TableCell>
                         <TableCell className="text-xs font-medium">{a.name_text}</TableCell>
+                        <TableCell className="text-xs">{a.unit || "—"}</TableCell>
+                        <TableCell className="text-xs">{a.position_label || "—"}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {a.guard_schedules?.name ?? "—"}
                           {a.guard_schedules?.status && (
