@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown, Sparkles } from "lucide-react";
+import { Upload, FileText, Eye, CheckCircle2, XCircle, AlertTriangle, Download, ShieldCheck, FileJson, FileDown, Sparkles, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { formatDateTime } from "@/lib/date-format";
@@ -654,6 +654,10 @@ export default function GuardScheduleImport() {
       .on("postgres_changes", { event: "*", schema: "public", table: "guard_schedules" }, () => {
         qc.invalidateQueries({ queryKey: ["guard-schedules-recent"] });
         qc.invalidateQueries({ queryKey: ["guard-schedules"] });
+        qc.invalidateQueries({ queryKey: ["guard-duty-calendar"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "guard_schedule_assignments" }, () => {
+        qc.invalidateQueries({ queryKey: ["guard-duty-calendar"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
