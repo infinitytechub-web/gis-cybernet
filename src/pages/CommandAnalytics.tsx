@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDirectoryPermissions } from "@/hooks/useDirectoryPermissions";
 import { exportReport, type ExportFormat } from "@/lib/export-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
-import { KpiTile } from "@/components/dashboard/KpiTile";
+import { KpiTile, accentFor, type KpiAlert } from "@/components/dashboard/KpiTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,15 +82,31 @@ function Breakdown({ title, data }: { title: string; data: Record<string, number
       <CardHeader className="pb-2"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
       <CardContent className="max-h-64 space-y-1.5 overflow-y-auto">
         {entries.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
-        {entries.map(([k, v]) => (
+        {entries.map(([k, v], i) => (
           <div key={k} className="text-xs">
             <div className="flex justify-between"><span className="truncate">{pretty(k)}</span><span className="tabular-nums font-medium">{v}</span></div>
-            <div className="mt-0.5 h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${(v / max) * 100}%` }} /></div>
+            <div className="mt-0.5 h-1.5 rounded bg-muted"><div className="h-1.5 rounded transition-all" style={{ width: `${(v / max) * 100}%`, background: `hsl(var(--cat-${(i % 8) + 1}))` }} /></div>
           </div>
         ))}
       </CardContent>
     </Card>
   );
+}
+
+function strengthAlert(active: number, authorised?: number | null): KpiAlert | null {
+  if (!authorised) return null;
+  const pct = Math.round((active / authorised) * 100);
+  if (pct < 85) return { level: "danger", text: `Understrength — ${pct}% of authorised` };
+  if (pct < 95) return { level: "warning", text: `${authorised - active} below authorised` };
+  return null;
+}
+
+function activeRatioAlert(active: number, total: number): KpiAlert | null {
+  if (total < 5) return null;
+  const pct = Math.round((active / total) * 100);
+  if (pct < 60) return { level: "danger", text: `Only ${pct}% active` };
+  if (pct < 75) return { level: "warning", text: `${pct}% active` };
+  return null;
 }
 
 export default function CommandAnalytics() {
@@ -106,6 +122,20 @@ export default function CommandAnalytics() {
   const scope = useAnalytics(unitId ?? null, null);
   const view = useAnalytics(unitId ?? null, deptId);
   const a = view.data;
+  const { data: baseline = {} } = useQuery({
+    queryKey: ["command-analytics-baseline"],
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const { data } = await (supabase.rpc as any)("command_analytics_baseline", { _days: 7 });
+      const m: Record<string, { total: number; active: number }> = {};
+      (data ?? []).forEach((r: any) => { m[r.org_unit_id] = r; });
+      return m;
+    },
+  });
+  const scopeTotalPrev = unitId && baseline[unitId] ? baseline[unitId].total : null;
+  const alerts = useMemo(() => (scope.data?.by_command ?? [])
+    .map((c) => ({ c, alert: strengthAlert(c.active, c.authorised) ?? activeRatioAlert(c.active, c.count) }))
+    .filter((x) => x.alert), [scope.data]);
   const commandName = unitId ? scope.data?.by_command.find((c) => c.id === unitId)?.name : null;
   const deptName = deptId ? scope.data?.by_department.find((d) => d.id === deptId)?.name : null;
 
@@ -179,7 +209,9 @@ export default function CommandAnalytics() {
             {commandName ? `${commandName} — Analytics` : "Command & Department Analytics"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Live staff figures for the commands in your reach. Updates automatically.
+            Live staff figures for the commands in your reach. Updates automatically
+            {view.dataUpdatedAt ? ` · last updated ${new Date(view.dataUpdatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : ""}.
+            <span className="ml-1 inline-flex items-center gap-1 text-success"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" aria-hidden="true" />Live</span>
           </p>
         </div>
         <div className="flex gap-2 print:hidden">
@@ -207,11 +239,29 @@ export default function CommandAnalytics() {
       </header>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiTile title="Total staff" value={a?.total ?? "—"} icon={Users} />
-        <KpiTile title="Active" value={a?.active ?? "—"} icon={UserCheck} tone="success" />
+        <KpiTile title="Total staff" value={a?.total ?? "—"} icon={Users} accent={2}
+          trend={scopeTotalPrev != null && a && !deptId ? a.total - scopeTotalPrev : null} />
+        <KpiTile title="Active" value={a?.active ?? "—"} icon={UserCheck} tone="success"
+          sub={a && a.total ? `${Math.round((a.active / a.total) * 100)}% of strength` : undefined}
+          alert={a ? activeRatioAlert(a.active, a.total) : null} />
         <KpiTile title="Commands" value={scope.data?.by_command.length ?? "—"} icon={Network} tone="info" />
         <KpiTile title="Departments" value={scope.data?.by_department.length ?? "—"} icon={Building2} tone="warning" />
       </div>
+
+      {alerts.length > 0 && (
+        <section aria-label="Automatic alerts" className="rounded-lg border-2 border-warning/40 bg-warning/5 p-3">
+          <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">Automatic alerts ({alerts.length})</h2>
+          <ul className="grid gap-1 text-xs sm:grid-cols-2">
+            {alerts.slice(0, 8).map(({ c, alert }) => (
+              <li key={c.id ?? c.name} className="flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${alert!.level === "danger" ? "bg-destructive" : "bg-warning"}`} aria-hidden="true" />
+                {c.id ? <Link className="font-medium underline-offset-2 hover:underline" to={`/command-analytics/${c.id}`}>{c.name}</Link> : <span className="font-medium">{c.name}</span>}
+                <span className="text-muted-foreground">— {alert!.text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-sm font-semibold">Commands — select one for its own dashboard</h2>
@@ -219,7 +269,9 @@ export default function CommandAnalytics() {
           {(scope.data?.by_command ?? []).map((c) => (
             <KpiTile key={c.id ?? "none"} title={c.name} value={c.count}
               sub={`${c.active} active${c.authorised ? ` · ${c.authorised} authorised` : ""}`}
-              icon={Network} tone={c.id === unitId ? "info" : "neutral"}
+              icon={Network} accent={accentFor(c.id ?? c.name)} selected={c.id === unitId}
+              alert={strengthAlert(c.active, c.authorised) ?? activeRatioAlert(c.active, c.count)}
+              trend={c.id && baseline[c.id] ? c.count - baseline[c.id].total : null}
               onClick={c.id ? () => navigate(`/command-analytics/${c.id}`) : undefined} />
           ))}
         </div>
@@ -233,7 +285,8 @@ export default function CommandAnalytics() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {(scope.data?.by_department ?? []).map((d) => (
             <KpiTile key={d.id ?? "none"} title={d.name} value={d.count} sub={`${d.active} active`}
-              icon={Building2} tone={d.id === deptId ? "warning" : "neutral"}
+              icon={Building2} accent={accentFor(d.id ?? d.name)} selected={d.id === deptId}
+              alert={activeRatioAlert(d.active, d.count)}
               onClick={d.id ? () => setDeptId(d.id === deptId ? null : d.id) : undefined} />
           ))}
         </div>

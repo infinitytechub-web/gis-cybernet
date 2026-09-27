@@ -1737,6 +1737,38 @@ export type Database = {
           },
         ]
       }
+      command_analytics_snapshots: {
+        Row: {
+          active: number
+          authorised: number | null
+          org_unit_id: string
+          snap_date: string
+          total: number
+        }
+        Insert: {
+          active?: number
+          authorised?: number | null
+          org_unit_id: string
+          snap_date?: string
+          total?: number
+        }
+        Update: {
+          active?: number
+          authorised?: number | null
+          org_unit_id?: string
+          snap_date?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_analytics_snapshots_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_rank_changes: {
         Row: {
           changed_by: string | null
@@ -17978,6 +18010,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      command_analytics_baseline: {
+        Args: { _days?: number }
+        Returns: {
+          active: number
+          org_unit_id: string
+          snap_date: string
+          total: number
+        }[]
+      }
       command_authority_level: { Args: { _user_id: string }; Returns: number }
       command_capability_report: {
         Args: { _target: string }
@@ -18626,6 +18667,7 @@ export type Database = {
       is_misd_supervisor: { Args: { _user_id: string }; Returns: boolean }
       is_recyclable_table: { Args: { _table: string }; Returns: boolean }
       is_roster_manager: { Args: { _uid: string }; Returns: boolean }
+      is_scoped_staff_officer: { Args: { _uid: string }; Returns: boolean }
       is_sensitive_realtime_topic: {
         Args: { _topic: string }
         Returns: boolean
@@ -19465,6 +19507,7 @@ export type Database = {
           skipped: number
         }[]
       }
+      send_weekly_command_summary: { Args: never; Returns: number }
       session_heartbeat: {
         Args: { _page?: string; _session_key: string }
         Returns: boolean
@@ -19535,6 +19578,19 @@ export type Database = {
         Returns: Json
       }
       signoff_steps: { Args: { _entity_type: string }; Returns: string[] }
+      snapshot_command_analytics: { Args: never; Returns: number }
+      so_can_see_profile: {
+        Args: { _profile_id: string; _uid: string }
+        Returns: boolean
+      }
+      so_can_see_unit: {
+        Args: { _uid: string; _unit: string }
+        Returns: boolean
+      }
+      so_can_see_user: {
+        Args: { _uid: string; _user_id: string }
+        Returns: boolean
+      }
       soft_delete_record: {
         Args: {
           _display_context?: string

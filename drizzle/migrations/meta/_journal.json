@@ -141,6 +141,20 @@
       "when": 1790512443526,
       "tag": "0019_audit_purge_controls",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790513400883,
+      "tag": "0020_staff_officer_command_scoping",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790513522134,
+      "tag": "0021_command_analytics_snapshots_and_reports",
+      "breakpoints": true
     }
   ]
 }
