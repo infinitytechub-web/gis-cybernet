@@ -47,6 +47,7 @@ const Departments = lazy(() => import("./pages/Departments"));
 const Roles = lazy(() => import("./pages/Roles"));
 const OrgStructure = lazy(() => import("./pages/OrgStructure"));
 const CommandAssignments = lazy(() => import("./pages/CommandAssignments"));
+const CommandAnalytics = lazy(() => import("./pages/CommandAnalytics"));
 const HrHub = lazy(() => import("./pages/HrHub"));
 // Monitoring & Evaluation — one screen resolves each /me/* module by path.
 const MEPage = lazy(() => import("./pages/me/MEPage"));
@@ -311,6 +312,8 @@ function App() {
           <Route path="/admin/sessions" element={<ProtectedRoute module="session-management"><Layout><SessionManagement /></Layout></ProtectedRoute>} />
           <Route path="/admin/trusted-devices" element={<ProtectedRoute module="trusted-devices"><Layout><TrustedDevices /></Layout></ProtectedRoute>} />
           <Route path="/unit-dashboard" element={<ProtectedRoute module="unit-dashboard"><Layout><UnitDashboard /></Layout></ProtectedRoute>} />
+          <Route path="/command-analytics" element={<ProtectedRoute module="command-analytics"><Layout><CommandAnalytics /></Layout></ProtectedRoute>} />
+          <Route path="/command-analytics/:unitId" element={<ProtectedRoute module="command-analytics"><Layout><CommandAnalytics /></Layout></ProtectedRoute>} />
           <Route path="/hr" element={<ProtectedRoute module="hr"><Layout><HrHub /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
           <Route path="/command-assignments" element={<ProtectedRoute module="command-assignments"><Layout><CommandAssignments /></Layout></ProtectedRoute>} />
