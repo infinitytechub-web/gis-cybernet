@@ -272,9 +272,11 @@ export default function CommandVault() {
       return;
     }
     setUploading(true);
+    let uploadedPath: string | null = null;
     try {
       const safeName = pendingFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${selectedCommand}/${meta.category}/${Date.now()}-${safeName}`;
+      uploadedPath = path;
       const { error: upErr } = await supabase.storage
         .from("command-vault")
         .upload(path, pendingFile, { contentType: pendingFile.type || "application/octet-stream" });
@@ -302,6 +304,7 @@ export default function CommandVault() {
       setMeta({ title: "", category: "staff_list", description: "", related_profile_id: "" });
       qc.invalidateQueries({ queryKey: ["command-vault"] });
     } catch (e: any) {
+      if (uploadedPath) await supabase.storage.from("command-vault").remove([uploadedPath]);
       toast.error(e.message || "Upload failed");
     } finally {
       setUploading(false);
