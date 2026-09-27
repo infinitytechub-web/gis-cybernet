@@ -18855,6 +18855,15 @@ export type Database = {
         Args: { _end: string; _start: string }
         Returns: number
       }
+      list_audit_purge_grants: {
+        Args: never
+        Returns: {
+          granted_at: string
+          name: string
+          staff_id: string
+          user_id: string
+        }[]
+      }
       list_authorized_command_vault_units: {
         Args: never
         Returns: {
