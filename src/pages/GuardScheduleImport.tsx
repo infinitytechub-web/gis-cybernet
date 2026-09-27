@@ -1534,15 +1534,38 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
     },
   });
 
+  // Distinct filter options from the loaded month
+  const deptOptions = useMemo(
+    () => Array.from(new Set((query.data ?? []).map((a) => a.unit).filter((u): u is string => !!u))).sort(),
+    [query.data]
+  );
+  const postOptions = useMemo(
+    () => Array.from(new Set((query.data ?? []).map((a) => a.position_label).filter((p): p is string => !!p))).sort(),
+    [query.data]
+  );
+
+  const filtered = useMemo(
+    () =>
+      (query.data ?? []).filter(
+        (a) =>
+          (shiftFilter === "all" || a.shift === shiftFilter) &&
+          (deptFilter === "all" || a.unit === deptFilter) &&
+          (postFilter === "all" || a.position_label === postFilter)
+      ),
+    [query.data, shiftFilter, deptFilter, postFilter]
+  );
+
   const byDate = useMemo(() => {
     const map = new Map<string, CalendarAssignment[]>();
-    for (const a of query.data ?? []) {
+    for (const a of filtered) {
       const arr = map.get(a.duty_date) ?? [];
       arr.push(a);
       map.set(a.duty_date, arr);
     }
     return map;
-  }, [query.data]);
+  }, [filtered]);
+
+  const filtersActive = shiftFilter !== "all" || deptFilter !== "all" || postFilter !== "all";
 
   // Build the Monday-first grid cells (null = outside this month).
   const cells = useMemo(() => {
