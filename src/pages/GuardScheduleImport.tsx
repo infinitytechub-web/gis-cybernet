@@ -1477,3 +1477,217 @@ export default function GuardScheduleImport() {
     </div>
   );
 }
+
+// ----- Calendar view of imported guard duty schedules -----
+const SHIFT_BADGE_CLASS: Record<Shift, string> = {
+  A: "bg-emerald-100 text-emerald-800 border-emerald-300",
+  B: "bg-sky-100 text-sky-800 border-sky-300",
+  C: "bg-indigo-100 text-indigo-800 border-indigo-300",
+  D: "bg-amber-100 text-amber-800 border-amber-300",
+};
+
+type CalendarAssignment = {
+  id: string;
+  duty_date: string;
+  shift: Shift;
+  rank_text: string | null;
+  name_text: string;
+  serial_no: number | null;
+  position_label: string | null;
+  schedule_id: string;
+  guard_schedules: { name: string; status: string } | null;
+};
+
+function monthKey(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+
+function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
+  const [month, setMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  const start = `${monthKey(month)}-01`;
+  const endDate = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+  const end = `${monthKey(month)}-${pad(endDate.getDate())}`;
+
+  const query = useQuery({
+    queryKey: ["guard-duty-calendar", start, end],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guard_schedule_assignments")
+        .select("id, duty_date, shift, rank_text, name_text, serial_no, position_label, schedule_id, guard_schedules(name, status)")
+        .gte("duty_date", start)
+        .lte("duty_date", end)
+        .order("duty_date")
+        .order("shift")
+        .order("serial_no");
+      if (error) throw error;
+      return (data ?? []) as unknown as CalendarAssignment[];
+    },
+  });
+
+  const byDate = useMemo(() => {
+    const map = new Map<string, CalendarAssignment[]>();
+    for (const a of query.data ?? []) {
+      const arr = map.get(a.duty_date) ?? [];
+      arr.push(a);
+      map.set(a.duty_date, arr);
+    }
+    return map;
+  }, [query.data]);
+
+  // Build the Monday-first grid cells (null = outside this month).
+  const cells = useMemo(() => {
+    const firstDow = (month.getDay() + 6) % 7; // 0 = Monday
+    const daysInMonth = endDate.getDate();
+    const list: (string | null)[] = [];
+    for (let i = 0; i < firstDow; i++) list.push(null);
+    for (let d = 1; d <= daysInMonth; d++) list.push(`${monthKey(month)}-${pad(d)}`);
+    while (list.length % 7 !== 0) list.push(null);
+    return list;
+  }, [month, endDate]);
+
+  const todayIso = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
+  })();
+
+  const selected = selectedDate ? byDate.get(selectedDate) ?? [] : [];
+  const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-primary" /> Assignment calendar
+        </CardTitle>
+        <CardDescription>
+          Saved guard duty assignments by date and shift. Select a day to see who is on duty.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" size="sm" onClick={() => { setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1)); setSelectedDate(null); }}>
+            <ChevronLeft className="h-4 w-4" /> <span className="sr-only">Previous month</span>
+          </Button>
+          <div className="text-sm font-semibold">{monthLabel}</div>
+          <Button variant="outline" size="sm" onClick={() => { setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1)); setSelectedDate(null); }}>
+            <ChevronRight className="h-4 w-4" /> <span className="sr-only">Next month</span>
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
+          {SHIFTS.map((s) => (
+            <span key={s} className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 ${SHIFT_BADGE_CLASS[s]}`}>
+              Shift {s} · {SHIFT_PERIOD_INFO[s].label}
+            </span>
+          ))}
+        </div>
+
+        {query.isLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Loading assignments…</p>
+        ) : query.isError ? (
+          <p className="py-6 text-center text-sm text-destructive">Could not load assignments.</p>
+        ) : (
+          <div className="rounded-lg border overflow-x-auto">
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-7 border-b bg-muted/40 text-center text-[11px] font-semibold text-muted-foreground">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+                  <div key={d} className="px-1 py-1.5">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7">
+                {cells.map((iso, i) => {
+                  if (!iso) return <div key={`empty-${i}`} className="min-h-[72px] border-b border-r bg-muted/20" />;
+                  const dayAssignments = byDate.get(iso) ?? [];
+                  const shiftCounts: Partial<Record<Shift, number>> = {};
+                  for (const a of dayAssignments) shiftCounts[a.shift] = (shiftCounts[a.shift] ?? 0) + 1;
+                  const isToday = iso === todayIso;
+                  const isSelected = iso === selectedDate;
+                  return (
+                    <button
+                      key={iso}
+                      type="button"
+                      onClick={() => setSelectedDate(isSelected ? null : iso)}
+                      className={`min-h-[72px] border-b border-r p-1 text-left align-top transition-colors hover:bg-muted/50 ${
+                        isSelected ? "bg-primary/10 ring-1 ring-inset ring-primary" : ""
+                      }`}
+                      aria-label={`${iso}: ${dayAssignments.length} assignment(s)`}
+                    >
+                      <div className={`text-[11px] font-semibold ${isToday ? "inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground" : ""}`}>
+                        {parseInt(iso.slice(-2), 10)}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap gap-0.5">
+                        {SHIFTS.filter((s) => shiftCounts[s]).map((s) => (
+                          <span key={s} className={`rounded border px-1 text-[10px] font-medium ${SHIFT_BADGE_CLASS[s]}`}>
+                            {s}·{shiftCounts[s]}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedDate && (
+          <div className="rounded-lg border">
+            <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+              <div className="text-sm font-semibold">
+                {selectedDate} — {selected.length} assignment{selected.length === 1 ? "" : "s"}
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedDate(null)}>
+                <XCircle className="h-4 w-4" /> <span className="sr-only">Close day detail</span>
+              </Button>
+            </div>
+            {selected.length === 0 ? (
+              <p className="px-3 py-4 text-sm text-muted-foreground">No assignments on this day.</p>
+            ) : (
+              <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">Shift</TableHead>
+                      <TableHead className="w-16">S/N</TableHead>
+                      <TableHead>Rank</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Schedule</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selected.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          <span className={`rounded border px-1.5 py-0.5 text-[11px] font-medium ${SHIFT_BADGE_CLASS[a.shift]}`}>
+                            {a.shift} · {SHIFT_PERIOD_INFO[a.shift].label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono">{a.serial_no ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{a.rank_text || "—"}</TableCell>
+                        <TableCell className="text-xs font-medium">{a.name_text}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {a.guard_schedules?.name ?? "—"}
+                          {a.guard_schedules?.status && (
+                            <Badge variant={a.guard_schedules.status === "published" ? "default" : "outline"} className="ml-1 text-[10px]">
+                              {a.guard_schedules.status}
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
