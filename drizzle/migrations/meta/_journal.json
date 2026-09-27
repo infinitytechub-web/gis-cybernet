@@ -162,6 +162,13 @@
       "when": 1790515030198,
       "tag": "0022_secure_command_scoped_document_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790515075702,
+      "tag": "0023_protect_command_vault_scope_on_update",
+      "breakpoints": true
     }
   ]
 }
