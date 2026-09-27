@@ -126,6 +126,28 @@ export default function CommandAnalytics() {
     void logAdminAudit("staff_analytics", `exported_${fmt}`, { unitId, deptId, rows: rows.length });
   };
 
+  const doExportBreakdowns = async (fmt: "pdf" | "csv") => {
+    if (!a) return;
+    const title = `Aggregate Breakdowns — ${commandName ?? "All commands in scope"}${deptName ? ` / ${deptName}` : ""}`;
+    const sections: [string, Record<string, number>][] = [
+      ["Sex", a.by_sex], ["Status", a.by_status], ["Rank", a.by_rank],
+      ["Role", a.by_role], ["Region", a.by_region],
+      ["Department", Object.fromEntries(a.by_department.map((d) => [d.name, d.count]))],
+      ["Command", Object.fromEntries(a.by_command.map((c) => [c.name, c.count]))],
+    ];
+    const rows = sections.flatMap(([section, data]) =>
+      Object.entries(data ?? {}).sort((x, y) => y[1] - x[1])
+        .map(([k, v]) => [section, pretty(k), String(v)]));
+    await exportReport(fmt, {
+      title,
+      filename: `analytics-breakdowns-${Date.now()}`,
+      subtitle: `Total ${a.total} · Active ${a.active}`,
+      headers: ["Breakdown", "Category", "Staff"],
+      rows,
+    } as never);
+    void logAdminAudit("staff_analytics", `exported_breakdowns_${fmt}`, { unitId, deptId, rows: rows.length });
+  };
+
   const doPrint = () => {
     void logAdminAudit("staff_analytics", "printed", { unitId, deptId });
     window.print();
@@ -169,6 +191,15 @@ export default function CommandAnalytics() {
                 {(["pdf", "excel", "word", "csv"] as ExportFormat[]).map((f) => (
                   <DropdownMenuItem key={f} onClick={() => doExport(f)}>{f.toUpperCase()}</DropdownMenuItem>
                 ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {perms.canDownload && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button variant="outline" size="sm"><Download className="mr-1 h-4 w-4" />Breakdowns</Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => doExportBreakdowns("pdf")}>PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => doExportBreakdowns("csv")}>CSV</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
