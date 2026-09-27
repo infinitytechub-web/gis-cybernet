@@ -2044,8 +2044,62 @@ export type Database = {
           },
         ]
       }
+      command_vault_file_audit: {
+        Row: {
+          action: string
+          actor_user_id: string
+          created_at: string
+          detail: string | null
+          file_id: string | null
+          file_name: string
+          file_title: string
+          id: string
+          org_unit_id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id: string
+          created_at?: string
+          detail?: string | null
+          file_id?: string | null
+          file_name: string
+          file_title: string
+          id?: string
+          org_unit_id: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string
+          created_at?: string
+          detail?: string | null
+          file_id?: string | null
+          file_name?: string
+          file_title?: string
+          id?: string
+          org_unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_vault_file_audit_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "command_vault_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_vault_file_audit_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_vault_files: {
         Row: {
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           category: string
           created_at: string
           description: string | null
@@ -2054,12 +2108,16 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           id: string
+          org_unit_id: string
           related_profile_id: string | null
           title: string
           updated_at: string
           uploaded_by: string
         }
         Insert: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -2068,12 +2126,16 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          org_unit_id: string
           related_profile_id?: string | null
           title: string
           updated_at?: string
           uploaded_by: string
         }
         Update: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           category?: string
           created_at?: string
           description?: string | null
@@ -2082,12 +2144,20 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           id?: string
+          org_unit_id?: string
           related_profile_id?: string | null
           title?: string
           updated_at?: string
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "command_vault_files_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "command_vault_files_related_profile_id_fkey"
             columns: ["related_profile_id"]
@@ -18066,6 +18136,10 @@ export type Database = {
         Returns: number
       }
       command_reach_units: { Args: { _user_id: string }; Returns: string[] }
+      command_vault_can_access: {
+        Args: { _org_unit_id: string; _user_id: string }
+        Returns: boolean
+      }
       commit_staff_list_import: { Args: { _import_id: string }; Returns: Json }
       compute_interlink_next_run: {
         Args: {
@@ -18751,6 +18825,14 @@ export type Database = {
         Args: { _end: string; _start: string }
         Returns: number
       }
+      list_authorized_command_vault_units: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+          type: string
+        }[]
+      }
       list_medical_inventory_audit: {
         Args: {
           p_action?: string
@@ -19264,6 +19346,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      record_command_vault_access: {
+        Args: { _action: string; _detail?: string; _file_id: string }
+        Returns: boolean
       }
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }

@@ -155,6 +155,34 @@
       "when": 1790513522134,
       "tag": "0021_command_analytics_snapshots_and_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790515030198,
+      "tag": "0022_secure_command_scoped_document_vault",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790515075702,
+      "tag": "0023_protect_command_vault_scope_on_update",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790515122671,
+      "tag": "0024_tighten_command_vault_to_assigned_hierarchy",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790515442637,
+      "tag": "0025_list_authorized_command_vault_units",
+      "breakpoints": true
     }
   ]
 }

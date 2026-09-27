@@ -32,6 +32,9 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
 import { DateInput } from "@/components/ui/date-input";
+import { PagedSection } from "@/components/ui/paged-section";
+import { QuickScroll } from "@/components/ui/quick-scroll";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
@@ -293,6 +296,7 @@ export default function Procurement() {
         <TabsContent value="documents"><DocumentsTab canManage={canManage} userId={user?.id} vendors={vendors} /></TabsContent>
         <TabsContent value="reports"><ProcurementReportsTab /></TabsContent>
       </Tabs>
+      <QuickScroll position="fixed" label="Procurement page" />
     </div>
   );
 }
@@ -342,7 +346,7 @@ function RequisitionsTab({ requisitions, canManage, userId }: any) {
         <div><CardTitle>Purchase Requisitions</CardTitle><CardDescription>Internal requests for goods or services</CardDescription></div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New Requisition</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Purchase Requisition</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
@@ -368,10 +372,11 @@ function RequisitionsTab({ requisitions, canManage, userId }: any) {
         </Dialog>
       </CardHeader>
       <CardContent>
-        <Table>
+        <PagedSection items={requisitions} searchText={(r: any) => `${r.pr_number} ${r.title} ${r.priority} ${r.status}`} label="requisitions" placeholder="Search requisitions…">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[760px]">
           <TableHeader><TableRow><TableHead>PR #</TableHead><TableHead>Title</TableHead><TableHead>Priority</TableHead><TableHead>Est. Cost</TableHead><TableHead>Needed By</TableHead><TableHead>Status</TableHead>{canManage && <TableHead></TableHead>}</TableRow></TableHeader>
           <TableBody>
-            {requisitions.map((r: any) => (
+            {pageItems.map((r: any) => (
               <TableRow key={r.id}>
                 <TableCell className="font-mono text-xs">{r.pr_number}</TableCell>
                 <TableCell>{r.title}</TableCell>
@@ -395,7 +400,8 @@ function RequisitionsTab({ requisitions, canManage, userId }: any) {
             ))}
             {requisitions.length === 0 && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">No requisitions yet</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );
@@ -420,7 +426,7 @@ function RfqsTab({ rfqs, vendors, canManage, userId }: any) {
         <div><CardTitle>Request for Quotations</CardTitle><CardDescription>Solicit competitive quotes from vendors</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New RFQ</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New RFQ</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
@@ -432,10 +438,11 @@ function RfqsTab({ rfqs, vendors, canManage, userId }: any) {
         </Dialog>}
       </CardHeader>
       <CardContent>
-        <Table>
+        <PagedSection items={rfqs} searchText={(r: any) => `${r.rfq_number} ${r.title} ${r.status}`} label="RFQs" placeholder="Search RFQs…">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[700px]">
           <TableHeader><TableRow><TableHead>RFQ #</TableHead><TableHead>Title</TableHead><TableHead>Closing Date</TableHead><TableHead>Status</TableHead><TableHead>Awarded</TableHead></TableRow></TableHeader>
           <TableBody>
-            {rfqs.map((r: any) => (
+            {pageItems.map((r: any) => (
               <TableRow key={r.id}>
                 <TableCell className="font-mono text-xs">{r.rfq_number}</TableCell>
                 <TableCell>{r.title}</TableCell>
@@ -446,7 +453,8 @@ function RfqsTab({ rfqs, vendors, canManage, userId }: any) {
             ))}
             {rfqs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No RFQs yet</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );
@@ -476,14 +484,11 @@ function PosTab({ pos, vendors, canManage, userId }: any) {
         <div><CardTitle>Purchase Orders</CardTitle><CardDescription>Issued orders to vendors</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New PO</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Purchase Order</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Vendor *</Label>
-                <Select value={form.vendor_id} onValueChange={v => setForm({ ...form, vendor_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                  <SelectContent>{vendors.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect value={form.vendor_id} onValueChange={v => setForm({ ...form, vendor_id: v })} placeholder="Select vendor" searchPlaceholder="Type a vendor name or code…" options={vendors.map((v: any) => ({ value: v.id, label: v.name, search: v.vendor_code }))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label>Total (GHS)</Label><Input type="number" value={form.total_amount} onChange={e => setForm({ ...form, total_amount: e.target.value })} /></div>
@@ -497,10 +502,11 @@ function PosTab({ pos, vendors, canManage, userId }: any) {
         </Dialog>}
       </CardHeader>
       <CardContent>
-        <Table>
+        <PagedSection items={pos} searchText={(p: any) => `${p.po_number} ${p.procurement_vendors?.name ?? ""} ${p.status}`} label="purchase orders" placeholder="Search purchase orders…">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[820px]">
           <TableHeader><TableRow><TableHead>PO #</TableHead><TableHead>Vendor</TableHead><TableHead>Total</TableHead><TableHead>Order Date</TableHead><TableHead>Expected</TableHead><TableHead>Status</TableHead>{canManage && <TableHead></TableHead>}</TableRow></TableHeader>
           <TableBody>
-            {pos.map((p: any) => (
+            {pageItems.map((p: any) => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono text-xs">{p.po_number}</TableCell>
                 <TableCell>{p.procurement_vendors?.name}</TableCell>
@@ -525,7 +531,8 @@ function PosTab({ pos, vendors, canManage, userId }: any) {
             ))}
             {pos.length === 0 && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-muted-foreground py-8">No purchase orders yet</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );
@@ -554,21 +561,15 @@ function InvoicesTab({ invoices, vendors, pos, canManage, userId }: any) {
         <div><CardTitle>Vendor Invoices</CardTitle><CardDescription>Track invoices and payments</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New Invoice</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Invoice</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Invoice # *</Label><Input value={form.invoice_number} onChange={e => setForm({ ...form, invoice_number: e.target.value })} /></div>
               <div><Label>Vendor *</Label>
-                <Select value={form.vendor_id} onValueChange={v => setForm({ ...form, vendor_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                  <SelectContent>{vendors.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect value={form.vendor_id} onValueChange={v => setForm({ ...form, vendor_id: v })} placeholder="Select vendor" searchPlaceholder="Type a vendor name or code…" options={vendors.map((v: any) => ({ value: v.id, label: v.name, search: v.vendor_code }))} />
               </div>
               <div><Label>Linked PO (optional)</Label>
-                <Select value={form.po_id} onValueChange={v => setForm({ ...form, po_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select PO" /></SelectTrigger>
-                  <SelectContent>{pos.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.po_number}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect value={form.po_id} onValueChange={v => setForm({ ...form, po_id: v })} placeholder="Select PO" searchPlaceholder="Type a purchase order number…" options={pos.map((p: any) => ({ value: p.id, label: p.po_number, search: p.procurement_vendors?.name }))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label>Amount (GHS)</Label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
@@ -580,10 +581,11 @@ function InvoicesTab({ invoices, vendors, pos, canManage, userId }: any) {
         </Dialog>}
       </CardHeader>
       <CardContent>
-        <Table>
+        <PagedSection items={invoices} searchText={(i: any) => `${i.invoice_number} ${i.procurement_vendors?.name ?? ""} ${i.status}`} label="invoices" placeholder="Search invoices…">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[740px]">
           <TableHeader><TableRow><TableHead>Invoice #</TableHead><TableHead>Vendor</TableHead><TableHead>Amount</TableHead><TableHead>Due Date</TableHead><TableHead>Status</TableHead>{canManage && <TableHead></TableHead>}</TableRow></TableHeader>
           <TableBody>
-            {invoices.map((i: any) => (
+            {pageItems.map((i: any) => (
               <TableRow key={i.id}>
                 <TableCell className="font-mono text-xs">{i.invoice_number}</TableCell>
                 <TableCell>{i.procurement_vendors?.name}</TableCell>
@@ -600,7 +602,8 @@ function InvoicesTab({ invoices, vendors, pos, canManage, userId }: any) {
             ))}
             {invoices.length === 0 && <TableRow><TableCell colSpan={canManage ? 6 : 5} className="text-center text-muted-foreground py-8">No invoices yet</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );
@@ -630,15 +633,12 @@ function ContractsTab({ contracts, vendors, canManage, userId }: any) {
         <div><CardTitle>Contracts & Tenders</CardTitle><CardDescription>Service, supply, framework, and tender contracts</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New Contract</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>New Contract</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Title *</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
               <div><Label>Vendor</Label>
-                <Select value={form.vendor_id} onValueChange={v => setForm({ ...form, vendor_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                  <SelectContent>{vendors.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect value={form.vendor_id} onValueChange={v => setForm({ ...form, vendor_id: v })} placeholder="Select vendor" searchPlaceholder="Type a vendor name or code…" options={vendors.map((v: any) => ({ value: v.id, label: v.name, search: v.vendor_code }))} />
               </div>
               <div><Label>Type</Label>
                 <Select value={form.contract_type} onValueChange={v => setForm({ ...form, contract_type: v })}>
@@ -660,10 +660,11 @@ function ContractsTab({ contracts, vendors, canManage, userId }: any) {
         </Dialog>}
       </CardHeader>
       <CardContent>
-        <Table>
+        <PagedSection items={contracts} searchText={(c: any) => `${c.contract_number} ${c.title} ${c.procurement_vendors?.name ?? ""} ${c.contract_type} ${c.status}`} label="contracts" placeholder="Search contracts…">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[820px]">
           <TableHeader><TableRow><TableHead>Contract #</TableHead><TableHead>Title</TableHead><TableHead>Vendor</TableHead><TableHead>Type</TableHead><TableHead>End Date</TableHead><TableHead>Value</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
           <TableBody>
-            {contracts.map((c: any) => (
+            {pageItems.map((c: any) => (
               <TableRow key={c.id}>
                 <TableCell className="font-mono text-xs">{c.contract_number}</TableCell>
                 <TableCell>{c.title}</TableCell>
@@ -676,7 +677,8 @@ function ContractsTab({ contracts, vendors, canManage, userId }: any) {
             ))}
             {contracts.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No contracts yet</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );
@@ -711,7 +713,7 @@ function VendorsTab({ vendors, canManage }: any) {
           </div>
           {canManage && <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Add Vendor</Button></DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Add Vendor</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
@@ -732,10 +734,11 @@ function VendorsTab({ vendors, canManage }: any) {
         </div>
       </CardHeader>
       <CardContent>
-        <Table>
+        <PagedSection items={filtered} hideSearch label="vendors">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[860px]">
           <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Code</TableHead><TableHead>Contact</TableHead><TableHead>Email</TableHead><TableHead>Phone</TableHead><TableHead>Category</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
           <TableBody>
-            {filtered.map((v: any) => (
+            {pageItems.map((v: any) => (
               <TableRow key={v.id}>
                 <TableCell className="font-medium">{v.name}</TableCell>
                 <TableCell className="font-mono text-xs">{v.vendor_code || "—"}</TableCell>
@@ -748,7 +751,8 @@ function VendorsTab({ vendors, canManage }: any) {
             ))}
             {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No vendors</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );
@@ -863,10 +867,11 @@ function DocumentsTab({ canManage, userId, vendors }: any) {
             <p className="text-xs text-muted-foreground mt-1">PDF, Word, Excel, images — up to 50 MB each</p>
           </div>
         )}
-        <Table>
+        <PagedSection items={docs} hideSearch label="documents">
+          {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[700px]">
           <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Type</TableHead><TableHead>Size</TableHead><TableHead>Uploaded</TableHead><TableHead></TableHead></TableRow></TableHeader>
           <TableBody>
-            {docs.map((d: any) => (
+            {pageItems.map((d: any) => (
               <TableRow key={d.id}>
                 <TableCell><div className="font-medium">{d.title}</div><div className="text-xs text-muted-foreground">{d.file_name}</div></TableCell>
                 <TableCell><Badge variant="outline" className="capitalize">{d.document_type}</Badge></TableCell>
@@ -882,7 +887,8 @@ function DocumentsTab({ canManage, userId, vendors }: any) {
             ))}
             {docs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No documents found</TableCell></TableRow>}
           </TableBody>
-        </Table>
+          </Table></div>}
+        </PagedSection>
       </CardContent>
     </Card>
   );

@@ -12,7 +12,7 @@
 - [ ] Super Admin screen to grant audit-purge access to selected admins
 - [x] Extend staffing alerts and seven-day trends across administrator dashboards
 - [x] Add automated Staff Officer UI/API command-isolation regression tests (live suite skips until dedicated credentials are configured)
-- [ ] Make every Procurement view searchable/selectable, paginated at 25+, and safely scrollable on phone, tablet and desktop
-- [ ] Scope Command Vault records and storage to each command with role/capability enforcement
-- [ ] Add immutable Command Vault access/action audit records and archive workflow
-- [ ] Complete functional, responsive, permission, security and regression checks for Procurement and Command Vault
+- [x] Make Procurement record views searchable/selectable, paginated at 25+, and safely scrollable on phone, tablet and desktop
+- [x] Scope Command Vault records and storage to each command with role/capability enforcement
+- [x] Add immutable Command Vault access/action audit records and archive workflow
+- [ ] Complete signed-in functional and cross-command browser checks for Procurement and Command Vault (automated type, RBAC, schema and responsive checks complete)

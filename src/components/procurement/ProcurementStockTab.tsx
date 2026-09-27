@@ -18,6 +18,7 @@ import { formatDateTime } from "@/lib/date-format";
 import { triggerDownload } from "@/lib/download-utils";
 import { useProcurementStock, type ProcurementStockItem } from "@/hooks/useProcurementRequests";
 import { csvCellQuoted } from "@/lib/csv-safe";
+import { PagedSection } from "@/components/ui/paged-section";
 
 const money = (n: number) =>
   new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", maximumFractionDigits: 2 })
@@ -164,7 +165,8 @@ export default function ProcurementStockTab() {
               Could not load the inventory: {(error as Error).message}
             </p>
           )}
-          <div className="overflow-x-auto">
+           <PagedSection items={filtered} hideSearch label="stock items">
+             {(pageItems) => <div className="overflow-x-auto">
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
@@ -192,13 +194,13 @@ export default function ProcurementStockTab() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((i) => (
+                   pageItems.map((i) => (
                     <TableRow key={i.id}>
                       <TableCell>
                         <div className="font-medium">{i.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {[i.sku, i.asset_tag].filter(Boolean).join(" · ") || "—"}
-                        </div>
+                         </div>
                       </TableCell>
                       <TableCell className="text-sm">{i.location || "—"}</TableCell>
                       <TableCell className="text-right font-medium">
@@ -235,7 +237,8 @@ export default function ProcurementStockTab() {
                 )}
               </TableBody>
             </Table>
-          </div>
+             </div>}
+           </PagedSection>
         </CardContent>
       </Card>
     </div>

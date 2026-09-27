@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,14 +22,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
+import { PagedSection } from "@/components/ui/paged-section";
+import { QuickScroll } from "@/components/ui/quick-scroll";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Upload, Download, Trash2, FileText, Search, Eye, Lock, ShieldCheck, Pencil,
-  BarChart3, CalendarDays, UserCircle2, Clock,
+  Upload, Download, Archive, ArchiveRestore, FileText, Search, Eye, Lock, ShieldCheck, Pencil,
+  BarChart3, CalendarDays, UserCircle2, Clock, History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
-import { softDelete } from "@/lib/recycle-bin";
 import { format } from "date-fns";
 import { Navigate } from "react-router-dom";
 import {
@@ -59,13 +62,17 @@ const CATEGORY_BADGE: Record<string, string> = {
 };
 
 export default function CommandVault() {
-  const { user, isAdmin, isOic, is2ic, isAdminOrSupervisor, role, loading } = useAuth();
-  const allowed = isAdminOrSupervisor || isAdmin || isOic || is2ic || role === "staff_officer";
+  const { user, isAdmin, isOic, is2ic, role, loading } = useAuth();
+  // Regional commanders commonly carry the supervisor app role; the database
+  // still requires an active regional-commander position before returning data.
+  const allowed = isAdmin || isOic || is2ic || role === "supervisor" || role === "command_officer" || role === "staff_officer";
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [archiveFilter, setArchiveFilter] = useState("active");
+  const [selectedCommand, setSelectedCommand] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [metaOpen, setMetaOpen] = useState(false);
@@ -86,17 +93,47 @@ export default function CommandVault() {
   const [editing, setEditing] = useState<any>(null);
   const [editForm, setEditForm] = useState({ title: "", category: "general", description: "", related_profile_id: "" });
   const [savingEdit, setSavingEdit] = useState(false);
-  const [deleting, setDeleting] = useState<any>(null);
-  const [deletingBusy, setDeletingBusy] = useState(false);
+  const [archiving, setArchiving] = useState<any>(null);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [archiveBusy, setArchiveBusy] = useState(false);
+
+  const { data: viewerProfile } = useQuery({
+    queryKey: ["command-vault-viewer", user?.id],
+    enabled: allowed && !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("org_unit_id").eq("user_id", user?.id ?? "").maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: commands = [] } = useQuery({
+    queryKey: ["command-vault-commands"],
+    enabled: allowed,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_authorized_command_vault_units");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (!selectedCommand && viewerProfile?.org_unit_id) setSelectedCommand(viewerProfile.org_unit_id);
+  }, [selectedCommand, viewerProfile?.org_unit_id]);
+
+  useEffect(() => {
+    if (!selectedCommand && isAdmin && commands[0]?.id) setSelectedCommand(commands[0].id);
+  }, [commands, isAdmin, selectedCommand]);
 
   // Fetch staff for the optional "related officer" combobox
   const { data: staff = [] } = useQuery({
-    queryKey: ["cv-staff-options"],
-    enabled: allowed,
+    queryKey: ["cv-staff-options", selectedCommand],
+    enabled: allowed && !!selectedCommand,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, staff_id")
+        .eq("org_unit_id", selectedCommand)
         .order("last_name", { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -104,14 +141,17 @@ export default function CommandVault() {
   });
 
   const { data: files = [], isLoading } = useQuery({
-    queryKey: ["command-vault", search, categoryFilter],
-    enabled: allowed,
+    queryKey: ["command-vault", selectedCommand, search, categoryFilter, archiveFilter],
+    enabled: allowed && !!selectedCommand,
     queryFn: async () => {
       let q = supabase
         .from("command_vault_files")
-        .select("*, profiles:related_profile_id (id, first_name, last_name, staff_id)")
+        .select("*, org_units(name), profiles:related_profile_id (id, first_name, last_name, staff_id)")
+        .eq("org_unit_id", selectedCommand)
         .order("created_at", { ascending: false });
       if (categoryFilter !== "all") q = q.eq("category", categoryFilter);
+      if (archiveFilter === "active") q = q.is("archived_at", null);
+      if (archiveFilter === "archived") q = q.not("archived_at", "is", null);
       const { data, error } = await q;
       if (error) throw error;
       const list = data ?? [];
@@ -137,6 +177,25 @@ export default function CommandVault() {
       });
     },
   });
+
+  const { data: audit = [] } = useQuery({
+    queryKey: ["command-vault-audit", selectedCommand],
+    enabled: allowed && !!selectedCommand,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("command_vault_file_audit").select("*").eq("org_unit_id", selectedCommand).order("created_at", { ascending: false }).limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (!allowed) return;
+    const channel = supabase.channel(`command-vault-${user?.id ?? "viewer"}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "command_vault_files" }, () => qc.invalidateQueries({ queryKey: ["command-vault"] }))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "command_vault_file_audit" }, () => qc.invalidateQueries({ queryKey: ["command-vault-audit"] }))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [allowed, qc, user?.id]);
 
   // Aggregate stats (always computed from full file list independent of filters? — use filtered list so it matches current view)
   const stats = useMemo(() => {
@@ -207,15 +266,17 @@ export default function CommandVault() {
   }, []);
 
   const confirmUpload = async () => {
-    if (!pendingFile || !user) return;
+    if (!pendingFile || !user || !selectedCommand) return;
     if (!meta.title.trim()) {
       toast.error("A title is required");
       return;
     }
     setUploading(true);
+    let uploadedPath: string | null = null;
     try {
       const safeName = pendingFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${meta.category}/${Date.now()}-${safeName}`;
+      const path = `${selectedCommand}/${meta.category}/${Date.now()}-${safeName}`;
+      uploadedPath = path;
       const { error: upErr } = await supabase.storage
         .from("command-vault")
         .upload(path, pendingFile, { contentType: pendingFile.type || "application/octet-stream" });
@@ -231,6 +292,7 @@ export default function CommandVault() {
         file_size: pendingFile.size,
         file_type: pendingFile.type || "application/octet-stream",
         uploaded_by: user.id,
+        org_unit_id: selectedCommand,
       });
       if (dbErr) {
         await supabase.storage.from("command-vault").remove([path]);
@@ -242,6 +304,7 @@ export default function CommandVault() {
       setMeta({ title: "", category: "staff_list", description: "", related_profile_id: "" });
       qc.invalidateQueries({ queryKey: ["command-vault"] });
     } catch (e: any) {
+      if (uploadedPath) await supabase.storage.from("command-vault").remove([uploadedPath]);
       toast.error(e.message || "Upload failed");
     } finally {
       setUploading(false);
@@ -249,6 +312,8 @@ export default function CommandVault() {
   };
 
   const downloadFile = async (d: any) => {
+    const { error: auditError } = await supabase.rpc("record_command_vault_access", { _file_id: d.id, _action: "download", _detail: "Downloaded from Command Vault" });
+    if (auditError) return toast.error(auditError.message || "Download not authorized");
     const { data, error } = await supabase.storage.from("command-vault").createSignedUrl(d.file_path, 60);
     if (error || !data) return toast.error("Download failed");
     triggerDownload(data.signedUrl, d.file_name || "file");
@@ -258,6 +323,8 @@ export default function CommandVault() {
     setPreview({ url: "", file: d });
     setPreviewLoading(true);
     setCsvText(null);
+    const { error: auditError } = await supabase.rpc("record_command_vault_access", { _file_id: d.id, _action: "preview", _detail: "Opened in Command Vault preview" });
+    if (auditError) { setPreview(null); setPreviewLoading(false); return toast.error(auditError.message || "Preview not authorized"); }
     const { data, error } = await supabase.storage.from("command-vault").createSignedUrl(d.file_path, 300);
     if (error || !data) {
       setPreview(null);
@@ -315,24 +382,24 @@ export default function CommandVault() {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleting) return;
-    setDeletingBusy(true);
+  const confirmArchive = async () => {
+    if (!archiving) return;
+    if (!archiving.archived_at && !archiveReason.trim()) return toast.error("An archive reason is required");
+    setArchiveBusy(true);
     try {
-      await softDelete({
-        table: "command_vault_files",
-        id: deleting.id,
-        label: deleting.title || deleting.file_name,
-        context: deleting.file_name,
-        storagePaths: deleting.file_path ? [{ bucket: "command-vault", path: deleting.file_path }] : [],
-      });
-      toast.success("File moved to Recycle Bin");
-      setDeleting(null);
+      const next = archiving.archived_at
+        ? { archived_at: null, archived_by: null, archive_reason: null }
+        : { archived_at: new Date().toISOString(), archived_by: user?.id ?? null, archive_reason: archiveReason.trim() };
+      const { error } = await supabase.from("command_vault_files").update(next).eq("id", archiving.id);
+      if (error) throw error;
+      toast.success(archiving.archived_at ? "Document restored" : "Document archived");
+      setArchiving(null);
+      setArchiveReason("");
       qc.invalidateQueries({ queryKey: ["command-vault"] });
     } catch (e: any) {
       toast.error(e.message || "Delete failed");
     } finally {
-      setDeletingBusy(false);
+      setArchiveBusy(false);
     }
   };
 
@@ -366,6 +433,21 @@ export default function CommandVault() {
         <Badge variant="secondary" className="gap-1">
           <FileText className="h-3 w-3" /> {files.length} file{files.length === 1 ? "" : "s"}
         </Badge>
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="w-full sm:max-w-md">
+          <Label>Command vault</Label>
+          <SearchableSelect
+            value={selectedCommand}
+            onValueChange={setSelectedCommand}
+            disabled={!isAdmin && role !== "command_officer"}
+            placeholder="Select an authorized command"
+            searchPlaceholder="Type a command name…"
+            options={commands.map((command: any) => ({ value: command.id, label: command.name, search: command.type }))}
+          />
+        </div>
+        <Badge variant="outline">Private command workspace</Badge>
       </div>
 
       {/* ======= Statistical Dashboard ======= */}
@@ -486,6 +568,12 @@ export default function CommandVault() {
         </CardContent>
       </Card>
 
+      <Tabs defaultValue="documents" className="space-y-4">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="documents"><FileText className="mr-1 h-4 w-4" />Documents</TabsTrigger>
+          <TabsTrigger value="activity"><History className="mr-1 h-4 w-4" />Activity</TabsTrigger>
+        </TabsList>
+        <TabsContent value="documents">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -517,6 +605,10 @@ export default function CommandVault() {
                 {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
+             <Select value={archiveFilter} onValueChange={setArchiveFilter}>
+               <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
+               <SelectContent><SelectItem value="active">Active files</SelectItem><SelectItem value="archived">Archived</SelectItem><SelectItem value="all">All files</SelectItem></SelectContent>
+             </Select>
           </div>
         </CardHeader>
 
@@ -541,8 +633,9 @@ export default function CommandVault() {
           ) : files.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground text-sm">No files in the vault yet</p>
           ) : (
-            <div className="rounded-lg border overflow-auto">
-              <Table>
+            <PagedSection items={files as any[]} hideSearch label="vault documents">
+              {(pageItems) => <div className="rounded-lg border overflow-x-auto">
+              <Table className="min-w-[820px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title / File</TableHead>
@@ -554,7 +647,7 @@ export default function CommandVault() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {files.map((d: any) => (
+                  {pageItems.map((d: any) => (
                     <TableRow key={d.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -592,22 +685,37 @@ export default function CommandVault() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
-                          <Button size="icon" variant="ghost" onClick={() => viewFile(d)} title="View"><Eye className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => downloadFile(d)} title="Download"><Download className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(d)} title="Edit"><Pencil className="h-4 w-4 text-amber-600" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDeleting(d)} title="Delete">
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                          {!d.archived_at && <Button size="icon" variant="ghost" onClick={() => viewFile(d)} title="View"><Eye className="h-4 w-4" /></Button>}
+                          {!d.archived_at && <Button size="icon" variant="ghost" onClick={() => downloadFile(d)} title="Download"><Download className="h-4 w-4" /></Button>}
+                          {!d.archived_at && <Button size="icon" variant="ghost" onClick={() => openEdit(d)} title="Edit"><Pencil className="h-4 w-4 text-amber-600" /></Button>}
+                          <Button size="icon" variant="ghost" onClick={() => setArchiving(d)} title={d.archived_at ? "Restore" : "Archive"}>
+                            {d.archived_at ? <ArchiveRestore className="h-4 w-4 text-primary" /> : <Archive className="h-4 w-4 text-amber-600" />}
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
-            </div>
+              </Table></div>}
+            </PagedSection>
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+        <TabsContent value="activity">
+          <Card>
+            <CardHeader><CardTitle className="text-lg">Sensitive document activity</CardTitle><CardDescription>Immutable upload, viewing, download, change, archive and restore history for this command.</CardDescription></CardHeader>
+            <CardContent>
+              <PagedSection items={audit as any[]} searchText={(event: any) => `${event.action} ${event.file_title} ${event.file_name} ${event.detail ?? ""}`} label="activity events" placeholder="Search activity…">
+                {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[720px]"><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Action</TableHead><TableHead>Document</TableHead><TableHead>Details</TableHead></TableRow></TableHeader><TableBody>
+                  {pageItems.map((event: any) => <TableRow key={event.id}><TableCell className="whitespace-nowrap text-xs">{format(new Date(event.created_at), "dd/MM/yyyy, HH:mm")}</TableCell><TableCell><Badge variant="outline" className="capitalize">{event.action}</Badge></TableCell><TableCell><div className="font-medium">{event.file_title}</div><div className="text-xs text-muted-foreground">{event.file_name}</div></TableCell><TableCell className="text-sm text-muted-foreground">{event.detail || "—"}</TableCell></TableRow>)}
+                  {pageItems.length === 0 && <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">No activity recorded.</TableCell></TableRow>}
+                </TableBody></Table></div>}
+              </PagedSection>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Upload metadata dialog */}
       <Dialog open={metaOpen} onOpenChange={(o) => { if (!uploading) setMetaOpen(o); }}>
@@ -716,23 +824,24 @@ export default function CommandVault() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleting} onOpenChange={(o) => { if (!o && !deletingBusy) setDeleting(null); }}>
+      {/* Archive / restore confirmation */}
+      <AlertDialog open={!!archiving} onOpenChange={(o) => { if (!o && !archiveBusy) { setArchiving(null); setArchiveReason(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this file?</AlertDialogTitle>
+            <AlertDialogTitle>{archiving?.archived_at ? "Restore this document?" : "Archive this document?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove <span className="font-semibold">{deleting?.title}</span> and its underlying file from the vault. This action cannot be undone.
+              {archiving?.archived_at ? "The document will return to the active command vault." : "The document will be retained securely, hidden from normal access, and recorded in the immutable activity trail."}
             </AlertDialogDescription>
+            {!archiving?.archived_at && <div className="space-y-1.5"><Label htmlFor="vault-archive-reason">Reason *</Label><Textarea id="vault-archive-reason" value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} maxLength={500} placeholder="Why is this document being archived?" /></div>}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletingBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={archiveBusy}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={confirmDelete}
-              disabled={deletingBusy}
+              onClick={confirmArchive}
+              disabled={archiveBusy || (!archiving?.archived_at && !archiveReason.trim())}
             >
-              {deletingBusy ? "Deleting…" : "Delete"}
+              {archiveBusy ? "Saving…" : archiving?.archived_at ? "Restore" : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -774,6 +883,7 @@ export default function CommandVault() {
           </div>
         </DialogContent>
       </Dialog>
+      <QuickScroll position="fixed" label="Command Vault page" />
     </div>
   );
 }
