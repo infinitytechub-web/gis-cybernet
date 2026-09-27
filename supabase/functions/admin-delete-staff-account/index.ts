@@ -126,28 +126,29 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Delete the profile (RLS bypassed by service key); related rows should cascade or be set null per FK config
-    const { error: delProfErr } = await admin.from("profiles").delete().eq("id", profile.id);
+    // Soft delete: a hard delete would cascade into immutable audit/security
+    // history and fail. Purging is a separate admin-only controlled step.
+    const { error: delProfErr } = await admin.from("profiles").update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+      deletion_reason: reason,
+      status: "inactive",
+    }).eq("id", profile.id);
     if (delProfErr) {
-      console.error("admin-delete-staff-account delete profile error:", delProfErr.message);
+      console.error("admin-delete-staff-account soft delete error:", delProfErr.message);
       return new Response(JSON.stringify({ error: "Failed to delete profile" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Delete the auth user if linked
+    // Block sign-in for the linked account without destroying history
     if (profile.user_id) {
-      const { error: delUserErr } = await admin.auth.admin.deleteUser(profile.user_id);
-      if (delUserErr) {
-        console.error("admin-delete-staff-account auth delete error:", delUserErr.message);
-        // Profile is already gone; surface a partial-success warning
+      const { error: banErr } = await admin.auth.admin.updateUserById(profile.user_id, { ban_duration: "876000h" });
+      if (banErr) {
+        console.error("admin-delete-staff-account ban error:", banErr.message);
         return new Response(
-          JSON.stringify({
-            ok: true,
-            warning: "Profile deleted but auth user removal failed",
-            staff_id: profile.staff_id,
-          }),
+          JSON.stringify({ ok: true, warning: "Record deleted but sign-in could not be disabled", staff_id: profile.staff_id }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }

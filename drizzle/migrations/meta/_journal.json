@@ -120,6 +120,13 @@
       "when": 1790504651480,
       "tag": "0016_guard_duty_import_format_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790505416129,
+      "tag": "0017_staff_soft_delete_and_purge",
+      "breakpoints": true
     }
   ]
 }

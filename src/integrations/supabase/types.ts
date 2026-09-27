@@ -12899,6 +12899,9 @@ export type Database = {
           deactivated_at: string | null
           deactivated_by: string | null
           deactivation_reason: string | null
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
           department_id: string | null
           digital_address: string | null
           dob_verification_note: string | null
@@ -12971,6 +12974,9 @@ export type Database = {
           deactivated_at?: string | null
           deactivated_by?: string | null
           deactivation_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           department_id?: string | null
           digital_address?: string | null
           dob_verification_note?: string | null
@@ -13043,6 +13049,9 @@ export type Database = {
           deactivated_at?: string | null
           deactivated_by?: string | null
           deactivation_reason?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           department_id?: string | null
           digital_address?: string | null
           dob_verification_note?: string | null
@@ -17843,6 +17852,10 @@ export type Database = {
       }
       can_approve_fuel_request: { Args: { _user_id: string }; Returns: boolean }
       can_approve_rotation_change: { Args: { _uid: string }; Returns: boolean }
+      can_delete_staff_record: {
+        Args: { _profile_id: string; _user_id?: string }
+        Returns: boolean
+      }
       can_directory_action: {
         Args: { _action: string; _profile_id: string; _user_id?: string }
         Returns: boolean
@@ -19133,6 +19146,10 @@ export type Database = {
         Returns: number
       }
       prune_system_backup_audit: { Args: never; Returns: Json }
+      purge_deleted_staff: {
+        Args: { _id: string; _reason: string }
+        Returns: undefined
+      }
       purge_expired_recycle_bin: { Args: never; Returns: Json }
       purge_old_presence_events: {
         Args: { _retention_days?: number }
@@ -19246,6 +19263,7 @@ export type Database = {
         }
         Returns: string
       }
+      restore_deleted_staff: { Args: { _id: string }; Returns: undefined }
       restore_recycle_bin_entry: {
         Args: { _bin_id: string }
         Returns: undefined
@@ -19499,6 +19517,10 @@ export type Database = {
           _table: string
         }
         Returns: string
+      }
+      soft_delete_staff: {
+        Args: { _ids: string[]; _reason: string }
+        Returns: number
       }
       staff_access_log_feed: {
         Args: {
