@@ -27,6 +27,10 @@ import { logAdminAudit } from "@/lib/admin-audit";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import { formatDateTime } from "@/lib/date-format";
 import { csvCell } from "@/lib/csv-safe";
+import { Checkbox } from "@/components/ui/checkbox";
+import { StaffCombobox } from "@/components/ui/staff-combobox";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 type AppRole =
   | "admin" | "supervisor" | "staff" | "deputy_supervisor" | "deputy_shift_leader"
@@ -170,7 +174,7 @@ export default function RoleAssignmentsAdmin() {
       const userIds = Array.from(new Set(roles.map((r) => r.user_id)));
       if (!userIds.length) return [];
       const { data: profs } = await supabase
-        .from("profiles").select("user_id, staff_id, first_name, last_name").in("user_id", userIds);
+        .from("profiles").select("user_id, staff_id, first_name, last_name, department_id").in("user_id", userIds);
       const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
       return roles.map((r) => ({ ...r, profile: map.get(r.user_id) }));
     },
@@ -182,6 +186,46 @@ export default function RoleAssignmentsAdmin() {
     for (const r of existingAssignments) c[r.role] = (c[r.role] || 0) + 1;
     return c;
   }, [existingAssignments]);
+
+  // ---- Assignments tab: search / type-to-search / pick / select ----------
+  const [aSearch, setASearch] = useState("");
+  const [aRole, setARole] = useState<string>("all");
+  const [aDept, setADept] = useState<string>("all");
+  const [aStaff, setAStaff] = useState<string>("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [newStaff, setNewStaff] = useState("");
+  const [newRole, setNewRole] = useState<AppRole | "">("");
+
+  const staffOptions = useMemo(
+    () => users.filter((u: any) => u.staff_id).map((u: any) => ({
+      id: u.user_id, first_name: u.first_name ?? "", last_name: u.last_name ?? "", staff_id: u.staff_id,
+    })),
+    [users],
+  );
+
+  const filteredAssignments = useMemo(() => {
+    const q = aSearch.trim().toLowerCase();
+    return existingAssignments.filter((r: any) => {
+      if (aRole !== "all" && r.role !== aRole) return false;
+      if (aStaff && r.user_id !== aStaff) return false;
+      if (aDept !== "all" && (r.profile?.department_id ?? "none") !== aDept) return false;
+      if (!q) return true;
+      return [r.profile?.staff_id, r.profile?.first_name, r.profile?.last_name, labelFor(r.role), deptName(r.profile?.department_id)]
+        .filter(Boolean).some((v) => String(v).toLowerCase().includes(q));
+    });
+  }, [existingAssignments, aSearch, aRole, aDept, aStaff, departments]);
+
+  const assignPage = usePagedList(filteredAssignments, { resetKey: `${aSearch}|${aRole}|${aDept}|${aStaff}` });
+  const usersPage = usePagedList(filteredUsers, { resetKey: search });
+  const auditPage = usePagedList(auditTrail);
+
+  // Drop selections that are no longer visible after filtering.
+  const visibleIds = useMemo(() => new Set(filteredAssignments.map((r: any) => r.id)), [filteredAssignments]);
+  const selectedVisible = [...selected].filter((id) => visibleIds.has(id));
+  const pageIds = assignPage.pageItems.map((r: any) => r.id as string);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggleSel = (id: string, on: boolean) =>
+    setSelected((s) => { const n = new Set(s); on ? n.add(id) : n.delete(id); return n; });
 
   const { data: auditTrail = [], isLoading: loadingAudit } = useQuery({
     queryKey: ["role-mgmt-audit"],
