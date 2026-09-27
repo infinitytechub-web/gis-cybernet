@@ -22,6 +22,7 @@ import autoTable from "jspdf-autotable";
 import { formatDateTime } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
 import { csvCellQuoted } from "@/lib/csv-safe";
+import { PagedSection } from "@/components/ui/paged-section";
 
 type Row = {
   shift: "A" | "B" | "C" | "D";
@@ -601,6 +602,7 @@ export default function DutyRosterImport() {
                 </TabsList>
                 {SHIFTS.map((s) => (
                   <TabsContent key={s} value={s} className="mt-3">
+                    <PagedSection items={parsed.rows.filter((r) => r.shift === s)} searchText={(r) => `${r.serial_no} ${r.rank} ${r.name} ${r.unit}`} label="rows">{(pageRows) => (
                     <div className="rounded-lg border overflow-x-auto">
                       <Table className="min-w-[700px]">
                         <TableHeader>
@@ -613,7 +615,7 @@ export default function DutyRosterImport() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {parsed.rows.filter((r) => r.shift === s).map((r) => (
+                          {pageRows.map((r) => (
                             <TableRow key={`${r.shift}-${r.serial_no}-${r.name}`}>
                               <TableCell className="font-mono text-xs">{r.serial_no}</TableCell>
                               <TableCell className="text-xs">{r.rank}</TableCell>
@@ -625,6 +627,7 @@ export default function DutyRosterImport() {
                         </TableBody>
                       </Table>
                     </div>
+                    )}</PagedSection>
                   </TabsContent>
                 ))}
               </Tabs>

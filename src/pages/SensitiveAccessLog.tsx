@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { csvCell } from "@/lib/csv-safe";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 export default function SensitiveAccessLog() {
   const { isAdmin, is2ic, isOic } = useAuth();
@@ -65,6 +66,7 @@ export default function SensitiveAccessLog() {
       <SecurityHero
         icon={ShieldCheck}
         title="Sensitive Data Access Log"
+        actions={<AuditPurgeButton table="sensitive_table_access_log" label="sensitive access entries" />}
         subtitle="Every read of sensitive tables (recipients lists, failed login attempts, etc.) is recorded here."
       />
 

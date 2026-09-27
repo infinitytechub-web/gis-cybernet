@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Eye, Loader2, Pencil, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 type LogRow = {
   id: string;
@@ -104,6 +105,7 @@ export function RestrictedAccessAuditPanel() {
               <ShieldAlert className="h-5 w-5 text-destructive" aria-hidden="true" />
               Restricted section access trail
             </CardTitle>
+            <AuditPurgeButton table="biodata_restricted_access_log" label="restricted access entries" />
             <CardDescription>
               Who looked at, or changed, medical &amp; welfare and bank / salary details. Entries
               cannot be edited or removed. Showing the latest 500.

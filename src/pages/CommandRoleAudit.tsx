@@ -20,6 +20,7 @@ import type { AppRole } from "@/lib/types";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { csvCell } from "@/lib/csv-safe";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 function toCsv(headers: string[], rows: (string | number | null | undefined)[][]) {
   const escape = (v: any) => {
@@ -200,6 +201,7 @@ export default function CommandRoleAudit() {
       <SecurityHero
         icon={History}
         title="Command Role Audit Log"
+        actions={<AuditPurgeButton table="command_role_audit" label="command role audit entries" />}
         subtitle="Immutable record of every command-tier role assignment, change, or removal."
       />
 

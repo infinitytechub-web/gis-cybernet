@@ -19,6 +19,7 @@ import { format, subDays } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCell } from "@/lib/csv-safe";
 import { SecurityHero } from "@/components/security/SecurityHero";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 type FeedRow = {
   id: string;
@@ -127,6 +128,7 @@ export default function StaffAccessLog() {
       <SecurityHero
         icon={ShieldCheck}
         title="Staff Access Log"
+        actions={<AuditPurgeButton table="staff_access_log" label="staff access entries" />}
         subtitle="Who opened which staff record, what they did with it, and who reached their own staff portal."
       />
 

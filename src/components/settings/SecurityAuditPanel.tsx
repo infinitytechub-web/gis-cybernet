@@ -15,6 +15,7 @@ import { downloadBlob } from "@/lib/download-utils";
 import { AuditImportVerifyDialog } from "./AuditImportVerifyDialog";
 import { formatDateTime } from "@/lib/date-format";
 import { DateInput } from "@/components/ui/date-input";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 const sevColor: Record<string, string> = {
   info: "bg-muted text-muted-foreground",
@@ -163,6 +164,7 @@ export function SecurityAuditPanel() {
             <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2">
               <Upload className="h-4 w-4" /> Import & verify
             </Button>
+            <AuditPurgeButton table="security_audit_log" label="security audit log" />
             <Button onClick={() => handleExportAll("csv")} className="gap-2 ml-auto">
               <FileDown className="h-4 w-4" /> Export all (CSV)
             </Button>

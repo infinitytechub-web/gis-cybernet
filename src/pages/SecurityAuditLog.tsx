@@ -13,6 +13,7 @@ import { format, subDays } from "date-fns";
 import { downloadCSVString } from "@/lib/download-utils";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { buildCsv } from "@/lib/csv-safe";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 type FeedRow = {
   id: string;
@@ -129,6 +130,7 @@ export default function SecurityAuditLog() {
       <SecurityHero
         icon={ShieldAlert}
         title="Security Audit Log"
+        actions={<AuditPurgeButton table="account_unlock_audit" label="account unlock entries" />}
         subtitle="Account lockouts and unlocks, two-factor enrolments, verifications and resets, and sessions ended by the device limit — in one timeline."
       />
 

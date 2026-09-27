@@ -26,6 +26,7 @@ import { Download, RefreshCw, ScrollText } from "lucide-react";
 import { formatDateTime } from "@/lib/date-format";
 import { downloadBlob } from "@/lib/download-utils";
 import { buildCsv } from "@/lib/csv-safe";
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 
 interface AuditRow {
   id: string;
@@ -149,6 +150,7 @@ export function BiometricAuditLogCard() {
         <CardTitle className="flex items-center gap-2">
           <ScrollText className="h-5 w-5 text-primary" />
           Biometric audit log
+          <span className="ml-auto"><AuditPurgeButton table="webauthn_audit" label="biometric audit entries" /></span>
         </CardTitle>
         <CardDescription>
           Immutable record of enrollment attempts, grace/compliance status changes and administrator
