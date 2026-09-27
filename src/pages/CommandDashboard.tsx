@@ -251,7 +251,7 @@ export default function CommandDashboard() {
         <KpiTile title="Vacancies" value={totals?.vacancies ?? 0}
           sub={`${posted} posted of ${authorised} authorised${fillRate !== null ? ` · ${fillRate}% filled` : ""}`}
           icon={UserMinus} accent={4} alert={strengthAlert(posted, authorised)}
-          trend={baseline && baseline.authorised ? Math.max(0, baseline.authorised - baseline.active) - (totals?.vacancies ?? 0) : null}
+          trend={baseline && authorised > 0 ? Math.max(0, authorised - baseline.active) - (totals?.vacancies ?? 0) : null}
           trendDirection="lower-is-better" />
         <KpiTile title="Posted ranks" value={data?.ranks?.length ?? 0} sub="distinct ranks in this command" icon={Building2} accent={2} />
         <KpiTile title="Reached the portal" value={totals?.portal_reached ?? 0}
