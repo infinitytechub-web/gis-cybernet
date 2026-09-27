@@ -58,45 +58,6 @@ export const SHIFT_PERIOD_INFO: Record<Shift, { label: string; start: string; en
   D: { label: "Operational (24/7)", start: "00:00", end: "24:00" },
 };
 
-// ----- PDF text extraction -----
-async function extractPdfText(file: File): Promise<string[]> {
-  // Lazy import; self-host worker (bundled by Vite) so we never load executable
-  // code from a third-party CDN. This sidesteps SRI/version-pinning concerns.
-  const pdfjs: any = await import("pdfjs-dist");
-  const workerUrl: string = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url" as string)).default;
-  pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-  const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
-  const pages: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const tc = await page.getTextContent();
-    // Reconstruct rows by Y coordinate.
-    const items = (tc.items as any[])
-      .map((it) => ({
-        str: String(it.str ?? ""),
-        x: it.transform?.[4] ?? 0,
-        y: it.transform?.[5] ?? 0,
-      }))
-      .filter((it) => it.str.trim() !== "");
-    items.sort((a, b) => b.y - a.y || a.x - b.x);
-    const lines: { y: number; parts: { x: number; str: string }[] }[] = [];
-    for (const it of items) {
-      const last = lines[lines.length - 1];
-      if (last && Math.abs(last.y - it.y) < 3) {
-        last.parts.push({ x: it.x, str: it.str });
-      } else {
-        lines.push({ y: it.y, parts: [{ x: it.x, str: it.str }] });
-      }
-    }
-    pages.push(
-      lines
-        .map((l) => l.parts.sort((a, b) => a.x - b.x).map((p) => p.str).join(" "))
-        .join("\n")
-    );
-  }
-  return pages;
-}
 
 // ----- Parser tuned to the May 2026 layout but tolerant of variants -----
 const MONTHS: Record<string, number> = {
