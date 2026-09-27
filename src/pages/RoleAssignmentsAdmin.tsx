@@ -306,6 +306,27 @@ export default function RoleAssignmentsAdmin() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const removeMany = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const rows = existingAssignments.filter((r: any) => ids.includes(r.id));
+      for (let i = 0; i < ids.length; i += 50) {
+        const { error } = await supabase.from("user_roles").delete().in("id", ids.slice(i, i + 50));
+        if (error) throw error;
+      }
+      await Promise.all(rows.map((r: any) =>
+        logAdminAudit("user_role", "role.remove", { role: r.role, reversible: true, bulk: true }, r.user_id)));
+      return rows.length;
+    },
+    onSuccess: (n) => {
+      toast.success(`${n} role assignment(s) removed`);
+      setSelected(new Set());
+      qc.invalidateQueries({ queryKey: ["role-assignments-list"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-users"] });
+      qc.invalidateQueries({ queryKey: ["role-mgmt-audit"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { data: row } = await supabase.from("user_roles").select("user_id, role").eq("id", id).maybeSingle();
@@ -490,7 +511,7 @@ export default function RoleAssignmentsAdmin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredUsers.slice(0, 300).map((u: any) => (
+                      {usersPage.pageItems.map((u: any) => (
                         <TableRow key={u.user_id}>
                           <TableCell className="font-mono text-xs">{u.staff_id ?? "—"}</TableCell>
                           <TableCell className="text-sm">{u.last_name}, {u.first_name}</TableCell>
@@ -526,12 +547,10 @@ export default function RoleAssignmentsAdmin() {
                       ))}
                     </TableBody>
                   </Table>
-                  {filteredUsers.length > 300 && (
-                    <div className="text-xs text-muted-foreground p-2 text-center">
-                      Showing first 300 — refine search to narrow.
-                    </div>
-                  )}
                 </div>
+              )}
+              {!loadingUsers && (
+                <ListPagination {...usersPage} label="users" />
               )}
             </CardContent>
           </Card>
@@ -616,34 +635,125 @@ export default function RoleAssignmentsAdmin() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <FileSpreadsheet className="h-4 w-4" /> Current Assignments ({existingAssignments.length})
+                <FileSpreadsheet className="h-4 w-4" /> Current Assignments ({filteredAssignments.length} of {existingAssignments.length})
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-3">
+            <CardContent className="space-y-3">
+              {/* Add a new assignment: pick staff + pick role */}
+              <div className="rounded border p-3 space-y-2 bg-muted/30">
+                <Label className="text-xs font-semibold">Assign a role</Label>
+                <div className="grid gap-2 sm:grid-cols-[1fr_220px_auto]">
+                  <StaffCombobox staff={staffOptions} value={newStaff} onValueChange={setNewStaff} placeholder="Type to search staff…" compact />
+                  <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                    <SelectTrigger className="h-9" aria-label="Role to assign"><SelectValue placeholder="Pick a role" /></SelectTrigger>
+                    <SelectContent>
+                      {KNOWN_ROLES.map((r) => <SelectItem key={r} value={r}>{labelFor(r)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm" className="h-9 gap-1"
+                    disabled={!newStaff || !newRole || addRole.isPending}
+                    onClick={() => {
+                      const u = users.find((x: any) => x.user_id === newStaff);
+                      if (u?.roles.includes(newRole)) {
+                        toast.error(`${u.staff_id} already has the ${labelFor(newRole as string)} role.`);
+                        return;
+                      }
+                      addRole.mutate({ user_id: newStaff, role: newRole as AppRole }, {
+                        onSuccess: () => { setNewRole(""); },
+                      });
+                    }}
+                  >
+                    <Plus className="h-4 w-4" /> Assign
+                  </Button>
+                </div>
+              </div>
+
+              {/* Search & filters */}
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search staff ID, name, role…" value={aSearch} onChange={(e) => setASearch(e.target.value)} className="pl-8 h-9" aria-label="Search assignments" />
+                </div>
+                <StaffCombobox staff={staffOptions} value={aStaff} onValueChange={setAStaff} includeAllOption allOptionLabel="All staff" placeholder="Pick staff" compact />
+                <Select value={aRole} onValueChange={setARole}>
+                  <SelectTrigger className="h-9" aria-label="Filter by role"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All roles</SelectItem>
+                    {KNOWN_ROLES.map((r) => <SelectItem key={r} value={r}>{labelFor(r)} ({counts[r] ?? 0})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={aDept} onValueChange={setADept}>
+                  <SelectTrigger className="h-9" aria-label="Filter by department"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All departments</SelectItem>
+                    <SelectItem value="none">No department</SelectItem>
+                    {departments.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
                 {Object.entries(counts).map(([role, n]) => (
-                  <Badge key={role} variant="outline">{labelFor(role)}: {n}</Badge>
+                  <Badge
+                    key={role} variant={aRole === role ? "default" : "outline"} className="cursor-pointer"
+                    onClick={() => setARole(aRole === role ? "all" : role)}
+                  >{labelFor(role)}: {n}</Badge>
                 ))}
               </div>
+
+              {selectedVisible.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-sm">
+                  <span>{selectedVisible.length} selected</span>
+                  <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Clear</Button>
+                  <Button
+                    size="sm" variant="destructive" className="gap-1" disabled={removeMany.isPending}
+                    onClick={() => askConfirm({
+                      title: `Remove ${selectedVisible.length} role assignment(s)?`,
+                      message: "Each removal is recorded in the audit trail and can be reverted.",
+                      confirmLabel: "Remove", destructive: true,
+                      onConfirm: () => removeMany.mutate(selectedVisible),
+                    })}
+                  ><Trash2 className="h-3.5 w-3.5" /> Remove selected</Button>
+                </div>
+              )}
+
               <div className="rounded border max-h-[500px] overflow-auto">
                 <Table className="min-w-[700px]">
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          aria-label="Select all on this page"
+                          checked={allPageSelected}
+                          onCheckedChange={(v) => setSelected((s) => {
+                            const n = new Set(s); pageIds.forEach((id) => (v ? n.add(id) : n.delete(id))); return n;
+                          })}
+                        />
+                      </TableHead>
                       <TableHead>Staff ID</TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Department</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead className="w-12">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {existingAssignments.map((r: any) => (
-                      <TableRow key={r.id}>
+                    {assignPage.pageItems.length === 0 && (
+                      <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">No assignments match.</TableCell></TableRow>
+                    )}
+                    {assignPage.pageItems.map((r: any) => (
+                      <TableRow key={r.id} data-state={selected.has(r.id) ? "selected" : undefined}>
+                        <TableCell>
+                          <Checkbox aria-label={`Select ${r.profile?.staff_id ?? "row"}`} checked={selected.has(r.id)} onCheckedChange={(v) => toggleSel(r.id, !!v)} />
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{r.profile?.staff_id ?? "—"}</TableCell>
                         <TableCell>{r.profile ? `${r.profile.last_name}, ${r.profile.first_name}` : "—"}</TableCell>
+                        <TableCell className="text-xs">{deptName(r.profile?.department_id)}</TableCell>
                         <TableCell><Badge variant="secondary">{labelFor(r.role)}</Badge></TableCell>
                         <TableCell>
                           <Button
-                            variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                            variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label="Remove role"
                             onClick={() => {
                               askConfirm({
                                 title: "Remove role?",
@@ -662,6 +772,7 @@ export default function RoleAssignmentsAdmin() {
                   </TableBody>
                 </Table>
               </div>
+              <ListPagination {...assignPage} label="assignments" />
             </CardContent>
           </Card>
         </TabsContent>
@@ -700,7 +811,7 @@ export default function RoleAssignmentsAdmin() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {auditTrail.map((e: any) => {
+                      {auditPage.pageItems.map((e: any) => {
                         const reverted = e.details?.reverted_from;
                         const reversible =
                           (e.action === "role.add" || e.action === "role.remove" || e.action === "department.change")
