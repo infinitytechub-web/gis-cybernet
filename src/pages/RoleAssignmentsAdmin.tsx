@@ -863,6 +863,9 @@ export default function RoleAssignmentsAdmin() {
                   </Table>
                 </div>
               )}
+              {!loadingAudit && auditTrail.length > 0 && (
+                <ListPagination {...auditPage} label="changes" />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
