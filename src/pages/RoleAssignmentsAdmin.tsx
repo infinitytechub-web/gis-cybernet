@@ -655,7 +655,7 @@ export default function RoleAssignmentsAdmin() {
                     disabled={!newStaff || !newRole || addRole.isPending}
                     onClick={() => {
                       const u = users.find((x: any) => x.user_id === newStaff);
-                      if (u?.roles.includes(newRole)) {
+                      if (u?.roles.includes(newRole as AppRole)) {
                         toast.error(`${u.staff_id} already has the ${labelFor(newRole as string)} role.`);
                         return;
                       }
