@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,6 +130,7 @@ export default function SecurityAuditLog() {
       <SecurityHero
         icon={ShieldAlert}
         title="Security Audit Log"
+        actions={<AuditPurgeButton table="account_unlock_audit" label="account unlock entries" />}
         subtitle="Account lockouts and unlocks, two-factor enrolments, verifications and resets, and sessions ended by the device limit — in one timeline."
       />
 

@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +66,7 @@ export default function SensitiveAccessLog() {
       <SecurityHero
         icon={ShieldCheck}
         title="Sensitive Data Access Log"
+        actions={<AuditPurgeButton table="sensitive_table_access_log" label="sensitive access entries" />}
         subtitle="Every read of sensitive tables (recipients lists, failed login attempts, etc.) is recorded here."
       />
 

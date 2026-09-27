@@ -1,3 +1,5 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 /**
  * Admin-only actions on an uploaded staff list file: Preview, Edit, Reject, Approve.
  *
@@ -191,6 +193,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     ? rows.filter((r) => FIELDS.some((f) =>
         String(r.payload?.[f.key] ?? "").toLowerCase().includes(q)))
     : rows;
+  const visiblePager = usePagedList(visible, { resetKey: q });
 
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -277,7 +280,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visible.slice(0, 500).map((r) => (
+                  {visiblePager.pageItems.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs text-muted-foreground">{r.row_no}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm font-medium">
@@ -310,11 +313,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
                 </TableBody>
               </Table>
             )}
-            {visible.length > 500 && (
-              <p className="p-2 text-xs text-muted-foreground">
-                Showing the first 500 of {visible.length} rows.
-              </p>
-            )}
+            <ListPagination {...visiblePager} label="rows" className="p-2" />
           </div>
         </DialogContent>
       </Dialog>

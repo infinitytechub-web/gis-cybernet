@@ -1,3 +1,5 @@
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 /**
  * UNIT STAFF PICKER — pop-up search-and-select over the whole staff directory,
  * available for every Command, Department and Unit.
@@ -30,7 +32,6 @@ import { orgUnitPath, type OrgUnit } from "@/lib/org-hierarchy";
 import { roleLabel, ROLE_LABEL } from "@/lib/role-labels";
 import { UnitAddStaffDialog } from "@/components/command/UnitAddStaffDialog";
 
-const ROW_LIMIT = 300;
 
 export type DirectoryStaff = {
   id: string;
@@ -159,9 +160,9 @@ export function UnitStaffPickerDialog({
           .toLowerCase()
           .includes(q);
       })
-      .slice(0, ROW_LIMIT);
   }, [staff, search, unitFilter, deptFilter, roleFilter, statusFilter]);
 
+  const pager = usePagedList(filtered, { resetKey: `${search}|${unitFilter}|${deptFilter}|${roleFilter}|${statusFilter}` });
   const bulk = useBulkSelection(filtered);
 
   const reassign = useMutation({
@@ -310,7 +311,7 @@ export function UnitStaffPickerDialog({
                     No staff match this search.
                   </div>
                 ) : (
-                  filtered.map((s) => (
+                  pager.pageItems.map((s) => (
                     <div
                       key={s.id}
                       role="option"
@@ -350,6 +351,7 @@ export function UnitStaffPickerDialog({
               </div>
               <QuickScroll containerRef={listRef} label="staff list" threshold={200} />
             </div>
+            <ListPagination {...pager} label="staff" />
 
             {bulk.count > 0 && (
               <div className="flex flex-col gap-2 rounded-md border bg-muted/40 p-3 sm:flex-row sm:items-end">

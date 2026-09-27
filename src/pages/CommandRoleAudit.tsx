@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -200,6 +201,7 @@ export default function CommandRoleAudit() {
       <SecurityHero
         icon={History}
         title="Command Role Audit Log"
+        actions={<AuditPurgeButton table="command_role_audit" label="command role audit entries" />}
         subtitle="Immutable record of every command-tier role assignment, change, or removal."
       />
 

@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +115,7 @@ export default function AuditLogDashboard() {
 
   return (
     <div className="space-y-6">
-      <SecurityHero icon={ScrollText} title="Audit Log Dashboard" subtitle="Search, filter and export the system audit trail." />
+      <SecurityHero icon={ScrollText} title="Audit Log Dashboard" subtitle="Search, filter and export the system audit trail." actions={<AuditPurgeButton table="system_audit_log" label="system audit trail" onPurged={() => refetch()} />} />
 
       <Card>
         <CardHeader>

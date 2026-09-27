@@ -1,4 +1,5 @@
 // src/pages/GuardScheduleImport.tsx
+import { PagedSection } from "@/components/ui/paged-section";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -1380,6 +1381,7 @@ export default function GuardScheduleImport() {
                 </TabsList>
                 {SHIFTS.map((s) => (
                   <TabsContent key={s} value={s} className="mt-3">
+                    <PagedSection items={assignments.filter((a) => a.shift === s)} searchText={(a) => `${a.duty_date} ${a.serial_no} ${a.rank_text} ${a.name_text} ${a.position_label}`} label="assignments">{(pageRows) => (
                     <div className="rounded-lg border overflow-x-auto max-h-[420px] overflow-y-auto">
                       <Table className="min-w-[700px]">
                         <TableHeader>
@@ -1392,7 +1394,7 @@ export default function GuardScheduleImport() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {assignments.filter((a) => a.shift === s).slice(0, 500).map((a) => (
+                          {pageRows.map((a) => (
                             <TableRow key={a.id}>
                               <TableCell className="text-xs font-mono">{a.duty_date}</TableCell>
                               <TableCell className="text-xs font-mono">{a.serial_no}</TableCell>
@@ -1404,6 +1406,7 @@ export default function GuardScheduleImport() {
                         </TableBody>
                       </Table>
                     </div>
+                    )}</PagedSection>
                   </TabsContent>
                 ))}
               </Tabs>
@@ -1750,6 +1753,7 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
             {selected.length === 0 ? (
               <p className="px-3 py-4 text-sm text-muted-foreground">No assignments on this day.</p>
             ) : (
+              <div className="p-2"><PagedSection items={selected} searchText={(a: any) => `${a.shift} ${a.serial_no ?? ""} ${a.rank_text ?? ""} ${a.name_text} ${a.unit ?? ""} ${a.position_label ?? ""}`} label="assignments">{(pageSel) => (
               <div className="overflow-x-auto max-h-[320px] overflow-y-auto">
                 <Table className="min-w-[700px]">
                   <TableHeader>
@@ -1764,7 +1768,7 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {selected.map((a) => (
+                    {pageSel.map((a: any) => (
                       <TableRow key={a.id}>
                         <TableCell>
                           <span className={`rounded border px-1.5 py-0.5 text-[11px] font-medium ${SHIFT_BADGE_CLASS[a.shift]}`}>
@@ -1789,6 +1793,7 @@ function GuardDutyCalendar({ enabled }: { enabled: boolean }) {
                   </TableBody>
                 </Table>
               </div>
+              )}</PagedSection></div>
             )}
           </div>
         )}

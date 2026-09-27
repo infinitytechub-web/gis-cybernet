@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 /**
  * Staff Access Log — command-tier view of who opened which staff record and
  * which action they performed, including who reached their own staff portal.
@@ -127,6 +128,7 @@ export default function StaffAccessLog() {
       <SecurityHero
         icon={ShieldCheck}
         title="Staff Access Log"
+        actions={<AuditPurgeButton table="staff_access_log" label="staff access entries" />}
         subtitle="Who opened which staff record, what they did with it, and who reached their own staff portal."
       />
 

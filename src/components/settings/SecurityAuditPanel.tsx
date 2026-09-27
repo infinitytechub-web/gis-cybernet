@@ -1,4 +1,5 @@
 // src/components/settings/SecurityAuditPanel.tsx
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,6 +164,7 @@ export function SecurityAuditPanel() {
             <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2">
               <Upload className="h-4 w-4" /> Import & verify
             </Button>
+            <AuditPurgeButton table="security_audit_log" label="security audit log" />
             <Button onClick={() => handleExportAll("csv")} className="gap-2 ml-auto">
               <FileDown className="h-4 w-4" /> Export all (CSV)
             </Button>

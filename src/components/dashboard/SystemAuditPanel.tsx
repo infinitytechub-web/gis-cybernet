@@ -1,3 +1,4 @@
+import { AuditPurgeButton } from "@/components/audit/AuditPurgeButton";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -196,17 +197,6 @@ export default function SystemAuditPanel() {
 
   const entityTypes = [...new Set(logs.map(l => l.entity_type))];
 
-  const purgeMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("system_audit_log").delete().lt("created_at", new Date().toISOString());
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dashboard-audit-log"] });
-      toast({ title: "Purged", description: "All audit log entries cleared." });
-    },
-    onError: () => toast({ title: "Error", description: "Failed to purge logs.", variant: "destructive" }),
-  });
 
   const getExportData = () => ({
     title: "System Audit Trail",
@@ -244,25 +234,7 @@ export default function SystemAuditPanel() {
             className="h-7 text-[10px] bg-[hsl(120,30%,25%)] hover:bg-[hsl(120,30%,30%)] text-[hsl(120,20%,80%)] border border-[hsl(120,30%,30%)]"
             disabled={filtered.length === 0}
           />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button size="sm" className="h-7 text-[10px] bg-red-900/40 hover:bg-red-900/60 text-red-300 border border-red-800/50" disabled={logs.length === 0 || purgeMutation.isPending}>
-                <Trash2 className="h-3 w-3 mr-1" />Purge
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Purge all audit logs?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Permanently delete all {logs.length} entries. Consider exporting first.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => purgeMutation.mutate()}>Purge All</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <AuditPurgeButton table="system_audit_log" label="system audit trail" />
           <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[hsl(120,15%,70%)]" onClick={() => setCollapsed(v => !v)} title={collapsed ? "Expand" : "Minimize"}>
             {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </Button>
