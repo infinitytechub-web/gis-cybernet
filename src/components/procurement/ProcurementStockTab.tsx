@@ -200,8 +200,7 @@ export default function ProcurementStockTab() {
                         <div className="font-medium">{i.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {[i.sku, i.asset_tag].filter(Boolean).join(" · ") || "—"}
-             </div>}
-           </PagedSection>
+                         </div>
                       </TableCell>
                       <TableCell className="text-sm">{i.location || "—"}</TableCell>
                       <TableCell className="text-right font-medium">
@@ -238,7 +237,8 @@ export default function ProcurementStockTab() {
                 )}
               </TableBody>
             </Table>
-          </div>
+             </div>}
+           </PagedSection>
         </CardContent>
       </Card>
     </div>
