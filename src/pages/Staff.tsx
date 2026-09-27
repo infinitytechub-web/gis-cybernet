@@ -1170,7 +1170,7 @@ export default function Staff() {
           to the bottom, so no section or control can end up clipped or out of
           reach on small screens.
         */}
-        <DialogContent aria-describedby="bio-form-description" className="relative !flex h-[min(92dvh,900px)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl flex-col gap-0 !overflow-hidden p-0">
+        <DialogContent aria-describedby="bio-form-description" className="!fixed !flex h-[min(92dvh,900px)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-5xl flex-col gap-0 !overflow-hidden p-0">
           <DialogHeader className="shrink-0 border-b px-4 py-3 pr-12 text-left sm:px-6 sm:py-4">
             <DialogTitle>{editing ? "Edit Staff" : "Add Staff"}</DialogTitle>
             <p id="bio-form-description" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

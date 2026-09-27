@@ -886,7 +886,7 @@ export function EmailShareDialog({ open, onOpenChange, kind, record }: EmailShar
                 </div>
                 {approvedContacts.length > 0 && <div className="space-y-1">
                   <Label htmlFor="approved-external-picker">Approved outside contacts</Label>
-                  <select id="approved-external-picker" value="" onChange={(e) => setTo(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
+                  <select id="approved-external-picker" value={approvedContacts.some((contact) => contact.email === to) ? to : ""} onChange={(e) => setTo(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground">
                     <option value="">Choose a contact…</option>
                     {approvedContacts.map((contact) => <option key={contact.id} value={contact.email}>{contact.display_name} — {contact.email} (external)</option>)}
                   </select>
