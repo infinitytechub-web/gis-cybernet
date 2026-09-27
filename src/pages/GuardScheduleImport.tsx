@@ -796,35 +796,45 @@ export default function GuardScheduleImport() {
   const handleFile = async (f: File) => {
     setFile(f); setParsed(null); setParsing(true);
     try {
-      const isCsv = /\.csv$/i.test(f.name) || f.type === "text/csv";
-      const isPdf = /\.pdf$/i.test(f.name) || f.type === "application/pdf";
-      if (!isCsv && !isPdf) {
-        toast.error("Please upload a PDF or CSV file");
+      const isCsv = /\.csv$/i.test(f.name);
+      const isXlsx = /\.xlsx$/i.test(f.name);
+      if (!isCsv && !isXlsx) {
+        toast.error("Only Excel (.xlsx) or CSV (.csv) files are accepted. PDF files are not supported.");
+        setFile(null);
         return;
       }
-      let result: ParseResult;
-      if (isCsv) {
-        if (f.size > 5 * 1024 * 1024) { toast.error("CSV too large (max 5 MB)"); return; }
-        const text = await f.text();
-        result = parseCsv(text, fallbackYear);
-        if (!name) setName(f.name.replace(/\.csv$/i, "").replace(/[_-]+/g, " "));
-        const structuralIssues = result.warnings.length;
-        if (result.rows.length === 0) {
-          toast.error(structuralIssues
-            ? `CSV rejected: ${structuralIssues} structural issue(s) — see warnings`
-            : "No personnel rows could be parsed");
-        } else {
-          toast.success(
-            `Parsed ${result.rows.length} CSV row(s)` +
-            (structuralIssues ? ` — ${structuralIssues} warning(s)` : ""),
-          );
-        }
+      if (f.size === 0) { toast.error("The file is empty"); setFile(null); return; }
+      if (f.size > 5 * 1024 * 1024) { toast.error("File too large (max 5 MB)"); setFile(null); return; }
+      const head = new Uint8Array(await f.slice(0, 5).arrayBuffer());
+      const isZip = head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;
+      const isPdfBytes = head[0] === 0x25 && head[1] === 0x50 && head[2] === 0x44 && head[3] === 0x46;
+      if (isPdfBytes || (isXlsx && !isZip) || (isCsv && isZip)) {
+        toast.error("File contents don't match its type. Upload a genuine .xlsx or .csv file.");
+        setFile(null);
+        return;
+      }
+      let text: string;
+      if (isXlsx) {
+        const XLSX = await import("xlsx");
+        const wb = XLSX.read(await f.arrayBuffer(), { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        if (!sheet) { toast.error("The workbook has no sheets"); setFile(null); return; }
+        text = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
       } else {
-        const pages = await extractPdfText(f);
-        result = parsePages(pages, fallbackYear);
-        if (!name) setName(f.name.replace(/\.pdf$/i, "").replace(/[_-]+/g, " "));
-        if (result.rows.length === 0) toast.error("No personnel rows could be parsed");
-        else toast.success(`Parsed ${result.rows.length} entries from ${pages.length} page(s)`);
+        text = await f.text();
+      }
+      const result: ParseResult = parseCsv(text, fallbackYear);
+      if (!name) setName(f.name.replace(/\.(csv|xlsx)$/i, "").replace(/[_-]+/g, " "));
+      const structuralIssues = result.warnings.length;
+      if (result.rows.length === 0) {
+        toast.error(structuralIssues
+          ? `File rejected: ${structuralIssues} structural issue(s) — see warnings`
+          : "No personnel rows could be parsed");
+      } else {
+        toast.success(
+          `Parsed ${result.rows.length} row(s)` +
+          (structuralIssues ? ` — ${structuralIssues} warning(s)` : ""),
+        );
       }
       setParsed(result);
     } catch (e: any) {
