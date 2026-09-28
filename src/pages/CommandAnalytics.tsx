@@ -132,6 +132,11 @@ export default function CommandAnalytics() {
     () => Array.from(new Set((a?.staff ?? []).map((s) => s.intake).filter((v): v is number => v != null))).sort((x, y) => x - y),
     [a]
   );
+  const intakeCounts = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const s of a?.staff ?? []) if (s.intake != null) m.set(s.intake, (m.get(s.intake) ?? 0) + 1);
+    return Array.from(m, ([intake, count]) => ({ label: `Intake ${intake}`, count, intake: String(intake) }));
+  }, [a]);
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (a?.staff ?? []).filter((s) =>
