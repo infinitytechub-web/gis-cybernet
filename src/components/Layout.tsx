@@ -41,11 +41,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="border-b bg-card px-4">
-            <div className="h-14 flex items-center gap-4">
-              <SidebarTrigger className="text-muted-foreground" />
-              <h2 className="text-sm font-semibold flex-1 truncate" style={{ color: "hsl(var(--brand-accent))" }}>{company_name}: {branding.system_label}</h2>
-              <span className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums shrink-0">
+          <header className="border-b bg-card px-2 sm:px-4 min-w-0 overflow-x-clip">
+            <div className="h-14 flex items-center gap-1.5 sm:gap-2 xl:gap-4 min-w-0">
+              <SidebarTrigger className="text-muted-foreground shrink-0" />
+              <h2 className="text-sm font-semibold flex-1 min-w-0 truncate" style={{ color: "hsl(var(--brand-accent))" }}>{company_name}: {branding.system_label}</h2>
+              <span className="hidden xl:flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums shrink-0">
                 <CalendarDays className="h-3.5 w-3.5" />
                 {format(clock, "EEE, dd/MM/yyyy")}
                 <span className="mx-0.5 opacity-40">·</span>
@@ -67,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </HeaderOverflowMenu>
             </div>
             {/* Compact date & clock row for mobile */}
-            <div className="sm:hidden flex items-center justify-center gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
+            <div className="xl:hidden flex items-center justify-center gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
               <CalendarDays className="h-3 w-3" />
               {format(clock, "EEE, dd/MM/yyyy")}
               <span className="opacity-40">·</span>

@@ -76,7 +76,7 @@ export function HeaderProfileDropdown() {
           {/* Online status indicator */}
           <span className="absolute bottom-0 right-0 block h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-card" />
         </div>
-        <span className="hidden md:inline text-sm font-medium truncate max-w-[120px]">{displayName}</span>
+        <span className="hidden xl:inline text-sm font-medium truncate max-w-[120px]">{displayName}</span>
         <ChevronDown className="hidden md:inline h-3.5 w-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
 
