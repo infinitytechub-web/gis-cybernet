@@ -162,6 +162,7 @@ export default function CommandAnalytics() {
     const sections: [string, Record<string, number>][] = [
       ["Sex", a.by_sex], ["Status", a.by_status], ["Rank", a.by_rank],
       ["Role", a.by_role], ["Region", a.by_region],
+      ["Intake", Object.fromEntries(intakeCounts.map((c) => [c.label, c.count]))],
       ["Department", Object.fromEntries(a.by_department.map((d) => [d.name, d.count]))],
       ["Command", Object.fromEntries(a.by_command.map((c) => [c.name, c.count]))],
     ];
