@@ -83,6 +83,7 @@ function StaffTableRowBase({
       <TableCell className="hidden md:table-cell">{s.ranks?.abbreviation ?? "—"}</TableCell>
       <TableCell className="hidden md:table-cell">{s.departments?.name ?? "—"}</TableCell>
       <TableCell className="hidden lg:table-cell">{s.shift_group ?? "—"}</TableCell>
+      <TableCell className="hidden lg:table-cell">{(s as any).intake ?? "—"}</TableCell>
       <TableCell>
         <div className="flex items-center gap-1.5">
           <Badge variant="secondary" className={statusColor(s.status)}>{staffStatusLabel(s.status)}</Badge>

@@ -918,7 +918,7 @@ export default function Staff() {
       const tenure = yearsOfService(joined ?? null);
       return [
         s.staff_id, s.last_name, s.first_name, s.ranks?.abbreviation ?? "—",
-        s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—",
+        s.departments?.name ?? "—", s.unit ?? "—", s.shift_group ?? "—", (s as any).intake != null ? String((s as any).intake) : "—",
         s.gender ?? "—", s.status, s.phone ?? "—",
         joined ? format(new Date(joined), "dd/MM/yyyy") : "—",
         joined ? formatService(tenure.years, tenure.months) : "—",
@@ -942,7 +942,7 @@ export default function Staff() {
               getData={() => ({
                 title: "Staff / Employee Report",
                 filename: `staff_export_${format(new Date(), "yyyy-MM-dd")}`,
-                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Sex", "Status", "Phone", "Date Joined Service", "Years of Service"],
+                headers: ["Staff ID", "Last Name", "First Name", "Rank", "Department", "Unit", "Shift", "Intake", "Sex", "Status", "Phone", "Date Joined Service", "Years of Service"],
                 rows: buildStaffExportRows(),
                 subtitle: `Generated: ${format(new Date(), "dd/MM/yyyy, HH:mm")} | Records: ${filtered.length}`,
               })}
@@ -1082,6 +1082,7 @@ export default function Staff() {
                   </Button>
                 </TableHead>
                 <TableHead className="hidden lg:table-cell">Shift</TableHead>
+                <TableHead className="hidden lg:table-cell">Intake</TableHead>
                 <TableHead>
                   <Button variant="ghost" size="sm" className="gap-1 -ml-3 h-8" onClick={() => toggleSort("status")}>
                     Status <ArrowUpDown className="h-3 w-3" />
@@ -1093,7 +1094,7 @@ export default function Staff() {
             <TableBody>
               {paged.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7 + (isAdmin ? 1 : 0) + (canManage ? 1 : 0)} className="text-center text-muted-foreground py-8">No staff found</TableCell>
+                  <TableCell colSpan={8 + (isAdmin ? 1 : 0) + (canManage ? 1 : 0)} className="text-center text-muted-foreground py-8">No staff found</TableCell>
                 </TableRow>
               ) : (
                 paged.map((s) => (
