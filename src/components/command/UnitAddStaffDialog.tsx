@@ -267,8 +267,8 @@ export function UnitAddStaffDialog({
               <Select value={gender} onValueChange={setGender}>
                 <SelectTrigger id="add-gender"><SelectValue placeholder="Select gender" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
                 </SelectContent>
               </Select>
             </div>

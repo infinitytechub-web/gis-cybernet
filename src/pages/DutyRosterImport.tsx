@@ -1,3 +1,4 @@
+import { normalizeGender } from "@/lib/gender";
 // src/pages/DutyRosterImport.tsx
 import { PagedSection } from "@/components/ui/paged-section";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -113,7 +114,7 @@ function parseSheet(rowsAoA: any[][]): ParseResult {
     const snRaw = String(r[colSn === -1 ? -1 : colSn] ?? "").replace(/\.$/, "").trim();
     const rank = String(r[colRank] ?? "").trim();
     const name = String(r[colName] ?? "").trim();
-    const gender = colSex === -1 ? "" : String(r[colSex] ?? "").trim().toUpperCase();
+    const gender = colSex === -1 ? "" : normalizeGender(r[colSex]);
     const unit = colUnit === -1 ? "" : String(r[colUnit] ?? "").trim();
 
     if (!shift) { warnings.push(`Row ${i + 1}: cannot determine shift, skipped`); continue; }

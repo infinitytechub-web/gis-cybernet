@@ -19223,6 +19223,7 @@ export type Database = {
         }[]
       }
       next_cyber_incident_number: { Args: never; Returns: string }
+      normalize_gender: { Args: { _v: string }; Returns: string }
       normalize_mac: { Args: { _mac: string }; Returns: string }
       notify_admins: {
         Args: {
