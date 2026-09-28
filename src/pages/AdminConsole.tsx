@@ -10,6 +10,7 @@ import { useRbac } from "@/hooks/useRbac";
 import { SecurityHero } from "@/components/security/SecurityHero";
 import { CapabilitySelfCheckPanel } from "@/components/admin/CapabilitySelfCheckPanel";
 import { SystemInformationPanel } from "@/components/admin/SystemInformationPanel";
+import { AuditPurgeGrantsPanel } from "@/components/admin/AuditPurgeGrantsPanel";
 import AdminSecurityBand from "@/components/dashboard/AdminSecurityBand";
 import RestrictedOperationsBand from "@/components/dashboard/RestrictedOperationsBand";
 
@@ -245,6 +246,8 @@ export default function AdminConsole() {
       {(isAdmin || canManageCommandTier) && <CapabilitySelfCheckPanel />}
 
       <SystemInformationPanel />
+
+      {isAdmin && <AuditPurgeGrantsPanel />}
 
       {/* High-risk live data, moved off the general dashboard: security and
           intrusion metrics, system integrity, and tactical operations. */}
