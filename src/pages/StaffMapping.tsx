@@ -272,8 +272,8 @@ export default function StaffMapping() {
           </div>
           {[
             { id: "region", label: "Region", value: region, set: setRegion, list: options.regions },
-            { id: "sector", label: "Sector / command", value: sector, set: setSector, list: options.sectors },
-            { id: "station", label: "Station / unit", value: station, set: setStation, list: options.stations },
+            { id: "sector", label: "Station / Sector / Command", value: sector, set: setSector, list: options.sectors },
+            { id: "station", label: "Department / Unit", value: station, set: setStation, list: options.stations },
             { id: "rank", label: "Rank", value: rank, set: setRank, list: options.ranks },
             { id: "department", label: "Department", value: department, set: setDepartment, list: options.departments },
           ].map((filter) => (
@@ -332,7 +332,7 @@ export default function StaffMapping() {
                     <th className="py-2 pr-3">Staff</th>
                     <th className="py-2 pr-3">Rank</th>
                     <th className="py-2 pr-3">Region</th>
-                    <th className="py-2 pr-3">Station / unit</th>
+                    <th className="py-2 pr-3">Department / Unit</th>
                     <th className="py-2 pr-3">Department</th>
                     <th className="py-2 pr-3">Shift</th>
                     <th className="py-2">Bio-data</th>

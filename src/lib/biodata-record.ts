@@ -97,8 +97,9 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
   pairs("A", "Form administration", [
     ["Date of completion", dmy(p.form_completed_on)],
     ["Service / organization", p.service_organization],
-    ["Sector / command", p.sector_command],
-    ["Station / unit", p.station_unit],
+    ["Region", p.service_region],
+    ["Station / Sector / Command", p.sector_command],
+    ["Department / Unit", p.station_unit],
     ["Staff ID", p.staff_id],
     ["IS / No.", p.is_number],
     ["Department", p.departments?.name],
@@ -122,8 +123,9 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
     ["Ghana Card no.", p.ghana_card_number],
     ["Rank", p.ranks?.name],
     ["Date of appointment", dmy(p.date_of_appointment)],
-    ["Cadet intake", p.cadet_intake],
-    ["Recruit intake", p.recruit_intake],
+    ["Category", p.staff_category],
+    ["Intake", p.intake],
+    ["Training designation", p.training_designation === "Other" ? p.training_designation_other || "Other" : p.training_designation],
     ["Date joined service", dmy(p.date_joined_service)],
     ...extrasFor("B"),
   ]);
@@ -144,7 +146,7 @@ export async function buildBioDataRecord(profileId: string): Promise<BioDataReco
 
   // D
   pairs("D", "Physical & personal profile", [
-    ["Height (cm)", p.height_cm],
+    ["Height", p.height_cm ? `${p.height_cm} cm (${Math.floor(Math.round(p.height_cm / 2.54) / 12)} ft ${Math.round(p.height_cm / 2.54) % 12} in)` : null],
     ["Blood group", p.blood_group],
     ["Uniform size", p.uniform_size],
     ["Shoe size", p.shoe_size],
