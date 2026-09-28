@@ -22,6 +22,7 @@
 ## Command Console & bio-data optimization (2026-09-28)
 - [x] Bio-data: Region→command cascade, renamed fields, Category Cadet/Recruit/Course, Training "Other", height picker (cm+ft/in, configurable range), Approving authority, searchable rank
 - [x] Intake column in Staff Directory and CSV/Excel staff exports
+- [x] Organisational positions searchable in the appointment picker
 - [ ] Command Console responsive/pagination/quick-scroll audit
 - [ ] Replace remaining raw date inputs system-wide with calendar picker
 - [ ] Signed-in check of the bio-data form at phone/tablet/desktop
