@@ -592,6 +592,7 @@ function StatusBoard({
             </Table>
           </div>
         )}
+        {rows.length > 0 && <ListPagination {...boardPager} />}
       </CardContent>
     </Card>
   );
