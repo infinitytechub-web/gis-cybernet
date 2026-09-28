@@ -42,14 +42,23 @@ type FamilyDetails = {
 };
 type BankDetails = { bank_name: string; branch: string; account_number: string };
 type MedicalDetails = { medical_conditions: string; welfare_notes: string };
-type Verification = { name: string; rank_position: string; signature: string; signed_on: string };
+type Verification = { name: string; rank_position: string; signature: string; signed_on: string; authority?: string };
+
+const APPROVING_AUTHORITIES = [
+  { value: "regional_commander", label: "Regional Commander" },
+  { value: "sector_commander", label: "Sector Commander" },
+  { value: "command_oic", label: "Command OIC" },
+  { value: "command_2ic", label: "Command 2IC" },
+  { value: "other", label: "Other" },
+];
+const OTHER_AUTHORITY_ROLES = ["admin", "oic", "2ic", "command_officer", "head_of_administration"];
 
 const EMPTY_FAMILY: FamilyDetails = {
   spouse_name: "", spouse_phone: "", spouse_address: "",
   nok_name: "", nok_relationship: "", nok_phone: "", nok_address: "",
   father_name: "", father_phone: "", mother_name: "", mother_phone: "",
 };
-const EMPTY_VERIFICATION: Verification = { name: "", rank_position: "", signature: "", signed_on: "" };
+const EMPTY_VERIFICATION: Verification = { name: "", rank_position: "", signature: "", signed_on: "", authority: "" };
 const VERIFICATION_KINDS = ["declaration", "checked", "verified", "approved"] as const;
 type VerificationKind = (typeof VERIFICATION_KINDS)[number];
 
@@ -227,6 +236,7 @@ export function BioDataProvider({
           verifications[row.kind as VerificationKind] = {
             name: row.name ?? "", rank_position: row.rank_position ?? "",
             signature: row.signature ?? "", signed_on: row.signed_on ?? "",
+            authority: row.authority ?? "",
           };
         }
       }
@@ -375,6 +385,7 @@ export function BioDataProvider({
           profile_id: targetProfileId, kind,
           name: v.name || null, rank_position: v.rank_position || null,
           signature: v.signature || null, signed_on: v.signed_on || null,
+          authority: kind === "approved" ? (v.authority || null) : null,
           acted_by: user?.id ?? null,
         },
         { onConflict: "profile_id,kind" },
@@ -551,6 +562,8 @@ export function BioDataSections({
     education, employment, family, emergency, bank, medical, verifications,
     set, setVerification, canSeeBank, canSeeMedical, optionSets, profileId,
   } = useBioData();
+  const { isAdmin: authIsAdmin, role: authRole } = useAuth();
+  const canEnterOtherAuthority = authIsAdmin || OTHER_AUTHORITY_ROLES.includes(String(authRole ?? ""));
 
   const relationshipOptions = optionsFor(optionSets, "relationship").map((o) => ({ value: o.value, label: o.label }));
   const qualificationOptions = optionsFor(optionSets, "qualification").map((o) => ({ value: o.value, label: o.label }));
@@ -923,6 +936,26 @@ export function BioDataSections({
             <div key={kind} className="rounded-lg border p-3 space-y-3">
               <h4 className="text-sm font-semibold capitalize">{kind} by</h4>
               <div className="grid gap-3 sm:grid-cols-2">
+                {kind === "approved" && (
+                  <div>
+                    <Label htmlFor="bio-approved-authority">Approving authority</Label>
+                    <Select
+                      value={verifications.approved.authority || ""}
+                      onValueChange={(v) => {
+                        const label = APPROVING_AUTHORITIES.find((a) => a.value === v)?.label ?? "";
+                        setVerification("approved", v === "other" ? { authority: v } : { authority: v, rank_position: label });
+                      }}
+                    >
+                      <SelectTrigger id="bio-approved-authority"><SelectValue placeholder="Select authority" /></SelectTrigger>
+                      <SelectContent>
+                        {APPROVING_AUTHORITIES.filter((a) => a.value !== "other" || canEnterOtherAuthority).map((a) => (
+                          <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!canEnterOtherAuthority && <p className="text-[10px] text-muted-foreground mt-1">"Other" is available to authorized approvers only.</p>}
+                  </div>
+                )}
                 <div>
                   <Label htmlFor={`bio-${kind}-name`}>Name</Label>
                   <Input

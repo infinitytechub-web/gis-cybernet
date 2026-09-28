@@ -135,7 +135,7 @@ export default function CommandStaffMappingTab() {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label htmlFor="cmap-station">Station / unit</Label>
+            <Label htmlFor="cmap-station">Department / Unit</Label>
             <Select value={station} onValueChange={setStation}>
               <SelectTrigger id="cmap-station" className="w-[200px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -206,7 +206,7 @@ export default function CommandStaffMappingTab() {
                   <TableHead>Staff</TableHead>
                   <TableHead>Rank</TableHead>
                   <TableHead>Region</TableHead>
-                  <TableHead>Station / unit</TableHead>
+                  <TableHead>Department / Unit</TableHead>
                   <TableHead>Shift</TableHead>
                   <TableHead>Bio-data</TableHead>
                 </TableRow>
