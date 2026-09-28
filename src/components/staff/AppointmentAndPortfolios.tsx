@@ -57,6 +57,21 @@ export function AppointmentAndPortfolios({
     },
   });
 
+  const { data: orgPositions = [] } = useQuery({
+    queryKey: ["org-position-titles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("org_positions")
+        .select("title")
+        .eq("is_active", true)
+        .order("title");
+      if (error) throw error;
+      const roleSet = new Set<string>(APPOINTMENT_ROLES);
+      return Array.from(new Set((data ?? []).map((p) => p.title.trim()).filter(Boolean)))
+        .filter((t) => !roleSet.has(t));
+    },
+  });
+
   const createPortfolio = useMutation({
     mutationFn: async (name: string) => {
       const { data, error } = await supabase
@@ -119,7 +134,7 @@ export function AppointmentAndPortfolios({
               <CommandInput placeholder="Type to search appointments..." />
               <CommandList className="max-h-[260px]">
                 <CommandEmpty>No appointment found.</CommandEmpty>
-                <CommandGroup>
+                <CommandGroup heading="Roles">
                   {appointment && (
                     <CommandItem
                       value="__clear__"
@@ -144,6 +159,20 @@ export function AppointmentAndPortfolios({
                     </CommandItem>
                   ))}
                 </CommandGroup>
+                {orgPositions.length > 0 && (
+                  <CommandGroup heading="Organisational positions">
+                    {orgPositions.map((t) => (
+                      <CommandItem
+                        key={`pos-${t}`}
+                        value={`position ${t}`}
+                        onSelect={() => { onAppointmentChange(t); setApptOpen(false); }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", appointment === t ? "opacity-100" : "opacity-0")} />
+                        {t}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
               </CommandList>
             </Command>
           </PopoverContent>
