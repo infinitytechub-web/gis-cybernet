@@ -1,3 +1,4 @@
+import { normalizeGender } from "@/lib/gender";
 /**
  * STAFF LIST IMPORT — reads a staff list spreadsheet (CSV / XLSX) and turns it
  * into rows the preview screen can show and the commit RPC can apply.
@@ -151,7 +152,7 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
     const unit = cell(cols.unit).replace(/\s+/g, " ").trim();
     const shiftRaw = cell(cols.shift).toUpperCase().replace(/[^ABCD]/g, "");
     const intakeRaw = cell(cols.intake).replace(/[^0-9]/g, "");
-    const gender = cell(cols.gender).toUpperCase().startsWith("F") ? "F" : cell(cols.gender) ? "M" : "";
+    const gender = normalizeGender(cell(cols.gender));
 
     const row: StaffListRow = {
       row_no: i + 1,
