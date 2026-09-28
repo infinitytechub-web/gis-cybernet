@@ -136,6 +136,7 @@ export default function CommandConsole() {
     });
   }, [scoped, source, severity, state, search]);
   const pager = usePagedList(filtered);
+  const livePager = usePagedList(liveAlerts);
 
   const open = scoped.filter((i) => i.open);
   const critical = open.filter((i) => i.severity === "critical");
@@ -401,7 +402,10 @@ export default function CommandConsole() {
                   Nothing outstanding — all commands in scope are clear.
                 </p>
               ) : (
-                liveAlerts.map((a) => <AlertRow key={a.key} item={a} unitName={unitName} />)
+                <>
+                  {livePager.pageItems.map((a) => <AlertRow key={a.key} item={a} unitName={unitName} />)}
+                  <ListPagination {...livePager} />
+                </>
               )}
             </CardContent>
           </Card>
@@ -524,6 +528,7 @@ function AlertRow({
 function StatusBoard({
   title, rows,
 }: { title: string; rows: ReturnType<typeof rollupByCommand> }) {
+  const boardPager = usePagedList(rows);
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -549,7 +554,7 @@ function StatusBoard({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r) => (
+                {boardPager.pageItems.map((r) => (
                   <TableRow key={r.orgUnitId ?? "unassigned"}>
                     <TableCell>
                       <div className="font-medium">{r.name}</div>
