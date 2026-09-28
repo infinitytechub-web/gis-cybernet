@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/date-format";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -246,7 +247,7 @@ export default function DeletedRecords() {
                       <TableCell>{rankName(r.rank_id)}</TableCell>
                       <TableCell>{deptName(r.department_id)}</TableCell>
                       <TableCell className="text-xs">
-                        {r.deleted_at ? new Date(r.deleted_at).toLocaleString() : "—"}
+                        {formatDateTime(r.deleted_at)}
                       </TableCell>
                       <TableCell className="max-w-[220px] truncate text-xs" title={r.deletion_reason ?? ""}>
                         {r.deletion_reason ?? "—"}
