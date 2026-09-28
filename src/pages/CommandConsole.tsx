@@ -136,7 +136,6 @@ export default function CommandConsole() {
     });
   }, [scoped, source, severity, state, search]);
   const pager = usePagedList(filtered);
-  const livePager = usePagedList(liveAlerts);
 
   const open = scoped.filter((i) => i.open);
   const critical = open.filter((i) => i.severity === "critical");
@@ -156,6 +155,7 @@ export default function CommandConsole() {
         .slice(0, 40),
     [open],
   );
+  const livePager = usePagedList(liveAlerts);
 
   const regional = useMemo(
     () => rollupByCommand(scoped, units, ["national", "regional"]),
