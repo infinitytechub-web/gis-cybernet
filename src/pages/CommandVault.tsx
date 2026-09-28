@@ -34,7 +34,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { triggerDownload } from "@/lib/download-utils";
 import { format } from "date-fns";
-import { Navigate } from "react-router-dom";
+import { AccessDenied } from "@/components/AccessDenied";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as ReTooltip, CartesianGrid,
 } from "recharts";
@@ -65,7 +65,7 @@ export default function CommandVault() {
   const { user, isAdmin, isOic, is2ic, role, loading } = useAuth();
   // Regional commanders commonly carry the supervisor app role; the database
   // still requires an active regional-commander position before returning data.
-  const allowed = isAdmin || isOic || is2ic || role === "supervisor" || role === "command_officer" || role === "staff_officer";
+  const allowed = isAdmin || isOic || is2ic || role === "supervisor" || role === "command_officer" || role === "staff_officer" || role === "head_of_administration" || role === "chief_staff_officer";
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -413,7 +413,7 @@ export default function CommandVault() {
     return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   }
   if (!allowed) {
-    return <Navigate to="/" replace />;
+    return <AccessDenied moduleKey="command-vault" label="Command Vault" />;
   }
 
   return (
