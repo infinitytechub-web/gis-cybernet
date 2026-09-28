@@ -305,6 +305,47 @@ export default function CommandAnalytics() {
         </div>
       )}
 
+      {a && intakeCounts.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <CardTitle className="flex-1 text-sm">Intake distribution</CardTitle>
+            {intakeFilter !== "all" && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs print:hidden" onClick={() => setIntakeFilter("all")}>
+                <X className="mr-1 h-3 w-3" />Showing {intakeFilter === "" ? "no intake" : `Intake ${intakeFilter}`}
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={intakeCounts} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+                  <RTooltip
+                    contentStyle={{
+                      background: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: 6,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    name="Staff"
+                    fill="hsl(var(--primary))"
+                    radius={[4, 4, 0, 0]}
+                    className="cursor-pointer"
+                    onClick={(d: { intake?: string }) => d?.intake && setIntakeFilter(d.intake === intakeFilter ? "all" : d.intake)}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground print:hidden">Click a bar to filter the staff list to that intake.</p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 pb-2">
           <CardTitle className="flex-1 text-sm">Staff records ({rows.length})</CardTitle>
