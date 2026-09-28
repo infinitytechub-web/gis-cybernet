@@ -2,6 +2,8 @@ import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { HeightPicker } from "@/components/staff/biodata/HeightPicker";
+import { RegionCommandPicker } from "@/components/staff/biodata/RegionCommandPicker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -273,8 +275,8 @@ export default function Staff() {
   const [hometown, setHometown] = useState("");
   const [regionOfOrigin, setRegionOfOrigin] = useState("");
   const [dateOfAppointment, setDateOfAppointment] = useState("");
-  const [cadetIntake, setCadetIntake] = useState("");
-  const [recruitIntake, setRecruitIntake] = useState("");
+  const [serviceRegion, setServiceRegion] = useState("");
+  const [trainingDesignationOther, setTrainingDesignationOther] = useState("");
   const [currentPlaceOfStay, setCurrentPlaceOfStay] = useState("");
   const [residentialAddress, setResidentialAddress] = useState("");
   const [digitalAddress, setDigitalAddress] = useState("");
@@ -454,8 +456,8 @@ export default function Staff() {
     setHometown("");
     setRegionOfOrigin("");
     setDateOfAppointment("");
-    setCadetIntake("");
-    setRecruitIntake("");
+    setServiceRegion("");
+    setTrainingDesignationOther("");
     setCurrentPlaceOfStay("");
     setResidentialAddress("");
     setDigitalAddress("");
@@ -541,8 +543,8 @@ export default function Staff() {
     setHometown((s as any).hometown || "");
     setRegionOfOrigin((s as any).region_of_origin || "");
     setDateOfAppointment((s as any).date_of_appointment || "");
-    setCadetIntake((s as any).cadet_intake || "");
-    setRecruitIntake((s as any).recruit_intake || "");
+    setServiceRegion((s as any).service_region || "");
+    setTrainingDesignationOther((s as any).training_designation_other || "");
     setCurrentPlaceOfStay((s as any).current_place_of_stay || "");
     setResidentialAddress((s as any).residential_address || "");
     setDigitalAddress((s as any).digital_address || "");
@@ -728,8 +730,8 @@ export default function Staff() {
         hometown: hometown || null,
         region_of_origin: regionOfOrigin || null,
         date_of_appointment: dateOfAppointment || null,
-        cadet_intake: cadetIntake || null,
-        recruit_intake: recruitIntake || null,
+        service_region: serviceRegion || null,
+        training_designation_other: trainingDesignation === "Other" ? (trainingDesignationOther.trim() || null) : null,
         current_place_of_stay: currentPlaceOfStay || null,
         residential_address: residentialAddress || null,
         digital_address: digitalAddress || null,
@@ -1254,18 +1256,23 @@ export default function Staff() {
                     <Label htmlFor="bio-service-org">Service / organization</Label>
                     <Input id="bio-service-org" value={serviceOrganization} onChange={(e) => setServiceOrganization(e.target.value)} placeholder="e.g. Ghana Immigration Service" />
                   </div>
+                  <RegionCommandPicker
+                    region={serviceRegion}
+                    onRegionChange={setServiceRegion}
+                    command={sectorCommand}
+                    onCommandChange={setSectorCommand}
+                  />
                   <div>
-                    <Label htmlFor="bio-sector">Sector / command</Label>
-                    <Input id="bio-sector" value={sectorCommand} onChange={(e) => setSectorCommand(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="bio-station">Station / unit</Label>
+                    <Label htmlFor="bio-station">Department / Unit</Label>
                     <OptionCombobox
                       id="bio-station"
                       value={stationUnit}
                       onChange={setStationUnit}
-                      options={optionsFor(bioOptionSets, "station").map((o) => ({ value: o.value, label: o.label }))}
-                      placeholder="Search station / command…"
+                      options={[
+                        ...departments.map((d: any) => ({ value: d.name, label: `${d.name} · department` })),
+                        ...optionsFor(bioOptionSets, "station").map((o) => ({ value: o.value, label: o.label })),
+                      ]}
+                      placeholder="Search department / unit…"
                       allowCustom
                     />
                   </div>
@@ -1412,15 +1419,15 @@ export default function Staff() {
                     <GhanaCardInput value={ghanaCardNumber} onChange={setGhanaCardNumber} />
                   </div>
                   <div>
-                    <Label htmlFor="bio-rank">Rank</Label>
-                    <Select value={rankId} onValueChange={setRankId} disabled={!!editing && !isAdmin}>
-                      <SelectTrigger id="bio-rank"><SelectValue placeholder="Select rank" /></SelectTrigger>
-                      <SelectContent>
-                        {ranks.map((r) => (
-                          <SelectItem key={r.id} value={r.id}>{r.abbreviation} — {r.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="bio-rank">Rank / position</Label>
+                    <OptionCombobox
+                      id="bio-rank"
+                      value={ranks.find((r) => r.id === rankId)?.name ?? ""}
+                      onChange={(name) => { const m = ranks.find((r) => r.name.toLowerCase() === name.toLowerCase()); setRankId(m?.id ?? ""); }}
+                      options={ranks.map((r) => ({ value: r.name, label: `${r.abbreviation ?? ""} — ${r.name}` }))}
+                      placeholder="Search rank…"
+                      disabled={!!editing && !isAdmin}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="bio-appointment-date">Date of appointment ({DATE_FORMAT_HINT})</Label>
@@ -1432,20 +1439,13 @@ export default function Staff() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="bio-cadet-intake">Cadet intake</Label>
-                    <Input id="bio-cadet-intake" value={cadetIntake} onChange={(e) => setCadetIntake(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="bio-recruit-intake">Recruit intake</Label>
-                    <Input id="bio-recruit-intake" value={recruitIntake} onChange={(e) => setRecruitIntake(e.target.value)} />
-                  </div>
-                  <div>
                     <Label htmlFor="bio-category">Category</Label>
                     <Select value={staffCategory} onValueChange={setStaffCategory}>
                       <SelectTrigger id="bio-category"><SelectValue placeholder="Select category" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Cadet">Cadet</SelectItem>
                         <SelectItem value="Recruit">Recruit</SelectItem>
+                        <SelectItem value="Course">Course</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1490,14 +1490,21 @@ export default function Staff() {
                   </div>
                   <div>
                     <Label htmlFor="bio-training-designation">Training designation</Label>
-                    <Select value={trainingDesignation} onValueChange={setTrainingDesignation}>
+                    <Select value={trainingDesignation} onValueChange={(v) => { setTrainingDesignation(v); if (v !== "Other") setTrainingDesignationOther(""); }}>
                       <SelectTrigger id="bio-training-designation"><SelectValue placeholder="Select designation" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="HUHUNYA">HUHUNYA</SelectItem>
                         <SelectItem value="ITTRAS">ITTRAS</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                  {trainingDesignation === "Other" && (
+                    <div>
+                      <Label htmlFor="bio-training-other">Other training designation</Label>
+                      <Input id="bio-training-other" value={trainingDesignationOther} maxLength={120} onChange={(e) => setTrainingDesignationOther(e.target.value)} placeholder="Enter designation" />
+                    </div>
+                  )}
                 </div>
                 <AppointmentAndPortfolios
                   appointment={currentAppointment}
@@ -1555,8 +1562,8 @@ export default function Staff() {
                 <h3 className="text-base font-semibold tracking-tight">D. Physical &amp; personal profile</h3>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <Label htmlFor="bio-height">Height (cm)</Label>
-                    <Input id="bio-height" type="number" min={100} max={250} value={heightCm} onChange={(e) => setHeightCm(e.target.value)} />
+                    <Label htmlFor="bio-height">Height (cm · ft/in)</Label>
+                    <HeightPicker id="bio-height" value={heightCm} onChange={setHeightCm} />
                   </div>
                   <div>
                     <Label htmlFor="bio-blood">Blood group</Label>
