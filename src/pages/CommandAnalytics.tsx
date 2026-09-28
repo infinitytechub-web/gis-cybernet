@@ -18,6 +18,7 @@ import { activeRatioAlert, strengthAlert } from "@/lib/staffing-indicators";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -102,6 +103,7 @@ export default function CommandAnalytics() {
   const perms = useDirectoryPermissions();
   const [deptId, setDeptId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [intakeFilter, setIntakeFilter] = useState("all");
   const [toDelete, setToDelete] = useState<StaffRow | null>(null);
   const [reason, setReason] = useState("");
 
@@ -125,10 +127,16 @@ export default function CommandAnalytics() {
   const commandName = unitId ? scope.data?.by_command.find((c) => c.id === unitId)?.name : null;
   const deptName = deptId ? scope.data?.by_department.find((d) => d.id === deptId)?.name : null;
 
+  const intakeOptions = useMemo(
+    () => Array.from(new Set((a?.staff ?? []).map((s) => s.intake).filter((v): v is number => v != null))).sort((x, y) => x - y),
+    [a]
+  );
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (a?.staff ?? []).filter((s) => !q || `${s.name} ${s.staff_id} ${s.rank} ${s.command} ${s.department} ${s.intake ?? ""}`.toLowerCase().includes(q));
-  }, [a, search]);
+    return (a?.staff ?? []).filter((s) =>
+      (!q || `${s.name} ${s.staff_id} ${s.rank} ${s.command} ${s.department} ${s.intake ?? ""}`.toLowerCase().includes(q)) &&
+      (intakeFilter === "all" || String(s.intake ?? "") === intakeFilter));
+  }, [a, search, intakeFilter]);
 
   const doExport = async (fmt: ExportFormat) => {
     const title = `Staff Analytics — ${commandName ?? "All commands in scope"}${deptName ? ` / ${deptName}` : ""}`;
@@ -293,6 +301,15 @@ export default function CommandAnalytics() {
       <Card>
         <CardHeader className="flex flex-row items-center gap-2 pb-2">
           <CardTitle className="flex-1 text-sm">Staff records ({rows.length})</CardTitle>
+          <Select value={intakeFilter} onValueChange={setIntakeFilter}>
+            <SelectTrigger className="h-8 w-[130px] print:hidden"><SelectValue placeholder="Intake" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Intakes</SelectItem>
+              {intakeOptions.map((v) => (
+                <SelectItem key={v} value={String(v)}>Intake {v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input placeholder="Search name, ID, rank…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 max-w-xs print:hidden" />
         </CardHeader>
         <CardContent className="max-h-[480px] overflow-auto">
