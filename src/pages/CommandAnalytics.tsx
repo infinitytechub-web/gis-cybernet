@@ -37,6 +37,7 @@ type Bucket = { id: string | null; name: string; count: number; active: number; 
 type StaffRow = {
   id: string; staff_id: string | null; name: string; sex: string; rank: string;
   roles: string; department: string; command: string; region: string; status: string;
+  intake: number | null;
 };
 type Analytics = {
   total: number; active: number;
@@ -126,7 +127,7 @@ export default function CommandAnalytics() {
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (a?.staff ?? []).filter((s) => !q || `${s.name} ${s.staff_id} ${s.rank} ${s.command} ${s.department}`.toLowerCase().includes(q));
+    return (a?.staff ?? []).filter((s) => !q || `${s.name} ${s.staff_id} ${s.rank} ${s.command} ${s.department} ${s.intake ?? ""}`.toLowerCase().includes(q));
   }, [a, search]);
 
   const doExport = async (fmt: ExportFormat) => {
@@ -135,8 +136,8 @@ export default function CommandAnalytics() {
       title,
       filename: `staff-analytics-${Date.now()}`,
       subtitle: `Total ${a?.total ?? 0} · Active ${a?.active ?? 0}`,
-      headers: ["Staff ID", "Name", "Sex", "Rank", "Role(s)", "Department", "Command", "Region", "Status"],
-      rows: rows.map((s) => [s.staff_id ?? "", s.name, s.sex, s.rank, s.roles, s.department, s.command, s.region, pretty(s.status)]),
+      headers: ["Staff ID", "Name", "Sex", "Rank", "Role(s)", "Department", "Command", "Region", "Intake", "Status"],
+      rows: rows.map((s) => [s.staff_id ?? "", s.name, s.sex, s.rank, s.roles, s.department, s.command, s.region, s.intake != null ? String(s.intake) : "", pretty(s.status)]),
     } as never);
     void logAdminAudit("staff_analytics", `exported_${fmt}`, { unitId, deptId, rows: rows.length });
   };
@@ -297,13 +298,13 @@ export default function CommandAnalytics() {
         <CardContent className="max-h-[480px] overflow-auto">
           <table className="w-full min-w-[700px] text-xs">
             <thead className="sticky top-0 bg-card text-left text-muted-foreground">
-              <tr><th className="p-2">Staff ID</th><th>Name</th><th>Sex</th><th>Rank</th><th>Role(s)</th><th>Department</th><th>Command</th><th>Status</th><th className="print:hidden" /></tr>
+              <tr><th className="p-2">Staff ID</th><th>Name</th><th>Sex</th><th>Rank</th><th>Role(s)</th><th>Department</th><th>Command</th><th>Intake</th><th>Status</th><th className="print:hidden" /></tr>
             </thead>
             <tbody>
               {rows.map((s) => (
                 <tr key={s.id} className="border-t">
                   <td className="p-2">{s.staff_id}</td><td>{s.name}</td><td>{s.sex}</td><td>{s.rank}</td>
-                  <td>{pretty(s.roles)}</td><td>{s.department}</td><td>{s.command}</td>
+                  <td>{pretty(s.roles)}</td><td>{s.department}</td><td>{s.command}</td><td>{s.intake ?? "—"}</td>
                   <td><Badge variant={s.status === "active" ? "default" : "secondary"}>{pretty(s.status)}</Badge></td>
                   <td className="whitespace-nowrap print:hidden">
                     <Button asChild variant="ghost" size="icon" aria-label="Open record"><Link to={`/staff?edit=${s.id}`}>{perms.canEdit ? <Pencil className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}</Link></Button>
