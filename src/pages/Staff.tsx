@@ -215,6 +215,7 @@ export default function Staff() {
   const [deptFilter, setDeptFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [maritalFilter, setMaritalFilter] = useState("all");
+  const [intakeFilter, setIntakeFilter] = useState("all");
   /** Hierarchy filter: a command node means "this command and everything below it". */
   const [unitFilter, setUnitFilter] = useState<string | null>(null);
   const unitScopeIds = useMemo(
@@ -857,9 +858,10 @@ export default function Staff() {
       const matchesDept = deptFilter === "all" || s.department_id === deptFilter;
       const matchesStatus = statusFilter === "all" || s.status === statusFilter;
       const matchesMarital = maritalFilter === "all" || (s.marital_status ?? "") === maritalFilter;
+      const matchesIntake = intakeFilter === "all" || String((s as any).intake ?? "") === intakeFilter;
       const matchesUnit =
         !unitScopeIds || (!!s.org_unit_id && unitScopeIds.has(s.org_unit_id));
-      return matchesSearch && matchesRank && matchesDept && matchesStatus && matchesMarital && matchesUnit;
+      return matchesSearch && matchesRank && matchesDept && matchesStatus && matchesMarital && matchesIntake && matchesUnit;
     });
 
     list.sort((a, b) => {
@@ -873,7 +875,12 @@ export default function Staff() {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return list;
-  }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, unitScopeIds, sortField, sortDir]);
+  }, [staff, search, rankFilter, deptFilter, statusFilter, maritalFilter, intakeFilter, unitScopeIds, sortField, sortDir]);
+
+  const intakeOptions = useMemo(
+    () => Array.from(new Set(staff.map((s) => (s as any).intake).filter((v): v is number => v != null))).sort((a, b) => a - b),
+    [staff]
+  );
 
   // Page-by-page display: 25 records per page keeps the table light so the
   // edit form on the same page stays responsive.
@@ -1032,6 +1039,17 @@ export default function Staff() {
             <SelectItem value="all">All Marital</SelectItem>
             {["Single","Married","Divorced","Widowed","Separated"].map(s => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={intakeFilter} onValueChange={setIntakeFilter}>
+          <SelectTrigger className="w-full sm:w-[130px]">
+            <SelectValue placeholder="Intake" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Intakes</SelectItem>
+            {intakeOptions.map((v) => (
+              <SelectItem key={v} value={String(v)}>Intake {v}</SelectItem>
             ))}
           </SelectContent>
         </Select>
