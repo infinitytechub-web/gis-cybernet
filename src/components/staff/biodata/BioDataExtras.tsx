@@ -159,7 +159,6 @@ export function BioDataProvider({
   children: ReactNode;
 }) {
   const { user, isAdmin, role } = useAuth();
-  const canEnterOtherAuthority = isAdmin || OTHER_AUTHORITY_ROLES.includes(String(role ?? ""));
   const [state, setState] = useState<BioDataState>(EMPTY_STATE);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
