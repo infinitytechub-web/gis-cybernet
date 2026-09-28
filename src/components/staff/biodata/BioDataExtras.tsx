@@ -565,6 +565,7 @@ export function BioDataSections({
   } = useBioData();
   const { isAdmin: authIsAdmin, role: authRole } = useAuth();
   const canEnterOtherAuthority = authIsAdmin || OTHER_AUTHORITY_ROLES.includes(String(authRole ?? ""));
+  const canEnterOtherAuthority = authIsAdmin || OTHER_AUTHORITY_ROLES.includes(String(authRole ?? ""));
 
   const relationshipOptions = optionsFor(optionSets, "relationship").map((o) => ({ value: o.value, label: o.label }));
   const qualificationOptions = optionsFor(optionSets, "qualification").map((o) => ({ value: o.value, label: o.label }));
