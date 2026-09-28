@@ -366,8 +366,6 @@ export default function Staff() {
     setIf(setGhanaCardNumber, v.ghanaCardNumber);
     setIf(setDateOfAppointment, v.dateOfAppointment);
     setIf(setDateJoinedService, v.dateJoinedService);
-    setIf(setCadetIntake, v.cadetIntake);
-    setIf(setRecruitIntake, v.recruitIntake);
     setIf(setIntake, v.intake);
     setIf(setServiceOrganization, v.serviceOrganization);
     setIf(setSectorCommand, v.sectorCommand);
