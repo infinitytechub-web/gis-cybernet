@@ -394,6 +394,8 @@ export type Database = {
           favicon_url: string | null
           footer_text: string
           header_text: string | null
+          height_max_cm: number
+          height_min_cm: number
           id: string
           lockout_auto_unlock_minutes: number | null
           lockout_threshold: number
@@ -460,6 +462,8 @@ export type Database = {
           favicon_url?: string | null
           footer_text?: string
           header_text?: string | null
+          height_max_cm?: number
+          height_min_cm?: number
           id?: string
           lockout_auto_unlock_minutes?: number | null
           lockout_threshold?: number
@@ -526,6 +530,8 @@ export type Database = {
           favicon_url?: string | null
           footer_text?: string
           header_text?: string | null
+          height_max_cm?: number
+          height_min_cm?: number
           id?: string
           lockout_auto_unlock_minutes?: number | null
           lockout_threshold?: number
@@ -13066,6 +13072,7 @@ export type Database = {
           retirement_age: number
           sector_command: string | null
           service_organization: string | null
+          service_region: string | null
           shift_group: string | null
           shoe_size: string | null
           special_skills: string[] | null
@@ -13074,6 +13081,7 @@ export type Database = {
           station_unit: string | null
           status: Database["public"]["Enums"]["staff_status"]
           training_designation: string | null
+          training_designation_other: string | null
           uniform_size: string | null
           unit: string | null
           updated_at: string
@@ -13141,6 +13149,7 @@ export type Database = {
           retirement_age?: number
           sector_command?: string | null
           service_organization?: string | null
+          service_region?: string | null
           shift_group?: string | null
           shoe_size?: string | null
           special_skills?: string[] | null
@@ -13149,6 +13158,7 @@ export type Database = {
           station_unit?: string | null
           status?: Database["public"]["Enums"]["staff_status"]
           training_designation?: string | null
+          training_designation_other?: string | null
           uniform_size?: string | null
           unit?: string | null
           updated_at?: string
@@ -13216,6 +13226,7 @@ export type Database = {
           retirement_age?: number
           sector_command?: string | null
           service_organization?: string | null
+          service_region?: string | null
           shift_group?: string | null
           shoe_size?: string | null
           special_skills?: string[] | null
@@ -13224,6 +13235,7 @@ export type Database = {
           station_unit?: string | null
           status?: Database["public"]["Enums"]["staff_status"]
           training_designation?: string | null
+          training_designation_other?: string | null
           uniform_size?: string | null
           unit?: string | null
           updated_at?: string
@@ -15700,6 +15712,7 @@ export type Database = {
       staff_biodata_verifications: {
         Row: {
           acted_by: string | null
+          authority: string | null
           created_at: string
           id: string
           kind: string
@@ -15712,6 +15725,7 @@ export type Database = {
         }
         Insert: {
           acted_by?: string | null
+          authority?: string | null
           created_at?: string
           id?: string
           kind: string
@@ -15724,6 +15738,7 @@ export type Database = {
         }
         Update: {
           acted_by?: string | null
+          authority?: string | null
           created_at?: string
           id?: string
           kind?: string
@@ -17777,6 +17792,8 @@ export type Database = {
           favicon_url: string | null
           footer_text: string
           header_text: string | null
+          height_max_cm: number
+          height_min_cm: number
           id: string
           lockout_auto_unlock_minutes: number | null
           lockout_threshold: number
