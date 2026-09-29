@@ -67,7 +67,12 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
       const masked = maskInput(raw);
       setText(masked);
       const iso = displayToIso(masked);
-      if (iso) emit(iso);
+      if (iso) {
+        const d = parse(iso, ISO, new Date());
+        const lower = min ? parse(min.slice(0, 10), ISO, new Date()) : null;
+        const upper = max ? parse(max.slice(0, 10), ISO, new Date()) : null;
+        if ((!lower || d >= lower) && (!upper || d <= upper)) emit(iso);
+      }
       else if (masked === "") emit("");
     };
 
