@@ -25,6 +25,7 @@ import {
 } from "@/lib/health-lab-export";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DateInput } from "@/components/ui/date-input";
+import { DateTimeInput } from "@/components/ui/date-time-input";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-amber-100 text-amber-900",
@@ -946,7 +947,7 @@ export default function HealthLab() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Scheduled at *</Label>
-                <Input type="datetime-local" value={apptForm.scheduled_at} onChange={(e) => setApptForm({ ...apptForm, scheduled_at: e.target.value })} />
+                <DateTimeInput value={apptForm.scheduled_at} onChange={(e) => setApptForm({ ...apptForm, scheduled_at: e.target.value })} />
               </div>
               <div>
                 <Label>Status</Label>

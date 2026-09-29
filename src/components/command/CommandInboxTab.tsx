@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DateTimeInput } from "@/components/ui/date-time-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -409,7 +410,7 @@ function RaiseAlertDialog({
           </div>
           <div className="space-y-1">
             <Label htmlFor="ca-due">Due by</Label>
-            <Input id="ca-due" type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+            <DateTimeInput id="ca-due" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
           </div>
           <div className="sm:col-span-2 space-y-1">
             <Label htmlFor="ca-photos">Photos</Label>

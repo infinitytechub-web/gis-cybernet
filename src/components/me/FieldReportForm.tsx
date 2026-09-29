@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DateTimeInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -243,7 +244,7 @@ export function FieldReportForm({ onSaved }: { onSaved: () => void }) {
           </div>
           <div>
             <Label htmlFor="fr-when">Reported at</Label>
-            <Input id="fr-when" type="datetime-local" value={form.reported_at} onChange={(event) => setForm({ ...form, reported_at: event.target.value })} />
+            <DateTimeInput id="fr-when" value={form.reported_at} onChange={(event) => setForm({ ...form, reported_at: event.target.value })} />
           </div>
           <div>
             <Label htmlFor="fr-region">Region</Label>

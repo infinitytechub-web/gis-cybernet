@@ -6,6 +6,7 @@ import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateTimeInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -517,8 +518,7 @@ export default function IpBlocks() {
             </div>
             <div className="space-y-2">
               <Label>Unblock at (leave empty for permanent)</Label>
-              <Input
-                type="datetime-local"
+              <DateTimeInput
                 value={editUntil}
                 onChange={(e) => setEditUntil(e.target.value)}
               />

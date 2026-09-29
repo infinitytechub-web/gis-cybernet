@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { DateTimeInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -517,11 +518,11 @@ export function StandardBailTab({ canEdit, canDelete, canAuthorize = false }: { 
                   <Field label="Report station" value={form.report_station} onChange={(v) => set("report_station", v)} />
                   <div className="space-y-2">
                     <Label>Report back on</Label>
-                    <Input type="datetime-local" value={form.report_back_at} onChange={(e) => set("report_back_at", e.target.value)} />
+                    <DateTimeInput value={form.report_back_at} onChange={(e) => set("report_back_at", e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Granted at</Label>
-                    <Input type="datetime-local" value={form.granted_at} onChange={(e) => set("granted_at", e.target.value)} />
+                    <DateTimeInput value={form.granted_at} onChange={(e) => set("granted_at", e.target.value)} />
                   </div>
                 </div>
                 <div className="space-y-2">

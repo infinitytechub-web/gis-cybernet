@@ -4,6 +4,8 @@ import { format, isValid, parse } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 /**
  * Drop-in replacement for the native date input.
@@ -50,6 +52,9 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
   ({ className, value, onChange, min, max, disabled, name, placeholder, ...props }, ref) => {
     const [text, setText] = React.useState(() => isoToDisplay(value));
     const [open, setOpen] = React.useState(false);
+    const [month, setMonth] = React.useState<Date>(() => value ? parse(String(value).slice(0, 10), ISO, new Date()) : new Date());
+    const [yearSearch, setYearSearch] = React.useState("");
+    const [monthPicker, setMonthPicker] = React.useState(false);
 
     // Keep the visible text in sync when the controlled value changes elsewhere.
     React.useEffect(() => {
@@ -57,12 +62,13 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
     }, [value]);
 
     const emit = (iso: string) => onChange?.({ target: { value: iso, name } });
+    const inRange = (iso: string) => (!min || iso >= min.slice(0, 10)) && (!max || iso <= max.slice(0, 10));
 
     const handleText = (raw: string) => {
       const masked = maskInput(raw);
       setText(masked);
       const iso = displayToIso(masked);
-      if (iso) emit(iso);
+      if (iso && inRange(iso)) emit(iso);
       else if (masked === "") emit("");
     };
 
@@ -74,6 +80,16 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
 
     const minDate = min ? parse(min.slice(0, 10), ISO, new Date()) : undefined;
     const maxDate = max ? parse(max.slice(0, 10), ISO, new Date()) : undefined;
+    const withinBounds = (d: Date) => (!minDate || d >= minDate) && (!maxDate || d <= maxDate);
+
+    const openCalendar = (next: boolean) => {
+      setOpen(next);
+      if (next) {
+        setMonth(selected ?? (maxDate && maxDate < new Date() ? maxDate : new Date()));
+        setMonthPicker(false);
+        setYearSearch("");
+      }
+    };
 
     return (
       <div className={cn("relative flex w-full items-center", className)}>
@@ -89,42 +105,76 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           value={text}
           onChange={(e) => handleText(e.target.value)}
           onBlur={(e) => {
-            if (text && !displayToIso(text)) {
+            if (text && (!displayToIso(text) || !inRange(displayToIso(text) ?? ""))) {
               setText(isoToDisplay(value));
             }
             props.onBlur?.(e);
           }}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
         />
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger
+        <Popover open={open} onOpenChange={openCalendar}>
+          <PopoverTrigger asChild>
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             disabled={disabled}
             aria-label="Open calendar (DD/MM/YYYY)"
-            className="absolute right-0 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className="absolute right-0 h-10 w-10 text-muted-foreground"
           >
             <CalendarIcon className="h-4 w-4" />
+          </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
+          <PopoverContent className="w-auto max-w-[calc(100vw-1rem)] p-2" align="end" collisionPadding={8}>
+            <div className="flex items-center gap-2 px-1 pb-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setMonthPicker(!monthPicker)} aria-label="Choose month and year">
+                {format(month, "MMMM yyyy")}
+              </Button>
+              {monthPicker && <Input
+                className="h-9 w-24"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="9999"
+                value={yearSearch || String(month.getFullYear())}
+                onChange={(e) => {
+                  setYearSearch(e.target.value);
+                  const year = Number(e.target.value);
+                  if (year >= 1 && year <= 9999) setMonth(new Date(year, month.getMonth(), 1));
+                }}
+                aria-label="Search year"
+              />}
+            </div>
+            {monthPicker ? (
+              <div className="grid grid-cols-4 gap-1 p-1 pointer-events-auto" aria-label="Choose month">
+                {Array.from({ length: 12 }, (_, i) => {
+                  const candidate = new Date(month.getFullYear(), i, 1);
+                  const end = new Date(month.getFullYear(), i + 1, 0);
+                  return <Button key={i} type="button" variant={month.getMonth() === i ? "default" : "ghost"} size="sm"
+                    disabled={(minDate && end < minDate) || (maxDate && candidate > maxDate)}
+                    onClick={() => { setMonth(candidate); setMonthPicker(false); }}>
+                    {format(candidate, "MMM")}
+                  </Button>;
+                })}
+              </div>
+            ) : (
             <Calendar
               mode="single"
               selected={selected}
-              defaultMonth={selected}
+              month={month}
+              onMonthChange={setMonth}
               onSelect={(d) => {
-                if (d && isValid(d)) {
+                if (d && isValid(d) && withinBounds(d)) {
                   setText(format(d, DISPLAY));
                   emit(format(d, ISO));
+                  setOpen(false);
                 }
-                setOpen(false);
               }}
-              disabled={
-                minDate || maxDate
-                  ? (d: Date) => (minDate && d < minDate) || (maxDate && d > maxDate) || false
-                  : undefined
-              }
+              disabled={(d: Date) => !withinBounds(d)}
               initialFocus
-              className={cn("p-3 pointer-events-auto")}
+              className="p-1 pointer-events-auto"
             />
+            )}
           </PopoverContent>
         </Popover>
       </div>
