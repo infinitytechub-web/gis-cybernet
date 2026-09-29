@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateTimeInput } from "@/components/ui/date-time-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -212,8 +213,7 @@ export function AttendanceEditRequestPanel({ profileId, userId, attendances }: P
           {(field === "check_in" || field === "both") && (
             <div>
               <Label className="text-xs">Proposed check-in</Label>
-              <Input
-                type="datetime-local"
+              <DateTimeInput
                 value={proposedIn}
                 onChange={(e) => setProposedIn(e.target.value)}
               />
@@ -222,8 +222,7 @@ export function AttendanceEditRequestPanel({ profileId, userId, attendances }: P
           {(field === "check_out" || field === "both") && (
             <div>
               <Label className="text-xs">Proposed check-out</Label>
-              <Input
-                type="datetime-local"
+              <DateTimeInput
                 value={proposedOut}
                 onChange={(e) => setProposedOut(e.target.value)}
               />

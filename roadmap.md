@@ -24,5 +24,5 @@
 - [x] Intake column in Staff Directory and CSV/Excel staff exports
 - [x] Organisational positions searchable in the appointment picker
 - [x] Command Console responsive/pagination/quick-scroll audit
-- [ ] Replace remaining raw date inputs system-wide with calendar picker
+- [x] Replace remaining raw date and date-time inputs system-wide with day-first calendar picker
 - [ ] Signed-in check of the bio-data form at phone/tablet/desktop

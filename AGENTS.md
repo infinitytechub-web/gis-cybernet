@@ -1,3 +1,4 @@
+# Date entry uses shared DateInput/DateTimeInput controls with DD/MM/YYYY display and ISO machine values — prevents browser-locale regressions across staff and operational forms.
 # Architecture rules
 
 - Keep personnel bio-data editing in the responsive web form; load related record sections separately and block saves after incomplete loads, so a failed fetch cannot overwrite existing details.
