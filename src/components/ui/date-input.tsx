@@ -62,17 +62,13 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
     }, [value]);
 
     const emit = (iso: string) => onChange?.({ target: { value: iso, name } });
+    const inRange = (iso: string) => (!min || iso >= min.slice(0, 10)) && (!max || iso <= max.slice(0, 10));
 
     const handleText = (raw: string) => {
       const masked = maskInput(raw);
       setText(masked);
       const iso = displayToIso(masked);
-      if (iso) {
-        const d = parse(iso, ISO, new Date());
-        const lower = min ? parse(min.slice(0, 10), ISO, new Date()) : null;
-        const upper = max ? parse(max.slice(0, 10), ISO, new Date()) : null;
-        if ((!lower || d >= lower) && (!upper || d <= upper)) emit(iso);
-      }
+      if (iso && inRange(iso)) emit(iso);
       else if (masked === "") emit("");
     };
 
@@ -109,7 +105,7 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
           value={text}
           onChange={(e) => handleText(e.target.value)}
           onBlur={(e) => {
-            if (text && !displayToIso(text)) {
+            if (text && (!displayToIso(text) || !inRange(displayToIso(text) ?? ""))) {
               setText(isoToDisplay(value));
             }
             props.onBlur?.(e);

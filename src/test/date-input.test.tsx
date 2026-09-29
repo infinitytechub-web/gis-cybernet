@@ -31,4 +31,12 @@ describe("day-first date entry", () => {
     fireEvent.change(screen.getByLabelText("Time (24-hour)"), { target: { value: "14:30" } });
     expect(screen.getByText("2026-09-29T14:30")).toBeTruthy();
   });
+
+  it("offers searchable year and selectable months for historic birth dates", () => {
+    render(<DateInput value="1990-09-29" onChange={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open calendar (DD/MM/YYYY)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose month and year" }));
+    expect(screen.getByRole("spinbutton", { name: "Search year" })).toHaveProperty("value", "1990");
+    expect(screen.getByRole("button", { name: "Sep" })).toBeTruthy();
+  });
 });
