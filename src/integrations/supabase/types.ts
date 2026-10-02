@@ -8742,6 +8742,174 @@ export type Database = {
           },
         ]
       }
+      me_message_attachments: {
+        Row: {
+          created_at: string
+          filename: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          scan_action: string
+          sha256: string | null
+          size_bytes: number | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          filename: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          scan_action: string
+          sha256?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          filename?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          scan_action?: string
+          sha256?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "me_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_message_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          message_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          message_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          message_id?: string | null
+        }
+        Relationships: []
+      }
+      me_message_recipients: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          id: string
+          message_id: string
+          read_at: string | null
+          recipient_profile_id: string | null
+          recipient_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          message_id: string
+          read_at?: string | null
+          recipient_profile_id?: string | null
+          recipient_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          message_id?: string
+          read_at?: string | null
+          recipient_profile_id?: string | null
+          recipient_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_message_recipients_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "me_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      me_messages: {
+        Row: {
+          audience_type: string
+          body: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          priority: string
+          recipient_count: number
+          sender_id: string
+          subject: string
+          target_department_id: string | null
+          target_org_unit_id: string | null
+          target_profile_id: string | null
+        }
+        Insert: {
+          audience_type: string
+          body: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          priority?: string
+          recipient_count?: number
+          sender_id: string
+          subject: string
+          target_department_id?: string | null
+          target_org_unit_id?: string | null
+          target_profile_id?: string | null
+        }
+        Update: {
+          audience_type?: string
+          body?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          priority?: string
+          recipient_count?: number
+          sender_id?: string
+          subject?: string
+          target_department_id?: string | null
+          target_org_unit_id?: string | null
+          target_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "me_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "me_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       me_milestones: {
         Row: {
           achieved_date: string | null
@@ -19002,6 +19170,7 @@ export type Database = {
       me_approval_queue: { Args: { _status?: string }; Returns: Json }
       me_approval_reviewer: { Args: never; Returns: boolean }
       me_approved_dashboard: { Args: never; Returns: Json }
+      me_attachment_can_read: { Args: { _path: string }; Returns: boolean }
       me_can_delete: { Args: never; Returns: boolean }
       me_can_manage: { Args: never; Returns: boolean }
       me_can_verify: { Args: never; Returns: boolean }
@@ -19010,6 +19179,11 @@ export type Database = {
         Returns: boolean
       }
       me_classification_rank: { Args: { _c: string }; Returns: number }
+      me_comm_can_send: { Args: { _uid: string }; Returns: boolean }
+      me_comm_can_view: {
+        Args: { _mid: string; _uid: string }
+        Returns: boolean
+      }
       me_command_attention: { Args: { _region?: string }; Returns: Json }
       me_command_center: {
         Args: { _department_id?: string; _period_id?: string; _region?: string }
@@ -19036,6 +19210,7 @@ export type Database = {
           region: string
         }[]
       }
+      me_mark_read: { Args: { _message: string }; Returns: undefined }
       me_measure_achievement: {
         Args: { _measure_id: string; _period_id?: string }
         Returns: {
@@ -19049,10 +19224,23 @@ export type Database = {
           verified_value: number
         }[]
       }
+      me_message_stats: { Args: never; Returns: Json }
       me_program_dashboard: { Args: { _program_id: string }; Returns: Json }
       me_project_dashboard: { Args: { _project_id: string }; Returns: Json }
       me_project_health: { Args: { _project_id: string }; Returns: Json }
       me_recalculate_scores: { Args: { _period_id?: string }; Returns: number }
+      me_send_message: {
+        Args: {
+          _attachments?: Json
+          _audience: string
+          _body: string
+          _parent?: string
+          _priority?: string
+          _subject: string
+          _target: string
+        }
+        Returns: string
+      }
       me_submit_for_approval: {
         Args: {
           _record_id: string
