@@ -339,6 +339,7 @@ function App() {
             ["approvals", "me-approvals"],
             ["reports", "me-reports"],
             ["analytics", "me-analytics"],
+            ["communications", "me-communications"],
             ["audit", "me-audit"],
             ["administration", "me-administration"],
           ].map(([segment, moduleKey]) => (

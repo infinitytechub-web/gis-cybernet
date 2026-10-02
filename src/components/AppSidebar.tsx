@@ -171,6 +171,7 @@ const meResourceItems = [
   { title: "Budgets", url: "/me/budgets", icon: Landmark, iconColor: "text-chart-1" },
   { title: "Reports", url: "/me/reports", icon: ScrollText, iconColor: "text-fuchsia-700 dark:text-fuchsia-300" },
   { title: "Analytics", url: "/me/analytics", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300" },
+  { title: "Communications", url: "/me/communications", icon: MessagesSquare, iconColor: "text-primary" },
   { title: "M&E Audit", url: "/me/audit", icon: History, iconColor: "text-primary" },
   { title: "M&E Administration", url: "/me/administration", icon: SettingsIcon, iconColor: "text-slate-600 dark:text-slate-400" },
 ];
