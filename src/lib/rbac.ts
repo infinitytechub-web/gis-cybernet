@@ -223,6 +223,7 @@ export const MODULES: ModuleDef[] = [
   { key: "me-approvals", label: "M&E Approvals", tier: "command", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/approvals"] },
   { key: "me-reports", label: "M&E Reports", tier: "module", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/reports"] },
   { key: "me-analytics", label: "M&E Analytics", tier: "command", roles: [...COMMAND, ...ME_DELIVERY], paths: ["/me/analytics"] },
+  { key: "me-communications", label: "M&E Communications", tier: "all-staff", roles: "all", paths: ["/me/communications"] },
   { key: "me-audit", label: "M&E Audit", tier: "admin", roles: ADMIN_OIC_2IC, paths: ["/me/audit"] },
   { key: "me-administration", label: "M&E Administration", tier: "admin", roles: ADMIN_ONLY, paths: ["/me/administration"] },
 ];
