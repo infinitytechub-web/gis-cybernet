@@ -35,6 +35,7 @@ import {
   PROCESSING_TABLES,
   sumPending,
 } from "@/lib/application-queues";
+import { MessagesSquare } from "lucide-react";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 import { navDescription } from "@/lib/nav-descriptions";
 

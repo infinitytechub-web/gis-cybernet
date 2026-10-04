@@ -117,6 +117,7 @@ describe("least privilege — audit-sensitive modules", () => {
 
   it("keeps all-staff modules limited to personal / informational surfaces", () => {
     const allowed = new Set([
+      "me-communications", // personal inbox; sending is gated server-side by me_comm_can_send
       "dashboard", "my-profile", "my-portal", "my-shift", "staff-directory",
       "excuse-duty", "leave", "attendance", "holidays", "announcements",
       "quarantine", "appraisals", "verify-export", "change-password",
