@@ -7,3 +7,5 @@
 - Command Vault files are owned by an org unit, stored beneath that unit's path prefix, and accessed only through command-scoped RBAC with immutable action logging — why: prevent cross-command document disclosure and preserve evidentiary history.
 
 - Staff deletion/transfer side-effects run in the `profile_lifecycle_sync` trigger on profiles (deleted_at / org_unit_id); retained history goes to admin-only `staff_record_archive` — why: every delete/transfer path cleans up consistently.
+
+- M&E Communications workspace lives in `me_*message*` tables; all sends go through the `me_send_message` security-definer function — why: one server-side place enforces sender role, command scope and audit.
