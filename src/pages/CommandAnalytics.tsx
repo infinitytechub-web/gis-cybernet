@@ -29,6 +29,8 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DutyStatusBadge } from "@/components/shared/DutyStatusBadge";
+import { useTodayDuty, dutyFor, DUTY_LABEL } from "@/hooks/useTodayDuty";
 import { useToast } from "@/hooks/use-toast";
 import {
   Activity, ArrowLeft, Building2, Download, ExternalLink, Network, Pencil,
@@ -132,6 +134,12 @@ export default function CommandAnalytics() {
     () => Array.from(new Set((a?.staff ?? []).map((s) => s.intake).filter((v): v is number => v != null))).sort((x, y) => x - y),
     [a]
   );
+  const { data: duty } = useTodayDuty();
+  const dutyCounts = useMemo(() => {
+    const m: Record<string, number> = { "On duty": 0, Excused: 0, Absent: 0, "Not marked": 0 };
+    for (const s of a?.staff ?? []) if (s.status === "active") m[DUTY_LABEL[dutyFor(duty, s.id)]] += 1;
+    return m;
+  }, [a, duty]);
   const intakeCounts = useMemo(() => {
     const m = new Map<number, number>();
     for (const s of a?.staff ?? []) if (s.intake != null) m.set(s.intake, (m.get(s.intake) ?? 0) + 1);
@@ -150,8 +158,8 @@ export default function CommandAnalytics() {
       title,
       filename: `staff-analytics-${Date.now()}`,
       subtitle: `Total ${a?.total ?? 0} · Active ${a?.active ?? 0}`,
-      headers: ["Staff ID", "Name", "Sex", "Rank", "Role(s)", "Department", "Command", "Region", "Intake", "Status"],
-      rows: rows.map((s) => [s.staff_id ?? "", s.name, s.sex, s.rank, s.roles, s.department, s.command, s.region, s.intake != null ? String(s.intake) : "", pretty(s.status)]),
+      headers: ["Staff ID", "Name", "Sex", "Rank", "Role(s)", "Department", "Command", "Region", "Intake", "Status", "Duty today"],
+      rows: rows.map((s) => [s.staff_id ?? "", s.name, s.sex, s.rank, s.roles, s.department, s.command, s.region, s.intake != null ? String(s.intake) : "", pretty(s.status), s.status === "active" ? DUTY_LABEL[dutyFor(duty, s.id)] : ""]),
     } as never);
     void logAdminAudit("staff_analytics", `exported_${fmt}`, { unitId, deptId, rows: rows.length });
   };
@@ -162,6 +170,7 @@ export default function CommandAnalytics() {
     const sections: [string, Record<string, number>][] = [
       ["Sex", a.by_sex], ["Status", a.by_status], ["Rank", a.by_rank],
       ["Role", a.by_role], ["Region", a.by_region],
+      ["Duty today", dutyCounts],
       ["Intake", Object.fromEntries(intakeCounts.map((c) => [c.label, c.count]))],
       ["Department", Object.fromEntries(a.by_department.map((d) => [d.name, d.count]))],
       ["Command", Object.fromEntries(a.by_command.map((c) => [c.name, c.count]))],
@@ -363,7 +372,7 @@ export default function CommandAnalytics() {
         <CardContent className="max-h-[480px] overflow-auto">
           <table className="w-full min-w-[700px] text-xs">
             <thead className="sticky top-0 bg-card text-left text-muted-foreground">
-              <tr><th className="p-2">Staff ID</th><th>Name</th><th>Sex</th><th>Rank</th><th>Role(s)</th><th>Department</th><th>Command</th><th>Intake</th><th>Status</th><th className="print:hidden" /></tr>
+              <tr><th className="p-2">Staff ID</th><th>Name</th><th>Sex</th><th>Rank</th><th>Role(s)</th><th>Department</th><th>Command</th><th>Intake</th><th>Status</th><th>Duty today</th><th className="print:hidden" /></tr>
             </thead>
             <tbody>
               {rows.map((s) => (
@@ -371,6 +380,7 @@ export default function CommandAnalytics() {
                   <td className="p-2">{s.staff_id}</td><td>{s.name}</td><td>{s.sex}</td><td>{s.rank}</td>
                   <td>{pretty(s.roles)}</td><td>{s.department}</td><td>{s.command}</td><td>{s.intake ?? "—"}</td>
                   <td><Badge variant={s.status === "active" ? "default" : "secondary"}>{pretty(s.status)}</Badge></td>
+                  <td>{s.status === "active" ? <DutyStatusBadge state={dutyFor(duty, s.id)} /> : "—"}</td>
                   <td className="whitespace-nowrap print:hidden">
                     <Button asChild variant="ghost" size="icon" aria-label="Open record"><Link to={`/staff?edit=${s.id}`}>{perms.canEdit ? <Pencil className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}</Link></Button>
                     {perms.canDelete && (

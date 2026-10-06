@@ -21,6 +21,8 @@ import { Lock, Pencil, Trash2, UserMinus, UserCheck } from "lucide-react";
 import { AdminAccountActions } from "@/components/staff/AdminAccountActions";
 
 import { staffStatusColor, staffStatusLabel } from "@/lib/staff-status";
+import { DutyStatusBadge } from "@/components/shared/DutyStatusBadge";
+import { useTodayDuty, dutyFor } from "@/hooks/useTodayDuty";
 
 const statusColor = staffStatusColor;
 
@@ -52,6 +54,7 @@ function StaffTableRowBase({
   const showDeactivate = !!onDeactivate && showEdit;
   const showActions = showEdit || showDelete || showDeactivate || isAdmin;
   const isActive = s.status === "active";
+  const { data: duty } = useTodayDuty();
   return (
     <TableRow data-state={selected ? "selected" : undefined}>
       {isAdmin && (
@@ -87,6 +90,7 @@ function StaffTableRowBase({
       <TableCell>
         <div className="flex items-center gap-1.5">
           <Badge variant="secondary" className={statusColor(s.status)}>{staffStatusLabel(s.status)}</Badge>
+          {isActive && <DutyStatusBadge state={dutyFor(duty, s.id)} />}
           {s.is_minor && (
             <Badge
               variant="secondary"
