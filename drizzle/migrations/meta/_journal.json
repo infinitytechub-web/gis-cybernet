@@ -232,6 +232,13 @@
       "when": 1790982975092,
       "tag": "0032_me_communications",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791308498281,
+      "tag": "0033_uppercase_staff_names",
+      "breakpoints": true
     }
   ]
 }
