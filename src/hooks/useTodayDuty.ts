@@ -14,18 +14,24 @@ export const DUTY_LABEL: Record<DutyState, string> = {
   on_duty: "On duty", excused: "Excused", absent: "Absent", pending: "Not marked",
 };
 
-let channelCount = 0;
+// One shared realtime channel, however many rows use the hook.
+let subscribers = 0;
+let channel: ReturnType<typeof supabase.channel> | null = null;
 
 export function useTodayDuty() {
   const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   useEffect(() => {
-    const ch = supabase
-      .channel(`today-duty-${++channelCount}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "attendances" }, () =>
-        qc.invalidateQueries({ queryKey: ["today-duty"] }))
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    if (subscribers++ === 0) {
+      channel = supabase
+        .channel("today-duty-shared")
+        .on("postgres_changes", { event: "*", schema: "public", table: "attendances" }, () =>
+          qc.invalidateQueries({ queryKey: ["today-duty"] }))
+        .subscribe();
+    }
+    return () => {
+      if (--subscribers === 0 && channel) { supabase.removeChannel(channel); channel = null; }
+    };
   }, [qc]);
   return useQuery({
     queryKey: ["today-duty", today],
