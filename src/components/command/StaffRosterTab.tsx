@@ -412,7 +412,9 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                   r.retired
                     ? "Retired"
                     : r.years_to_retirement === null ? "—" : String(r.years_to_retirement),
-                  r.attendance_today ?? "Unmarked",
+                  r.attendance_today
+                    ? `${DUTY_EXPORT_LABEL[dutyStateOf(r.attendance_today, r.attendance_check_in)]}${r.attendance_today === "late" ? " (late)" : ""}`
+                    : "Not marked",
                   String(r.patrols_led),
                   (r.status ?? "—").replace(/_/g, " "),
                 ]),
