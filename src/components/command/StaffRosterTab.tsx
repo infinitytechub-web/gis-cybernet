@@ -9,6 +9,7 @@
  * Storekeeper, Procurement Officer and the rest — which is what unlocks the
  * patrol log, procurement and inventory modules for those staff.
  */
+import { DutyStatusBadge, dutyStateOf } from "@/components/shared/DutyStatusBadge";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
