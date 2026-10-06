@@ -8,6 +8,7 @@
  *
  * Reused by the Duty Roster page and the Command Console.
  */
+import { DutyStatusBadge, dutyStateOf } from "@/components/shared/DutyStatusBadge";
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -195,6 +196,11 @@ export function OnDutyNowPanel({ compact = false }: { compact?: boolean }) {
                     <td className="py-2 pr-3">
                       <span className="block font-medium">{[row.rank_abbr, row.full_name].filter(Boolean).join(" ") || "—"}</span>
                       <span className="block text-xs text-muted-foreground">{row.staff_id ?? "—"}</span>
+                      {row.on_duty && (
+                        <span className="mt-1 block">
+                          <DutyStatusBadge state={dutyStateOf(row.attendance_status, row.check_in, dayOffset <= 0)} />
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 pr-3">
                       <Badge variant="outline" className={`${rowTone.bg} ${rowTone.text} ${rowTone.border} border`}>{row.shift_group ?? "—"}</Badge>

@@ -9,6 +9,7 @@
  * Storekeeper, Procurement Officer and the rest — which is what unlocks the
  * patrol log, procurement and inventory modules for those staff.
  */
+import { DutyStatusBadge, dutyStateOf } from "@/components/shared/DutyStatusBadge";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -525,10 +526,10 @@ export default function StaffRosterTab({ orgUnitId, branchName, compact }: Props
                       <TableCell>
                         {r.attendance_today ? (
                           <div className="space-y-0.5">
-                            <Badge variant="outline" className={ATTENDANCE_CLASS[r.attendance_today] ?? ""}>
-                              {r.attendance_today}
-                              {timeOf(r.attendance_check_in) ? ` · ${timeOf(r.attendance_check_in)}` : ""}
-                            </Badge>
+                            <DutyStatusBadge
+                              state={dutyStateOf(r.attendance_today, r.attendance_check_in)}
+                              suffix={`${r.attendance_today === "late" ? " (late)" : ""}${timeOf(r.attendance_check_in) ? ` · ${timeOf(r.attendance_check_in)}` : ""}`}
+                            />
                             <div className="text-xs text-muted-foreground">
                               {r.attendance_days_30d > 0
                                 ? `${r.attendance_present_30d}/${r.attendance_days_30d} days (30d)`
