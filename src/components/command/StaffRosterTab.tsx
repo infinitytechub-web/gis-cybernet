@@ -10,6 +10,7 @@
  * patrol log, procurement and inventory modules for those staff.
  */
 import { DutyStatusBadge, dutyStateOf } from "@/components/shared/DutyStatusBadge";
+import { DUTY_LABEL as DUTY_EXPORT_LABEL } from "@/hooks/useTodayDuty";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
