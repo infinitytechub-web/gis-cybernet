@@ -202,6 +202,35 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
   return { rows, unmapped };
 }
 
+/**
+ * Flag rows whose staff ID or normalised name already belongs to an existing
+ * staff record, so the preview warns before anything is saved.
+ */
+export function flagExistingStaff(
+  rows: StaffListRow[],
+  existing: { staff_id?: string | null; first_name?: string | null; last_name?: string | null; other_names?: string | null }[],
+): StaffListRow[] {
+  const ids = new Set<string>();
+  const names = new Set<string>();
+  for (const p of existing) {
+    const id = (p.staff_id ?? "").replace(/\s+/g, "").toUpperCase();
+    if (id) ids.add(id);
+    const nk = staffNameKey(p.first_name, p.last_name, p.other_names);
+    if (nk) names.add(nk);
+  }
+  return rows.map((r) => {
+    if (r.outcome !== "ready") return r;
+    const idKey = r.staff_id_raw.replace(/\s+/g, "").toUpperCase();
+    if (idKey && ids.has(idKey)) {
+      return { ...r, outcome: "skipped" as const, reason: `Staff ID "${r.staff_id_raw}" already exists in staff records` };
+    }
+    if (names.has(staffNameKey(r.first_name, r.last_name))) {
+      return { ...r, outcome: "skipped" as const, reason: "A staff record with this name already exists (matched after case/spacing)" };
+    }
+    return r;
+  });
+}
+
 /** Distinct unit/department values across the ready rows. */
 export function distinctUnits(rows: StaffListRow[]): string[] {
   const set = new Set<string>();
