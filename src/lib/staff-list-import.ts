@@ -180,12 +180,17 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
       row.outcome = "skipped";
       row.reason = "Missing rank";
     } else {
-      const key = `${first}|${last}`.toUpperCase();
-      if (seen.has(key)) {
+      const idKey = row.staff_id_raw.replace(/\s+/g, "").toUpperCase();
+      const nameKey = staffNameKey(first, last);
+      if (idKey && seenIds.has(idKey)) {
         row.outcome = "skipped";
-        row.reason = "Duplicate of an earlier row in this file";
+        row.reason = `Duplicate staff ID "${row.staff_id_raw}" — also on an earlier row`;
+      } else if (seenNames.has(nameKey)) {
+        row.outcome = "skipped";
+        row.reason = "Duplicate name (same person after case/spacing) — also on an earlier row";
       } else {
-        seen.add(key);
+        if (idKey) seenIds.add(idKey);
+        seenNames.add(nameKey);
       }
     }
 
