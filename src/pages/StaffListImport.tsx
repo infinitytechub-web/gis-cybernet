@@ -38,7 +38,7 @@ import { formatDateTime } from "@/lib/date-format";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import {
-  parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, type StaffListRow,
+  parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, flagExistingStaff, type StaffListRow,
 } from "@/lib/staff-list-import";
 import StaffListImportActions from "@/components/staff/StaffListImportActions";
 
