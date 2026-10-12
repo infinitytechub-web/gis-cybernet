@@ -1,4 +1,5 @@
 import { normalizeGender } from "@/lib/gender";
+import { staffNameKey } from "@/lib/staff-name";
 /**
  * STAFF LIST IMPORT — reads a staff list spreadsheet (CSV / XLSX) and turns it
  * into rows the preview screen can show and the commit RPC can apply.
@@ -139,7 +140,8 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
 
   const taken = new Set<string>();
   const rows: StaffListRow[] = [];
-  const seen = new Set<string>();
+  const seenNames = new Set<string>();
+  const seenIds = new Set<string>();
 
   for (let i = headerIdx + 1; i < aoa.length; i++) {
     const r = aoa[i] ?? [];
@@ -178,12 +180,17 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
       row.outcome = "skipped";
       row.reason = "Missing rank";
     } else {
-      const key = `${first}|${last}`.toUpperCase();
-      if (seen.has(key)) {
+      const idKey = row.staff_id_raw.replace(/\s+/g, "").toUpperCase();
+      const nameKey = staffNameKey(first, last);
+      if (idKey && seenIds.has(idKey)) {
         row.outcome = "skipped";
-        row.reason = "Duplicate of an earlier row in this file";
+        row.reason = `Duplicate staff ID "${row.staff_id_raw}" — also on an earlier row`;
+      } else if (seenNames.has(nameKey)) {
+        row.outcome = "skipped";
+        row.reason = "Duplicate name (same person after case/spacing) — also on an earlier row";
       } else {
-        seen.add(key);
+        if (idKey) seenIds.add(idKey);
+        seenNames.add(nameKey);
       }
     }
 
@@ -193,6 +200,35 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
 
   if (!rows.length) throw new Error("No staff rows were found under the column titles");
   return { rows, unmapped };
+}
+
+/**
+ * Flag rows whose staff ID or normalised name already belongs to an existing
+ * staff record, so the preview warns before anything is saved.
+ */
+export function flagExistingStaff(
+  rows: StaffListRow[],
+  existing: { staff_id?: string | null; first_name?: string | null; last_name?: string | null; other_names?: string | null }[],
+): StaffListRow[] {
+  const ids = new Set<string>();
+  const names = new Set<string>();
+  for (const p of existing) {
+    const id = (p.staff_id ?? "").replace(/\s+/g, "").toUpperCase();
+    if (id) ids.add(id);
+    const nk = staffNameKey(p.first_name, p.last_name, p.other_names);
+    if (nk) names.add(nk);
+  }
+  return rows.map((r) => {
+    if (r.outcome !== "ready") return r;
+    const idKey = r.staff_id_raw.replace(/\s+/g, "").toUpperCase();
+    if (idKey && ids.has(idKey)) {
+      return { ...r, outcome: "skipped" as const, reason: `Staff ID "${r.staff_id_raw}" already exists in staff records` };
+    }
+    if (names.has(staffNameKey(r.first_name, r.last_name))) {
+      return { ...r, outcome: "skipped" as const, reason: "A staff record with this name already exists (matched after case/spacing)" };
+    }
+    return r;
+  });
 }
 
 /** Distinct unit/department values across the ready rows. */

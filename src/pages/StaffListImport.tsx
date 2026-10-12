@@ -38,7 +38,7 @@ import { formatDateTime } from "@/lib/date-format";
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import {
-  parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, type StaffListRow,
+  parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, flagExistingStaff, type StaffListRow,
 } from "@/lib/staff-list-import";
 import StaffListImportActions from "@/components/staff/StaffListImportActions";
 
@@ -213,9 +213,19 @@ export default function StaffListImport() {
     setFileName(file.name);
     try {
       const parsed = await parseStaffListFile(file);
-      setRows(parsed.rows);
+      // Flag rows that match staff already on record (by ID or normalised name).
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("staff_id, first_name, last_name, other_names")
+        .is("deleted_at", null);
+      const flagged = flagExistingStaff(parsed.rows, existing ?? []);
+      const dupeCount = flagged.filter((r) => r.outcome === "skipped").length - parsed.rows.filter((r) => r.outcome === "skipped").length;
+      setRows(flagged);
       setUnmapped(parsed.unmapped);
-      toast.success(`${parsed.rows.length} row(s) read from ${file.name}`);
+      toast.success(`${flagged.length} row(s) read from ${file.name}`);
+      if (dupeCount > 0) {
+        toast.warning(`${dupeCount} row(s) match existing staff records and will be skipped`);
+      }
     } catch (e: any) {
       setRows(null);
       toast.error(e?.message || "Could not read that file");
