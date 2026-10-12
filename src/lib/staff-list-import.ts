@@ -1,4 +1,5 @@
 import { normalizeGender } from "@/lib/gender";
+import { staffNameKey } from "@/lib/staff-name";
 /**
  * STAFF LIST IMPORT — reads a staff list spreadsheet (CSV / XLSX) and turns it
  * into rows the preview screen can show and the commit RPC can apply.
@@ -139,7 +140,8 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
 
   const taken = new Set<string>();
   const rows: StaffListRow[] = [];
-  const seen = new Set<string>();
+  const seenNames = new Set<string>();
+  const seenIds = new Set<string>();
 
   for (let i = headerIdx + 1; i < aoa.length; i++) {
     const r = aoa[i] ?? [];
