@@ -180,7 +180,7 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
       row.outcome = "skipped";
       row.reason = "Missing rank";
     } else {
-      const idKey = row.staff_id_raw.replace(/\s+/g, "").toUpperCase();
+      const idKey = realStaffIdKey(row.staff_id_raw);
       const nameKey = staffNameKey(first, last);
       if (idKey && seenIds.has(idKey)) {
         row.outcome = "skipped";
@@ -203,32 +203,17 @@ export async function parseStaffListFile(file: File): Promise<{ rows: StaffListR
 }
 
 /**
- * Flag rows whose staff ID or normalised name already belongs to an existing
- * staff record, so the preview warns before anything is saved.
+ * Normalised staff ID for duplicate checks, or "" when the value is blank or a
+ * placeholder (e.g. `xxxxxx`, `N/A`, `---`, `000`) that rosters repeat on every row.
  */
-export function flagExistingStaff(
-  rows: StaffListRow[],
-  existing: { staff_id?: string | null; first_name?: string | null; last_name?: string | null; other_names?: string | null }[],
-): StaffListRow[] {
-  const ids = new Set<string>();
-  const names = new Set<string>();
-  for (const p of existing) {
-    const id = (p.staff_id ?? "").replace(/\s+/g, "").toUpperCase();
-    if (id) ids.add(id);
-    const nk = staffNameKey(p.first_name, p.last_name, p.other_names);
-    if (nk) names.add(nk);
-  }
-  return rows.map((r) => {
-    if (r.outcome !== "ready") return r;
-    const idKey = r.staff_id_raw.replace(/\s+/g, "").toUpperCase();
-    if (idKey && ids.has(idKey)) {
-      return { ...r, outcome: "skipped" as const, reason: `Staff ID "${r.staff_id_raw}" already exists in staff records` };
-    }
-    if (names.has(staffNameKey(r.first_name, r.last_name))) {
-      return { ...r, outcome: "skipped" as const, reason: "A staff record with this name already exists (matched after case/spacing)" };
-    }
-    return r;
-  });
+export function realStaffIdKey(value: string | null | undefined): string {
+  const key = String(value ?? "").replace(/\s+/g, "").toUpperCase();
+  if (!key) return "";
+  if (/^X+$/.test(key)) return "";
+  if (/^[^A-Z0-9]+$/.test(key)) return "";
+  if (/^0+$/.test(key)) return "";
+  if (["NA", "N/A", "NIL", "NONE", "TBA", "TBD", "PENDING", "NULL"].includes(key)) return "";
+  return key;
 }
 
 /** Distinct unit/department values across the ready rows. */
