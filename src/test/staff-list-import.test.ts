@@ -7,7 +7,7 @@ function file(aoa: unknown[][]) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "S");
   const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-  return new File([buf], "list.xlsx");
+  return { name: "list.xlsx", arrayBuffer: async () => buf } as unknown as File;
 }
 
 describe("staff list import duplicates", () => {
