@@ -41,6 +41,7 @@ import {
   parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, type StaffListRow,
 } from "@/lib/staff-list-import";
 import StaffListImportActions from "@/components/staff/StaffListImportActions";
+import RetirementReviewDialog, { type RetiringPerson } from "@/components/staff/RetirementReviewDialog";
 
 
 const COMMAND_TYPES = ["sector", "command", "station", "district", "regional"];
@@ -56,6 +57,7 @@ export default function StaffListImport() {
   const [targetUnit, setTargetUnit] = useState<string>("");
   const [search, setSearch] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [retireMode, setRetireMode] = useState<null | "review" | "confirm">(null);
   const [result, setResult] = useState<null | {
     new: number; matched: number; retired: number; ranks_created: number; units_created: number;
   }>(null);
@@ -173,15 +175,22 @@ export default function StaffListImport() {
     });
     const newRanks = distinctRanks(ready).filter((r) => !knownRanks.has(r));
     const newUnits = distinctUnits(ready).filter((u) => !existingChildUnits.has(u.toUpperCase().trim()));
-    const retiring = targetUnit
-      ? people.filter(
-          (p) =>
-            p.org_unit_id &&
-            subtreeIds.has(p.org_unit_id) &&
-            p.status !== "inactive" &&
-            !matchedIds.has(p.id),
-        ).length
-      : 0;
+    const unitName = new Map(units.map((u) => [u.id, u.name] as const));
+    const retiringPeople: RetiringPerson[] = targetUnit
+      ? people
+          .filter(
+            (p) =>
+              p.org_unit_id &&
+              subtreeIds.has(p.org_unit_id) &&
+              p.status !== "inactive" &&
+              !matchedIds.has(p.id),
+          )
+          .map((p) => ({
+            id: p.id, first_name: p.first_name, last_name: p.last_name, staff_id: p.staff_id,
+            unit_name: p.org_unit_id ? unitName.get(p.org_unit_id) ?? null : null,
+            status: p.status as string | null,
+          }))
+      : [];
     return {
       total: rows?.length ?? 0,
       ready: ready.length,
@@ -190,7 +199,8 @@ export default function StaffListImport() {
       created: ready.length - matched,
       newRanks,
       newUnits,
-      retiring,
+      retiring: retiringPeople.length,
+      retiringPeople,
     };
   }, [rows, nameIndex, knownRanks, existingChildUnits, people, subtreeIds, targetUnit]);
 
@@ -281,7 +291,11 @@ export default function StaffListImport() {
         import_id: imp.id,
         action: "uploaded",
         performed_by: me?.user?.id ?? "",
-        details: { file: fileName, rows: rows.length, skipped: summary.skipped } as never,
+        details: {
+          file: fileName, rows: rows.length, skipped: summary.skipped,
+          retire_confirmed_count: summary.retiringPeople.length,
+          retire_profile_ids: summary.retiringPeople.map((p) => p.id),
+        } as never,
       });
 
       toast.success(`${summary.ready} row(s) saved — review then approve below`);
@@ -396,7 +410,21 @@ export default function StaffListImport() {
               <Badge variant="secondary">{summary.matched} existing updated</Badge>
               <Badge variant="outline">{summary.newRanks.length} ranks to create</Badge>
               <Badge variant="outline">{summary.newUnits.length} units to create</Badge>
-              <Badge variant="destructive">{summary.retiring} to be retired</Badge>
+              <button type="button" onClick={() => setRetireMode("review")}
+                className="rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={`View the ${summary.retiring} staff to be retired`}>
+                <Badge variant="destructive" className="cursor-pointer underline-offset-2 hover:underline">
+                  {summary.retiring} to be retired
+                </Badge>
+              </button>
+              <RetirementReviewDialog
+                open={retireMode !== null}
+                onOpenChange={(o) => !o && setRetireMode(null)}
+                people={summary.retiringPeople}
+                mode={retireMode ?? "review"}
+                busy={committing}
+                onConfirm={async () => { await submitForApproval(); setRetireMode(null); }}
+              />
               {summary.skipped > 0 && <Badge variant="destructive">{summary.skipped} skipped</Badge>}
             </div>
             {summary.newUnits.length > 0 && (
@@ -419,7 +447,8 @@ export default function StaffListImport() {
                 <Download className="mr-2 h-4 w-4" aria-hidden="true" />
                 Export preview
               </Button>
-              <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0} onClick={submitForApproval}>
+              <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0}
+                onClick={() => (summary.retiringPeople.length > 0 ? setRetireMode("confirm") : submitForApproval())}>
                 {committing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
