@@ -25,6 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { downloadCSVString } from "@/lib/download-utils";
 import { csvCellQuoted } from "@/lib/csv-safe";
 import { logAdminAudit } from "@/lib/admin-audit";
+import RetirementReviewDialog, { type RetiringPerson } from "@/components/staff/RetirementReviewDialog";
 
 type ImportRecord = {
   id: string;
@@ -65,6 +66,9 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [search, setSearch] = useState("");
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [retirees, setRetirees] = useState<RetiringPerson[]>([]);
+  const [retireLoading, setRetireLoading] = useState(false);
 
   const committed = record.status === "committed";
   const rejected = record.approval_status === "rejected";
@@ -165,6 +169,29 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     onError: (e: any) => toast.error(e?.message || "That file could not be deleted"),
   });
 
+  // Work the retirement list out fresh on the server at approval time.
+  const startApprove = async () => {
+    setApproveOpen(true);
+    setRetireLoading(true);
+    setRetirees([]);
+    const { data, error } = await (supabase.rpc as any)("preview_staff_list_retirements", { _import_id: record.id });
+    setRetireLoading(false);
+    if (error) {
+      setApproveOpen(false);
+      toast.error(error.message || "Could not work out who would be retired");
+      return;
+    }
+    setRetirees((data ?? []) as RetiringPerson[]);
+  };
+
+  const confirmAndApprove = async () => {
+    const { error } = await (supabase.rpc as any)("confirm_staff_list_retirements", {
+      _import_id: record.id, _count: retirees.length, _profile_ids: retirees.map((p) => p.id),
+    });
+    if (error) { toast.error(error.message || "Could not record the confirmation"); return; }
+    review.mutate("approve", { onSettled: () => setApproveOpen(false) });
+  };
+
   const createAccounts = async (ids: string[]) => {
     const creds: Array<{ staffId: string; name: string; username: string; password: string }> = [];
     for (let i = 0; i < ids.length; i += 150) {
@@ -216,10 +243,19 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
       >
         <XCircle className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Reject
       </Button>
+      <RetirementReviewDialog
+        open={approveOpen}
+        onOpenChange={setApproveOpen}
+        people={retirees}
+        loading={retireLoading}
+        mode="confirm"
+        busy={review.isPending}
+        onConfirm={confirmAndApprove}
+      />
       <Button
         size="sm" className="h-7 px-2"
         disabled={!decidable || review.isPending}
-        onClick={() => review.mutate("approve")}
+        onClick={startApprove}
       >
         {review.isPending ? (
           <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
