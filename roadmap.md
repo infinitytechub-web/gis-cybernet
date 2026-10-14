@@ -26,3 +26,5 @@
 - [x] Command Console responsive/pagination/quick-scroll audit
 - [x] Replace remaining raw date and date-time inputs system-wide with day-first calendar picker
 - [ ] Signed-in check of the bio-data form at phone/tablet/desktop
+
+- [ ] Apply staff-import retirement safeguard migration (blocked: database unreachable 2026-10-14)
