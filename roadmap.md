@@ -28,3 +28,8 @@
 - [ ] Signed-in check of the bio-data form at phone/tablet/desktop
 
 - [ ] Apply staff-import retirement safeguard migration (blocked: database unreachable 2026-10-14)
+
+## AI staff import comparison
+- [ ] Add read-only AI duplicate/mismatch review to staff import preview.
+- [ ] Test candidate rules, authorization failure and review result handling.
+- [ ] Deploy and verify authenticated AI review (blocked: hosted database and auth are paused).
