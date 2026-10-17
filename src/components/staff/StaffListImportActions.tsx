@@ -57,10 +57,6 @@ const FIELDS: Array<{ key: string; label: string }> = [
   { key: "gender", label: "Sex" },
 ];
 
-function isMissingRoutine(e: { code?: string; message?: string }) {
-  return e.code === "PGRST202" || e.code === "42883" || /could not find the function/i.test(e.message ?? "");
-}
-
 export default function StaffListImportActions({ record }: { record: ImportRecord }) {
   const qc = useQueryClient();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -73,9 +69,8 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
   const [approveOpen, setApproveOpen] = useState(false);
   const [retirees, setRetirees] = useState<RetiringPerson[]>([]);
   const [retireLoading, setRetireLoading] = useState(false);
-  // True when the server safeguard routines are not installed yet; approval then
-  // falls back to the original single-step approve so imports are never blocked.
-  const [legacyApprove, setLegacyApprove] = useState(false);
+  const [retireError, setRetireError] = useState<string | undefined>();
+  const [retireReady, setRetireReady] = useState(false);
 
   const committed = record.status === "committed";
   const rejected = record.approval_status === "rejected";
@@ -181,27 +176,23 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
     setApproveOpen(true);
     setRetireLoading(true);
     setRetirees([]);
-    setLegacyApprove(false);
-    const { data, error } = await (supabase.rpc as any)("preview_staff_list_retirements", { _import_id: record.id });
-    setRetireLoading(false);
-    if (error && isMissingRoutine(error)) {
-      setLegacyApprove(true);
-      toast.warning("The retirement list is not available yet. Check the \"to be retired\" count in Preview before confirming.");
-      return;
+    setRetireReady(false);
+    setRetireError(undefined);
+    try {
+      const { data, error } = await (supabase.rpc as any)("preview_staff_list_retirements", { _import_id: record.id });
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error("Invalid retirement list");
+      setRetirees(data as RetiringPerson[]);
+      setRetireReady(true);
+    } catch {
+      setRetireError("Could not load the retirement list. Approval is blocked to protect staff records. Close this window and try again later.");
+    } finally {
+      setRetireLoading(false);
     }
-    if (error) {
-      setApproveOpen(false);
-      toast.error(error.message || "Could not work out who would be retired");
-      return;
-    }
-    setRetirees((data ?? []) as RetiringPerson[]);
   };
 
   const confirmAndApprove = async () => {
-    if (legacyApprove) {
-      review.mutate("approve", { onSettled: () => setApproveOpen(false) });
-      return;
-    }
+    if (!retireReady || retireLoading || retireError) return;
     const { error } = await (supabase.rpc as any)("confirm_staff_list_retirements", {
       _import_id: record.id, _count: retirees.length, _profile_ids: retirees.map((p) => p.id),
     });
@@ -265,6 +256,7 @@ export default function StaffListImportActions({ record }: { record: ImportRecor
         onOpenChange={setApproveOpen}
         people={retirees}
         loading={retireLoading}
+        error={retireError}
         mode="confirm"
         busy={review.isPending}
         onConfirm={confirmAndApprove}

@@ -35,12 +35,13 @@ export function canConfirmRetirement(count: number, ticked: boolean, typed: stri
 }
 
 export default function RetirementReviewDialog({
-  open, onOpenChange, people, loading, mode, busy, onConfirm,
+  open, onOpenChange, people, loading, error, mode, busy, onConfirm,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   people: RetiringPerson[];
   loading?: boolean;
+  error?: string;
   /** "review" = list only; "confirm" = requires tick + typed count. */
   mode: "review" | "confirm";
   busy?: boolean;
@@ -75,12 +76,13 @@ export default function RetirementReviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!flex max-h-[90vh] max-w-3xl flex-col !overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="text-base">{count} staff will be retired</DialogTitle>
+          <DialogTitle className="text-base">{loading ? "Checking staff retirements…" : error ? "Retirement list unavailable" : `${count} staff will be retired`}</DialogTitle>
           <DialogDescription className="text-xs">
             These people are posted in this command but are not on the uploaded list.
           </DialogDescription>
         </DialogHeader>
-        {mode === "confirm" && count > 0 && (
+        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+        {mode === "confirm" && count > 0 && !loading && !error && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
             <AlertDescription className="text-xs">
@@ -94,12 +96,12 @@ export default function RetirementReviewDialog({
             <Input className="pl-9" placeholder="Search this list" value={q}
               onChange={(e) => setQ(e.target.value)} aria-label="Search staff to be retired" />
           </div>
-          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!count}>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={!count || loading || !!error}>
             <Download className="mr-1 h-4 w-4" aria-hidden="true" /> CSV
           </Button>
         </div>
         <div className="flex-1 overflow-auto">
-          {loading ? (
+          {error ? null : loading ? (
             <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Working out the list…
             </div>
@@ -126,7 +128,7 @@ export default function RetirementReviewDialog({
           )}
           <ListPagination {...pager} label="people" className="p-2" />
         </div>
-        {mode === "confirm" && count > 0 && (
+        {mode === "confirm" && count > 0 && !loading && !error && (
           <div className="space-y-3 border-t pt-3">
             <div className="flex items-start gap-2">
               <Checkbox id="retire-ack" checked={ticked} onCheckedChange={(v) => setTicked(v === true)} />
@@ -146,7 +148,7 @@ export default function RetirementReviewDialog({
             {mode === "confirm" ? "Cancel" : "Close"}
           </Button>
           {mode === "confirm" && (
-            <Button variant={count ? "destructive" : "default"} disabled={!ok || busy || loading} onClick={onConfirm}>
+            <Button variant={count ? "destructive" : "default"} disabled={!ok || busy || loading || !!error} onClick={onConfirm}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
               Confirm and continue
             </Button>
