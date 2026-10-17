@@ -81,7 +81,7 @@ export default function RetirementReviewDialog({
             These people are posted in this command but are not on the uploaded list.
           </DialogDescription>
         </DialogHeader>
-        {error && <Alert variant="destructive"><AlertDescription role="alert">{error}</AlertDescription></Alert>}
+        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
         {mode === "confirm" && count > 0 && !loading && !error && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />

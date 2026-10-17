@@ -21,7 +21,7 @@ describe("staff import approval fails closed", () => {
     rpc.mockResolvedValue({ data: null, error: { code, message: "Unavailable" } });
     renderActions();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Approve", exact: true }));
+    await user.click(screen.getByRole("button", { name: /^Approve$/ }));
     await screen.findByRole("alert");
     const confirm = screen.getByRole("button", { name: "Confirm and continue" });
     expect(confirm).toBeDisabled();
@@ -32,14 +32,14 @@ describe("staff import approval fails closed", () => {
   it("blocks approval while the retirement list is still loading", async () => {
     rpc.mockReturnValue(new Promise(() => {}));
     renderActions();
-    await userEvent.click(screen.getByRole("button", { name: "Approve", exact: true }));
+    await userEvent.click(screen.getByRole("button", { name: /^Approve$/ }));
     expect(screen.getByRole("button", { name: "Confirm and continue" })).toBeDisabled();
   });
 
   it.each([null, "invalid"])("does not treat a malformed preview (%s) as zero retirements", async (data) => {
     rpc.mockResolvedValue({ data, error: null });
     renderActions();
-    await userEvent.click(screen.getByRole("button", { name: "Approve", exact: true }));
+    await userEvent.click(screen.getByRole("button", { name: /^Approve$/ }));
     await screen.findByRole("alert");
     expect(screen.getByRole("button", { name: "Confirm and continue" })).toBeDisabled();
     expect(rpc).toHaveBeenCalledTimes(1);
@@ -51,7 +51,7 @@ describe("staff import approval fails closed", () => {
       .mockResolvedValueOnce({ data: { new: 0, matched: 12, retired: 0 }, error: null });
     renderActions();
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Approve", exact: true }));
+    await user.click(screen.getByRole("button", { name: /^Approve$/ }));
     const confirm = await screen.findByRole("button", { name: "Confirm and continue" });
     await waitFor(() => expect(confirm).toBeEnabled());
     await user.click(confirm);
