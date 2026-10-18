@@ -44,9 +44,10 @@ export function buildComparison(rows: ComparisonRow[], staff: ExistingStaff[]) {
 }
 export type Finding = { row_no: number; candidate_key: string | null; assessment: "likely_duplicate" | "mismatch" | "possible_match" | "no_likely_match"; confidence: "high" | "medium" | "low"; reason: string };
 export function validateFindings(findings: Finding[], groups: ReturnType<typeof buildComparison>) {
-  if (findings.length !== groups.length) throw new Error("AI review did not return every selected row.");
+  if (!Array.isArray(findings) || findings.length !== groups.length) throw new Error("AI review did not return every selected row.");
   const seen = new Set<number>();
   for (const finding of findings) {
+    if (!finding || !["likely_duplicate", "mismatch", "possible_match", "no_likely_match"].includes(finding.assessment) || !["high", "medium", "low"].includes(finding.confidence) || typeof finding.reason !== "string") throw new Error("AI review returned invalid evidence.");
     const group = groups.find((g) => g.row.row_no === finding.row_no);
     if (!group || seen.has(finding.row_no)) throw new Error("AI returned an unknown or repeated import row.");
     seen.add(finding.row_no);
