@@ -1,5 +1,4 @@
 # Roadmap
-
 - [x] Fix preview typecheck errors (PhotoCheck union narrowing under non-strict tsconfig)
 - [x] Align command dashboard counts, ranks, and vacancies with current posting hierarchy
 - [ ] Reorganize desktop and mobile navigation around task flows using central RBAC only
@@ -30,6 +29,6 @@
 - [ ] Apply staff-import retirement safeguard migration (blocked: database unreachable 2026-10-14)
 
 ## AI staff import comparison
-- [ ] Add read-only AI duplicate/mismatch review to staff import preview.
-- [ ] Test candidate rules, authorization failure and review result handling.
+- [x] Add read-only AI duplicate/mismatch review to staff import preview.
+- [x] Test candidate rules, denied-access UI handling and review results; 18 tests and synthetic live AI request passed.
 - [ ] Deploy and verify authenticated AI review (blocked: hosted database and auth are paused).

@@ -41,6 +41,7 @@ import {
   parseStaffListFile, distinctRanks, distinctUnits, normaliseRank, type StaffListRow,
 } from "@/lib/staff-list-import";
 import StaffListImportActions from "@/components/staff/StaffListImportActions";
+import StaffImportAIReview from "@/components/staff/StaffImportAIReview";
 import RetirementReviewDialog, { type RetiringPerson } from "@/components/staff/RetirementReviewDialog";
 
 
@@ -447,6 +448,7 @@ export default function StaffListImport() {
                 <Download className="mr-2 h-4 w-4" aria-hidden="true" />
                 Export preview
               </Button>
+              <StaffImportAIReview rows={rows} />
               <Button size="sm" disabled={!targetUnit || committing || summary.ready === 0}
                 onClick={() => (summary.retiringPeople.length > 0 ? setRetireMode("confirm") : submitForApproval())}>
                 {committing ? (
