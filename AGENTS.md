@@ -9,3 +9,5 @@
 - Staff deletion/transfer side-effects run in the `profile_lifecycle_sync` trigger on profiles (deleted_at / org_unit_id); retained history goes to admin-only `staff_record_archive` — why: every delete/transfer path cleans up consistently.
 
 - M&E Communications workspace lives in `me_*message*` tables; all sends go through the `me_send_message` security-definer function — why: one server-side place enforces sender role, command scope and audit.
+
+- Staff import AI comparisons are advisory: authenticate import administrators on the server, read candidates through caller-scoped RLS, minimize prompt fields, validate returned candidate references and audit runs; never let AI modify import outcomes or staff records — why: probabilistic matches cannot authorize personnel changes.
