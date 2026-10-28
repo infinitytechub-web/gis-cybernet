@@ -21,6 +21,7 @@ import { AnonymizationSettings } from "@/components/settings/AnonymizationSettin
 
 import { AppSettings } from "@/components/settings/AppSettings";
 import { BrandingSettings } from "@/components/settings/BrandingSettings";
+import { BrandManager } from "@/components/settings/BrandManager";
 import { FailedLoginAttemptsPanel } from "@/components/settings/FailedLoginAttemptsPanel";
 import { FailedLoginTimelinePanel } from "@/components/settings/FailedLoginTimelinePanel";
 import { PresenceEventsPanel } from "@/components/settings/PresenceEventsPanel";
@@ -200,7 +201,7 @@ export default function Settings() {
         <TabsContent value="portfolios"><PortfoliosTab /></TabsContent>
         <TabsContent value="accounts"><BulkCreateAccounts /></TabsContent>
         <TabsContent value="app-settings"><AppSettings /></TabsContent>
-        <TabsContent value="branding"><BrandingSettings /></TabsContent>
+        <TabsContent value="branding"><div className="space-y-6"><BrandManager /><BrandingSettings /></div></TabsContent>
         <TabsContent value="lockouts"><FailedLoginAttemptsPanel /></TabsContent>
         <TabsContent value="locked-accounts"><LockedAccountsPanel /></TabsContent>
         <TabsContent value="login-audit"><FailedLoginTimelinePanel /></TabsContent>
