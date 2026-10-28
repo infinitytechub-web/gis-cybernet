@@ -65,7 +65,7 @@ function HierarchyRow({ node, sortable, collapsed, onToggle }: {
   );
 }
 
-export default function HierarchyView({ isAdmin }: { isAdmin: boolean }) {
+export default function HierarchyView({ isAdmin, rootUnitId }: { isAdmin: boolean; rootUnitId?: string }) {
   const qc = useQueryClient();
   const chId = useId();
   const [roots, setRoots] = useState<HierarchyNode[] | null>(null);
