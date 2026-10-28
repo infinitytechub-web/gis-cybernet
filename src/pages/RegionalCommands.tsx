@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw } from "lucide-react";
+import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { commandDashboardPath, reorder, splitCommandName, type RegionalCommandCard } from "@/lib/regional-commands";
+import { buildCommandsWordHtml } from "@/lib/command-hierarchy";
+import { downloadBlob } from "@/lib/download-utils";
+import { logAdminAudit } from "@/lib/admin-audit";
+import HierarchyView from "@/components/command/HierarchyView";
 import { formatDateTime } from "@/lib/date-format";
 
 const GhanaOutline = ({ className }: { className?: string }) => (
@@ -63,6 +67,7 @@ export default function RegionalCommands() {
   const qc = useQueryClient();
   const chId = useId();
   const [order, setOrder] = useState<RegionalCommandCard[] | null>(null);
+  const [view, setView] = useState<"cards" | "hierarchy">("cards");
 
   const cards = useQuery({
     queryKey: ["regional-commands"],
