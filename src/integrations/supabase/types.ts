@@ -18401,6 +18401,9 @@ export type Database = {
         Args: { _from: string; _period: string; _to: string }
         Returns: {
           absent: number
+          avg_hours: number
+          checked_in: number
+          checked_out: number
           duplicates: number
           excused: number
           invalid_times: number
@@ -18411,6 +18414,7 @@ export type Database = {
           present: number
           records: number
           staff_count: number
+          total_hours: number
           unit_name: string
         }[]
       }

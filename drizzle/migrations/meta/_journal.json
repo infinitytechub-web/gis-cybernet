@@ -260,6 +260,13 @@
       "when": 1793214183737,
       "tag": "0036_attendance_validation_report",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793214696524,
+      "tag": "0037_attendance_validation_hours",
+      "breakpoints": true
     }
   ]
 }

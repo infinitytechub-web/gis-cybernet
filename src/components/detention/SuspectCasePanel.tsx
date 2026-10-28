@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/date-format";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +19,7 @@ const MIN_SURETIES = 2;
 export const scanLabel = (s: string) =>
   s === "safe" ? "Scanned – safe" : s === "infected" ? "Quarantined" : "Checked – pending virus scan";
 
-async function upload(path: string, file: File) {
+export async function upload(path: string, file: File) {
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true });
   if (error) throw error;
   return path;
@@ -35,7 +36,7 @@ function useErr() {
     e ? toast({ title: "Not saved", description: (e as Error).message ?? String(e), variant: "destructive" }) : ok && toast({ title: ok });
 }
 
-function OffencesTab({ id }: { id: string }) {
+export function OffencesTab({ id }: { id: string }) {
   const qc = useQueryClient(); const err = useErr();
   const { data = [] } = useQuery({ queryKey: ["suspect_offences", id], queryFn: async () =>
     ((await supabase.from("suspect_offences").select("offence").eq("detention_id", id)).data ?? []).map((r) => r.offence) });
@@ -51,7 +52,7 @@ function OffencesTab({ id }: { id: string }) {
   return <div className="space-y-3"><OffencesMultiSelect value={v} onChange={setV} /><Button onClick={save}>Save offences</Button></div>;
 }
 
-function MugshotTab({ id }: { id: string }) {
+export function MugshotTab({ id }: { id: string }) {
   const qc = useQueryClient(); const err = useErr();
   const { data } = useQuery({ queryKey: ["mugshot", id], queryFn: async () => {
     const r = (await supabase.from("detention_records").select("mugshot_url").eq("id", id).single()).data;
@@ -68,7 +69,7 @@ function MugshotTab({ id }: { id: string }) {
   );
 }
 
-function DocumentsTab({ id }: { id: string }) {
+export function DocumentsTab({ id }: { id: string }) {
   const qc = useQueryClient(); const err = useErr();
   const { data = [] } = useQuery({ queryKey: ["suspect_docs", id], queryFn: async () =>
     (await supabase.from("suspect_documents").select("*").eq("detention_id", id).order("created_at", { ascending: false })).data ?? [] });
@@ -89,7 +90,7 @@ function DocumentsTab({ id }: { id: string }) {
 }
 
 const emptySurety = { full_name: "", relationship: "", id_type: "", id_number: "", phone: "", address: "", occupation: "" };
-function SuretiesTab({ id }: { id: string }) {
+export function SuretiesTab({ id }: { id: string }) {
   const qc = useQueryClient(); const err = useErr();
   const { data: bails = [] } = useQuery({ queryKey: ["bails_for", id], queryFn: async () =>
     (await supabase.from("detention_bail_records").select("id,reference,offence").eq("detention_id", id).is("deleted_at", null)).data ?? [] });
@@ -180,7 +181,7 @@ function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | "repatr
       {tiers.map((t) => { const s = signed.find((x) => x.tier === t.tier); return (
         <div key={t.id} className="rounded border p-2 text-sm">
           <b>Tier {t.tier}: {t.label}</b> <span className="text-muted-foreground">({t.role})</span>
-          {s ? <p>{s.decision.replace("_", " ")} by <i>{s.signer_name}</i> on {new Date(s.signed_at).toLocaleString("en-GB")}{s.comments ? ` — ${s.comments}` : ""}<br /><span className="font-mono text-xs text-muted-foreground">Signature {s.signature_hash.slice(0, 16)}…</span></p>
+          {s ? <p>{s.decision.replace("_", " ")} by <i>{s.signer_name}</i> on {formatDateTime(s.signed_at)}{s.comments ? ` — ${s.comments}` : ""}<br /><span className="font-mono text-xs text-muted-foreground">Signature {s.signature_hash.slice(0, 16)}…</span></p>
             : <p className="text-muted-foreground">Awaiting</p>}
         </div>); })}
       {next && (

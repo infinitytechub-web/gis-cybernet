@@ -26,8 +26,8 @@ export function AttendanceValidationReport() {
   });
   const issues = (r: (typeof data)[number]) => Number(r.missing_checkout) + Number(r.invalid_times) + Number(r.duplicates);
   const exportCsv = () => {
-    const head = ["Period", "Command/Unit", "Staff", "Records", "Present", "Late", "Absent", "Excused", "Missing check-out", "Check-out before check-in", "Duplicates"];
-    const rows = data.map((r) => [ddmmyyyy(r.period_start), r.unit_name, r.staff_count, r.records, r.present, r.late, r.absent, r.excused, r.missing_checkout, r.invalid_times, r.duplicates]);
+    const head = ["Period", "Command/Unit", "Staff", "Records", "Check-ins", "Check-outs", "Total hours", "Avg hours", "Present", "Late", "Absent", "Excused", "Missing check-out", "Check-out before check-in", "Duplicates"];
+    const rows = data.map((r) => [ddmmyyyy(r.period_start), r.unit_name, r.staff_count, r.records, r.checked_in, r.checked_out, r.total_hours, r.avg_hours, r.present, r.late, r.absent, r.excused, r.missing_checkout, r.invalid_times, r.duplicates]);
     const csv = [head, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     downloadBlob(new Blob([csv], { type: "text/csv" }), `attendance-validation-${period}-${from}-${to}.csv`);
   };
@@ -44,13 +44,14 @@ export function AttendanceValidationReport() {
         {error && <p className="text-destructive">Could not load: {(error as Error).message}</p>}
         <div className="max-h-[480px] overflow-auto rounded-md border">
           <table className="w-full min-w-[700px] text-sm">
-            <thead className="sticky top-0 bg-muted"><tr>{["Period", "Command/Unit", "Staff", "Present", "Late", "Absent", "Excused", "Issues"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
+            <thead className="sticky top-0 bg-muted"><tr>{["Period", "Command/Unit", "Staff", "Check-ins", "Check-outs", "Present", "Late", "Absent", "Excused", "Hours", "Avg hrs", "Issues"].map((h) => <th key={h} className="p-2 text-left">{h}</th>)}</tr></thead>
             <tbody>
-              {isLoading && <tr><td className="p-2" colSpan={8}>Loading…</td></tr>}
+              {!isLoading && !data.length && <tr><td className="p-2 text-muted-foreground" colSpan={12}>No check-in records in this range.</td></tr>}
+              {isLoading && <tr><td className="p-2" colSpan={12}>Loading…</td></tr>}
               {data.map((r, i) => (
                 <tr key={i} className="border-t">
-                  <td className="p-2">{ddmmyyyy(r.period_start)}</td><td className="p-2">{r.unit_name}</td><td className="p-2">{r.staff_count}</td>
-                  <td className="p-2">{r.present}</td><td className="p-2">{r.late}</td><td className="p-2">{r.absent}</td><td className="p-2">{r.excused}</td>
+                  <td className="p-2">{ddmmyyyy(r.period_start)}</td><td className="p-2">{r.unit_name}</td><td className="p-2">{r.staff_count}</td><td className="p-2">{r.checked_in}</td><td className="p-2">{r.checked_out}</td>
+                  <td className="p-2">{r.present}</td><td className="p-2">{r.late}</td><td className="p-2">{r.absent}</td><td className="p-2">{r.excused}</td><td className="p-2">{r.total_hours}</td><td className="p-2">{r.avg_hours}</td>
                   <td className="p-2">{issues(r) ? <Badge variant="destructive" title={`Missing check-out ${r.missing_checkout}, invalid times ${r.invalid_times}, duplicates ${r.duplicates}`}>⚠ {issues(r)} to review</Badge> : <Badge variant="secondary">✓ Valid</Badge>}</td>
                 </tr>
               ))}
