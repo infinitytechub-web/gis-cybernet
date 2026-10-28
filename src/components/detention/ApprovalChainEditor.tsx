@@ -14,13 +14,14 @@ import { Label } from "@/components/ui/label";
 import { Save, RotateCcw, Loader2 } from "lucide-react";
 
 type Tier = { id: string; workflow: string; tier: number; label: string; role: string; configured_at: string | null };
+const EMPTY_TIERS: Tier[] = [];
 
 /** Admin-only: choose who signs at each of the 3 approval tiers for bail and repatriation. */
 export function ApprovalChainEditor() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { isAdmin, loading } = useAuth();
-  const { data = [], isPending, error, refetch } = useQuery({ queryKey: ["chain_all"], enabled: isAdmin, queryFn: async () => {
+  const { data = EMPTY_TIERS, isPending, error, refetch } = useQuery({ queryKey: ["chain_all"], enabled: isAdmin, queryFn: async () => {
     const result = await supabase.from("approval_chain_config").select("*").order("workflow").order("tier");
     if (result.error) throw result.error;
     return (result.data ?? []) as Tier[];
