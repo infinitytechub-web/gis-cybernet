@@ -25,7 +25,7 @@ describe("approval authority editor", () => {
     mount();
     const picker = await screen.findByRole("combobox", { name: "bail tier 1 signing role" });
     await userEvent.click(picker);
-    await userEvent.click(await screen.findByRole("option", { name: "OIC", exact: true }));
+    await userEvent.click(await screen.findByRole("option", { name: /^OIC$/ }));
     await userEvent.click(screen.getByRole("button", { name: "Save signing authority" }));
     await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(1));
     expect(mocks.rpc).toHaveBeenCalledWith("save_approval_chain", { _tiers: tiers.map(({ id, label, role }) => ({ id, label, role: id === "bail-1" ? "oic" : role })) });
