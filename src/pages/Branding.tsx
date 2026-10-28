@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { BrandingSettings } from "@/components/settings/BrandingSettings";
+import { BrandManager } from "@/components/settings/BrandManager";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Palette, ArrowLeft, ShieldCheck } from "lucide-react";
@@ -35,6 +36,7 @@ export default function Branding() {
         </Button>
       </header>
 
+      <BrandManager />
       <BrandingSettings />
     </div>
   );

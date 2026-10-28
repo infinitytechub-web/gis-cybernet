@@ -206,10 +206,11 @@ export default function Login() {
 
         if (mustChangePw) {
           navigate("/change-password", { replace: true });
-        } else if (!roleErr && (roleRows?.length ?? 0) > 0) {
-          navigate("/dashboard", { replace: true });
         } else {
-          navigate("/portal", { replace: true });
+          // Every signed-in officer lands on the Regional Commands screen;
+          // the server decides which command cards they may see.
+          void roleRows; void roleErr;
+          navigate("/regional-commands", { replace: true });
         }
       } catch (signInErr) {
         // Record failed attempt server-side, against the configured policy.
