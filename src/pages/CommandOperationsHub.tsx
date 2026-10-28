@@ -13,6 +13,7 @@ import { ApprovalChainEditor } from "@/components/detention/ApprovalChainEditor"
 import { useAuth } from "@/hooks/useAuth";
 import { SuspectCasePanel } from "@/components/detention/SuspectCasePanel";
 import { useRbac } from "@/hooks/useRbac";
+import { CommandOperationsDashboard } from "@/components/command/CommandOperationsDashboard";
 
 const Enforcement = lazy(() => import("./Enforcement"));
 const Operations = lazy(() => import("./Operations"));
@@ -168,13 +169,14 @@ export default function CommandOperationsHub() {
   const { role } = useAuth();
   const { can, loading, holdingReadOnly } = useRbac();
   const available = [
+    "dashboard",
     ...(can("detention") ? ["analytics"] : []),
     ...(can("enforcement") ? ["enforcement"] : []),
     ...(can("operations") ? ["operations"] : []),
     ...(can("detention") ? ["holding"] : []),
     ...(role === "admin" ? ["chain"] : []),
   ];
-  const requested = params.get("tab") ?? "analytics";
+  const requested = params.get("tab") ?? "dashboard";
   const tab = available.includes(requested) ? requested : available[0];
   if (loading) return <p role="status">Loading access…</p>;
   if (!tab) return <p role="alert">Access restricted.</p>;
@@ -184,6 +186,7 @@ export default function CommandOperationsHub() {
       <Button asChild variant="outline"><a href="/holding-verification">Staff verification</a></Button>
       <Tabs value={tab} onValueChange={(t) => setParams((previous) => { const next = new URLSearchParams(previous); next.set("tab", t); return next; })}>
         <TabsList className="h-auto flex-wrap gap-1">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           {can("detention") && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
           {can("enforcement") && <TabsTrigger value="enforcement">Enforcement</TabsTrigger>}
           {can("operations") && <TabsTrigger value="operations">Operations</TabsTrigger>}
@@ -191,6 +194,7 @@ export default function CommandOperationsHub() {
           {role === "admin" && <TabsTrigger value="chain">Chain of command</TabsTrigger>}
         </TabsList>
         <Suspense fallback={<p className="p-4 text-muted-foreground">Loading…</p>}>
+          <TabsContent value="dashboard"><CommandOperationsDashboard /></TabsContent>
           {can("detention") && <TabsContent value="analytics"><SuspectAnalytics readOnly={holdingReadOnly} /></TabsContent>}
           {can("enforcement") && <TabsContent value="enforcement"><Enforcement /></TabsContent>}
           {can("operations") && <TabsContent value="operations"><Operations /></TabsContent>}

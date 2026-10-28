@@ -108,7 +108,7 @@ const immigrationItems = [
 ];
 
 const securityItems = [
-  { title: "Command Operations", url: "/command-operations", icon: ShieldAlert, iconColor: "text-primary" },
+  { title: "Command Operations", url: "/command-operations?tab=dashboard", icon: ShieldAlert, iconColor: "text-primary" },
   { title: "IPSE", url: "/ipse", icon: Shield, iconColor: "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" },
   { title: "MISD / CYBER", url: "/misd", icon: Shield, iconColor: "text-purple-700 dark:text-purple-300" },
   { title: "Compliance", url: "/compliance", icon: ClipboardCheck, iconColor: "text-sky-600 dark:text-sky-400" },
