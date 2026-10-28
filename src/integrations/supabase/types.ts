@@ -647,6 +647,69 @@ export type Database = {
         }
         Relationships: []
       }
+      approval_chain_config: {
+        Row: {
+          id: string
+          label: string
+          role: Database["public"]["Enums"]["app_role"]
+          tier: number
+          workflow: string
+        }
+        Insert: {
+          id?: string
+          label: string
+          role: Database["public"]["Enums"]["app_role"]
+          tier: number
+          workflow: string
+        }
+        Update: {
+          id?: string
+          label?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          tier?: number
+          workflow?: string
+        }
+        Relationships: []
+      }
+      approval_recommendations: {
+        Row: {
+          comments: string | null
+          decision: string
+          id: string
+          record_id: string
+          signature_hash: string
+          signed_at: string
+          signer_id: string
+          signer_name: string
+          tier: number
+          workflow: string
+        }
+        Insert: {
+          comments?: string | null
+          decision: string
+          id?: string
+          record_id: string
+          signature_hash: string
+          signed_at?: string
+          signer_id?: string
+          signer_name: string
+          tier: number
+          workflow: string
+        }
+        Update: {
+          comments?: string | null
+          decision?: string
+          id?: string
+          record_id?: string
+          signature_hash?: string
+          signed_at?: string
+          signer_id?: string
+          signer_name?: string
+          tier?: number
+          workflow?: string
+        }
+        Relationships: []
+      }
       asset_tag_counters: {
         Row: {
           next_value: number
@@ -2636,6 +2699,7 @@ export type Database = {
           created_at: string
           created_by: string
           currency: string
+          deleted_at: string | null
           detention_id: string | null
           granted_at: string
           id: string
@@ -2677,6 +2741,7 @@ export type Database = {
           created_at?: string
           created_by: string
           currency?: string
+          deleted_at?: string | null
           detention_id?: string | null
           granted_at?: string
           id?: string
@@ -2718,6 +2783,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           currency?: string
+          deleted_at?: string | null
           detention_id?: string | null
           granted_at?: string
           id?: string
@@ -2866,10 +2932,12 @@ export type Database = {
           created_by: string
           crime_type: string
           date_of_birth: string | null
+          deleted_at: string | null
           emergency_contact: string | null
           expected_release_at: string | null
           first_name: string
           gender: string | null
+          health_status: string | null
           home_address: string | null
           id: string
           id_number: string | null
@@ -2879,6 +2947,7 @@ export type Database = {
           location_of_arrest: string | null
           marital_status: string | null
           medical_alerts: string | null
+          mugshot_url: string | null
           nationality: string | null
           next_of_kin: string | null
           next_of_kin_phone: string | null
@@ -2893,6 +2962,7 @@ export type Database = {
           release_reason: string | null
           released_at: string | null
           released_by: string | null
+          repatriated_at: string | null
           risk_level: string
           statement_approved_at: string | null
           statement_approved_by: string | null
@@ -2917,10 +2987,12 @@ export type Database = {
           created_by: string
           crime_type: string
           date_of_birth?: string | null
+          deleted_at?: string | null
           emergency_contact?: string | null
           expected_release_at?: string | null
           first_name: string
           gender?: string | null
+          health_status?: string | null
           home_address?: string | null
           id?: string
           id_number?: string | null
@@ -2930,6 +3002,7 @@ export type Database = {
           location_of_arrest?: string | null
           marital_status?: string | null
           medical_alerts?: string | null
+          mugshot_url?: string | null
           nationality?: string | null
           next_of_kin?: string | null
           next_of_kin_phone?: string | null
@@ -2944,6 +3017,7 @@ export type Database = {
           release_reason?: string | null
           released_at?: string | null
           released_by?: string | null
+          repatriated_at?: string | null
           risk_level?: string
           statement_approved_at?: string | null
           statement_approved_by?: string | null
@@ -2968,10 +3042,12 @@ export type Database = {
           created_by?: string
           crime_type?: string
           date_of_birth?: string | null
+          deleted_at?: string | null
           emergency_contact?: string | null
           expected_release_at?: string | null
           first_name?: string
           gender?: string | null
+          health_status?: string | null
           home_address?: string | null
           id?: string
           id_number?: string | null
@@ -2981,6 +3057,7 @@ export type Database = {
           location_of_arrest?: string | null
           marital_status?: string | null
           medical_alerts?: string | null
+          mugshot_url?: string | null
           nationality?: string | null
           next_of_kin?: string | null
           next_of_kin_phone?: string | null
@@ -2995,6 +3072,7 @@ export type Database = {
           release_reason?: string | null
           released_at?: string | null
           released_by?: string | null
+          repatriated_at?: string | null
           risk_level?: string
           statement_approved_at?: string | null
           statement_approved_by?: string | null
@@ -3057,6 +3135,59 @@ export type Database = {
             columns: ["statement_approved_by"]
             isOneToOne: false
             referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      detention_sureties: {
+        Row: {
+          address: string | null
+          bail_id: string
+          created_at: string
+          full_name: string
+          id: string
+          id_number: string | null
+          id_type: string | null
+          occupation: string | null
+          phone: string | null
+          photo_path: string | null
+          relationship: string | null
+          scan_status: string
+        }
+        Insert: {
+          address?: string | null
+          bail_id: string
+          created_at?: string
+          full_name: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          occupation?: string | null
+          phone?: string | null
+          photo_path?: string | null
+          relationship?: string | null
+          scan_status?: string
+        }
+        Update: {
+          address?: string | null
+          bail_id?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          id_number?: string | null
+          id_type?: string | null
+          occupation?: string | null
+          phone?: string | null
+          photo_path?: string | null
+          relationship?: string | null
+          scan_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detention_sureties_bail_id_fkey"
+            columns: ["bail_id"]
+            isOneToOne: false
+            referencedRelation: "detention_bail_records"
             referencedColumns: ["id"]
           },
         ]
@@ -10951,6 +11082,30 @@ export type Database = {
         }
         Relationships: []
       }
+      offence_catalogue: {
+        Row: {
+          approved: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          approved?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          approved?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       office_history_access_log: {
         Row: {
           accessed_at: string
@@ -13816,6 +13971,56 @@ export type Database = {
           table_name?: string
         }
         Relationships: []
+      }
+      repatriation_details: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          destination: string | null
+          detention_id: string
+          id: string
+          notes: string | null
+          officer_count: number | null
+          officer_ids: string[]
+          updated_at: string
+          vehicles: string[]
+          weapons: string[]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          detention_id: string
+          id?: string
+          notes?: string | null
+          officer_count?: number | null
+          officer_ids?: string[]
+          updated_at?: string
+          vehicles?: string[]
+          weapons?: string[]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          detention_id?: string
+          id?: string
+          notes?: string | null
+          officer_count?: number | null
+          officer_ids?: string[]
+          updated_at?: string
+          vehicles?: string[]
+          weapons?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repatriation_details_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: true
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_schedules: {
         Row: {
@@ -16948,6 +17153,76 @@ export type Database = {
         }
         Relationships: []
       }
+      suspect_documents: {
+        Row: {
+          created_at: string
+          detention_id: string
+          file_name: string | null
+          file_path: string
+          id: string
+          kind: string
+          scan_status: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          detention_id: string
+          file_name?: string | null
+          file_path: string
+          id?: string
+          kind?: string
+          scan_status?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          detention_id?: string
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          kind?: string
+          scan_status?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suspect_documents_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suspect_offences: {
+        Row: {
+          created_at: string
+          detention_id: string
+          id: string
+          offence: string
+        }
+        Insert: {
+          created_at?: string
+          detention_id: string
+          id?: string
+          offence: string
+        }
+        Update: {
+          created_at?: string
+          detention_id?: string
+          id?: string
+          offence?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suspect_offences_detention_id_fkey"
+            columns: ["detention_id"]
+            isOneToOne: false
+            referencedRelation: "detention_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_audit_log: {
         Row: {
           action: string
@@ -19930,6 +20205,17 @@ export type Database = {
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
+      }
+      sign_approval: {
+        Args: {
+          _comments: string
+          _decision: string
+          _record_id: string
+          _signer_name: string
+          _tier: number
+          _workflow: string
+        }
+        Returns: string
       }
       signoff_can_sign: {
         Args: { _step: string; _user: string }
