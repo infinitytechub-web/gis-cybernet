@@ -267,6 +267,13 @@
       "when": 1793214696524,
       "tag": "0037_attendance_validation_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793214911388,
+      "tag": "0038_upload_scan_status_guard",
+      "breakpoints": true
     }
   ]
 }

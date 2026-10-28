@@ -24,6 +24,12 @@ export async function upload(path: string, file: File) {
   if (error) throw error;
   return path;
 }
+/** Ask the server to virus-scan an uploaded file; the verdict is stored on the record. */
+export async function requestScan(kind: "document" | "surety" | "mugshot", id: string) {
+  const { data, error } = await supabase.functions.invoke("scan-upload", { body: { kind, id } });
+  if (error || data?.status === "infected") return data?.status ?? "pending";
+  return data?.status as string;
+}
 async function openFile(path: string, status: string) {
   if (status === "infected") return alert("This file is quarantined and cannot be opened.");
   const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, 120);
@@ -55,15 +61,16 @@ export function OffencesTab({ id }: { id: string }) {
 export function MugshotTab({ id }: { id: string }) {
   const qc = useQueryClient(); const err = useErr();
   const { data } = useQuery({ queryKey: ["mugshot", id], queryFn: async () => {
-    const r = (await supabase.from("detention_records").select("mugshot_url").eq("id", id).single()).data;
-    if (!r?.mugshot_url) return null;
+    const r = (await supabase.from("detention_records").select("mugshot_url,mugshot_scan_status").eq("id", id).single()).data;
+    if (!r?.mugshot_url || r.mugshot_scan_status === "infected") return null;
     return (await supabase.storage.from(BUCKET).createSignedUrl(r.mugshot_url, 300)).data?.signedUrl ?? null; } });
   return (
     <div className="space-y-3">
       {data ? <img src={data} alt="Suspect mug-shot" className="h-48 rounded-md border object-cover" /> : <p className="text-sm text-muted-foreground">No mug-shot yet.</p>}
       <FileUploadGuard accept="image/jpeg,image/png,image/webp" buttonLabel="Upload mug-shot" onAccept={async ([f]) => {
         try { const p = await upload(`suspects/${id}/mugshot-${Date.now()}.${f.name.split(".").pop()}`, f);
-          err((await supabase.from("detention_records").update({ mugshot_url: p }).eq("id", id)).error, "Mug-shot uploaded");
+          err((await supabase.from("detention_records").update({ mugshot_url: p }).eq("id", id)).error, "Mug-shot uploaded – scanning");
+          const v = await requestScan("mugshot", id); if (v === "infected") err(new Error("Virus detected – the mug-shot was quarantined"));
           qc.invalidateQueries({ queryKey: ["mugshot", id] }); } catch (e) { err(e); } }} />
     </div>
   );
@@ -77,7 +84,8 @@ export function DocumentsTab({ id }: { id: string }) {
     <div className="space-y-3">
       <FileUploadGuard multiple accept="application/pdf,image/jpeg,image/png" buttonLabel="Upload documents" onAccept={async (files) => {
         for (const f of files) { try { const p = await upload(`suspects/${id}/docs/${Date.now()}-${f.name}`, f);
-          err((await supabase.from("suspect_documents").insert({ detention_id: id, file_path: p, file_name: f.name })).error); } catch (e) { err(e); } }
+          const r = await supabase.from("suspect_documents").insert({ detention_id: id, file_path: p, file_name: f.name }).select("id").single();
+          err(r.error); if (r.data && (await requestScan("document", r.data.id)) === "infected") err(new Error(`Virus detected in ${f.name} – quarantined`)); } catch (e) { err(e); } }
         qc.invalidateQueries({ queryKey: ["suspect_docs", id] }); }} />
       {data.map((d) => (
         <div key={d.id} className="flex items-center justify-between rounded border p-2 text-sm">
@@ -104,7 +112,8 @@ export function SuretiesTab({ id }: { id: string }) {
     if (!draft.full_name.trim() || !draft.phone.trim()) return err(new Error("Surety name and phone are required"));
     try {
       const photo_path = photo ? await upload(`bail/${bailId}/sureties/${Date.now()}-${photo.name}`, photo) : null;
-      err((await supabase.from("detention_sureties").insert({ ...draft, bail_id: bailId, photo_path })).error, "Surety added");
+      const r = await supabase.from("detention_sureties").insert({ ...draft, bail_id: bailId, photo_path }).select("id").single();
+      err(r.error, "Surety added"); if (r.data && photo_path) await requestScan("surety", r.data.id);
       setDraft(emptySurety); setPhoto(null); qc.invalidateQueries({ queryKey: ["sureties", bailId] });
     } catch (e) { err(e); }
   };

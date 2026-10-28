@@ -2947,6 +2947,7 @@ export type Database = {
           location_of_arrest: string | null
           marital_status: string | null
           medical_alerts: string | null
+          mugshot_scan_status: string
           mugshot_url: string | null
           nationality: string | null
           next_of_kin: string | null
@@ -3002,6 +3003,7 @@ export type Database = {
           location_of_arrest?: string | null
           marital_status?: string | null
           medical_alerts?: string | null
+          mugshot_scan_status?: string
           mugshot_url?: string | null
           nationality?: string | null
           next_of_kin?: string | null
@@ -3057,6 +3059,7 @@ export type Database = {
           location_of_arrest?: string | null
           marital_status?: string | null
           medical_alerts?: string | null
+          mugshot_scan_status?: string
           mugshot_url?: string | null
           nationality?: string | null
           next_of_kin?: string | null
