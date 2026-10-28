@@ -3,8 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, ChevronRight, FileDown, GripVertical } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BarChart3, ChevronDown, ChevronRight, FileDown, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { commandDashboardPath } from "@/lib/regional-commands";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -36,10 +38,23 @@ function HierarchyRow({ node, sortable, collapsed, onToggle }: {
         </button>
       ) : <span className="w-5" aria-hidden />}
       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `hsl(${color})`, opacity: pending ? 0.4 : 1 }} aria-hidden />
-      <span className={`min-w-0 flex-1 truncate text-sm ${node.depth === 0 ? "font-bold" : ""}`}>{node.name}</span>
+      {pending || !node.is_active ? (
+        <span className={`min-w-0 flex-1 truncate text-sm ${node.depth === 0 ? "font-bold" : ""}`}>{node.name}</span>
+      ) : (
+        <Link to={commandDashboardPath(node.id)}
+          className={`min-w-0 flex-1 truncate text-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded ${node.depth === 0 ? "font-bold" : ""}`}>
+          {node.name}
+        </Link>
+      )}
       <span className="hidden sm:inline text-xs text-muted-foreground">{ORG_UNIT_TYPE_LABELS[node.type as OrgUnitType] ?? node.type}</span>
       {pending && <Badge variant="outline" className="text-[10px]">Pending</Badge>}
       {!node.is_active && <Badge variant="destructive" className="text-[10px]">Inactive</Badge>}
+      {!pending && node.is_active && (
+        <Link to={commandDashboardPath(node.id)} aria-label={`Open ${node.name} dashboard`}
+          className="rounded p-1 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <BarChart3 className="h-4 w-4" />
+        </Link>
+      )}
       {sortable && (
         <span {...attributes} {...listeners} aria-label={`Drag to reorder ${node.name}`}
           className="cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted">
