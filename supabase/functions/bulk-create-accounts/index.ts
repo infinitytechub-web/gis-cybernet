@@ -145,13 +145,14 @@ Deno.serve(async (req) => {
         }
       }
     } catch {
-      // An admin-chosen password only makes sense for a single targeted account.
-      if (requestedPassword && (!targetIds || targetIds.length !== 1)) {
-        return new Response(JSON.stringify({ error: "A custom password requires exactly one profile" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // An admin-chosen password only makes sense for a single targeted account.
+    if (requestedPassword && (!targetIds || targetIds.length !== 1)) {
+      return new Response(JSON.stringify({ error: "A custom password requires exactly one profile" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
