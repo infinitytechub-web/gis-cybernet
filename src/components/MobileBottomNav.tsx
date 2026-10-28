@@ -51,6 +51,7 @@ const moreItems = [
   { title: "Front Desk", url: "/front-desk", icon: Stamp, iconColor: "text-lime-600 dark:text-lime-400", group: "Immigration" },
   { title: "Processing", url: "/processing", icon: FileSearch, iconColor: "text-amber-600 dark:text-amber-400", group: "Immigration" },
   // Security & Enforcement
+  { title: "Command Operations", url: "/command-operations", icon: ShieldAlert, iconColor: "text-primary", group: "Security" },
   { title: "Operations", url: "/operations", icon: Crosshair, iconColor: "text-orange-600 dark:text-orange-400", group: "Security" },
   { title: "Holding Center", url: "/holding", icon: Lock, iconColor: "text-red-700 dark:text-red-500", group: "Security" },
   { title: "Enforcement", url: "/enforcement", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", group: "Security" },

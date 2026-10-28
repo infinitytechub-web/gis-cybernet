@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { ApprovalChainEditor } from "@/components/detention/ApprovalChainEditor";
+import { useAuth } from "@/hooks/useAuth";
 import { SuspectCasePanel } from "@/components/detention/SuspectCasePanel";
 
 const Enforcement = lazy(() => import("./Enforcement"));
@@ -163,6 +165,7 @@ function SuspectAnalytics() {
 export default function CommandOperationsHub() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? "analytics";
+  const { role } = useAuth();
   return (
     <div className="space-y-4 p-4">
       <h1 className="text-2xl font-bold">Command Operations</h1>
@@ -172,12 +175,14 @@ export default function CommandOperationsHub() {
           <TabsTrigger value="enforcement">Enforcement</TabsTrigger>
           <TabsTrigger value="operations">Operations</TabsTrigger>
           <TabsTrigger value="holding">Holding Center</TabsTrigger>
+          {role === "admin" && <TabsTrigger value="chain">Chain of command</TabsTrigger>}
         </TabsList>
         <Suspense fallback={<p className="p-4 text-muted-foreground">Loading…</p>}>
           <TabsContent value="analytics"><SuspectAnalytics /></TabsContent>
           <TabsContent value="enforcement"><Enforcement /></TabsContent>
           <TabsContent value="operations"><Operations /></TabsContent>
           <TabsContent value="holding"><HoldingCenter /></TabsContent>
+          {role === "admin" && <TabsContent value="chain"><ApprovalChainEditor /></TabsContent>}
         </Suspense>
       </Tabs>
     </div>

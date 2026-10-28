@@ -125,7 +125,7 @@ export const MODULES: ModuleDef[] = [
   { key: "processing", label: "Processing", tier: "module", roles: [...COMMAND, ...PROCESSING_TIER, "front_desk"], paths: ["/processing"] },
   { key: "operations", label: "Operations", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "special_duties"], paths: ["/operations"] },
   { key: "enforcement", label: "Enforcement", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "special_duties"], paths: ["/enforcement"] },
-  { key: "detention", label: "Holding & Detention Center", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "special_duties"], paths: ["/holding"] },
+  { key: "detention", label: "Holding & Detention Center", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP, "special_duties"], paths: ["/holding", "/command-operations"] },
   { key: "ipse", label: "IPSE", tier: "module", roles: [...COMMAND, ...IPSE_TIER], paths: ["/ipse"] },
   { key: "misd", label: "MISD / CYBER", tier: "module", roles: [...COMMAND, ...SHIFT_LEADERSHIP], paths: ["/misd"] },
   { key: "health-lab", label: "Health Lab+", tier: "module", roles: [...COMMAND, "medical_officer"], paths: ["/health-lab"] },

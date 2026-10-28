@@ -34,6 +34,7 @@ export const NAV_DESCRIPTIONS: Record<string, string> = {
   "/processing": "Pre-front-desk vetting and processing of applications.",
 
   "/operations": "Planned operations, deployments and outcomes.",
+  "/command-operations": "Enforcement, Operations and Holding Center with live suspect analytics.",
   "/holding": "Detainee intake, custody records, bail and releases.",
   "/enforcement": "Enforcement actions, arrests and field reporting.",
   "/ipse": "Immigration Police Support & Enforcement casework.",
