@@ -5,6 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
+import { OffencesMultiSelect } from "@/components/detention/OffencesMultiSelect";
+import { OffencesTab, MugshotTab, DocumentsTab, SuretiesTab, upload as uploadDetentionFile } from "@/components/detention/SuspectCasePanel";
+import { FileUploadGuard } from "@/components/security/FileUploadGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StandardBailTab } from "@/components/detention/StandardBailTab";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -658,6 +661,9 @@ function EditDetaineeDialog({ record, onClose, role }: { record: any; onClose: (
 function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: string; role?: string | null }) {
   const qc = useQueryClient();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [offences, setOffences] = useState<string[]>([]);
+  const [mugshot, setMugshot] = useState<File | null>(null);
+  const [docs, setDocs] = useState<File[]>([]);
   const [form, setForm] = useState({
     first_name: "", last_name: "", alias: "", gender: "male", date_of_birth: "", marital_status: "",
     nationality: "", country_of_origin: "", id_type: "Passport", id_number: "",
@@ -694,10 +700,21 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
         payload.statement_approved_by = approver.id;
         payload.statement_approved_by_name = approver.label;
       }
-      const { error } = await supabase.from("detention_records").insert(payload);
+      const { data: created, error } = await supabase.from("detention_records").insert(payload).select("id").single();
       if (error) throw error;
+      const id = created.id;
+      const all = Array.from(new Set([form.crime_type, ...offences].filter(Boolean)));
+      if (all.length) { const r = await supabase.from("suspect_offences").insert(all.map((offence) => ({ detention_id: id, offence }))); if (r.error) throw r.error; }
+      if (mugshot) {
+        const p = await uploadDetentionFile(`suspects/${id}/mugshot-${Date.now()}.${mugshot.name.split(".").pop()}`, mugshot);
+        await supabase.from("detention_records").update({ mugshot_url: p }).eq("id", id);
+      }
+      for (const f of docs) {
+        const p = await uploadDetentionFile(`suspects/${id}/docs/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`, f);
+        await supabase.from("suspect_documents").insert({ detention_id: id, file_path: p, file_name: f.name });
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); toast.success("Detainee booked in"); onClose(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); qc.invalidateQueries({ queryKey: ["hub_offences"] }); toast.success("Detainee booked in"); onClose(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -790,6 +807,9 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
                 </Select>
               </div>
               <div><Label>Cell / Room</Label><Input value={form.cell_number} onChange={e => setForm(p => ({ ...p, cell_number: e.target.value }))} placeholder="e.g. C-01" /></div>
+              <div className="col-span-2"><Label>Additional offences (multi-select, Others / + to add)</Label><OffencesMultiSelect value={offences} onChange={setOffences} /></div>
+              <div><Label>Mug-shot photo</Label><FileUploadGuard accept="image/jpeg,image/png,image/webp" buttonLabel={mugshot ? `Mug-shot: ${mugshot.name}` : "Upload mug-shot"} onAccept={([f]) => setMugshot(f)} /></div>
+              <div><Label>Documents submitted on suspect's behalf</Label><FileUploadGuard multiple accept="application/pdf,image/jpeg,image/png" buttonLabel={docs.length ? `${docs.length} document(s) selected` : "Upload documents"} onAccept={(f) => setDocs((d) => [...d, ...f])} /></div>
               <div className="col-span-2"><Label>Charge Description</Label><Textarea rows={2} value={form.charge_description} onChange={e => setForm(p => ({ ...p, charge_description: e.target.value }))} /></div>
               <div><Label>Location of Arrest</Label><Input value={form.location_of_arrest} onChange={e => setForm(p => ({ ...p, location_of_arrest: e.target.value }))} /></div>
               <div><Label>Arresting Officer</Label><StaffPicker value={null} label={form.arresting_officer_name || null} title="Select arresting officer" placeholder="Select officer from staff directory…" onChange={(_id, label) => setForm(p => ({ ...p, arresting_officer_name: label || "" }))} /></div>
@@ -907,6 +927,10 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
             <TabsTrigger value="visitors" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Users className="h-3.5 w-3.5 mr-1 text-cyan-700 dark:text-cyan-400" />Visitors ({detail?.visitors.length || 0})</TabsTrigger>
             <TabsTrigger value="medical" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><Stethoscope className="h-3.5 w-3.5 mr-1 text-emerald-700 dark:text-emerald-400" />Medical ({detail?.medical.length || 0})</TabsTrigger>
             <TabsTrigger value="transfers" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><ArrowRightLeft className="h-3.5 w-3.5 mr-1 text-indigo-700 dark:text-indigo-400" />Transfers ({detail?.transfers.length || 0})</TabsTrigger>
+            <TabsTrigger value="offences">Offences</TabsTrigger>
+            <TabsTrigger value="mugshot">Mug-shot</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="sureties">Sureties</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bio" className="space-y-3">
@@ -953,6 +977,10 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
           <TabsContent value="property"><PropertyLog records={detail?.property || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody"} /></TabsContent>
           <TabsContent value="visitors"><VisitorLog records={detail?.visitors || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody"} /></TabsContent>
           <TabsContent value="medical"><MedicalLog records={detail?.medical || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody"} /></TabsContent>
+          <TabsContent value="offences"><OffencesTab id={record.id} /></TabsContent>
+          <TabsContent value="mugshot"><MugshotTab id={record.id} /></TabsContent>
+          <TabsContent value="documents"><DocumentsTab id={record.id} /></TabsContent>
+          <TabsContent value="sureties"><SuretiesTab id={record.id} /></TabsContent>
           <TabsContent value="transfers"><TransferLog records={detail?.transfers || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody" && canCommand} /></TabsContent>
         </Tabs>
       </SheetContent>
