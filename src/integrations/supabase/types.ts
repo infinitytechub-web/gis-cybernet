@@ -649,6 +649,8 @@ export type Database = {
       }
       approval_chain_config: {
         Row: {
+          configured_at: string | null
+          configured_by: string | null
           id: string
           label: string
           role: Database["public"]["Enums"]["app_role"]
@@ -656,6 +658,8 @@ export type Database = {
           workflow: string
         }
         Insert: {
+          configured_at?: string | null
+          configured_by?: string | null
           id?: string
           label: string
           role: Database["public"]["Enums"]["app_role"]
@@ -663,6 +667,8 @@ export type Database = {
           workflow: string
         }
         Update: {
+          configured_at?: string | null
+          configured_by?: string | null
           id?: string
           label?: string
           role?: Database["public"]["Enums"]["app_role"]

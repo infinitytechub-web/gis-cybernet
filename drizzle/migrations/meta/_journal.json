@@ -274,6 +274,13 @@
       "when": 1793214911388,
       "tag": "0038_upload_scan_status_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793215372601,
+      "tag": "0039_approval_chain_confirmation",
+      "breakpoints": true
     }
   ]
 }
