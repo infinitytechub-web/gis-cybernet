@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ORG_UNIT_TYPE_LABELS, type OrgUnitType } from "@/lib/org-hierarchy";
-import { buildHierarchyTree, buildHierarchyWordHtml, flattenedIds, moveWithinSiblings, visibleNodes, type HierarchyNode, type HierarchyUnit } from "@/lib/command-hierarchy";
+import { buildHierarchyTree, buildHierarchyWordHtml, flattenedIds, moveWithinSiblings, subtreeAt, visibleNodes, type HierarchyNode, type HierarchyUnit } from "@/lib/command-hierarchy";
 import { downloadBlob } from "@/lib/download-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
 
@@ -65,7 +65,7 @@ function HierarchyRow({ node, sortable, collapsed, onToggle }: {
   );
 }
 
-export default function HierarchyView({ isAdmin }: { isAdmin: boolean }) {
+export default function HierarchyView({ isAdmin, rootUnitId }: { isAdmin: boolean; rootUnitId?: string }) {
   const qc = useQueryClient();
   const chId = useId();
   const [roots, setRoots] = useState<HierarchyNode[] | null>(null);
@@ -93,7 +93,10 @@ export default function HierarchyView({ isAdmin }: { isAdmin: boolean }) {
     return () => { supabase.removeChannel(ch); };
   }, [qc, chId]);
 
-  const tree = useMemo(() => roots ?? (units.data ? buildHierarchyTree(units.data) : []), [roots, units.data]);
+  const tree = useMemo(() => {
+    const full = roots ?? (units.data ? buildHierarchyTree(units.data) : []);
+    return rootUnitId ? subtreeAt(full, rootUnitId) : full;
+  }, [roots, units.data, rootUnitId]);
   const visible = useMemo(() => visibleNodes(tree, collapsed), [tree, collapsed]);
 
   const sensors = useSensors(

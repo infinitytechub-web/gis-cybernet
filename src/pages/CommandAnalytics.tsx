@@ -11,6 +11,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import HierarchyView from "@/components/command/HierarchyView";
 import { useDirectoryPermissions } from "@/hooks/useDirectoryPermissions";
 import { exportReport, type ExportFormat } from "@/lib/export-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
@@ -104,6 +105,7 @@ export default function CommandAnalytics() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const perms = useDirectoryPermissions();
+  const { isAdmin } = useAuth();
   const [deptId, setDeptId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [intakeFilter, setIntakeFilter] = useState("all");
@@ -286,6 +288,20 @@ export default function CommandAnalytics() {
           ))}
         </div>
       </section>
+
+      {unitId && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Network className="h-4 w-4" aria-hidden="true" />
+              Sub-commands — drag to reorder
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <HierarchyView isAdmin={isAdmin} rootUnitId={unitId} />
+          </CardContent>
+        </Card>
+      )}
 
       <section>
         <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
