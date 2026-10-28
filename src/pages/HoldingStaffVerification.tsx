@@ -31,6 +31,7 @@ export default function HoldingStaffVerification() {
   const [review, setReview] = useState<Request | null>(null);
   const [reason, setReason] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoLoaded, setPhotoLoaded] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const requests = useQuery({
@@ -47,7 +48,7 @@ export default function HoldingStaffVerification() {
     return () => URL.revokeObjectURL(url);
   }, [photo]);
   useEffect(() => {
-    setPhotoUrl(null); setPhotoError("");
+    setPhotoUrl(null); setPhotoError(""); setPhotoLoaded(false);
     if (!review) return;
     let active = true;
     supabase.storage.from(BUCKET).createSignedUrl(review.photo_path, 60).then(({ data, error }) => {
@@ -76,7 +77,7 @@ export default function HoldingStaffVerification() {
     mutationFn: async (decision: VerificationDecision) => {
       if (!review || !user || !canReviewVerification(role, user.id, review.user_id, review.status, decision)) throw new Error("Review is not permitted.");
       if (!reason.trim()) throw new Error("Enter a review reason.");
-      if (decision === "approved" && !photoUrl) throw new Error("The submitted photo must load before approval.");
+      if (decision === "approved" && !photoLoaded) throw new Error("The submitted photo must load before approval.");
       const { error } = await supabase.rpc("review_holding_staff_verification", { _id: review.id, _decision: decision, _reason: reason.trim() });
       if (error) throw error;
     },
@@ -99,8 +100,8 @@ export default function HoldingStaffVerification() {
     </form>}
     <section className="space-y-3"><h2 className="text-lg font-semibold">{role === "admin" ? "Verification review" : "My verification history"}</h2><Input aria-label="Search verification requests" placeholder="Search Staff ID or status…" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
       {!requests.isLoading && !requests.error && !filtered.length && <p className="text-muted-foreground">No verification requests.</p>}
-      <ul className="divide-y">{pages.pageItems.map((r) => <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="break-words font-medium">{r.user_id === user?.id ? r.submitted_staff_id : "Staff identity request"}</p><p className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}{r.reviewed_at ? ` · Reviewed ${formatDateTime(r.reviewed_at)}` : ""}</p>{r.review_reason && <p className="mt-1 break-words text-sm">{r.review_reason}</p>}</div><div className="flex items-center gap-2"><Badge variant={r.status === "approved" ? "default" : "secondary"}>{r.status}</Badge>{role === "admin" && r.user_id !== user?.id && ["pending", "approved"].includes(r.status) && <Button variant="outline" onClick={() => { setReview(r); setReason(""); }}>Review</Button>}</div></li>)}</ul><ListPagination {...pages} label="verification requests" />
+      <ul className="divide-y">{pages.pageItems.map((r) => <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="break-words font-medium">{r.submitted_staff_id}</p><p className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}{r.reviewed_at ? ` · Reviewed ${formatDateTime(r.reviewed_at)}` : ""}</p>{r.review_reason && <p className="mt-1 break-words text-sm">{r.review_reason}</p>}</div><div className="flex items-center gap-2"><Badge variant={r.status === "approved" ? "default" : "secondary"}>{r.status}</Badge>{role === "admin" && r.user_id !== user?.id && ["pending", "approved"].includes(r.status) && <Button variant="outline" onClick={() => { setReview(r); setReason(""); }}>Review</Button>}</div></li>)}</ul><ListPagination {...pages} label="verification requests" />
     </section>
-    <Dialog open={!!review} onOpenChange={(open) => { if (!open && !decide.isPending) setReview(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Review staff identity</DialogTitle></DialogHeader>{review && <div className="space-y-4"><p className="break-words font-semibold">Staff ID: {review.submitted_staff_id}</p>{photoError ? <p role="alert" className="text-destructive">{photoError}</p> : photoUrl ? <img src={photoUrl} alt="Submitted staff verification photo" className="h-64 w-full rounded-md border object-contain" onError={() => { setPhotoUrl(null); setPhotoError("Photo could not be displayed. Approval is blocked."); }} /> : <p role="status">Loading private photo…</p>}<Label htmlFor="verification-reason">Review reason</Label><Textarea id="verification-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} /><div className="flex flex-wrap gap-2">{review.status === "pending" ? <><Button disabled={decide.isPending || !reason.trim() || !photoUrl} onClick={() => decide.mutate("approved")}><Check className="mr-2 h-4 w-4" />Approve Command read access</Button><Button variant="destructive" disabled={decide.isPending || !reason.trim()} onClick={() => decide.mutate("rejected")}><X className="mr-2 h-4 w-4" />Reject</Button></> : <Button variant="destructive" disabled={decide.isPending || !reason.trim()} onClick={() => decide.mutate("revoked")}>Revoke access</Button>}</div></div>}</DialogContent></Dialog>
+    <Dialog open={!!review} onOpenChange={(open) => { if (!open && !decide.isPending) setReview(null); }}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Review staff identity</DialogTitle></DialogHeader>{review && <div className="space-y-4"><p className="break-words font-semibold">Staff ID: {review.submitted_staff_id}</p>{photoError ? <p role="alert" className="text-destructive">{photoError}</p> : photoUrl ? <img src={photoUrl} alt="Submitted staff verification photo" className="h-64 w-full rounded-md border object-contain" onLoad={() => setPhotoLoaded(true)} onError={() => { setPhotoLoaded(false); setPhotoUrl(null); setPhotoError("Photo could not be displayed. Approval is blocked."); }} /> : <p role="status">Loading private photo…</p>}<Label htmlFor="verification-reason">Review reason</Label><Textarea id="verification-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} /><div className="flex flex-wrap gap-2">{review.status === "pending" ? <><Button disabled={decide.isPending || !reason.trim() || !photoLoaded} onClick={() => decide.mutate("approved")}><Check className="mr-2 h-4 w-4" />Approve Command read access</Button><Button variant="destructive" disabled={decide.isPending || !reason.trim()} onClick={() => decide.mutate("rejected")}><X className="mr-2 h-4 w-4" />Reject</Button></> : <Button variant="destructive" disabled={decide.isPending || !reason.trim()} onClick={() => decide.mutate("revoked")}>Revoke access</Button>}</div></div>}</DialogContent></Dialog>
   </div>;
 }
