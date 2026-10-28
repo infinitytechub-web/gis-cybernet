@@ -1,4 +1,6 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Staff ID/photo verification screen with private uploads and Super Admin approval/revocation
+- [ ] Verify Holding Center verification permissions and submission/review regression tests
 - [x] Replace typed approval names with fresh account verification and server-attributed signatures/timestamps; eight focused tests passed
 - [ ] Live verified approval signing — blocked: requires signed-in authorized account and real record; not exercised
 - [x] Consolidate legacy operations pages and duplicate menu entries into existing Command Operations tabs; 26 navigation/RBAC tests passed
