@@ -5,6 +5,7 @@ import {
   buildHierarchyWordHtml,
   flattenedIds,
   moveWithinSiblings,
+  subtreeAt,
   visibleNodes,
   type HierarchyUnit,
 } from "@/lib/command-hierarchy";
