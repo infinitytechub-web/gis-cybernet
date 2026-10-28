@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Command Operations dashboard: detainee totals, pending approvals, attendance trends and menu entry; focused tests and page verification
 - [x] Shift roster: officer self-service sign-in/out with automatic server timestamps, existing attendance records and permission-gated Attendance Overview links
 - [x] Shift roster/report synchronization: 59 focused permission, recording, synchronization and date tests passed; preview build passed; signed-out route redirects to sign-in without runtime errors
 - [ ] Live officer shift sign-in/out and report readback — blocked: requesting user has no matching app account; requires an identified signed-in officer and an actual shift, no real attendance changed
