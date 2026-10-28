@@ -18397,6 +18397,23 @@ export type Database = {
           staff_name: string
         }[]
       }
+      attendance_validation: {
+        Args: { _from: string; _period: string; _to: string }
+        Returns: {
+          absent: number
+          duplicates: number
+          excused: number
+          invalid_times: number
+          late: number
+          missing_checkout: number
+          org_unit_id: string
+          period_start: string
+          present: number
+          records: number
+          staff_count: number
+          unit_name: string
+        }[]
+      }
       auto_deploy_roster_assignments: {
         Args: { _import_id: string }
         Returns: Json

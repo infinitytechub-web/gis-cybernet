@@ -253,6 +253,13 @@
       "when": 1793213545518,
       "tag": "0035_holding_center_enhancements",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793214183737,
+      "tag": "0036_attendance_validation_report",
+      "breakpoints": true
     }
   ]
 }

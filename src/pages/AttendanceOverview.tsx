@@ -24,6 +24,7 @@ import { formatDate } from "@/lib/date-format";
 import { format, startOfMonth, subDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { DateInput } from "@/components/ui/date-input";
+import { AttendanceValidationReport } from "@/components/attendance/AttendanceValidationReport";
 
 interface SummaryRow {
   profile_id: string;
@@ -245,6 +246,7 @@ export default function AttendanceOverview() {
           </div>
         </CardContent>
       </Card>
+      <AttendanceValidationReport />
     </div>
   );
 }
