@@ -281,6 +281,13 @@
       "when": 1793215372601,
       "tag": "0039_approval_chain_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793215389157,
+      "tag": "0040_approval_chain_unconfirm_defaults",
+      "breakpoints": true
     }
   ]
 }
