@@ -302,6 +302,13 @@
       "when": 1793216472522,
       "tag": "0042_save_approval_signing_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793217457485,
+      "tag": "0043_verified_approval_signatures",
+      "breakpoints": true
     }
   ]
 }
