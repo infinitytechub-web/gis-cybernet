@@ -69,6 +69,21 @@ export function visibleNodes(roots: HierarchyNode[], collapsed: Set<string>): Hi
   return out;
 }
 
+/**
+ * The branch of the tree rooted at one unit, with depths rebased so the unit
+ * itself renders at level 0 — used to show a command its own sub-commands.
+ */
+export function subtreeAt(roots: HierarchyNode[], rootId: string): HierarchyNode[] {
+  const find = (nodes: HierarchyNode[]): HierarchyNode | null => {
+    for (const n of nodes) { if (n.id === rootId) return n; const hit = find(n.children); if (hit) return hit; }
+    return null;
+  };
+  const root = find(roots);
+  if (!root) return [];
+  const rebase = (n: HierarchyNode, depth: number): HierarchyNode => ({ ...n, depth, children: n.children.map((c) => rebase(c, depth + 1)) });
+  return [rebase(root, 0)];
+}
+
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const wordShell = (body: string) => `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>
