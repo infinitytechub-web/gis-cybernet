@@ -56,7 +56,7 @@ export function buildProfilePayload(form: StaffAccountForm, extras: {
     rank_id: extras.rankId || null,
     department_id: extras.departmentId || null,
     org_unit_id: form.orgUnitId,
-    status: "active",
+    status: "active" as const,
     ghana_card_number: form.ghanaCard.trim() || null,
   };
 }
