@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { CommandOperationsRedirect } from "@/components/CommandOperationsRedirect";
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { Suspense } from "react";
 import { lazyRetry as lazy } from "@/lib/lazy-retry";
@@ -91,8 +92,6 @@ const ScheduledFiles = lazy(() => import("./pages/ScheduledFiles"));
 const FrontDesk = lazy(() => import("./pages/FrontDesk"));
 const Processing = lazy(() => import("./pages/Processing"));
 const Analytics = lazy(() => import("./pages/Analytics"));
-const Enforcement = lazy(() => import("./pages/Enforcement"));
-const Operations = lazy(() => import("./pages/Operations"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Branding = lazy(() => import("./pages/Branding"));
 const CommandRoles = lazy(() => import("./pages/CommandRoles"));
@@ -104,7 +103,6 @@ const Fleet = lazy(() => import("./pages/Fleet"));
 const InCab = lazy(() => import("./pages/InCab"));
 const CommandConsole = lazy(() => import("./pages/CommandConsole"));
 
-const HoldingCenter = lazy(() => import("./pages/HoldingCenter"));
 const CommandOperationsHub = lazy(() => import("./pages/CommandOperationsHub"));
 const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
@@ -267,8 +265,8 @@ function App() {
           <Route path="/processing" element={<ProtectedRoute module="processing"><Layout><Processing /></Layout></ProtectedRoute>} />
           <Route path="/front-desk" element={<ProtectedRoute module="front-desk"><Layout><FrontDesk /></Layout></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute module="analytics"><Layout><Analytics /></Layout></ProtectedRoute>} />
-          <Route path="/enforcement" element={<ProtectedRoute module="enforcement"><Layout><Enforcement /></Layout></ProtectedRoute>} />
-          <Route path="/operations" element={<ProtectedRoute module="operations"><Layout><Operations /></Layout></ProtectedRoute>} />
+          <Route path="/enforcement" element={<ProtectedRoute module="enforcement"><CommandOperationsRedirect tab="enforcement" /></ProtectedRoute>} />
+          <Route path="/operations" element={<ProtectedRoute module="operations"><CommandOperationsRedirect tab="operations" /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute module="settings"><Layout><Settings /></Layout></ProtectedRoute>} />
           <Route path="/branding" element={<ProtectedRoute module="branding"><Layout><Branding /></Layout></ProtectedRoute>} />
           <Route path="/admin/shift-rotations" element={<ProtectedRoute module="admin-shift-rotations"><Layout><AdminShiftRotations /></Layout></ProtectedRoute>} />
@@ -281,8 +279,8 @@ function App() {
           <Route path="/in-cab" element={<ProtectedRoute module="in-cab"><Layout><InCab /></Layout></ProtectedRoute>} />
           <Route path="/command-console" element={<ProtectedRoute module="command-console"><Layout><CommandConsole /></Layout></ProtectedRoute>} />
 
-          <Route path="/holding" element={<ProtectedRoute module="detention"><Layout><HoldingCenter /></Layout></ProtectedRoute>} />
-          <Route path="/command-operations" element={<ProtectedRoute module="detention"><Layout><CommandOperationsHub /></Layout></ProtectedRoute>} />
+          <Route path="/holding" element={<ProtectedRoute module="detention"><CommandOperationsRedirect tab="holding" /></ProtectedRoute>} />
+          <Route path="/command-operations" element={<ProtectedRoute module="command-operations"><Layout><CommandOperationsHub /></Layout></ProtectedRoute>} />
           <Route path="/procurement" element={<ProtectedRoute module="procurement"><Layout><Procurement /></Layout></ProtectedRoute>} />
           <Route path="/misd" element={<ProtectedRoute module="misd"><Layout><Misd /></Layout></ProtectedRoute>} />
           <Route path="/ipse" element={<ProtectedRoute module="ipse"><Layout><Ipse /></Layout></ProtectedRoute>} />

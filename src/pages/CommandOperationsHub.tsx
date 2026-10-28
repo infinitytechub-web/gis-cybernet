@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ApprovalChainEditor } from "@/components/detention/ApprovalChainEditor";
 import { useAuth } from "@/hooks/useAuth";
 import { SuspectCasePanel } from "@/components/detention/SuspectCasePanel";
+import { useRbac } from "@/hooks/useRbac";
 
 const Enforcement = lazy(() => import("./Enforcement"));
 const Operations = lazy(() => import("./Operations"));
@@ -164,24 +165,35 @@ function SuspectAnalytics() {
 
 export default function CommandOperationsHub() {
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") ?? "analytics";
   const { role } = useAuth();
+  const { can, loading } = useRbac();
+  const available = [
+    ...(can("detention") ? ["analytics"] : []),
+    ...(can("enforcement") ? ["enforcement"] : []),
+    ...(can("operations") ? ["operations"] : []),
+    ...(can("detention") ? ["holding"] : []),
+    ...(role === "admin" ? ["chain"] : []),
+  ];
+  const requested = params.get("tab") ?? "analytics";
+  const tab = available.includes(requested) ? requested : available[0];
+  if (loading) return <p role="status">Loading access…</p>;
+  if (!tab) return <p role="alert">Access restricted.</p>;
   return (
     <div className="space-y-4 p-4">
       <h1 className="text-2xl font-bold">Command Operations</h1>
-      <Tabs value={tab} onValueChange={(t) => setParams({ tab: t })}>
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="enforcement">Enforcement</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
-          <TabsTrigger value="holding">Holding Center</TabsTrigger>
+      <Tabs value={tab} onValueChange={(t) => setParams((previous) => { const next = new URLSearchParams(previous); next.set("tab", t); return next; })}>
+        <TabsList className="h-auto flex-wrap gap-1">
+          {can("detention") && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
+          {can("enforcement") && <TabsTrigger value="enforcement">Enforcement</TabsTrigger>}
+          {can("operations") && <TabsTrigger value="operations">Operations</TabsTrigger>}
+          {can("detention") && <TabsTrigger value="holding">Holding Center</TabsTrigger>}
           {role === "admin" && <TabsTrigger value="chain">Chain of command</TabsTrigger>}
         </TabsList>
         <Suspense fallback={<p className="p-4 text-muted-foreground">Loading…</p>}>
-          <TabsContent value="analytics"><SuspectAnalytics /></TabsContent>
-          <TabsContent value="enforcement"><Enforcement /></TabsContent>
-          <TabsContent value="operations"><Operations /></TabsContent>
-          <TabsContent value="holding"><HoldingCenter /></TabsContent>
+          {can("detention") && <TabsContent value="analytics"><SuspectAnalytics /></TabsContent>}
+          {can("enforcement") && <TabsContent value="enforcement"><Enforcement /></TabsContent>}
+          {can("operations") && <TabsContent value="operations"><Operations /></TabsContent>}
+          {can("detention") && <TabsContent value="holding"><HoldingCenter /></TabsContent>}
           {role === "admin" && <TabsContent value="chain"><ApprovalChainEditor /></TabsContent>}
         </Suspense>
       </Tabs>
