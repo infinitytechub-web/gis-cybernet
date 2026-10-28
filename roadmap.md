@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Make three-tier bail/repatriation signing authority editable and verify Super Admin-only saving
 - [x] Database: offences catalogue, suspect offences, sureties, suspect documents, repatriation details, 3-tier approval chain, signed recommendations, soft delete
 - [x] Command Operations page (/command-operations) with live suspect analytics, KYC view, modify/soft delete
 - [x] Offences multi-select component with "+"/Others
