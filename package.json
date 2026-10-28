@@ -97,7 +97,7 @@
     "vaul": "^0.9.9",
     "web-vitals": "^5.3.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
@@ -140,7 +140,7 @@
     "minimatch": "^9.0.7",
     "picomatch": "^2.3.2",
     "brace-expansion": "^2.0.3",
-    "dompurify": "^3.3.4",
+    "dompurify": "^3.4.17",
     "yaml": "^2.8.3"
   }
 }
