@@ -38,7 +38,9 @@ describe("Holding verification form integration", () => {
     await waitFor(() => expect(submit).not.toBeDisabled());
     fireEvent.change(screen.getByLabelText("Registered Staff ID"), { target: { value: "GIS-100" } });
     fireEvent.change(screen.getByLabelText("Staff photo"), { target: { files: [new File(["photo"], "staff.png", { type: "image/png" })] } });
-    fireEvent.click(submit);
+    const form = submit.closest("form");
+    if (!form) throw new Error("Submission form missing");
+    fireEvent.submit(form);
     await screen.findByText("Pending administrator review");
     expect(mocks.upload).toHaveBeenCalledWith(expect.objectContaining({ bucket: "holding-staff-verification", upsert: false }));
     expect(mocks.rpc).toHaveBeenCalledWith("submit_holding_staff_verification", { _staff_id: "GIS-100", _photo_path: "staff-user/photo.png" });
@@ -49,7 +51,9 @@ describe("Holding verification form integration", () => {
     await waitFor(() => expect(submit).not.toBeDisabled());
     fireEvent.change(screen.getByLabelText("Registered Staff ID"), { target: { value: "WRONG" } });
     fireEvent.change(screen.getByLabelText("Staff photo"), { target: { files: [new File(["photo"], "staff.png", { type: "image/png" })] } });
-    fireEvent.click(submit);
+    const form = submit.closest("form");
+    if (!form) throw new Error("Submission form missing");
+    fireEvent.submit(form);
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith(["staff-user/photo.png"]));
     expect(screen.queryByText("Pending administrator review")).not.toBeInTheDocument();
   });
