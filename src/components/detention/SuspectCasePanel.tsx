@@ -12,6 +12,10 @@ import { OffencesMultiSelect } from "./OffencesMultiSelect";
 import { StaffPicker } from "./StaffPicker";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2 } from "lucide-react";
+import { verifyAndSignApproval } from "@/lib/approval-signing";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { roleLabel } from "@/lib/role-labels";
 
 const BUCKET = "detention-photos";
 const MIN_SURETIES = 2;
@@ -173,23 +177,39 @@ function RepatriationTab({ id }: { id: string }) {
 
 export function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | "repatriation" }) {
   const qc = useQueryClient(); const err = useErr();
-  const { data: tiers = [] } = useQuery({ queryKey: ["chain", workflow], queryFn: async () =>
-    (await supabase.from("approval_chain_config").select("*").eq("workflow", workflow).order("tier")).data ?? [] });
-  const { data: signed = [] } = useQuery({ queryKey: ["recs", workflow, id], queryFn: async () =>
-    (await supabase.from("approval_recommendations").select("*").eq("workflow", workflow).eq("record_id", id).order("tier")).data ?? [] });
+  const { data: tiers = [], isPending: tiersLoading, error: tiersError } = useQuery({ queryKey: ["chain", workflow], queryFn: async () => {
+    const result = await supabase.from("approval_chain_config").select("*").eq("workflow", workflow).order("tier");
+    if (result.error) throw result.error;
+    return result.data ?? [];
+  } });
+  const { data: signed = [], isPending: signedLoading, error: signedError } = useQuery({ queryKey: ["recs", workflow, id], queryFn: async () => {
+    const result = await supabase.from("approval_recommendations").select("*").eq("workflow", workflow).eq("record_id", id).order("tier");
+    if (result.error) throw result.error;
+    return result.data ?? [];
+  } });
   const next = tiers.find((t) => !signed.some((s) => s.tier === t.tier));
-  const [comments, setComments] = useState(""); const [name, setName] = useState("");
-  const sign = async (decision: string) => {
-    if (!next) return;
-    const { error } = await supabase.rpc("sign_approval", { _workflow: workflow, _record_id: id, _tier: next.tier, _decision: decision, _comments: comments, _signer_name: name });
-    err(error, "Signed"); if (!error) { setComments(""); setName(""); }
-    qc.invalidateQueries({ queryKey: ["recs", workflow, id] });
+  const [comments, setComments] = useState("");
+  const [decision, setDecision] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [signError, setSignError] = useState("");
+  const sign = async () => {
+    if (!next || !decision || !password || busy) return;
+    setBusy(true); setSignError("");
+    try {
+      await verifyAndSignApproval(password, { _workflow: workflow, _record_id: id, _tier: next.tier, _decision: decision, _comments: comments });
+      setComments(""); setDecision(null); err(null, "Verified signature recorded");
+      await qc.invalidateQueries({ queryKey: ["recs", workflow, id] });
+    } catch (e) { setSignError(e instanceof Error ? e.message : "Could not sign. Please try again."); }
+    finally { setPassword(""); setBusy(false); }
   };
+  if (tiersLoading || signedLoading) return <p role="status">Loading approval record…</p>;
+  if (tiersError || signedError || tiers.length !== 3) return <p role="alert" className="text-destructive">Could not load the complete approval record. Signing is blocked.</p>;
   return (
     <div className="space-y-3">
       {tiers.map((t) => { const s = signed.find((x) => x.tier === t.tier); return (
         <div key={t.id} className="rounded border p-2 text-sm">
-          <b>Tier {t.tier}: {t.label}</b> <span className="text-muted-foreground">({t.role})</span>
+          <b>Tier {t.tier}: {t.label}</b> <span className="text-muted-foreground">({roleLabel(t.role)})</span>
           {s ? <p>{s.decision.replace("_", " ")} by <i>{s.signer_name}</i> on {formatDateTime(s.signed_at)}{s.comments ? ` — ${s.comments}` : ""}<br /><span className="font-mono text-xs text-muted-foreground">Signature {s.signature_hash.slice(0, 16)}…</span></p>
             : <p className="text-muted-foreground">Awaiting</p>}
         </div>); })}
@@ -198,13 +218,23 @@ export function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | 
         <div className="space-y-2 rounded-md border p-3">
           <p className="text-sm font-medium">Your step: {next.label}</p>
           <Textarea placeholder="Recommendation / comments" value={comments} onChange={(e) => setComments(e.target.value)} />
-          <Input placeholder="Type your full name as e-signature" value={name} onChange={(e) => setName(e.target.value)} />
-          <div className="flex gap-2">
-            {next.tier < 3 ? <><Button onClick={() => sign("recommend")} disabled={!name.trim()}>Recommend & sign</Button><Button variant="outline" onClick={() => sign("not_recommend")} disabled={!name.trim()}>Do not recommend</Button></>
-              : <><Button onClick={() => sign("approve")} disabled={!name.trim()}>Approve & sign</Button><Button variant="destructive" onClick={() => sign("reject")} disabled={!name.trim()}>Reject</Button></>}
+          <div className="flex flex-wrap gap-2">
+            {next.tier < 3 ? <><Button onClick={() => setDecision("recommend")}>Recommend & sign</Button><Button variant="outline" onClick={() => setDecision("not_recommend")}>Do not recommend</Button></>
+              : <><Button onClick={() => setDecision("approve")}>Approve & sign</Button><Button variant="destructive" onClick={() => setDecision("reject")}>Reject</Button></>}
           </div>
         </div>
       )}
+      <Dialog open={!!decision} onOpenChange={(open) => { if (!open && !busy) { setDecision(null); setPassword(""); setSignError(""); } }}>
+        <DialogContent><DialogHeader><DialogTitle>Verify & sign · Tier {next?.tier}</DialogTitle></DialogHeader>
+          <p className="text-sm font-medium capitalize">{decision?.replace("_", " ")}</p>
+          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void sign(); }}>
+            <Label htmlFor={`approval-password-${workflow}-${id}`}>Your account password</Label>
+            <Input id={`approval-password-${workflow}-${id}`} type="password" autoComplete="current-password" value={password} disabled={busy} onChange={(e) => setPassword(e.target.value)} />
+            {signError && <p role="alert" className="text-sm text-destructive">{signError}</p>}
+            <Button type="submit" disabled={busy || !password}>{busy ? "Verifying…" : "Verify account & sign"}</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
