@@ -240,6 +240,7 @@ function App() {
           <Route path="/command-administration" element={<ProtectedRoute module="command-administration"><Layout><CommandAdministration /></Layout></ProtectedRoute>} />
           <Route path="/attendance/weekly" element={<ProtectedRoute module="attendance-weekly"><Layout><AttendanceWeekly /></Layout></ProtectedRoute>} />
           <Route path="/my-shift" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
+          <Route path="/shift-roster" element={<ProtectedRoute module="my-shift"><Layout><MyShiftTracker /></Layout></ProtectedRoute>} />
           <Route path="/shift-rotation-approvals" element={<ProtectedRoute module="shift-rotation-approvals"><Layout><RotationChangeApprovals /></Layout></ProtectedRoute>} />
           <Route path="/attendance/connections" element={<ProtectedRoute module="shift-connections"><Layout><ShiftConnections /></Layout></ProtectedRoute>} />
           <Route path="/staff-approvals" element={<ProtectedRoute module="staff-request-approvals"><Layout><StaffRequestApprovals /></Layout></ProtectedRoute>} />

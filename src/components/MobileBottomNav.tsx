@@ -39,6 +39,7 @@ const moreItems = [
   { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400", group: "Personnel" },
   { title: "Roles", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400", group: "Personnel" },
   // Workforce
+  { title: "Shift Roster", url: "/shift-roster", icon: CalendarCheck, iconColor: "text-primary", group: "Workforce" },
   { title: "Shifts", url: "/shifts", icon: Clock, iconColor: "text-indigo-600 dark:text-indigo-400", group: "Workforce" },
   { title: "Attendance Overview", url: "/attendance/overview", icon: BarChart3, iconColor: "text-teal-700 dark:text-teal-300", group: "Workforce" },
   { title: "Weekly Attendance", url: "/attendance/weekly", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300", group: "Workforce" },

@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { validatePhotoFile } from "@/lib/image-upload";
 import { toast } from "sonner";
+import { ATTENDANCE_REPORT_KEYS } from "@/hooks/useAttendanceReportSync";
 
 export type ClockAction = "check_in" | "check_out";
 
@@ -84,6 +85,9 @@ export function useRosterClock() {
       return data as unknown as ClockResult;
     },
     onSuccess: (res, vars) => {
+      ATTENDANCE_REPORT_KEYS.forEach((key) => {
+        void qc.invalidateQueries({ queryKey: [key] });
+      });
       // Refresh every surface that reports attendance: roster columns, the
       // Command Dashboard "Staff attendance today" KPI and unit roll-ups.
       qc.invalidateQueries({ queryKey: ["staff-roster"] });
