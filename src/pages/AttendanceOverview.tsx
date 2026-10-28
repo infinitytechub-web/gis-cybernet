@@ -25,6 +25,7 @@ import { format, startOfMonth, subDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { DateInput } from "@/components/ui/date-input";
 import { AttendanceValidationReport } from "@/components/attendance/AttendanceValidationReport";
+import { useAttendanceReportSync } from "@/hooks/useAttendanceReportSync";
 
 interface SummaryRow {
   profile_id: string;
@@ -44,6 +45,7 @@ interface SummaryRow {
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
 export default function AttendanceOverview() {
+  useAttendanceReportSync();
   const { isAdminOrSupervisor } = useAuth();
   const today = new Date();
   const [from, setFrom] = useState(iso(startOfMonth(today)));
@@ -51,9 +53,12 @@ export default function AttendanceOverview() {
 
   const rangeValid = !!from && !!to && from <= to;
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["attendance-hours-summary", from, to],
+  const { user } = useAuth();
+  const { data: rows = [], isLoading, error } = useQuery({
+    queryKey: ["attendance-hours-summary", user?.id, from, to],
     enabled: rangeValid,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("attendance_hours_summary", {
         _from: from,
@@ -140,12 +145,16 @@ export default function AttendanceOverview() {
           ? "Hours worked, attendance and leave across the unit for any date range"
           : "Your hours worked, attendance and leave for any date range"}
         actions={
-          <Button variant="secondary" size="sm" onClick={exportCsv} disabled={rows.length === 0}>
+          <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm"><Link to="/shift-roster">Shift Roster</Link></Button>
+          <Button variant="secondary" size="sm" onClick={exportCsv} disabled={!!error || isLoading || rows.length === 0}>
             <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden="true" />
             Export
           </Button>
+          </div>
         }
       />
+      {error && <p role="alert" className="text-destructive">Could not load attendance: {(error as Error).message}</p>}
 
       <Card>
         <CardHeader>
@@ -224,7 +233,9 @@ export default function AttendanceOverview() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {error ? (
+                  <TableRow><TableCell colSpan={9}>Attendance could not be loaded.</TableCell></TableRow>
+                ) : isLoading ? (
                   <TableRow><TableCell colSpan={9}>Loading…</TableCell></TableRow>
                 ) : rows.length === 0 ? (
                   <TableRow><TableCell colSpan={9}>No attendance recorded in this range.</TableCell></TableRow>

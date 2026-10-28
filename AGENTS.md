@@ -1,4 +1,5 @@
 # Architecture rules
+- Shift Roster reuses the personal shift tracker and server-attributed roster clock action; Attendance Overview reads the same attendance records with realtime invalidation and polling — why: avoid duplicate registers and client-invented attendance times.
 - Holding Center identity verification uses private photos, server-matched staff IDs and Super Admin-only review; approved access is read-only and scoped to the current assigned Command, without changing signing or operational authority — why: verifying identity must not grant administrative powers.
 - Command Operations reuses legacy workflow pages in permission-gated tabs; legacy routes redirect preserving context, and hub access is the union of existing module permissions — why: consolidate navigation without duplicating records or expanding access.
 - Bail/repatriation signing-role configuration is saved atomically through `save_approval_chain`, restricted to Super Admins; `sign_approval` reads configured roles on each sign — why: labels must never substitute for actual signing authority.

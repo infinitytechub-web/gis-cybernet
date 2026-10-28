@@ -71,7 +71,7 @@ export const MODULES: ModuleDef[] = [
   { key: "my-profile", label: "My Profile", tier: "all-staff", roles: "all", paths: ["/my-profile"] },
   { key: "biometric-enrollment", label: "Biometric Enrollment", tier: "all-staff", roles: "all", paths: ["/biometric-enrollment"] },
   { key: "my-portal", label: "My Portal", tier: "all-staff", roles: "all", paths: ["/my-portal"] },
-  { key: "my-shift", label: "My Shift Tracker", tier: "all-staff", roles: "all", paths: ["/my-shift"] },
+  { key: "my-shift", label: "Shift Roster", tier: "all-staff", roles: "all", paths: ["/my-shift", "/shift-roster"] },
   { key: "staff-directory", label: "Staff Directory", feature: "Staff Directory", tier: "all-staff", roles: "all", paths: ["/directory"] },
   { key: "excuse-duty", label: "Excuse Duty Form", tier: "all-staff", roles: "all", paths: ["/excuse-duty", "/excuse-duty/mine"] },
   { key: "leave", label: "Leave / Pass Requests", feature: "Leave Requests", tier: "all-staff", roles: "all", paths: ["/leave"] },

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   format,
   startOfMonth,
@@ -33,6 +33,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { useRosterClock } from "@/hooks/useRosterClock";
+import { useRbac } from "@/hooks/useRbac";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -154,18 +161,22 @@ function computePunctuality(checkInIso: string, dateKey: string, shift: { start_
 export default function MyShiftTracker() {
   const { user, role } = useAuth();
   const queryClient = useQueryClient();
+  const clock = useRosterClock();
+  const { canPath } = useRbac();
+  const [search, setSearch] = useState("");
   const now = useNow(1000);
   const [cursor, setCursor] = useState<Date>(() => new Date());
 
   // Profile
-  const { data: profile, isLoading: loadingProfile } = useQuery({
+  const { data: profile, isLoading: loadingProfile, error: profileError } = useQuery({
     queryKey: ["my-shift-tracker", "profile", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
+      if (!user) throw new Error("Sign in to load your roster");
       const { data, error } = await supabase
         .from("profiles")
         .select("id, user_id, first_name, last_name, staff_id, shift_group, department_id")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data as Profile | null;
@@ -179,14 +190,17 @@ export default function MyShiftTracker() {
   const days = useMemo(() => eachDayOfInterval({ start: gridStart, end: gridEnd }), [gridStart, gridEnd]);
 
   // Shift assignments overlapping the visible month
-  const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
+  const { data: assignments = [], isLoading: loadingAssignments, error: assignmentsError } = useQuery({
     queryKey: ["my-shift-tracker", "assignments", profile?.id, format(monthStart, "yyyy-MM")],
     enabled: !!profile?.id,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
+      if (!profile) throw new Error("Staff profile not loaded");
       const { data, error } = await supabase
         .from("shift_assignments")
         .select("id, shift_id, start_date, end_date, shifts(id, name, start_time, end_time)")
-        .eq("profile_id", profile!.id)
+        .eq("profile_id", profile.id)
         .lte("start_date", format(monthEnd, "yyyy-MM-dd"))
         .or(`end_date.is.null,end_date.gte.${format(monthStart, "yyyy-MM-dd")}`);
       if (error) throw error;
@@ -195,14 +209,17 @@ export default function MyShiftTracker() {
   });
 
   // Attendance for current month
-  const { data: attendances = [], isLoading: loadingAttendance } = useQuery({
+  const { data: attendances = [], isLoading: loadingAttendance, error: attendanceError } = useQuery({
     queryKey: ["my-shift-tracker", "attendance", profile?.id, format(monthStart, "yyyy-MM")],
     enabled: !!profile?.id,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
+      if (!profile) throw new Error("Staff profile not loaded");
       const { data, error } = await supabase
         .from("attendances")
         .select("id, date, check_in, check_out, status")
-        .eq("profile_id", profile!.id)
+        .eq("profile_id", profile.id)
         .gte("date", format(monthStart, "yyyy-MM-dd"))
         .lte("date", format(monthEnd, "yyyy-MM-dd"))
         .order("date", { ascending: true });
@@ -219,12 +236,12 @@ export default function MyShiftTracker() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "attendances", filter: `profile_id=eq.${profile.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] }),
+        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker"] }),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "shift_assignments", filter: `profile_id=eq.${profile.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "assignments"] }),
+        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker"] }),
       )
       .subscribe();
     return () => {
@@ -292,10 +309,39 @@ export default function MyShiftTracker() {
     };
   }, [days, dateMap, cursor, now]);
 
-  const todayEntry = dateMap.get(format(now, "yyyy-MM-dd"));
+  // Today's action must not follow the month selected for historical browsing.
+  const currentDateKey = format(now, "yyyy-MM-dd");
+  const todayQuery = useQuery({
+    queryKey: ["my-shift-tracker", "today", profile?.id, currentDateKey],
+    enabled: !!profile?.id,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      if (!profile) throw new Error("Staff profile not loaded");
+      const [shiftResult, attendanceResult] = await Promise.all([
+        supabase.from("shift_assignments")
+          .select("id, shift_id, start_date, end_date, shifts(id, name, start_time, end_time)")
+          .eq("profile_id", profile.id).lte("start_date", currentDateKey)
+          .or(`end_date.is.null,end_date.gte.${currentDateKey}`)
+          .order("start_date", { ascending: false }).limit(1),
+        supabase.from("attendances").select("id, date, check_in, check_out, status")
+          .eq("profile_id", profile.id).eq("date", currentDateKey).maybeSingle(),
+      ]);
+      if (shiftResult.error) throw shiftResult.error;
+      if (attendanceResult.error) throw attendanceResult.error;
+      return {
+        assignments: (shiftResult.data ?? []) as unknown as Assignment[],
+        attendance: attendanceResult.data as Attendance | null,
+      };
+    },
+  });
+  const todayEntry = todayQuery.data;
   const todayShift = todayEntry?.assignments[0]?.shifts;
   const todayAtt = todayEntry?.attendance;
-  const todayPunctuality = todayEntry?.punctuality ?? null;
+  const todayPunctuality = todayAtt?.check_in
+    ? computePunctuality(todayAtt.check_in, currentDateKey, todayShift) : null;
+  const liveTodayMinutes = todayAtt?.check_in && !todayAtt.check_out
+    ? Math.max(0, differenceInMinutes(now, parseISO(todayAtt.check_in))) : 0;
 
   // List of all shifts for the change/override request form
   const { data: allShifts = [] } = useQuery({
@@ -332,10 +378,11 @@ export default function MyShiftTracker() {
     queryKey: ["attendance-window-override", todayShiftId, todayDateKey],
     enabled: !!todayShiftId,
     queryFn: async () => {
+      if (!todayShiftId) return null;
       const { data, error } = await supabase
         .from("shift_attendance_window_overrides")
         .select("grace_minutes, early_checkin_minutes, late_checkout_minutes, enforce_window, effective_from, effective_to")
-        .eq("shift_id", todayShiftId!)
+        .eq("shift_id", todayShiftId)
         .or(`effective_from.is.null,effective_from.lte.${todayDateKey}`)
         .or(`effective_to.is.null,effective_to.gte.${todayDateKey}`)
         .order("effective_from", { ascending: false, nullsFirst: false })
@@ -356,6 +403,7 @@ export default function MyShiftTracker() {
   }), [shiftOverride, globalWin]);
 
   const loading = loadingProfile || loadingAssignments || loadingAttendance;
+  const loadError = profileError || assignmentsError || attendanceError || todayQuery.error;
 
   // ============ Check-in / Check-out mutations ============
   const todayKey = format(now, "yyyy-MM-dd");
@@ -394,53 +442,14 @@ export default function MyShiftTracker() {
     return null;
   }
 
-  const checkInMutation = useMutation({
-    mutationFn: async () => {
-      if (!profile?.id) throw new Error("Profile not loaded");
-      const at = new Date();
-      const err = validateCheckIn(at);
-      if (err) throw new Error(err);
-      const ts = at.toISOString();
-      const { error } = await supabase.from("attendances").insert({
-        profile_id: profile.id,
-        date: todayKey,
-        check_in: ts,
-        status: "present",
-      });
-      if (error) throw error;
-      return ts;
-    },
-    onSuccess: () => {
-      toast.success("Checked in");
-      queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["attendance"] });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Check-in failed"),
-  });
-
-  const checkOutMutation = useMutation({
-    mutationFn: async () => {
-      if (!todayAtt?.id) throw new Error("No active check-in");
-      const at = new Date();
-      const err = validateCheckOut(at);
-      if (err) throw new Error(err);
-      const ts = at.toISOString();
-      const { error } = await supabase
-        .from("attendances")
-        .update({ check_out: ts })
-        .eq("id", todayAtt.id);
-      if (error) throw error;
-      return ts;
-    },
-    onSuccess: () => {
-      toast.success("Checked out");
-      queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["my-attendance"] });
-      queryClient.invalidateQueries({ queryKey: ["attendance"] });
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Check-out failed"),
-  });
+  const recordShift = async (action: "check_in" | "check_out") => {
+    if (!profile || loadError || todayQuery.isLoading || clock.isPending) return;
+    const error = action === "check_in" ? validateCheckIn(new Date()) : validateCheckOut(new Date());
+    if (error) { toast.error(error); return; }
+    try {
+      await clock.mutateAsync({ profileId: profile.id, action });
+    } catch { /* The shared clock shows the server error. */ }
+  };
 
   // ============ Export filter state ============
   const [exportScope, setExportScope] = useState<"all" | "scheduled" | "worked" | "missed">("all");
@@ -459,7 +468,7 @@ export default function MyShiftTracker() {
         const completed = !!att?.check_in && !!att?.check_out;
         const minutes =
           completed
-            ? Math.max(0, differenceInMinutes(parseISO(att!.check_out!), parseISO(att!.check_in!)))
+            ? Math.max(0, differenceInMinutes(parseISO(att?.check_out ?? ""), parseISO(att?.check_in ?? "")))
             : 0;
         return {
           d,
@@ -485,6 +494,12 @@ export default function MyShiftTracker() {
       });
   }, [days, dateMap, cursor, exportScope, exportStatus]);
 
+  const rosterRows = useMemo(() => exportRows.filter((row) => {
+    const query = search.trim().toLowerCase();
+    return !query || `${format(row.d, "dd/MM/yyyy")} ${row.assignName} ${row.status}`.toLowerCase().includes(query);
+  }), [exportRows, search]);
+  const pager = usePagedList(rosterRows, { resetKey: `${search}-${format(cursor, "yyyy-MM")}-${exportScope}-${exportStatus}` });
+
   const buildExportPayload = () => {
     const fullName = `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim() || "Staff";
     const subtitle = [
@@ -501,7 +516,7 @@ export default function MyShiftTracker() {
       subtitle,
       headers: ["Date", "Day", "Wk", "Assigned shift", "Check-in", "Check-out", "Status", "Hours"],
       rows: exportRows.map((r) => [
-        r.key,
+        format(r.d, "dd/MM/yyyy"),
         r.weekday,
         `W${r.week}`,
         r.assignName || "—",
@@ -518,12 +533,12 @@ export default function MyShiftTracker() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
             <Activity className="h-6 w-6 text-primary" />
-            My Shift Tracker
+            Shift Roster
           </h1>
           <p className="text-sm text-muted-foreground">
-            Real-time view of your shift days, weeks, hours and dates within the month.
+            {`${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim()}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -543,6 +558,12 @@ export default function MyShiftTracker() {
         </div>
       </div>
 
+      {loadError && <p role="alert" className="text-destructive">Could not load your shift roster. Sign-in/out is unavailable until it reloads.</p>}
+      {!loadingProfile && !profile && !profileError && <p role="alert" className="text-destructive">No staff profile is linked to this account.</p>}
+      <div className="flex flex-wrap gap-2">
+        {canPath("/attendance/overview") && <Button asChild variant="outline" size="sm"><Link to="/attendance/overview">Attendance Overview</Link></Button>}
+        <Button asChild variant="outline" size="sm"><Link to="/attendance">My Attendance</Link></Button>
+      </div>
       {/* Summary tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryTile
@@ -581,7 +602,7 @@ export default function MyShiftTracker() {
             ) : (
               <Sun className="h-4 w-4 text-amber-500" />
             )}
-            Today — {format(now, "EEEE, dd MMM")}
+            Today — {format(now, "dd/MM/yyyy")}
           </CardTitle>
           <CardDescription>Live snapshot of your assignment and check-in.</CardDescription>
         </CardHeader>
@@ -607,7 +628,7 @@ export default function MyShiftTracker() {
                 todayAtt?.check_out
                   ? format(parseISO(todayAtt.check_out), "HH:mm:ss")
                   : todayAtt?.check_in
-                    ? fmtMinutes(metrics.liveMinutes)
+                    ? fmtMinutes(liveTodayMinutes)
                     : "—"
               }
               hint={todayAtt?.check_in && !todayAtt?.check_out ? "Live · still on duty" : undefined}
@@ -619,24 +640,24 @@ export default function MyShiftTracker() {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {!todayAtt?.check_in ? (
               <Button
-                onClick={() => checkInMutation.mutate()}
-                disabled={checkInMutation.isPending || !profile?.id}
+                onClick={() => void recordShift("check_in")}
+                disabled={clock.isPending || !profile?.id || todayQuery.isLoading || !!loadError}
                 className="gap-2"
                 size="sm"
               >
                 <LogIn className="h-4 w-4" />
-                {checkInMutation.isPending ? "Checking in..." : "Check in now"}
+                {clock.isPending ? "Recording…" : "Sign in to shift"}
               </Button>
             ) : !todayAtt?.check_out ? (
               <Button
-                onClick={() => checkOutMutation.mutate()}
-                disabled={checkOutMutation.isPending}
+                onClick={() => void recordShift("check_out")}
+                disabled={clock.isPending || todayQuery.isLoading || !!loadError}
                 variant="destructive"
                 className="gap-2"
                 size="sm"
               >
                 <LogOut className="h-4 w-4" />
-                {checkOutMutation.isPending ? "Checking out..." : "Check out now"}
+                {clock.isPending ? "Recording…" : "Sign out of shift"}
               </Button>
             ) : (
               <div className="flex items-center gap-2 text-emerald-600 text-sm">
@@ -868,7 +889,7 @@ export default function MyShiftTracker() {
                             </div>
                             {hasShift && (
                               <div className="mt-1 truncate text-[10px] text-muted-foreground">
-                                {entry!.assignments[0].shifts?.name ?? "Shift"}
+                                {entry?.assignments[0].shifts?.name ?? "Shift"}
                               </div>
                             )}
                             {workedMins > 0 && (
@@ -913,6 +934,29 @@ export default function MyShiftTracker() {
           </div>
         </CardContent>
       </Card>
+
+      <section className="space-y-3" aria-label="Shift records">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Shift records</h2>
+          <Input aria-label="Search shift records" placeholder="Search date, shift or status…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full sm:max-w-xs" />
+        </div>
+        <div className="overflow-x-auto rounded-md border">
+          <Table className="min-w-[700px]">
+            <TableHeader><TableRow>{["Date", "Shift", "Check-in", "Check-out", "Status", "Hours"].map((label) => <TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader>
+            <TableBody>
+              {loadError ? <TableRow><TableCell colSpan={6}>Shift records could not be loaded.</TableCell></TableRow>
+                : loading ? <TableRow><TableCell colSpan={6}>Loading…</TableCell></TableRow>
+                : pager.pageItems.map((row) => <TableRow key={row.key}>
+                  <TableCell>{format(row.d, "dd/MM/yyyy")}</TableCell><TableCell>{row.assignName || "—"}</TableCell>
+                  <TableCell>{row.checkIn || "—"}</TableCell><TableCell>{row.checkOut || "—"}</TableCell>
+                  <TableCell>{row.status || "Not marked"}</TableCell><TableCell>{fmtMinutes(row.minutes)}</TableCell>
+                </TableRow>)}
+              {!loading && !loadError && !rosterRows.length && <TableRow><TableCell colSpan={6}>No matching shifts.</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
+        <ListPagination {...pager} label="shift records" />
+      </section>
 
       {/* Shift change / override requests */}
       {profile?.id && user?.id && (

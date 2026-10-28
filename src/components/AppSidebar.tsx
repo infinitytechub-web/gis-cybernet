@@ -56,7 +56,7 @@ const personnelItems = [
 ];
 
 const myDutyItems = [
-  { title: "My Shift Tracker", url: "/my-shift", icon: Activity, iconColor: "text-pink-600 dark:text-pink-400" },
+  { title: "Shift Roster", url: "/shift-roster", icon: CalendarCheck, iconColor: "text-primary" },
   { title: "In-Cab Console", url: "/in-cab", icon: Radio, iconColor: "text-sky-700 dark:text-sky-400" },
 ];
 

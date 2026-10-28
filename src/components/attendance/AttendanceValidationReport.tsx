@@ -18,6 +18,8 @@ export function AttendanceValidationReport() {
   const [to, setTo] = useState(iso(new Date()));
   const { data = [], isLoading, error } = useQuery({
     queryKey: ["attendance_validation", period, from, to],
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("attendance_validation", { _period: period, _from: from, _to: to });
       if (error) throw error;
