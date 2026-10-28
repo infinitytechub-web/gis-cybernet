@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
 import { OffencesMultiSelect } from "@/components/detention/OffencesMultiSelect";
-import { OffencesTab, MugshotTab, DocumentsTab, SuretiesTab, upload as uploadDetentionFile, requestScan } from "@/components/detention/SuspectCasePanel";
+import { OffencesTab, MugshotTab, DocumentsTab, SuretiesTab, ApprovalsTab, upload as uploadDetentionFile, requestScan } from "@/components/detention/SuspectCasePanel";
 import { FileUploadGuard } from "@/components/security/FileUploadGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StandardBailTab } from "@/components/detention/StandardBailTab";
@@ -933,6 +933,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
             <TabsTrigger value="mugshot">Mug-shot</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="sureties">Sureties</TabsTrigger>
+            <TabsTrigger value="bail-approval">Bail approval</TabsTrigger>
+            <TabsTrigger value="repat-approval">Repatriation approval</TabsTrigger>
           </TabsList>
 
           <TabsContent value="bio" className="space-y-3">
@@ -983,6 +985,8 @@ function DetainDetailDrawer({ record, onClose, userId, role }: { record: any; on
           <TabsContent value="mugshot"><MugshotTab id={record.id} /></TabsContent>
           <TabsContent value="documents"><DocumentsTab id={record.id} /></TabsContent>
           <TabsContent value="sureties"><SuretiesTab id={record.id} /></TabsContent>
+          <TabsContent value="bail-approval"><ApprovalsTab id={record.id} workflow="bail" /></TabsContent>
+          <TabsContent value="repat-approval"><ApprovalsTab id={record.id} workflow="repatriation" /></TabsContent>
           <TabsContent value="transfers"><TransferLog records={detail?.transfers || []} detentionId={record.id} userId={userId} canEdit={record.status === "in_custody" && canCommand} /></TabsContent>
         </Tabs>
       </SheetContent>
