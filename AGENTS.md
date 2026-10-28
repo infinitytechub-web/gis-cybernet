@@ -1,4 +1,5 @@
 # Architecture rules
+- Command Operations reuses legacy workflow pages in permission-gated tabs; legacy routes redirect preserving context, and hub access is the union of existing module permissions — why: consolidate navigation without duplicating records or expanding access.
 - Bail/repatriation signing-role configuration is saved atomically through `save_approval_chain`, restricted to Super Admins; `sign_approval` reads configured roles on each sign — why: labels must never substitute for actual signing authority.
 
 - Date entry uses shared DateInput/DateTimeInput controls with DD/MM/YYYY display and ISO machine values — why: prevent browser-locale regressions across staff and operational forms.
