@@ -9,6 +9,7 @@ vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ isAdmin: mocks.isAdmin, lo
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ select: () => ({ order: () => ({ order: mocks.read }) }) }), rpc: mocks.rpc } }));
 const tiers = ["bail", "repatriation"].flatMap((workflow) => [1, 2, 3].map((tier) => ({ id: `${workflow}-${tier}`, workflow, tier, label: `Step ${tier}`, role: "supervisor", configured_at: null })));
+Object.assign(HTMLElement.prototype, { hasPointerCapture: () => false, setPointerCapture: () => {}, releasePointerCapture: () => {}, scrollIntoView: () => {} });
 function mount() {
   render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><ApprovalChainEditor /></QueryClientProvider>);
 }
