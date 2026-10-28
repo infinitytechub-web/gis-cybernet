@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { commandDashboardPath, reorder, splitCommandName, type RegionalCommandCard } from "@/lib/regional-commands";
@@ -55,6 +57,15 @@ function CommandCard({ c, index, sortable, onOpen, onToggleActivation }: { c: Re
         <span {...attributes} {...listeners} aria-label={`Drag to reorder ${c.name}`}
           className="absolute right-1 bottom-1 cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted">
           <GripVertical className="h-4 w-4" />
+        </span>
+      )}
+      {onToggleActivation && (
+        <span className="absolute left-1 bottom-1">
+          <Button type="button" size="sm" variant={pending ? "default" : "outline"} className="h-7 px-2 text-xs"
+            aria-label={pending ? `Activate ${c.name}` : `Pause ${c.name}`}
+            onClick={(e) => { e.stopPropagation(); onToggleActivation(c); }}>
+            {pending ? <><Play className="h-3 w-3 mr-1" />Activate</> : <><Pause className="h-3 w-3 mr-1" />Pause</>}
+          </Button>
         </span>
       )}
     </div>
