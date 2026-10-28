@@ -123,6 +123,12 @@ export default function RegionalCommands() {
     qc.invalidateQueries({ queryKey: ["regional-commands"] });
   };
 
+  const exportWord = () => {
+    const html = buildCommandsWordHtml(list, new Date());
+    downloadBlob(new Blob([html], { type: "application/msword" }), `regional-commands-${new Date().toISOString().slice(0, 10)}.doc`);
+    void logAdminAudit("regional_commands", "exported_word", { rows: list.length });
+  };
+
   const open = (c: RegionalCommandCard) => {
     if (!c.can_open) { toast.info(`${c.name} is pending activation.`); return; }
     navigate(commandDashboardPath(c.id));
