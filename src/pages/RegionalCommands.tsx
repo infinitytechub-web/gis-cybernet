@@ -145,8 +145,16 @@ export default function RegionalCommands() {
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>{cards.dataUpdatedAt ? `Last updated ${formatDateTime(new Date(cards.dataUpdatedAt))}` : ""}</span>
-        <div className="flex gap-2">
-          {isAdmin && <span className="hidden sm:inline">Drag the handle to rearrange cards. This only changes the display order.</span>}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex rounded-md border" role="tablist" aria-label="View">
+            <Button size="sm" variant={view === "cards" ? "secondary" : "ghost"} role="tab" aria-selected={view === "cards"} onClick={() => setView("cards")}>
+              <LayoutGrid className="h-3 w-3 mr-1" />Cards
+            </Button>
+            <Button size="sm" variant={view === "hierarchy" ? "secondary" : "ghost"} role="tab" aria-selected={view === "hierarchy"} onClick={() => setView("hierarchy")}>
+              <ListTree className="h-3 w-3 mr-1" />Full hierarchy
+            </Button>
+          </div>
+          {view === "cards" && <Button size="sm" variant="outline" onClick={exportWord} disabled={!list.length}><FileDown className="h-3 w-3 mr-1" />Export to Word</Button>}
           <Button size="sm" variant="outline" onClick={() => cards.refetch()}><RefreshCw className="h-3 w-3 mr-1" />Refresh</Button>
           <Button size="sm" variant="ghost" asChild><Link to={isAdmin ? "/dashboard" : "/portal"}>Skip to my dashboard</Link></Button>
         </div>
