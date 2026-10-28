@@ -1,4 +1,5 @@
 # Architecture rules
+- Bail/repatriation signing-role configuration is saved atomically through `save_approval_chain`, restricted to Super Admins; `sign_approval` reads configured roles on each sign — why: labels must never substitute for actual signing authority.
 
 - Date entry uses shared DateInput/DateTimeInput controls with DD/MM/YYYY display and ISO machine values — why: prevent browser-locale regressions across staff and operational forms.
 - Keep personnel bio-data editing in the responsive web form; load related record sections separately and block saves after incomplete loads, so a failed fetch cannot overwrite existing details.
