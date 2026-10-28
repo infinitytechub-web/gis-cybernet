@@ -288,6 +288,13 @@
       "when": 1793215389157,
       "tag": "0040_approval_chain_unconfirm_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793215649981,
+      "tag": "0041_restrict_approval_chain_config_read",
+      "breakpoints": true
     }
   ]
 }
