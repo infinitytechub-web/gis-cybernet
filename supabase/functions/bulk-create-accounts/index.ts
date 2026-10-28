@@ -119,10 +119,19 @@ Deno.serve(async (req) => {
     // provisioning every in-scope active staff member without an account.
     let targetIds: string[] | null = null;
     let requestedRole = "staff";
+    let requestedPassword: string | null = null;
     try {
       const raw = await req.text();
       if (raw) {
-        const body = JSON.parse(raw) as { profile_ids?: unknown; role?: unknown };
+        const body = JSON.parse(raw) as { profile_ids?: unknown; role?: unknown; password?: unknown };
+        if (typeof body.password === "string" && body.password) {
+          if (body.password.length < 8) {
+            return new Response(JSON.stringify({ error: "Password must be at least 8 characters" }), {
+              status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          requestedPassword = body.password;
+        }
         if (Array.isArray(body.profile_ids)) {
           const ids = body.profile_ids.filter((v): v is string => typeof v === "string");
           if (ids.length > 0) targetIds = ids.slice(0, 200);
@@ -194,7 +203,7 @@ Deno.serve(async (req) => {
       try {
         const username = makeUsername(profile.first_name, profile.last_name, existingUsernames);
         const email = `${username}@gis.local`;
-        const password = generatePassword(12);
+        const password = requestedPassword ?? generatePassword(12);
 
         const { data: newUser, error: createErr } = await adminClient.auth.admin.createUser({
           email, password, email_confirm: true,
