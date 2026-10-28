@@ -1,6 +1,6 @@
 # Roadmap – Holding Center / Command Operations enhancement
 - [x] Staff ID/photo verification screen with private uploads and Super Admin approval/revocation; approval grants only current-Command read access
-- [x] Verification/navigation regression tests: 26 passed; private policies and duplicate-prevention index confirmed; preview build passed
+- [x] Verification/navigation regression tests: 31 passed, including mocked submission/readback, failed-ID upload cleanup, photo-load approval gate and staff review denial; private policies and duplicate-prevention index confirmed; preview build passed
 - [ ] Live staff submission and Super Admin approval/readback — blocked: no identified signed-in staff or administrator account
 - [x] Replace typed approval names with fresh account verification and server-attributed signatures/timestamps; eight focused tests passed
 - [ ] Live verified approval signing — blocked: requires signed-in authorized account and real record; not exercised
