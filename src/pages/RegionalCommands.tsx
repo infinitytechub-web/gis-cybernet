@@ -174,6 +174,9 @@ export default function RegionalCommands() {
       {cards.error && <Alert variant="destructive"><AlertDescription>Could not load commands. {(cards.error as Error).message}</AlertDescription></Alert>}
       {!cards.isLoading && !cards.error && list.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No command is available for your account.</p>}
 
+      {view === "hierarchy" ? (
+        <HierarchyView isAdmin={isAdmin} />
+      ) : (
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={list.map((c) => c.id)} strategy={rectSortingStrategy}>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
@@ -181,6 +184,7 @@ export default function RegionalCommands() {
           </div>
         </SortableContext>
       </DndContext>
+      )}
 
       {isAdmin && (unmapped.data?.length ?? 0) > 0 && (
         <Alert>
