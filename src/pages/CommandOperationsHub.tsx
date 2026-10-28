@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { SuspectCasePanel } from "@/components/detention/SuspectCasePanel";
 
 const Enforcement = lazy(() => import("./Enforcement"));
 const Operations = lazy(() => import("./Operations"));
@@ -137,7 +138,7 @@ function SuspectAnalytics() {
         </table>
       </div>
       <Dialog open={!!open} onOpenChange={(o) => !o && setOpen(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader><DialogTitle>Suspect KYC</DialogTitle></DialogHeader>
           {open && (
             <div className="space-y-2 text-sm">
@@ -150,6 +151,7 @@ function SuspectAnalytics() {
                 <Button asChild variant="outline"><a href={`/holding?record=${open.id}`}>Modify</a></Button>
                 <Button variant="destructive" onClick={() => softDelete(open)}>Soft delete</Button>
               </div>
+              <div className="border-t pt-3"><SuspectCasePanel id={open.id} /></div>
             </div>
           )}
         </DialogContent>
