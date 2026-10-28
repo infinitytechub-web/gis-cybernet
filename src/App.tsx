@@ -104,6 +104,7 @@ const InCab = lazy(() => import("./pages/InCab"));
 const CommandConsole = lazy(() => import("./pages/CommandConsole"));
 
 const CommandOperationsHub = lazy(() => import("./pages/CommandOperationsHub"));
+const HoldingStaffVerification = lazy(() => import("./pages/HoldingStaffVerification"));
 const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
 const Ipse = lazy(() => import("./pages/Ipse"));
@@ -280,6 +281,7 @@ function App() {
           <Route path="/command-console" element={<ProtectedRoute module="command-console"><Layout><CommandConsole /></Layout></ProtectedRoute>} />
 
           <Route path="/holding" element={<ProtectedRoute module="detention"><CommandOperationsRedirect tab="holding" /></ProtectedRoute>} />
+          <Route path="/holding-verification" element={<ProtectedRoute module="holding-verification"><Layout><HoldingStaffVerification /></Layout></ProtectedRoute>} />
           <Route path="/command-operations" element={<ProtectedRoute module="command-operations"><Layout><CommandOperationsHub /></Layout></ProtectedRoute>} />
           <Route path="/procurement" element={<ProtectedRoute module="procurement"><Layout><Procurement /></Layout></ProtectedRoute>} />
           <Route path="/misd" element={<ProtectedRoute module="misd"><Layout><Misd /></Layout></ProtectedRoute>} />

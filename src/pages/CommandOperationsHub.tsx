@@ -31,7 +31,7 @@ function tally(rows: Row[], key: (r: Row) => string | null) {
   return [...m.entries()].sort((a, b) => b[1] - a[1]);
 }
 
-function SuspectAnalytics() {
+function SuspectAnalytics({ readOnly = false }: { readOnly?: boolean }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [q, setQ] = useState("");
@@ -150,11 +150,11 @@ function SuspectAnalytics() {
                 ["Health", open.health_status || open.medical_alerts], ["Offences", offOf(open).join(", ")]] as const).map(([k, v]) => (
                 <div key={k} className="grid grid-cols-3 gap-2"><span className="text-muted-foreground">{k}</span><span className="col-span-2">{v || "—"}</span></div>
               ))}
-              <div className="flex gap-2 pt-2">
+              {!readOnly && <div className="flex gap-2 pt-2">
                 <Button asChild variant="outline"><a href={`/holding?record=${open.id}`}>Modify</a></Button>
                 <Button variant="destructive" onClick={() => softDelete(open)}>Soft delete</Button>
-              </div>
-              <div className="border-t pt-3"><SuspectCasePanel id={open.id} /></div>
+              </div>}
+              {!readOnly && <div className="border-t pt-3"><SuspectCasePanel id={open.id} /></div>}
             </div>
           )}
         </DialogContent>
@@ -166,7 +166,7 @@ function SuspectAnalytics() {
 export default function CommandOperationsHub() {
   const [params, setParams] = useSearchParams();
   const { role } = useAuth();
-  const { can, loading } = useRbac();
+  const { can, loading, holdingReadOnly } = useRbac();
   const available = [
     ...(can("detention") ? ["analytics"] : []),
     ...(can("enforcement") ? ["enforcement"] : []),
@@ -181,6 +181,7 @@ export default function CommandOperationsHub() {
   return (
     <div className="space-y-4 p-4">
       <h1 className="text-2xl font-bold">Command Operations</h1>
+      <Button asChild variant="outline"><a href="/holding-verification">Staff verification</a></Button>
       <Tabs value={tab} onValueChange={(t) => setParams((previous) => { const next = new URLSearchParams(previous); next.set("tab", t); return next; })}>
         <TabsList className="h-auto flex-wrap gap-1">
           {can("detention") && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
@@ -190,10 +191,10 @@ export default function CommandOperationsHub() {
           {role === "admin" && <TabsTrigger value="chain">Chain of command</TabsTrigger>}
         </TabsList>
         <Suspense fallback={<p className="p-4 text-muted-foreground">Loading…</p>}>
-          {can("detention") && <TabsContent value="analytics"><SuspectAnalytics /></TabsContent>}
+          {can("detention") && <TabsContent value="analytics"><SuspectAnalytics readOnly={holdingReadOnly} /></TabsContent>}
           {can("enforcement") && <TabsContent value="enforcement"><Enforcement /></TabsContent>}
           {can("operations") && <TabsContent value="operations"><Operations /></TabsContent>}
-          {can("detention") && <TabsContent value="holding"><HoldingCenter /></TabsContent>}
+          {can("detention") && <TabsContent value="holding">{holdingReadOnly ? <SuspectAnalytics readOnly /> : <HoldingCenter />}</TabsContent>}
           {role === "admin" && <TabsContent value="chain"><ApprovalChainEditor /></TabsContent>}
         </Suspense>
       </Tabs>
