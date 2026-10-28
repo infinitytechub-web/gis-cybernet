@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ORG_UNIT_TYPE_LABELS, type OrgUnitType } from "@/lib/org-hierarchy";
-import { buildHierarchyTree, buildHierarchyWordHtml, flattenedIds, moveWithinSiblings, visibleNodes, type HierarchyNode, type HierarchyUnit } from "@/lib/command-hierarchy";
+import { buildHierarchyTree, buildHierarchyWordHtml, flattenedIds, moveWithinSiblings, subtreeAt, visibleNodes, type HierarchyNode, type HierarchyUnit } from "@/lib/command-hierarchy";
 import { downloadBlob } from "@/lib/download-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
 
@@ -95,16 +95,7 @@ export default function HierarchyView({ isAdmin, rootUnitId }: { isAdmin: boolea
 
   const tree = useMemo(() => {
     const full = roots ?? (units.data ? buildHierarchyTree(units.data) : []);
-    if (!rootUnitId) return full;
-    const find = (nodes: HierarchyNode[]): HierarchyNode | null => {
-      for (const n of nodes) { if (n.id === rootUnitId) return n; const hit = find(n.children); if (hit) return hit; }
-      return null;
-    };
-    const root = find(full);
-    if (!root) return [];
-    // Rebase depths so the command itself renders at level 0 of this view.
-    const rebase = (n: HierarchyNode, depth: number): HierarchyNode => ({ ...n, depth, children: n.children.map((c) => rebase(c, depth + 1)) });
-    return [rebase(root, 0)];
+    return rootUnitId ? subtreeAt(full, rootUnitId) : full;
   }, [roots, units.data, rootUnitId]);
   const visible = useMemo(() => visibleNodes(tree, collapsed), [tree, collapsed]);
 
