@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw } from "lucide-react";
+import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { commandDashboardPath, reorder, splitCommandName, type RegionalCommandCard } from "@/lib/regional-commands";
+import { buildCommandsWordHtml } from "@/lib/command-hierarchy";
+import { downloadBlob } from "@/lib/download-utils";
+import { logAdminAudit } from "@/lib/admin-audit";
+import HierarchyView from "@/components/command/HierarchyView";
 import { formatDateTime } from "@/lib/date-format";
 
 const GhanaOutline = ({ className }: { className?: string }) => (
@@ -63,6 +67,7 @@ export default function RegionalCommands() {
   const qc = useQueryClient();
   const chId = useId();
   const [order, setOrder] = useState<RegionalCommandCard[] | null>(null);
+  const [view, setView] = useState<"cards" | "hierarchy">("cards");
 
   const cards = useQuery({
     queryKey: ["regional-commands"],
@@ -118,6 +123,12 @@ export default function RegionalCommands() {
     qc.invalidateQueries({ queryKey: ["regional-commands"] });
   };
 
+  const exportWord = () => {
+    const html = buildCommandsWordHtml(list, new Date());
+    downloadBlob(new Blob([html], { type: "application/msword" }), `regional-commands-${new Date().toISOString().slice(0, 10)}.doc`);
+    void logAdminAudit("regional_commands", "exported_word", { rows: list.length });
+  };
+
   const open = (c: RegionalCommandCard) => {
     if (!c.can_open) { toast.info(`${c.name} is pending activation.`); return; }
     navigate(commandDashboardPath(c.id));
@@ -134,8 +145,16 @@ export default function RegionalCommands() {
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>{cards.dataUpdatedAt ? `Last updated ${formatDateTime(new Date(cards.dataUpdatedAt))}` : ""}</span>
-        <div className="flex gap-2">
-          {isAdmin && <span className="hidden sm:inline">Drag the handle to rearrange cards. This only changes the display order.</span>}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex rounded-md border" role="tablist" aria-label="View">
+            <Button size="sm" variant={view === "cards" ? "secondary" : "ghost"} role="tab" aria-selected={view === "cards"} onClick={() => setView("cards")}>
+              <LayoutGrid className="h-3 w-3 mr-1" />Cards
+            </Button>
+            <Button size="sm" variant={view === "hierarchy" ? "secondary" : "ghost"} role="tab" aria-selected={view === "hierarchy"} onClick={() => setView("hierarchy")}>
+              <ListTree className="h-3 w-3 mr-1" />Full hierarchy
+            </Button>
+          </div>
+          {view === "cards" && <Button size="sm" variant="outline" onClick={exportWord} disabled={!list.length}><FileDown className="h-3 w-3 mr-1" />Export to Word</Button>}
           <Button size="sm" variant="outline" onClick={() => cards.refetch()}><RefreshCw className="h-3 w-3 mr-1" />Refresh</Button>
           <Button size="sm" variant="ghost" asChild><Link to={isAdmin ? "/dashboard" : "/portal"}>Skip to my dashboard</Link></Button>
         </div>
@@ -155,6 +174,9 @@ export default function RegionalCommands() {
       {cards.error && <Alert variant="destructive"><AlertDescription>Could not load commands. {(cards.error as Error).message}</AlertDescription></Alert>}
       {!cards.isLoading && !cards.error && list.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">No command is available for your account.</p>}
 
+      {view === "hierarchy" ? (
+        <HierarchyView isAdmin={isAdmin} />
+      ) : (
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={list.map((c) => c.id)} strategy={rectSortingStrategy}>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
@@ -162,6 +184,7 @@ export default function RegionalCommands() {
           </div>
         </SortableContext>
       </DndContext>
+      )}
 
       {isAdmin && (unmapped.data?.length ?? 0) > 0 && (
         <Alert>
