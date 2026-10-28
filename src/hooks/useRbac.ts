@@ -54,21 +54,37 @@ export function useRbac() {
     [role, overridesQuery.data, grantsQuery.data],
   );
 
+  const holdingQuery = useQuery({
+    queryKey: ["rbac", "holding-verification", user?.id],
+    enabled: !!user,
+    refetchInterval: 15000,
+    staleTime: 0,
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase.rpc("has_holding_verified_access", { _uid: user.id });
+      if (error) throw error;
+      return data === true;
+    },
+  });
+
   // Never decide "denied" before the inputs have settled — that would flash an
   // Access Denied screen at a legitimately authorised user.
   const loading =
     authLoading ||
-    (!!user && (overridesQuery.isLoading || grantsQuery.isLoading));
+    (!!user && (overridesQuery.isLoading || grantsQuery.isLoading || holdingQuery.isLoading));
+
+  const holdingReadOnly = holdingQuery.data === true && !canAccessModule("detention", input);
 
   return useMemo(
     () => ({
       loading,
       role,
       capabilities: grantsQuery.data ?? [],
-      can: (moduleKey: string) => canAccessModule(moduleKey, input),
-      canPath: (pathname: string) => canAccessPath(pathname, input),
+      holdingReadOnly,
+      can: (moduleKey: string) => ((moduleKey === "detention" || moduleKey === "command-operations") && holdingQuery.data === true) || canAccessModule(moduleKey, input),
+      canPath: (pathname: string) => ((pathname === "/holding" || pathname === "/command-operations") && holdingQuery.data === true) || canAccessPath(pathname, input),
     }),
-    [loading, role, grantsQuery.data, input],
+    [loading, role, grantsQuery.data, input, holdingQuery.data, holdingReadOnly],
   );
 }
 

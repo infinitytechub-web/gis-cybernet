@@ -119,6 +119,7 @@ const healthItems = [
 ];
 
 const allStaffItems = [
+  { title: "Holding Center Verification", url: "/holding-verification", icon: ShieldCheck, iconColor: "text-primary" },
   { title: "My Profile", url: "/my-profile", icon: UserCog, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Biometric Enrollment", url: "/biometric-enrollment", icon: Fingerprint, iconColor: "text-indigo-600 dark:text-indigo-400" },
   { title: "My Portal", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
