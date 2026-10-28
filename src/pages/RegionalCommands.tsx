@@ -79,6 +79,9 @@ export default function RegionalCommands() {
   const chId = useId();
   const [order, setOrder] = useState<RegionalCommandCard[] | null>(null);
   const [view, setView] = useState<"cards" | "hierarchy">("cards");
+  const [activationTarget, setActivationTarget] = useState<RegionalCommandCard | null>(null);
+  const [activationReason, setActivationReason] = useState("");
+  const [activationSaving, setActivationSaving] = useState(false);
 
   const cards = useQuery({
     queryKey: ["regional-commands"],
@@ -145,6 +148,21 @@ export default function RegionalCommands() {
     navigate(commandDashboardPath(c.id));
   };
 
+  const submitActivation = async () => {
+    if (!activationTarget) return;
+    const reason = activationReason.trim();
+    if (!reason) { toast.error("A reason is required."); return; }
+    const next = activationTarget.activation_status === "active" ? "pending" : "active";
+    setActivationSaving(true);
+    const { error } = await supabase.rpc("set_command_activation", { _unit: activationTarget.id, _status: next, _reason: reason });
+    setActivationSaving(false);
+    if (error) { toast.error(`Could not update ${activationTarget.name}: ${error.message}`); return; }
+    toast.success(`${activationTarget.name} is now ${next === "active" ? "active" : "paused"}.`);
+    setActivationTarget(null);
+    setActivationReason("");
+    qc.invalidateQueries({ queryKey: ["regional-commands"] });
+  };
+
   const status = mine.data?.status;
 
   return (
@@ -191,7 +209,7 @@ export default function RegionalCommands() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={list.map((c) => c.id)} strategy={rectSortingStrategy}>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-            {list.map((c, i) => <CommandCard key={c.id} c={c} index={isAdmin ? i : (c.display_order ?? 1) - 1} sortable={isAdmin} onOpen={() => open(c)} />)}
+            {list.map((c, i) => <CommandCard key={c.id} c={c} index={isAdmin ? i : (c.display_order ?? 1) - 1} sortable={isAdmin} onOpen={() => open(c)} onToggleActivation={isAdmin ? setActivationTarget : undefined} />)}
           </div>
         </SortableContext>
       </DndContext>
