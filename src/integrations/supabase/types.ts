@@ -5657,6 +5657,70 @@ export type Database = {
         }
         Relationships: []
       }
+      holding_staff_verifications: {
+        Row: {
+          created_at: string
+          id: string
+          org_unit_id: string
+          photo_path: string
+          profile_id: string
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_staff_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_unit_id: string
+          photo_path: string
+          profile_id: string
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_staff_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_unit_id?: string
+          photo_path?: string
+          profile_id?: string
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_staff_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holding_staff_verifications_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "holding_staff_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "holding_staff_verifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           created_at: string
@@ -19218,6 +19282,7 @@ export type Database = {
         Args: { _capability: string; _user_id: string }
         Returns: boolean
       }
+      has_holding_verified_access: { Args: { _uid: string }; Returns: boolean }
       has_org_access: {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
@@ -19231,6 +19296,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      holding_verified_record_access: {
+        Args: { _record: string; _uid: string }
         Returns: boolean
       }
       hr_biodata_completeness: {
@@ -20016,6 +20085,10 @@ export type Database = {
         Args: { p_snapshot_id: string }
         Returns: Json
       }
+      review_holding_staff_verification: {
+        Args: { _decision: string; _id: string; _reason: string }
+        Returns: undefined
+      }
       revoke_all_user_sessions: {
         Args: { _keep_session_key?: string; _reason?: string; _user_id: string }
         Returns: number
@@ -20391,6 +20464,10 @@ export type Database = {
         Returns: undefined
       }
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
+      submit_holding_staff_verification: {
+        Args: { _photo_path: string; _staff_id: string }
+        Returns: string
+      }
       tag_appraisal_audit_batch: {
         Args: {
           _appraisal_id: string

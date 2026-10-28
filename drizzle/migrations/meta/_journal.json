@@ -309,6 +309,13 @@
       "when": 1793217457485,
       "tag": "0043_verified_approval_signatures",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793217861995,
+      "tag": "0044_holding_staff_verification",
+      "breakpoints": true
     }
   ]
 }
