@@ -108,6 +108,7 @@ const immigrationItems = [
 ];
 
 const securityItems = [
+  { title: "Command Operations", url: "/command-operations", icon: ShieldAlert, iconColor: "text-primary" },
   { title: "Operations", url: "/operations", icon: Crosshair, iconColor: "text-orange-600 dark:text-orange-400" },
   { title: "Holding Center", url: "/holding", icon: Lock, iconColor: "text-red-700 dark:text-red-500" },
   { title: "Enforcement", url: "/enforcement", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400" },

@@ -6,4 +6,5 @@
 - [x] Repatriation form: vehicles, weapons, officer picker
 - [x] Approval panel (recommend → review → Command decision) with e-signature; admin tier editor
 - [x] Attendance validation report (daily/weekly/monthly/quarterly/annual)
+- [x] Menu entry + admin chain-of-command editor
 - [ ] Upload malware scanning — blocked: needs scanner choice (ClamAV service / VirusTotal / Cloudmersive) and key
