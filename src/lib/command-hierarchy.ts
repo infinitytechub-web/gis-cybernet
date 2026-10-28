@@ -80,7 +80,7 @@ export function subtreeAt(roots: HierarchyNode[], rootId: string): HierarchyNode
   };
   const root = find(roots);
   if (!root) return [];
-  const rebase = (n: HierarchyNode, depth: number): HierarchyNode => ({ ...n, depth, children: n.children.map((c) => rebase(c, depth + 1)) });
+  const rebase = (n: HierarchyNode, depth: number): HierarchyNode => ({ ...n, depth, children: (n.children as HierarchyNode[]).map((c) => rebase(c, depth + 1)) });
   return [rebase(root, 0)];
 }
 
