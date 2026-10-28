@@ -193,7 +193,8 @@ export function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | 
           {s ? <p>{s.decision.replace("_", " ")} by <i>{s.signer_name}</i> on {formatDateTime(s.signed_at)}{s.comments ? ` — ${s.comments}` : ""}<br /><span className="font-mono text-xs text-muted-foreground">Signature {s.signature_hash.slice(0, 16)}…</span></p>
             : <p className="text-muted-foreground">Awaiting</p>}
         </div>); })}
-      {next && (
+      {tiers.some((t) => !t.configured_at) && <p className="text-sm text-destructive">A Super Admin must confirm the chain of command (System Settings → Chain of Command) before anyone can sign.</p>}
+      {next && !tiers.some((t) => !t.configured_at) && (
         <div className="space-y-2 rounded-md border p-3">
           <p className="text-sm font-medium">Your step: {next.label}</p>
           <Textarea placeholder="Recommendation / comments" value={comments} onChange={(e) => setComments(e.target.value)} />
