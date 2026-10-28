@@ -1,4 +1,5 @@
 # Architecture rules
+- Holding Center identity verification uses private photos, server-matched staff IDs and Super Admin-only review; approved access is read-only and scoped to the current assigned Command, without changing signing or operational authority — why: verifying identity must not grant administrative powers.
 - Command Operations reuses legacy workflow pages in permission-gated tabs; legacy routes redirect preserving context, and hub access is the union of existing module permissions — why: consolidate navigation without duplicating records or expanding access.
 - Bail/repatriation signing-role configuration is saved atomically through `save_approval_chain`, restricted to Super Admins; `sign_approval` reads configured roles on each sign — why: labels must never substitute for actual signing authority.
 - Approval signing verifies the current account using an isolated nonpersistent auth client; `sign_approval` requires fresh password AMR and derives the staff name, timestamp and signature server-side — why: prevent typed-name impersonation without switching the app session.
