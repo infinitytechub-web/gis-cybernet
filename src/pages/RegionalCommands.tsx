@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree } from "lucide-react";
+import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree, Play, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ const GhanaOutline = ({ className }: { className?: string }) => (
   </svg>
 );
 
-function CommandCard({ c, index, sortable, onOpen }: { c: RegionalCommandCard; index: number; sortable: boolean; onOpen: () => void }) {
+function CommandCard({ c, index, sortable, onOpen, onToggleActivation }: { c: RegionalCommandCard; index: number; sortable: boolean; onOpen: () => void; onToggleActivation?: (c: RegionalCommandCard) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id, disabled: !sortable });
   const color = c.brand_color ?? "145 63% 30%";
   const { title, subtitle } = splitCommandName(c.name);
