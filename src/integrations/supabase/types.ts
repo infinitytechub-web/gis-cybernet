@@ -20040,6 +20040,7 @@ export type Database = {
             Returns: Json
           }
       run_security_hygiene_scan: { Args: never; Returns: Json }
+      save_approval_chain: { Args: { _tiers: Json }; Returns: undefined }
       search_approval_audit: {
         Args: {
           _actions?: string[]

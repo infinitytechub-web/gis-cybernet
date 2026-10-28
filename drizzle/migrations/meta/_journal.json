@@ -295,6 +295,13 @@
       "when": 1793215649981,
       "tag": "0041_restrict_approval_chain_config_read",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793216472522,
+      "tag": "0042_save_approval_signing_roles",
+      "breakpoints": true
     }
   ]
 }
