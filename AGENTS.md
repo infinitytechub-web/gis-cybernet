@@ -11,3 +11,4 @@
 - M&E Communications workspace lives in `me_*message*` tables; all sends go through the `me_send_message` security-definer function — why: one server-side place enforces sender role, command scope and audit.
 
 - Staff import AI comparisons are advisory: authenticate import administrators on the server, read candidates through caller-scoped RLS, minimize prompt fields, validate returned candidate references and audit runs; never let AI modify import outcomes or staff records — why: probabilistic matches cannot authorize personnel changes.
+- Staff list import approvals retire only the server-computed set confirmed through `confirm_staff_list_retirements` (same admin, exact count, 30-minute window); `commit_staff_list_import` refuses otherwise — why: a stale or changed list must never silently inactivate staff.

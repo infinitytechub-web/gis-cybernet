@@ -1,1 +1,0 @@
-Pending migration: staff import retirement safeguard (preview_staff_list_retirements, confirm_staff_list_retirements, guard trigger, expected_retire_count column). The SQL was submitted on 2026-10-14 but the database was unreachable; re-submit it via lov_database--migration (see chat history).
