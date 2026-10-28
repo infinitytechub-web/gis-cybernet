@@ -105,6 +105,7 @@ export default function CommandAnalytics() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const perms = useDirectoryPermissions();
+  const { isAdmin } = useAuth();
   const [deptId, setDeptId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [intakeFilter, setIntakeFilter] = useState("all");
