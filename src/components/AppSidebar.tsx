@@ -35,7 +35,7 @@ import {
   PROCESSING_TABLES,
   sumPending,
 } from "@/lib/application-queues";
-import { MessagesSquare } from "lucide-react";
+import { MessagesSquare, MapPinned } from "lucide-react";
 import { Pin as PinIcon, Settings as SettingsIcon } from "lucide-react";
 import { navDescription } from "@/lib/nav-descriptions";
 
@@ -108,6 +108,7 @@ const immigrationItems = [
 ];
 
 const securityItems = [
+  { title: "Regional Commands", url: "/regional-commands", icon: MapPinned, iconColor: "text-primary" },
   { title: "Command Operations", url: "/command-operations?tab=dashboard", icon: ShieldAlert, iconColor: "text-primary" },
   { title: "IPSE", url: "/ipse", icon: Shield, iconColor: "text-[hsl(82,40%,30%)] dark:text-[hsl(82,50%,65%)]" },
   { title: "MISD / CYBER", url: "/misd", icon: Shield, iconColor: "text-purple-700 dark:text-purple-300" },
