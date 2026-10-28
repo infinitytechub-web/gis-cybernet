@@ -93,7 +93,19 @@ export default function HierarchyView({ isAdmin, rootUnitId }: { isAdmin: boolea
     return () => { supabase.removeChannel(ch); };
   }, [qc, chId]);
 
-  const tree = useMemo(() => roots ?? (units.data ? buildHierarchyTree(units.data) : []), [roots, units.data]);
+  const tree = useMemo(() => {
+    const full = roots ?? (units.data ? buildHierarchyTree(units.data) : []);
+    if (!rootUnitId) return full;
+    const find = (nodes: HierarchyNode[]): HierarchyNode | null => {
+      for (const n of nodes) { if (n.id === rootUnitId) return n; const hit = find(n.children); if (hit) return hit; }
+      return null;
+    };
+    const root = find(full);
+    if (!root) return [];
+    // Rebase depths so the command itself renders at level 0 of this view.
+    const rebase = (n: HierarchyNode, depth: number): HierarchyNode => ({ ...n, depth, children: n.children.map((c) => rebase(c, depth + 1)) });
+    return [rebase(root, 0)];
+  }, [roots, units.data, rootUnitId]);
   const visible = useMemo(() => visibleNodes(tree, collapsed), [tree, collapsed]);
 
   const sensors = useSensors(
