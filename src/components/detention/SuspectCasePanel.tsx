@@ -171,7 +171,7 @@ function RepatriationTab({ id }: { id: string }) {
   );
 }
 
-function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | "repatriation" }) {
+export function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | "repatriation" }) {
   const qc = useQueryClient(); const err = useErr();
   const { data: tiers = [] } = useQuery({ queryKey: ["chain", workflow], queryFn: async () =>
     (await supabase.from("approval_chain_config").select("*").eq("workflow", workflow).order("tier")).data ?? [] });
