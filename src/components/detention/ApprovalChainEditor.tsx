@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Constants } from "@/integrations/supabase/types";
 import { roleLabel } from "@/lib/role-labels";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatDateTime } from "@/lib/date-format";
 
-type Tier = { id: string; workflow: string; tier: number; label: string; role: string };
+type Tier = { id: string; workflow: string; tier: number; label: string; role: string; configured_at: string | null };
 
 /** Admin-only: choose who signs at each of the 3 approval tiers for bail and repatriation. */
 export function ApprovalChainEditor() {
@@ -24,7 +26,7 @@ export function ApprovalChainEditor() {
       const { error } = await supabase.from("approval_chain_config").update({ label: r.label, role: r.role as never }).eq("id", r.id);
       if (error) return toast({ title: "Not saved", description: error.message, variant: "destructive" });
     }
-    toast({ title: "Chain of command saved" });
+    toast({ title: "Chain of command confirmed" });
     qc.invalidateQueries({ queryKey: ["chain_all"] }); qc.invalidateQueries({ queryKey: ["chain"] });
   };
   return (
@@ -32,6 +34,11 @@ export function ApprovalChainEditor() {
       <CardHeader><CardTitle>3-tier chain of command</CardTitle></CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">Tiers 1 and 2 recommend; tier 3 (the Command) makes the final decision.</p>
+        {rows.some((r) => !r.configured_at) ? (
+          <Alert variant="destructive"><AlertDescription>Not confirmed yet. The roles below are suggestions only — bail and repatriation sign-offs are blocked until a Super Admin reviews and saves them.</AlertDescription></Alert>
+        ) : rows.length > 0 && (
+          <Alert><AlertDescription>Confirmed {formatDateTime(rows.map((r) => r.configured_at!).sort().at(-1)!)}.</AlertDescription></Alert>
+        )}
         {["bail", "repatriation"].map((w) => (
           <div key={w} className="space-y-2">
             <h3 className="font-semibold capitalize">{w}</h3>
@@ -47,7 +54,7 @@ export function ApprovalChainEditor() {
             ))}
           </div>
         ))}
-        <Button onClick={save}>Save</Button>
+        <Button onClick={save}>Confirm & save chain of command</Button>
       </CardContent>
     </Card>
   );
