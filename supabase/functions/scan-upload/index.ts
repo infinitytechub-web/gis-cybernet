@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     if (status === "infected") {
       await admin.storage.from("detention-photos").remove([path]);
       await admin.from("firewall_events").insert({
-        layer: "file", action: "quarantine", subject: path, actor_id: u.user.id,
+        layer: "file", action: "quarantine", subject: path, user_id: u.user.id,
         details: { scanner: "cloudmersive", viruses: (verdict.FoundViruses ?? []).map((v) => v.VirusName) },
       }).then(() => {}, () => {});
     }

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
 import { OffencesMultiSelect } from "@/components/detention/OffencesMultiSelect";
-import { OffencesTab, MugshotTab, DocumentsTab, SuretiesTab, upload as uploadDetentionFile } from "@/components/detention/SuspectCasePanel";
+import { OffencesTab, MugshotTab, DocumentsTab, SuretiesTab, upload as uploadDetentionFile, requestScan } from "@/components/detention/SuspectCasePanel";
 import { FileUploadGuard } from "@/components/security/FileUploadGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StandardBailTab } from "@/components/detention/StandardBailTab";
@@ -708,10 +708,12 @@ function IntakeForm({ onClose, userId, role }: { onClose: () => void; userId?: s
       if (mugshot) {
         const p = await uploadDetentionFile(`suspects/${id}/mugshot-${Date.now()}.${mugshot.name.split(".").pop()}`, mugshot);
         await supabase.from("detention_records").update({ mugshot_url: p }).eq("id", id);
+        await requestScan("mugshot", id);
       }
       for (const f of docs) {
         const p = await uploadDetentionFile(`suspects/${id}/docs/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`, f);
-        await supabase.from("suspect_documents").insert({ detention_id: id, file_path: p, file_name: f.name });
+        const d = await supabase.from("suspect_documents").insert({ detention_id: id, file_path: p, file_name: f.name }).select("id").single();
+        if (d.data) await requestScan("document", d.data.id);
       }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["detention_records"] }); qc.invalidateQueries({ queryKey: ["hub_offences"] }); toast.success("Detainee booked in"); onClose(); },
