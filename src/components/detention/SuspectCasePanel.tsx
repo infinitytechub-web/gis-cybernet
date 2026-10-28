@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/date-format";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -180,7 +181,7 @@ function ApprovalsTab({ id, workflow }: { id: string; workflow: "bail" | "repatr
       {tiers.map((t) => { const s = signed.find((x) => x.tier === t.tier); return (
         <div key={t.id} className="rounded border p-2 text-sm">
           <b>Tier {t.tier}: {t.label}</b> <span className="text-muted-foreground">({t.role})</span>
-          {s ? <p>{s.decision.replace("_", " ")} by <i>{s.signer_name}</i> on {new Date(s.signed_at).toLocaleString("en-GB")}{s.comments ? ` — ${s.comments}` : ""}<br /><span className="font-mono text-xs text-muted-foreground">Signature {s.signature_hash.slice(0, 16)}…</span></p>
+          {s ? <p>{s.decision.replace("_", " ")} by <i>{s.signer_name}</i> on {formatDateTime(s.signed_at)}{s.comments ? ` — ${s.comments}` : ""}<br /><span className="font-mono text-xs text-muted-foreground">Signature {s.signature_hash.slice(0, 16)}…</span></p>
             : <p className="text-muted-foreground">Awaiting</p>}
         </div>); })}
       {next && (
