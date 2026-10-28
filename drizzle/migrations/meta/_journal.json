@@ -316,6 +316,13 @@
       "when": 1793217861995,
       "tag": "0044_holding_staff_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793226297409,
+      "tag": "0045_regional_commands_and_brands",
+      "breakpoints": true
     }
   ]
 }

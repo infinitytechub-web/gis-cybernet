@@ -317,6 +317,39 @@ export type Database = {
           },
         ]
       }
+      app_brands: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          tokens: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          tokens: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          tokens?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_build_releases: {
         Row: {
           app_version: string | null
@@ -2000,6 +2033,33 @@ export type Database = {
           target_staff_id?: string | null
           target_user_id?: string
           to_role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: []
+      }
+      command_structure_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          org_unit_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          org_unit_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          org_unit_id?: string | null
         }
         Relationships: []
       }
@@ -11542,9 +11602,12 @@ export type Database = {
       }
       org_units: {
         Row: {
+          activation_status: string
           authorised_strength: number | null
+          brand_color: string | null
           code: string
           created_at: string
+          display_order: number | null
           id: string
           is_active: boolean
           latitude: number | null
@@ -11555,9 +11618,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activation_status?: string
           authorised_strength?: number | null
+          brand_color?: string | null
           code: string
           created_at?: string
+          display_order?: number | null
           id?: string
           is_active?: boolean
           latitude?: number | null
@@ -11568,9 +11634,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activation_status?: string
           authorised_strength?: number | null
+          brand_color?: string | null
           code?: string
           created_at?: string
+          display_order?: number | null
           id?: string
           is_active?: boolean
           latitude?: number | null
@@ -18362,6 +18431,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      activate_brand: { Args: { _id: string }; Returns: undefined }
       admin_appoint_commander: {
         Args: {
           _org_unit_id: string
@@ -18733,6 +18803,7 @@ export type Database = {
         Returns: number
       }
       command_reach_units: { Args: { _user_id: string }; Returns: string[] }
+      command_region_of: { Args: { _unit: string }; Returns: string }
       command_vault_can_access: {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
@@ -18763,6 +18834,7 @@ export type Database = {
         Args: { p_job_id: string }
         Returns: Json
       }
+      delete_brand: { Args: { _id: string }; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -19721,6 +19793,7 @@ export type Database = {
         }
         Returns: number
       }
+      my_command_assignment: { Args: never; Returns: Json }
       my_command_context: {
         Args: never
         Returns: {
@@ -20039,6 +20112,20 @@ export type Database = {
         Returns: string
       }
       redact_old_job_passwords: { Args: never; Returns: undefined }
+      regional_commands_overview: {
+        Args: never
+        Returns: {
+          activation_status: string
+          brand_color: string
+          can_open: boolean
+          display_order: number
+          id: string
+          is_own: boolean
+          name: string
+          staff_count: number
+          type: string
+        }[]
+      }
       register_app_build: {
         Args: {
           p_app_version?: string
@@ -20114,6 +20201,11 @@ export type Database = {
           }
       run_security_hygiene_scan: { Args: never; Returns: Json }
       save_approval_chain: { Args: { _tiers: Json }; Returns: undefined }
+      save_brand: {
+        Args: { _id: string; _name: string; _tokens: Json }
+        Returns: string
+      }
+      save_command_order: { Args: { _ids: string[] }; Returns: undefined }
       search_approval_audit: {
         Args: {
           _actions?: string[]
@@ -20267,6 +20359,10 @@ export type Database = {
       }
       set_audit_purge_grant: {
         Args: { _grant: boolean; _user_id: string }
+        Returns: undefined
+      }
+      set_command_activation: {
+        Args: { _reason: string; _status: string; _unit: string }
         Returns: undefined
       }
       set_interlink_contact_approval: {
@@ -20505,6 +20601,15 @@ export type Database = {
       }
       unblock_ip: { Args: { _block_id: string }; Returns: undefined }
       unit_dashboard: { Args: { _org_unit_id: string }; Returns: Json }
+      unmapped_staff_assignments: {
+        Args: never
+        Returns: {
+          full_name: string
+          profile_id: string
+          reason: string
+          staff_id: string
+        }[]
+      }
       user_department_ids: {
         Args: { _user_id: string }
         Returns: {
