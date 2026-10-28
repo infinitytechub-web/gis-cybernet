@@ -1,6 +1,7 @@
 # Roadmap – Holding Center / Command Operations enhancement
-- [ ] Shift roster: officer self-service sign-in/out with automatic server timestamps, existing attendance records and permission-gated Attendance Overview links
-- [ ] Shift roster/report synchronization regression tests and live verification without changing real staff attendance
+- [x] Shift roster: officer self-service sign-in/out with automatic server timestamps, existing attendance records and permission-gated Attendance Overview links
+- [x] Shift roster/report synchronization: 59 focused permission, recording, synchronization and date tests passed; preview build passed; signed-out route redirects to sign-in without runtime errors
+- [ ] Live officer shift sign-in/out and report readback — blocked: requesting user has no matching app account; requires an identified signed-in officer and an actual shift, no real attendance changed
 - [x] Staff ID/photo verification screen with private uploads and Super Admin approval/revocation; approval grants only current-Command read access
 - [x] Verification/navigation regression tests: 31 passed, including mocked submission/readback, failed-ID upload cleanup, photo-load approval gate and staff review denial; private policies and duplicate-prevention index confirmed; preview build passed
 - [ ] Live staff submission and Super Admin approval/readback — blocked: no identified signed-in staff or administrator account
