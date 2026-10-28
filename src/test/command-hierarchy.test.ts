@@ -36,6 +36,28 @@ describe("buildHierarchyTree", () => {
   });
 });
 
+describe("subtreeAt", () => {
+  it("returns the branch rooted at the given command with depths rebased to zero", () => {
+    const sub = subtreeAt(buildHierarchyTree(UNITS), "ga");
+    expect(sub).toHaveLength(1);
+    expect(sub[0].id).toBe("ga");
+    expect(sub[0].depth).toBe(0);
+    expect(sub[0].children.map((n) => n.id)).toEqual(["ama"]);
+    expect(sub[0].children[0].depth).toBe(1);
+  });
+
+  it("returns an empty list for an unknown command", () => {
+    expect(subtreeAt(buildHierarchyTree(UNITS), "missing")).toEqual([]);
+  });
+
+  it("keeps the branch reorderable within its own siblings", () => {
+    const sub = subtreeAt(buildHierarchyTree(UNITS), "hq");
+    const moved = moveWithinSiblings(sub, "ga", "ar");
+    expect(moved).not.toBeNull();
+    expect(moved![0].children.map((n) => n.id)).toEqual(["ga", "ar"]);
+  });
+});
+
 describe("moveWithinSiblings", () => {
   it("reorders siblings within the same parent", () => {
     const roots = buildHierarchyTree(UNITS);
