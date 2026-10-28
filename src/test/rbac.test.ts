@@ -125,6 +125,7 @@ describe("least privilege — audit-sensitive modules", () => {
       "payments", "loans", "biometric-enrollment", "leave-calendar", "staff-portal", "command-portal", "command-dashboard",
       // Self-service only: own sign-off steps, own leave standing, own postings.
       "officer-portal",
+      "regional-commands", // post-login landing; card data is caller-scoped by security-definer RPCs
     ]);
     const unexpected = MODULES.filter((m) => m.roles === "all" && !allowed.has(m.key)).map((m) => m.key);
     expect(unexpected, `modules open to everyone: ${unexpected.join(", ")}`).toEqual([]);
