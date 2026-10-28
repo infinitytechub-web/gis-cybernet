@@ -4,12 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree } from "lucide-react";
+import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree, Play, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { commandDashboardPath, reorder, splitCommandName, type RegionalCommandCard } from "@/lib/regional-commands";
@@ -25,7 +27,7 @@ const GhanaOutline = ({ className }: { className?: string }) => (
   </svg>
 );
 
-function CommandCard({ c, index, sortable, onOpen }: { c: RegionalCommandCard; index: number; sortable: boolean; onOpen: () => void }) {
+function CommandCard({ c, index, sortable, onOpen, onToggleActivation }: { c: RegionalCommandCard; index: number; sortable: boolean; onOpen: () => void; onToggleActivation?: (c: RegionalCommandCard) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id, disabled: !sortable });
   const color = c.brand_color ?? "145 63% 30%";
   const { title, subtitle } = splitCommandName(c.name);
@@ -57,6 +59,15 @@ function CommandCard({ c, index, sortable, onOpen }: { c: RegionalCommandCard; i
           <GripVertical className="h-4 w-4" />
         </span>
       )}
+      {onToggleActivation && (
+        <span className="absolute left-1 bottom-1">
+          <Button type="button" size="sm" variant={pending ? "default" : "outline"} className="h-7 px-2 text-xs"
+            aria-label={pending ? `Activate ${c.name}` : `Pause ${c.name}`}
+            onClick={(e) => { e.stopPropagation(); onToggleActivation(c); }}>
+            {pending ? <><Play className="h-3 w-3 mr-1" />Activate</> : <><Pause className="h-3 w-3 mr-1" />Pause</>}
+          </Button>
+        </span>
+      )}
     </div>
   );
 }
@@ -68,6 +79,9 @@ export default function RegionalCommands() {
   const chId = useId();
   const [order, setOrder] = useState<RegionalCommandCard[] | null>(null);
   const [view, setView] = useState<"cards" | "hierarchy">("cards");
+  const [activationTarget, setActivationTarget] = useState<RegionalCommandCard | null>(null);
+  const [activationReason, setActivationReason] = useState("");
+  const [activationSaving, setActivationSaving] = useState(false);
 
   const cards = useQuery({
     queryKey: ["regional-commands"],
@@ -134,6 +148,21 @@ export default function RegionalCommands() {
     navigate(commandDashboardPath(c.id));
   };
 
+  const submitActivation = async () => {
+    if (!activationTarget) return;
+    const reason = activationReason.trim();
+    if (!reason) { toast.error("A reason is required."); return; }
+    const next = activationTarget.activation_status === "active" ? "pending" : "active";
+    setActivationSaving(true);
+    const { error } = await supabase.rpc("set_command_activation", { _unit: activationTarget.id, _status: next, _reason: reason });
+    setActivationSaving(false);
+    if (error) { toast.error(`Could not update ${activationTarget.name}: ${error.message}`); return; }
+    toast.success(`${activationTarget.name} is now ${next === "active" ? "active" : "paused"}.`);
+    setActivationTarget(null);
+    setActivationReason("");
+    qc.invalidateQueries({ queryKey: ["regional-commands"] });
+  };
+
   const status = mine.data?.status;
 
   return (
@@ -180,7 +209,7 @@ export default function RegionalCommands() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={list.map((c) => c.id)} strategy={rectSortingStrategy}>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-            {list.map((c, i) => <CommandCard key={c.id} c={c} index={isAdmin ? i : (c.display_order ?? 1) - 1} sortable={isAdmin} onOpen={() => open(c)} />)}
+            {list.map((c, i) => <CommandCard key={c.id} c={c} index={isAdmin ? i : (c.display_order ?? 1) - 1} sortable={isAdmin} onOpen={() => open(c)} onToggleActivation={isAdmin ? setActivationTarget : undefined} />)}
           </div>
         </SortableContext>
       </DndContext>
@@ -198,6 +227,27 @@ export default function RegionalCommands() {
           </AlertDescription>
         </Alert>
       )}
+
+      <Dialog open={!!activationTarget} onOpenChange={(openState) => { if (!openState) { setActivationTarget(null); setActivationReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{activationTarget?.activation_status === "active" ? "Pause" : "Activate"} {activationTarget?.name}</DialogTitle>
+            <DialogDescription>
+              {activationTarget?.activation_status === "active"
+                ? "Pausing closes this command's dashboard to staff until it is reactivated. This is audited."
+                : "Activating opens this regional command so assigned staff can open its dashboard. This is audited."}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea value={activationReason} onChange={(e) => setActivationReason(e.target.value)}
+            placeholder="Reason for this change (required)" aria-label="Reason" rows={3} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setActivationTarget(null); setActivationReason(""); }} disabled={activationSaving}>Cancel</Button>
+            <Button onClick={submitActivation} disabled={activationSaving || !activationReason.trim()}>
+              {activationSaving ? "Saving…" : activationTarget?.activation_status === "active" ? "Pause command" : "Activate command"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <p className="text-center text-[11px] tracking-widest text-muted-foreground">SECURE BORDERS • SAFE COMMUNITIES • A STRONGER GHANA</p>
     </div>
