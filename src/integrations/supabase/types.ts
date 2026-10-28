@@ -16516,12 +16516,15 @@ export type Database = {
           approval_status: string
           committed_at: string | null
           created_at: string
+          expected_retire_count: number | null
           file_name: string
           id: string
           matched_count: number
           new_count: number
           notes: string | null
           ranks_created: number
+          retire_confirmed_at: string | null
+          retire_confirmed_by: string | null
           retired_count: number
           review_notes: string | null
           reviewed_at: string | null
@@ -16538,12 +16541,15 @@ export type Database = {
           approval_status?: string
           committed_at?: string | null
           created_at?: string
+          expected_retire_count?: number | null
           file_name: string
           id?: string
           matched_count?: number
           new_count?: number
           notes?: string | null
           ranks_created?: number
+          retire_confirmed_at?: string | null
+          retire_confirmed_by?: string | null
           retired_count?: number
           review_notes?: string | null
           reviewed_at?: string | null
@@ -16560,12 +16566,15 @@ export type Database = {
           approval_status?: string
           committed_at?: string | null
           created_at?: string
+          expected_retire_count?: number | null
           file_name?: string
           id?: string
           matched_count?: number
           new_count?: number
           notes?: string | null
           ranks_created?: number
+          retire_confirmed_at?: string | null
+          retire_confirmed_by?: string | null
           retired_count?: number
           review_notes?: string | null
           reviewed_at?: string | null
@@ -17924,6 +17933,10 @@ export type Database = {
       }
     }
     Functions: {
+      _staff_list_retirement_ids: {
+        Args: { _import_id: string }
+        Returns: string[]
+      }
       access_policy: {
         Args: never
         Returns: {
@@ -18372,6 +18385,10 @@ export type Database = {
           _from: string
         }
         Returns: string
+      }
+      confirm_staff_list_retirements: {
+        Args: { _count: number; _import_id: string; _profile_ids: string[] }
+        Returns: Json
       }
       consume_processing_job_credentials: {
         Args: { p_job_id: string }
@@ -19492,6 +19509,18 @@ export type Database = {
           rank: string
           staff_id: string
           user_id: string
+        }[]
+      }
+      preview_staff_list_retirements: {
+        Args: { _import_id: string }
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+          rank_name: string
+          staff_id: string
+          status: string
+          unit_name: string
         }[]
       }
       procurement_actor_name: { Args: { _uid: string }; Returns: string }
