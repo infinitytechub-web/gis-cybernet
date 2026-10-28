@@ -228,6 +228,27 @@ export default function RegionalCommands() {
         </Alert>
       )}
 
+      <Dialog open={!!activationTarget} onOpenChange={(openState) => { if (!openState) { setActivationTarget(null); setActivationReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{activationTarget?.activation_status === "active" ? "Pause" : "Activate"} {activationTarget?.name}</DialogTitle>
+            <DialogDescription>
+              {activationTarget?.activation_status === "active"
+                ? "Pausing closes this command's dashboard to staff until it is reactivated. This is audited."
+                : "Activating opens this regional command so assigned staff can open its dashboard. This is audited."}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea value={activationReason} onChange={(e) => setActivationReason(e.target.value)}
+            placeholder="Reason for this change (required)" aria-label="Reason" rows={3} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setActivationTarget(null); setActivationReason(""); }} disabled={activationSaving}>Cancel</Button>
+            <Button onClick={submitActivation} disabled={activationSaving || !activationReason.trim()}>
+              {activationSaving ? "Saving…" : activationTarget?.activation_status === "active" ? "Pause command" : "Activate command"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <p className="text-center text-[11px] tracking-widest text-muted-foreground">SECURE BORDERS • SAFE COMMUNITIES • A STRONGER GHANA</p>
     </div>
   );
