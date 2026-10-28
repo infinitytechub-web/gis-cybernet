@@ -236,12 +236,12 @@ export default function MyShiftTracker() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "attendances", filter: `profile_id=eq.${profile.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "attendance"] }),
+        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker"] }),
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "shift_assignments", filter: `profile_id=eq.${profile.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker", "assignments"] }),
+        () => queryClient.invalidateQueries({ queryKey: ["my-shift-tracker"] }),
       )
       .subscribe();
     return () => {
@@ -946,7 +946,7 @@ export default function MyShiftTracker() {
             <TableBody>
               {loadError ? <TableRow><TableCell colSpan={6}>Shift records could not be loaded.</TableCell></TableRow>
                 : loading ? <TableRow><TableCell colSpan={6}>Loading…</TableCell></TableRow>
-                : pager.items.map((row) => <TableRow key={row.key}>
+                : pager.pageItems.map((row) => <TableRow key={row.key}>
                   <TableCell>{format(row.d, "dd/MM/yyyy")}</TableCell><TableCell>{row.assignName || "—"}</TableCell>
                   <TableCell>{row.checkIn || "—"}</TableCell><TableCell>{row.checkOut || "—"}</TableCell>
                   <TableCell>{row.status || "Not marked"}</TableCell><TableCell>{fmtMinutes(row.minutes)}</TableCell>
