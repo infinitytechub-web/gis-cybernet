@@ -1,5 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
-- [ ] Consolidate legacy operations pages and duplicate menu entries into existing Command Operations tabs
+- [x] Consolidate legacy operations pages and duplicate menu entries into existing Command Operations tabs; 26 navigation/RBAC tests passed
 - [x] Make three-tier bail/repatriation signing authority editable; atomic Super Admin-only save and four editor regression tests
 - [ ] Signed-in approval-authority save/readback — blocked: requesting user has no matching account; preview sign-in required
 - [x] Database: offences catalogue, suspect offences, sureties, suspect documents, repatriation details, 3-tier approval chain, signed recommendations, soft delete
