@@ -9,8 +9,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 
 const GENDER_COLORS: Record<string, string> = {
   Male: "hsl(var(--primary))",
-  Female: "hsl(var(--destructive))",
-  Other: "hsl(var(--warning))",
+  Female: "hsl(var(--chart-2))",
+  Other: "hsl(var(--chart-3))",
   "Not Set": "hsl(var(--muted-foreground))",
 };
 
@@ -106,7 +106,7 @@ export default function GenderStatisticsWidget() {
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                 />
                 <Legend
-                  formatter={(value) => <span className="text-xs">{value}</span>}
+                  formatter={(value) => <span className="text-xs text-foreground">{value}</span>}
                   iconSize={10}
                 />
               </PieChart>
