@@ -22,6 +22,7 @@ import { executeRecaptcha, getRecaptchaConfig, preloadRecaptcha } from "@/lib/re
 const gisLogo = "/gis-logo-192.webp";
 import { useBranding } from "@/hooks/useBranding";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Login() {
   const branding = useBranding();
@@ -465,17 +466,18 @@ export default function Login() {
 
   return (
     <main
-      className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-accent via-background to-muted bg-cover bg-center p-4"
+      className="relative flex min-h-dvh items-center justify-center bg-background bg-cover bg-center p-4 pt-16"
       style={branding.login_background_url ? { backgroundImage: `url(${branding.login_background_url})` } : undefined}
       aria-labelledby="login-heading"
     >
-      <Card className="w-full max-w-md border-primary/20 shadow-xl">
+      <div className="absolute right-4 top-4"><ThemeToggle /></div>
+      <Card className="w-full max-w-md border-border shadow-sm">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
             <img src={branding.login_logo_url || branding.logo_url || gisLogo} alt={branding.company_name} width={96} height={96} decoding="async" {...({ fetchpriority: "high" } as Record<string, string>)} className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
           </div>
           <div>
-            <h1 id="login-heading" className="text-xl font-bold text-secondary">
+            <h1 id="login-heading" className="text-xl font-bold text-foreground">
               {branding.company_name} — {branding.system_label || "HRM System"}
             </h1>
             <p className="text-sm text-muted-foreground">{branding.org_name} {branding.system_label}</p>
@@ -492,7 +494,7 @@ export default function Login() {
                 <div className="bg-destructive/10 p-2.5 rounded-full">
                   <Shield className="h-6 w-6 text-destructive" />
                 </div>
-                <h2 className="text-base font-semibold text-secondary">Two-Factor Authentication</h2>
+                <h2 className="text-base font-semibold text-foreground">Two-Factor Authentication</h2>
                 <p className="text-xs text-muted-foreground">
                   Enter the 6-digit code from your authenticator app to finish signing in.
                 </p>
@@ -504,7 +506,7 @@ export default function Login() {
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button onClick={handleVerifyOtp} disabled={isLoading || otp.length !== 6} className="w-full bg-secondary hover:bg-secondary/90">
+              <Button variant="secondary" onClick={handleVerifyOtp} disabled={isLoading || otp.length !== 6} className="w-full">
                 {isLoading ? "Verifying…" : "Verify & Sign In"}
               </Button>
               <div className="flex items-center justify-between">
@@ -526,7 +528,7 @@ export default function Login() {
               {renderLoginForm("Staff / Service ID", "Enter your Staff ID", undefined, undefined, "staff")}
             </TabsContent>
             <TabsContent value="admin">
-              {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary hover:bg-secondary/90", "Admin Sign In", "admin")}
+              {renderLoginForm("Admin ID", "Enter your Admin ID", "bg-secondary text-secondary-foreground hover:bg-secondary/90", "Admin Sign In", "admin")}
             </TabsContent>
           </Tabs>
           )}

@@ -54,12 +54,12 @@ export default function InterlinkWidget() {
   if (!isAdminOrSupervisor) return null;
 
   return (
-    <Card className="border-border/50 bg-gradient-to-br from-indigo-50/40 via-background to-violet-50/40 dark:from-indigo-950/20 dark:to-violet-950/20">
+    <Card className="border-border bg-card">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center gap-2">
-          <Network className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <Network className="h-4 w-4 text-primary" />
           {branding.nav}
-          <Badge variant="outline" className="ml-2 text-[10px] text-white border-0 bg-green-600">
+          <Badge variant="outline" className="ml-2 text-[10px] text-primary-foreground border-0 bg-primary">
             Command tier
           </Badge>
           <Button
@@ -74,19 +74,20 @@ export default function InterlinkWidget() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="Last 7 days" value={stats?.totalWeek ?? 0} tone="from-indigo-500 to-blue-500" icon={Send} />
-          <Stat label="Delivered" value={stats?.sentWeek ?? 0} tone="from-emerald-500 to-teal-500" icon={CheckCircle2} />
-          <Stat label="Issues" value={stats?.failedWeek ?? 0} tone="from-amber-500 to-rose-500" icon={AlertTriangle} />
+          <Stat label="Last 7 days" value={stats?.totalWeek ?? 0} tone="bg-secondary text-secondary-foreground" icon={Send} />
+          <Stat label="Delivered" value={stats?.sentWeek ?? 0} tone="bg-success text-success-foreground" icon={CheckCircle2} />
+          <Stat label="Issues" value={stats?.failedWeek ?? 0} tone="bg-warning text-warning-foreground" icon={AlertTriangle} />
         </div>
         <div className="space-y-1.5">
           {(stats?.recent ?? []).length === 0 && (
             <p className="text-xs text-muted-foreground italic px-1">No dispatches yet — open Interlink to send your first.</p>
           )}
           {(stats?.recent ?? []).map((r: any) => (
-            <button
+            <Button
+              variant="ghost"
               key={r.id}
               onClick={() => navigate("/interlink?tab=audit")}
-              className="w-full text-left flex items-center gap-2 p-2 rounded-md border border-border/50 bg-background/50 hover:bg-accent/40 transition"
+              className="h-auto w-full text-left flex flex-wrap items-center gap-2 p-2 rounded-md border border-border bg-background hover:bg-accent whitespace-normal"
             >
               <Badge variant="outline" className="text-[10px] capitalize">{r.scope}</Badge>
               <span className="text-xs font-medium truncate flex-1">{r.subject}</span>
@@ -97,10 +98,10 @@ export default function InterlinkWidget() {
                 variant="outline"
                 className={`text-[10px] ${
                   r.status === "sent"
-                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                    ? "bg-success text-success-foreground"
                     : r.status === "failed"
-                    ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
-                    : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-warning text-warning-foreground"
                 }`}
               >
                 {r.status}
@@ -108,7 +109,7 @@ export default function InterlinkWidget() {
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       </CardContent>
@@ -118,7 +119,7 @@ export default function InterlinkWidget() {
 
 function Stat({ label, value, tone, icon: Icon }: { label: string; value: number; tone: string; icon: any }) {
   return (
-    <div className={`rounded-lg p-2 text-white shadow-sm ${tone === 'from-amber-500 to-rose-500' ? 'bg-sky-800' : tone === 'from-indigo-500 to-blue-500' ? 'bg-yellow-300 text-black' : 'bg-gradient-to-br ' + tone}`}>
+    <div className={`rounded-md p-2 ${tone}`}>
       <div className="flex items-center justify-between">
         <Icon className="h-3.5 w-3.5 opacity-80" />
         <span className="text-lg font-bold leading-none">{value}</span>

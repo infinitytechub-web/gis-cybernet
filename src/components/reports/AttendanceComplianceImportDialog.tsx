@@ -514,12 +514,12 @@ export function AttendanceComplianceImportDialog({ open, onOpenChange, initialRe
               </div>
 
               {match.unknown.length > 0 && (
-                <Alert variant="default" className="border-amber-300 bg-amber-50 text-amber-900 [&>svg]:text-amber-700">
+                <Alert variant="default" className="border-warning bg-card text-card-foreground [&>svg]:text-foreground">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>{match.unknown.length} row(s) will be skipped</AlertTitle>
-                  <AlertDescription className="text-amber-800">
+                  <AlertDescription className="text-card-foreground">
                     These Staff IDs were not found in the directory and will not be imported:
-                    <ScrollArea className="mt-2 max-h-28 rounded border border-amber-200 bg-white/60 p-2 text-[11px]">
+                    <ScrollArea className="mt-2 max-h-28 rounded border border-border bg-muted p-2 text-[11px]">
                       <ul className="space-y-0.5">
                         {match.unknown.map((r) => (
                           <li key={r.rowIndex}>Row {r.rowIndex}: <code>{r.staff_id}</code> — {r.name || "(no name)"}</li>

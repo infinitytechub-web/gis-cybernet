@@ -14,20 +14,28 @@ export function BrandingProvider({ children }: { children?: React.ReactNode }) {
   const active = brands?.find((x) => x.is_active && !validateBrandTokens(x.tokens));
 
   useEffect(() => {
-    const root = document.documentElement;
+    const stylesheet = document.createElement("style");
+    stylesheet.dataset.brandTheme = "active";
     if (active) {
-      const vars = brandToCssVars(active.tokens);
-      Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
-      return () => { Object.keys(vars).forEach((k) => root.style.removeProperty(k)); };
+      stylesheet.textContent = (["light", "dark"] as const).map((mode) => {
+        const vars = brandToCssVars(active.tokens, mode);
+        return `${mode === "dark" ? ":root.dark" : ":root:not(.dark)"} { ${Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join(" ")} }`;
+      }).join("\n");
+      document.head.appendChild(stylesheet);
+      return () => { stylesheet.remove(); };
     }
+    const vars: Record<string, string> = {};
     const apply = (name: string, value: string | null | undefined) => {
-      if (value && /^\d/.test(value.trim())) root.style.setProperty(name, value.trim());
+      if (value && !validateBrandTokens({ primary: value, secondary: value, accent: value, background: value, surface: value, text: value, border: value, success: value, warning: value, danger: value })) vars[name] = value.trim();
     };
     apply("--primary", b.primary_color);
     apply("--ring", b.primary_color);
     apply("--secondary", b.secondary_color);
     apply("--sidebar-primary", b.secondary_color);
     apply("--brand-accent", b.accent_color);
+    stylesheet.textContent = `:root:not(.dark) { ${Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join(" ")} }`;
+    document.head.appendChild(stylesheet);
+    return () => { stylesheet.remove(); };
   }, [active, b.primary_color, b.secondary_color, b.accent_color]);
 
   useEffect(() => {
