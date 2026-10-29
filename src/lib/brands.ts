@@ -29,23 +29,50 @@ export function validateBrandTokens(t: Partial<Record<string, unknown>>): string
 
 /** Text colour that stays readable on an HSL background. */
 export function contrastFor(hsl: string): string {
-  const l = Number(hsl.trim().split(" ")[2]?.replace("%", "") ?? 50);
-  return l > 60 ? "155 45% 10%" : "0 0% 100%";
+  return contrastRatio(hsl, "0 0% 100%") >= contrastRatio(hsl, "155 45% 10%")
+    ? "0 0% 100%" : "155 45% 10%";
+}
+
+export function contrastRatio(a: string, b: string): number {
+  const luminance = (value: string) => {
+    const hex = hslToHex(value).slice(1);
+    const channels = [0, 2, 4].map((i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  const x = luminance(a), y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
 
 /** Maps brand tokens onto the app's shared CSS variables. */
-export function brandToCssVars(t: BrandTokens): Record<string, string> {
+export function brandToCssVars(t: BrandTokens, mode: "light" | "dark" = "light"): Record<string, string> {
+  const dark = mode === "dark";
+  const readable = (color: string) => {
+    const [h, s] = color.split(" ");
+    return `${h} ${s} 68%`;
+  };
+  const primary = dark ? readable(t.primary) : t.primary;
+  const surface = dark ? "160 10% 12%" : t.surface;
+  const background = dark ? "160 12% 8%" : t.background;
+  const text = dark ? "150 10% 94%" : (contrastRatio(t.text, surface) >= 4.5 && contrastRatio(t.text, background) >= 4.5 ? t.text : contrastFor(background));
   return {
-    "--primary": t.primary, "--primary-foreground": contrastFor(t.primary), "--ring": t.primary,
+    "--primary": primary, "--primary-foreground": contrastFor(primary), "--ring": primary,
     "--secondary": t.secondary, "--secondary-foreground": contrastFor(t.secondary),
-    "--brand-accent": t.accent,
-    "--background": t.background, "--foreground": t.text,
-    "--card": t.surface, "--card-foreground": t.text,
-    "--popover": t.surface, "--popover-foreground": t.text,
-    "--border": t.border, "--input": t.border,
+    "--brand-accent": dark ? readable(t.accent) : t.accent,
+    "--background": background, "--foreground": text,
+    "--card": surface, "--card-foreground": text,
+    "--popover": surface, "--popover-foreground": text,
+    "--border": dark ? "160 8% 30%" : t.border, "--input": dark ? "160 8% 42%" : "160 8% 50%",
+    "--muted": dark ? "160 8% 18%" : "150 8% 94%",
+    "--muted-foreground": dark ? "150 8% 72%" : "160 8% 36%",
+    "--accent": dark ? "152 20% 20%" : "152 25% 92%",
+    "--accent-foreground": dark ? "150 10% 94%" : "155 45% 10%",
     "--success": t.success, "--warning": t.warning,
+    "--success-foreground": contrastFor(t.success), "--warning-foreground": contrastFor(t.warning),
     "--destructive": t.danger, "--destructive-foreground": contrastFor(t.danger),
-    "--sidebar-primary": t.primary, "--sidebar-ring": t.primary,
+    "--sidebar-primary": t.secondary, "--sidebar-primary-foreground": contrastFor(t.secondary), "--sidebar-ring": t.secondary,
   };
 }
 
