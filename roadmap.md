@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Apply official enterprise branding through existing theme manager; verify instant Light/Dark/System switching, persistence, contrast, representative interfaces and paper-safe reports
 - [x] Command Operations dashboard: exact detainee totals, pending bail/repatriation approvals, daily attendance trends and menu entry; 32 focused tests passed and preview build passed
 - [ ] Live Command Dashboard totals and navigation readback — blocked: requesting user has no matching app account; signed-out page correctly redirects to login without runtime errors
 - [x] Shift roster: officer self-service sign-in/out with automatic server timestamps, existing attendance records and permission-gated Attendance Overview links
