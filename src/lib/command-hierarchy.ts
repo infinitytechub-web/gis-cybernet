@@ -12,7 +12,7 @@ export type HierarchyNode = OrgTreeNode & HierarchyUnit & { children: HierarchyN
 
 /** Build the full org tree, siblings ordered by saved display order first. */
 export function buildHierarchyTree(units: HierarchyUnit[]): HierarchyNode[] {
-  const roots = buildOrgTree(units as OrgUnit[]) as HierarchyNode[];
+  const roots = buildOrgTree(units as OrgUnit[], { collapseHq: false }) as HierarchyNode[];
   const sortRec = (nodes: HierarchyNode[]) => {
     nodes.sort((a, b) => (a.display_order ?? Number.MAX_SAFE_INTEGER) - (b.display_order ?? Number.MAX_SAFE_INTEGER));
     for (const n of nodes) sortRec(n.children);
