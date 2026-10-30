@@ -19946,6 +19946,10 @@ export type Database = {
         Args: { _profile_id: string; _uid: string }
         Returns: boolean
       }
+      hrm_dashboard_summary: {
+        Args: { _org_unit_id?: string; _since?: string }
+        Returns: Json
+      }
       hrm_is_hr_admin: { Args: { _uid: string }; Returns: boolean }
       increment_announcement_file_downloads: {
         Args: { _file_id: string }

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, subDays } from "date-fns";
+import { dashboardRetry } from "@/lib/dashboard-integrity";
 
 /**
  * Dashboard data access, split by privilege so a lower-privileged role never
@@ -73,9 +74,10 @@ export function useOversightDashboardData(enabled: boolean) {
   const day = today();
 
   const counts = useQuery({
-    queryKey: ["dash", "oversight-counts", day],
+    queryKey: ["dash", "oversight-counts", user?.id, day],
     enabled,
     refetchInterval: 30_000,
+    retry: dashboardRetry,
     queryFn: async () => {
       const [staff, active, attendance, leave, postings] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }).is("deleted_at", null),
@@ -84,6 +86,9 @@ export function useOversightDashboardData(enabled: boolean) {
         supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("postings_transfers").select("id", { count: "exact", head: true }).eq("status", "pending"),
       ]);
+      for (const result of [staff, active, attendance, leave, postings]) {
+        if (result.error) throw result.error;
+      }
       return {
         staffCount: staff.count ?? 0,
         activeStaff: active.count ?? 0,
@@ -124,6 +129,7 @@ export function useOversightDashboardData(enabled: boolean) {
       const { data, error } = await supabase
         .from("profiles")
         .select("department_id, departments(name)")
+        .is("deleted_at", null)
         .eq("status", "active");
       if (error) throw error;
       const counts: Record<string, { value: number; id: string }> = {};
@@ -157,7 +163,7 @@ export function useOversightDashboardData(enabled: boolean) {
     queryKey: ["dash", "staff-status"],
     enabled,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("status");
+      const { data, error } = await supabase.from("profiles").select("status").is("deleted_at", null);
       if (error) throw error;
       const counts: Record<string, number> = {};
       (data || []).forEach((p) => {

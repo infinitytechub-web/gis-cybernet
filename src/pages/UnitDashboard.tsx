@@ -29,6 +29,7 @@ import { ORG_UNIT_TYPE_LABELS, orgUnitPath, type OrgUnitType } from "@/lib/org-h
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { KpiTile } from "@/components/dashboard/KpiTile";
 import { activeRatioAlert } from "@/lib/staffing-indicators";
+import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
 
 export default function UnitDashboard() {
   const { role } = useAuth();
@@ -114,6 +115,7 @@ export default function UnitDashboard() {
           </div>
         </div>
       </header>
+      <DashboardSyncStatus updatedAt={query.dataUpdatedAt} failed={query.isError} fetching={query.isFetching} onRetry={() => { void query.refetch(); }} />
 
       <UnitStaffPickerDialog
         open={pickerOpen}

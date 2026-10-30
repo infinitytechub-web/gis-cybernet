@@ -365,6 +365,27 @@
       "when": 1793396204790,
       "tag": "0051_log_biodata_export",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1793397551951,
+      "tag": "0052_hr_dashboard_scoped_aggregates",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793397571478,
+      "tag": "0053_exclude_deleted_dashboard_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1793397702906,
+      "tag": "0054_exclude_deleted_command_picker_counts",
+      "breakpoints": true
     }
   ]
 }

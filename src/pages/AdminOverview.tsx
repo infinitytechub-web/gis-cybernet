@@ -11,14 +11,17 @@ import { Input } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/date-format";
 import { regionalCardPath, type RegionalCommandCard } from "@/lib/regional-commands";
 import { CommandApprovalQueue } from "@/components/hr/CommandApprovalQueue";
+import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
+import { dashboardRetry, reportingSince, sumCounts } from "@/lib/dashboard-integrity";
 import { Briefcase, FileDown, LayoutDashboard, Users } from "lucide-react";
 
-const RANGES: Record<string, number | null> = { "7": 7, "30": 30, "90": 90, "365": 365, all: null };
-const since = (r: string) => (RANGES[r] ? new Date(Date.now() - RANGES[r]! * 864e5).toISOString() : null);
-const count = (rows: { status?: string | null }[] | undefined) => {
-  const m: Record<string, number> = {};
-  (rows ?? []).forEach((r) => { const s = r.status ?? "unknown"; m[s] = (m[s] ?? 0) + 1; });
-  return m;
+type Summary = {
+  as_of: string;
+  staff: { total: number; assigned: number; unassigned: number; by_status: Record<string, number> };
+  applications: Record<string, number>; transfers: Record<string, number>;
+  appointments: number; promotions: Record<string, number>; exits: Record<string, number>;
+  attendance: Record<string, number>; leave: Record<string, number>; certifications: number;
+  downloads: null | { total: number; records: number; recent: { id: string; format: string; row_count: number; created_at: string }[] };
 };
 
 function Totals({ title, total, parts, icon: Icon, to, note }: { title: string; total: number | string; parts?: Record<string, number>; icon: any; to?: string; note?: string }) {
@@ -47,7 +50,7 @@ export default function AdminOverview() {
   const [range, setRange] = useState("30");
   const [command, setCommand] = useState("all");
   const [search, setSearch] = useState("");
-  const from = since(range);
+  const from = useMemo(() => reportingSince(range), [range]);
 
   const commands = useQuery({
     queryKey: ["admin-overview-commands"],
@@ -59,63 +62,37 @@ export default function AdminOverview() {
     refetchInterval: 60_000,
   });
 
-  const q = <T,>(key: string, fn: () => Promise<T>) =>
-    useQuery({ queryKey: ["admin-overview", key, range, command], queryFn: fn, refetchInterval: 60_000 });
-
-  const withRange = (b: any, col = "created_at") => (from ? b.gte(col, from) : b);
-
-  const apps = q("apps", async () => {
-    let b: any = supabase.from("staff_applications").select("status,application_type,target_org_unit_id");
-    b = withRange(b);
-    if (command !== "all") b = b.eq("target_org_unit_id", command);
-    const { data, error } = await b.limit(5000);
-    if (error) throw error;
-    return data as { status: string; application_type: string }[];
-  });
-  const transfers = q("transfers", async () => {
-    let b: any = supabase.from("staff_transfer_requests").select("status,to_org_unit_id,from_org_unit_id");
-    b = withRange(b);
-    if (command !== "all") b = b.or(`to_org_unit_id.eq.${command},from_org_unit_id.eq.${command}`);
-    const { data, error } = await b.limit(5000);
-    if (error) throw error;
-    return data as { status: string }[];
-  });
-  const hr = q("hr", async () => {
-    const run = async (t: "staff_appointments" | "staff_promotions" | "staff_exits") => {
-      let b: any = supabase.from(t).select(t === "staff_appointments" ? "id,org_unit_id" : "status");
-      b = withRange(b);
-      if (t === "staff_appointments" && command !== "all") b = b.eq("org_unit_id", command);
-      const { data, error } = await b.limit(5000);
+  const summary = useQuery({
+    queryKey: ["admin-overview-summary", range, command],
+    refetchInterval: 60_000,
+    retry: dashboardRetry,
+    queryFn: async (): Promise<Summary> => {
+      const { data, error } = await supabase.rpc("hrm_dashboard_summary", {
+        _org_unit_id: command === "all" ? undefined : command,
+        _since: from ?? undefined,
+      });
       if (error) throw error;
-      return data as any[];
-    };
-    const [appointments, promotions, exits] = await Promise.all([run("staff_appointments"), run("staff_promotions"), run("staff_exits")]);
-    return { appointments, promotions, exits };
+      if (!data || typeof data !== "object" || !("staff" in data)) throw new Error("Dashboard figures unavailable");
+      return data as unknown as Summary;
+    },
   });
-  const kyc = q("kyc", async () => {
-    let b: any = supabase.from("hrm_export_audit").select("id,format,subject,row_count,created_at").eq("export_kind", "biodata_service_record").order("created_at", { ascending: false });
-    b = withRange(b);
-    const { data, error } = await b.limit(500);
-    if (error) throw error;
-    return data as { id: string; format: string; subject: string | null; row_count: number | null; created_at: string }[];
-  });
-
+  const metrics = summary.isError ? undefined : summary.data;
+  const total = (parts: Record<string, number> | undefined) => metrics ? sumCounts(parts) : summary.isError ? "—" : "…";
   const cmdList = commands.data ?? [];
   const shownCmds = useMemo(() => {
     const s = search.trim().toLowerCase();
     return cmdList.filter((c) => (command === "all" || c.id === command) && (!s || c.name.toLowerCase().includes(s)));
   }, [cmdList, command, search]);
-  const staffTotal = shownCmds.reduce((n, c) => n + (c.staff_count ?? 0), 0);
-  const kycRows = kyc.data ?? [];
-  const kycRecords = kycRows.reduce((n, r) => n + (r.row_count ?? 0), 0);
+  const kycRows = metrics?.downloads?.recent ?? [];
 
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground">HR, staff applications, Bio-Data & Service Record downloads and command dashboards in one place. Figures only include records you are allowed to see.</p>
+
       </div>
 
+      <DashboardSyncStatus updatedAt={summary.dataUpdatedAt} failed={summary.isError || commands.isError} fetching={summary.isFetching} onRetry={() => { void summary.refetch(); void commands.refetch(); }} />
       <div className="flex flex-wrap gap-3">
         <Select value={range} onValueChange={setRange}>
           <SelectTrigger className="w-40" aria-label="Period"><SelectValue /></SelectTrigger>
@@ -128,7 +105,7 @@ export default function AdminOverview() {
           </SelectContent>
         </Select>
         <Select value={command} onValueChange={setCommand}>
-          <SelectTrigger className="w-64" aria-label="Command"><SelectValue placeholder="All commands" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-64" aria-label="Command"><SelectValue placeholder="All commands" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All commands</SelectItem>
             {cmdList.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -138,22 +115,30 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Totals title="Staff in commands" total={staffTotal} icon={Users} note={`${shownCmds.length} command(s)`} to="/regional-commands" />
-        <Totals title="Staff applications" total={apps.isError ? "—" : apps.data?.length ?? "…"} parts={count(apps.data)} icon={Briefcase} to="/hr/applications" />
-        <Totals title="Transfer requests" total={transfers.isError ? "—" : transfers.data?.length ?? "…"} parts={count(transfers.data)} icon={Briefcase} to="/hr/applications" />
-        <Totals title="Bio-Data & Service Record downloads" total={kyc.isError ? "—" : kycRows.length} icon={FileDown} note={kyc.isError ? "Super Admins only" : `${kycRecords} records downloaded`} />
+        <Totals title="Total personnel" total={metrics?.staff.total ?? (summary.isError ? "—" : "…")} parts={metrics?.staff.by_status} icon={Users} note={metrics ? `${metrics.staff.assigned} assigned · ${metrics.staff.unassigned} unassigned` : undefined} to="/regional-commands" />
+        <Totals title="Staff applications" total={total(metrics?.applications)} parts={metrics?.applications} icon={Briefcase} to="/hr/applications" />
+        <Totals title="Transfer requests" total={total(metrics?.transfers)} parts={metrics?.transfers} icon={Briefcase} to="/hr/applications" />
+        <Totals title="Bio-Data & Service Record downloads" total={metrics?.downloads?.total ?? "—"} icon={FileDown} note={metrics?.downloads ? `${metrics.downloads.records} records downloaded` : "Super Admins only"} />
       </div>
 
       <CommandApprovalQueue />
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">HR service records</CardTitle></CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <Totals title="Appointments" total={hr.data?.appointments.length ?? (hr.isError ? "—" : "…")} icon={Users} to="/hr" />
-          <Totals title="Promotions" total={hr.data?.promotions.length ?? (hr.isError ? "—" : "…")} parts={count(hr.data?.promotions)} icon={Users} />
-          <Totals title="Resignations & exits" total={hr.data?.exits.length ?? (hr.isError ? "—" : "…")} parts={count(hr.data?.exits)} icon={Users} />
-        </CardContent>
-      </Card>
+      <section className="space-y-3" aria-label="Workforce availability">
+        <h2 className="text-base font-semibold">Workforce availability</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Totals title="Attendance today" total={total(metrics?.attendance)} parts={metrics?.attendance} icon={Users} />
+          <Totals title="Leave requests" total={total(metrics?.leave)} parts={metrics?.leave} icon={Briefcase} />
+          <Totals title="Professional certifications" total={metrics?.certifications ?? (summary.isError ? "—" : "…")} icon={Briefcase} />
+        </div>
+      </section>
+      <section className="space-y-3" aria-label="HR service records">
+        <h2 className="text-base font-semibold">HR service records</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Totals title="Appointments" total={metrics?.appointments ?? (summary.isError ? "—" : "…")} icon={Users} to="/hr" />
+          <Totals title="Promotions" total={total(metrics?.promotions)} parts={metrics?.promotions} icon={Users} />
+          <Totals title="Resignations & exits" total={total(metrics?.exits)} parts={metrics?.exits} icon={Users} />
+        </div>
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -166,7 +151,7 @@ export default function AdminOverview() {
                 <div key={c.id} className="flex items-center justify-between rounded-md border p-2">
                   <div>
                     <div className="text-sm font-medium">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.staff_count ?? 0} staff · {c.activation_status === "active" ? "Active" : "Paused"}</div>
+                    <div className="text-xs text-muted-foreground">{commands.isError ? "Unavailable" : c.staff_count ?? "—"} staff · {c.activation_status === "active" ? "Active" : "Paused"}</div>
                   </div>
                   {path && <Button asChild size="sm" variant="outline"><Link to={path}><LayoutDashboard className="mr-1 h-4 w-4" />Dashboard</Link></Button>}
                 </div>
@@ -177,11 +162,11 @@ export default function AdminOverview() {
         <Card>
           <CardHeader><CardTitle className="text-base">Recent Bio-Data & Service Record downloads</CardTitle></CardHeader>
           <CardContent className="max-h-96 space-y-2 overflow-y-auto">
-            {kyc.isError && <p className="text-sm text-muted-foreground">Only Super Admins can view the download history.</p>}
-            {!kyc.isError && kycRows.length === 0 && <p className="text-sm text-muted-foreground">No Bio-Data & Service Record downloads in this period.</p>}
+            {!metrics?.downloads && <p className="text-sm text-muted-foreground">Only Super Admins can view the download history.</p>}
+            {metrics?.downloads && kycRows.length === 0 && <p className="text-sm text-muted-foreground">No Bio-Data & Service Record downloads in this period.</p>}
             {kycRows.slice(0, 25).map((r) => (
               <div key={r.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
-                <span>{r.subject || "Staff selection"} · {r.row_count ?? 0} records · {r.format.toUpperCase()}</span>
+                <span>{r.row_count ?? 0} records · {r.format.toUpperCase()}</span>
                 <span className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}</span>
               </div>
             ))}

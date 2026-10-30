@@ -31,6 +31,8 @@ import { SignOffQueue } from "@/components/command/SignOffQueue";
 import { KpiTile } from "@/components/dashboard/KpiTile";
 import { useStaffingBaseline } from "@/hooks/useDashboardData";
 import { activeRatioAlert, strengthAlert } from "@/lib/staffing-indicators";
+import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
+import { dashboardRetry } from "@/lib/dashboard-integrity";
 
 interface CommandUnit {
   id: string;
@@ -118,6 +120,7 @@ export default function CommandDashboard() {
     queryKey: ["command-dashboard-live", selectedUnit],
     enabled: !unitsQuery.isLoading,
     refetchInterval: 30_000,
+    retry: dashboardRetry,
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("command_dashboard_live", {
         _org_unit_id: selectedUnit,
@@ -243,6 +246,7 @@ export default function CommandDashboard() {
           </Button>
         </div>
       </header>
+      <DashboardSyncStatus updatedAt={dashQuery.dataUpdatedAt} failed={dashQuery.isError || unitsQuery.isError} fetching={dashQuery.isFetching} onRetry={() => { void dashQuery.refetch(); void unitsQuery.refetch(); }} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile title="Officers on strength" value={totals?.officers ?? 0} sub={`${totals?.active ?? 0} active`} icon={Users} accent={1}

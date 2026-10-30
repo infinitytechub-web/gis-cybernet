@@ -10,6 +10,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { dashboardRetry } from "@/lib/dashboard-integrity";
 
 export interface UnitDashboardStaff {
   id: string;
@@ -85,15 +86,17 @@ export interface UnitDashboardData {
 export function useUnitDashboard(orgUnitId: string | null) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["unit-dashboard", orgUnitId],
+    queryKey: ["unit-dashboard", orgUnitId, user?.id],
     enabled: !!user && !!orgUnitId,
-    retry: false,
+    retry: dashboardRetry,
     refetchInterval: 60_000,
     queryFn: async (): Promise<UnitDashboardData> => {
+      if (!orgUnitId) throw new Error("Select a command");
       const { data, error } = await supabase.rpc("unit_dashboard", {
-        _org_unit_id: orgUnitId!,
+        _org_unit_id: orgUnitId,
       });
       if (error) throw error;
+      if (!data || typeof data !== "object" || !("staff_total" in data)) throw new Error("Unit data unavailable");
       return data as unknown as UnitDashboardData;
     },
   });

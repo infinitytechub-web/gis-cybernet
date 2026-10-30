@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { CommandOperationsRedirect } from "@/components/CommandOperationsRedirect";
 import { BrandingProvider } from "@/components/BrandingProvider";
+import { DashboardSyncProvider } from "@/components/dashboard/DashboardSyncProvider";
 import { Suspense } from "react";
 import { lazyRetry as lazy } from "@/lib/lazy-retry";
 // Layout is lazy — it pulls in the authenticated app shell (sidebar,
@@ -202,6 +203,7 @@ function App() {
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+        <DashboardSyncProvider>
         <ForcedSignoutMount />
         <AuthenticatedExtras />
         <Suspense fallback={<PageLoader />}>
@@ -366,6 +368,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
+        </DashboardSyncProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
