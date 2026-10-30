@@ -19253,6 +19253,22 @@ export type Database = {
           total: number
         }[]
       }
+      command_approval_queue: {
+        Args: never
+        Returns: {
+          can_act: boolean
+          created_at: string
+          detail: string
+          from_unit: string
+          id: string
+          kind: string
+          profile_id: string
+          staff_name: string
+          stage: string
+          status: string
+          to_unit: string
+        }[]
+      }
       command_authority_level: { Args: { _user_id: string }; Returns: number }
       command_capability_report: {
         Args: { _target: string }
@@ -19936,6 +19952,10 @@ export type Database = {
         Returns: undefined
       }
       is_active_staff: { Args: never; Returns: boolean }
+      is_command_head_for: {
+        Args: { _uid: string; _unit: string }
+        Returns: boolean
+      }
       is_command_tier: { Args: { _user_id: string }; Returns: boolean }
       is_ecowas_country: { Args: { _nationality: string }; Returns: boolean }
       is_frontdesk_realtime_topic: {
