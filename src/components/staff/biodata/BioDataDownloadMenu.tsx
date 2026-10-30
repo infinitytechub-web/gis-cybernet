@@ -46,7 +46,7 @@ export function BioDataDownloadMenu({
     try {
       const { downloadBioDataRecord } = await import("@/lib/biodata-export");
       await downloadBioDataRecord(profileId, fmt);
-      void supabase.rpc("log_biodata_export", { _profile_id: profileId, _format: fmt });
+      void supabase.rpc("log_biodata_export", { _profile_id: profileId, _format: fmt }).then(({ error }) => { if (error) console.warn("Download log failed", error.message); });
       toast.success(`Record downloaded — ${BIODATA_FORMAT_LABELS[fmt]}`);
     } catch (e: any) {
       toast.error(e?.message || "Could not build that copy of the record");
