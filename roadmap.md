@@ -1,5 +1,7 @@
 # Roadmap – Holding Center / Command Operations enhancement
-- [ ] Apply official enterprise branding through existing theme manager; verify instant Light/Dark/System switching, persistence, contrast, representative interfaces and paper-safe reports
+- [x] Apply shared Deep Green/Gold branding, mode-scoped surfaces and contrasting action text; preserve built-in brands and audit activation; remove glossy navigation and conflicting dashboard/import colors
+- [x] Verify no-reload Light/Dark/System switching, unsaved input preservation, reload persistence, OS changes, white print background and sign-in layouts at 360/768/1280px; 11 theme/brand tests passed, preview build passed
+- [ ] Signed-in dashboard, chart, form and exported-report visual verification — blocked: no matching account for requesting user; sign-in preview required. Local reCAPTCHA domain warning remains unrelated to theme.
 - [x] Command Operations dashboard: exact detainee totals, pending bail/repatriation approvals, daily attendance trends and menu entry; 32 focused tests passed and preview build passed
 - [ ] Live Command Dashboard totals and navigation readback — blocked: requesting user has no matching app account; signed-out page correctly redirects to login without runtime errors
 - [x] Shift roster: officer self-service sign-in/out with automatic server timestamps, existing attendance records and permission-gated Attendance Overview links
