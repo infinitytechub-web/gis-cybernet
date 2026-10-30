@@ -18,6 +18,14 @@ describe("KYC export", () => {
     expect(rows[0]).toEqual(["04/05/1990", "GHA-123456789-0"]);
   });
 
+  it("masks per officer when access is decided by rank", () => {
+    const junior = { id: "j", ghana_card_number: "GHA-111111111-1" };
+    const senior = { id: "s", ghana_card_number: "GHA-222222222-2" };
+    const { rows } = buildKycRows([junior, senior], ["ghana_card_number"], (p) => p.id === "j");
+    expect(rows[0][0]).toBe("GHA-111111111-1");
+    expect(rows[1][0]).not.toContain("222222222");
+  });
+
   it("includes only the chosen fields", () => {
     const { headers } = buildKycRows([p], ["last_name"], true);
     expect(headers).toEqual(["Last name"]);

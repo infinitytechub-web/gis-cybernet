@@ -2,6 +2,7 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import JSZip from "jszip";
 import { FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { downloadBlob } from "@/lib/download-utils";
 import { formatDate } from "@/lib/date-format";
-import { KYC_FIELDS, KYC_GROUPS, buildKycRows } from "@/lib/hrm-kyc-export";
+import { KYC_FIELDS, KYC_GROUPS, buildKycRows, safeName } from "@/lib/hrm-kyc-export";
+import { Switch } from "@/components/ui/switch";
 
 type Props = {
   /** Profile IDs in the current view (filtered list or command). */
@@ -32,6 +34,7 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
   const [fmt, setFmt] = useState<"xlsx" | "csv" | "pdf">("xlsx");
   const [scope, setScope] = useState<"view" | "selected">("view");
   const [busy, setBusy] = useState(false);
+  const [withFiles, setWithFiles] = useState(false);
   if (!isAdminOrSupervisor) return null;
   const canSeeRestricted = isAdmin || role === "oic" || role === "2ic";
 
@@ -55,6 +58,12 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
         if (error) throw error;
         out.push(...(data ?? []));
       }
+      const access = new Map<string, boolean>();
+      for (let i = 0; i < ids.length; i += 500) {
+        const { data: acc, error: accErr } = await (supabase.rpc as any)("kyc_access", { _profile_ids: ids.slice(i, i + 500) });
+        if (accErr) throw accErr;
+        (acc ?? []).forEach((r: any) => access.set(r.profile_id, !!r.full_access));
+      }
       const needSR = keys.some((k) => ["appointments", "promotions", "exits"].includes(k));
       const sr: Record<string, { a: string[]; p: string[]; e: string[] }> = {};
       if (needSR) {
@@ -77,24 +86,25 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
           appointments: sr[p.id]?.a, promotions: sr[p.id]?.p, exits: sr[p.id]?.e,
         }));
       const ordered = KYC_FIELDS.map((f) => f.key).filter((k) => keys.includes(k));
-      const { headers, rows } = buildKycRows(flat, ordered, canSeeRestricted);
+      const { headers, rows } = buildKycRows(flat, ordered, (p) => access.get(p.id) === true);
       const stamp = new Date().toISOString().slice(0, 10);
       const name = `staff_kyc_${stamp}`;
 
       const { error: logErr } = await (supabase.rpc as any)("log_kyc_export", {
-        _format: fmt, _row_count: rows.length, _fields: ordered, _scope: scopeLabel,
+        _format: withFiles ? `${fmt}+files` : fmt, _row_count: rows.length, _fields: withFiles ? [...ordered, "photos", "documents"] : ordered, _scope: scopeLabel,
       });
       if (logErr) throw logErr;
 
+      let main: { blob: Blob; ext: string };
       if (fmt === "csv") {
-        const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+        const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
         const csv = [headers, ...rows].map((r) => r.map(esc).join(",")).join("\n");
-        downloadBlob(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }), `${name}.csv`);
+        main = { blob: new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }), ext: "csv" };
       } else if (fmt === "xlsx") {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([headers, ...rows]), "Staff KYC");
         const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-        downloadBlob(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${name}.xlsx`);
+        main = { blob: new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), ext: "xlsx" };
       } else {
         const doc = new jsPDF({ unit: "mm", format: "a4" });
         rows.forEach((r, i) => {
@@ -103,7 +113,41 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
           doc.setFontSize(8).text(`${scopeLabel} · Generated ${formatDate(new Date())} · CONFIDENTIAL`, 14, 22);
           autoTable(doc, { startY: 27, head: [["Field", "Value"]], body: headers.map((h, j) => [h, r[j] || "—"]), styles: { fontSize: 9 }, columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } } });
         });
-        downloadBlob(doc.output("blob"), `${name}.pdf`);
+        main = { blob: doc.output("blob"), ext: "pdf" };
+      }
+
+      if (!withFiles) {
+        downloadBlob(main.blob, `${name}.${main.ext}`);
+      } else {
+        const zip = new JSZip();
+        zip.file(`${name}.${main.ext}`, main.blob);
+        const fullIds = flat.filter((p) => access.get(p.id) === true);
+        const docsByProfile = new Map<string, any[]>();
+        for (let i = 0; i < fullIds.length; i += 200) {
+          const { data: docs } = await supabase.from("staff_documents").select("profile_id,document_type,file_path,file_name").in("profile_id", fullIds.slice(i, i + 200).map((p) => p.id)).not("file_path", "is", null);
+          (docs ?? []).forEach((d: any) => docsByProfile.set(d.profile_id, [...(docsByProfile.get(d.profile_id) ?? []), d]));
+        }
+        let files = 0, skipped = 0;
+        const fetchInto = async (bucket: string, path: string, entry: string) => {
+          const { data, error } = await supabase.storage.from(bucket).download(path);
+          if (error || !data) { skipped++; return; }
+          zip.file(entry, data); files++;
+        };
+        for (const p of fullIds) {
+          const folder = safeName(`${p.staff_id ?? "NO-ID"} ${p.last_name ?? ""} ${p.first_name ?? ""}`);
+          if (p.photo_url && !String(p.photo_url).startsWith("http")) {
+            const ext = String(p.photo_url).split(".").pop() || "jpg";
+            await fetchInto("staff-photos", p.photo_url, `${folder}/photo.${ext}`);
+          }
+          for (const [k, d] of (docsByProfile.get(p.id) ?? []).entries()) {
+            await fetchInto("staff-documents", d.file_path, `${folder}/documents/${String(k + 1).padStart(2, "0")}-${safeName(d.document_type ?? "doc")}-${safeName(d.file_name ?? "file")}`);
+          }
+        }
+        const withheld = flat.length - fullIds.length;
+        zip.file("README.txt", `CONFIDENTIAL staff KYC export\nScope: ${scopeLabel}\nGenerated: ${formatDate(new Date())}\nProfiles: ${flat.length}\nFiles included: ${files}\nFiles unavailable: ${skipped}\nProfiles with photos/documents withheld by rank: ${withheld}\n`);
+        const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+        downloadBlob(blob, `${name}.zip`);
+        if (withheld) toast.info(`${withheld} profile(s) are senior to or level with you, so their photos and documents were left out.`);
       }
       toast.success(`Exported ${rows.length} staff profiles.`);
       setOpen(false);
@@ -123,7 +167,7 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
         <DialogHeader>
           <DialogTitle>Export staff profiles (KYC)</DialogTitle>
           <DialogDescription>
-            Choose the details to include. {canSeeRestricted ? "" : "Sensitive details are masked for your role. "}Every export is logged.
+            Choose the details to include. Sensitive details, photos and documents are only included for officers junior to you in rank (administrators, OIC and 2IC see all). Every export is logged.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -149,7 +193,7 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
                     {gf.map((f) => (
                       <Label key={f.key} className="flex items-center gap-2 text-sm font-normal">
                         <Checkbox checked={keys.includes(f.key)} onCheckedChange={() => toggle(f.key)} /> {f.label}
-                        {f.restricted && !canSeeRestricted && <span className="text-xs text-muted-foreground">(masked)</span>}
+                        {f.restricted && !canSeeRestricted && <span className="text-xs text-muted-foreground">(masked by rank)</span>}
                       </Label>
                     ))}
                   </div>
@@ -157,6 +201,10 @@ export function KycExportDialog({ profileIds, selectedIds = [], scopeLabel }: Pr
               );
             })}
           </div>
+          <Label className="flex items-center justify-between gap-3 rounded-md border p-3 font-normal">
+            <span><span className="font-medium">Include photos and documents</span><br /><span className="text-xs text-muted-foreground">Downloads a ZIP with a folder per officer.</span></span>
+            <Switch checked={withFiles} onCheckedChange={setWithFiles} />
+          </Label>
           <div>
             <p className="mb-2 text-sm font-medium">Format</p>
             <RadioGroup value={fmt} onValueChange={(v) => setFmt(v as any)} className="flex flex-wrap gap-4">

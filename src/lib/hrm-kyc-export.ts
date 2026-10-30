@@ -44,17 +44,23 @@ export function maskValue(v: string): string {
 export function buildKycRows(
   profiles: Record<string, any>[],
   keys: string[],
-  canSeeRestricted: boolean,
+  canSeeRestricted: boolean | ((p: Record<string, any>) => boolean),
 ): { headers: string[]; rows: string[][] } {
   const fields = KYC_FIELDS.filter((f) => keys.includes(f.key));
-  const rows = profiles.map((p) =>
-    fields.map((f) => {
+  const rows = profiles.map((p) => {
+    const full = typeof canSeeRestricted === "function" ? canSeeRestricted(p) : canSeeRestricted;
+    return fields.map((f) => {
       const raw = p[f.key];
       let s = raw == null ? "" : Array.isArray(raw) ? raw.join("; ") : String(raw);
       if (s && f.date) s = formatDate(s);
-      if (s && f.restricted && !canSeeRestricted) s = maskValue(s);
+      if (s && f.restricted && !full) s = maskValue(s);
       return s;
-    }),
-  );
+    });
+  });
   return { headers: fields.map((f) => f.label), rows };
+}
+
+/** Safe file/folder name for archive entries. */
+export function safeName(s: string): string {
+  return s.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, " ").trim().slice(0, 80) || "file";
 }

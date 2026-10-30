@@ -19744,6 +19744,13 @@ export type Database = {
         Args: { _purpose?: string; _ttl_minutes?: number }
         Returns: string
       }
+      kyc_access: {
+        Args: { _profile_ids: string[] }
+        Returns: {
+          full_access: boolean
+          profile_id: string
+        }[]
+      }
       leave_balances: {
         Args: { _year?: number }
         Returns: {
