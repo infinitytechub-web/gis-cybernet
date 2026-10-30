@@ -1,4 +1,7 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useDirectoryPermissions } from "@/hooks/useDirectoryPermissions";
+import type { BioDataFormat } from "@/lib/biodata-export";
+import { BioDataDownloadMenu } from "@/components/staff/biodata/BioDataDownloadMenu";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +43,8 @@ const statusColor = (s: string) => {
 
 export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
+  const dirPerms = useDirectoryPermissions();
+  const bioFormats: BioDataFormat[] = dirPerms.canDownload ? ["pdf", "word", "excel", "csv"] : dirPerms.canPrint ? ["pdf"] : [];
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "attendance";
@@ -219,9 +224,14 @@ export default function StaffProfile() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" onClick={() => navigate("/staff")} className="gap-1">
-        <ArrowLeft className="h-4 w-4" /> Back to Staff
-      </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/staff")} className="gap-1">
+          <ArrowLeft className="h-4 w-4" /> Back to Staff
+        </Button>
+        {id && bioFormats.length > 0 && (
+          <BioDataDownloadMenu profileId={id} formats={bioFormats} label="Download Bio-Data & Service Record" />
+        )}
+      </div>
 
       {/* Profile Header */}
       <Card>
