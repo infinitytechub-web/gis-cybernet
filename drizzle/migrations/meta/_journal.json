@@ -372,6 +372,13 @@
       "when": 1793397551951,
       "tag": "0052_hr_dashboard_scoped_aggregates",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793397571478,
+      "tag": "0053_exclude_deleted_dashboard_profiles",
+      "breakpoints": true
     }
   ]
 }
