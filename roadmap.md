@@ -1,4 +1,6 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Update Today's Occurrences to theme-linked deep green, gold and white; verify signed-in rendering.
+- [ ] Verify HR module implementation, regression tests and signed-in screens; report any completeness gaps without changing staff records.
 - [x] Fix confirmed suspect Modify deep-link with caller-scoped exact-record loading and existing admin/OIC edit authority; ordinary own-command cards open the personal portal unless analytics is permitted; hierarchy links respect the same permission; 48 navigation/RBAC/hierarchy tests passed and preview build passed
 - [ ] Signed-in suspect Modify and ordinary officer card click-through — blocked: no matching requesting-user account; authenticated preview required, no custody or staff records changed
 - [x] Apply shared Deep Green/Gold branding, mode-scoped surfaces and contrasting action text; preserve built-in brands and audit activation; remove glossy navigation and conflicting dashboard/import colors
