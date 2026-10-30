@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,7 @@ function tally(rows: Row[], key: (r: Row) => string | null) {
 }
 
 function SuspectAnalytics({ readOnly = false }: { readOnly?: boolean }) {
+  const { role } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [q, setQ] = useState("");
@@ -152,7 +153,7 @@ function SuspectAnalytics({ readOnly = false }: { readOnly?: boolean }) {
                 <div key={k} className="grid grid-cols-3 gap-2"><span className="text-muted-foreground">{k}</span><span className="col-span-2">{v || "—"}</span></div>
               ))}
               {!readOnly && <div className="flex gap-2 pt-2">
-                <Button asChild variant="outline"><a href={`/holding?record=${open.id}`}>Modify</a></Button>
+                <Button asChild variant="outline"><Link to={`/command-operations?tab=holding&record=${encodeURIComponent(open.id)}${["admin", "oic"].includes(role || "") ? "&edit=1" : ""}`}>{["admin", "oic"].includes(role || "") ? "Modify" : "View record"}</Link></Button>
                 <Button variant="destructive" onClick={() => softDelete(open)}>Soft delete</Button>
               </div>}
               {!readOnly && <div className="border-t pt-3"><SuspectCasePanel id={open.id} /></div>}
