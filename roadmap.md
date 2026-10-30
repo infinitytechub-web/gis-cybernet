@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Fix confirmed suspect Modify deep-link and ordinary officer command-card destination; preserve existing edit authority and analytics permissions; run navigation regressions
 - [x] Apply shared Deep Green/Gold branding, mode-scoped surfaces and contrasting action text; preserve built-in brands and audit activation; remove glossy navigation and conflicting dashboard/import colors
 - [x] Verify no-reload Light/Dark/System switching, unsaved input preservation, reload persistence, OS changes, white print background and sign-in layouts at 360/768/1280px; 11 theme/brand tests passed, preview build passed
 - [ ] Signed-in dashboard, chart, form and exported-report visual verification — blocked: no matching account for requesting user; sign-in preview required. Local reCAPTCHA domain warning remains unrelated to theme.
