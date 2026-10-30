@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Add HR 25-row pagination and shared fast vertical/horizontal navigation; verify paging rules and signed-in desktop/mobile navigation without changing permissions or totals.
 - [x] Generated real Word and Excel Bio-Data downloads as ADMIN-001; repaired audit format mismatch (docx/xlsx), awaited logging and refreshed totals. Word package validation passed; Excel has 15 sheets and no formula errors. Dashboard shows 3 real downloads: PDF, DOCX and XLSX, total personnel 278. No fabricated history inserted.
 - [x] Add HR overview exact scoped aggregates, separate total/assigned/unassigned personnel, exclude deleted personnel in four command RPCs, shared debounced live invalidation, retry/freshness indicators and anonymized download summaries; 42 focused tests passed and preview build passed.
 - [ ] Complete all-dashboard privacy/performance acceptance and every module's event coverage — current shared subscription covers published workforce/HR/fleet tables; other modules retain timed refresh. Broader review and authenticated verification remain required; no offline administrative write queue added.
