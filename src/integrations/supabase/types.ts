@@ -16042,6 +16042,201 @@ export type Database = {
           },
         ]
       }
+      staff_application_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          application_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          note: string | null
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          application_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          application_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_application_events_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "staff_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_application_interviews: {
+        Row: {
+          application_id: string
+          created_at: string
+          id: string
+          location: string | null
+          notes: string | null
+          panel_members: string | null
+          recommendation: string | null
+          recorded_at: string | null
+          recorded_by: string | null
+          scheduled_at: string
+          scheduled_by: string | null
+          score: number | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          panel_members?: string | null
+          recommendation?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          scheduled_at: string
+          scheduled_by?: string | null
+          score?: number | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          notes?: string | null
+          panel_members?: string | null
+          recommendation?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          scheduled_at?: string
+          scheduled_by?: string | null
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_application_interviews_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "staff_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_applications: {
+        Row: {
+          applicant_kind: string
+          application_type: string
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          external_email: string | null
+          external_ghana_card: string | null
+          external_name: string | null
+          external_phone: string | null
+          id: string
+          position_title: string | null
+          posted_at: string | null
+          posted_effective_date: string | null
+          profile_id: string | null
+          statement: string | null
+          status: string
+          target_org_unit_id: string | null
+          transfer_request_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          applicant_kind: string
+          application_type: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          external_email?: string | null
+          external_ghana_card?: string | null
+          external_name?: string | null
+          external_phone?: string | null
+          id?: string
+          position_title?: string | null
+          posted_at?: string | null
+          posted_effective_date?: string | null
+          profile_id?: string | null
+          statement?: string | null
+          status?: string
+          target_org_unit_id?: string | null
+          transfer_request_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          applicant_kind?: string
+          application_type?: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          external_email?: string | null
+          external_ghana_card?: string | null
+          external_name?: string | null
+          external_phone?: string | null
+          id?: string
+          position_title?: string | null
+          posted_at?: string | null
+          posted_effective_date?: string | null
+          profile_id?: string | null
+          statement?: string | null
+          status?: string
+          target_org_unit_id?: string | null
+          transfer_request_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_applications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_applications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_applications_target_org_unit_id_fkey"
+            columns: ["target_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_applications_transfer_request_id_fkey"
+            columns: ["transfer_request_id"]
+            isOneToOne: true
+            referencedRelation: "staff_transfer_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_appointments: {
         Row: {
           appointing_authority: string | null
@@ -18640,6 +18835,10 @@ export type Database = {
       }
     }
     Functions: {
+      _app_set_status: {
+        Args: { _action: string; _id: string; _note: string; _to: string }
+        Returns: undefined
+      }
       _staff_list_retirement_ids: {
         Args: { _import_id: string }
         Returns: string[]
@@ -18952,6 +19151,10 @@ export type Database = {
       can_manage_procurement: { Args: { _user_id: string }; Returns: boolean }
       can_manage_sessions: { Args: { _user_id: string }; Returns: boolean }
       can_move_command: { Args: { _user_id: string }; Returns: boolean }
+      can_panel_staff_application: {
+        Args: { _app_id: string; _uid: string }
+        Returns: boolean
+      }
       can_propose_rotation_change: { Args: { _uid: string }; Returns: boolean }
       can_purge_audit: { Args: never; Returns: boolean }
       can_see_org_unit: {
@@ -18970,6 +19173,10 @@ export type Database = {
       }
       can_view_org_unit: {
         Args: { _org_unit_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_staff_application: {
+        Args: { _app_id: string; _uid: string }
         Returns: boolean
       }
       claim_due_backup_schedules: {
@@ -19123,6 +19330,22 @@ export type Database = {
       consume_processing_job_credentials: {
         Args: { p_job_id: string }
         Returns: Json
+      }
+      create_external_application: {
+        Args: {
+          _email: string
+          _ghana_card: string
+          _name: string
+          _phone: string
+          _position_title: string
+          _statement: string
+          _target_org_unit_id: string
+        }
+        Returns: string
+      }
+      decide_staff_application: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
       }
       decide_staff_exit: {
         Args: { _approve: boolean; _id: string; _note?: string }
@@ -19707,6 +19930,7 @@ export type Database = {
         Args: { _profile_id: string; _uid: string }
         Returns: boolean
       }
+      hrm_is_hr_admin: { Args: { _uid: string }; Returns: boolean }
       increment_announcement_file_downloads: {
         Args: { _file_id: string }
         Returns: undefined
@@ -20272,6 +20496,10 @@ export type Database = {
         Returns: Json
       }
       patrol_gps_activity: { Args: { _days?: number }; Returns: Json }
+      post_staff_application: {
+        Args: { _effective_date: string; _id: string }
+        Returns: undefined
+      }
       presence_identities: {
         Args: { _user_ids: string[] }
         Returns: {
@@ -20419,6 +20647,15 @@ export type Database = {
       record_failed_login:
         | { Args: { _staff_id: string }; Returns: Json }
         | { Args: { _ip_address?: string; _staff_id: string }; Returns: Json }
+      record_interview_result: {
+        Args: {
+          _interview_id: string
+          _notes: string
+          _recommend: boolean
+          _score: number
+        }
+        Returns: undefined
+      }
       record_mfa_challenge: {
         Args: {
           _device_fingerprint?: string
@@ -20544,6 +20781,10 @@ export type Database = {
         Returns: string
       }
       save_command_order: { Args: { _ids: string[] }; Returns: undefined }
+      schedule_application_interview: {
+        Args: { _at: string; _id: string; _location: string; _panel: string }
+        Returns: string
+      }
       search_approval_audit: {
         Args: {
           _actions?: string[]
@@ -20740,6 +20981,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      shortlist_staff_application: {
+        Args: { _id: string; _note?: string; _shortlist: boolean }
+        Returns: undefined
+      }
       should_force_signout: {
         Args: { _fingerprint?: string; _ip: string }
         Returns: boolean
@@ -20900,6 +21145,15 @@ export type Database = {
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       submit_holding_staff_verification: {
         Args: { _photo_path: string; _staff_id: string }
+        Returns: string
+      }
+      submit_staff_application: {
+        Args: {
+          _position_title: string
+          _statement: string
+          _target_org_unit_id: string
+          _type: string
+        }
         Returns: string
       }
       tag_appraisal_audit_batch: {
@@ -21102,6 +21356,7 @@ export type Database = {
         Args: { _consent?: boolean; _enabled: boolean }
         Returns: boolean
       }
+      withdraw_staff_application: { Args: { _id: string }; Returns: undefined }
       withdraw_staff_transfer: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
