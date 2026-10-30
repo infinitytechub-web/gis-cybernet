@@ -93,7 +93,7 @@ export default function AdminOverview() {
     return { appointments, promotions, exits };
   });
   const kyc = q("kyc", async () => {
-    let b: any = supabase.from("hrm_export_audit").select("id,format,subject,row_count,created_at").eq("export_kind", "kyc_profiles").order("created_at", { ascending: false });
+    let b: any = supabase.from("hrm_export_audit").select("id,format,subject,row_count,created_at").eq("export_kind", "biodata_service_record").order("created_at", { ascending: false });
     b = withRange(b);
     const { data, error } = await b.limit(500);
     if (error) throw error;
@@ -113,7 +113,7 @@ export default function AdminOverview() {
     <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground">HR, staff applications, KYC downloads and command dashboards in one place. Figures only include records you are allowed to see.</p>
+        <p className="text-sm text-muted-foreground">HR, staff applications, Bio-Data & Service Record downloads and command dashboards in one place. Figures only include records you are allowed to see.</p>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -141,7 +141,7 @@ export default function AdminOverview() {
         <Totals title="Staff in commands" total={staffTotal} icon={Users} note={`${shownCmds.length} command(s)`} to="/regional-commands" />
         <Totals title="Staff applications" total={apps.isError ? "—" : apps.data?.length ?? "…"} parts={count(apps.data)} icon={Briefcase} to="/hr/applications" />
         <Totals title="Transfer requests" total={transfers.isError ? "—" : transfers.data?.length ?? "…"} parts={count(transfers.data)} icon={Briefcase} to="/hr/applications" />
-        <Totals title="KYC downloads" total={kyc.isError ? "—" : kycRows.length} icon={FileDown} note={kyc.isError ? "Super Admins only" : `${kycRecords} staff records exported`} />
+        <Totals title="Bio-Data & Service Record downloads" total={kyc.isError ? "—" : kycRows.length} icon={FileDown} note={kyc.isError ? "Super Admins only" : `${kycRecords} records downloaded`} />
       </div>
 
       <CommandApprovalQueue />
@@ -175,10 +175,10 @@ export default function AdminOverview() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">Recent KYC downloads</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Recent Bio-Data & Service Record downloads</CardTitle></CardHeader>
           <CardContent className="max-h-96 space-y-2 overflow-y-auto">
-            {kyc.isError && <p className="text-sm text-muted-foreground">Only Super Admins can view the KYC download history.</p>}
-            {!kyc.isError && kycRows.length === 0 && <p className="text-sm text-muted-foreground">No KYC downloads in this period.</p>}
+            {kyc.isError && <p className="text-sm text-muted-foreground">Only Super Admins can view the download history.</p>}
+            {!kyc.isError && kycRows.length === 0 && <p className="text-sm text-muted-foreground">No Bio-Data & Service Record downloads in this period.</p>}
             {kycRows.slice(0, 25).map((r) => (
               <div key={r.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
                 <span>{r.subject || "Staff selection"} · {r.row_count ?? 0} records · {r.format.toUpperCase()}</span>
