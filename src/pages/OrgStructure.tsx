@@ -65,7 +65,7 @@ const emptyForm = {
 export default function OrgStructure() {
   const { role } = useAuth();
   const queryClient = useQueryClient();
-  const { units, tree, scope, loading } = useOrgScope();
+  const { units, rawTree: tree, scope, loading } = useOrgScope();
 
   const [form, setForm] = useState(emptyForm);
   const [unitDialogOpen, setUnitDialogOpen] = useState(false);

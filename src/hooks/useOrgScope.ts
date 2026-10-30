@@ -83,6 +83,8 @@ export function useOrgScope() {
   );
 
   const tree = useMemo(() => buildOrgTree(units), [units]);
+  /** Real parent links, for structure editors only. */
+  const rawTree = useMemo(() => buildOrgTree(units, { collapseHq: false }), [units]);
 
   const loading =
     authLoading ||
@@ -93,6 +95,7 @@ export function useOrgScope() {
     loading,
     units,
     tree,
+    rawTree,
     scope,
     homeUnitId: homeQuery.data ?? null,
     assignments: assignmentsQuery.data ?? [],

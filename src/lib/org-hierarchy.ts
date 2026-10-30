@@ -89,14 +89,63 @@ export interface OrgTreeNode extends OrgUnit {
   children: OrgTreeNode[];
 }
 
-/** Build the forest of org units, ordered by level then name. */
-export function buildOrgTree(units: OrgUnit[]): OrgTreeNode[] {
+/**
+ * Headquarters wrapper levels ("Management Members", "National Headquarters")
+ * that only group commands beneath HQ. For display they are folded into HQ so
+ * every selector starts at HQ followed directly by its commands. A wrapper is
+ * a management/national node with children whose ancestors are all HQ or other
+ * wrappers. Leaf national units (e.g. HQ OPERATIONS) stay listed. Database
+ * parent links are untouched; descendant scoping still uses real parents.
+ */
+export function hqWrapperIds(units: OrgUnit[]): Set<string> {
+  const byId = new Map(units.map((u) => [u.id, u]));
+  const hasKids = new Set(units.map((u) => u.parent_id).filter(Boolean) as string[]);
+  const out = new Set<string>();
+  const isWrapper = (u: OrgUnit, seen = new Set<string>()): boolean => {
+    if (seen.has(u.id)) return false;
+    seen.add(u.id);
+    if (!(u.type === "management" || u.type === "national") || !hasKids.has(u.id)) return false;
+    const parent = u.parent_id ? byId.get(u.parent_id) : undefined;
+    if (!parent) return false;
+    return parent.type === "directorate" || isWrapper(parent, seen);
+  };
+  for (const u of units) if (isWrapper(u)) out.add(u.id);
+  return out;
+}
+
+/**
+ * Build the forest of org units, ordered by level then name. By default the
+ * HQ wrapper levels are folded into HQ (see `hqWrapperIds`); structure editors
+ * pass `{ collapseHq: false }` to see the real parent links.
+ */
+export function buildOrgTree(units: OrgUnit[], opts: { collapseHq?: boolean } = {}): OrgTreeNode[] {
+  const collapse = opts.collapseHq !== false;
+  const wrappers = collapse ? hqWrapperIds(units) : new Set<string>();
+  const unitById = new Map(units.map((u) => [u.id, u]));
+  const displayParent = (id: string | null): string | null => {
+    let cur = id;
+    const seen = new Set<string>();
+    while (cur && wrappers.has(cur) && !seen.has(cur)) {
+      seen.add(cur);
+      cur = unitById.get(cur)?.parent_id ?? null;
+    }
+    return cur;
+  };
   const byId = new Map<string, OrgTreeNode>();
-  for (const u of units) byId.set(u.id, { ...u, depth: 0, children: [] });
+  for (const u of units) if (!wrappers.has(u.id)) byId.set(u.id, { ...u, depth: 0, children: [] });
 
   const roots: OrgTreeNode[] = [];
+  const seenNames = new Map<string, Set<string>>();
   for (const node of byId.values()) {
-    const parent = node.parent_id ? byId.get(node.parent_id) : undefined;
+    const pid = displayParent(node.parent_id);
+    const parent = pid ? byId.get(pid) : undefined;
+    // One entry per name under the same parent (duplicate labels collapse).
+    const key = pid ?? "__root__";
+    const names = seenNames.get(key) ?? new Set<string>();
+    const nm = node.name.trim().toLowerCase();
+    if (collapse && names.has(nm)) continue;
+    names.add(nm);
+    seenNames.set(key, names);
     if (parent) parent.children.push(node);
     else roots.push(node);
   }
