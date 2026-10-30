@@ -5,10 +5,10 @@
  * All figures come from the scoped `staff_analytics` RPC; the server decides
  * which commands the caller may see.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid } from "recharts";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import HierarchyView from "@/components/command/HierarchyView";
@@ -35,6 +35,8 @@ import {
 import { DutyStatusBadge } from "@/components/shared/DutyStatusBadge";
 import { useTodayDuty, dutyFor, DUTY_LABEL } from "@/hooks/useTodayDuty";
 import { useToast } from "@/hooks/use-toast";
+import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
+import { dashboardRetry } from "@/lib/dashboard-integrity";
 import {
   Activity, ArrowLeft, Building2, Download, ExternalLink, Network, Pencil,
   Printer, Trash2, UserCheck, Users, X,
@@ -58,21 +60,12 @@ const pretty = (s: string) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toU
 
 function useAnalytics(unitId: string | null, deptId: string | null) {
   const { user } = useAuth();
-  const qc = useQueryClient();
-  const key = ["staff-analytics", unitId, deptId];
-  useEffect(() => {
-    if (!user) return;
-    const ch = supabase
-      .channel(`staff-analytics-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () =>
-        qc.invalidateQueries({ queryKey: ["staff-analytics"] }))
-      .subscribe();
-    return () => { void supabase.removeChannel(ch); };
-  }, [user, qc]);
+  const key = ["staff-analytics", unitId, deptId, user?.id];
   return useQuery({
     queryKey: key,
     enabled: !!user,
     refetchInterval: 30_000,
+    retry: dashboardRetry,
     queryFn: async (): Promise<Analytics> => {
       const { data, error } = await supabase.rpc("staff_analytics", {
         _org_unit_id: unitId ?? undefined, _department_id: deptId ?? undefined,
@@ -251,6 +244,7 @@ export default function CommandAnalytics() {
           )}
         </div>
       </header>
+      <DashboardSyncStatus updatedAt={Math.min(view.dataUpdatedAt, scope.dataUpdatedAt)} failed={view.isError || scope.isError} fetching={view.isFetching || scope.isFetching} onRetry={() => { void view.refetch(); void scope.refetch(); }} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiTile title="Total staff" value={a?.total ?? "—"} icon={Users} accent={2}

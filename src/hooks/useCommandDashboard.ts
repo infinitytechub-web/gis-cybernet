@@ -9,6 +9,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { dashboardRetry, validateCommandSnapshot } from "@/lib/dashboard-integrity";
 
 export interface CommandBranchRollup {
   org_unit_id: string;
@@ -53,19 +54,14 @@ export interface CommandDashboard {
 export function useCommandDashboard(days = 30, enabled = true) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["command-dashboard", days],
+    queryKey: ["command-dashboard", user?.id, days],
     enabled: enabled && !!user,
     refetchInterval: 60_000,
+    retry: dashboardRetry,
     queryFn: async (): Promise<CommandDashboard> => {
       const { data, error } = await supabase.rpc("command_dashboard", { _days: days });
       if (error) throw error;
-      const raw = (data ?? {}) as Partial<CommandDashboard>;
-      return {
-        as_of: raw.as_of ?? new Date().toISOString(),
-        day: raw.day ?? "",
-        days: raw.days ?? days,
-        branches: (raw.branches ?? []) as CommandBranchRollup[],
-      };
+      return validateCommandSnapshot(data) as unknown as CommandDashboard;
     },
   });
 }
