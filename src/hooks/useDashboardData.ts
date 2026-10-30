@@ -78,8 +78,8 @@ export function useOversightDashboardData(enabled: boolean) {
     refetchInterval: 30_000,
     queryFn: async () => {
       const [staff, active, attendance, leave, postings] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).is("deleted_at", null),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "active"),
         supabase.from("attendances").select("*", { count: "exact", head: true }).eq("date", day),
         supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("postings_transfers").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -220,8 +220,8 @@ export function useSystemHealthData(enabled: boolean) {
     enabled,
     queryFn: async () => {
       const [profilesRes, withAccountRes, deptsRes, ranksRes, rolesRes] = await Promise.all([
-        supabase.from("profiles").select("id, user_id, department_id, rank_id, phone", { count: "exact" }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).not("user_id", "is", null),
+        supabase.from("profiles").select("id, user_id, department_id, rank_id, phone", { count: "exact" }).is("deleted_at", null),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).not("user_id", "is", null).is("deleted_at", null),
         supabase.from("departments").select("id", { count: "exact", head: true }),
         supabase.from("ranks").select("id", { count: "exact", head: true }),
         supabase.from("user_roles").select("id", { count: "exact", head: true }),

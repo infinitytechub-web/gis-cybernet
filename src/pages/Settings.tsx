@@ -445,7 +445,7 @@ function SystemInfoTab() {
     queryKey: ["system-counts"],
     queryFn: async () => {
       const [profiles, departments, ranks, shifts, leaves, postings] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).is("deleted_at", null),
         supabase.from("departments").select("id", { count: "exact", head: true }),
         supabase.from("ranks").select("id", { count: "exact", head: true }),
         supabase.from("shifts").select("id", { count: "exact", head: true }),
