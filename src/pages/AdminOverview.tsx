@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 import { formatDateTime } from "@/lib/date-format";
 import { regionalCardPath, type RegionalCommandCard } from "@/lib/regional-commands";
 import { CommandApprovalQueue } from "@/components/hr/CommandApprovalQueue";
@@ -84,6 +86,8 @@ export default function AdminOverview() {
     return cmdList.filter((c) => (command === "all" || c.id === command) && (!s || c.name.toLowerCase().includes(s)));
   }, [cmdList, command, search]);
   const kycRows = metrics?.downloads?.recent ?? [];
+  const commandPager = usePagedList(shownCmds, { resetKey: `${command}|${search}` });
+  const downloadPager = usePagedList(kycRows, { resetKey: `${command}|${range}` });
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -141,15 +145,15 @@ export default function AdminOverview() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="min-w-0">
           <CardHeader><CardTitle className="text-base">Command dashboards</CardTitle></CardHeader>
           <CardContent className="max-h-96 space-y-2 overflow-y-auto">
             {shownCmds.length === 0 && <p className="text-sm text-muted-foreground">No commands match.</p>}
-            {shownCmds.map((c) => {
+            {commandPager.pageItems.map((c) => {
               const path = regionalCardPath(c, can("command-analytics"));
               return (
-                <div key={c.id} className="flex items-center justify-between rounded-md border p-2">
-                  <div>
+                <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2">
+                  <div className="min-w-0 flex-1 break-words">
                     <div className="text-sm font-medium">{c.name}</div>
                     <div className="text-xs text-muted-foreground">{commands.isError ? "Unavailable" : c.staff_count ?? "—"} staff · {c.activation_status === "active" ? "Active" : "Paused"}</div>
                   </div>
@@ -158,19 +162,21 @@ export default function AdminOverview() {
               );
             })}
           </CardContent>
+          <div className="px-6 pb-4"><ListPagination {...commandPager} label="commands" /></div>
         </Card>
-        <Card>
+        <Card className="min-w-0">
           <CardHeader><CardTitle className="text-base">Recent Bio-Data & Service Record downloads</CardTitle></CardHeader>
           <CardContent className="max-h-96 space-y-2 overflow-y-auto">
             {!metrics?.downloads && <p className="text-sm text-muted-foreground">Only Super Admins can view the download history.</p>}
             {metrics?.downloads && kycRows.length === 0 && <p className="text-sm text-muted-foreground">No Bio-Data & Service Record downloads in this period.</p>}
-            {kycRows.slice(0, 25).map((r) => (
-              <div key={r.id} className="flex items-center justify-between rounded-md border p-2 text-sm">
+            {downloadPager.pageItems.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2 text-sm">
                 <span>{r.row_count ?? 0} records · {r.format.toUpperCase()}</span>
                 <span className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}</span>
               </div>
             ))}
           </CardContent>
+          <div className="px-6 pb-4"><ListPagination {...downloadPager} label="recent downloads" /></div>
         </Card>
       </div>
     </div>

@@ -13,7 +13,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgUnits } from "@/hooks/useOrgScope";
-import { QuickScroll } from "@/components/ui/quick-scroll";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 import { useOrgPositions, POSITION_LEVEL_LABELS } from "@/components/org/OrgPositionsAdmin";
 import {
   ORG_UNIT_TYPE_LABELS,
@@ -86,6 +87,7 @@ export function EstablishmentBrowser() {
     return rows.filter((n) => keep.has(n.id));
   }, [rows, search, units]);
 
+  const pager = usePagedList(visible, { resetKey: search });
   return (
     <Card>
       <CardHeader>
@@ -127,7 +129,7 @@ export function EstablishmentBrowser() {
                   </TableCell>
                 </TableRow>
               )}
-              {visible.map((node) => {
+              {pager.pageItems.map((node) => {
                 const held = positionsByUnit.get(node.id) ?? [];
                 return (
                   <TableRow key={node.id}>
@@ -173,8 +175,8 @@ export function EstablishmentBrowser() {
               })}
             </TableBody>
           </Table>
-          <QuickScroll label="hierarchy list" threshold={600} />
         </div>
+        <ListPagination {...pager} label="commands and units" />
       </CardContent>
     </Card>
   );

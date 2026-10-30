@@ -9,7 +9,9 @@ export const DEFAULT_PAGE_SIZE = 25;
  * list length changes, so filters never leave the user on an empty page.
  */
 export function usePagedList<T>(items: T[], opts: { pageSize?: number; resetKey?: unknown } = {}) {
-  const [pageSize, setPageSize] = useState(opts.pageSize ?? DEFAULT_PAGE_SIZE);
+  const pageSize = DEFAULT_PAGE_SIZE;
+  // Retain the shared API for existing callers; record pages remain fixed at 25.
+  const setPageSize = (_size: number) => setPage(1);
   const [page, setPage] = useState(1);
   const total = items.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
