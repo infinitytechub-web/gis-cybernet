@@ -28,3 +28,10 @@ export function reorder<T extends { id: string }>(list: T[], from: string, to: s
 }
 
 export const commandDashboardPath = (id: string) => `/command-analytics/${id}`;
+
+/** The server decides which card can open; RBAC decides its safe destination. */
+export const regionalCardPath = (card: RegionalCommandCard, canAnalytics: boolean): string | null => {
+  if (!card.can_open) return null;
+  if (canAnalytics) return commandDashboardPath(card.id);
+  return card.is_own ? "/portal" : null;
+};

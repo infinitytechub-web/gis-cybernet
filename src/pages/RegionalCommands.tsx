@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { MapPin, GripVertical, Lock, AlertTriangle, RefreshCw, FileDown, LayoutGrid, ListTree, Play, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRbac } from "@/hooks/useRbac";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { commandDashboardPath, reorder, splitCommandName, type RegionalCommandCard } from "@/lib/regional-commands";
+import { regionalCardPath, reorder, splitCommandName, type RegionalCommandCard } from "@/lib/regional-commands";
 import { buildCommandsWordHtml } from "@/lib/command-hierarchy";
 import { downloadBlob } from "@/lib/download-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
@@ -74,6 +75,7 @@ function CommandCard({ c, index, sortable, onOpen, onToggleActivation }: { c: Re
 
 export default function RegionalCommands() {
   const { isAdmin } = useAuth();
+  const { can, loading: accessLoading } = useRbac();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const chId = useId();
@@ -145,7 +147,9 @@ export default function RegionalCommands() {
 
   const open = (c: RegionalCommandCard) => {
     if (!c.can_open) { toast.info(`${c.name} is pending activation.`); return; }
-    navigate(commandDashboardPath(c.id));
+    if (accessLoading) return;
+    const path = regionalCardPath(c, can("command-analytics"));
+    if (path) navigate(path);
   };
 
   const submitActivation = async () => {
@@ -209,7 +213,7 @@ export default function RegionalCommands() {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={list.map((c) => c.id)} strategy={rectSortingStrategy}>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-            {list.map((c, i) => <CommandCard key={c.id} c={c} index={isAdmin ? i : (c.display_order ?? 1) - 1} sortable={isAdmin} onOpen={() => open(c)} onToggleActivation={isAdmin ? setActivationTarget : undefined} />)}
+            {list.map((c, i) => <CommandCard key={c.id} c={{ ...c, can_open: !accessLoading && !!regionalCardPath(c, can("command-analytics")) }} index={isAdmin ? i : (c.display_order ?? 1) - 1} sortable={isAdmin} onOpen={() => open(c)} onToggleActivation={isAdmin ? setActivationTarget : undefined} />)}
           </div>
         </SortableContext>
       </DndContext>

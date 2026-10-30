@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { openPrintWindow } from "@/lib/safe-print";
 import { useAuth } from "@/hooks/useAuth";
+import { useHoldingRecordLink } from "@/hooks/useHoldingRecordLink";
 import { OffencesMultiSelect } from "@/components/detention/OffencesMultiSelect";
 import { OffencesTab, MugshotTab, DocumentsTab, SuretiesTab, ApprovalsTab, upload as uploadDetentionFile, requestScan } from "@/components/detention/SuspectCasePanel";
 import { FileUploadGuard } from "@/components/security/FileUploadGuard";
@@ -94,6 +95,8 @@ export default function HoldingCenter() {
   const [selected, setSelected] = useState<any>(null);
   const allowed = ["admin", "oic", "2ic", "supervisor", "shift_supervisor", "deputy_shift_supervisor"].includes(role || "");
   const canCreate = allowed;
+  const linked = useHoldingRecordLink(allowed);
+  const linkedEditing = linked.edit && ["admin", "oic"].includes(role || "");
 
   useEffect(() => {
     const ch = supabase.channel("holding-realtime");
@@ -145,7 +148,12 @@ export default function HoldingCenter() {
         <TabsContent value="analytics"><HoldingAnalytics /></TabsContent>
       </Tabs>
 
-      {selected && <DetainDetailDrawer record={selected} onClose={() => setSelected(null)} userId={user?.id} role={role} />}
+      {linked.requested && linked.isLoading && <p role="status">Loading selected record…</p>}
+      {linked.requested && linked.error && <p role="alert" className="text-destructive">Could not open selected record: {(linked.error as Error).message}</p>}
+      {linked.requested && linked.data && (linkedEditing
+        ? <EditDetaineeDialog key={linked.data.id} record={linked.data} onClose={linked.close} role={role} />
+        : <DetainDetailDrawer record={linked.data} onClose={linked.close} userId={user?.id} role={role} />)}
+      {!linked.requested && selected && <DetainDetailDrawer record={selected} onClose={() => setSelected(null)} userId={user?.id} role={role} />}
     </div>
   );
 }
