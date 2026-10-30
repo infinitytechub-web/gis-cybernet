@@ -89,7 +89,7 @@ export default function StaffApplications() {
     <div className="space-y-4">
       <PageHeader
         title="Staff Applications"
-        description="Applications, interviews, approvals and postings for officers and new recruits. Officer transfer requests appear here automatically."
+        subtitle="Applications, interviews, approvals and postings for officers and new recruits. Officer transfer requests appear here automatically."
         icon={ClipboardList}
         actions={<Button size="sm" className="gap-1" onClick={() => setNewOpen(true)}><Plus className="h-4 w-4" /> Record recruit application</Button>}
       />
