@@ -177,7 +177,7 @@ export const MODULES: ModuleDef[] = [
   // Smart HR workspace: establishment, positions register, personnel record
   // completeness and staff availability across every command in reach.
   { key: "command-analytics", label: "Command & Department Analytics", tier: "command", roles: [...COMMAND, "head_of_administration"], paths: ["/command-analytics"] },
-  { key: "hr", label: "Human Resource", feature: "Human Resource", tier: "command", roles: [...COMMAND, "head_of_administration"], paths: ["/hr", "/hr/create-account"] },
+  { key: "hr", label: "Human Resource", feature: "Human Resource", tier: "command", roles: [...COMMAND, "head_of_administration"], paths: ["/hr", "/hr/create-account", "/hr/applications"] },
 
   // ── Administration, security & audit ────────────────────────────────────
   // Audit, session, security and telemetry surfaces are audit-sensitive:
