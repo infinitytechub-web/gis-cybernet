@@ -20,6 +20,7 @@ import { executeRecaptcha, getRecaptchaConfig, preloadRecaptcha } from "@/lib/re
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
+import loginHrm from "@/assets/login-hrm.jpg";
 import { useBranding } from "@/hooks/useBranding";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { ThemeToggle } from "@/components/ThemeToggle";
