@@ -14,7 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrgUnits } from "@/hooks/useOrgScope";
 import { CommandPicker } from "@/components/org/CommandPicker";
-import { QuickScroll } from "@/components/ui/quick-scroll";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 import { descendantIds } from "@/lib/org-hierarchy";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -242,6 +243,7 @@ export function OrgPositionsAdmin() {
   };
 
   const vacant = rows.filter((r) => r.is_vacant).length;
+  const pager = usePagedList(rows, { resetKey: `${search}|${levelFilter}|${unitFilter}|${vacancyFilter}` });
 
   return (
     <Card>
@@ -326,7 +328,7 @@ export function OrgPositionsAdmin() {
                   </TableCell>
                 </TableRow>
               )}
-              {rows.map((p) => (
+              {pager.pageItems.map((p) => (
                 <TableRow key={p.id} className={p.is_active ? "" : "opacity-60"}>
                   <TableCell className="font-medium">
                     {p.title}
@@ -374,8 +376,8 @@ export function OrgPositionsAdmin() {
               ))}
             </TableBody>
           </Table>
-          <QuickScroll label="positions list" threshold={600} />
         </div>
+        <ListPagination {...pager} label="positions" />
       </CardContent>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { DateInput } from "@/components/ui/date-input";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 25;
 
 export default function AuditLog() {
   const { isAdmin } = useAuth();

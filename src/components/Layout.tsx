@@ -80,7 +80,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {children}
           </main>
           {/* Quick scroll for long pages — appears only when content overflows. */}
-          <QuickScroll selector="#main-content" position="fixed" label="page" />
+          <QuickScroll selector="#main-content" position="fixed" label="page" followActive />
           <footer className="hidden lg:flex items-center justify-center gap-2 border-t bg-card px-4 py-2 text-center text-xs text-muted-foreground">
             <span>{footer_text}</span>
             <span aria-hidden="true" className="opacity-40">·</span>

@@ -17,7 +17,7 @@ import { BulkStaffUploadDialog } from "@/components/staff/BulkStaffUploadDialog"
 
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 25;
 
 async function getPhotoUrl(path: string | null) {
   return getSignedPhotoUrl(path);

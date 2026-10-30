@@ -57,7 +57,7 @@ export default function HealthLab() {
   const [filterStatus, setFilterStatus] = useState("");
   const [recordsPage, setRecordsPage] = useState(1);
   const [reportsPage, setReportsPage] = useState(1);
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 25;
 
   // Audit log dialog
   const [auditOpen, setAuditOpen] = useState(false);

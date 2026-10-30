@@ -43,7 +43,7 @@ interface Props {
   onBulkChange: (ids: string[]) => void;
 }
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 25;
 const SENIOR_RANGE: [number, number] = [7, 11]; // ASI → ACI
 const JUNIOR_RANGE: [number, number] = [1, 6];  // AICO II → Senior Inspector
 

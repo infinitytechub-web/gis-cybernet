@@ -1,13 +1,20 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { QuickScroll } from "@/components/ui/quick-scroll";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-    </div>
-  ),
+  ({ className, ...props }, ref) => {
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+    return (
+      <div className="w-full min-w-0">
+        <QuickScroll containerRef={scrollRef} position="inline" label="table" />
+        <div ref={scrollRef} className="relative w-full overflow-auto" tabIndex={0}>
+          <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+        </div>
+      </div>
+    );
+  },
 );
 Table.displayName = "Table";
 

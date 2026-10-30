@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 import { CalendarRange, MapPinned, RefreshCw, Search } from "lucide-react";
 
 const db = supabase as any;
@@ -121,6 +123,7 @@ export function LeaveUsageDashboard() {
     [filtered],
   );
 
+  const pager = usePagedList(tableRows, { resetKey: `${year}|${region}|${type}|${search}` });
   const years = useMemo(
     () => [currentYear + 1, currentYear, currentYear - 1, currentYear - 2],
     [currentYear],
@@ -254,8 +257,8 @@ export function LeaveUsageDashboard() {
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[700px]">
-            <Table>
+          <div>
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Region</TableHead>
@@ -275,7 +278,7 @@ export function LeaveUsageDashboard() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  tableRows.map((r, i) => (
+                  pager.pageItems.map((r, i) => (
                     <TableRow key={`${r.region_name}-${r.station_name}-${r.leave_type}-${i}`}>
                       <TableCell className="font-medium">{r.region_name}</TableCell>
                       <TableCell>{r.station_name}</TableCell>
@@ -299,6 +302,7 @@ export function LeaveUsageDashboard() {
             </Table>
           </div>
         </div>
+        <ListPagination {...pager} label="leave usage records" />
       </CardContent>
     </Card>
   );

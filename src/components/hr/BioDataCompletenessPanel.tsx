@@ -14,7 +14,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgUnits } from "@/hooks/useOrgScope";
 import { CommandPicker } from "@/components/org/CommandPicker";
-import { QuickScroll } from "@/components/ui/quick-scroll";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 import { descendantIds } from "@/lib/org-hierarchy";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -113,6 +114,7 @@ export function BioDataCompletenessPanel() {
     });
   }, [query.data, search, scopeIds, moduleFilter]);
 
+  const pager = usePagedList(rows, { resetKey: `${search}|${unitFilter}|${moduleFilter}` });
   const avg = rows.length
     ? Math.round(rows.reduce((s, r) => s + Number(r.completeness_pct || 0), 0) / rows.length)
     : 0;
@@ -201,7 +203,7 @@ export function BioDataCompletenessPanel() {
                   <TableCell colSpan={11} className="text-center text-muted-foreground">No records match these filters.</TableCell>
                 </TableRow>
               )}
-              {rows.map((r) => (
+              {pager.pageItems.map((r) => (
                 <TableRow key={r.profile_id}>
                   <TableCell>
                     <Link to={`/staff/${r.profile_id}`} className="font-medium text-primary hover:underline">
@@ -226,8 +228,8 @@ export function BioDataCompletenessPanel() {
               ))}
             </TableBody>
           </Table>
-          <QuickScroll label="records list" threshold={600} />
         </div>
+        <ListPagination {...pager} label="personnel records" />
       </CardContent>
     </Card>
   );

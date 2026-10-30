@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/date-format";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 type Row = { kind: "transfer" | "promotion"; id: string; staff_name: string; status: string; stage: string; from_unit: string | null; to_unit: string | null; detail: string | null; created_at: string; can_act: boolean };
 
@@ -40,6 +42,7 @@ export function CommandApprovalQueue() {
   };
 
   const rows = q.data ?? [];
+  const pager = usePagedList(rows);
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">Command approvals ({rows.length})</CardTitle></CardHeader>
@@ -47,7 +50,7 @@ export function CommandApprovalQueue() {
         <p className="text-xs text-muted-foreground">Transfers: releasing command OIC/2IC recommends, then receiving command OIC/2IC approves. Promotions: the officer's command OIC/2IC approves.</p>
         {q.isError && <p className="text-sm text-destructive">Could not load approvals.</p>}
         {!q.isError && rows.length === 0 && <p className="text-sm text-muted-foreground">Nothing awaiting your command's approval.</p>}
-        {rows.map((r) => (
+        {pager.pageItems.map((r) => (
           <div key={r.kind + r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2">
             <div className="min-w-0">
               <div className="text-sm font-medium">
@@ -66,6 +69,7 @@ export function CommandApprovalQueue() {
           </div>
         ))}
       </CardContent>
+      <div className="px-6 pb-4"><ListPagination {...pager} label="approvals" /></div>
     </Card>
   );
 }
