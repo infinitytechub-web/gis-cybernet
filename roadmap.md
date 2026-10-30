@@ -1,6 +1,7 @@
 # Roadmap – Holding Center / Command Operations enhancement
-- [ ] Update Today's Occurrences to theme-linked deep green, gold and white; verify signed-in rendering.
-- [ ] Verify HR module implementation, regression tests and signed-in screens; report any completeness gaps without changing staff records.
+- [x] Update Today's Occurrences to theme-linked deep green, gold and white with contrasting text, dark-mode surfaces and no decorative colour blobs; preview build passed and 26 focused theme/HR/export tests passed.
+- [x] Review HR implementation: profiles/service records, appointments/promotions/exits, applications/interviews/postings, command approval queue, officer transfer requests and bio-data downloads are present; workflow helper/export tests passed, not live approval verification.
+- [ ] Signed-in occurrence appearance and full HR end-to-end verification — blocked: no requesting-user auth account; preview sign-in or approval for an identified account required. Completeness risks: 2,000 application query cap, capped dashboard totals, command-independent promotion/exit/download totals, profile decision-button authority alignment, and untested live approval/posting flows.
 - [x] Fix confirmed suspect Modify deep-link with caller-scoped exact-record loading and existing admin/OIC edit authority; ordinary own-command cards open the personal portal unless analytics is permitted; hierarchy links respect the same permission; 48 navigation/RBAC/hierarchy tests passed and preview build passed
 - [ ] Signed-in suspect Modify and ordinary officer card click-through — blocked: no matching requesting-user account; authenticated preview required, no custody or staff records changed
 - [x] Apply shared Deep Green/Gold branding, mode-scoped surfaces and contrasting action text; preserve built-in brands and audit activation; remove glossy navigation and conflicting dashboard/import colors
