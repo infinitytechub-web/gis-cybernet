@@ -144,6 +144,8 @@ export default function AdminOverview() {
         <Totals title="KYC downloads" total={kyc.isError ? "—" : kycRows.length} icon={FileDown} note={kyc.isError ? "Super Admins only" : `${kycRecords} staff records exported`} />
       </div>
 
+      <CommandApprovalQueue />
+
       <Card>
         <CardHeader><CardTitle className="text-base">HR service records</CardTitle></CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
