@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,16 +41,22 @@ export function BioDataDownloadMenu({
   className?: string;
 }) {
   const [busy, setBusy] = useState<BioDataFormat | null>(null);
+  const queryClient = useQueryClient();
 
   const run = async (fmt: BioDataFormat) => {
     setBusy(fmt);
     try {
       const { downloadBioDataRecord } = await import("@/lib/biodata-export");
       await downloadBioDataRecord(profileId, fmt);
-      void supabase.rpc("log_biodata_export", { _profile_id: profileId, _format: fmt }).then(({ error }) => { if (error) console.warn("Download log failed", error.message); });
+      const { error } = await supabase.rpc("log_biodata_export", { _profile_id: profileId, _format: fmt });
+      if (error) {
+        toast.warning("File prepared, but download history could not be saved. Dashboard totals have not changed.");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["admin-overview-summary"] });
       toast.success(`Record downloaded — ${BIODATA_FORMAT_LABELS[fmt]}`);
-    } catch (e: any) {
-      toast.error(e?.message || "Could not build that copy of the record");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not build that copy of the record");
     } finally {
       setBusy(null);
     }

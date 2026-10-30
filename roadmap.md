@@ -1,4 +1,5 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Generate real Word and Excel Bio-Data downloads as ADMIN-001, validate files and confirm logged dashboard totals; initial downloads worked but audit rows were missing.
 - [x] Add HR overview exact scoped aggregates, separate total/assigned/unassigned personnel, exclude deleted personnel in four command RPCs, shared debounced live invalidation, retry/freshness indicators and anonymized download summaries; 42 focused tests passed and preview build passed.
 - [ ] Complete all-dashboard privacy/performance acceptance and every module's event coverage — current shared subscription covers published workforce/HR/fleet tables; other modules retain timed refresh. Broader review and authenticated verification remain required; no offline administrative write queue added.
 - [ ] Verify authenticated dashboard totals, cross-command isolation and real change/readback — blocked until an identified authorized account is available.
