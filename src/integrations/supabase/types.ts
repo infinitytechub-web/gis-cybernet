@@ -20126,6 +20126,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_biodata_export: {
+        Args: { _format: string; _profile_id: string }
+        Returns: undefined
+      }
       log_biodata_restricted_access: {
         Args: {
           _action: string
