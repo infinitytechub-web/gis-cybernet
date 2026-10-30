@@ -12,6 +12,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import HierarchyView from "@/components/command/HierarchyView";
+import { CommandHrmPanel } from "@/components/hr/CommandHrmPanel";
+import { KycExportDialog } from "@/components/hr/KycExportDialog";
 import { useDirectoryPermissions } from "@/hooks/useDirectoryPermissions";
 import { exportReport, type ExportFormat } from "@/lib/export-utils";
 import { logAdminAudit } from "@/lib/admin-audit";
@@ -302,6 +304,12 @@ export default function CommandAnalytics() {
           </CardContent>
         </Card>
       )}
+
+      {unitId && <CommandHrmPanel profileIds={(scope.data?.staff ?? []).map((s) => s.id)} />}
+
+      <div className="flex justify-end">
+        <KycExportDialog profileIds={rows.map((s) => s.id)} scopeLabel={commandName ?? "Current view"} />
+      </div>
 
       <section>
         <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">

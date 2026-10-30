@@ -16042,6 +16042,73 @@ export type Database = {
           },
         ]
       }
+      staff_appointments: {
+        Row: {
+          appointing_authority: string | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          org_unit_id: string | null
+          position_title: string
+          profile_id: string
+          reference_no: string | null
+          remarks: string | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          appointing_authority?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          org_unit_id?: string | null
+          position_title: string
+          profile_id: string
+          reference_no?: string | null
+          remarks?: string | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          appointing_authority?: string | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          org_unit_id?: string | null
+          position_title?: string
+          profile_id?: string
+          reference_no?: string | null
+          remarks?: string | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_appointments_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_appointments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_appointments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_appraisal_audit: {
         Row: {
           action: string
@@ -16710,6 +16777,66 @@ export type Database = {
           },
         ]
       }
+      staff_exits: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          effective_date: string
+          exit_type: string
+          id: string
+          notice_date: string | null
+          profile_id: string
+          reason: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          effective_date: string
+          exit_type: string
+          id?: string
+          notice_date?: string | null
+          profile_id: string
+          reason?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          effective_date?: string
+          exit_type?: string
+          id?: string
+          notice_date?: string | null
+          profile_id?: string
+          reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_exits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_exits_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_family_details: {
         Row: {
           created_at: string
@@ -17097,6 +17224,83 @@ export type Database = {
           },
         ]
       }
+      staff_promotions: {
+        Row: {
+          authority: string | null
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          effective_date: string
+          from_rank_id: string | null
+          id: string
+          profile_id: string
+          reference_no: string | null
+          remarks: string | null
+          status: string
+          to_rank_id: string
+        }
+        Insert: {
+          authority?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          effective_date: string
+          from_rank_id?: string | null
+          id?: string
+          profile_id: string
+          reference_no?: string | null
+          remarks?: string | null
+          status?: string
+          to_rank_id: string
+        }
+        Update: {
+          authority?: string | null
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          effective_date?: string
+          from_rank_id?: string | null
+          id?: string
+          profile_id?: string
+          reference_no?: string | null
+          remarks?: string | null
+          status?: string
+          to_rank_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_promotions_from_rank_id_fkey"
+            columns: ["from_rank_id"]
+            isOneToOne: false
+            referencedRelation: "ranks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_promotions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_promotions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_promotions_to_rank_id_fkey"
+            columns: ["to_rank_id"]
+            isOneToOne: false
+            referencedRelation: "ranks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_record_archive: {
         Row: {
           cleanup: Json
@@ -17234,6 +17438,92 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_transfer_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          from_org_unit_id: string | null
+          id: string
+          preferred_date: string | null
+          profile_id: string
+          reason: string
+          recommend_note: string | null
+          recommended_at: string | null
+          recommended_by: string | null
+          status: string
+          to_org_unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          from_org_unit_id?: string | null
+          id?: string
+          preferred_date?: string | null
+          profile_id: string
+          reason: string
+          recommend_note?: string | null
+          recommended_at?: string | null
+          recommended_by?: string | null
+          status?: string
+          to_org_unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          from_org_unit_id?: string | null
+          id?: string
+          preferred_date?: string | null
+          profile_id?: string
+          reason?: string
+          recommend_note?: string | null
+          recommended_at?: string | null
+          recommended_by?: string | null
+          status?: string
+          to_org_unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_transfer_requests_from_org_unit_id_fkey"
+            columns: ["from_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_transfer_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_transfer_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_transfer_requests_to_org_unit_id_fkey"
+            columns: ["to_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
             referencedColumns: ["id"]
           },
         ]
@@ -18834,6 +19124,18 @@ export type Database = {
         Args: { p_job_id: string }
         Returns: Json
       }
+      decide_staff_exit: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
+      }
+      decide_staff_promotion: {
+        Args: { _approve: boolean; _id: string }
+        Returns: undefined
+      }
+      decide_staff_transfer: {
+        Args: { _approve: boolean; _id: string; _note?: string }
+        Returns: undefined
+      }
       delete_brand: { Args: { _id: string }; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -19397,6 +19699,14 @@ export type Database = {
           status: string
         }[]
       }
+      hrm_can_record: {
+        Args: { _profile_id: string; _uid: string }
+        Returns: boolean
+      }
+      hrm_can_view: {
+        Args: { _profile_id: string; _uid: string }
+        Returns: boolean
+      }
       increment_announcement_file_downloads: {
         Args: { _file_id: string }
         Returns: undefined
@@ -19585,6 +19895,15 @@ export type Database = {
           _watermarked: boolean
         }
         Returns: string
+      }
+      log_kyc_export: {
+        Args: {
+          _fields: string[]
+          _format: string
+          _row_count: number
+          _scope: string
+        }
+        Returns: undefined
       }
       log_office_history_access: {
         Args: { _profile_id: string }
@@ -20068,6 +20387,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      recommend_staff_transfer: {
+        Args: { _id: string; _note?: string; _recommend: boolean }
+        Returns: undefined
+      }
       reconcile_staff_records_apply: {
         Args: { _profile_ids: string[]; _reason: string }
         Returns: Json
@@ -20160,6 +20483,14 @@ export type Database = {
           _page?: string
           _session_key: string
           _user_agent?: string
+        }
+        Returns: string
+      }
+      request_staff_transfer: {
+        Args: {
+          _preferred_date?: string
+          _reason: string
+          _to_org_unit_id: string
         }
         Returns: string
       }
@@ -20764,6 +21095,7 @@ export type Database = {
         Args: { _consent?: boolean; _enabled: boolean }
         Returns: boolean
       }
+      withdraw_staff_transfer: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       announcement_file_audit_action:
