@@ -330,6 +330,13 @@
       "when": 1793226472287,
       "tag": "0046_regional_overview_include_directorate_regions",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793394455457,
+      "tag": "0047_hrm_service_records",
+      "breakpoints": true
     }
   ]
 }
