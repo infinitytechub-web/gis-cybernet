@@ -26,7 +26,7 @@ interface Props {
   shifts: { id: string; name: string; pattern: string }[];
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 25;
 
 export default function NightGuardAssignmentsPanel({ nightGuardStaff, allStaff = [], shifts }: Props) {
   const queryClient = useQueryClient();

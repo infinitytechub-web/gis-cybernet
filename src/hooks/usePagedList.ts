@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /** System-wide default: lists longer than this paginate automatically. */
 export const DEFAULT_PAGE_SIZE = 25;
@@ -16,8 +16,13 @@ export function usePagedList<T>(items: T[], opts: { pageSize?: number; resetKey?
   const total = items.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-  useEffect(() => { setPage(1); }, [opts.resetKey, pageSize]);
-  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  const resetRef = useRef(opts.resetKey);
+  useEffect(() => {
+    if (!Object.is(resetRef.current, opts.resetKey)) {
+      resetRef.current = opts.resetKey;
+      setPage(1);
+    } else if (page > totalPages) setPage(totalPages);
+  }, [opts.resetKey, page, totalPages]);
 
   const pageItems = useMemo(
     () => items.slice((page - 1) * pageSize, page * pageSize),

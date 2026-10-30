@@ -24,7 +24,7 @@ type EntityType = "leave_request" | "posting_transfer";
 interface Props {
   entityType: EntityType;
   entityId: string;
-  /** Rows per page. Defaults to 20. */
+  /** Rows per request. Defaults to 25. */
   pageSize?: number;
 }
 
@@ -82,7 +82,7 @@ function formatValue(v: unknown): string {
  * (command tier or the request's department supervisor) and caps page size
  * server-side at 200 rows.
  */
-export function ApprovalAuditTrail({ entityType, entityId, pageSize = 20 }: Props) {
+export function ApprovalAuditTrail({ entityType, entityId, pageSize = 25 }: Props) {
   const [filterActions, setFilterActions] = useState<string[]>([]);
   const [filterRoles, setFilterRoles] = useState<string[]>([]);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);

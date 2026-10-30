@@ -29,7 +29,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 type SortKey = "created_at" | "start_date" | "end_date" | "status";
 
-const PAGE_SIZES = [10, 25, 50];
+const PAGE_SIZES = [25];
 
 export default function MyExcuseDutySubmissions() {
   const { user } = useAuth();
