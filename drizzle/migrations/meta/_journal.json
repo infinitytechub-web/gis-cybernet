@@ -351,6 +351,13 @@
       "when": 1793395400884,
       "tag": "0049_staff_applications",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793396102893,
+      "tag": "0050_command_approval_hierarchy",
+      "breakpoints": true
     }
   ]
 }
