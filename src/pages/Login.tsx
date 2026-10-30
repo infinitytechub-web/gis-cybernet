@@ -20,6 +20,7 @@ import { executeRecaptcha, getRecaptchaConfig, preloadRecaptcha } from "@/lib/re
 
 // Use public path so the preload <link> in index.html matches the actual request URL (LCP optimisation)
 const gisLogo = "/gis-logo-192.webp";
+import loginHrm from "@/assets/login-hrm.jpg";
 import { useBranding } from "@/hooks/useBranding";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -465,13 +466,26 @@ export default function Login() {
   };
 
   return (
-    <main
-      className="relative flex min-h-dvh items-center justify-center bg-background bg-cover bg-center p-4 pt-16"
-      style={branding.login_background_url ? { backgroundImage: `url(${branding.login_background_url})` } : undefined}
-      aria-labelledby="login-heading"
-    >
+    <main className="grid min-h-dvh bg-background lg:grid-cols-2" aria-labelledby="login-heading">
+      <aside className="relative hidden overflow-hidden lg:block" aria-hidden="true">
+        <img src={branding.login_background_url || loginHrm} alt="" width={1280} height={1600} decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/70 to-primary/30" />
+        <div className="relative flex h-full flex-col justify-end gap-4 p-10 xl:p-14 text-primary-foreground">
+          <div className="h-1 w-16 rounded-full bg-secondary" />
+          <p className="text-3xl xl:text-4xl font-bold leading-tight">{branding.company_name}</p>
+          <p className="max-w-md text-base text-primary-foreground/90">Real-time Human Resource, Staff and Operations Management for every Command.</p>
+          <ul className="flex flex-wrap gap-2 text-xs font-medium">
+            {["HR Management", "Staff Management", "Operations"].map((t) => (
+              <li key={t} className="rounded-full border border-secondary/60 bg-primary/40 px-3 py-1">{t}</li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+      <div className="relative flex flex-col">
+      <div className="h-2 w-full bg-gradient-to-r from-primary via-primary to-secondary lg:hidden" aria-hidden="true" />
+      <div className="relative flex flex-1 items-center justify-center p-4 pt-16 sm:p-8">
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
-      <Card className="w-full max-w-md border-border shadow-sm">
+      <Card className="w-full max-w-md border-border border-t-4 border-t-secondary shadow-lg">
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto">
             <img src={branding.login_logo_url || branding.logo_url || gisLogo} alt={branding.company_name} width={96} height={96} decoding="async" {...({ fetchpriority: "high" } as Record<string, string>)} className="h-24 w-24 rounded-full object-cover mx-auto border-2 border-primary/30" />
@@ -537,6 +551,8 @@ export default function Login() {
           </p>
         </CardContent>
       </Card>
+      </div>
+      </div>
     </main>
   );
 }
