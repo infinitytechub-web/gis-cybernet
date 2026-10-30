@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { BarChart3, ChevronDown, ChevronRight, FileDown, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { commandDashboardPath } from "@/lib/regional-commands";
+import { useRbac } from "@/hooks/useRbac";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -26,6 +27,8 @@ function HierarchyRow({ node, sortable, collapsed, onToggle }: {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id, disabled: !sortable });
   const color = node.brand_color ?? "145 63% 30%";
   const pending = node.activation_status !== "active";
+  const { can, loading } = useRbac();
+  const canOpenDashboard = !loading && can("command-analytics") && !pending && node.is_active;
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-1 rounded-lg border px-2 py-1.5 bg-card ${isDragging ? "z-10 opacity-80 shadow-md" : ""}`}
@@ -38,7 +41,7 @@ function HierarchyRow({ node, sortable, collapsed, onToggle }: {
         </button>
       ) : <span className="w-5" aria-hidden />}
       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: `hsl(${color})`, opacity: pending ? 0.4 : 1 }} aria-hidden />
-      {pending || !node.is_active ? (
+      {!canOpenDashboard ? (
         <span className={`min-w-0 flex-1 truncate text-sm ${node.depth === 0 ? "font-bold" : ""}`}>{node.name}</span>
       ) : (
         <Link to={commandDashboardPath(node.id)}
@@ -49,7 +52,7 @@ function HierarchyRow({ node, sortable, collapsed, onToggle }: {
       <span className="hidden sm:inline text-xs text-muted-foreground">{ORG_UNIT_TYPE_LABELS[node.type as OrgUnitType] ?? node.type}</span>
       {pending && <Badge variant="outline" className="text-[10px]">Pending</Badge>}
       {!node.is_active && <Badge variant="destructive" className="text-[10px]">Inactive</Badge>}
-      {!pending && node.is_active && (
+      {canOpenDashboard && (
         <Link to={commandDashboardPath(node.id)} aria-label={`Open ${node.name} dashboard`}
           className="rounded p-1 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <BarChart3 className="h-4 w-4" />

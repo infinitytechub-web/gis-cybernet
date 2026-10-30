@@ -33,5 +33,5 @@ export const commandDashboardPath = (id: string) => `/command-analytics/${id}`;
 export const regionalCardPath = (card: RegionalCommandCard, canAnalytics: boolean): string | null => {
   if (!card.can_open) return null;
   if (canAnalytics) return commandDashboardPath(card.id);
-  return card.is_own ? "/portal?tab=command" : null;
+  return card.is_own ? "/portal" : null;
 };

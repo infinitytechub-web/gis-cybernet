@@ -10,7 +10,7 @@ describe("regional command cards", () => {
   it("ordinary officers open their portal without gaining analytics access", () => {
     const canAnalytics = canAccessModule("command-analytics", { role: "staff" });
     expect(canAnalytics).toBe(false);
-    expect(regionalCardPath(card, canAnalytics)).toBe("/portal?tab=command");
+    expect(regionalCardPath(card, canAnalytics)).toBe("/portal");
     expect(canAccessModule("staff-portal", { role: "staff" })).toBe(true);
   });
   it("authorized analytics users retain the exact command destination", () => {
