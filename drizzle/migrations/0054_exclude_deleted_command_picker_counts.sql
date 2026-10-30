@@ -1,0 +1,1 @@
+DO $$ DECLARE definition text; BEGIN SELECT pg_get_functiondef('public.command_dashboard_units()'::regprocedure) INTO definition; definition:=replace(definition,'WHERE p.org_unit_id IN (SELECT st.unit_id FROM selected_subtree st)','WHERE p.deleted_at IS NULL AND p.org_unit_id IN (SELECT st.unit_id FROM selected_subtree st)'); EXECUTE definition; END $$;
