@@ -14,8 +14,8 @@ describe("KYC export", () => {
 
   it("shows restricted fields to permitted roles and formats dates DD/MM/YYYY", () => {
     const { headers, rows } = buildKycRows([p], ["ghana_card_number", "date_of_birth"], true);
-    expect(headers).toEqual(["Ghana Card number", "Date of birth"]);
-    expect(rows[0]).toEqual(["GHA-123456789-0", "04/05/1990"]);
+    expect(headers).toEqual(["Date of birth", "Ghana Card number"]);
+    expect(rows[0]).toEqual(["04/05/1990", "GHA-123456789-0"]);
   });
 
   it("includes only the chosen fields", () => {
