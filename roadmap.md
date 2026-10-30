@@ -1,5 +1,6 @@
 # Roadmap – Holding Center / Command Operations enhancement
-- [ ] Fix confirmed suspect Modify deep-link and ordinary officer command-card destination; preserve existing edit authority and analytics permissions; run navigation regressions
+- [x] Fix confirmed suspect Modify deep-link with caller-scoped exact-record loading and existing admin/OIC edit authority; ordinary own-command cards open the personal portal unless analytics is permitted; hierarchy links respect the same permission; 48 navigation/RBAC/hierarchy tests passed and preview build passed
+- [ ] Signed-in suspect Modify and ordinary officer card click-through — blocked: no matching requesting-user account; authenticated preview required, no custody or staff records changed
 - [x] Apply shared Deep Green/Gold branding, mode-scoped surfaces and contrasting action text; preserve built-in brands and audit activation; remove glossy navigation and conflicting dashboard/import colors
 - [x] Verify no-reload Light/Dark/System switching, unsaved input preservation, reload persistence, OS changes, white print background and sign-in layouts at 360/768/1280px; 11 theme/brand tests passed, preview build passed
 - [ ] Signed-in dashboard, chart, form and exported-report visual verification — blocked: no matching account for requesting user; sign-in preview required. Local reCAPTCHA domain warning remains unrelated to theme.
