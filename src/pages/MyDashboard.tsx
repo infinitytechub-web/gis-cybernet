@@ -46,6 +46,7 @@ import {
   LEAVE_STATE_BADGE,
 } from "@/components/portal/MyLeaveStandingCard";
 import { MyPostingsCard } from "@/components/portal/MyPostingsCard";
+import { MyCommandSection } from "@/components/portal/MyCommandSection";
 import {
   MySignOffSection,
   useMyRecordStatus,
@@ -56,7 +57,7 @@ import {
 const MAX_DAILY_HOURS = 16;
 const iso = (d: Date) => format(d, "yyyy-MM-dd");
 
-const TABS = ["today", "leave", "record", "things", "requests", "command"] as const;
+const TABS = ["today", "leave", "record", "mycommand", "things", "requests", "command"] as const;
 type TabKey = (typeof TABS)[number];
 
 type WeekRow = {
@@ -126,7 +127,7 @@ export default function MyDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, staff_id, shift_group")
+        .select("id, first_name, last_name, staff_id, shift_group, org_unit_id")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw new Error(error.message);
@@ -334,6 +335,7 @@ export default function MyDashboard() {
           <TabsTrigger value="record" className="w-full gap-1.5 sm:w-auto">
             My record{awaitingMySignature > 0 ? ` (${awaitingMySignature})` : ""}
           </TabsTrigger>
+          <TabsTrigger value="mycommand" className="w-full sm:w-auto">My command & transfer</TabsTrigger>
           <TabsTrigger value="things" className="w-full sm:w-auto">My things</TabsTrigger>
           <TabsTrigger value="requests" className="w-full sm:w-auto">
             My requests{pendingCount > 0 ? ` (${pendingCount})` : ""}
@@ -405,6 +407,10 @@ export default function MyDashboard() {
         <TabsContent value="record" className="space-y-4">
           <MySignOffSection profileId={profileId} staffId={profile?.staff_id ?? null} fullName={fullName} />
           <MyPostingsCard shiftGroup={profile?.shift_group ?? null} />
+        </TabsContent>
+
+        <TabsContent value="mycommand">
+          <MyCommandSection profileId={profileId} orgUnitId={(profile as any)?.org_unit_id ?? null} />
         </TabsContent>
 
         <TabsContent value="things">

@@ -20,6 +20,7 @@ import { logStaffAccess } from "@/lib/staff-access-log";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logAdminAudit } from "@/lib/admin-audit";
+import { ServiceRecordTab } from "@/components/hr/ServiceRecordTab";
 
 import { getSignedPhotoUrl } from "@/lib/photo-utils";
 
@@ -331,6 +332,7 @@ export default function StaffProfile() {
           <TabsTrigger value="postings" className="gap-1"><ArrowRightLeft className="h-4 w-4" /> Postings</TabsTrigger>
           <TabsTrigger value="office-history" className="gap-1"><MapPin className="h-4 w-4" /> Office History {canViewOfficeHistory && officeHistory.length > 0 && <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">{officeHistory.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1"><FolderLock className="h-4 w-4" /> Documents</TabsTrigger>
+          <TabsTrigger value="service" className="gap-1"><Award className="h-4 w-4" /> Service Record</TabsTrigger>
         </TabsList>
 
         <TabsContent value="attendance">
@@ -535,6 +537,10 @@ export default function StaffProfile() {
               canManage={isAdminOrSupervisor && vaultManage !== false}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="service">
+          <ServiceRecordTab profileId={profile.id} currentRankId={(profile as any).rank_id ?? null} />
         </TabsContent>
       </Tabs>
     </div>

@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ExportMenu } from "@/components/ui/export-menu";
+import { KycExportDialog } from "@/components/hr/KycExportDialog";
 import { yearsOfService } from "@/lib/postings-analytics";
 import { formatService } from "@/hooks/useStaffRoster";
 import type { ProfileWithRelations } from "@/lib/types";
@@ -955,6 +956,7 @@ export default function Staff() {
               })}
             />
             )}
+            <KycExportDialog profileIds={filtered.map((s: any) => s.id)} scopeLabel="Filtered staff list" />
             <Button variant="outline" size="sm" onClick={() => setAssignUnitOpen(true)} className="gap-1">
               <Building2 className="h-4 w-4" /> Assign to unit
             </Button>
