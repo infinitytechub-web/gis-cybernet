@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/date-format";
 import { regionalCardPath, type RegionalCommandCard } from "@/lib/regional-commands";
+import { CommandApprovalQueue } from "@/components/hr/CommandApprovalQueue";
 import { Briefcase, FileDown, LayoutDashboard, Users } from "lucide-react";
 
 const RANGES: Record<string, number | null> = { "7": 7, "30": 30, "90": 90, "365": 365, all: null };
