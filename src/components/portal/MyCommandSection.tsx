@@ -12,6 +12,8 @@ import { DateInput } from "@/components/ui/date-input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/date-format";
+import { Input } from "@/components/ui/input";
+import { STATUS_LABEL, type AppStatus } from "@/lib/staff-applications";
 
 const db = supabase as any;
 type Unit = { id: string; name: string; type: string; parent_id: string | null; is_active: boolean };
@@ -40,6 +42,31 @@ export function MyCommandSection({ profileId, orgUnitId }: { profileId: string |
   const [reason, setReason] = useState("");
   const [date, setDate] = useState("");
   const [busy, setBusy] = useState(false);
+  const [appOpen, setAppOpen] = useState(false);
+  const [appType, setAppType] = useState<"position" | "posting">("position");
+  const [appTitle, setAppTitle] = useState("");
+  const [appUnit, setAppUnit] = useState("");
+  const [appStmt, setAppStmt] = useState("");
+  const appsKey = ["my-staff-applications", profileId];
+  const { data: myApps = [] } = useQuery({
+    queryKey: appsKey,
+    enabled: !!profileId,
+    queryFn: async () => (await db.from("staff_applications").select("id,application_type,position_title,status,created_at, target:org_units!staff_applications_target_org_unit_id_fkey(name)").eq("profile_id", profileId).neq("application_type", "transfer").order("created_at", { ascending: false })).data ?? [],
+  });
+  const submitApp = async () => {
+    setBusy(true);
+    const { error } = await db.rpc("submit_staff_application", { _type: appType, _position_title: appTitle || null, _target_org_unit_id: appUnit || null, _statement: appStmt });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Application submitted.");
+    setAppOpen(false); setAppTitle(""); setAppUnit(""); setAppStmt("");
+    qc.invalidateQueries({ queryKey: appsKey });
+  };
+  const withdrawApp = async (id: string) => {
+    const { error } = await db.rpc("withdraw_staff_application", { _id: id });
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: appsKey });
+  };
 
   const { data: units = [] } = useQuery({
     queryKey: ["org-units-tree-basic"],
@@ -158,6 +185,37 @@ export function MyCommandSection({ profileId, orgUnitId }: { profileId: string |
           ))}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">My position & posting applications</CardTitle>
+          <Button size="sm" variant="outline" disabled={!profileId} onClick={() => setAppOpen(true)}>Apply</Button>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {myApps.length === 0 && <p className="text-sm text-muted-foreground">No applications yet.</p>}
+          {myApps.map((a: any) => (
+            <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 text-sm">
+              <div><p className="font-medium capitalize">{a.application_type}: {[a.position_title, a.target?.name].filter(Boolean).join(" · ")}</p><p className="text-xs text-muted-foreground">Applied {formatDate(a.created_at)}</p></div>
+              <div className="flex items-center gap-2"><Badge variant="secondary">{STATUS_LABEL[a.status as AppStatus]}</Badge>
+                {!["approved", "rejected", "posted", "withdrawn"].includes(a.status) && <Button size="sm" variant="outline" onClick={() => withdrawApp(a.id)}>Withdraw</Button>}</div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Dialog open={appOpen} onOpenChange={setAppOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Apply for a position or posting</DialogTitle><DialogDescription>Shortlisting and interview by the command panel, then administrator approval.</DialogDescription></DialogHeader>
+          <div className="grid gap-3">
+            <div><Label>Type</Label><Select value={appType} onValueChange={(v) => setAppType(v as any)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="position">Position / appointment</SelectItem><SelectItem value="posting">Posting</SelectItem></SelectContent></Select></div>
+            {appType === "position" && <div><Label>Position</Label><Input value={appTitle} onChange={(e) => setAppTitle(e.target.value)} /></div>}
+            <div><Label>{appType === "posting" ? "Where you want to be posted" : "Command / unit (optional)"}</Label>
+              <Select value={appUnit} onValueChange={setAppUnit}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{units.filter((u) => u.is_active).map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Statement</Label><Textarea value={appStmt} onChange={(e) => setAppStmt(e.target.value)} placeholder="Why you are applying (at least 20 characters)" /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setAppOpen(false)}>Cancel</Button><Button disabled={busy || appStmt.trim().length < 20 || (appType === "position" ? !appTitle.trim() : !appUnit)} onClick={submitApp}>Submit</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
