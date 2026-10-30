@@ -135,17 +135,9 @@ export function buildOrgTree(units: OrgUnit[], opts: { collapseHq?: boolean } = 
   for (const u of units) if (!wrappers.has(u.id)) byId.set(u.id, { ...u, depth: 0, children: [] });
 
   const roots: OrgTreeNode[] = [];
-  const seenNames = new Map<string, Set<string>>();
   for (const node of byId.values()) {
     const pid = displayParent(node.parent_id);
     const parent = pid ? byId.get(pid) : undefined;
-    // One entry per name under the same parent (duplicate labels collapse).
-    const key = pid ?? "__root__";
-    const names = seenNames.get(key) ?? new Set<string>();
-    const nm = node.name.trim().toLowerCase();
-    if (collapse && names.has(nm)) continue;
-    names.add(nm);
-    seenNames.set(key, names);
     if (parent) parent.children.push(node);
     else roots.push(node);
   }
