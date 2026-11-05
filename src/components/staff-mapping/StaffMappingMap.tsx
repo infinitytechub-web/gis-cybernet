@@ -109,7 +109,7 @@ export function StaffMappingMap({
       </CardHeader>
       <CardContent className="space-y-3">
         <MapTilesStatusBanner />
-        <div className="overflow-hidden rounded-lg border border-border">
+        <div className="relative z-0 overflow-hidden rounded-lg border border-border">
           <div ref={containerRef} style={{ height }} role="application" aria-label="Map of staff postings" />
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">

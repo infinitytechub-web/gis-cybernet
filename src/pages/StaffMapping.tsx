@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ExportMenu } from "@/components/ui/export-menu";
 import { StaffMappingAdminPanel } from "@/components/staff-mapping/StaffMappingAdminPanel";
 import { useAuth } from "@/hooks/useAuth";
+import { StaffMappingEditDialog } from "@/components/staff-mapping/StaffMappingEditDialog";
 
 const db = supabase as any;
 
@@ -112,7 +113,17 @@ function BreakdownCard({
 }
 
 export default function StaffMapping() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  const [editing, setEditing] = useState<MappingRow | null>(null);
+  const { data: canEdit = false } = useQuery({
+    queryKey: ["staff-mapping-can-edit", user?.id], enabled: !!user,
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase.rpc("can_move_command", { _user_id: user.id });
+      if (error) throw error;
+      return data === true;
+    },
+  });
   const [region, setRegion] = useState(ALL);
   const [sector, setSector] = useState(ALL);
   const [station, setStation] = useState(ALL);
@@ -159,7 +170,7 @@ export default function StaffMapping() {
         .some((value) => String(value ?? "").toLowerCase().includes(term));
     });
   }, [rows, region, sector, station, rank, department, status, search, mapKey]);
-  const pager = usePagedList(filtered);
+  const pager = usePagedList(filtered, { resetKey: `${search}|${region}|${sector}|${station}|${rank}|${department}|${status}|${mapKey}` });
 
   const countBy = (pick: (row: MappingRow) => string) => {
     const map = new Map<string, number>();
@@ -220,6 +231,7 @@ export default function StaffMapping() {
   return (
     <div className="space-y-5">
       <PageHeader
+        className="[&>div>div:nth-child(2)]:min-w-40 [&>div>div:last-child]:max-w-full"
         icon={MapIcon}
         title="Staff Mapping"
         subtitle="Where every staff member is posted — by region, station and rank, linked to their bio-data record."
@@ -337,18 +349,20 @@ export default function StaffMapping() {
                     <th className="py-2 pr-3">Staff</th>
                     <th className="py-2 pr-3">Rank</th>
                     <th className="py-2 pr-3">Region</th>
+                    <th className="py-2 pr-3">Command / posting</th>
                     <th className="py-2 pr-3">Department / Unit</th>
                     <th className="py-2 pr-3">Department</th>
                     <th className="py-2 pr-3">Shift</th>
                     <th className="py-2">Bio-data</th>
+                    {canEdit && <th className="py-2">Assignment</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading && (
-                    <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Loading staff postings…</td></tr>
+                    <tr><td colSpan={canEdit ? 9 : 8} className="py-6 text-center text-muted-foreground">Loading staff postings…</td></tr>
                   )}
                   {!isLoading && filtered.length === 0 && (
-                    <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">No staff match these filters.</td></tr>
+                    <tr><td colSpan={canEdit ? 9 : 8} className="py-6 text-center text-muted-foreground">No staff match these filters.</td></tr>
                   )}
                   {pager.pageItems.map((row) => (
                     <tr key={row.profile_id} className="border-b last:border-0">
@@ -358,6 +372,7 @@ export default function StaffMapping() {
                       </td>
                       <td className="py-2 pr-3">{label(row.rank_abbr ?? row.rank_name)}</td>
                       <td className="py-2 pr-3">{label(row.region_name)}</td>
+                      <td className="py-2 pr-3">{label(row.org_unit_name)}</td>
                       <td className="py-2 pr-3">{label(row.station_name ?? row.org_unit_name)}</td>
                       <td className="py-2 pr-3">{label(row.department_name)}</td>
                       <td className="py-2 pr-3">
@@ -368,6 +383,7 @@ export default function StaffMapping() {
                           Open record
                         </Link>
                       </td>
+                      {canEdit && <td className="py-2"><Button variant="outline" size="sm" onClick={() => setEditing(row)} aria-label={`Edit assignment for ${row.full_name || row.staff_id}`}>Edit assignment</Button></td>}
                     </tr>
                   ))}
                 </tbody>
@@ -379,6 +395,7 @@ export default function StaffMapping() {
       </div>
 
       {isAdmin && <StaffMappingAdminPanel />}
+      {editing && <StaffMappingEditDialog record={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }

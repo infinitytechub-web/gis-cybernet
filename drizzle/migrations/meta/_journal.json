@@ -421,6 +421,20 @@
       "when": 1793908117136,
       "tag": "0059_staff_application_review_transitions",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1793908458125,
+      "tag": "0060_staff_mapping_authorized_edit",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1793908481261,
+      "tag": "0061_staff_mapping_active_scoped_rows",
+      "breakpoints": true
     }
   ]
 }

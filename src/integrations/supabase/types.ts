@@ -20827,6 +20827,15 @@ export type Database = {
         Returns: string
       }
       save_command_order: { Args: { _ids: string[] }; Returns: undefined }
+      save_staff_mapping: {
+        Args: {
+          _expected_org_unit_id: string
+          _profile_id: string
+          _reason: string
+          _to_org_unit_id: string
+        }
+        Returns: string
+      }
       schedule_application_interview: {
         Args: { _at: string; _id: string; _location: string; _panel: string }
         Returns: string
@@ -21151,6 +21160,10 @@ export type Database = {
       }
       staff_list_import_review: {
         Args: { _decision: string; _import_id: string; _notes?: string }
+        Returns: Json
+      }
+      staff_mapping_edit_context: {
+        Args: { _profile_id: string }
         Returns: Json
       }
       staff_mapping_rows: {
