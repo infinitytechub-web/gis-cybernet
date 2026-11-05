@@ -2032,6 +2032,115 @@ export type Database = {
           },
         ]
       }
+      command_reassignment_events: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          note: string | null
+          request_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_reassignment_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "command_reassignment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      command_reassignment_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          from_org_unit_id: string | null
+          id: string
+          profile_id: string
+          reason: string
+          requested_by: string
+          status: string
+          to_org_unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          from_org_unit_id?: string | null
+          id?: string
+          profile_id: string
+          reason: string
+          requested_by: string
+          status?: string
+          to_org_unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          from_org_unit_id?: string | null
+          id?: string
+          profile_id?: string
+          reason?: string
+          requested_by?: string
+          status?: string
+          to_org_unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "command_reassignment_requests_from_org_unit_id_fkey"
+            columns: ["from_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_reassignment_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_reassignment_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "command_reassignment_requests_to_org_unit_id_fkey"
+            columns: ["to_org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       command_role_audit: {
         Row: {
           action: string
@@ -19258,6 +19367,13 @@ export type Database = {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_reassignment: {
+        Args: {
+          _r: Database["public"]["Tables"]["command_reassignment_requests"]["Row"]
+          _uid: string
+        }
+        Returns: boolean
+      }
       can_view_staff_application: {
         Args: { _app_id: string; _uid: string }
         Returns: boolean
@@ -19440,6 +19556,10 @@ export type Database = {
           _statement: string
           _target_org_unit_id: string
         }
+        Returns: string
+      }
+      decide_command_reassignment: {
+        Args: { _decision: string; _note: string; _request_id: string }
         Returns: string
       }
       decide_staff_application: {
@@ -20673,6 +20793,15 @@ export type Database = {
       procurement_request_submit: {
         Args: { _note?: string; _requisition_id: string }
         Returns: undefined
+      }
+      propose_command_reassignment: {
+        Args: {
+          _expected_org_unit_id: string
+          _profile_id: string
+          _reason: string
+          _to_org_unit_id: string
+        }
+        Returns: string
       }
       prune_backup_schedule_history: {
         Args: { _schedule_id: string }

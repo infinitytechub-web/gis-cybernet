@@ -24,6 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { STATUS_LABEL, TYPE_LABEL, OPEN_STATUSES, nextAction, applicantName, inPendingStage, type AppStatus } from "@/lib/staff-applications";
 import { CommandApprovalQueue } from "@/components/hr/CommandApprovalQueue";
+import CommandReassignmentReview from "@/components/hr/CommandReassignmentReview";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StaffApplicationForm } from "@/components/hr/StaffApplicationForm";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -111,8 +112,9 @@ export default function StaffApplications({ pending = false }: { pending?: boole
       {pending && <>
         <nav className="flex flex-wrap gap-2" aria-label="HR workflow links"><Button asChild variant="outline" size="sm"><Link to="/hr">Human Resource</Link></Button><Button asChild variant="outline" size="sm"><Link to="/hr/applications">All applications & history</Link></Button></nav>
         <CommandApprovalQueue />
-        <Tabs value={stage} onValueChange={setStage}><div className="overflow-x-auto"><TabsList className="w-max"><TabsTrigger value="all">All pending</TabsTrigger><TabsTrigger value="applications">Applications</TabsTrigger><TabsTrigger value="interviews">Interviews</TabsTrigger><TabsTrigger value="decisions">Approvals</TabsTrigger><TabsTrigger value="postings">Postings</TabsTrigger></TabsList></div></Tabs>
+        <Tabs value={stage} onValueChange={setStage}><div className="overflow-x-auto"><TabsList className="w-max"><TabsTrigger value="all">All pending</TabsTrigger><TabsTrigger value="applications">Applications</TabsTrigger><TabsTrigger value="interviews">Interviews</TabsTrigger><TabsTrigger value="decisions">Approvals</TabsTrigger><TabsTrigger value="postings">Postings</TabsTrigger><TabsTrigger value="reassignments">Command reassignments</TabsTrigger></TabsList></div></Tabs>
       </>}
+      {pending && stage === "reassignments" ? <CommandReassignmentReview /> : <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[["New / shortlisted", counts.new], ["Interviews scheduled", counts.interview], ["Awaiting admin decision", counts.awaiting], ["Approved, to post", counts.posting]].map(([l, v]) => (
           <Card key={l as string}><CardContent className="p-4"><p className="text-2xl font-bold text-primary">{isLoading || isError ? "—" : v as number}</p><p className="text-xs text-muted-foreground">{l as string}</p></CardContent></Card>
@@ -156,6 +158,7 @@ export default function StaffApplications({ pending = false }: { pending?: boole
 
       {openId && <ApplicationDialog id={openId} isHrAdmin={isHrAdmin} onClose={() => setOpenId(null)} />}
       {staffFormOpen && <StaffApplicationForm open={staffFormOpen} onOpenChange={setStaffFormOpen} onSubmitted={(id) => { setStatus("all"); setQ(""); setCommand("all"); setType("all"); setStage("all"); setOpenId(id); }} />}
+      </>}
       {isHrAdmin && <NewRecruitDialog open={newOpen} onOpenChange={setNewOpen} units={units} />}
     </div>
   );
