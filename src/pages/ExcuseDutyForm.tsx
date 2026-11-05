@@ -19,6 +19,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { downloadExcuseDutyPDF, downloadExcuseDutyDOCX, type ExcuseDutyData } from "@/lib/excuse-duty-templates";
 import { FileDown as FileDownIcon } from "lucide-react";
 import { DateInput } from "@/components/ui/date-input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ListPagination } from "@/components/ui/list-pagination";
+import { usePagedList } from "@/hooks/usePagedList";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
@@ -45,15 +48,17 @@ export default function ExcuseDutyForm() {
   const [attachmentPath, setAttachmentPath] = useState<string | null>(null);
 
   // Auto-fill: rank, department, office shift, staff ID, contact
-  const { data: profile } = useQuery({
-    queryKey: ["my-profile-excuse"],
+  const { data: profile, isLoading: profileLoading, isError: profileFailed, refetch: retryProfile } = useQuery({
+    queryKey: ["my-profile-excuse", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, staff_id, phone, email, shift_group, office, ranks(name, abbreviation), departments(name)")
         .eq("user_id", user.id)
+        .is("deleted_at", null)
         .maybeSingle();
+      if (error) throw error;
       return data as any;
     },
     enabled: !!user,
@@ -74,23 +79,27 @@ export default function ExcuseDutyForm() {
     };
   }, [profile]);
 
-  const { data: myForms = [] } = useQuery({
+  const { data: myForms = [], isLoading: formsLoading, isError: formsFailed, refetch: retryForms } = useQuery({
     queryKey: ["my-excuse-forms", user?.id],
+    refetchInterval: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from("excuse_duty_forms" as any).select("*").eq("submitted_by", user!.id).order("created_at", { ascending: false });
+      if (!user) return [];
+      const { data, error } = await supabase.from("excuse_duty_forms" as any).select("*").eq("submitted_by", user.id).order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
     enabled: !!user,
   });
+  const pager = usePagedList(myForms);
 
   const submit = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("Sign in to submit an excuse duty form.");
       if (!profile?.id) throw new Error("Profile not found");
       if (!form.reason.trim()) throw new Error("Reason is required");
       const { error } = await supabase.from("excuse_duty_forms" as any).insert({
         staff_profile_id: profile.id,
-        submitted_by: user!.id,
+        submitted_by: user.id,
         start_date: form.start_date,
         end_date: form.end_date,
         reason: form.reason.trim(),
@@ -103,6 +112,8 @@ export default function ExcuseDutyForm() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["my-excuse-forms"] });
+      qc.invalidateQueries({ queryKey: ["my-excuse-subs"] });
+      qc.invalidateQueries({ queryKey: ["hr-duty-summary"] });
       toast.success("Excuse Duty Form submitted — reviewers have been notified.");
       setConfirmation({ period: `${form.start_date} to ${form.end_date}`, submittedAt: new Date() });
       setAttachmentPath(null);
@@ -157,6 +168,10 @@ export default function ExcuseDutyForm() {
         subtitle="Submit and download standard Excuse Duty Forms (PDF & Word)"
       />
 
+      {profileLoading && <p role="status">Loading your staff record…</p>}
+      {(profileFailed || formsFailed) && <Alert variant="destructive"><AlertDescription>Your staff record or submissions could not be loaded. <Button variant="outline" onClick={() => { void retryProfile(); void retryForms(); }}>Retry</Button></AlertDescription></Alert>}
+      {!profileLoading && !profileFailed && !profile && <Alert><AlertDescription>No current staff record is linked to this account.</AlertDescription></Alert>}
+
       {autoFill && (
         <Card className="border-l-4 border-l-emerald-600">
           <CardHeader className="pb-2">
@@ -190,7 +205,7 @@ export default function ExcuseDutyForm() {
           </div>
           <SecureAttachmentField value={attachmentPath} onChange={setAttachmentPath} label="Medical certificate / supporting doc" />
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => submit.mutate()} disabled={submit.isPending} className="gap-1"><FilePlus2 className="h-4 w-4" /> Submit</Button>
+            <Button onClick={() => submit.mutate()} disabled={submit.isPending || profileLoading || profileFailed || !profile} className="gap-1"><FilePlus2 className="h-4 w-4" /> Submit</Button>
             <Button variant="outline" onClick={() => exportPDF()} className="gap-1"><FileDown className="h-4 w-4" /> Export PDF</Button>
             <Button variant="outline" onClick={() => exportDOCX()} className="gap-1"><FileDown className="h-4 w-4" /> Export Word</Button>
             <div className="ml-auto flex gap-2 flex-wrap">
@@ -211,8 +226,9 @@ export default function ExcuseDutyForm() {
           <Table>
             <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Period</TableHead><TableHead>Status</TableHead><TableHead>Reviewer comment</TableHead><TableHead className="text-right">Export</TableHead></TableRow></TableHeader>
             <TableBody>
-              {myForms.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No submissions yet.</TableCell></TableRow>}
-              {myForms.map((f: any) => (
+              {formsLoading && <TableRow><TableCell colSpan={5}>Loading submissions…</TableCell></TableRow>}
+              {!formsLoading && !formsFailed && myForms.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No submissions yet.</TableCell></TableRow>}
+              {pager.pageItems.map((f: any) => (
                 <TableRow key={f.id}>
                   <TableCell className="text-xs">{format(new Date(f.created_at), "dd/MM/yyyy")}</TableCell>
                   <TableCell className="text-xs">{format(new Date(f.start_date), "dd/MM/yyyy")} – {format(new Date(f.end_date), "dd/MM/yyyy")}</TableCell>
@@ -228,6 +244,7 @@ export default function ExcuseDutyForm() {
               ))}
             </TableBody>
           </Table>
+          <div className="px-4 pb-3"><ListPagination {...pager} label="submissions" /></div>
         </CardContent>
       </Card>
 

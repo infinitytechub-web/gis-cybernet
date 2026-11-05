@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { DateInput } from "@/components/ui/date-input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type AttendanceStatus = Database["public"]["Enums"]["attendance_status"];
 
@@ -34,12 +35,14 @@ export function AdminAttendanceLog() {
   const [logStatus, setLogStatus] = useState<AttendanceStatus>("present");
   const [logNotes, setLogNotes] = useState("");
 
-  const { data: records = [], isLoading } = useQuery({
+  const { data: records = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["attendance", selectedDate],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendances")
-        .select("*, profiles(first_name, last_name, staff_id, shift_group)")
+        .select("*, profiles!inner(first_name, last_name, staff_id, shift_group)")
+        .is("profiles.deleted_at", null)
         .eq("date", selectedDate)
         .order("check_in", { ascending: false });
       if (error) throw error;
@@ -54,6 +57,7 @@ export function AdminAttendanceLog() {
         .from("profiles")
         .select("id, first_name, last_name, staff_id, shift_group")
         .eq("status", "active")
+        .is("deleted_at", null)
         .order("last_name");
       if (error) throw error;
       return data;
@@ -77,6 +81,7 @@ export function AdminAttendanceLog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-overview-summary"] });
       setLogDialogOpen(false);
       setLogStaffId("");
       setLogCheckIn("");
@@ -257,6 +262,8 @@ export function AdminAttendanceLog() {
       {/* Table */}
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
+      ) : isError ? (
+        <Alert variant="destructive"><AlertDescription>Attendance could not be loaded. <Button variant="outline" onClick={() => void refetch()}>Retry</Button></AlertDescription></Alert>
       ) : (
         <div className="rounded-lg border overflow-auto">
           <Table className="min-w-[900px]">

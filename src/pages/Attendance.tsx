@@ -60,11 +60,14 @@ export default function Attendance() {
     queryKey: ["my-profile-id", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
+      if (!user) return null;
+      const { data, error } = await supabase
         .from("profiles")
         .select("id")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
         .maybeSingle();
+      if (error) throw error;
       return data;
     },
   });

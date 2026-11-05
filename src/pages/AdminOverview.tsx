@@ -13,6 +13,7 @@ import { usePagedList } from "@/hooks/usePagedList";
 import { formatDateTime } from "@/lib/date-format";
 import { regionalCardPath, type RegionalCommandCard } from "@/lib/regional-commands";
 import { CommandApprovalQueue } from "@/components/hr/CommandApprovalQueue";
+import { DutyAvailabilitySummary } from "@/components/hr/DutyAvailabilitySummary";
 import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
 import { dashboardRetry, reportingSince, sumCounts } from "@/lib/dashboard-integrity";
 import { Briefcase, FileDown, LayoutDashboard, Users } from "lucide-react";
@@ -127,11 +128,13 @@ export default function AdminOverview() {
 
       <CommandApprovalQueue />
 
+      <DutyAvailabilitySummary command={command} since={from} />
+
       <section className="space-y-3" aria-label="Workforce availability">
         <h2 className="text-base font-semibold">Workforce availability</h2>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Totals title="Attendance today" total={total(metrics?.attendance)} parts={metrics?.attendance} icon={Users} />
-          <Totals title="Leave requests" total={total(metrics?.leave)} parts={metrics?.leave} icon={Briefcase} />
+          <Totals title="Attendance today" total={total(metrics?.attendance)} parts={metrics?.attendance} icon={Users} to="/attendance" />
+          <Totals title="Leave requests" total={total(metrics?.leave)} parts={metrics?.leave} icon={Briefcase} to="/leave" />
           <Totals title="Professional certifications" total={metrics?.certifications ?? (summary.isError ? "—" : "…")} icon={Briefcase} />
         </div>
       </section>

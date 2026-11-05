@@ -19938,6 +19938,10 @@ export type Database = {
           status: string
         }[]
       }
+      hr_duty_dashboard_summary: {
+        Args: { _org_unit_id?: string; _self?: boolean; _since?: string }
+        Returns: Json
+      }
       hrm_can_record: {
         Args: { _profile_id: string; _uid: string }
         Returns: boolean

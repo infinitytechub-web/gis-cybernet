@@ -11,6 +11,7 @@ import AdminQuickSearchWidget from "@/components/dashboard/AdminQuickSearchWidge
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import { Users, CalendarClock } from "lucide-react";
+import { DutyAvailabilitySummary } from "@/components/hr/DutyAvailabilitySummary";
 
 /**
  * Dashboard — one fixed information hierarchy, two role compositions:
@@ -59,6 +60,8 @@ export default function Dashboard() {
           </Badge>
         </div>
       </header>
+
+      {isAdminOrSupervisor && <DutyAvailabilitySummary />}
 
       {isAdminOrSupervisor ? (
         <CommandDashboard>

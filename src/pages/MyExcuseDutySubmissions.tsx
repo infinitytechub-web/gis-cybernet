@@ -18,6 +18,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } fro
 import { saveAs } from "file-saver";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DateInput } from "@/components/ui/date-input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const STATUS_COLOR: Record<string, string> = {
   submitted: "bg-amber-100 text-amber-900",
@@ -59,14 +60,16 @@ export default function MyExcuseDutySubmissions() {
   };
 
   const { data: profile } = useQuery({
-    queryKey: ["my-profile-mysubs"],
+    queryKey: ["my-profile-mysubs", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, staff_id, phone, email, shift_group, office, ranks(name, abbreviation), departments(name)")
         .eq("user_id", user.id)
+        .is("deleted_at", null)
         .maybeSingle();
+      if (error) throw error;
       return data as any;
     },
     enabled: !!user,
@@ -82,16 +85,17 @@ export default function MyExcuseDutySubmissions() {
     return hay.includes(search.toLowerCase());
   }, [search, profile]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["my-excuse-subs", user?.id, sortKey, sortDir, page, pageSize, fromDate, toDate, statusFilter, search, searchMatchesMe],
     queryFn: async () => {
+      if (!user) throw new Error("Sign in to view submissions.");
       if (search && !searchMatchesMe) return { rows: [] as any[], total: 0 };
       const from = page * pageSize;
       const to = from + pageSize - 1;
       let q = supabase
         .from("excuse_duty_forms" as any)
         .select("*", { count: "exact" })
-        .eq("submitted_by", user!.id);
+        .eq("submitted_by", user.id);
       // Date range applies to the duty period (overlap)
       if (fromDate) q = q.gte("end_date", fromDate);
       if (toDate) q = q.lte("start_date", toDate);
@@ -103,6 +107,7 @@ export default function MyExcuseDutySubmissions() {
       return { rows: (data ?? []) as any[], total: count ?? 0 };
     },
     enabled: !!user,
+    refetchInterval: 60_000,
   });
 
   const rows = data?.rows ?? [];
@@ -205,6 +210,8 @@ export default function MyExcuseDutySubmissions() {
         subtitle="Sortable, paginated history of forms you've submitted to HEALTH LAB+."
       />
 
+      {isError && <Alert variant="destructive"><AlertDescription>Submissions could not be loaded. <Button variant="outline" onClick={() => void refetch()}>Retry</Button></AlertDescription></Alert>}
+
       <Card className="border-l-4 border-l-sky-600">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-sky-700" /> Download access</CardTitle>
@@ -285,7 +292,7 @@ export default function MyExcuseDutySubmissions() {
               </TableHeader>
               <TableBody>
                 {isLoading && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">Loading…</TableCell></TableRow>}
-                {!isLoading && rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No submissions yet.</TableCell></TableRow>}
+                {!isLoading && !isError && rows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-xs text-muted-foreground py-6">No submissions yet.</TableCell></TableRow>}
                 {rows.map((f: any) => (
                   <TableRow key={f.id}>
                     <TableCell className="text-xs">{format(new Date(f.created_at), "dd/MM/yyyy HH:mm")}</TableCell>

@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStaffAccess } from "@/lib/staff-access-log";
 import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DutyAvailabilitySummary } from "@/components/hr/DutyAvailabilitySummary";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -348,6 +349,7 @@ export default function MyDashboard() {
         </TabsList>
 
         <TabsContent value="today" className="space-y-4">
+          <DutyAvailabilitySummary personal />
           <CheckInOut />
           <Card>
             <CardHeader>

@@ -22,6 +22,7 @@ import ShiftCalendarTab from "@/components/shifts/ShiftCalendarTab";
 import NightGuardTab from "@/components/shifts/NightGuardTab";
 import ShiftWindowRulesTab from "@/components/shifts/ShiftWindowRulesTab";
 import { DateInput } from "@/components/ui/date-input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type ShiftPattern = Database["public"]["Enums"]["shift_pattern"];
 
@@ -43,8 +44,9 @@ export default function Shifts() {
   const [shiftEndTime, setShiftEndTime] = useState("");
   const [shiftDescription, setShiftDescription] = useState("");
 
-  const { data: shifts = [] } = useQuery({
+  const { data: shifts = [], isError: shiftsFailed, refetch: retryShifts } = useQuery({
     queryKey: ["shifts"],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("shifts").select("*").order("name");
       if (error) throw error;
@@ -52,15 +54,17 @@ export default function Shifts() {
     },
   });
 
-  const { data: assignments = [] } = useQuery({
+  const { data: assignments = [], isError: assignmentsFailed, refetch: retryAssignments } = useQuery({
     queryKey: ["shift-assignments", weekStart.toISOString()],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { format: fmt } = await import("date-fns");
       const from = fmt(weekStart, "yyyy-MM-dd");
       const to = fmt(new Date(weekStart.getTime() + 6 * 86400000), "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("shift_assignments")
-        .select("*, profiles(first_name, last_name, staff_id, shift_group), shifts(name)")
+        .select("*, profiles!inner(first_name, last_name, staff_id, shift_group), shifts(name)")
+        .is("profiles.deleted_at", null)
         .lte("start_date", to)
         .or(`end_date.gte.${from},end_date.is.null`);
       if (error) throw error;
@@ -68,13 +72,14 @@ export default function Shifts() {
     },
   });
 
-  const { data: profiles = [] } = useQuery({
+  const { data: profiles = [], isError: profilesFailed, refetch: retryProfiles } = useQuery({
     queryKey: ["profiles-active"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, staff_id, shift_group, department_id, phone, email, gender, departments(name)")
         .eq("status", "active")
+        .is("deleted_at", null)
         .order("last_name");
       if (error) throw error;
       return data;
@@ -138,6 +143,7 @@ export default function Shifts() {
     },
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["hr-duty-summary"] });
       if (selectedProfileId) {
         const shift = shifts.find((s: any) => s.id === selectedShiftId);
         const userId = await getUserIdFromProfileId(selectedProfileId);
@@ -158,7 +164,7 @@ export default function Shifts() {
             <Button variant="outline" onClick={openCreateShift} className="gap-1"><Plus className="h-4 w-4" /> New Shift</Button>
             <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
               <DialogTrigger asChild><Button className="gap-1"><Plus className="h-4 w-4" /> Assign Shift</Button></DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle>Assign Shift</DialogTitle></DialogHeader>
                 <div className="space-y-3">
                   <div><Label>Shift</Label><Select value={selectedShiftId} onValueChange={setSelectedShiftId}><SelectTrigger><SelectValue placeholder="Select shift" /></SelectTrigger><SelectContent>{shifts.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name} ({s.pattern})</SelectItem>))}</SelectContent></Select></div>
@@ -174,6 +180,8 @@ export default function Shifts() {
           </div>
         )}
       </div>
+
+      {(shiftsFailed || assignmentsFailed || profilesFailed) && <Alert variant="destructive"><AlertDescription>Shift records could not be loaded. <Button variant="outline" size="sm" onClick={() => { void retryShifts(); void retryAssignments(); void retryProfiles(); }}>Retry</Button></AlertDescription></Alert>}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {shifts.map((s, idx) => {

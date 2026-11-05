@@ -18,6 +18,7 @@ import { useRbac } from "@/hooks/useRbac";
 import { Button } from "@/components/ui/button";
 import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
 import { dashboardRetry } from "@/lib/dashboard-integrity";
+import { DutyAvailabilitySummary } from "@/components/hr/DutyAvailabilitySummary";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgUnits } from "@/hooks/useOrgScope";
@@ -102,6 +103,9 @@ export default function HrHub() {
           ["Create Staff Account", "/hr/create-account"],
           ["Staff Mapping", "/staff-mapping"],
           ["Staff Applications", "/hr/applications"],
+          ["Attendance", "/attendance"],
+          ["Attendance & Shifts", "/shifts"],
+          ["Excuse Duty Form", "/excuse-duty"],
         ].filter(([, path]) => canPath(path)).map(([title, path]) => (
           <Button key={path} asChild variant="outline" size="sm"><Link to={path}>{title}</Link></Button>
         ))}
@@ -138,6 +142,8 @@ export default function HrHub() {
           tone="text-destructive"
         />
       </div>
+
+      <DutyAvailabilitySummary />
 
       <Tabs defaultValue="establishment" className="space-y-4">
         <div className="overflow-x-auto">

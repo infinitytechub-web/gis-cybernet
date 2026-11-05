@@ -7,6 +7,7 @@ import { KpiGrid, KpiTile } from "@/components/dashboard/KpiTile";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
 import StaffQuickSearchWidget from "@/components/dashboard/StaffQuickSearchWidget";
 import { usePersonalDashboardData } from "@/hooks/useDashboardData";
+import { DutyAvailabilitySummary } from "@/components/hr/DutyAvailabilitySummary";
 
 const statusTone = (s: string) =>
   s === "approved" ? "bg-success/15 text-success" : s === "rejected" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning";
@@ -34,6 +35,8 @@ export default function StaffDashboard() {
           <KpiTile title="Upcoming Holidays" value={holidays.length} sub="next 5" icon={Calendar} tone="info" />
         </KpiGrid>
       </DashboardSection>
+
+      <DutyAvailabilitySummary personal />
 
       <DashboardSection id="my-work" title="My work" description="Your own records and submissions." icon={Inbox}>
         <StaffQuickSearchWidget />
