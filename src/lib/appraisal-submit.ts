@@ -25,6 +25,7 @@ export type BulkResult = {
 
 type SupabaseLike = {
   from: (table: string) => any;
+  rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data?: any; error?: any }>;
 };
 
 const isUniqueViolation = (err: any) =>
@@ -36,7 +37,7 @@ const isUniqueViolation = (err: any) =>
  * as either an integer or `is null` based on the value.
  */
 export async function checkExistingAppraisals(
-  client: SupabaseLike,
+  client: Pick<SupabaseLike, "from">,
   args: {
     targetIds: string[];
     periodYear: number;
@@ -57,12 +58,13 @@ export async function checkExistingAppraisals(
 }
 
 /**
- * Inserts one appraisal + its score rows per target id. Reports per-officer
+ * Atomically saves one appraisal and its scores per target id. Reports per-officer
  * outcome instead of failing the whole batch on first error.
  *
  * If `bulkBatchId` is provided, every duplicate attempt is logged via the
  * `log_appraisal_duplicate_attempt` RPC and every successful insert is tagged
- * with the same batch id via `tag_appraisal_audit_batch`. These RPCs are
+ * with the same batch id via `tag_appraisal_audit_batch`. Core workflow events are
+ * written atomically by appraisal_save; optional legacy batch tags are best-effort. These RPCs are
  * SECURITY DEFINER on the server side; failures from logging never break the
  * core insert flow (they're swallowed and reported in `failures` only when
  * the appraisal itself failed).
@@ -84,11 +86,11 @@ export async function submitBulkAppraisals(
   const bulkSize = targetIds.length;
 
   for (const id of targetIds) {
-    const { data: ap, error: ae } = await client
-      .from("staff_appraisals")
-      .insert({ ...payloadBase, staff_profile_id: id })
-      .select("id")
-      .single();
+    const { data: ap, error: ae } = await client.rpc("appraisal_save", {
+      _profile: id, _year: payloadBase.period_year, _month: payloadBase.period_month,
+      _scores: Object.fromEntries(criteria.map(c => [c.key, scores[c.key]])),
+      _comments: payloadBase.comments ?? "", _submit: payloadBase.status === "submitted",
+    });
     if (ae) {
       if (isUniqueViolation(ae)) {
         duplicates.push(id);
@@ -108,21 +110,11 @@ export async function submitBulkAppraisals(
       }
       continue;
     }
-    const rows = criteria.map((c) => ({
-      appraisal_id: (ap as any).id,
-      criterion: c.key,
-      score: scores[c.key],
-    }));
-    const { error: se } = await client.from("staff_appraisal_scores").insert(rows);
-    if (se) {
-      failures.push(`${id}: ${se.message}`);
-      continue;
-    }
     created.push(id);
     if (bulkBatchId) {
       try {
         await (client as any).rpc("tag_appraisal_audit_batch", {
-          _appraisal_id: (ap as any).id,
+          _appraisal_id: ap,
           _bulk_batch_id: bulkBatchId,
           _bulk_size: bulkSize,
         });

@@ -21,6 +21,10 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { PageHeader } from "@/components/shared/PageHeader";
 import { OfficerSelector } from "@/components/appraisals/OfficerSelector";
 import { checkExistingAppraisals, submitBulkAppraisals } from "@/lib/appraisal-submit";
+import { AppraisalQueue } from "@/components/appraisals/AppraisalQueue";
+import { APPRAISAL_STATES, appraisalDetailLink } from "@/lib/appraisal-workflow";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 const CRITERIA: { key: string; label: string; hint: string }[] = [
   { key: "job_knowledge",          label: "1. Job Knowledge",            hint: "Understanding of duties, procedures, regulations." },
@@ -43,8 +47,7 @@ const TROPHY_COLORS = ["#FFD700","#C0C0C0","#CD7F32","#10b981","#3b82f6"];
 
 export default function Appraisals() {
   const { user } = useAuth();
-  const { isAdminOrSupervisor, isHoa } = useAuthContext();
-  const canManage = isAdminOrSupervisor || isHoa;
+  const { data: canManage = false } = useQuery({queryKey:["appraisal-can-manage",user?.id],enabled:!!user,queryFn:async()=>{if(!user)return false;const {data,error}=await supabase.rpc("can_manage_appraisals",{_uid:user.id});if(error)throw error;return data===true;}});
 
   const today = new Date();
   const [periodYear, setPeriodYear] = useState(today.getFullYear());
@@ -76,17 +79,15 @@ export default function Appraisals() {
   const { data: appraisals = [] } = useQuery({
     queryKey: ["appraisals-list"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("staff_appraisals" as any)
-        .select("*, profiles:staff_profile_id(first_name, last_name, staff_id)")
-        .order("created_at", { ascending: false })
-        .limit(100);
+      const { data, error } = await supabase.rpc("appraisal_queue_rows");
       if (error) throw error;
-      return (data ?? []) as any[];
+      return ((data ?? []) as unknown as any[]).map(a=>({...a,profiles:{first_name:a.first_name,last_name:a.last_name,staff_id:a.staff_id}}));
     },
   });
 
-  const outstanding = useMemo(() => appraisals.filter((a: any) => a.outstanding), [appraisals]);
+  const outstanding = useMemo(() => appraisals.filter((a: any) => a.outstanding && ["approved", "acknowledged"].includes(a.workflow_state)), [appraisals]);
+  const listPager = usePagedList(appraisals);
+  const outstandingPager = usePagedList(outstanding);
 
   // ---- Submit form ----
   // (Officer list is now fetched inside <OfficerSelector />.)
@@ -129,6 +130,7 @@ export default function Appraisals() {
 
   const submit = useMutation({
     mutationFn: async (status: "draft" | "submitted") => {
+      if (!user) throw new Error("Sign in before saving an appraisal");
       if (targetIds.length === 0) throw new Error("Select at least one officer");
 
       // Friendly pre-flight check before hitting the DB. The server-side
@@ -158,7 +160,7 @@ export default function Appraisals() {
       const result = await submitBulkAppraisals(supabase as any, {
         targetIds: fresh,
         payloadBase: {
-          appraised_by: user!.id,
+          appraised_by: user.id,
           period_year: periodYear,
           period_month: periodMonth,
           status,
@@ -194,6 +196,7 @@ export default function Appraisals() {
         setStaffProfileId(""); setBulkProfileIds([]); setComments("");
         setScores(Object.fromEntries(CRITERIA.map(c => [c.key, 3])));
         qc.invalidateQueries({ queryKey: ["appraisals-list"] });
+        qc.invalidateQueries({ queryKey: ["appraisal-queue"] });
         qc.invalidateQueries({ queryKey: ["top5-month"] });
         qc.invalidateQueries({ queryKey: ["top5-year"] });
         qc.invalidateQueries({ queryKey: ["appraisal-existing"] });
@@ -206,7 +209,7 @@ export default function Appraisals() {
     <div className="space-y-4">
       <PageHeader
         icon={Award}
-        title="Staff Appraisal Dashboard"
+        title="Appraisals & Approvals"
         actions={canManage ? (
           <Button asChild variant="outline" size="sm" className="gap-1">
             <Link to="/appraisals/coverage"><ClipboardCheck className="h-4 w-4" /> Coverage report</Link>
@@ -214,13 +217,15 @@ export default function Appraisals() {
         ) : undefined}
       />
 
-      <Tabs defaultValue="charts">
-        <TabsList>
+      <Tabs defaultValue="queue">
+        <TabsList className="department-tabs flex h-auto flex-wrap gap-1">
+          <TabsTrigger value="queue">Appraisals & Approvals</TabsTrigger>
           <TabsTrigger value="charts">Top Performers</TabsTrigger>
           <TabsTrigger value="outstanding">Outstanding Staff</TabsTrigger>
           <TabsTrigger value="list">All Appraisals</TabsTrigger>
           {canManage && <TabsTrigger value="new">New Appraisal</TabsTrigger>}
         </TabsList>
+        <TabsContent value="queue"><AppraisalQueue /></TabsContent>
 
         {/* CHARTS */}
         <TabsContent value="charts" className="space-y-4 mt-3">
@@ -304,13 +309,13 @@ export default function Appraisals() {
                   <TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Period</TableHead><TableHead>Total</TableHead><TableHead>Average</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {outstanding.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">No outstanding appraisals yet.</TableCell></TableRow>}
-                    {outstanding.map((a: any) => (
+                    {outstandingPager.pageItems.map((a: any) => (
                       <TableRow key={a.id}>
                         <TableCell className="text-xs">{a.profiles?.last_name}, {a.profiles?.first_name} <span className="text-muted-foreground">({a.profiles?.staff_id})</span></TableCell>
                         <TableCell className="text-xs">{a.period_month ? MONTHS[a.period_month - 1] + " " : ""}{a.period_year}</TableCell>
                         <TableCell className="text-xs font-medium">{a.total_score} / 35</TableCell>
                         <TableCell className="text-xs">{a.average_score} / 5</TableCell>
-                        <TableCell><Badge className={STATUS_COLOR[a.status] ?? ""}>{a.status}</Badge></TableCell>
+                        <TableCell><Badge variant="secondary">{APPRAISAL_STATES[a.workflow_state]}</Badge></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -318,6 +323,7 @@ export default function Appraisals() {
               </div>
             </CardContent>
           </Card>
+          <ListPagination {...outstandingPager} />
         </TabsContent>
 
         {/* LIST */}
@@ -325,7 +331,6 @@ export default function Appraisals() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2"><ClipboardList className="h-4 w-4" /> Recent Appraisals</CardTitle>
-              <CardDescription className="text-xs">Most recent 100 records you can view.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -333,19 +338,19 @@ export default function Appraisals() {
                   <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Officer</TableHead><TableHead>Period</TableHead><TableHead>Score</TableHead><TableHead>Status</TableHead><TableHead>Outstanding</TableHead>{canManage && <TableHead className="w-[110px] text-right">Actions</TableHead>}</TableRow></TableHeader>
                   <TableBody>
                     {appraisals.length === 0 && <TableRow><TableCell colSpan={canManage ? 7 : 6} className="text-center text-xs text-muted-foreground py-6">No appraisals yet.</TableCell></TableRow>}
-                    {appraisals.map((a: any) => (
+                    {listPager.pageItems.map((a: any) => (
                       <TableRow key={a.id}>
                         <TableCell className="text-xs">{format(new Date(a.created_at), "dd/MM/yyyy")}</TableCell>
                         <TableCell className="text-xs">{a.profiles?.last_name}, {a.profiles?.first_name}</TableCell>
                         <TableCell className="text-xs">{a.period_month ? MONTHS[a.period_month - 1] + " " : ""}{a.period_year}</TableCell>
                         <TableCell className="text-xs">{a.total_score} / 35 · avg {a.average_score}</TableCell>
-                        <TableCell><Badge className={STATUS_COLOR[a.status] ?? ""}>{a.status}</Badge></TableCell>
+                        <TableCell><Badge variant="secondary">{APPRAISAL_STATES[a.workflow_state]}</Badge></TableCell>
                         <TableCell className="text-xs">{a.outstanding ? <Star className="h-3.5 w-3.5 text-amber-500 inline" /> : "—"}</TableCell>
                         {canManage && (
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
                               <Button asChild variant="ghost" size="icon" className="h-7 w-7" title="Edit / Open">
-                                <Link to={`/appraisals/officer/${a.staff_profile_id}`}><Pencil className="h-3 w-3" /></Link>
+                                <Link to={appraisalDetailLink(a)}><Pencil className="h-3 w-3" /></Link>
                               </Button>
                               <Button
                                 variant="ghost"
@@ -375,6 +380,7 @@ export default function Appraisals() {
               </div>
             </CardContent>
           </Card>
+          <ListPagination {...listPager} />
         </TabsContent>
 
         {/* NEW APPRAISAL */}

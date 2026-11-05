@@ -680,6 +680,47 @@ export type Database = {
         }
         Relationships: []
       }
+      appraisal_workflow_events: {
+        Row: {
+          action: string
+          actor_id: string
+          appraisal_id: string
+          created_at: string
+          from_state: string | null
+          id: string
+          note: string | null
+          to_state: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          appraisal_id: string
+          created_at?: string
+          from_state?: string | null
+          id?: string
+          note?: string | null
+          to_state: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          appraisal_id?: string
+          created_at?: string
+          from_state?: string | null
+          id?: string
+          note?: string | null
+          to_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisal_workflow_events_appraisal_id_fkey"
+            columns: ["appraisal_id"]
+            isOneToOne: false
+            referencedRelation: "staff_appraisals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approval_chain_config: {
         Row: {
           configured_at: string | null
@@ -16393,6 +16434,7 @@ export type Database = {
           submitted_at: string | null
           total_score: number
           updated_at: string
+          workflow_state: string
         }
         Insert: {
           appraised_by: string
@@ -16408,6 +16450,7 @@ export type Database = {
           submitted_at?: string | null
           total_score?: number
           updated_at?: string
+          workflow_state?: string
         }
         Update: {
           appraised_by?: string
@@ -16423,6 +16466,7 @@ export type Database = {
           submitted_at?: string | null
           total_score?: number
           updated_at?: string
+          workflow_state?: string
         }
         Relationships: [
           {
@@ -18985,6 +19029,18 @@ export type Database = {
           soft_deleted: number
         }[]
       }
+      appraisal_allowed_actions: {
+        Args: { _appraisal: string }
+        Returns: string[]
+      }
+      appraisal_can_manage_profile: {
+        Args: { _profile: string; _uid: string }
+        Returns: boolean
+      }
+      appraisal_can_view_profile: {
+        Args: { _profile: string; _uid: string }
+        Returns: boolean
+      }
       appraisal_coverage_report: {
         Args: { _period_month?: number; _period_year: number }
         Returns: {
@@ -19002,6 +19058,33 @@ export type Database = {
           total_score: number
           unit: string
         }[]
+      }
+      appraisal_queue_rows: { Args: never; Returns: Json }
+      appraisal_save: {
+        Args: {
+          _appraisal?: string
+          _comments: string
+          _expected_state?: string
+          _month: number
+          _profile: string
+          _scores: Json
+          _submit?: boolean
+          _year: number
+        }
+        Returns: string
+      }
+      appraisal_transition: {
+        Args: {
+          _action: string
+          _appraisal: string
+          _expected_state: string
+          _note?: string
+        }
+        Returns: string
+      }
+      appraisal_workflow_context: {
+        Args: { _appraisal: string }
+        Returns: Json
       }
       approved_record_email_recipients: {
         Args: never

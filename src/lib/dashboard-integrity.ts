@@ -5,6 +5,7 @@ export const DASHBOARD_QUERY_KEYS = [
   "hr-hub-staff-stats", "staff", "directory-staff", "staff-mapping-rows", "staff-applications",
   "hr-duty-summary", "shifts", "shift-assignments", "attendance", "my-attendance",
   "portal-week-attendance", "portal-my-leave", "my-excuse-forms", "my-excuse-subs",
+  "appraisal-queue", "appraisals-list", "appraisal-workflow", "appraisal-detail", "appraisal-audit", "top5-month", "top5-year",
 ] as const;
 
 export const DASHBOARD_LIVE_TABLES = [
@@ -12,6 +13,7 @@ export const DASHBOARD_LIVE_TABLES = [
   "staff_transfer_requests", "staff_applications", "fleet_alerts", "fleet_messages",
   "guard_schedules", "security_monitor_alerts",
   "attendances", "shift_assignments", "shifts", "leave_requests",
+  "staff_appraisals", "staff_appraisal_scores",
 ] as const;
 
 export function sumCounts(parts: Record<string, number> | undefined) {

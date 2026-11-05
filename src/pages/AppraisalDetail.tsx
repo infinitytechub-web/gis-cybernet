@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Award, ArrowLeft, History, Star } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { format } from "date-fns";
+import { APPRAISAL_STATES } from "@/lib/appraisal-workflow";
 import {
   ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -47,10 +48,11 @@ export default function AppraisalDetail() {
     queryKey: ["appraisal-detail-profile", staffProfileId],
     enabled: !!staffProfileId,
     queryFn: async () => {
+      if (!staffProfileId) return null;
       const { data, error } = await supabase
         .from("profiles")
         .select("id, staff_id, first_name, last_name, ranks(name), departments(name)")
-        .eq("id", staffProfileId!)
+        .eq("id", staffProfileId)
         .maybeSingle();
       if (error) throw error;
       return data as any;
@@ -61,10 +63,11 @@ export default function AppraisalDetail() {
     queryKey: ["appraisal-detail", staffProfileId, year, month],
     enabled: !!staffProfileId,
     queryFn: async () => {
+      if (!staffProfileId) return null;
       let q = supabase
         .from("staff_appraisals" as any)
         .select("*, scores:staff_appraisal_scores(criterion, score, remarks)")
-        .eq("staff_profile_id", staffProfileId!)
+        .eq("staff_profile_id", staffProfileId)
         .eq("period_year", year)
         .limit(1);
       q = month == null ? q.is("period_month", null) : q.eq("period_month", month);
@@ -78,10 +81,11 @@ export default function AppraisalDetail() {
     queryKey: ["appraisal-audit", staffProfileId, year, month],
     enabled: !!staffProfileId,
     queryFn: async () => {
+      if (!staffProfileId) return [];
       let q = supabase
         .from("staff_appraisal_audit" as any)
         .select("*")
-        .eq("staff_profile_id", staffProfileId!)
+        .eq("staff_profile_id", staffProfileId)
         .eq("period_year", year)
         .order("created_at", { ascending: false });
       q = month == null ? q.is("period_month", null) : q.eq("period_month", month);
@@ -108,10 +112,11 @@ export default function AppraisalDetail() {
     queryKey: ["appraisal-trend", staffProfileId],
     enabled: !!staffProfileId,
     queryFn: async () => {
+      if (!staffProfileId) return [];
       const { data, error } = await supabase
         .from("staff_appraisals" as any)
         .select("period_year, period_month, scores:staff_appraisal_scores(criterion, score)")
-        .eq("staff_profile_id", staffProfileId!)
+        .eq("staff_profile_id", staffProfileId)
         .order("period_year", { ascending: true })
         .order("period_month", { ascending: true, nullsFirst: true })
         .limit(12);
@@ -143,7 +148,7 @@ export default function AppraisalDetail() {
 
       <div>
         <Button asChild variant="outline" size="sm" className="gap-1">
-          <Link to="/appraisals/coverage"><ArrowLeft className="h-4 w-4" /> Back to coverage report</Link>
+          <Link to="/appraisals"><ArrowLeft className="h-4 w-4" /> Back to Appraisals & Approvals</Link>
         </Button>
       </div>
 
@@ -220,7 +225,7 @@ export default function AppraisalDetail() {
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <div>Total: <span className="font-semibold">{appraisal.total_score} / 35</span></div>
                 <div>Average: <span className="font-semibold">{appraisal.average_score} / 5</span></div>
-                <Badge className={appraisal.status === "submitted" ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"}>{appraisal.status}</Badge>
+                <Badge variant="secondary">{APPRAISAL_STATES[appraisal.workflow_state] ?? appraisal.status}</Badge>
                 {appraisal.outstanding && <Badge className="bg-amber-100 text-amber-900"><Star className="h-3 w-3 mr-1 inline" /> Outstanding</Badge>}
               </div>
               <div className="overflow-x-auto">
