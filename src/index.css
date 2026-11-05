@@ -88,6 +88,8 @@ body {
     --sidebar-border: 152 25% 28%;
     --sidebar-ring: 43 74% 55%;
     --shadow-surface: 0 1px 3px hsl(155 45% 10% / 0.06);
+    --card-radius: 0.5rem;
+    --card-border-width: 1px;
     --print-background: 0 0% 100%;
     --print-foreground: 155 45% 10%;
     --print-border: 150 10% 75%;
@@ -181,11 +183,31 @@ body {
 :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
 html { letter-spacing: 0; }
 [data-ui="card"] {
-  border: 1px solid hsl(var(--card-border));
-  border-radius: var(--radius);
+  border: var(--card-border-width) solid hsl(var(--card-border));
+  border-radius: var(--card-radius);
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
   box-shadow: var(--shadow-surface);
   min-width: 0;
 }
+[data-ui="card-header"], [data-ui="card-content"], [data-ui="card-footer"] {
+  min-width: 0;
+}
+[data-ui="card-title"] {
+  color: hsl(var(--foreground));
+  overflow-wrap: anywhere;
+}
+.department-tabs {
+  background: hsl(var(--accent));
+  border: var(--card-border-width) solid hsl(var(--card-border));
+  border-radius: var(--card-radius);
+}
+.department-tabs [data-state="active"] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: var(--shadow-surface);
+}
+.department-tabs [data-state="active"] svg { color: inherit; }
 .app-surface {
   background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--background-sky)));
 }
@@ -221,7 +243,9 @@ html { letter-spacing: 0; }
     --muted: var(--print-muted) !important;
     --muted-foreground: var(--print-foreground) !important;
     --border: var(--print-border) !important;
+    --card-border: var(--print-border) !important;
   }
+  [data-ui="card"] { box-shadow: none; }
   body * {
     visibility: hidden;
   }
