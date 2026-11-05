@@ -1,4 +1,12 @@
 /** Staff application pipeline helpers (pure, testable). */
+export function validateStaffApplication(f: { profile: string; type: string; position: string; unit: string; statement: string }): string | null {
+  if (!f.profile) return "Select a staff member.";
+  if (!["position", "posting"].includes(f.type)) return "Select a position or posting application.";
+  if (f.type === "position" && !f.position.trim()) return "Enter the position applied for.";
+  if (f.type === "posting" && !f.unit) return "Select the destination command.";
+  if (f.statement.trim().length < 20) return "Write an application statement of at least 20 characters.";
+  return null;
+}
 export type AppStatus =
   | "submitted" | "shortlisted" | "interview_scheduled" | "interviewed" | "panel_recommended"
   | "panel_not_recommended" | "approved" | "rejected" | "posted" | "withdrawn";

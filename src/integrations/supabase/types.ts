@@ -20714,6 +20714,16 @@ export type Database = {
         }
         Returns: string
       }
+      record_staff_application: {
+        Args: {
+          _position_title: string
+          _profile_id: string
+          _statement: string
+          _target_org_unit_id: string
+          _type: string
+        }
+        Returns: string
+      }
       redact_old_job_passwords: { Args: never; Returns: undefined }
       regional_commands_overview: {
         Args: never

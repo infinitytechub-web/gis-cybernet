@@ -407,6 +407,20 @@
       "when": 1793907720128,
       "tag": "0057_pending_hr_link_and_real_posting",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1793908019440,
+      "tag": "0058_staff_application_submission",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793908117136,
+      "tag": "0059_staff_application_review_transitions",
+      "breakpoints": true
     }
   ]
 }
