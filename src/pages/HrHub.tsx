@@ -103,6 +103,7 @@ export default function HrHub() {
           ["Create Staff Account", "/hr/create-account"],
           ["Staff Mapping", "/staff-mapping"],
           ["Staff Applications", "/hr/applications"],
+          ["Pending HR", "/hr/pending"],
           ["Attendance", "/attendance"],
           ["Attendance & Shifts", "/shifts"],
           ["Excuse Duty Form", "/excuse-duty"],

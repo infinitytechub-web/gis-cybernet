@@ -53,6 +53,7 @@ const personnelItems = [
 
 const hrEntryItems = [
   { title: "Human Resource", url: "/hr", icon: BriefcaseBusiness, iconColor: "text-primary" },
+  { title: "Pending HR", url: "/hr/pending", icon: ClipboardList, iconColor: "text-primary" },
 ];
 
 const staffRecordItems = [

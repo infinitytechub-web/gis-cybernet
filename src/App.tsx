@@ -328,6 +328,7 @@ function App() {
           <Route path="/hr/overview" element={<ProtectedRoute module="hr"><Layout><AdminOverview /></Layout></ProtectedRoute>} />
           <Route path="/hr/create-account" element={<ProtectedRoute module="hr"><Layout><CreateStaffAccount /></Layout></ProtectedRoute>} />
           <Route path="/hr/applications" element={<ProtectedRoute module="hr"><Layout><StaffApplications /></Layout></ProtectedRoute>} />
+          <Route path="/hr/pending" element={<ProtectedRoute module="hr"><Layout><StaffApplications pending /></Layout></ProtectedRoute>} />
           <Route path="/org-structure" element={<ProtectedRoute module="org-structure"><Layout><OrgStructure /></Layout></ProtectedRoute>} />
           <Route path="/command-assignments" element={<ProtectedRoute module="command-assignments"><Layout><CommandAssignments /></Layout></ProtectedRoute>} />
 

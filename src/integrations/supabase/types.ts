@@ -20072,6 +20072,10 @@ export type Database = {
         Args: { _end: string; _start: string }
         Returns: number
       }
+      link_external_application_profile: {
+        Args: { _id: string; _staff_id: string }
+        Returns: undefined
+      }
       list_audit_purge_grants: {
         Args: never
         Returns: {

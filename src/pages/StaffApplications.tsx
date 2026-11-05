@@ -22,7 +22,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate, formatDateTime } from "@/lib/date-format";
-import { STATUS_LABEL, TYPE_LABEL, OPEN_STATUSES, nextAction, applicantName, type AppStatus } from "@/lib/staff-applications";
+import { STATUS_LABEL, TYPE_LABEL, OPEN_STATUSES, nextAction, applicantName, inPendingStage, type AppStatus } from "@/lib/staff-applications";
+import { CommandApprovalQueue } from "@/components/hr/CommandApprovalQueue";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const db = supabase as any;
 const SEL = "*, profiles(id,first_name,last_name,staff_id), target:org_units!staff_applications_target_org_unit_id_fkey(name)";
@@ -30,7 +32,7 @@ const SEL = "*, profiles(id,first_name,last_name,staff_id), target:org_units!sta
 const statusVariant = (s: AppStatus) =>
   s === "posted" || s === "approved" ? "default" : s === "rejected" || s === "panel_not_recommended" ? "destructive" : s === "withdrawn" ? "outline" : "secondary";
 
-export default function StaffApplications() {
+export default function StaffApplications({ pending = false }: { pending?: boolean }) {
   const { isAdmin, role } = useAuth();
   const isHrAdmin = isAdmin || role === "head_of_administration";
   const qc = useQueryClient();
@@ -39,6 +41,8 @@ export default function StaffApplications() {
   const [type, setType] = useState("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
+  const [stage, setStage] = useState("all");
+  const [command, setCommand] = useState("all");
 
   const { data: apps = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["staff-applications"],
@@ -72,32 +76,40 @@ export default function StaffApplications() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return apps.filter((a: any) =>
+      (!pending || inPendingStage(a.application_type, a.status, stage)) &&
+      (command === "all" || a.target_org_unit_id === command) &&
       (status === "all" || (status === "open" ? OPEN_STATUSES.includes(a.status) : a.status === status)) &&
       (type === "all" || a.application_type === type) &&
       (!s || [applicantName(a), a.profiles?.staff_id, a.position_title, a.target?.name, a.external_ghana_card].some((v) => String(v ?? "").toLowerCase().includes(s))));
-  }, [apps, q, status, type]);
-  const pager = usePagedList(filtered, { resetKey: `${q}|${status}|${type}` });
+  }, [apps, q, status, type, pending, stage, command]);
+  const pager = usePagedList(filtered, { resetKey: `${q}|${status}|${type}|${stage}|${command}` });
   const pageRows = pager.pageItems;
 
   const counts = useMemo(() => {
     const c = { new: 0, interview: 0, awaiting: 0, posting: 0 };
     apps.forEach((a: any) => {
+      if (a.application_type === "transfer" || (command !== "all" && a.target_org_unit_id !== command)) return;
       if (a.status === "submitted" || a.status === "shortlisted") c.new++;
       else if (a.status === "interview_scheduled") c.interview++;
       else if (a.status.startsWith("panel_")) c.awaiting++;
       else if (a.status === "approved") c.posting++;
     });
     return c;
-  }, [apps]);
+  }, [apps, command]);
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Staff Applications"
-        subtitle="Applications, interviews, approvals and postings for officers and new recruits. Officer transfer requests appear here automatically."
+        className="[&>div>div:nth-child(2)]:min-w-40 [&>div>div:last-child]:max-w-full"
+        title={pending ? "Pending HR" : "Staff Applications"}
         icon={ClipboardList}
         actions={isHrAdmin ? <Button size="sm" className="gap-1" onClick={() => setNewOpen(true)}><Plus className="h-4 w-4" /> Record recruit application</Button> : undefined}
       />
+      {pending && <>
+        <nav className="flex flex-wrap gap-2" aria-label="HR workflow links"><Button asChild variant="outline" size="sm"><Link to="/hr">Human Resource</Link></Button><Button asChild variant="outline" size="sm"><Link to="/hr/applications">All applications & history</Link></Button></nav>
+        <CommandApprovalQueue />
+        <Tabs value={stage} onValueChange={setStage}><div className="overflow-x-auto"><TabsList className="w-max"><TabsTrigger value="all">All pending</TabsTrigger><TabsTrigger value="applications">Applications</TabsTrigger><TabsTrigger value="interviews">Interviews</TabsTrigger><TabsTrigger value="decisions">Approvals</TabsTrigger><TabsTrigger value="postings">Postings</TabsTrigger></TabsList></div></Tabs>
+      </>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[["New / shortlisted", counts.new], ["Interviews scheduled", counts.interview], ["Awaiting admin decision", counts.awaiting], ["Approved, to post", counts.posting]].map(([l, v]) => (
           <Card key={l as string}><CardContent className="p-4"><p className="text-2xl font-bold text-primary">{isLoading || isError ? "—" : v as number}</p><p className="text-xs text-muted-foreground">{l as string}</p></CardContent></Card>
@@ -110,6 +122,7 @@ export default function StaffApplications() {
         <CardContent className="space-y-3 p-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1"><Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" /><Input className="pl-8" placeholder="Search name, staff ID, position, command, Ghana Card" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search applications" /></div>
+            <Select value={command} onValueChange={setCommand}><SelectTrigger className="sm:w-48" aria-label="Destination command"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All destinations</SelectItem>{units.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}</SelectContent></Select>
             <Select value={status} onValueChange={(v) => setStatus(v as any)}><SelectTrigger className="sm:w-56" aria-label="Status"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="open">Open</SelectItem><SelectItem value="all">All statuses</SelectItem>{Object.entries(STATUS_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent></Select>
             <Select value={type} onValueChange={setType}><SelectTrigger className="sm:w-44" aria-label="Type"><SelectValue /></SelectTrigger>
@@ -155,6 +168,7 @@ function ApplicationDialog({ id, isHrAdmin, onClose }: { id: string; isHrAdmin: 
   const [rec, setRec] = useState("recommend");
   const [eff, setEff] = useState("");
   const [busy, setBusy] = useState(false);
+  const [staffId, setStaffId] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["staff-application", id],
@@ -180,13 +194,14 @@ function ApplicationDialog({ id, isHrAdmin, onClose }: { id: string; isHrAdmin: 
 
   const call = async (fn: string, args: Record<string, unknown>, ok: string) => {
     setBusy(true);
-    const { error } = await db.rpc(fn, args);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(ok);
-    setNote("");
-    qc.invalidateQueries({ queryKey: ["staff-application", id] });
-    qc.invalidateQueries({ queryKey: ["staff-applications"] });
+    try {
+      const { error } = await db.rpc(fn, args);
+      if (error) throw error;
+      toast.success(ok);
+      setNote("");
+      for (const key of ["staff-application", "staff-applications", "command-approval-queue", "admin-overview", "hr-hub-staff-stats", "service-record", "staff-profile", "profiles", "command-analytics"]) qc.invalidateQueries({ queryKey: [key] });
+    } catch (error: any) { toast.error(error.message || "The action could not be saved. Please retry."); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -224,14 +239,15 @@ function ApplicationDialog({ id, isHrAdmin, onClose }: { id: string; isHrAdmin: 
 
             <div className="rounded-md border bg-muted/40 p-3">
               <p className="mb-2 font-semibold">Next step</p>
-              {action === "transfer" && <p>This is an officer transfer. It is recommended by the command OIC/2IC and approved by an administrator from the command dashboard; this record updates automatically.</p>}
+              {action === "transfer" && <Button asChild variant="outline"><Link to="/hr/pending">Open command approvals</Link></Button>}
               {action === "shortlist" && (data.canPanel ? (<div className="space-y-2"><Textarea placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} /><div className="flex gap-2"><Button disabled={busy} onClick={() => call("shortlist_staff_application", { _id: id, _shortlist: true, _note: note || null }, "Shortlisted")}>Shortlist</Button><Button variant="outline" disabled={busy} onClick={() => call("shortlist_staff_application", { _id: id, _shortlist: false, _note: note || null }, "Not shortlisted")}>Reject</Button></div></div>) : <p className="text-muted-foreground">Awaiting shortlisting by the command panel.</p>)}
               {action === "schedule" && (data.canPanel ? (<div className="grid gap-2"><div><Label>Date and time</Label><DateTimeInput value={at} onChange={(e) => setAt(e.target.value)} /></div><div><Label>Location</Label><Input value={loc} onChange={(e) => setLoc(e.target.value)} /></div><div><Label>Panel members</Label><Input placeholder="Names and ranks" value={panel} onChange={(e) => setPanel(e.target.value)} /></div><Button disabled={busy || !at || !panel.trim()} onClick={() => call("schedule_application_interview", { _id: id, _at: new Date(at).toISOString(), _location: loc, _panel: panel }, "Interview scheduled")}>Schedule interview</Button></div>) : <p className="text-muted-foreground">Awaiting interview scheduling.</p>)}
               {action === "record" && openInterview && (data.canPanel ? (<div className="grid gap-2 sm:grid-cols-2"><div><Label>Score (0–100)</Label><Input type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} /></div><div><Label>Panel recommendation</Label><Select value={rec} onValueChange={setRec}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="recommend">Recommend</SelectItem><SelectItem value="not_recommend">Do not recommend</SelectItem></SelectContent></Select></div><Textarea className="sm:col-span-2" placeholder="Panel notes" value={note} onChange={(e) => setNote(e.target.value)} /><Button className="sm:col-span-2" disabled={busy || score === ""} onClick={() => call("record_interview_result", { _interview_id: openInterview.id, _score: Number(score), _recommend: rec === "recommend", _notes: note }, "Interview result recorded")}>Record panel result</Button></div>) : <p className="text-muted-foreground">Awaiting the interview panel's result.</p>)}
               {action === "decide" && (isHrAdmin ? (<div className="space-y-2"><Textarea placeholder="Decision note" value={note} onChange={(e) => setNote(e.target.value)} /><div className="flex gap-2"><Button disabled={busy} onClick={() => call("decide_staff_application", { _id: id, _approve: true, _note: note || null }, "Approved")}>Approve</Button><Button variant="outline" disabled={busy} onClick={() => call("decide_staff_application", { _id: id, _approve: false, _note: note || null }, "Rejected")}>Reject</Button></div></div>) : <p className="text-muted-foreground">Awaiting administrator approval.</p>)}
               {action === "post" && (isHrAdmin ? (<div className="space-y-2"><div><Label>Effective date</Label><DateInput value={eff} onChange={(e) => setEff(e.target.value)} /></div>
-                {a.applicant_kind === "external" && <p className="text-xs text-muted-foreground">After posting, create the recruit's login on <Link className="underline" to="/hr/create-account">Create Staff Account</Link>.</p>}
-                <Button disabled={busy || !eff} onClick={() => call("post_staff_application", { _id: id, _effective_date: eff }, "Posted")}>Post applicant</Button></div>) : <p className="text-muted-foreground">Approved — awaiting posting by an administrator.</p>)}
+                {a.applicant_kind === "external" && !a.profile_id && <div className="space-y-2"><Button asChild variant="outline"><Link to="/hr/create-account">Create Staff Account</Link></Button><Label htmlFor="posting-staff-id">Verified staff ID</Label><Input id="posting-staff-id" value={staffId} onChange={(e) => setStaffId(e.target.value)} /><Button variant="outline" disabled={busy || !staffId.trim()} onClick={() => call("link_external_application_profile", { _id: id, _staff_id: staffId.trim() }, "Staff record linked; review before posting")}>Link staff record</Button></div>}
+                {a.profile_id && <Button asChild variant="outline"><Link to={`/staff/${a.profile_id}?tab=service`}>Review linked staff record</Link></Button>}
+                <Button disabled={busy || !eff || !a.profile_id} onClick={() => call("post_staff_application", { _id: id, _effective_date: eff }, "Posted and service record updated")}>Post applicant</Button></div>) : <p className="text-muted-foreground">Approved — awaiting posting by an administrator.</p>)}
               {action === null && <p className="text-muted-foreground">No further action.</p>}
             </div>
 

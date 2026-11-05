@@ -22,6 +22,20 @@ export const TYPE_LABEL: Record<string, string> = {
 
 export const OPEN_STATUSES: AppStatus[] = ["submitted", "shortlisted", "interview_scheduled", "interviewed", "panel_recommended", "panel_not_recommended", "approved"];
 
+export const PENDING_STAGES = {
+  applications: ["submitted", "shortlisted"],
+  interviews: ["interview_scheduled", "interviewed"],
+  decisions: ["panel_recommended", "panel_not_recommended"],
+  postings: ["approved"],
+} as const;
+
+export function inPendingStage(type: string, status: AppStatus, stage: string): boolean {
+  if (stage === "all") return OPEN_STATUSES.includes(status);
+  // Transfers remain in the command-head queue, not the interview/admin pipeline.
+  if (type === "transfer") return false;
+  return Object.entries(PENDING_STAGES).some(([key, statuses]) => key === stage && (statuses as readonly string[]).includes(status));
+}
+
 export type NextAction = "shortlist" | "schedule" | "record" | "decide" | "post" | "transfer" | null;
 
 /**

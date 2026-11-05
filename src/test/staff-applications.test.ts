@@ -1,7 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { nextAction, applicantName } from "@/lib/staff-applications";
+import { nextAction, applicantName, inPendingStage } from "@/lib/staff-applications";
 
 describe("staff application pipeline", () => {
+  it("moves approved applications out of decisions into pending postings", () => {
+    expect(inPendingStage("recruitment", "panel_recommended", "decisions")).toBe(true);
+    expect(inPendingStage("recruitment", "approved", "decisions")).toBe(false);
+    expect(inPendingStage("recruitment", "approved", "postings")).toBe(true);
+    expect(inPendingStage("recruitment", "posted", "all")).toBe(false);
+  });
+  it("does not send transfer recommendations to the ordinary approval pipeline", () => {
+    expect(inPendingStage("transfer", "panel_recommended", "decisions")).toBe(false);
+    expect(inPendingStage("transfer", "submitted", "applications")).toBe(false);
+    expect(inPendingStage("transfer", "submitted", "all")).toBe(true);
+  });
   it("runs shortlist → interview → panel result → admin decision → posting", () => {
     expect(nextAction("position", "submitted", false)).toBe("shortlist");
     expect(nextAction("position", "shortlisted", false)).toBe("schedule");
