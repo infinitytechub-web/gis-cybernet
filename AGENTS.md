@@ -1,4 +1,5 @@
 # Architecture rules
+- Human Resource links reuse existing permission-gated staff screens and the hub uses the shared exact HR aggregate; application lists fetch every authorized page — why: one real-data workflow without duplicate screens, deleted-inclusive totals or silent record caps.
 - Record lists use the shared fixed-25 usePagedList pager; shared tables expose inline horizontal fast navigation and the shell targets active nested scrollers with a document fallback — why: consistent navigation without slicing aggregates, exports or authorization scope.
 - Bio-Data export audit stores canonical file extensions (docx/xlsx for Word/Excel); the menu awaits authorized logging and invalidates HR totals after successful generation — why: UI format names must not violate audit constraints or silently lose real download events.
 - Dashboard session synchronization uses one debounced, authenticated subscription to published non-audit tables plus existing query polling; HR overview totals use an invoker aggregate RPC and exclude deleted personnel — why: prevent duplicate sockets, capped counts, leaked preview PII and false freshness signals without adding write queues.

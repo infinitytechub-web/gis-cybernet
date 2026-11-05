@@ -2,6 +2,7 @@ export const DASHBOARD_QUERY_KEYS = [
   "admin-overview-summary", "admin-overview-commands", "dash", "command-dashboard",
   "command-dashboard-live", "command-dashboard-units", "unit-dashboard", "staff-analytics",
   "regional-commands", "today-duty", "command-approval-queue",
+  "hr-hub-staff-stats", "staff", "directory-staff", "staff-mapping-rows", "staff-applications",
 ] as const;
 
 export const DASHBOARD_LIVE_TABLES = [

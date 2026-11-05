@@ -71,9 +71,10 @@ export default function CreateStaffAccount() {
   const set = <K extends keyof StaffAccountForm>(key: K, value: StaffAccountForm[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const { data: units = [], isLoading: unitsLoading } = useOrgUnits();
+  const unitsQuery = useOrgUnits();
+  const { data: units = [], isLoading: unitsLoading } = unitsQuery;
 
-  const { data: ranks = [] } = useQuery({
+  const ranksQuery = useQuery({
     queryKey: ["ranks"],
     queryFn: async () => {
       const { data, error } = await supabase.from("ranks").select("*").order("level", { ascending: false });
@@ -82,7 +83,7 @@ export default function CreateStaffAccount() {
     },
   });
 
-  const { data: departments = [] } = useQuery({
+  const departmentsQuery = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
       const { data, error } = await supabase.from("departments").select("*").order("name");
@@ -90,6 +91,11 @@ export default function CreateStaffAccount() {
       return data ?? [];
     },
   });
+
+  const ranks = ranksQuery.data ?? [];
+  const departments = departmentsQuery.data ?? [];
+  const optionsFailed = unitsQuery.isError || ranksQuery.isError || departmentsQuery.isError;
+  const optionsLoading = unitsLoading || ranksQuery.isLoading || departmentsQuery.isLoading;
 
   const unitOptions = useMemo(
     () => [...units].sort((a, b) => orgUnitPath(units, a.id).localeCompare(orgUnitPath(units, b.id))),
@@ -109,22 +115,24 @@ export default function CreateStaffAccount() {
       }
 
       // ── Duplicate validation (staff ID is uniquely indexed; Ghana Card is not)
-      const { data: dupeId } = await supabase
+      const { data: dupeId, error: idError } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, staff_id")
         .eq("staff_id", form.staffId.trim())
         .maybeSingle();
+      if (idError) throw idError;
       if (dupeId) {
         throw new Error(
           `Staff ID ${dupeId.staff_id} already belongs to ${dupeId.first_name} ${dupeId.last_name} — open their record instead of creating a duplicate.`,
         );
       }
       if (form.ghanaCard.trim()) {
-        const { data: dupeCard } = await supabase
+        const { data: dupeCard, error: cardError } = await supabase
           .from("profiles")
           .select("id, first_name, last_name, staff_id")
           .eq("ghana_card_number", form.ghanaCard.trim())
           .maybeSingle();
+        if (cardError) throw cardError;
         if (dupeCard) {
           throw new Error(
             `That Ghana Card is already on record for ${dupeCard.first_name} ${dupeCard.last_name} (${dupeCard.staff_id}).`,
@@ -174,6 +182,10 @@ export default function CreateStaffAccount() {
       qc.invalidateQueries({ queryKey: ["staff-roster"] });
       qc.invalidateQueries({ queryKey: ["unit-dashboard"] });
       qc.invalidateQueries({ queryKey: ["unit-staff-directory"] });
+      qc.invalidateQueries({ queryKey: ["directory-staff"] });
+      qc.invalidateQueries({ queryKey: ["staff-mapping-rows"] });
+      qc.invalidateQueries({ queryKey: ["hr-hub-staff-stats"] });
+      qc.invalidateQueries({ queryKey: ["admin-overview-summary"] });
       toast.success(`${res.name} added and account created`);
     },
     onError: (e: any) => toast.error(e.message || "Could not create staff account"),
@@ -191,6 +203,8 @@ export default function CreateStaffAccount() {
           <Link to="/settings" className="underline">System Settings</Link>.
         </p>
       </div>
+
+      {optionsFailed && <Alert variant="destructive"><AlertTitle>Staff options unavailable</AlertTitle><AlertDescription>Commands, ranks or departments could not be loaded. <Button variant="outline" size="sm" onClick={() => { void unitsQuery.refetch(); void ranksQuery.refetch(); void departmentsQuery.refetch(); }}>Retry</Button></AlertDescription></Alert>}
 
       {created ? (
         <Card>
@@ -363,7 +377,7 @@ export default function CreateStaffAccount() {
               <Badge variant="outline" className="mr-auto text-xs">
                 Creates profile + login account
               </Badge>
-              <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              <Button onClick={() => save.mutate()} disabled={save.isPending || optionsFailed || optionsLoading}>
                 {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                 Create staff account
               </Button>

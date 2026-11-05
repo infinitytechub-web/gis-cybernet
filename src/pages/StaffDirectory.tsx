@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Phone, Users, Building2, ChevronLeft, ChevronRight, ArrowLeft, FolderLock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { ProfileWithRelations } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { Sensitive } from "@/components/Sensitive";
@@ -51,8 +52,9 @@ export default function StaffDirectory() {
   // directory-safe columns (name, staff number, rank, unit, shift, status,
   // photo, contact number). Confidential fields — date of birth,
   // identification numbers, addresses, KYC — are never sent to this screen.
-  const { data: staff = [], isLoading } = useQuery({
+  const { data: staff = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["directory-staff"],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("staff_directory_rows");
       if (error) throw error;
@@ -125,7 +127,7 @@ export default function StaffDirectory() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {initialDept !== "all" && (
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/dashboard")}>
@@ -137,7 +139,7 @@ export default function StaffDirectory() {
         <div className="flex items-center gap-2">
           {canBulkUpload && <BulkStaffUploadDialog />}
           <Badge variant="outline" className="gap-1">
-            <Users className="h-3 w-3" /> {filtered.length} staff
+            <Users className="h-3 w-3" /> {isLoading || isError ? "—" : filtered.length} staff
           </Badge>
         </div>
       </div>
@@ -190,6 +192,8 @@ export default function StaffDirectory() {
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading directory...</div>
+      ) : isError ? (
+        <Alert variant="destructive"><AlertDescription>Staff directory could not be loaded. <Button variant="outline" size="sm" onClick={() => void refetch()}>Retry</Button></AlertDescription></Alert>
       ) : sortedDepts.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">No staff found matching your filters.</div>
       ) : (

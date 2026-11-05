@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExportMenu } from "@/components/ui/export-menu";
 import { StaffMappingAdminPanel } from "@/components/staff-mapping/StaffMappingAdminPanel";
@@ -121,8 +122,9 @@ export default function StaffMapping() {
   const [search, setSearch] = useState("");
   const [mapKey, setMapKey] = useState<string | null>(null);
 
-  const { data: rows = [], isLoading, refetch, isFetching } = useQuery({
+  const { data: rows = [], isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["staff-mapping-rows"],
+    refetchInterval: 60_000,
     queryFn: async (): Promise<MappingRow[]> => {
       const { data, error } = await db.rpc("staff_mapping_rows");
       if (error) throw error;
@@ -175,6 +177,7 @@ export default function StaffMapping() {
   const clusters = useMemo<MapCluster[]>(() => {
     const map = new Map<string, MapCluster>();
     filtered.forEach((row) => {
+      if (row.latitude == null || row.longitude == null) return;
       const lat = Number(row.latitude);
       const lng = Number(row.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -239,6 +242,8 @@ export default function StaffMapping() {
         }
       />
 
+      {isError && <Alert variant="destructive"><AlertDescription>Staff postings could not be loaded. <Button variant="outline" size="sm" onClick={() => void refetch()}>Retry</Button></AlertDescription></Alert>}
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "Staff in view", value: filtered.length, icon: Users },
@@ -251,7 +256,7 @@ export default function StaffMapping() {
               <card.icon className="h-5 w-5 text-primary" aria-hidden />
               <div>
                 <p className="text-xs text-muted-foreground">{card.label}</p>
-                <p className="text-2xl font-semibold tabular-nums">{isLoading ? "—" : card.value}</p>
+                <p className="text-2xl font-semibold tabular-nums">{isLoading || isError ? "—" : card.value}</p>
               </div>
             </CardContent>
           </Card>

@@ -13,6 +13,11 @@
  * surfaced — only whether the module has been completed.
  */
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { useRbac } from "@/hooks/useRbac";
+import { Button } from "@/components/ui/button";
+import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
+import { dashboardRetry } from "@/lib/dashboard-integrity";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrgUnits } from "@/hooks/useOrgScope";
@@ -62,28 +67,20 @@ function StatCard({
 }
 
 export default function HrHub() {
+  const { canPath, loading } = useRbac();
   const { data: units = [] } = useOrgUnits();
   const { data: positions = [] } = useOrgPositions();
 
   const staffStats = useQuery({
     queryKey: ["hr-hub-staff-stats"],
     staleTime: 60_000,
+    refetchInterval: 60_000,
+    retry: dashboardRetry,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, status, org_unit_id, department_id");
+      const { data, error } = await supabase.rpc("hrm_dashboard_summary");
       if (error) throw error;
-      const rows = (data ?? []) as {
-        id: string;
-        status: string | null;
-        org_unit_id: string | null;
-        department_id: string | null;
-      }[];
-      return {
-        total: rows.length,
-        active: rows.filter((r) => r.status === "active").length,
-        unposted: rows.filter((r) => r.status === "active" && !r.org_unit_id).length,
-      };
+      if (!data || typeof data !== "object" || !("staff" in data)) throw new Error("Personnel totals unavailable");
+      return (data as unknown as { staff: { total: number; assigned: number; unassigned: number } }).staff;
     },
   });
 
@@ -96,18 +93,28 @@ export default function HrHub() {
           <BriefcaseBusiness className="h-6 w-6 text-primary" aria-hidden="true" />
           Human Resource
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Establishment, personnel records and staff availability across every
-          command in your reach.
-        </p>
       </header>
+
+      <nav aria-label="Human Resource screens" className="flex flex-wrap gap-2">
+        {!loading && [
+          ["Staff / Employees", "/staff"],
+          ["Staff Directory", "/directory"],
+          ["Create Staff Account", "/hr/create-account"],
+          ["Staff Mapping", "/staff-mapping"],
+          ["Staff Applications", "/hr/applications"],
+        ].filter(([, path]) => canPath(path)).map(([title, path]) => (
+          <Button key={path} asChild variant="outline" size="sm"><Link to={path}>{title}</Link></Button>
+        ))}
+      </nav>
+
+      <DashboardSyncStatus updatedAt={staffStats.dataUpdatedAt} failed={staffStats.isError} fetching={staffStats.isFetching} onRetry={() => void staffStats.refetch()} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Users}
           label="Staff on strength"
-          value={staffStats.data?.active ?? "—"}
-          hint={`${staffStats.data?.total ?? 0} records in total`}
+          value={staffStats.isError ? "—" : staffStats.data?.total ?? "—"}
+          hint={staffStats.data && !staffStats.isError ? `${staffStats.data.assigned} assigned · ${staffStats.data.unassigned} unassigned` : undefined}
         />
         <StatCard
           icon={Network}
@@ -126,7 +133,7 @@ export default function HrHub() {
         <StatCard
           icon={UserCheck}
           label="Awaiting a posting"
-          value={staffStats.data?.unposted ?? "—"}
+          value={staffStats.isError ? "—" : staffStats.data?.unassigned ?? "—"}
           hint="Active staff with no command"
           tone="text-destructive"
         />

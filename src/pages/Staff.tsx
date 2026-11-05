@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -308,8 +309,9 @@ export default function Staff() {
   const { data: bioOptionSets } = useBioDataOptionSets();
 
 
-  const { data: staff = [], isLoading } = useQuery({
+  const { data: staff = [], isLoading, isError: staffLoadFailed, refetch: retryStaff } = useQuery({
     queryKey: ["staff"],
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -1070,6 +1072,8 @@ export default function Staff() {
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading staff...</div>
+      ) : staffLoadFailed ? (
+        <Alert variant="destructive"><AlertDescription>Staff records could not be loaded. <Button variant="outline" size="sm" onClick={() => void retryStaff()}>Retry</Button></AlertDescription></Alert>
       ) : (
         <div className="rounded-lg border overflow-auto">
           <Table>
