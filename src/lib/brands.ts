@@ -5,6 +5,11 @@ export const BRAND_TOKEN_KEYS = [
 export type BrandTokenKey = (typeof BRAND_TOKEN_KEYS)[number];
 export type BrandTokens = Record<BrandTokenKey, string>;
 
+export const ENTERPRISE_BRANDS: Record<"ALFA" | "BETA", BrandTokens> = {
+  ALFA: { primary: "152 65% 22%", secondary: "0 0% 100%", accent: "43 74% 45%", background: "205 25% 96%", surface: "0 0% 100%", text: "155 45% 10%", border: "152 35% 42%", success: "145 60% 32%", warning: "40 90% 45%", danger: "0 75% 45%" },
+  BETA: { primary: "152 65% 22%", secondary: "220 80% 18%", accent: "43 74% 45%", background: "205 25% 96%", surface: "0 0% 100%", text: "155 45% 10%", border: "152 35% 42%", success: "145 60% 32%", warning: "40 90% 45%", danger: "0 75% 45%" },
+};
+
 export interface AppBrand {
   id: string;
   name: string;
@@ -61,6 +66,7 @@ export function brandToCssVars(t: BrandTokens, mode: "light" | "dark" = "light")
     "--primary": primary, "--primary-foreground": contrastFor(primary), "--ring": primary,
     "--secondary": t.secondary, "--secondary-foreground": contrastFor(t.secondary),
     "--brand-accent": dark ? readable(t.accent) : t.accent,
+    "--gold": t.accent, "--gold-foreground": contrastFor(t.accent),
     "--background": background, "--foreground": text,
     "--card": surface, "--card-foreground": text,
     "--popover": surface, "--popover-foreground": text,
@@ -72,7 +78,19 @@ export function brandToCssVars(t: BrandTokens, mode: "light" | "dark" = "light")
     "--success": t.success, "--warning": t.warning,
     "--success-foreground": contrastFor(t.success), "--warning-foreground": contrastFor(t.warning),
     "--destructive": t.danger, "--destructive-foreground": contrastFor(t.danger),
-    "--sidebar-primary": t.secondary, "--sidebar-primary-foreground": contrastFor(t.secondary), "--sidebar-ring": t.secondary,
+    "--sidebar-background": t.secondary === ENTERPRISE_BRANDS.BETA.secondary ? t.secondary : "152 55% 13%",
+    "--sidebar-foreground": "0 0% 100%",
+    "--sidebar-accent": dark ? "152 20% 20%" : "152 35% 22%",
+    "--sidebar-accent-foreground": "0 0% 100%",
+    "--sidebar-border": "152 25% 28%",
+    "--sidebar-primary": t.accent, "--sidebar-primary-foreground": contrastFor(t.accent), "--sidebar-ring": t.accent,
+    "--card-border": "152 35% 42%",
+    "--background-sky": dark ? "205 20% 13%" : "205 55% 94%",
+    "--chart-1": dark ? "152 65% 68%" : "152 65% 22%",
+    "--chart-2": dark ? "168 45% 58%" : "168 55% 33%",
+    "--chart-3": dark ? "135 40% 75%" : "135 45% 43%",
+    "--chart-4": dark ? "155 25% 48%" : "155 30% 58%",
+    "--chart-5": dark ? "145 20% 85%" : "145 25% 75%",
   };
 }
 

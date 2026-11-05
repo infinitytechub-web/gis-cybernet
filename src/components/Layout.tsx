@@ -16,7 +16,9 @@ import { HeaderCommandSwitcher } from "@/components/HeaderCommandSwitcher";
 import { HeaderOverflowMenu } from "@/components/HeaderOverflowMenu";
 import { useBranding } from "@/hooks/useBranding";
 import { useAuth } from "@/hooks/useAuth";
-import { Clock, CalendarDays } from "lucide-react";
+import { Clock, CalendarDays, Home } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -45,6 +47,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="h-14 flex items-center gap-1.5 sm:gap-2 xl:gap-4 min-w-0">
               <SidebarTrigger className="text-muted-foreground shrink-0" />
               <h2 className="text-sm font-semibold flex-1 min-w-0 truncate" style={{ color: "hsl(var(--brand-accent))" }}>{company_name}: {branding.system_label}</h2>
+              <Button asChild variant="outline" size="sm" className="hidden xl:inline-flex shrink-0"><Link to="/regional-commands"><Home className="mr-1 h-4 w-4" />Home</Link></Button>
               <span className="hidden xl:flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums shrink-0">
                 <CalendarDays className="h-3.5 w-3.5" />
                 {format(clock, "EEE, dd/MM/yyyy")}
@@ -67,7 +70,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </HeaderOverflowMenu>
             </div>
             {/* Compact date & clock row for mobile */}
-            <div className="xl:hidden flex items-center justify-center gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
+            <div className="xl:hidden flex flex-wrap items-center justify-start gap-2 pb-1.5 text-[11px] text-muted-foreground tabular-nums">
+              <Button asChild variant="outline" size="sm" className="h-8 shrink-0"><Link to="/regional-commands"><Home className="mr-1 h-4 w-4" />Home</Link></Button>
               <CalendarDays className="h-3 w-3" />
               {format(clock, "EEE, dd/MM/yyyy")}
               <span className="opacity-40">·</span>
@@ -75,7 +79,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {clock.toLocaleTimeString()}
             </div>
           </header>
-          <main id="main-content" tabIndex={-1} className="flex-1 min-w-0 max-w-full p-3 md:p-6 overflow-x-hidden overflow-y-auto pb-20 lg:pb-6 scroll-smooth-gpu">
+          <main id="main-content" tabIndex={-1} className="app-surface flex-1 min-w-0 max-w-full p-3 md:p-6 overflow-x-hidden overflow-y-auto pb-20 lg:pb-6 scroll-smooth-gpu">
             <WelcomeBanner />
             {children}
           </main>

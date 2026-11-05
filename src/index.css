@@ -45,7 +45,9 @@ body {
 @layer base {
   :root {
     color-scheme: light;
-    --background: 150 8% 97%;
+    --background: 205 25% 96%;
+    --background-sky: 205 55% 94%;
+    --card-border: 152 35% 42%;
     --foreground: 155 45% 10%;
     --card: 0 0% 100%;
     --card-foreground: 155 45% 10%;
@@ -54,6 +56,8 @@ body {
     --primary: 152 65% 22%;
     --primary-foreground: 0 0% 100%;
     --brand-accent: 152 65% 22%;
+    --gold: 43 74% 45%;
+    --gold-foreground: 155 45% 10%;
     --secondary: 43 74% 45%;
     --secondary-foreground: 155 45% 10%;
     --muted: 150 8% 94%;
@@ -94,6 +98,8 @@ body {
   .dark {
     color-scheme: dark;
     --background: 160 12% 8%;
+    --background-sky: 205 20% 13%;
+    --card-border: 152 35% 42%;
     --foreground: 150 10% 94%;
     --card: 160 10% 12%;
     --card-foreground: 150 10% 94%;
@@ -102,6 +108,8 @@ body {
     --primary: 152 65% 68%;
     --primary-foreground: 155 45% 10%;
     --brand-accent: 152 55% 68%;
+    --gold: 43 74% 55%;
+    --gold-foreground: 155 45% 10%;
     --secondary: 43 74% 45%;
     --secondary-foreground: 155 45% 10%;
     --muted: 160 8% 18%;
@@ -159,8 +167,8 @@ body {
 }
 [data-sidebar="menu-button"][data-active="true"],
 [data-sidebar="menu-sub-button"][data-active="true"] {
-  background-color: hsl(var(--sidebar-accent));
-  color: hsl(var(--sidebar-foreground));
+  background-color: hsl(var(--sidebar-primary));
+  color: hsl(var(--sidebar-primary-foreground));
   box-shadow:
     inset 3px 0 hsl(var(--sidebar-primary)),
     inset 0 1px 0 hsl(var(--sidebar-primary) / 0.35),
@@ -172,6 +180,15 @@ body {
 }
 :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
 html { letter-spacing: 0; }
+[data-ui="card"] {
+  border: 1px solid hsl(var(--card-border));
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-surface);
+  min-width: 0;
+}
+.app-surface {
+  background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--background-sky)));
+}
 .recharts-text { fill: hsl(var(--foreground)); }
 .recharts-cartesian-grid line { stroke: hsl(var(--border)); }
 .recharts-default-tooltip {

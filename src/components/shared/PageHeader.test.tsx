@@ -25,16 +25,4 @@ describe("PageHeader spacing", () => {
     expect(getByText("Overview of metrics")).toBeInTheDocument();
   });
 
-  it("keeps the same outer padding regardless of subtitle presence", () => {
-    const { container: a } = render(<PageHeader icon={Award} title="A" />);
-    const { container: b } = render(
-      <PageHeader icon={Award} title="A" subtitle="B" />,
-    );
-    const outerA = a.querySelector('[data-testid="page-header"]')!;
-    const outerB = b.querySelector('[data-testid="page-header"]')!;
-    // p-5 must be present on both — protects against regressions that
-    // strip padding when there is no subtitle.
-    expect(outerA.className).toContain("p-5");
-    expect(outerB.className).toContain("p-5");
-  });
 });

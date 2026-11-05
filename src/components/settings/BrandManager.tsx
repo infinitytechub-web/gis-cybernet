@@ -43,7 +43,7 @@ export function BrandManager() {
     <Card>
       <CardHeader>
         <CardTitle>Brand colours</CardTitle>
-        <CardDescription>Choose which saved brand the whole system uses. Brand 1 keeps the original colours.</CardDescription>
+        <CardDescription>ALFA · Deep Green, White & Gold. BETA · Deep Green, Navy, Gold & White.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && <p className="text-sm text-muted-foreground">Loading brands…</p>}

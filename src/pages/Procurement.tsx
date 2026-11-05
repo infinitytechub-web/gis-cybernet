@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { HorizontalStrip } from "@/components/ui/horizontal-strip";
 import {
   Briefcase, FileText, ShoppingCart, Receipt, FileSignature, Package, Search, Upload, Download,
   Plus, TrendingUp, AlertCircle, CheckCircle2, Clock, X, Trash2, FileBarChart,
@@ -38,28 +38,28 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
-  submitted: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  approved: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  submitted: "bg-info/10 text-info",
+  approved: "bg-success/10 text-success",
   rejected: "bg-destructive/15 text-destructive",
-  open: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  open: "bg-info/10 text-info",
   closed: "bg-muted text-muted-foreground",
-  awarded: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-  issued: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
-  partial: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  received: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  awarded: "bg-success/10 text-success",
+  issued: "bg-info/10 text-info",
+  partial: "bg-warning/10 text-warning",
+  received: "bg-success/10 text-success",
   cancelled: "bg-destructive/15 text-destructive",
   closed_status: "bg-muted text-muted-foreground",
-  pending: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  paid: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  pending: "bg-warning/10 text-warning",
+  paid: "bg-success/10 text-success",
   overdue: "bg-destructive/15 text-destructive",
-  active: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  active: "bg-success/10 text-success",
   expired: "bg-destructive/15 text-destructive",
 };
 
 const fmtCurrency = (n: number, c = "GHS") =>
   new Intl.NumberFormat("en-GH", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(n || 0);
 
-const PIE_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(var(--chart-3, 280 70% 50%))", "hsl(var(--chart-4, 30 80% 55%))", "hsl(var(--chart-5, 160 70% 45%))"];
+const PIE_COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
 export default function Procurement() {
   const { user, role } = useAuth();
@@ -180,44 +180,44 @@ export default function Procurement() {
   }, [pos]);
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-4">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Procurement Unit</h1>
-        <p className="text-muted-foreground">End-to-end procurement lifecycle: requisitions, RFQs, vendors, orders, invoices, contracts, and document vault.</p>
+        
       </div>
 
       {/* KPI strip */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard icon={<Clock className="h-4 w-4 text-amber-600" />} label="Pending Requisitions" value={kpis.pendingReqs.toString()} />
-        <KpiCard icon={<ShoppingCart className="h-4 w-4 text-indigo-600" />} label="Open POs" value={kpis.openPOs.toString()} />
-        <KpiCard icon={<TrendingUp className="h-4 w-4 text-emerald-600" />} label="Spend MTD" value={fmtCurrency(kpis.spendMTD)} />
-        <KpiCard icon={<TrendingUp className="h-4 w-4 text-fuchsia-600" />} label="Spend YTD" value={fmtCurrency(kpis.spendYTD)} />
+      <HorizontalStrip label="Procurement totals" className="[&>div]:w-52 [&>div]:shrink-0">
+        <KpiCard icon={<Clock className="h-4 w-4 text-primary" />} label="Pending Requisitions" value={kpis.pendingReqs.toString()} />
+        <KpiCard icon={<ShoppingCart className="h-4 w-4 text-primary" />} label="Open POs" value={kpis.openPOs.toString()} />
+        <KpiCard icon={<TrendingUp className="h-4 w-4 text-primary" />} label="Spend MTD" value={fmtCurrency(kpis.spendMTD)} />
+        <KpiCard icon={<TrendingUp className="h-4 w-4 text-primary" />} label="Spend YTD" value={fmtCurrency(kpis.spendYTD)} />
         <KpiCard icon={<AlertCircle className="h-4 w-4 text-destructive" />} label="Overdue Deliveries" value={kpis.overdueDeliveries.toString()} alert={kpis.overdueDeliveries > 0} />
         <KpiCard icon={<Receipt className="h-4 w-4 text-destructive" />} label="Overdue Invoices" value={kpis.overdueInvoices.toString()} alert={kpis.overdueInvoices > 0} />
-        <KpiCard icon={<FileSignature className="h-4 w-4 text-amber-600" />} label="Contracts Expiring (30d)" value={kpis.expiringContracts.toString()} alert={kpis.expiringContracts > 0} />
-        <KpiCard icon={<Briefcase className="h-4 w-4 text-blue-600" />} label="Active Vendors" value={kpis.vendorCount.toString()} />
-      </div>
+        <KpiCard icon={<FileSignature className="h-4 w-4 text-primary" />} label="Contracts Expiring (30d)" value={kpis.expiringContracts.toString()} alert={kpis.expiringContracts > 0} />
+        <KpiCard icon={<Briefcase className="h-4 w-4 text-primary" />} label="Active Vendors" value={kpis.vendorCount.toString()} />
+      </HorizontalStrip>
 
       <Tabs defaultValue="analytics" className="space-y-4">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <TabsList className="inline-flex bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/50 p-1">
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"><TrendingUp className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Analytics</TabsTrigger>
-            <TabsTrigger value="requests" className="data-[state=active]:bg-emerald-700 data-[state=active]:text-white"><Plus className="h-4 w-4 mr-1 text-emerald-700 dark:text-emerald-400" />Requests</TabsTrigger>
-           <TabsTrigger value="stock" className="data-[state=active]:bg-lime-700 data-[state=active]:text-white"><Package className="h-4 w-4 mr-1 text-lime-700 dark:text-lime-400" />Inventory</TabsTrigger>
-           <TabsTrigger value="requisitions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-blue-700 dark:text-blue-400" />Requisitions</TabsTrigger>
-            <TabsTrigger value="rfqs" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white"><FileText className="h-4 w-4 mr-1 text-indigo-700 dark:text-indigo-400" />RFQs</TabsTrigger>
-            <TabsTrigger value="pos" className="data-[state=active]:bg-amber-600 data-[state=active]:text-white"><ShoppingCart className="h-4 w-4 mr-1 text-amber-700 dark:text-amber-400" />Purchase Orders</TabsTrigger>
-            <TabsTrigger value="invoices" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"><Receipt className="h-4 w-4 mr-1 text-violet-700 dark:text-violet-400" />Invoices</TabsTrigger>
-            <TabsTrigger value="contracts" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white"><FileSignature className="h-4 w-4 mr-1 text-teal-700 dark:text-teal-400" />Contracts</TabsTrigger>
-            <TabsTrigger value="vendors" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white"><Briefcase className="h-4 w-4 mr-1 text-cyan-700 dark:text-cyan-400" />Vendors</TabsTrigger>
-            <TabsTrigger value="documents" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white"><Package className="h-4 w-4 mr-1 text-slate-700 dark:text-slate-300" />Document Vault</TabsTrigger>
-            <TabsTrigger value="reports" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white"><FileBarChart className="h-4 w-4 mr-1 text-rose-700 dark:text-rose-400" />Reports</TabsTrigger>
+        <HorizontalStrip label="Procurement sections">
+          <TabsList className="inline-flex h-auto shrink-0 gap-1 border border-primary/40 bg-card p-1">
+            <TabsTrigger value="analytics" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><TrendingUp className="h-4 w-4 mr-1" />Analytics</TabsTrigger>
+            <TabsTrigger value="requests" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Plus className="h-4 w-4 mr-1" />Requests</TabsTrigger>
+           <TabsTrigger value="stock" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Package className="h-4 w-4 mr-1" />Inventory</TabsTrigger>
+           <TabsTrigger value="requisitions" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileText className="h-4 w-4 mr-1" />Requisitions</TabsTrigger>
+            <TabsTrigger value="rfqs" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileText className="h-4 w-4 mr-1" />RFQs</TabsTrigger>
+            <TabsTrigger value="pos" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><ShoppingCart className="h-4 w-4 mr-1" />Purchase Orders</TabsTrigger>
+            <TabsTrigger value="invoices" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Receipt className="h-4 w-4 mr-1" />Invoices</TabsTrigger>
+            <TabsTrigger value="contracts" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileSignature className="h-4 w-4 mr-1" />Contracts</TabsTrigger>
+            <TabsTrigger value="vendors" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Briefcase className="h-4 w-4 mr-1" />Vendors</TabsTrigger>
+            <TabsTrigger value="documents" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><Package className="h-4 w-4 mr-1" />Document Vault</TabsTrigger>
+            <TabsTrigger value="reports" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"><FileBarChart className="h-4 w-4 mr-1" />Reports</TabsTrigger>
           </TabsList>
-        </ScrollArea>
+        </HorizontalStrip>
 
         {/* ANALYTICS */}
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <HorizontalStrip label="Procurement analytics" className="[&>div]:w-[min(100%,26rem)] [&>div]:shrink-0 [&>div]:self-stretch">
             <Card>
               <CardHeader><CardTitle>Monthly Spend Trend</CardTitle><CardDescription>Last 6 months of PO spend</CardDescription></CardHeader>
               <CardContent>
@@ -270,7 +270,7 @@ export default function Procurement() {
                     .slice(0, 8)
                     .map((it, idx) => (
                       <div key={idx} className="flex items-center justify-between text-sm border-b last:border-0 pb-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <Badge variant="outline" className="text-xs">{it.type}</Badge>
                           <span className="font-medium">{it.title}</span>
                           <span className="text-muted-foreground">— {it.sub}</span>
@@ -282,7 +282,7 @@ export default function Procurement() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </HorizontalStrip>
         </TabsContent>
 
         <TabsContent value="requests"><ProcurementTab /></TabsContent>
@@ -342,7 +342,7 @@ function RequisitionsTab({ requisitions, canManage, userId }: any) {
 
   return (
     <Card>
-      <CardHeader className="flex-row justify-between items-center">
+      <CardHeader className="flex-row flex-wrap gap-3 justify-between items-center">
         <div><CardTitle>Purchase Requisitions</CardTitle><CardDescription>Internal requests for goods or services</CardDescription></div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New Requisition</Button></DialogTrigger>
@@ -422,7 +422,7 @@ function RfqsTab({ rfqs, vendors, canManage, userId }: any) {
   };
   return (
     <Card>
-      <CardHeader className="flex-row justify-between items-center">
+      <CardHeader className="flex-row flex-wrap gap-3 justify-between items-center">
         <div><CardTitle>Request for Quotations</CardTitle><CardDescription>Solicit competitive quotes from vendors</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New RFQ</Button></DialogTrigger>
@@ -480,7 +480,7 @@ function PosTab({ pos, vendors, canManage, userId }: any) {
   };
   return (
     <Card>
-      <CardHeader className="flex-row justify-between items-center">
+      <CardHeader className="flex-row flex-wrap gap-3 justify-between items-center">
         <div><CardTitle>Purchase Orders</CardTitle><CardDescription>Issued orders to vendors</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New PO</Button></DialogTrigger>
@@ -557,7 +557,7 @@ function InvoicesTab({ invoices, vendors, pos, canManage, userId }: any) {
   };
   return (
     <Card>
-      <CardHeader className="flex-row justify-between items-center">
+      <CardHeader className="flex-row flex-wrap gap-3 justify-between items-center">
         <div><CardTitle>Vendor Invoices</CardTitle><CardDescription>Track invoices and payments</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New Invoice</Button></DialogTrigger>
@@ -629,7 +629,7 @@ function ContractsTab({ contracts, vendors, canManage, userId }: any) {
   };
   return (
     <Card>
-      <CardHeader className="flex-row justify-between items-center">
+      <CardHeader className="flex-row flex-wrap gap-3 justify-between items-center">
         <div><CardTitle>Contracts & Tenders</CardTitle><CardDescription>Service, supply, framework, and tender contracts</CardDescription></div>
         {canManage && <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />New Contract</Button></DialogTrigger>
@@ -706,7 +706,7 @@ function VendorsTab({ vendors, canManage }: any) {
     <Card>
       <CardHeader className="flex-row justify-between items-center gap-2 flex-wrap">
         <div><CardTitle>Vendor Directory</CardTitle><CardDescription>{vendors.length} registered vendors</CardDescription></div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center min-w-0">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search…" value={search} onChange={e => setSearch(e.target.value)} className="pl-8 w-48" />
@@ -746,7 +746,7 @@ function VendorsTab({ vendors, canManage }: any) {
                 <TableCell>{v.email || "—"}</TableCell>
                 <TableCell>{v.phone || "—"}</TableCell>
                 <TableCell>{v.category || "—"}</TableCell>
-                <TableCell>{v.is_blacklisted ? <Badge variant="destructive">Blacklisted</Badge> : <Badge variant="outline" className="bg-emerald-500/15 text-emerald-700">Active</Badge>}</TableCell>
+                <TableCell>{v.is_blacklisted ? <Badge variant="destructive">Blacklisted</Badge> : <Badge variant="outline" className="bg-success/10 text-success">Active</Badge>}</TableCell>
               </TableRow>
             ))}
             {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No vendors</TableCell></TableRow>}

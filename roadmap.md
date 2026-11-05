@@ -1,4 +1,8 @@
 # Roadmap – Holding Center / Command Operations enhancement
+- [ ] Save and activate protected ALFA, preserve BETA; apply centralized background, sidebar, card and analytics styling with light/dark contrast.
+- [ ] Add Home before the shared date display, compact shared banners, and touch/arrow horizontal Procurement navigation without changing workflows.
+- [ ] Verify theme switching, dashboard navigation, cards and Procurement at phone/tablet/laptop/desktop sizes; authenticated checks require an authorized account.
+- [ ] Define and prepare the separate Pending Human Resources expansion without disabling operational HRM — blocked: the brief does not specify which additional HR workflows belong in this new module.
 - [x] Add 25-row paging to HR establishment, personnel, positions, availability, command approvals and Admin Overview lists; shared pager fixed at 25, custom directory/health/audit/appraisal/night guard pages standardized. Shared tables gain horizontal edge buttons; global controls navigate active nested lists or the document. 847 tests pass; build OK; desktop/mobile shared-control browser check passes without page errors. Totals, exports and permissions unchanged.
 - [ ] Verify signed-in HR navigation and remaining bespoke lists across every module — blocked: requesting user has no matching auth account and preview redirects to login; shared-control browser check used synthetic records, not real HR records.
 - [x] Generated real Word and Excel Bio-Data downloads as ADMIN-001; repaired audit format mismatch (docx/xlsx), awaited logging and refreshed totals. Word package validation passed; Excel has 15 sheets and no formula errors. Dashboard shows 3 real downloads: PDF, DOCX and XLSX, total personnel 278. No fabricated history inserted.

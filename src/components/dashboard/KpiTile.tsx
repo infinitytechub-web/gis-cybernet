@@ -25,23 +25,11 @@ export interface KpiTileProps {
 }
 
 const TONES: Record<NonNullable<KpiTileProps["tone"]>, string> = {
-  neutral: "border-border bg-card text-foreground",
-  info: "border-info/30 bg-info/5 text-info",
-  success: "border-success/30 bg-success/5 text-success",
-  warning: "border-warning/40 bg-warning/5 text-warning",
-  danger: "border-destructive/40 bg-destructive/5 text-destructive",
-};
-
-const ACCENT_BARS: Record<number, string> = {
-  1: "bg-[hsl(var(--cat-1))]", 2: "bg-[hsl(var(--cat-2))]", 3: "bg-[hsl(var(--cat-3))]", 4: "bg-[hsl(var(--cat-4))]",
-  5: "bg-[hsl(var(--cat-5))]", 6: "bg-[hsl(var(--cat-6))]", 7: "bg-[hsl(var(--cat-7))]", 8: "bg-[hsl(var(--cat-8))]",
-};
-
-const ACCENT_ICONS: Record<number, string> = {
-  1: "bg-[hsl(var(--cat-1)/0.12)] text-[hsl(var(--cat-1))]", 2: "bg-[hsl(var(--cat-2)/0.12)] text-[hsl(var(--cat-2))]",
-  3: "bg-[hsl(var(--cat-3)/0.12)] text-[hsl(var(--cat-3))]", 4: "bg-[hsl(var(--cat-4)/0.12)] text-[hsl(var(--cat-4))]",
-  5: "bg-[hsl(var(--cat-5)/0.12)] text-[hsl(var(--cat-5))]", 6: "bg-[hsl(var(--cat-6)/0.12)] text-[hsl(var(--cat-6))]",
-  7: "bg-[hsl(var(--cat-7)/0.12)] text-[hsl(var(--cat-7))]", 8: "bg-[hsl(var(--cat-8)/0.12)] text-[hsl(var(--cat-8))]",
+  neutral: "bg-card text-primary",
+  info: "bg-card text-info",
+  success: "bg-card text-success",
+  warning: "bg-card text-warning",
+  danger: "bg-card text-destructive",
 };
 
 /** Stable accent index for a name, so a command keeps its colour everywhere. */
@@ -62,17 +50,17 @@ export function KpiTile({ title, value, sub, icon: Icon, tone = "neutral", onCli
   const body = (
     <Card
       className={cn(
-        "relative h-full overflow-hidden border-2 transition-all",
+        "relative h-full w-full min-w-0 overflow-hidden transition-all",
         TONES[effTone],
         onClick && "hover:-translate-y-0.5 hover:shadow-md hover:border-primary/60",
         selected && "ring-2 ring-primary ring-offset-1",
       )}
     >
-      {accent && <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-1.5", ACCENT_BARS[accent])} />}
+      {accent && <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-primary" />}
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-1 pt-4 px-4">
         <CardTitle className="text-xs font-medium text-muted-foreground line-clamp-2">{title}</CardTitle>
         <span
-          className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", accent && ACCENT_ICONS[accent])}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10"
         >
           <Icon className="h-4 w-4" aria-hidden="true" />
         </span>

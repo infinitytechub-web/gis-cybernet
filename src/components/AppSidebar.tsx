@@ -397,7 +397,7 @@ export function AppSidebar() {
         aria-label={ariaLabel}
         className={`group/nav relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar rounded-md transition-colors ${
           active
-            ? "ring-2 ring-sidebar-primary bg-sidebar-primary/10 text-sidebar-primary"
+            ? "ring-1 ring-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground"
             : ""
         }`}
         activeClassName="font-medium"
@@ -406,7 +406,7 @@ export function AppSidebar() {
           aria-hidden="true"
           className="pointer-events-none absolute left-0 top-1/2 h-0 w-[3px] -translate-y-1/2 rounded-full bg-sidebar-primary opacity-0 transition-all duration-150 group-hover/nav:h-4/5 group-hover/nav:opacity-100"
         />
-        <item.icon className={`mr-2 h-4 w-4 ${item.iconColor}`} aria-hidden="true" />
+        <item.icon className="mr-2 h-4 w-4 text-current" aria-hidden="true" />
         {!collapsed && <span>{item.title}</span>}
         {renderBadge(item)}
       </NavLink>
@@ -555,7 +555,7 @@ export function AppSidebar() {
           <img src={branding.logo_url || gisLogo} alt={branding.company_name} width={40} height={40} decoding="async" className="h-10 w-10 rounded-full object-cover border border-sidebar-border" />
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-sidebar-primary-foreground">{org_name.length > 20 ? org_name.slice(0, 20) + "…" : org_name}</span>
+              <span className="text-sm font-bold text-sidebar-foreground">{org_name.length > 20 ? org_name.slice(0, 20) + "…" : org_name}</span>
               <span className="text-xs text-sidebar-foreground/70">{branding.system_label}</span>
             </div>
           )}

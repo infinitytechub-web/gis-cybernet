@@ -80,7 +80,7 @@ export default function DailyOccurrencesWidget() {
       label: "Leave Requests",
       count: data?.leaveReqs ?? 0,
       icon: CalendarOff,
-      tone: "bg-secondary text-secondary-foreground border-secondary",
+      tone: "bg-gold text-gold-foreground border-primary/40",
     },
     {
       label: "Postings",
@@ -104,7 +104,7 @@ export default function DailyOccurrencesWidget() {
       label: "Passport Apps",
       count: data?.passportApps ?? 0,
       icon: FileText,
-      tone: "bg-secondary text-secondary-foreground border-secondary",
+      tone: "bg-gold text-gold-foreground border-primary/40",
     },
     {
       label: "Incidents",
@@ -118,7 +118,7 @@ export default function DailyOccurrencesWidget() {
 
   return (
     <Card className="border-border/50 overflow-hidden relative">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-secondary to-card" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-gold to-card" />
 
       <CardHeader className="pb-2 pt-5">
         <CardTitle className="text-sm flex flex-wrap items-center gap-2">
