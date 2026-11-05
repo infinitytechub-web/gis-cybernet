@@ -47,15 +47,30 @@ const commandItems = [
 
 const personnelItems = [
   { title: "Command Analytics", url: "/command-analytics", icon: Activity, iconColor: "text-primary" },
+  { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400" },
+  { title: "Roles / Designations", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
+];
+
+const hrEntryItems = [
   { title: "Human Resource", url: "/hr", icon: BriefcaseBusiness, iconColor: "text-primary" },
+];
+
+const staffRecordItems = [
   { title: "Staff / Employees", url: "/staff", icon: Users, iconColor: "text-emerald-600 dark:text-emerald-400" },
   { title: "Staff Directory", url: "/directory", icon: Contact, iconColor: "text-teal-600 dark:text-teal-400" },
   { title: "Create Staff Account", url: "/hr/create-account", icon: UserPlus, iconColor: "text-emerald-700 dark:text-emerald-300" },
-  { title: "Admin Dashboard", url: "/hr/overview", icon: ClipboardList, iconColor: "text-primary" },
-  { title: "Staff Applications", url: "/hr/applications", icon: ClipboardList, iconColor: "text-primary" },
   { title: "Staff Mapping", url: "/staff-mapping", icon: MapPinned, iconColor: "text-cyan-700 dark:text-cyan-300" },
-  { title: "Departments", url: "/departments", icon: Building2, iconColor: "text-purple-600 dark:text-purple-400" },
-  { title: "Roles / Designations", url: "/roles", icon: Award, iconColor: "text-amber-600 dark:text-amber-400" },
+  { title: "Staff Applications", url: "/hr/applications", icon: ClipboardList, iconColor: "text-primary" },
+];
+
+const excuseDutyItems = [
+  { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
+  { title: "My Submissions", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
+];
+
+const hrReportItems = [
+  { title: "HR Admin Dashboard", url: "/hr/overview", icon: ClipboardList, iconColor: "text-primary" },
+  { title: "Staff Export Integrity", url: "/staff-export-integrity", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
 ];
 
 const myDutyItems = [
@@ -127,8 +142,6 @@ const allStaffItems = [
   { title: "My Profile", url: "/my-profile", icon: UserCog, iconColor: "text-emerald-700 dark:text-emerald-300" },
   { title: "Biometric Enrollment", url: "/biometric-enrollment", icon: Fingerprint, iconColor: "text-indigo-600 dark:text-indigo-400" },
   { title: "My Portal", url: "/my-portal", icon: Inbox, iconColor: "text-sky-600 dark:text-sky-400" },
-  { title: "Excuse Duty Form", url: "/excuse-duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400" },
-  { title: "My Submissions", url: "/excuse-duty/mine", icon: Heart, iconColor: "text-rose-500 dark:text-rose-300" },
 ];
 
 const logisticsItems = [
@@ -245,7 +258,6 @@ const commandWorkspaceItems = [
 
 const reportingItems = [
   { title: "Scheduled Files", url: "/scheduled-files", icon: CalendarDays, iconColor: "text-cyan-700 dark:text-cyan-300" },
-  { title: "Staff Export Integrity", url: "/staff-export-integrity", icon: ShieldCheck, iconColor: "text-emerald-700 dark:text-emerald-300" },
 ];
 
 const homeItems = [
@@ -572,13 +584,14 @@ export function AppSidebar() {
           { label: "Reports & Assurance", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", items: reportingItems },
         ])}
         {renderGroup(
-          "Workforce",
-          [],
+          "Human Resource",
+          hrEntryItems,
           [
+            { label: "Staff Records", icon: Users, iconColor: "text-emerald-600 dark:text-emerald-400", items: staffRecordItems },
             { label: "Attendance & Shifts", icon: CalendarCheck, iconColor: "text-green-600 dark:text-green-400", items: attendanceItems },
             { label: "Rosters & Schedules", icon: CalendarDays, iconColor: "text-cyan-600 dark:text-cyan-400", items: rosterItems },
             { label: "Leave & Holidays", icon: CalendarOff, iconColor: "text-orange-600 dark:text-orange-400", items: leaveItems },
-            { label: "Pay & Loans", icon: CreditCard, iconColor: "text-teal-600 dark:text-teal-400", items: paymentsLoansItems },
+            { label: "Excuse Duty", icon: Heart, iconColor: "text-rose-600 dark:text-rose-400", items: excuseDutyItems },
             { label: "Postings & Transfers", icon: ArrowRightLeft, iconColor: "text-violet-600 dark:text-violet-400", items: postingItems },
             {
               label: "Appraisals & Approvals",
@@ -589,8 +602,10 @@ export function AppSidebar() {
                   ? [...appraisalItems, staffApprovalsItem]
                   : appraisalItems,
             },
+            { label: "HR Reports", icon: BarChart3, iconColor: "text-fuchsia-600 dark:text-fuchsia-400", items: hrReportItems },
           ],
         )}
+        {renderGroup("Pay & Loans", paymentsLoansItems)}
         {renderGroup("Immigration & Enforcement", immigrationItems, [
           { label: "Operational Security", icon: ShieldAlert, iconColor: "text-red-600 dark:text-red-400", items: securityItems },
         ])}
