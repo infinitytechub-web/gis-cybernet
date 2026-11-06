@@ -492,7 +492,7 @@ export default function Login() {
           </div>
           <div>
             <h1 id="login-heading" className="text-xl font-bold text-foreground">
-              {branding.company_name} — {branding.system_label || "HRM System"}
+              {branding.company_name} {branding.system_label || "HRM System"}
             </h1>
             <p className="text-sm text-muted-foreground">{branding.org_name} {branding.system_label}</p>
 
