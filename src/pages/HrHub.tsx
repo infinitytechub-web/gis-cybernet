@@ -98,6 +98,7 @@ export default function HrHub() {
 
       <nav aria-label="Human Resource screens" className="flex flex-wrap gap-2">
         {!loading && [
+          ["Command HR Dashboard", "/hr/command"],
           ["Staff / Employees", "/staff"],
           ["Staff Directory", "/directory"],
           ["Create Staff Account", "/hr/create-account"],

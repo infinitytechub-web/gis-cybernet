@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { ArrowRight, Search } from "lucide-react";
+import { formatDate } from "@/lib/date-format";
 
 const db = supabase as any;
 type Req = { id: string; profile_id: string; from_org_unit_id: string | null; to_org_unit_id: string; reason: string; requested_by: string; status: string; decision_note: string | null; created_at: string };
@@ -118,7 +119,7 @@ export default function CommandReassignmentReview() {
             const mine = r.requested_by === user?.id;
             return (
               <div key={r.id} className="space-y-2 rounded-md border p-3">
-                <div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{person(r.profile_id)}</strong><Badge variant={r.status === "pending" ? "secondary" : r.status === "approved" ? "default" : "outline"} className="capitalize">{r.status}</Badge><span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-GB")}</span></div>
+                <div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{person(r.profile_id)}</strong><Badge variant={r.status === "pending" ? "secondary" : r.status === "approved" ? "default" : "outline"} className="capitalize">{r.status}</Badge><span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span></div>
                 <p className="flex flex-wrap items-center gap-1 text-sm">{unitName(r.from_org_unit_id)} <ArrowRight className="h-3 w-3" aria-hidden="true" /> {unitName(r.to_org_unit_id)}</p>
                 <p className="text-sm text-muted-foreground">Reason: {r.reason}</p>
                 {r.decision_note && <p className="text-sm text-muted-foreground">Decision note: {r.decision_note}</p>}
