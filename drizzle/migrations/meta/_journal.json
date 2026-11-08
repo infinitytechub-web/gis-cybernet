@@ -491,6 +491,13 @@
       "when": 1794137661726,
       "tag": "0069_fix_unit_dashboard_patrols",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1794137878675,
+      "tag": "0070_grade_follows_rank",
+      "breakpoints": true
     }
   ]
 }
