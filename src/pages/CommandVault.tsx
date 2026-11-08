@@ -107,7 +107,7 @@ export default function CommandVault() {
     },
   });
 
-  const { data: commands = [] } = useQuery({
+  const { data: commands = [], isFetched: commandsFetched } = useQuery({
     queryKey: ["command-vault-commands"],
     enabled: allowed,
     queryFn: async () => {
@@ -415,6 +415,13 @@ export default function CommandVault() {
   if (!allowed) {
     return <AccessDenied moduleKey="command-vault" label="Command Vault" />;
   }
+  if (commandsFetched && commands.length === 0) {
+    return <div className="mx-auto max-w-xl space-y-2 rounded-lg border p-6 text-center">
+      <Lock className="mx-auto h-6 w-6 text-muted-foreground" aria-hidden />
+      <h1 className="text-lg font-semibold">No command vault available</h1>
+      <p className="text-sm text-muted-foreground">You can only open the vault of the command you are posted to, as its OIC, 2IC, Chief Staff Officer, Command Officer or Regional Commander. Staff Officers need a Command Vault grant from a Super Admin.</p>
+    </div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -426,7 +433,7 @@ export default function CommandVault() {
           <div>
             <h1 className="text-2xl font-bold text-secondary">Command Vault</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-              <Lock className="h-3.5 w-3.5 mr-1" /> Restricted — visible only to Admin, Command OIC, 2IC and Staff Officer
+              <Lock className="h-3.5 w-3.5 mr-1" /> Restricted to your own command — Super Admin, OIC, 2IC, Chief Staff Officer and authorised Staff Officers
             </p>
           </div>
         </div>
