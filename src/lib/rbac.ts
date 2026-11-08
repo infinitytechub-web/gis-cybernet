@@ -68,6 +68,7 @@ const ME_FIELD: AppRole[] = ["field_officer"];
 export const MODULES: ModuleDef[] = [
   // ── Open to every authenticated staff member ────────────────────────────
   { key: "dashboard", label: "Dashboard", feature: "Dashboard", tier: "all-staff", roles: "all", paths: ["/dashboard", "/"] },
+  { key: "staff-vault", label: "Staff Vault", tier: "all-staff", roles: "all", paths: ["/staff-vault"] },
   { key: "my-profile", label: "My Profile", tier: "all-staff", roles: "all", paths: ["/my-profile"] },
   { key: "biometric-enrollment", label: "Biometric Enrollment", tier: "all-staff", roles: "all", paths: ["/biometric-enrollment"] },
   { key: "my-portal", label: "My Portal", tier: "all-staff", roles: "all", paths: ["/my-portal"] },

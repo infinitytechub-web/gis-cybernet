@@ -18042,6 +18042,108 @@ export type Database = {
           },
         ]
       }
+      staff_vault_audit: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          detail: string | null
+          file_id: string | null
+          file_name: string | null
+          file_title: string | null
+          id: string
+          profile_id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          detail?: string | null
+          file_id?: string | null
+          file_name?: string | null
+          file_title?: string | null
+          id?: string
+          profile_id: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          detail?: string | null
+          file_id?: string | null
+          file_name?: string | null
+          file_title?: string | null
+          id?: string
+          profile_id?: string
+        }
+        Relationships: []
+      }
+      staff_vault_files: {
+        Row: {
+          archive_reason: string | null
+          archived_at: string | null
+          category: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          id: string
+          mime_type: string | null
+          profile_id: string
+          size_bytes: number | null
+          title: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          mime_type?: string | null
+          profile_id: string
+          size_bytes?: number | null
+          title: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          archive_reason?: string | null
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          mime_type?: string | null
+          profile_id?: string
+          size_bytes?: number | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_vault_files_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_vault_files_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       status_change_audit: {
         Row: {
           changed_by: string | null
@@ -21150,6 +21252,10 @@ export type Database = {
         }
         Returns: string
       }
+      record_staff_vault_access: {
+        Args: { _action: string; _file_id: string }
+        Returns: boolean
+      }
       redact_old_job_passwords: { Args: never; Returns: undefined }
       regional_commands_overview: {
         Args: never
@@ -21650,6 +21756,40 @@ export type Database = {
         Returns: undefined
       }
       staff_tier_summary: { Args: { _org_unit_id?: string }; Returns: Json }
+      staff_vault_activity: {
+        Args: { _profile_id: string }
+        Returns: {
+          action: string
+          actor_name: string
+          actor_staff_id: string
+          created_at: string
+          detail: string
+          file_name: string
+          file_title: string
+          id: string
+        }[]
+      }
+      staff_vault_can_view: {
+        Args: { _profile_id: string; _user_id: string }
+        Returns: boolean
+      }
+      staff_vault_is_owner: {
+        Args: { _profile_id: string; _user_id: string }
+        Returns: boolean
+      }
+      staff_vault_people: {
+        Args: never
+        Returns: {
+          file_count: number
+          grade: string
+          is_self: boolean
+          name: string
+          profile_id: string
+          rank: string
+          staff_id: string
+          unit: string
+        }[]
+      }
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       submit_holding_staff_verification: {
         Args: { _photo_path: string; _staff_id: string }

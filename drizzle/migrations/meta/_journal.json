@@ -547,6 +547,13 @@
       "when": 1794139326152,
       "tag": "0077_command_vault_activity_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1794139486471,
+      "tag": "0078_staff_vault",
+      "breakpoints": true
     }
   ]
 }

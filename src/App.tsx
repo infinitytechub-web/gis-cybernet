@@ -116,6 +116,7 @@ const Procurement = lazy(() => import("./pages/Procurement"));
 const Misd = lazy(() => import("./pages/Misd"));
 const Ipse = lazy(() => import("./pages/Ipse"));
 const CommandVault = lazy(() => import("./pages/CommandVault"));
+const StaffVault = lazy(() => import("./pages/StaffVault"));
 const RecycleBin = lazy(() => import("./pages/RecycleBin"));
 const DeletedRecords = lazy(() => import("./pages/DeletedRecords"));
 const RetentionPolicy = lazy(() => import("./pages/RetentionPolicy"));
@@ -312,6 +313,7 @@ function App() {
           <Route path="/my-portal" element={<ProtectedRoute module="my-portal"><Layout><StaffPortal /></Layout></ProtectedRoute>} />
           <Route path="/audit-log" element={<ProtectedRoute module="audit-log"><Layout><AuditLogDashboard /></Layout></ProtectedRoute>} />
           <Route path="/rum-analytics" element={<ProtectedRoute module="rum-analytics"><Layout><RumAnalytics /></Layout></ProtectedRoute>} />
+          <Route path="/staff-vault" element={<ProtectedRoute module="staff-vault"><Layout><StaffVault /></Layout></ProtectedRoute>} />
           <Route path="/command-vault" element={<ProtectedRoute module="command-vault"><Layout><CommandVault /></Layout></ProtectedRoute>} />
          <Route path="/command-vault/gps" element={<ProtectedRoute module="command-vault"><Layout><GpsAddresses /></Layout></ProtectedRoute>} />
          {/* GPS Hub aliases — keep deep-links to the canonical command-vault path. */}
