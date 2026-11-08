@@ -65,7 +65,7 @@ export default function CommandVault() {
   const { user, isAdmin, isOic, is2ic, role, loading } = useAuth();
   // Regional commanders commonly carry the supervisor app role; the database
   // still requires an active regional-commander position before returning data.
-  const allowed = isAdmin || isOic || is2ic || role === "supervisor" || role === "command_officer" || role === "staff_officer" || role === "head_of_administration" || role === "chief_staff_officer";
+  const allowed = isAdmin || isOic || is2ic || role === "supervisor" || role === "command_officer" || role === "staff_officer" || role === "chief_staff_officer";
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -176,8 +176,8 @@ export const MODULES: ModuleDef[] = [
   { key: "command-assignments", label: "Command Matrix", tier: "command", roles: ADMIN_OIC_2IC, paths: ["/command-assignments"] },
   // Smart HR workspace: establishment, positions register, personnel record
   // completeness and staff availability across every command in reach.
-  { key: "command-analytics", label: "Command & Department Analytics", tier: "command", roles: [...COMMAND, "head_of_administration"], paths: ["/command-analytics"] },
-  { key: "hr", label: "Human Resource", feature: "Human Resource", tier: "command", roles: [...COMMAND, "head_of_administration"], paths: ["/hr", "/hr/create-account", "/hr/applications", "/hr/overview", "/hr/command", "/hr/pending", "/hr/staff-tier"] },
+  { key: "command-analytics", label: "Command & Department Analytics", tier: "command", roles: COMMAND, paths: ["/command-analytics"] },
+  { key: "hr", label: "Human Resource", feature: "Human Resource", tier: "command", roles: COMMAND, paths: ["/hr", "/hr/create-account", "/hr/applications", "/hr/overview", "/hr/command", "/hr/pending", "/hr/staff-tier"] },
 
   // ── Administration, security & audit ────────────────────────────────────
   // Audit, session, security and telemetry surfaces are audit-sensitive:

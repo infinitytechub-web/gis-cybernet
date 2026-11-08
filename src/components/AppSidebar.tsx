@@ -601,7 +601,7 @@ export function AppSidebar() {
               icon: Award,
               iconColor: "text-amber-600 dark:text-amber-400",
               items:
-                (role === "admin" || role === "oic" || role === "2ic" || role === "head_of_administration" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
+                (role === "admin" || role === "oic" || role === "2ic" || role === "chief_staff_officer" || role === "staff_officer" || role === "supervisor" || role === "shift_supervisor" || role === "deputy_shift_supervisor")
                   ? [...appraisalItems, staffApprovalsItem]
                   : appraisalItems,
             },

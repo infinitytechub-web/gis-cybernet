@@ -2563,6 +2563,7 @@ export type Database = {
           assigned_by: string
           created_at: string
           custom_role_id: string
+          granted_base: boolean
           id: string
           profile_id: string
         }
@@ -2570,6 +2571,7 @@ export type Database = {
           assigned_by: string
           created_at?: string
           custom_role_id: string
+          granted_base?: boolean
           id?: string
           profile_id: string
         }
@@ -2577,6 +2579,7 @@ export type Database = {
           assigned_by?: string
           created_at?: string
           custom_role_id?: string
+          granted_base?: boolean
           id?: string
           profile_id?: string
         }
@@ -19517,6 +19520,7 @@ export type Database = {
       }
       can_manage_appraisals: { Args: { _uid: string }; Returns: boolean }
       can_manage_command_tier: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_custom_roles: { Args: { _user_id: string }; Returns: boolean }
       can_manage_fleet: { Args: { _user_id: string }; Returns: boolean }
       can_manage_org_unit: {
         Args: { _org_unit_id: string; _user_id: string }

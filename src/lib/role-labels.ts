@@ -35,7 +35,6 @@ export const COMMAND_TIER_ROLES: AppRole[] = [
   "admin",
   "oic",
   "2ic",
-  "head_of_administration",
   "chief_staff_officer",
   "command_officer",
   "staff_officer",

@@ -22,6 +22,8 @@ interface AuthContextValue {
   isHoa: boolean;
   /** Admin, OIC and 2IC may assign, modify and revoke command-tier roles/grants. */
   canManageCommandTier: boolean;
+  /** Super Admin, OIC, 2IC and Chief Staff Officer may create and assign custom roles. */
+  canManageCustomRoles: boolean;
   /** Tightest tier — only Admin + OIC may export Interlink dispatch & approval logs. */
   canExportInterlinkLogs: boolean;
 
@@ -47,6 +49,7 @@ const FALLBACK_AUTH: AuthContextValue = {
   isOic: false,
   isHoa: false,
   canManageCommandTier: false,
+  canManageCustomRoles: false,
   canExportInterlinkLogs: false,
 };
 
@@ -162,6 +165,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchRole]);
 
+  // Re-read roles regularly and on focus so a removed role cuts dashboard access without re-login.
+  useEffect(() => {
+    if (!user) return;
+    const reload = async () => { const r = await fetchRole(user.id); setRole(prev => prev === r ? prev : r); };
+    const t = window.setInterval(reload, 60_000);
+    const onFocus = () => { if (document.visibilityState === "visible") reload(); };
+    document.addEventListener("visibilitychange", onFocus); window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(t); document.removeEventListener("visibilitychange", onFocus); window.removeEventListener("focus", onFocus); };
+  }, [user, fetchRole]);
+
   // Auto sign-out after the configured idle period (only when authenticated).
   useIdleTimeout({ enabled: !!user, idleMinutes, warnSeconds });
 
@@ -184,13 +197,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     isAdmin: role === "admin",
     isSupervisor: role === "supervisor",
-    // Command tier: admin, OIC, 2IC, Head of Administration, Chief Staff Officer,
+    // Command tier: admin, OIC, 2IC, Chief Staff Officer, Command Officer,
     // Staff Officer, and Supervisor share elevated reporting/oversight access.
     isAdminOrSupervisor:
       role === "admin" ||
       role === "oic" ||
       role === "2ic" ||
-      role === "head_of_administration" ||
       role === "chief_staff_officer" ||
       role === "command_officer" ||
       role === "staff_officer" ||
@@ -200,6 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isOic: role === "oic",
     isHoa: role === "head_of_administration",
     canManageCommandTier: role === "admin" || role === "oic" || role === "2ic",
+    canManageCustomRoles: role === "admin" || role === "oic" || role === "2ic" || role === "chief_staff_officer",
     canExportInterlinkLogs: role === "admin" || role === "oic",
   }), [user, role, loading, signIn, signOut]);
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { formatDate } from "@/lib/date-format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -24,8 +25,8 @@ const empty = { id: null as string | null, name: "", description: "", base_role:
 
 /** Create, edit, retire and assign custom roles. Each custom role carries the permissions of one existing system role. */
 export function CustomRolesManager() {
-  const { isAdmin, isAdminOrSupervisor, canManageCommandTier } = useAuth();
-  const canManage = isAdmin || isAdminOrSupervisor || canManageCommandTier;
+  const { isAdmin, canManageCustomRoles } = useAuth();
+  const canManage = canManageCustomRoles;
   const qc = useQueryClient();
   const [draft, setDraft] = useState(empty);
   const [busy, setBusy] = useState(false);
@@ -61,7 +62,7 @@ export function CustomRolesManager() {
     toast.success("Role deleted"); if (viewing?.id === r.id) setViewing(null); refresh();
   };
 
-  if (!canManage) return <p className="text-sm text-muted-foreground">Only Command Tier staff and Super Admins can create roles.</p>;
+  if (!canManage) return <p className="text-sm text-muted-foreground">Only Super Admins, OIC, 2IC and Chief Staff Officers can create roles.</p>;
   return <div className="space-y-4">
     <Card><CardHeader><CardTitle className="text-base">{draft.id ? "Edit role" : "Create a new role"}</CardTitle>
       <CardDescription>Each role gives officers the access of the permission level you choose.{!isAdmin && " Command staff create roles for their own command."}</CardDescription></CardHeader>
@@ -131,14 +132,14 @@ function RoleHolders({ role, onClose, onDone }: { role: CustomRole; onClose: () 
     toast.success("Role removed"); holders.refetch(); onDone();
   };
   return <Card><CardHeader className="flex flex-row items-center justify-between gap-2"><div><CardTitle className="text-base">Officers with “{role.name}”</CardTitle>
-    <CardDescription>Removing the role here does not remove the officer’s underlying system permission; change that under System Roles.</CardDescription></div>
+    <CardDescription>Removing the role also removes the access it gave, unless the officer has that access from another role.</CardDescription></div>
     <Button size="sm" variant="ghost" onClick={onClose}>Close</Button></CardHeader>
     <CardContent>
       {holders.error && <p className="text-sm text-destructive">Could not load officers.</p>}
       <div className="overflow-x-auto"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Staff ID</TableHead><TableHead>Rank</TableHead><TableHead>Assigned</TableHead><TableHead /></TableRow></TableHeader>
         <TableBody>{pager.pageItems.map(h => { const n = `${h.profile?.first_name ?? ""} ${h.profile?.last_name ?? ""}`.trim() || "Officer"; return <TableRow key={h.id}>
           <TableCell className="font-medium">{n}</TableCell><TableCell>{h.profile?.staff_id ?? "—"}</TableCell><TableCell>{h.profile?.rank?.name ?? "—"}</TableCell>
-          <TableCell>{new Date(h.created_at).toLocaleDateString("en-GB")}</TableCell>
+          <TableCell>{formatDate(h.created_at)}</TableCell>
           <TableCell>{h.profile && <Button size="sm" variant="outline" onClick={() => unassign(h.profile!.id, n)}>Remove</Button>}</TableCell></TableRow>; })}
           {!holders.isLoading && !holders.data?.length && <TableRow><TableCell colSpan={5} className="text-muted-foreground">No officers hold this role.</TableCell></TableRow>}</TableBody></Table></div>
       <ListPagination {...pager} label="officers" />
