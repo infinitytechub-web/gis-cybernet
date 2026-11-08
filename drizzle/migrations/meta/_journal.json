@@ -470,6 +470,13 @@
       "when": 1794136038161,
       "tag": "0066_command_workforce_leadership_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1794137349846,
+      "tag": "0067_staff_tier",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { QuickUserSearch } from "@/components/dashboard/QuickUserSearch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import StaffRosterTab from "@/components/command/StaffRosterTab";
@@ -190,9 +191,11 @@ export default function UnitDashboard() {
                 <TabsTrigger value="cases">Cases ({data.cases.length})</TabsTrigger>
                 <TabsTrigger value="vehicles">Vehicles ({data.vehicles.length})</TabsTrigger>
                 <TabsTrigger value="patrols">Patrols ({data.patrols.length})</TabsTrigger>
+                <TabsTrigger value="quick-search">Quick User Search</TabsTrigger>
               </TabsList>
             </div>
 
+            <TabsContent value="quick-search" className="mt-4"><QuickUserSearch /></TabsContent>
             <TabsContent value="staff" className="mt-4 space-y-4">
               {/* Roster view: photos, roles and contact details for this unit */}
               {unitId && <StaffRosterTab orgUnitId={unitId} branchName={data.unit?.name ?? undefined} compact />}

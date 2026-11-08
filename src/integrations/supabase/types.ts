@@ -13654,6 +13654,7 @@ export type Database = {
           form_completed_on: string | null
           gender: string | null
           ghana_card_number: string | null
+          grade_id: string | null
           height_cm: number | null
           hobbies: string[] | null
           hometown: string | null
@@ -13731,6 +13732,7 @@ export type Database = {
           form_completed_on?: string | null
           gender?: string | null
           ghana_card_number?: string | null
+          grade_id?: string | null
           height_cm?: number | null
           hobbies?: string[] | null
           hometown?: string | null
@@ -13808,6 +13810,7 @@ export type Database = {
           form_completed_on?: string | null
           gender?: string | null
           ghana_card_number?: string | null
+          grade_id?: string | null
           height_cm?: number | null
           hobbies?: string[] | null
           hometown?: string | null
@@ -13864,6 +13867,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "staff_grades"
             referencedColumns: ["id"]
           },
           {
@@ -17254,6 +17264,39 @@ export type Database = {
           },
         ]
       }
+      staff_grades: {
+        Row: {
+          code: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       staff_list_import_audit: {
         Row: {
           action: string
@@ -17789,6 +17832,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      staff_tier_audit: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          reason: string | null
+          target_profile_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reason?: string | null
+          target_profile_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reason?: string | null
+          target_profile_id?: string | null
+        }
+        Relationships: []
       }
       staff_transfer_requests: {
         Row: {
@@ -19203,6 +19276,16 @@ export type Database = {
           id: string
           recipient_type: string
         }[]
+      }
+      assign_staff_tier: {
+        Args: {
+          _add_role: Database["public"]["Enums"]["app_role"]
+          _grade_id: string
+          _profile_id: string
+          _rank_id: string
+          _reason: string
+        }
+        Returns: undefined
       }
       attendance_hours_summary: {
         Args: { _from: string; _to: string }
@@ -21052,6 +21135,17 @@ export type Database = {
         }
         Returns: string
       }
+      save_staff_tier_definition: {
+        Args: {
+          _active: boolean
+          _code: string
+          _id: string
+          _kind: string
+          _name: string
+          _sort: number
+        }
+        Returns: string
+      }
       schedule_application_interview: {
         Args: { _at: string; _id: string; _location: string; _panel: string }
         Returns: string
@@ -21417,6 +21511,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      staff_tier_summary: { Args: { _org_unit_id?: string }; Returns: Json }
       status_workflow_options: { Args: { _entity: string }; Returns: string[] }
       submit_holding_staff_verification: {
         Args: { _photo_path: string; _staff_id: string }

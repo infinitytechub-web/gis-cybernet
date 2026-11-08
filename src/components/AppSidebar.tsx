@@ -55,6 +55,7 @@ const hrEntryItems = [
   { title: "Human Resource", url: "/hr", icon: BriefcaseBusiness, iconColor: "text-primary" },
   { title: "Command HR Dashboard", url: "/hr/command", icon: LayoutDashboard, iconColor: "text-primary" },
   { title: "Pending HR", url: "/hr/pending", icon: ClipboardList, iconColor: "text-primary" },
+  { title: "Staff Tier", url: "/hr/staff-tier", icon: Award, iconColor: "text-primary" },
 ];
 
 const staffRecordItems = [
@@ -613,7 +614,7 @@ export function AppSidebar() {
         ])}
         {renderGroup("Logistics & Resources", logisticsItems, [
           { label: "Procurement", icon: Briefcase, iconColor: "text-emerald-700 dark:text-emerald-400", items: financeItems },
-          { label: "Health & Wellbeing", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300", items: healthItems },
+          { label: "Clinic", icon: FileHeart, iconColor: "text-emerald-700 dark:text-emerald-300", items: healthItems },
         ])}
         {renderGroup("M&E and Project Management", meEntryItems, [
           { label: "Strategy & Delivery", icon: Crosshair, iconColor: "text-blue-700 dark:text-blue-300", items: meStrategyItems },
