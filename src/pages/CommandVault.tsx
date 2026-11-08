@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { StaffCombobox } from "@/components/ui/staff-combobox";
 import { PagedSection } from "@/components/ui/paged-section";
+import { CommandVaultLog } from "@/components/vault/CommandVaultLog";
 import { QuickScroll } from "@/components/ui/quick-scroll";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -578,7 +579,7 @@ export default function CommandVault() {
       <Tabs defaultValue="documents" className="space-y-4">
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="documents"><FileText className="mr-1 h-4 w-4" />Documents</TabsTrigger>
-          <TabsTrigger value="activity"><History className="mr-1 h-4 w-4" />Activity</TabsTrigger>
+          <TabsTrigger value="activity"><History className="mr-1 h-4 w-4" />Vault log</TabsTrigger>
         </TabsList>
         <TabsContent value="documents">
       <Card>
@@ -710,17 +711,7 @@ export default function CommandVault() {
       </Card>
         </TabsContent>
         <TabsContent value="activity">
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Sensitive document activity</CardTitle><CardDescription>Immutable upload, viewing, download, change, archive and restore history for this command.</CardDescription></CardHeader>
-            <CardContent>
-              <PagedSection items={audit as any[]} searchText={(event: any) => `${event.action} ${event.file_title} ${event.file_name} ${event.detail ?? ""}`} label="activity events" placeholder="Search activity…">
-                {(pageItems) => <div className="overflow-x-auto"><Table className="min-w-[720px]"><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Action</TableHead><TableHead>Document</TableHead><TableHead>Details</TableHead></TableRow></TableHeader><TableBody>
-                  {pageItems.map((event: any) => <TableRow key={event.id}><TableCell className="whitespace-nowrap text-xs">{format(new Date(event.created_at), "dd/MM/yyyy, HH:mm")}</TableCell><TableCell><Badge variant="outline" className="capitalize">{event.action}</Badge></TableCell><TableCell><div className="font-medium">{event.file_title}</div><div className="text-xs text-muted-foreground">{event.file_name}</div></TableCell><TableCell className="text-sm text-muted-foreground">{event.detail || "—"}</TableCell></TableRow>)}
-                  {pageItems.length === 0 && <TableRow><TableCell colSpan={4} className="py-8 text-center text-muted-foreground">No activity recorded.</TableCell></TableRow>}
-                </TableBody></Table></div>}
-              </PagedSection>
-            </CardContent>
-          </Card>
+          {selectedCommand && <CommandVaultLog orgUnitId={selectedCommand} commandName={(commands as any[]).find((c: any) => c.id === selectedCommand)?.name} />}
         </TabsContent>
       </Tabs>
 

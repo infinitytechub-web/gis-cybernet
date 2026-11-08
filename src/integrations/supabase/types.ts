@@ -19702,6 +19702,22 @@ export type Database = {
       }
       command_reach_units: { Args: { _user_id: string }; Returns: string[] }
       command_region_of: { Args: { _unit: string }; Returns: string }
+      command_vault_activity: {
+        Args: { _from?: string; _org_unit_id: string; _to?: string }
+        Returns: {
+          action: string
+          actor_name: string
+          actor_rank: string
+          actor_staff_id: string
+          actor_user_id: string
+          created_at: string
+          detail: string
+          file_id: string
+          file_name: string
+          file_title: string
+          id: string
+        }[]
+      }
       command_vault_can_access: {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
