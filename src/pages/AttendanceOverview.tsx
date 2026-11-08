@@ -24,6 +24,7 @@ import { formatDate } from "@/lib/date-format";
 import { format, startOfMonth, subDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { DateInput } from "@/components/ui/date-input";
+import { AttendanceTrendsPanel } from "@/components/attendance/AttendanceTrendsPanel";
 import { AttendanceValidationReport } from "@/components/attendance/AttendanceValidationReport";
 import { useAttendanceReportSync } from "@/hooks/useAttendanceReportSync";
 
@@ -154,6 +155,7 @@ export default function AttendanceOverview() {
           </div>
         }
       />
+      <AttendanceTrendsPanel />
       {error && <p role="alert" className="text-destructive">Could not load attendance: {(error as Error).message}</p>}
 
       <Card>

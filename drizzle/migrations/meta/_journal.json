@@ -477,6 +477,20 @@
       "when": 1794137349846,
       "tag": "0067_staff_tier",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1794137585548,
+      "tag": "0068_staff_grades_read_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1794137661726,
+      "tag": "0069_fix_unit_dashboard_patrols",
+      "breakpoints": true
     }
   ]
 }
