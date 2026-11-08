@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import HierarchyView from "@/components/command/HierarchyView";
 import { CommandHrmPanel } from "@/components/hr/CommandHrmPanel";
+import { AnalyticsWorkforceTabs } from "@/components/dashboard/AnalyticsWorkforceTabs";
 import { KycExportDialog } from "@/components/hr/KycExportDialog";
 import { useDirectoryPermissions } from "@/hooks/useDirectoryPermissions";
 import { exportReport, type ExportFormat } from "@/lib/export-utils";
@@ -298,6 +299,8 @@ export default function CommandAnalytics() {
           </CardContent>
         </Card>
       )}
+
+      <AnalyticsWorkforceTabs unitId={unitId ?? null} profileIds={(scope.data?.staff ?? []).map((s) => s.id)} />
 
       {unitId && <CommandHrmPanel profileIds={(scope.data?.staff ?? []).map((s) => s.id)} />}
 
