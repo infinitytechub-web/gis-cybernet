@@ -512,6 +512,13 @@
       "when": 1794138079830,
       "tag": "0072_custom_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1794138284275,
+      "tag": "0073_delete_custom_role",
+      "breakpoints": true
     }
   ]
 }

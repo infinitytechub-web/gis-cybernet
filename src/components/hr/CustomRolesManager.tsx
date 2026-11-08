@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Save, UserPlus } from "lucide-react";
+import { Plus, Save, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,7 +42,8 @@ export function CustomRolesManager() {
   const unitName = (id: string | null) => id ? units.data?.find(u => u.id === id)?.name ?? "Command" : "All commands";
   const baseRoles = allowedBaseRoles(Constants.public.Enums.app_role as readonly string[], isAdmin);
   const pager = usePagedList(roles.data ?? []);
-  const refresh = () => ["custom-roles", "custom-role-counts", "staff-tier-summary"].forEach(k => qc.invalidateQueries({ queryKey: [k] }));
+  const [viewing, setViewing] = useState<CustomRole | null>(null);
+  const refresh = () => ["custom-roles", "custom-role-counts", "staff-tier-summary", "custom-role-holders"].forEach(k => qc.invalidateQueries({ queryKey: [k] }));
 
   const save = async () => {
     setBusy(true);
@@ -50,6 +51,14 @@ export function CustomRolesManager() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(draft.id ? "Role updated" : "Role created"); setDraft(empty); refresh();
+  };
+
+  const remove = async (r: CustomRole) => {
+    const reason = window.prompt(`Delete the role "${r.name}"? Enter a reason:`);
+    if (!reason?.trim()) return;
+    const { error } = await supabase.rpc("delete_custom_role", { _id: r.id, _reason: reason });
+    if (error) return toast.error(error.message);
+    toast.success("Role deleted"); if (viewing?.id === r.id) setViewing(null); refresh();
   };
 
   if (!canManage) return <p className="text-sm text-muted-foreground">Only Command Tier staff and Super Admins can create roles.</p>;
@@ -72,9 +81,12 @@ export function CustomRolesManager() {
       <TableBody>{pager.pageItems.map(r => <TableRow key={r.id}><TableCell><div className="font-medium">{r.name}</div>{r.description && <div className="text-xs text-muted-foreground">{r.description}</div>}</TableCell>
         <TableCell className="capitalize">{pretty(r.base_role)}</TableCell><TableCell>{unitName(r.org_unit_id)}</TableCell><TableCell>{counts.data?.[r.id] ?? 0}</TableCell>
         <TableCell><Badge variant={r.is_active ? "secondary" : "outline"}>{r.is_active ? "Active" : "Retired"}</Badge></TableCell>
-        <TableCell><Button size="sm" variant="ghost" onClick={() => setDraft({ id: r.id, name: r.name, description: r.description ?? "", base_role: r.base_role, org_unit_id: r.org_unit_id ?? GLOBAL, is_active: r.is_active })}>Edit</Button></TableCell></TableRow>)}
+        <TableCell><Button size="sm" variant="ghost" onClick={() => setDraft({ id: r.id, name: r.name, description: r.description ?? "", base_role: r.base_role, org_unit_id: r.org_unit_id ?? GLOBAL, is_active: r.is_active })}>Edit</Button>
+          <Button size="sm" variant="ghost" onClick={() => setViewing(r)}><Users className="mr-1 h-4 w-4" aria-hidden />Officers</Button>
+          <Button size="sm" variant="ghost" className="text-destructive" disabled={(counts.data?.[r.id] ?? 0) > 0} title={(counts.data?.[r.id] ?? 0) > 0 ? "Remove all officers first" : "Delete role"} onClick={() => remove(r)}><Trash2 className="h-4 w-4" aria-label="Delete role" /></Button></TableCell></TableRow>)}
         {!roles.isLoading && !roles.data?.length && <TableRow><TableCell colSpan={6} className="text-muted-foreground">No custom roles yet.</TableCell></TableRow>}</TableBody></Table></div>
     <ListPagination {...pager} label="roles" />
+    {viewing && <RoleHolders role={viewing} onClose={() => setViewing(null)} onDone={refresh} />}
     <AssignCustomRole roles={(roles.data ?? []).filter(r => r.is_active)} onDone={refresh} />
   </div>;
 }
@@ -101,5 +113,34 @@ function AssignCustomRole({ roles, onDone }: { roles: CustomRole[]; onDone: () =
         <div><Label htmlFor="cr-reason">Reason</Label><Input id="cr-reason" value={reason} onChange={e => setReason(e.target.value)} placeholder="Required" /></div>
         <div className="flex gap-2"><Button onClick={() => run(false)} disabled={busy || !picked || !role || !reason.trim()}>Assign</Button><Button variant="outline" onClick={() => run(true)} disabled={busy || !picked || !role || !reason.trim()}>Remove</Button></div>
       </div>
+    </CardContent></Card>;
+}
+
+
+function RoleHolders({ role, onClose, onDone }: { role: CustomRole; onClose: () => void; onDone: () => void }) {
+  const holders = useQuery({ queryKey: ["custom-role-holders", role.id], queryFn: async () => {
+    const { data, error } = await supabase.from("custom_role_assignments").select("id, created_at, profile:profiles(id, first_name, last_name, staff_id, rank:ranks(name))").eq("custom_role_id", role.id).order("created_at");
+    if (error) throw error; return (data ?? []) as unknown as { id: string; created_at: string; profile: { id: string; first_name: string | null; last_name: string | null; staff_id: string | null; rank: { name: string } | null } | null }[];
+  } });
+  const pager = usePagedList(holders.data ?? []);
+  const unassign = async (profileId: string, name: string) => {
+    const reason = window.prompt(`Remove "${role.name}" from ${name}? Enter a reason:`);
+    if (!reason?.trim()) return;
+    const { error } = await supabase.rpc("assign_custom_role", { _custom_role_id: role.id, _profile_id: profileId, _remove: true, _reason: reason });
+    if (error) return toast.error(error.message);
+    toast.success("Role removed"); holders.refetch(); onDone();
+  };
+  return <Card><CardHeader className="flex flex-row items-center justify-between gap-2"><div><CardTitle className="text-base">Officers with “{role.name}”</CardTitle>
+    <CardDescription>Removing the role here does not remove the officer’s underlying system permission; change that under System Roles.</CardDescription></div>
+    <Button size="sm" variant="ghost" onClick={onClose}>Close</Button></CardHeader>
+    <CardContent>
+      {holders.error && <p className="text-sm text-destructive">Could not load officers.</p>}
+      <div className="overflow-x-auto"><Table className="min-w-[700px]"><TableHeader><TableRow><TableHead>Officer</TableHead><TableHead>Staff ID</TableHead><TableHead>Rank</TableHead><TableHead>Assigned</TableHead><TableHead /></TableRow></TableHeader>
+        <TableBody>{pager.pageItems.map(h => { const n = `${h.profile?.first_name ?? ""} ${h.profile?.last_name ?? ""}`.trim() || "Officer"; return <TableRow key={h.id}>
+          <TableCell className="font-medium">{n}</TableCell><TableCell>{h.profile?.staff_id ?? "—"}</TableCell><TableCell>{h.profile?.rank?.name ?? "—"}</TableCell>
+          <TableCell>{new Date(h.created_at).toLocaleDateString("en-GB")}</TableCell>
+          <TableCell>{h.profile && <Button size="sm" variant="outline" onClick={() => unassign(h.profile!.id, n)}>Remove</Button>}</TableCell></TableRow>; })}
+          {!holders.isLoading && !holders.data?.length && <TableRow><TableCell colSpan={5} className="text-muted-foreground">No officers hold this role.</TableCell></TableRow>}</TableBody></Table></div>
+      <ListPagination {...pager} label="officers" />
     </CardContent></Card>;
 }

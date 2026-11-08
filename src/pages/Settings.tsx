@@ -122,8 +122,8 @@ const roleColors: Record<AppRole, string> = {
  * (organization, configuration, integrations, maintenance).
  */
 const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; area: "security" | "system" }[] = [
-  { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
-  { value: "custom-roles", label: "Custom Roles", icon: Shield, iconClass: "text-primary", area: "security" },
+  { value: "roles", label: "System Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
+  { value: "custom-roles", label: "User Roles", icon: Shield, iconClass: "text-primary", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
   { value: "directory-perms", label: "Directory Matrix", icon: Grid3X3, iconClass: "text-emerald-600", area: "security" },
   { value: "ranks", label: "Ranks & Hierarchy", icon: Layers, iconClass: "text-amber-600", area: "system" },

@@ -19769,6 +19769,10 @@ export type Database = {
         Returns: undefined
       }
       delete_brand: { Args: { _id: string }; Returns: undefined }
+      delete_custom_role: {
+        Args: { _id: string; _reason: string }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
