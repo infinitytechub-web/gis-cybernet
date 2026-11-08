@@ -3,7 +3,7 @@ export const DASHBOARD_QUERY_KEYS = [
   "command-dashboard-live", "command-dashboard-units", "unit-dashboard", "staff-analytics",
   "regional-commands", "today-duty", "command-approval-queue",
   "hr-hub-staff-stats", "staff", "directory-staff", "staff-mapping-rows", "staff-applications",
-  "hr-duty-summary", "shifts", "shift-assignments", "attendance", "my-attendance",
+  "command-workforce", "hr-duty-summary", "shifts", "shift-assignments", "attendance", "my-attendance",
   "portal-week-attendance", "portal-my-leave", "my-excuse-forms", "my-excuse-subs",
   "appraisal-queue", "appraisals-list", "appraisal-workflow", "appraisal-detail", "appraisal-audit", "top5-month", "top5-year",
 ] as const;

@@ -456,6 +456,20 @@
       "when": 1793910411697,
       "tag": "0064_command_reassignment_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1794135956222,
+      "tag": "0065_command_workforce_dashboard",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1794136038161,
+      "tag": "0066_command_workforce_leadership_roles",
+      "breakpoints": true
     }
   ]
 }

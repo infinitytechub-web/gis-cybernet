@@ -19520,6 +19520,10 @@ export type Database = {
         Args: { _org_unit_id: string; _user_id: string }
         Returns: boolean
       }
+      command_workforce_dashboard: {
+        Args: { _day?: string; _year?: number }
+        Returns: Json
+      }
       commit_staff_list_import: { Args: { _import_id: string }; Returns: Json }
       compute_interlink_next_run: {
         Args: {
