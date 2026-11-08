@@ -37,4 +37,4 @@
 - Org selectors fold HQ wrapper levels (Management Members / National Headquarters with children) into HQ via buildOrgTree; structure editors use collapseHq:false — why: one HQ entry in every filter without altering parent links or scoping.
 - Pending HR command reassignments are proposals; officers move only when the releasing command OIC/2IC or Super Admin approves via decide_command_reassignment (no self-decision, stale-assignment check, immutable events) — why: postings are reviewed before mapping changes.
 
-- Staff Tier (/hr/staff-tier) defines ranks/grades only via save_staff_tier_definition (Super Admin) and assigns via assign_staff_tier (Super Admin or command head, reason, audited); headcounts use invoker staff_tier_summary — why: tier changes stay server-authorised and counts respect caller scope.
+- Staff Tier: definitions via save_staff_tier_definition (Super Admin), assignments via assign_staff_tier (admin/command head, audited) — why: server-authorised tiers.
