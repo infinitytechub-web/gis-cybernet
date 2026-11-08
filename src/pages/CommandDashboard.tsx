@@ -28,6 +28,7 @@ import { downloadBlob } from "@/lib/download-utils";
 import { formatDate, formatDateTime } from "@/lib/date-format";
 import { LeaveDueWidget } from "@/components/leave/LeaveDueWidget";
 import { SignOffQueue } from "@/components/command/SignOffQueue";
+import { CustomRolesManager } from "@/components/hr/CustomRolesManager";
 import { QuickUserSearch } from "@/components/dashboard/QuickUserSearch";
 import { KpiTile } from "@/components/dashboard/KpiTile";
 import { useStaffingBaseline } from "@/hooks/useDashboardData";
@@ -271,8 +272,10 @@ export default function CommandDashboard() {
           <TabsTrigger value="ranks">Posted ranks</TabsTrigger>
           <TabsTrigger value="portal">Portal this month</TabsTrigger>
           <TabsTrigger value="quick-search">Quick User Search</TabsTrigger>
+          <TabsTrigger value="roles">Roles</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="roles" className="mt-4"><CustomRolesManager /></TabsContent>
         <TabsContent value="quick-search" className="mt-4"><QuickUserSearch /></TabsContent>
         <TabsContent value="officers" className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">

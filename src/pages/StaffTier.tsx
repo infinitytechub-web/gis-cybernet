@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { filterQuickUsers, type QuickUserRow } from "@/lib/quick-user-search";
+import { CustomRolesManager } from "@/components/hr/CustomRolesManager";
 import { Constants } from "@/integrations/supabase/types";
 
 type Bucket = { id: string | null; name: string; count: number };
@@ -61,7 +62,7 @@ export default function StaffTier() {
       <TabsContent value="grades" className="mt-4"><DefList kind="grade" rows={grades.data ?? []} canEdit={isAdmin} onDone={refresh} /></TabsContent>
       <TabsContent value="roles" className="mt-4"><Card><CardHeader><CardTitle className="text-base">System roles</CardTitle></CardHeader><CardContent className="flex flex-wrap gap-2">
         {ROLES.map(r => <Badge key={r} variant="outline" className="capitalize">{pretty(r)} · {summary.data?.roles.find(x => x.name === r)?.count ?? 0}</Badge>)}
-        <p className="w-full pt-2 text-xs text-muted-foreground">Roles are fixed security levels; assign them to officers in the Assign tab.</p></CardContent></Card></TabsContent>
+        <p className="w-full pt-2 text-xs text-muted-foreground">These are the system permission levels. Create your own roles below.</p></CardContent></Card><div className="mt-4"><CustomRolesManager /></div></TabsContent>
     </Tabs>
   </div>;
 }

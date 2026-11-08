@@ -2558,6 +2558,96 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_role_assignments: {
+        Row: {
+          assigned_by: string
+          created_at: string
+          custom_role_id: string
+          id: string
+          profile_id: string
+        }
+        Insert: {
+          assigned_by: string
+          created_at?: string
+          custom_role_id: string
+          id?: string
+          profile_id: string
+        }
+        Update: {
+          assigned_by?: string
+          created_at?: string
+          custom_role_id?: string
+          id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_role_assignments_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_role_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_role_assignments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "staff_birthdays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_roles: {
+        Row: {
+          base_role: Database["public"]["Enums"]["app_role"]
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          org_unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_role: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          org_unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_role?: Database["public"]["Enums"]["app_role"]
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          org_unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_roles_org_unit_id_fkey"
+            columns: ["org_unit_id"]
+            isOneToOne: false
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cyber_incidents: {
         Row: {
           affected_systems: string | null
@@ -19277,6 +19367,15 @@ export type Database = {
           recipient_type: string
         }[]
       }
+      assign_custom_role: {
+        Args: {
+          _custom_role_id: string
+          _profile_id: string
+          _reason: string
+          _remove: boolean
+        }
+        Returns: undefined
+      }
       assign_staff_tier: {
         Args: {
           _add_role: Database["public"]["Enums"]["app_role"]
@@ -19644,6 +19743,10 @@ export type Database = {
           _target_org_unit_id: string
         }
         Returns: string
+      }
+      custom_role_base_allowed: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
       }
       decide_command_reassignment: {
         Args: { _decision: string; _note: string; _request_id: string }
@@ -21126,6 +21229,17 @@ export type Database = {
         Returns: string
       }
       save_command_order: { Args: { _ids: string[] }; Returns: undefined }
+      save_custom_role: {
+        Args: {
+          _active: boolean
+          _base_role: Database["public"]["Enums"]["app_role"]
+          _description: string
+          _id: string
+          _name: string
+          _org_unit_id: string
+        }
+        Returns: string
+      }
       save_staff_mapping: {
         Args: {
           _expected_org_unit_id: string

@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ListPagination } from "@/components/ui/list-pagination";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CustomRolesManager } from "@/components/hr/CustomRolesManager";
 import { QuickUserSearch } from "@/components/dashboard/QuickUserSearch";
 import { KpiTile } from "@/components/dashboard/KpiTile";
 import { DashboardSyncStatus } from "@/components/dashboard/DashboardSyncStatus";
@@ -64,7 +65,8 @@ export default function CommandWorkforceDashboard() {
         <KpiTile title="Appraisals awaiting review" value={data.appraisal_access ? data.appraisals?.filter(r => r.status === "submitted" || r.status === "under_review").length ?? 0 : "Restricted"} icon={ClipboardCheck} sub={year}/>
       </div>
       <Tabs defaultValue="staff" className="min-w-0">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-5">{(Object.keys(labels) as View[]).map(view => <TabsTrigger key={view} value={view} className="min-h-10">{labels[view]}</TabsTrigger>)}<TabsTrigger value="quick-search" className="min-h-10">Quick User Search</TabsTrigger></TabsList>
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-6">{(Object.keys(labels) as View[]).map(view => <TabsTrigger key={view} value={view} className="min-h-10">{labels[view]}</TabsTrigger>)}<TabsTrigger value="quick-search" className="min-h-10">Quick User Search</TabsTrigger><TabsTrigger value="roles" className="min-h-10">Roles</TabsTrigger></TabsList>
+        <TabsContent value="roles" className="mt-4"><CustomRolesManager /></TabsContent>
         <TabsContent value="quick-search" className="mt-4 min-w-0"><QuickUserSearch /></TabsContent>
         {(Object.keys(labels) as View[]).map(view => <TabsContent key={view} value={view} className="mt-4 min-w-0">
           {view === "appraisals" && !data.appraisal_access ? <Alert><AlertDescription>Appraisal access is not authorized for your account.</AlertDescription></Alert> :

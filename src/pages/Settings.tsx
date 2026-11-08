@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { CustomRolesManager } from "@/components/hr/CustomRolesManager";
 import { ApprovalChainEditor } from "@/components/detention/ApprovalChainEditor";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -122,6 +123,7 @@ const roleColors: Record<AppRole, string> = {
  */
 const TAB_DEFS: { value: string; label: string; icon: any; iconClass: string; area: "security" | "system" }[] = [
   { value: "roles", label: "User Roles", icon: Shield, iconClass: "text-destructive", area: "security" },
+  { value: "custom-roles", label: "Custom Roles", icon: Shield, iconClass: "text-primary", area: "security" },
   { value: "permissions", label: "Permissions", icon: Grid3X3, iconClass: "text-chart-1", area: "security" },
   { value: "directory-perms", label: "Directory Matrix", icon: Grid3X3, iconClass: "text-emerald-600", area: "security" },
   { value: "ranks", label: "Ranks & Hierarchy", icon: Layers, iconClass: "text-amber-600", area: "system" },
@@ -194,6 +196,7 @@ export default function Settings() {
         <TabsContent value="permissions"><PermissionsMatrix /></TabsContent>
         <TabsContent value="directory-perms"><DirectoryPermissionsMatrix /></TabsContent>
         <TabsContent value="chain-of-command"><ApprovalChainEditor /></TabsContent>
+        <TabsContent value="custom-roles"><CustomRolesManager /></TabsContent>
         <TabsContent value="ranks"><RankHierarchyAdmin canEdit={isAdmin} /></TabsContent>
         <TabsContent value="access-policy"><AccessPolicySettings /></TabsContent>
         <TabsContent value="anonymization"><AnonymizationSettings /></TabsContent>

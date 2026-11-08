@@ -38,3 +38,4 @@
 - Pending HR command reassignments are proposals; officers move only when the releasing command OIC/2IC or Super Admin approves via decide_command_reassignment (no self-decision, stale-assignment check, immutable events) — why: postings are reviewed before mapping changes.
 
 - Staff Tier: define via save_staff_tier_definition, assign via assign_staff_tier (audited) — why: server-side authority.
+- Custom roles (custom_roles) map to an existing app_role permission level; created/assigned only via save_custom_role/assign_custom_role — why: new names never bypass RLS.
