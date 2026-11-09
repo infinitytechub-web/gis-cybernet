@@ -34,9 +34,9 @@
 - KYC visibility (sensitive fields, photos, documents) is decided per profile by the `kyc_access` RPC; exports and the profile KYC tab follow it — why: rank-based masking must be server-decided, not a client role guess.
 - Staff Applications submits self/scoped selected-profile requests through record_staff_application; locked review RPCs enforce stages and prevent self-approval with immutable history; transfers keep their own approval steps and posting reuses command_move_officers/staff_appointments — why: one server-authorised pipeline without duplicate requests or racing decisions.
 - Transfers and promotions are approved by command OIC/2IC via `is_command_head_for` (role + `user_org_scope`) in `recommend_staff_transfer`/`decide_staff_transfer`/`decide_staff_promotion`, with Super Admin override; queue via `command_approval_queue` — why: approval authority follows the command, not general HR roles.
-- Org selectors fold HQ wrapper levels (Management Members / National Headquarters with children) into HQ via buildOrgTree; structure editors use collapseHq:false — why: one HQ entry in every filter without altering parent links or scoping.
+- Org selectors fold HQ wrapper levels into HQ via buildOrgTree; structure editors use collapseHq:false — why: one HQ entry without altering parent links.
 - Pending HR command reassignments are proposals; officers move only when the releasing command OIC/2IC or Super Admin approves via decide_command_reassignment (no self-decision, stale-assignment check, immutable events) — why: postings are reviewed before mapping changes.
 
 - Staff Tier: save_staff_tier_definition/assign_staff_tier.
 - Custom roles: app_role level, save/assign_custom_role.
-- Staff Vault: owner-only writes under profile-id prefix; reads via `staff_vault_can_view` (owner/admin/same-branch senior rank+grade), immutable audit — why: no role-only access to personal files.
+- Staff Vault: owner-only writes; reads via `staff_vault_can_view` (rank+grade, same branch) — why: no role-only access.
