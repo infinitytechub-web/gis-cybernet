@@ -39,3 +39,4 @@
 
 - Staff Tier: save_staff_tier_definition/assign_staff_tier.
 - Custom roles: app_role level, save/assign_custom_role.
+- Staff Vault files live under the owner's profile-id storage prefix; only the owner uploads/archives, and reads go through `staff_vault_can_view` (owner, Super Admin, or same command branch with strictly senior rank and equal-or-senior grade) with immutable `staff_vault_audit` — why: personal documents must never be visible by role alone.
