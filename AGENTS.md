@@ -38,5 +38,5 @@
 - Pending HR command reassignments are proposals; officers move only when the releasing command OIC/2IC or Super Admin approves via decide_command_reassignment (no self-decision, stale-assignment check, immutable events) — why: postings are reviewed before mapping changes.
 
 - Staff Tier: save_staff_tier_definition/assign_staff_tier.
-- Custom roles: app_role level, save/assign_custom_role.
+- Custom roles: save/assign_custom_role.
 - Staff Vault: owner-only writes; reads via `staff_vault_can_view` (rank+grade, same branch) — why: no role-only access.
