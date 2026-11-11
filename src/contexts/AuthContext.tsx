@@ -87,11 +87,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user]);
 
-  const fetchRole = useCallback(async (userId: string) => {
-    const { data } = await supabase
+  const fetchRole = useCallback(async (userId: string, opts?: { throwOnError?: boolean }) => {
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
+    if (error && opts?.throwOnError) throw error;
     if (!data || data.length === 0) return "staff" as AppRole;
     // Prioritize command authority before M&E delivery and operational roles.
     const priority: Record<string, number> = { admin: 0, oic: 1, "2ic": 2, head_of_administration: 3, chief_staff_officer: 4, command_officer: 5, me_officer: 6, project_manager: 7, staff_officer: 8, supervisor: 9, field_officer: 10, ipse_supervisor: 11, ipse_deputy_supervisor: 12, head_of_processing: 13, deputy_head_of_processing: 14, shift_supervisor: 15, deputy_shift_supervisor: 16, shift_leader: 17, deputy_supervisor: 18, deputy_shift_leader: 19, special_duties: 20, deputy: 21, staff: 99 };
@@ -168,7 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Re-read roles regularly and on focus so a removed role cuts dashboard access without re-login.
   useEffect(() => {
     if (!user) return;
-    const reload = async () => { const r = await fetchRole(user.id); setRole(prev => prev === r ? prev : r); };
+    const reload = async () => {
+      // Background refresh: a failed check (flaky network, waking from sleep) keeps the current role.
+      try { const r = await fetchRole(user.id, { throwOnError: true }); setRole(prev => prev === r ? prev : r); } catch { /* keep current role */ }
+    };
     const t = window.setInterval(reload, 60_000);
     const onFocus = () => { if (document.visibilityState === "visible") reload(); };
     document.addEventListener("visibilitychange", onFocus); window.addEventListener("focus", onFocus);
