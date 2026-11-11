@@ -7,6 +7,9 @@ import { MyLeaveHistory } from "@/components/leave/MyLeaveHistory";
 import { LeaveAdminDashboard } from "@/components/leave/LeaveAdminDashboard";
 import { LeaveBalanceDashboard } from "@/components/leave/LeaveBalanceDashboard";
 import { LeaveUsageDashboard } from "@/components/leave/LeaveUsageDashboard";
+import { LeaveApprovalQueue } from "@/components/leave/LeaveApprovalQueue";
+import { DutyAvailabilitySummary } from "@/components/hr/DutyAvailabilitySummary";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function LeaveRequests() {
   const { isAdminOrSupervisor } = useAuth();
@@ -14,7 +17,7 @@ export default function LeaveRequests() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-secondary">Leave / Pass Requests</h1>
+        <h1 className="text-2xl font-bold text-secondary">Leave Requests & Approvals</h1>
         <Button variant="outline" asChild>
           <Link to="/leave/calendar">
             <CalendarDays className="mr-2 h-4 w-4" />
@@ -24,8 +27,18 @@ export default function LeaveRequests() {
       </div>
 
       {/* Staff: submit form + own history */}
-      <LeaveRequestForm />
-      <MyLeaveHistory />
+      <DutyAvailabilitySummary personal={!isAdminOrSupervisor} />
+      <Tabs defaultValue="my-requests" className="space-y-4">
+        <div className="overflow-x-auto"><TabsList className="w-max">
+          <TabsTrigger value="my-requests">My leave requests</TabsTrigger>
+          {isAdminOrSupervisor && <TabsTrigger value="approvals">Command approvals</TabsTrigger>}
+        </TabsList></div>
+        <TabsContent value="my-requests" className="space-y-4">
+          <LeaveRequestForm />
+          <MyLeaveHistory />
+        </TabsContent>
+        {isAdminOrSupervisor && <TabsContent value="approvals"><LeaveApprovalQueue /></TabsContent>}
+      </Tabs>
 
       {/* Balance dashboard — own balance for staff, whole command for the command tier */}
       <LeaveBalanceDashboard />

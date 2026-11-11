@@ -19874,6 +19874,14 @@ export type Database = {
         Args: { _decision: string; _note: string; _request_id: string }
         Returns: string
       }
+      decide_leave_request: {
+        Args: {
+          _action: Database["public"]["Enums"]["leave_status"]
+          _comments: string
+          _id: string
+        }
+        Returns: string
+      }
       decide_staff_application: {
         Args: { _approve: boolean; _id: string; _note?: string }
         Returns: undefined
@@ -20573,6 +20581,7 @@ export type Database = {
         Returns: string
       }
       leave_grade_of_profile: { Args: { _profile_id: string }; Returns: string }
+      leave_request_queue: { Args: never; Returns: Json }
       leave_usage_by_location: {
         Args: { _year?: number }
         Returns: {

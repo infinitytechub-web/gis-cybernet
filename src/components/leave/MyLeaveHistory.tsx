@@ -13,6 +13,8 @@ import { ExportMenu } from "@/components/ui/export-menu";
 import { canAccessModule } from "@/lib/rbac";
 import { toast } from "sonner";
 import { countLeaveDays, type HolidayDate } from "@/lib/leave-days";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 type StatusFilter = "all" | "pending" | "approved" | "rejected";
 
@@ -29,6 +31,7 @@ export function MyLeaveHistory() {
   const { data: holidays = [] } = useQuery({
     queryKey: ["leave-day-holidays"],
     queryFn: async () => {
+      if (!user) throw new Error("Please sign in");
       const { data, error } = await supabase.from("holidays").select("date, recurring");
       if (error) throw error;
       return (data ?? []) as HolidayDate[];
@@ -42,26 +45,23 @@ export function MyLeaveHistory() {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, staff_id, first_name, last_name")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: requests = [], isLoading } = useQuery({
+  const { data: requests = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["my-leave-requests", profile?.id],
     enabled: !!profile?.id,
+    refetchInterval: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("leave_requests")
-        .select(
-          "id, type, status, start_date, end_date, reason, comments, created_at, decided_at, approver:profiles!leave_requests_approved_by_fkey(first_name, last_name)",
-        )
-        .eq("profile_id", profile!.id)
-        .order("created_at", { ascending: false });
+      if (!profile) throw new Error("Officer profile unavailable");
+      const { data, error } = await supabase.rpc("leave_request_queue");
       if (error) throw error;
-      return data ?? [];
+      if (!Array.isArray(data)) throw new Error("Leave history unavailable");
+      return (data as any[]).filter(r => r.profile_id === profile.id);
     },
   });
 
@@ -76,6 +76,7 @@ export function MyLeaveHistory() {
   );
 
   const rows = filter === "all" ? requests : requests.filter((r: any) => r.status === filter);
+  const pager = usePagedList(rows, { resetKey: filter });
   const fullName = profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() : "";
 
   // Letters are official approval/rejection documents. Only the owning staff
@@ -138,12 +139,12 @@ export function MyLeaveHistory() {
             const Icon = t.icon;
             const active = filter === t.key;
             return (
-              <button
+              <Button variant="outline"
                 key={t.key}
                 type="button"
                 onClick={() => setFilter(t.key)}
                 aria-pressed={active}
-                className={`rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`h-auto flex-col items-start rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   active ? "border-primary bg-primary/5" : "hover:bg-muted/50"
                 }`}
               >
@@ -152,12 +153,12 @@ export function MyLeaveHistory() {
                   <span className="text-xl font-bold">{counts[t.key]}</span>
                 </div>
                 <span className="text-xs text-muted-foreground">{t.label}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
 
-        {isLoading ? (
+        {isError ? <div role="alert">Leave history could not be loaded. <Button variant="outline" onClick={() => void refetch()}>Retry</Button></div> : isLoading ? (
           <div className="py-6 text-center text-muted-foreground">Loading...</div>
         ) : rows.length === 0 ? (
           <div className="py-6 text-center text-muted-foreground">
@@ -178,7 +179,7 @@ export function MyLeaveHistory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((r: any) => {
+                {pager.pageItems.map((r: any) => {
                   const days = daysFor(r);
                   const approver = r.approver
                     ? `${r.approver.first_name ?? ""} ${r.approver.last_name ?? ""}`.trim()
@@ -247,6 +248,7 @@ export function MyLeaveHistory() {
             </Table>
           </div>
         )}
+        {!isError && <ListPagination {...pager} label="my leave requests" />}
       </CardContent>
     </Card>
   );

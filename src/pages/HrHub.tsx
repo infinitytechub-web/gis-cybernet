@@ -107,6 +107,8 @@ export default function HrHub() {
           ["Pending HR", "/hr/pending"],
           ["Attendance", "/attendance"],
           ["Attendance & Shifts", "/shifts"],
+          ["Leave Requests", "/leave"],
+          ["Leave Approvals", "/leave/approvals"],
           ["Excuse Duty Form", "/excuse-duty"],
         ].filter(([, path]) => canPath(path)).map(([title, path]) => (
           <Button key={path} asChild variant="outline" size="sm"><Link to={path}>{title}</Link></Button>

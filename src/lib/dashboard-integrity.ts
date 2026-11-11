@@ -6,6 +6,7 @@ export const DASHBOARD_QUERY_KEYS = [
   "command-workforce", "hr-duty-summary", "shifts", "shift-assignments", "attendance", "my-attendance",
   "portal-week-attendance", "portal-my-leave", "my-excuse-forms", "my-excuse-subs",
   "appraisal-queue", "appraisals-list", "appraisal-workflow", "appraisal-detail", "appraisal-audit", "top5-month", "top5-year",
+  "leave-requests", "my-leave-requests", "leave-admin-dashboard", "leave-balances", "leave-usage",
 ] as const;
 
 export const DASHBOARD_LIVE_TABLES = [

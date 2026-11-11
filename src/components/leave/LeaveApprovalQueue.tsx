@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { createNotification, getUserIdFromProfileId } from "@/lib/notifications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,9 +29,12 @@ import { generateLeaveLetter, downloadPdf } from "@/lib/branded-letter-pdf";
 import { LeaveEditDialog } from "./LeaveEditDialog";
 import { softDelete } from "@/lib/recycle-bin";
 import { countLeaveDays, type HolidayDate } from "@/lib/leave-days";
+import { refreshLeaveDashboards, validateLeaveDecision } from "@/lib/leave-workflow";
+import { usePagedList } from "@/hooks/usePagedList";
+import { ListPagination } from "@/components/ui/list-pagination";
 
 export function LeaveApprovalQueue() {
-  const { user, isAdmin, isOic, isAdminOrSupervisor } = useAuth();
+  const { isAdmin, isOic, is2ic } = useAuth();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("pending");
   const [search, setSearch] = useState("");
@@ -52,70 +54,31 @@ export function LeaveApprovalQueue() {
   const daysFor = (r: any) => countLeaveDays(r.start_date, r.end_date, r.type, holidays);
 
   /** Role-based capabilities — server-side triggers/RLS enforce the same rules. */
-  const canReview = isAdminOrSupervisor;                 // approve / reject
-  const canEditPending = isAdminOrSupervisor;            // edit while pending
+  const canReview = isAdmin || isOic || is2ic;
+  const canEditPending = isAdmin;
   const canDelete = isAdmin || isOic;                    // soft delete (Recycle Bin)
   const canRevert = isAdmin;                             // put a decided request back to pending
 
-  const { data: adminProfile } = useQuery({
-    queryKey: ["my-profile", user?.id],
-    enabled: !!user,
+  const { data: requests = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["leave-requests"],
+    refetchInterval: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("user_id", user!.id)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("leave_request_queue");
       if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["leave-requests", statusFilter],
-    queryFn: async () => {
-      let query = supabase
-        .from("leave_requests")
-        .select("*, profiles!leave_requests_profile_id_fkey(first_name, last_name, staff_id, shift_group), approver:profiles!leave_requests_approved_by_fkey(first_name, last_name, staff_id)")
-        .order("created_at", { ascending: false });
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter as "pending" | "approved" | "rejected");
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      if (!Array.isArray(data)) throw new Error("Leave queue unavailable");
+      return data as any[];
     },
   });
 
   const decisionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "approved" | "rejected" | "pending" }) => {
-      if (action === "rejected" && !comments.trim()) {
-        throw new Error("A comment is required when rejecting a request.");
-      }
-      const payload: Record<string, unknown> = { status: action };
-      if (action !== "pending") {
-        payload.approved_by = adminProfile?.id ?? null;
-        payload.comments = comments || null;
-      }
-      const { error } = await supabase.from("leave_requests").update(payload as any).eq("id", id);
+      validateLeaveDecision(action, comments);
+      const { data, error } = await supabase.rpc("decide_leave_request", { _id: id, _action: action, _comments: comments });
       if (error) throw error;
+      if (data !== id) throw new Error("Leave decision was not saved");
     },
     onSuccess: async (_, { action }) => {
-      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["leave-admin-dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["approval-audit"] });
-      if (selectedRequest && action !== "pending") {
-        const userId = await getUserIdFromProfileId(selectedRequest.profile_id);
-        if (userId) {
-          await createNotification({
-            userId,
-            title: `Leave ${action === "approved" ? "Approved" : "Rejected"}`,
-            message: `Your ${selectedRequest.type} leave request has been ${action}.${comments ? ` Comment: ${comments}` : ""}`,
-            type: "leave",
-            referenceId: selectedRequest.id,
-          });
-        }
-      }
+      await refreshLeaveDashboards(queryClient);
       setSelectedRequest(null);
       setComments("");
       toast.success(action === "pending" ? "Request reverted to pending" : `Leave request ${action}`);
@@ -132,9 +95,8 @@ export function LeaveApprovalQueue() {
         context: `${format(new Date(r.start_date), "dd/MM/yyyy")} – ${format(new Date(r.end_date), "dd/MM/yyyy")} · ${r.status}`,
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["leave-admin-dashboard"] });
+    onSuccess: async () => {
+      await refreshLeaveDashboards(queryClient);
       setDeleteRequest(null);
       toast.success("Request moved to the Recycle Bin");
     },
@@ -143,16 +105,17 @@ export function LeaveApprovalQueue() {
 
   const filtered = requests.filter((r: any) => {
     const name = `${r.profiles?.last_name} ${r.profiles?.first_name} ${r.profiles?.staff_id}`.toLowerCase();
-    return !search || name.includes(search.toLowerCase());
+    return (statusFilter === "all" || r.status === statusFilter) && (!search || name.includes(search.toLowerCase()));
   });
+  const pager = usePagedList(filtered, { resetKey: `${search}|${statusFilter}` });
 
   const pendingCount = requests.filter((r: any) => r.status === "pending").length;
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "approved": return "bg-emerald-100 text-emerald-800";
-      case "rejected": return "bg-red-100 text-red-800";
-      default: return "bg-amber-100 text-amber-800";
+      case "approved": return "bg-success/15 text-success";
+      case "rejected": return "bg-destructive/15 text-destructive";
+      default: return "bg-warning/15 text-warning";
     }
   };
 
@@ -186,8 +149,8 @@ export function LeaveApprovalQueue() {
       {/* Summary — clickable status filters */}
       <div className="grid grid-cols-3 gap-3">
         {([
-          { key: "pending", label: "Pending", value: pendingCount, Icon: Clock, tone: "text-amber-600" },
-          { key: "approved", label: "Approved", value: requests.filter((r: any) => r.status === "approved").length, Icon: CheckCircle2, tone: "text-emerald-600" },
+          { key: "pending", label: "Pending", value: pendingCount, Icon: Clock, tone: "text-warning" },
+          { key: "approved", label: "Approved", value: requests.filter((r: any) => r.status === "approved").length, Icon: CheckCircle2, tone: "text-success" },
           { key: "rejected", label: "Rejected", value: requests.filter((r: any) => r.status === "rejected").length, Icon: XCircle, tone: "text-destructive" },
         ] as const).map(({ key, label, value, Icon, tone }) => (
           <Card
@@ -199,10 +162,10 @@ export function LeaveApprovalQueue() {
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setStatusFilter(key); } }}
             className={`cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${statusFilter === key ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
           >
-            <CardContent className="p-4 flex items-center gap-3">
-              <Icon className={`h-8 w-8 ${tone}`} />
+            <CardContent className="p-3 flex flex-wrap items-center gap-2">
+              <Icon className={`h-5 w-5 shrink-0 ${tone}`} />
               <div>
-                <div className="text-2xl font-bold">{value}</div>
+                <div className="text-2xl font-bold">{isError ? "—" : value}</div>
                 <div className="text-xs text-muted-foreground">{label}</div>
               </div>
             </CardContent>
@@ -228,7 +191,7 @@ export function LeaveApprovalQueue() {
       </div>
 
       {/* Table */}
-      {isLoading ? (
+      {isError ? <div role="alert" className="flex flex-wrap gap-2 items-center text-destructive">Leave requests could not be loaded.<Button variant="outline" onClick={() => void refetch()}>Retry</Button></div> : isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : (
         <div className="rounded-lg border overflow-x-auto">
@@ -249,7 +212,7 @@ export function LeaveApprovalQueue() {
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">No leave requests</TableCell>
                 </TableRow>
               ) : (
-                filtered.map((r: any) => {
+                pager.pageItems.map((r: any) => {
                   const days = daysFor(r);
                   const isPending = r.status === "pending";
                   const showMenu = canReview || canEditPending || canDelete;
@@ -272,7 +235,7 @@ export function LeaveApprovalQueue() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {isPending && canReview && (
+                          {isPending && canReview && r.can_review && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -300,7 +263,7 @@ export function LeaveApprovalQueue() {
                                     <Pencil className="h-4 w-4 mr-2" /> Edit
                                   </DropdownMenuItem>
                                 )}
-                                {isPending && canReview && (
+                                {isPending && canReview && r.can_review && (
                                   <>
                                     <DropdownMenuItem
                                       onClick={() => { setSelectedRequest(r); setComments(r.comments ?? ""); }}
@@ -309,7 +272,7 @@ export function LeaveApprovalQueue() {
                                     </DropdownMenuItem>
                                   </>
                                 )}
-                                {!isPending && canRevert && (
+                                {!isPending && canRevert && r.can_review && (
                                   <DropdownMenuItem
                                     onClick={() => { setComments(""); decisionMutation.mutate({ id: r.id, action: "pending" }); }}
                                   >
@@ -337,6 +300,7 @@ export function LeaveApprovalQueue() {
           </Table>
         </div>
       )}
+      {!isError && <ListPagination {...pager} label="leave requests" />}
 
       {/* Review dialog */}
       <Dialog open={!!selectedRequest} onOpenChange={(open) => { if (!open) setSelectedRequest(null); }}>
@@ -382,7 +346,7 @@ export function LeaveApprovalQueue() {
                 </div>
               )}
               <div>
-                <Label htmlFor="leave-review-comments">Comments (required when rejecting)</Label>
+                <Label htmlFor="leave-review-comments">Decision comments (required)</Label>
                 <Textarea
                   id="leave-review-comments"
                   value={comments}
@@ -395,12 +359,12 @@ export function LeaveApprovalQueue() {
                 <h4 className="text-sm font-semibold mb-1">Approval History</h4>
                 <ApprovalAuditTrail entityType="leave_request" entityId={selectedRequest.id} />
               </div>
-              {canReview && selectedRequest.status === "pending" && (
+              {canReview && selectedRequest.can_review && selectedRequest.status === "pending" && (
                 <div className="flex gap-2">
                   <Button
                     className="flex-1 gap-1"
                     onClick={() => decisionMutation.mutate({ id: selectedRequest.id, action: "approved" })}
-                    disabled={decisionMutation.isPending}
+                    disabled={decisionMutation.isPending || !comments.trim()}
                   >
                     <CheckCircle2 className="h-4 w-4" /> Approve
                   </Button>
@@ -408,7 +372,7 @@ export function LeaveApprovalQueue() {
                     variant="destructive"
                     className="flex-1 gap-1"
                     onClick={() => decisionMutation.mutate({ id: selectedRequest.id, action: "rejected" })}
-                    disabled={decisionMutation.isPending}
+                    disabled={decisionMutation.isPending || !comments.trim()}
                   >
                     <XCircle className="h-4 w-4" /> Reject
                   </Button>

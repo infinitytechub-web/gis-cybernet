@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { SecureAttachmentField } from "@/components/shared/SecureAttachmentField";
 import { DateInput } from "@/components/ui/date-input";
+import { refreshLeaveDashboards } from "@/lib/leave-workflow";
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
 
@@ -40,14 +41,16 @@ export function LeaveRequestForm() {
   const [attachmentPath, setAttachmentPath] = useState<string | null>(null);
   const [duration, setDuration] = useState<string>("");
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading, isError: profileError, refetch: retryProfile } = useQuery({
     queryKey: ["my-profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      if (!user) throw new Error("Please sign in");
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, staff_id")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
+        .is("deleted_at", null)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -59,7 +62,8 @@ export function LeaveRequestForm() {
     queryKey: ["my-leave-grade", profile?.id],
     enabled: !!profile?.id,
     queryFn: async (): Promise<string> => {
-      const { data, error } = await db.rpc("leave_grade_of_profile", { _profile_id: profile!.id });
+      if (!profile) throw new Error("Profile unavailable");
+      const { data, error } = await db.rpc("leave_grade_of_profile", { _profile_id: profile.id });
       if (error) throw error;
       return (data as string) ?? "junior";
     },
@@ -136,13 +140,13 @@ export function LeaveRequestForm() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+    onSuccess: async () => {
+      await refreshLeaveDashboards(queryClient);
       setStartDate("");
       setEndDate("");
       setReason("");
       setAttachmentPath(null);
+      setDuration("");
       toast.success("Leave request submitted successfully");
     },
     onError: (e: any) => toast.error(e.message),
@@ -157,6 +161,8 @@ export function LeaveRequestForm() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {profileError && <div role="alert" className="text-destructive">Officer profile could not be loaded. <Button variant="outline" size="sm" onClick={() => void retryProfile()}>Retry</Button></div>}
+        {!profileLoading && !profileError && !profile && <p role="alert">An active officer profile is required to submit leave.</p>}
         <div>
           <Label>Type</Label>
           <Select
@@ -185,12 +191,12 @@ export function LeaveRequestForm() {
             <Label>Duration</Label>
             <Select value={duration} onValueChange={applyDuration}>
               <SelectTrigger>
-                <SelectValue placeholder={`Select duration in ${UNIT_LABEL[entitlement!.unit]}s`} />
+                <SelectValue placeholder={`Select duration in ${UNIT_LABEL[entitlement?.unit ?? "months"]}s`} />
               </SelectTrigger>
               <SelectContent>
                 {durationOptions.map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {n} {UNIT_LABEL[entitlement!.unit]}{n === 1 ? "" : "s"}
+                    {n} {UNIT_LABEL[entitlement?.unit ?? "months"]}{n === 1 ? "" : "s"}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -200,14 +206,14 @@ export function LeaveRequestForm() {
             </p>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <Label>Start Date</Label>
-            <DateInput  value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <Label htmlFor="leave-start">Start Date</Label>
+            <DateInput id="leave-start" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div>
-            <Label>End Date</Label>
-            <DateInput  value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} />
+            <Label htmlFor="leave-end">End Date</Label>
+            <DateInput id="leave-end" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} />
           </div>
         </div>
         <div>
@@ -223,7 +229,7 @@ export function LeaveRequestForm() {
         
         <Button
           onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || !startDate || !endDate}
+          disabled={mutation.isPending || !profile || profileError || !startDate || !endDate}
           className="w-full gap-2"
         >
           <Send className="h-4 w-4" />
