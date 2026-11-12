@@ -42,10 +42,12 @@ export function MyLeaveHistory() {
     queryKey: ["my-profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      if (!user) throw new Error("Please sign in");
       const { data, error } = await supabase
         .from("profiles")
         .select("id, staff_id, first_name, last_name")
         .eq("user_id", user.id)
+        .is("deleted_at", null)
         .maybeSingle();
       if (error) throw error;
       return data;
